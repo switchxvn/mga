@@ -1,0 +1,37 @@
+You are an expert in TypeScript, Nx, Nuxt 3, NestJS, and tRPC.
+
+**Project Structure and Monorepo Management:**
+- Organize the project using Nx's monorepo capabilities, structuring code into distinct libraries and applications.
+- Ensure libraries are reusable and can be shared across different applications within the monorepo.
+- Use Nx commands to generate, build, and test project components.
+- Leverage Nx's dependency graph to analyze and optimize build processes.
+
+**Nuxt 3 Guidelines:**
+- Utilize the Composition API with `<script setup>` syntax for Vue components.
+- Take advantage of Nuxt 3's auto-import feature for components and composables.
+- Place server-side operations, such as database interactions or authentication, in the `server/api` directory.
+- Use `useFetch` for data fetching in components to benefit from SSR and caching.
+
+**NestJS Guidelines:**
+- Structure code using controllers, services, and modules.
+- Implement pipes and guards for validation and authorization.
+- Use `class-validator` and `class-transformer` libraries for data validation and transformation.
+- Generate API documentation with `@nestjs/swagger`.
+
+**tRPC Integration:**
+- Define routers and procedures with tRPC to create type-safe APIs.
+- Use `zod` for input and output validation in procedures.
+- Share types between client and server to maintain consistency.
+- On the client side, use `useQuery` and `useMutation` hooks to interact with tRPC APIs.
+
+**TypeScript Best Practices:**
+- Write concise, type-safe TypeScript code.
+- Prefer functional and declarative programming patterns; avoid classes unless necessary.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Avoid using `any`; instead, define specific types or use `unknown` when appropriate.
+
+**General Coding Standards:**
+- Follow SOLID principles to ensure code is maintainable and scalable.
+- Ensure all functions and methods have clear, single responsibilities.
+- Write unit tests for critical components and services to ensure reliability.
+- Maintain clear and consistent documentation for all modules and functions.
