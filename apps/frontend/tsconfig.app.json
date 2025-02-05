@@ -1,21 +1,28 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "composite": true
+    "module": "ESNext",
+    "types": ["node"],
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "../../dist/out-tsc/apps/frontend",
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "ignoreDeprecations": "5.0"
   },
-  "include": [".nuxt/nuxt.d.ts", "src/**/*"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "../backend/src/trpc/**/*.ts",
+    ".nuxt/nuxt.d.ts",
+    ".nuxt/types/app.d.ts",
+    ".nuxt/types/imports.d.ts"
+  ],
   "exclude": [
-    "vite.config.ts",
-    "vite.config.mts",
-    "vitest.config.ts",
-    "vitest.config.mts",
-    "src/**/*.test.ts",
     "src/**/*.spec.ts",
-    "src/**/*.test.tsx",
-    "src/**/*.spec.tsx",
-    "src/**/*.test.js",
-    "src/**/*.spec.js",
-    "src/**/*.test.jsx",
-    "src/**/*.spec.jsx"
+    "src/**/*.test.ts",
+    "node_modules"
   ]
 }

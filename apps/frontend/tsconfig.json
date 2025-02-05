@@ -1,13 +1,32 @@
 {
-  "files": [],
-  "include": [".nuxt/nuxt.d.ts"],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./src/*"],
+      "@/*": ["./src/*"],
+      "#app": ["./.nuxt/types/app"]
     },
-    {
-      "path": "./tsconfig.spec.json"
-    }
+    "skipLibCheck": true
+  },
+  "include": [
+    ".nuxt/nuxt.d.ts",
+    ".nuxt/types/app.d.ts",
+    "src/**/*"
   ],
-  "extends": "../../tsconfig.base.json"
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
 }

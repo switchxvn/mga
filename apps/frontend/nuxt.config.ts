@@ -11,16 +11,31 @@ export default defineNuxtConfig({
     port: 4200,
   },
   typescript: {
+    strict: true,
     typeCheck: true,
     tsConfig: {
-      extends: '../tsconfig.app.json', // Nuxt copies this string as-is to the `./.nuxt/tsconfig.json`, therefore it needs to be relative to that directory
+      extends: './tsconfig.json',
+      compilerOptions: {
+        paths: {
+          '#app': ['./.nuxt/types/app']
+        }
+      }
+    },
+  },
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.API_BASE || 'http://localhost:3000',
     },
   },
   imports: {
-    autoImport: true,
+    dirs: ['composables/**', 'utils/**'],
   },
+  modules: ['@nuxt/devtools'],
   css: ['~/assets/css/styles.scss'],
   vite: {
     plugins: [nxViteTsPaths()],
+    optimizeDeps: {
+      include: ['@trpc/client', '@trpc/server'],
+    },
   },
 });
