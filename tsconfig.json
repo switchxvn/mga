@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@ew/database": ["libs/database/src"]
+    }
+  }
+} 
