@@ -1,0 +1,131 @@
+// Text alignment
+.text {
+  &-left { text-align: left; }
+  &-center { text-align: center; }
+  &-right { text-align: right; }
+  &-justify { text-align: justify; }
+}
+
+// Text truncation
+.truncate {
+  @include truncate(1);
+
+  &-2 { @include truncate(2); }
+  &-3 { @include truncate(3); }
+}
+
+// Display
+.d {
+  &-none { display: none; }
+  &-block { display: block; }
+  &-inline { display: inline; }
+  &-inline-block { display: inline-block; }
+  &-flex { display: flex; }
+  &-inline-flex { display: inline-flex; }
+  &-grid { display: grid; }
+}
+
+// Flex utilities
+.flex {
+  &-row { flex-direction: row; }
+  &-column { flex-direction: column; }
+  &-wrap { flex-wrap: wrap; }
+  &-nowrap { flex-wrap: nowrap; }
+  
+  &-justify {
+    &-start { justify-content: flex-start; }
+    &-end { justify-content: flex-end; }
+    &-center { justify-content: center; }
+    &-between { justify-content: space-between; }
+    &-around { justify-content: space-around; }
+  }
+  
+  &-items {
+    &-start { align-items: flex-start; }
+    &-end { align-items: flex-end; }
+    &-center { align-items: center; }
+    &-baseline { align-items: baseline; }
+    &-stretch { align-items: stretch; }
+  }
+}
+
+// Spacing
+@each $space in (0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16) {
+  .m {
+    &t-#{$space} { margin-top: var(--spacing-#{$space}); }
+    &r-#{$space} { margin-right: var(--spacing-#{$space}); }
+    &b-#{$space} { margin-bottom: var(--spacing-#{$space}); }
+    &l-#{$space} { margin-left: var(--spacing-#{$space}); }
+    &x-#{$space} {
+      margin-left: var(--spacing-#{$space});
+      margin-right: var(--spacing-#{$space});
+    }
+    &y-#{$space} {
+      margin-top: var(--spacing-#{$space});
+      margin-bottom: var(--spacing-#{$space});
+    }
+  }
+
+  .p {
+    &t-#{$space} { padding-top: var(--spacing-#{$space}); }
+    &r-#{$space} { padding-right: var(--spacing-#{$space}); }
+    &b-#{$space} { padding-bottom: var(--spacing-#{$space}); }
+    &l-#{$space} { padding-left: var(--spacing-#{$space}); }
+    &x-#{$space} {
+      padding-left: var(--spacing-#{$space});
+      padding-right: var(--spacing-#{$space});
+    }
+    &y-#{$space} {
+      padding-top: var(--spacing-#{$space});
+      padding-bottom: var(--spacing-#{$space});
+    }
+  }
+}
+
+// Position
+.position {
+  &-relative { position: relative; }
+  &-absolute { position: absolute; }
+  &-fixed { position: fixed; }
+  &-sticky { position: sticky; }
+}
+
+// Visibility
+.visible { visibility: visible; }
+.invisible { visibility: hidden; }
+
+// Opacity
+.opacity {
+  &-0 { opacity: 0; }
+  &-25 { opacity: 0.25; }
+  &-50 { opacity: 0.5; }
+  &-75 { opacity: 0.75; }
+  &-100 { opacity: 1; }
+}
+
+// Cursor
+.cursor {
+  &-pointer { cursor: pointer; }
+  &-default { cursor: default; }
+  &-not-allowed { cursor: not-allowed; }
+  &-wait { cursor: wait; }
+  &-text { cursor: text; }
+  &-move { cursor: move; }
+  &-help { cursor: help; }
+}
+
+// User select
+.select {
+  &-none { user-select: none; }
+  &-text { user-select: text; }
+  &-all { user-select: all; }
+}
+
+// Object fit
+.object {
+  &-contain { object-fit: contain; }
+  &-cover { object-fit: cover; }
+  &-fill { object-fit: fill; }
+  &-none { object-fit: none; }
+  &-scale-down { object-fit: scale-down; }
+} 

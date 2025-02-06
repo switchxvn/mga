@@ -13,6 +13,7 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     typeCheck: true,
+    shim: false,
     tsConfig: {
       extends: './tsconfig.json',
       compilerOptions: {
@@ -30,12 +31,27 @@ export default defineNuxtConfig({
   imports: {
     dirs: ['composables/**', 'utils/**'],
   },
-  modules: ['@nuxt/devtools'],
-  css: ['~/assets/css/styles.scss'],
+  css: [
+    '@/assets/styles/main.scss',
+  ],
+  postcss: {
+    plugins: {
+      'postcss-import': {},
+      'tailwindcss/nesting': 'postcss-nesting',
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  },
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
       include: ['@trpc/client', '@trpc/server'],
+    },
+    vue: {
+      script: {
+        defineModel: true,
+        propsDestructure: true,
+      },
     },
   },
 });

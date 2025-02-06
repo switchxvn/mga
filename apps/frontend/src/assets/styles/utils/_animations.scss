@@ -1,0 +1,103 @@
+// Fade animations
+.fade {
+  &-enter-active,
+  &-leave-active {
+    @include transition(opacity, var(--transition-normal));
+  }
+
+  &-enter-from,
+  &-leave-to {
+    opacity: 0;
+  }
+}
+
+// Slide animations
+.slide {
+  &-up {
+    &-enter-active,
+    &-leave-active {
+      @include transition(transform, var(--transition-normal));
+    }
+
+    &-enter-from,
+    &-leave-to {
+      transform: translateY(100%);
+    }
+  }
+
+  &-down {
+    &-enter-active,
+    &-leave-active {
+      @include transition(transform, var(--transition-normal));
+    }
+
+    &-enter-from,
+    &-leave-to {
+      transform: translateY(-100%);
+    }
+  }
+
+  &-left {
+    &-enter-active,
+    &-leave-active {
+      @include transition(transform, var(--transition-normal));
+    }
+
+    &-enter-from,
+    &-leave-to {
+      transform: translateX(100%);
+    }
+  }
+
+  &-right {
+    &-enter-active,
+    &-leave-active {
+      @include transition(transform, var(--transition-normal));
+    }
+
+    &-enter-from,
+    &-leave-to {
+      transform: translateX(-100%);
+    }
+  }
+}
+
+// Scale animations
+.scale {
+  &-enter-active,
+  &-leave-active {
+    @include transition(transform, var(--transition-normal));
+  }
+
+  &-enter-from,
+  &-leave-to {
+    transform: scale(0.95);
+  }
+}
+
+// Rotate animations
+.rotate {
+  &-enter-active,
+  &-leave-active {
+    @include transition(transform, var(--transition-normal));
+  }
+
+  &-enter-from,
+  &-leave-to {
+    transform: rotate(-180deg);
+  }
+}
+
+// Loading spinner
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+} 

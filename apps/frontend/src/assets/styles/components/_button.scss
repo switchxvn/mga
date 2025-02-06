@@ -1,0 +1,94 @@
+.btn {
+  @include button-base;
+
+  // Variants
+  &-primary {
+    @extend .btn;
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  &-secondary {
+    @extend .btn;
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  &-outline {
+    @extend .btn;
+    border: 1px solid hsl(var(--border));
+    background-color: transparent;
+    color: hsl(var(--foreground));
+
+    &:hover {
+      background-color: hsl(var(--accent));
+      color: hsl(var(--accent-foreground));
+    }
+  }
+
+  &-ghost {
+    @extend .btn;
+    background-color: transparent;
+    color: hsl(var(--foreground));
+
+    &:hover {
+      background-color: hsl(var(--accent));
+      color: hsl(var(--accent-foreground));
+    }
+  }
+
+  &-destructive {
+    @extend .btn;
+    background-color: hsl(var(--destructive));
+    color: hsl(var(--destructive-foreground));
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  // Sizes
+  &-sm {
+    padding: var(--spacing-1) var(--spacing-2);
+    font-size: var(--font-size-sm);
+  }
+
+  &-lg {
+    padding: var(--spacing-3) var(--spacing-6);
+    font-size: var(--font-size-lg);
+  }
+
+  // States
+  &-loading {
+    position: relative;
+    pointer-events: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 1em;
+      height: 1em;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: button-loading 0.6s linear infinite;
+    }
+  }
+}
+
+@keyframes button-loading {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+} 
