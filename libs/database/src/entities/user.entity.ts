@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
 import { Post } from './post.entity';
+import { UserProfile } from './user-profile.entity';
 
 @Entity('users')
 export class User {
@@ -9,18 +10,30 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: true })
-  name: string;
+  @Column({ name: 'username', nullable: true })
+  username: string;
 
-  @Column({ select: false })
+  @Column({ name: 'password', select: false })
   password: string;
+
+  @Column({ name: 'is_email_verified', default: false })
+  isEmailVerified: boolean;
+
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
+  @Column({ name: 'last_login_at', nullable: true })
+  lastLoginAt: Date;
 
   @OneToMany(() => Post, post => post.author)
   posts: Post[];
 
-  @CreateDateColumn()
+  @OneToOne(() => UserProfile, profile => profile.user, { cascade: true })
+  profile: UserProfile;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 } 

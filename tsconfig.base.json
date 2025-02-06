@@ -15,9 +15,17 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@ew/database": ["libs/database/src/index.ts"]
+      "@ew/database": ["libs/database/src/index.ts"],
+      "@ew/backend/*": ["apps/backend/src/*"]
     },
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "strict": false,
+    "types": ["node"],
+    "allowJs": true,
+    "noEmit": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
   },
   "exclude": ["node_modules", "tmp"]
 }

@@ -3,10 +3,13 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "typeorm": "typeorm-ts-node-commonjs",
+    "typeorm": "ts-node -r tsconfig-paths/register -P ./tsconfig.json ./node_modules/typeorm/cli.js",
+    "migration:create": "npm run typeorm -- migration:create",
     "migration:generate": "npm run typeorm -- migration:generate -d libs/database/src/config/typeorm.config.ts",
     "migration:run": "npm run typeorm -- migration:run -d libs/database/src/config/typeorm.config.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d libs/database/src/config/typeorm.config.ts"
+    "migration:revert": "npm run typeorm -- migration:revert -d libs/database/src/config/typeorm.config.ts",
+    "migration:show": "npm run typeorm -- migration:show -d libs/database/src/config/typeorm.config.ts",
+    "seed": "ts-node -r tsconfig-paths/register apps/backend/src/database/commands/seed.ts seed"
   },
   "private": true,
   "dependencies": {
@@ -23,6 +26,7 @@
     "axios": "^1.6.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "nest-commander": "^3.16.0",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
@@ -71,8 +75,10 @@
     "prisma": "^6.3.1",
     "sass": "1.62.1",
     "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "tslib": "^2.3.0",
-    "typescript": "~5.7.2",
+    "typescript": "4.9.5",
     "typescript-eslint": "^8.19.0",
     "vite": "^5.0.0",
     "vitest": "^1.3.1",
