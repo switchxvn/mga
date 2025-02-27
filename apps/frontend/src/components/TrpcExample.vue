@@ -31,7 +31,8 @@
 <script setup lang="ts">
 import type { RouterOutput } from '../types/trpc';
 import { TRPCClientError } from '@trpc/client';
-import { useTrpc } from '../utils/trpc';
+import { useTrpc } from '../composables/useTrpc';
+import { ref } from '../composables/useVueComposables';
 
 const trpc = useTrpc();
 const name = ref('');
@@ -39,7 +40,10 @@ const greeting = ref('');
 const error = ref('');
 const isLoading = ref(false);
 
-type HelloResponse = RouterOutput['example']['hello'];
+// Định nghĩa kiểu dữ liệu cho response
+interface HelloResponse {
+  greeting: string;
+}
 
 const sayHello = async () => {
   try {
@@ -61,4 +65,5 @@ const sayHello = async () => {
 };
 
 // Initial greeting
-sayHello();</script> 
+sayHello();
+</script> 

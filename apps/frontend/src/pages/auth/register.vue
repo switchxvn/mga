@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+// Auto-imported by Nuxt 3;
 import FormInput from '@/components/ui/form/FormInput.vue';
 import { useAuth, type RegisterCredentials } from '@/composables/useAuth';
 

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+// Auto-imported by Nuxt 3;
 import { useRouter } from 'vue-router';
 import { useTrpc } from '../composables/useTrpc';
+import { ref, onMounted } from '../composables/useVueComposables';
 
 const router = useRouter();
 const trpc = useTrpc();

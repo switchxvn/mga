@@ -1,31 +1,30 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
 import { useTrpc } from '../composables/useTrpc';
+import { ref, onMounted } from '../composables/useVueComposables';
 
 const trpc = useTrpc();
-const latestPosts = ref<any[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
+const latestPosts = ref([]);
+const isLoading = ref(false);
+const error = ref('');
+
+onMounted(async () => {
+  await fetchLatestPosts();
+});
 
 async function fetchLatestPosts() {
+  isLoading.value = true;
+  error.value = '';
   try {
-    loading.value = true;
-    error.value = null;
-    
     // Gọi tRPC endpoint để lấy danh sách bài viết mới nhất
     const result = await trpc.post.all.query();
     latestPosts.value = result.slice(0, 3); // Chỉ lấy 3 bài viết mới nhất
   } catch (err: any) {
     console.error('Failed to fetch latest posts:', err);
-    error.value = err.message || 'Có lỗi xảy ra khi tải bài viết mới nhất';
+    error.value = err.message || 'Đã xảy ra lỗi khi tải bài viết';
   } finally {
-    loading.value = false;
+    isLoading.value = false;
   }
 }
-
-onMounted(() => {
-  fetchLatestPosts();
-});
 </script>
 
 <template>
@@ -54,7 +53,7 @@ onMounted(() => {
         <h2 class="text-3xl font-bold mb-8 text-center">Bài viết mới nhất</h2>
         
         <!-- Loading state -->
-        <div v-if="loading" class="flex justify-center items-center py-12">
+        <div v-if="isLoading" class="flex justify-center items-center py-12">
           <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
         

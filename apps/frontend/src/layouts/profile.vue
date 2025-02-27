@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+// Auto-imported by Nuxt 3;
 import { useColorMode } from '@vueuse/core';
+import { computed } from 'vue';
+import { ref } from '../composables/useVueComposables';
 
 const colorMode = useColorMode();
 
 const toggleTheme = () => {
   colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
 };
+
+const isDarkMode = computed(() => colorMode.value === 'dark');
 
 const navigation = [
   { name: 'Profile', href: '/profile' },
@@ -29,7 +33,7 @@ const currentPath = ref('/profile'); // In real app, get this from router
         </a>
         <nav class="flex items-center space-x-4">
           <button @click="toggleTheme" class="px-2 hover:bg-accent hover:text-accent-foreground rounded-md">
-            <svg v-if="colorMode === 'dark'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+            <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
               <circle cx="12" cy="12" r="4"/>
               <path d="M12 2v2"/>
               <path d="M12 20v2"/>

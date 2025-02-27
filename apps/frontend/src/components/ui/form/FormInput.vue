@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+// Auto-imported by Nuxt 3;
 
 interface Props {
   modelValue: string;

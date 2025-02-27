@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+// Auto-imported by Nuxt 3;
 import { useTrpc } from '../../composables/useTrpc';
+import { ref } from '../../composables/useVueComposables';
 
 const trpc = useTrpc();
 const posts = ref<any[]>([]);

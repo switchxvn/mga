@@ -1,7 +1,8 @@
-import { ref } from 'vue';
+// Auto-imported by Nuxt 3;
 import { useRouter } from 'vue-router';
 import { TRPCClientError } from '@trpc/client';
 import { trpc } from '@/utils/trpc';
+import { ref } from 'vue';
 
 export interface LoginCredentials {
   email: string;
