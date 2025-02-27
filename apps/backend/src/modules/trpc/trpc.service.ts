@@ -9,6 +9,7 @@ import { router } from './trpc';
 import { authRouter } from './routers/auth.router';
 import { postRouter } from './routers/post.router';
 import { userRouter } from './routers/user.router';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TrpcService {
@@ -25,6 +26,7 @@ export class TrpcService {
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   getRouter() {
@@ -45,7 +47,7 @@ export class TrpcService {
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
-        const payload = this.jwtService.verify(token);
+        const payload = await this.verifyToken(token);
         
         if (payload && payload.sub) {
           try {
@@ -64,16 +66,29 @@ export class TrpcService {
             } else {
               this.logger.warn(`User with ID ${payload.sub} not found`);
             }
-          } catch (dbError) {
-            this.logger.error(`Database error fetching user: ${dbError.message}`);
+          } catch (dbError: unknown) {
+            this.logger.error(`Database error fetching user: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
           }
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Token verification failed, user will remain undefined
-      this.logger.warn(`JWT verification failed: ${error.message}`);
+      this.logger.warn(`JWT verification failed: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return context;
+  }
+
+  private async verifyToken(token: string) {
+    try {
+      const decoded = this.jwtService.verify(token, {
+        secret: this.configService.get('JWT_SECRET'),
+      });
+
+      return decoded;
+    } catch (error: unknown) {
+      this.logger.warn(`JWT verification failed: ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    }
   }
 } 

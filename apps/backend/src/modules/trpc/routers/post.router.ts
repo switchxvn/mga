@@ -14,8 +14,8 @@ export const postRouter = router({
       
       ctx.logger.debug(`Retrieved ${posts.length} posts`);
       return posts;
-    } catch (error) {
-      ctx.logger.error(`Error fetching all posts: ${error.message}`);
+    } catch (error: unknown) {
+      ctx.logger.error(`Error fetching all posts: ${error instanceof Error ? error.message : String(error)}`);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to retrieve posts',
@@ -45,10 +45,10 @@ export const postRouter = router({
 
         ctx.logger.debug(`Successfully retrieved post ID: ${input}`);
         return post;
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error fetching post by ID ${input}: ${error.message}`);
+        ctx.logger.error(`Error fetching post by ID ${input}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve post',
@@ -77,8 +77,8 @@ export const postRouter = router({
         ctx.logger.log(`Successfully created post ID: ${savedPost.id}`);
         
         return savedPost;
-      } catch (error) {
-        ctx.logger.error(`Error creating post: ${error.message}`);
+      } catch (error: unknown) {
+        ctx.logger.error(`Error creating post: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create post',
@@ -131,10 +131,10 @@ export const postRouter = router({
 
         ctx.logger.log(`Successfully updated post ID: ${updatedPost.id}`);
         return updatedPost;
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error updating post ID ${input.id}: ${error.message}`);
+        ctx.logger.error(`Error updating post ID ${input.id}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update post',
@@ -176,10 +176,10 @@ export const postRouter = router({
         ctx.logger.log(`Successfully deleted post ID: ${input}`);
         
         return { success: true, message: 'Post deleted successfully' };
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error deleting post ID ${input}: ${error.message}`);
+        ctx.logger.error(`Error deleting post ID ${input}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to delete post',

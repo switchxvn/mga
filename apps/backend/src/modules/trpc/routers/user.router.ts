@@ -5,7 +5,7 @@ import { publicProcedure, protectedProcedure, router } from '../trpc';
 export const userRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
     try {
-      ctx.logger.log(`Fetching current user profile for user ID: ${ctx.user.id}`);
+      ctx.logger.log('Fetching user profile');
       
       const user = await ctx.repositories.users.findOne({
         where: { id: ctx.user.id },
@@ -20,14 +20,11 @@ export const userRouter = router({
       }
 
       ctx.logger.debug(`Successfully retrieved user profile for ID: ${ctx.user.id}`);
-      
-      // Exclude sensitive information
-      const { password, ...userWithoutPassword } = user;
-      return userWithoutPassword;
-    } catch (error) {
+      return user;
+    } catch (error: unknown) {
       if (error instanceof TRPCError) throw error;
       
-      ctx.logger.error(`Error fetching user profile: ${error.message}`);
+      ctx.logger.error(`Error fetching user profile: ${error instanceof Error ? error.message : String(error)}`);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to retrieve user profile',
@@ -54,15 +51,12 @@ export const userRouter = router({
           });
         }
 
-        ctx.logger.debug(`Successfully retrieved user for ID: ${input}`);
-        
-        // Exclude sensitive information
-        const { password, ...userWithoutPassword } = user;
-        return userWithoutPassword;
-      } catch (error) {
+        ctx.logger.debug(`Successfully retrieved user with ID: ${input}`);
+        return user;
+      } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error fetching user by ID ${input}: ${error.message}`);
+        ctx.logger.error(`Error fetching user by ID ${input}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve user',
@@ -120,10 +114,10 @@ export const userRouter = router({
         // Exclude sensitive information
         const { password, ...userWithoutPassword } = updatedUser;
         return userWithoutPassword;
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error updating user profile: ${error.message}`);
+        ctx.logger.error(`Error updating user profile: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update profile',
@@ -143,10 +137,10 @@ export const userRouter = router({
 
       ctx.logger.debug(`Retrieved ${posts.length} posts for user ID: ${ctx.user.id}`);
       return posts;
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof TRPCError) throw error;
       
-      ctx.logger.error(`Error fetching user posts: ${error.message}`);
+      ctx.logger.error(`Error fetching user posts: ${error instanceof Error ? error.message : String(error)}`);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to retrieve posts',

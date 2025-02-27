@@ -58,11 +58,11 @@ export class TrpcController {
       // Set status and send response
       res.status(status);
       return res.send(body);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error handling tRPC request:', error);
       res.status(500).send({
         message: 'Internal server error processing tRPC request',
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }

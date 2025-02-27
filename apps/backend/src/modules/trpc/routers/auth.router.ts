@@ -51,10 +51,10 @@ export const authRouter = router({
           user: userWithoutPassword,
           message: 'User registered successfully',
         };
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Registration error: ${error.message}`);
+        ctx.logger.error(`Registration error: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to register user',
@@ -126,13 +126,13 @@ export const authRouter = router({
             email: user.email,
           },
         };
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Login error: ${error.message}`);
+        ctx.logger.error(`Login error: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to process login',
+          message: 'Failed to login',
           cause: error,
         });
       }
@@ -146,11 +146,11 @@ export const authRouter = router({
         // The client should remove the token
         ctx.logger.debug('Logout processed successfully');
         return { success: true, message: 'Logged out successfully' };
-      } catch (error) {
-        ctx.logger.error(`Logout error: ${error.message}`);
+      } catch (error: unknown) {
+        ctx.logger.error(`Logout error: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to process logout',
+          message: 'Failed to logout',
           cause: error,
         });
       }
@@ -167,7 +167,7 @@ export const authRouter = router({
           });
         }
         
-        ctx.logger.log(`Fetching current user data for ID: ${ctx.user.id}`);
+        ctx.logger.log(`Fetching current user data for user ID: ${ctx.user.id}`);
         
         const user = await ctx.repositories.users.findOne({
           where: { id: ctx.user.id },
@@ -184,10 +184,10 @@ export const authRouter = router({
         
         ctx.logger.debug(`Successfully retrieved user data for ID: ${ctx.user.id}`);
         return user;
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error fetching current user data: ${error.message}`);
+        ctx.logger.error(`Error fetching current user data: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve user data',
