@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@tanstack/vue-query": "^5.66.9",
+    "@trpc/client": "^10.45.2",
+    "@trpc/server": "^10.45.2"
+  }
+}

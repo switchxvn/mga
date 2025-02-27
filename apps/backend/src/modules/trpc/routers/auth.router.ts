@@ -141,13 +141,16 @@ export const authRouter = router({
   logout: publicProcedure
     .mutation(async ({ ctx }) => {
       try {
+        ctx.logger.log('Processing logout request');
         // In a stateless JWT setup, we don't need to do anything server-side
         // The client should remove the token
-        return { success: true };
+        ctx.logger.debug('Logout processed successfully');
+        return { success: true, message: 'Logged out successfully' };
       } catch (error) {
+        ctx.logger.error(`Logout error: ${error.message}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message,
+          message: 'Failed to process logout',
           cause: error,
         });
       }
@@ -157,29 +160,37 @@ export const authRouter = router({
     .query(async ({ ctx }) => {
       try {
         if (!ctx.user) {
+          ctx.logger.debug('Me endpoint accessed without authentication');
           throw new TRPCError({
             code: 'UNAUTHORIZED',
             message: 'Not authenticated',
           });
         }
         
+        ctx.logger.log(`Fetching current user data for ID: ${ctx.user.id}`);
+        
         const user = await ctx.repositories.users.findOne({
           where: { id: ctx.user.id },
-          select: ['id', 'email', 'username', 'isActive', 'isEmailVerified', 'createdAt', 'updatedAt'],
+          select: ['id', 'email', 'name', 'isActive', 'isEmailVerified', 'createdAt', 'updatedAt'],
         });
         
         if (!user) {
+          ctx.logger.warn(`User not found for ID: ${ctx.user.id}`);
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: 'User not found',
           });
         }
         
+        ctx.logger.debug(`Successfully retrieved user data for ID: ${ctx.user.id}`);
         return user;
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching current user data: ${error.message}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message,
+          message: 'Failed to retrieve user data',
           cause: error,
         });
       }
