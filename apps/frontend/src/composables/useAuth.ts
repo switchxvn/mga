@@ -27,7 +27,9 @@ export function useAuth() {
       const result = await trpc.auth.login.mutate(credentials);
       
       if (result.token) {
-        localStorage.setItem('token', result.token);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', result.token);
+        }
         user.value = result.user;
         await router.push('/dashboard');
       }
@@ -50,7 +52,9 @@ export function useAuth() {
       const result = await trpc.auth.register.mutate(credentials);
       
       if (result.token) {
-        localStorage.setItem('token', result.token);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', result.token);
+        }
         user.value = result.user;
         await router.push('/dashboard');
       }
@@ -71,7 +75,9 @@ export function useAuth() {
       error.value = null;
       
       await trpc.auth.logout.mutate();
-      localStorage.removeItem('token');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
       user.value = null;
       await router.push('/auth/login');
     } catch (e) {
@@ -87,6 +93,10 @@ export function useAuth() {
 
   const checkAuth = async () => {
     try {
+      if (typeof window === 'undefined') {
+        return false;
+      }
+      
       const token = localStorage.getItem('token');
       if (!token) {
         user.value = null;
@@ -98,7 +108,9 @@ export function useAuth() {
       return true;
     } catch (e) {
       user.value = null;
-      localStorage.removeItem('token');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
       return false;
     }
   };

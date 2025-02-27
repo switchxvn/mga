@@ -2,8 +2,25 @@
 import { useTrpc } from '../composables/useTrpc';
 import { ref, onMounted } from '../composables/useVueComposables';
 
+// Định nghĩa kiểu dữ liệu cho bài viết
+interface Post {
+  id: number | string;
+  title: string;
+  content: string;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
+  authorId?: number;
+  published?: boolean;
+  author?: {
+    name: string;
+    email?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
 const trpc = useTrpc();
-const latestPosts = ref([]);
+const latestPosts = ref<Post[]>([]);
 const isLoading = ref(false);
 const error = ref('');
 
@@ -71,8 +88,8 @@ async function fetchLatestPosts() {
         <!-- Posts grid -->
         <div v-else-if="latestPosts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div 
-            v-for="post in latestPosts" 
-            :key="post.id" 
+            v-for="(post, index) in latestPosts" 
+            :key="index" 
             class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
           >
             <div class="p-6">

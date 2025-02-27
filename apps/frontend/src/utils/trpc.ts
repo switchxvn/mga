@@ -1,14 +1,15 @@
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import superjson from 'superjson';
+import type { AppRouter } from '../../../backend/src/modules/trpc/routers';
 
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') return '';
   return `http://localhost:${process.env.PORT || 3000}`;
 };
 
-// Tạo trpc client với type any
-const trpcClient = createTRPCProxyClient<any>({
-  transformer: superjson,
+// Tạo trpc client với type AppRouter
+const trpcClient = createTRPCProxyClient<AppRouter>({
+  transformer: superjson as any,
   links: [
     httpBatchLink({
       url: `${getBaseUrl()}/trpc`,
@@ -23,30 +24,40 @@ const trpcClient = createTRPCProxyClient<any>({
   ],
 });
 
-// Tạo các mock router
-const mockTrpc: any = {
+// Export trpc client thực tế thay vì mock
+export const trpc = trpcClient;
+
+// Giữ lại mockTrpc để sử dụng trong trường hợp cần thiết (ví dụ: khi phát triển UI mà backend chưa sẵn sàng)
+export const mockTrpc: any = {
   auth: {
     login: {
       mutate: async (credentials: any) => {
-        console.warn('Router auth.login.mutate không tồn tại hoặc chưa được triển khai');
-        return { token: 'mock-token' };
+        console.warn('Đang sử dụng mock data cho auth.login.mutate');
+        return { 
+          token: 'mock-token',
+          tokenData: { sub: 'mock-user-id' },
+          user: { id: 'mock-id', name: 'Mock User', email: 'mock@example.com' }
+        };
       }
     },
     register: {
       mutate: async (credentials: any) => {
-        console.warn('Router auth.register.mutate không tồn tại hoặc chưa được triển khai');
-        return { token: 'mock-token' };
+        console.warn('Đang sử dụng mock data cho auth.register.mutate');
+        return { 
+          token: 'mock-token',
+          user: { id: 'mock-id', name: credentials.name, email: credentials.email }
+        };
       }
     },
     logout: {
       mutate: async () => {
-        console.warn('Router auth.logout.mutate không tồn tại hoặc chưa được triển khai');
+        console.warn('Đang sử dụng mock data cho auth.logout.mutate');
         return { success: true };
       }
     },
     me: {
       query: async () => {
-        console.warn('Router auth.me.query không tồn tại hoặc chưa được triển khai');
+        console.warn('Đang sử dụng mock data cho auth.me.query');
         return { id: 'mock-id', name: 'Mock User', email: 'mock@example.com' };
       }
     }
@@ -54,24 +65,42 @@ const mockTrpc: any = {
   post: {
     all: {
       query: async () => {
-        console.warn('Router post.all.query không tồn tại hoặc chưa được triển khai');
+        console.warn('Đang sử dụng mock data cho post.all.query');
         return [
-          { id: '1', title: 'Mock Post 1', content: 'Mock content 1' },
-          { id: '2', title: 'Mock Post 2', content: 'Mock content 2' }
+          { 
+            id: '1', 
+            title: 'Mock Post 1', 
+            content: 'Mock content 1',
+            createdAt: new Date().toISOString(),
+            author: { name: 'Mock Author' }
+          },
+          { 
+            id: '2', 
+            title: 'Mock Post 2', 
+            content: 'Mock content 2',
+            createdAt: new Date().toISOString(),
+            author: { name: 'Mock Author' }
+          }
         ];
       }
     },
     byId: {
       query: async (id: string) => {
-        console.warn('Router post.byId.query không tồn tại hoặc chưa được triển khai');
-        return { id, title: 'Mock Post', content: 'Mock content' };
+        console.warn('Đang sử dụng mock data cho post.byId.query');
+        return { 
+          id, 
+          title: 'Mock Post', 
+          content: 'Mock content',
+          createdAt: new Date().toISOString(),
+          author: { name: 'Mock Author' }
+        };
       }
     }
   },
   example: {
     hello: {
       query: async (params: any) => {
-        console.warn('Router example.hello.query không tồn tại hoặc chưa được triển khai');
+        console.warn('Đang sử dụng mock data cho example.hello.query');
         return { greeting: `Hello, ${params?.name || 'World'}!` };
       }
     }
@@ -79,12 +108,9 @@ const mockTrpc: any = {
   user: {
     profile: {
       query: async () => {
-        console.warn('Router user.profile.query không tồn tại hoặc chưa được triển khai');
+        console.warn('Đang sử dụng mock data cho user.profile.query');
         return { id: 'mock-id', name: 'Mock User', email: 'mock@example.com' };
       }
     }
   }
-};
-
-// Export trpc client
-export const trpc = mockTrpc; 
+}; 
