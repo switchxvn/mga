@@ -22,6 +22,8 @@ onMounted(async () => {
       
       // Kiểm tra token với server
       try {
+        // Token đã được lưu trong localStorage và sẽ được tự động gửi trong header
+        // bởi trpc client trong file trpc.ts
         const currentUser = await trpc.auth.me.query();
         user.value = currentUser;
       } catch (error) {

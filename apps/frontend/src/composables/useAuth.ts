@@ -29,15 +29,20 @@ export function useAuth() {
       if (result.token) {
         if (typeof window !== 'undefined') {
           localStorage.setItem('token', result.token);
+          localStorage.setItem('user', JSON.stringify(result.user));
         }
         user.value = result.user;
-        await router.push('/dashboard');
+        await router.push('/');
+      } else {
+        throw new Error('Không nhận được token từ server');
       }
     } catch (e) {
       if (e instanceof TRPCClientError) {
         error.value = e.message;
+      } else if (e instanceof Error) {
+        error.value = e.message;
       } else {
-        error.value = 'An unexpected error occurred';
+        error.value = 'Đã xảy ra lỗi không xác định';
       }
     } finally {
       isLoading.value = false;
@@ -51,18 +56,19 @@ export function useAuth() {
       
       const result = await trpc.auth.register.mutate(credentials);
       
-      if (result.token) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', result.token);
-        }
-        user.value = result.user;
-        await router.push('/dashboard');
+      if (result.user) {
+        // Đăng ký thành công, chuyển hướng đến trang đăng nhập
+        await router.push('/login');
+      } else {
+        throw new Error('Đăng ký không thành công');
       }
     } catch (e) {
       if (e instanceof TRPCClientError) {
         error.value = e.message;
+      } else if (e instanceof Error) {
+        error.value = e.message;
       } else {
-        error.value = 'An unexpected error occurred';
+        error.value = 'Đã xảy ra lỗi không xác định';
       }
     } finally {
       isLoading.value = false;
@@ -77,14 +83,17 @@ export function useAuth() {
       await trpc.auth.logout.mutate();
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
       user.value = null;
-      await router.push('/auth/login');
+      await router.push('/login');
     } catch (e) {
       if (e instanceof TRPCClientError) {
         error.value = e.message;
+      } else if (e instanceof Error) {
+        error.value = e.message;
       } else {
-        error.value = 'An unexpected error occurred';
+        error.value = 'Đã xảy ra lỗi không xác định';
       }
     } finally {
       isLoading.value = false;
@@ -103,13 +112,22 @@ export function useAuth() {
         return false;
       }
 
-      const currentUser = await trpc.auth.me.query();
-      user.value = currentUser;
-      return true;
+      try {
+        const currentUser = await trpc.auth.me.query();
+        user.value = currentUser;
+        return true;
+      } catch (error) {
+        // Nếu token không hợp lệ hoặc hết hạn
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        user.value = null;
+        return false;
+      }
     } catch (e) {
       user.value = null;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
       return false;
     }

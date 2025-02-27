@@ -3,8 +3,8 @@ import superjson from 'superjson';
 import type { AppRouter } from '../../../backend/src/modules/trpc/routers';
 
 const getBaseUrl = () => {
-  if (typeof window !== 'undefined') return '';
-  return `http://localhost:${process.env.PORT || 3000}`;
+  // Sử dụng URL tương đối để Nuxt server middleware có thể xử lý
+  return '';
 };
 
 // Tạo mock tRPC client
@@ -13,10 +13,26 @@ const mockTrpc: any = {
     login: {
       mutate: async (credentials: any) => {
         console.warn('Đang sử dụng mock data cho auth.login.mutate');
+        const tokenData = { 
+          sub: 1, 
+          email: 'mock@example.com' 
+        };
         return { 
-          token: 'mock-token',
-          tokenData: { sub: 'mock-user-id' },
-          user: { id: 'mock-id', name: 'Mock User', email: 'mock@example.com' }
+          user: { 
+            id: 1, 
+            name: 'Mock User', 
+            email: 'mock@example.com',
+            isActive: true,
+            isEmailVerified: false,
+            username: 'mockuser',
+            lastLoginAt: new Date().toISOString(),
+            bio: '',
+            posts: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          tokenData,
+          token: btoa(JSON.stringify(tokenData))
         };
       }
     },
@@ -24,21 +40,44 @@ const mockTrpc: any = {
       mutate: async (credentials: any) => {
         console.warn('Đang sử dụng mock data cho auth.register.mutate');
         return { 
-          token: 'mock-token',
-          user: { id: 'mock-id', name: credentials.name, email: credentials.email }
+          user: { 
+            id: 1, 
+            name: credentials.name, 
+            email: credentials.email,
+            isActive: true,
+            isEmailVerified: false,
+            username: '',
+            lastLoginAt: null,
+            bio: '',
+            posts: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          message: 'User registered successfully'
         };
       }
     },
     logout: {
       mutate: async () => {
         console.warn('Đang sử dụng mock data cho auth.logout.mutate');
-        return { success: true };
+        return { success: true, message: 'Logged out successfully' };
       }
     },
     me: {
       query: async () => {
         console.warn('Đang sử dụng mock data cho auth.me.query');
-        return { id: 'mock-id', name: 'Mock User', email: 'mock@example.com' };
+        return { 
+          id: 1, 
+          name: 'Mock User', 
+          email: 'mock@example.com',
+          isActive: true,
+          isEmailVerified: false,
+          username: 'mockuser',
+          lastLoginAt: new Date().toISOString(),
+          bio: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
       }
     }
   },
@@ -48,17 +87,23 @@ const mockTrpc: any = {
         console.warn('Đang sử dụng mock data cho post.all.query');
         return [
           { 
-            id: '1', 
+            id: 1, 
             title: 'Mock Post 1', 
             content: 'Mock content 1',
             createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            published: true,
+            authorId: 1,
             author: { name: 'Mock Author' }
           },
           { 
-            id: '2', 
+            id: 2, 
             title: 'Mock Post 2', 
             content: 'Mock content 2',
             createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            published: true,
+            authorId: 1,
             author: { name: 'Mock Author' }
           }
         ];
@@ -68,10 +113,13 @@ const mockTrpc: any = {
       query: async (id: string) => {
         console.warn('Đang sử dụng mock data cho post.byId.query');
         return { 
-          id, 
+          id: Number(id), 
           title: 'Mock Post', 
           content: 'Mock content',
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          published: true,
+          authorId: 1,
           author: { name: 'Mock Author' }
         };
       }
@@ -89,7 +137,18 @@ const mockTrpc: any = {
     profile: {
       query: async () => {
         console.warn('Đang sử dụng mock data cho user.profile.query');
-        return { id: 'mock-id', name: 'Mock User', email: 'mock@example.com' };
+        return { 
+          id: 1, 
+          name: 'Mock User', 
+          email: 'mock@example.com',
+          isActive: true,
+          isEmailVerified: false,
+          username: 'mockuser',
+          lastLoginAt: new Date().toISOString(),
+          bio: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
       }
     }
   }
@@ -113,4 +172,4 @@ const trpcClient = createTRPCProxyClient<AppRouter>({
 });
 
 // Tạm thời sử dụng mock data cho đến khi backend hoạt động đúng
-export const trpc = mockTrpc; 
+export const trpc = trpcClient; 

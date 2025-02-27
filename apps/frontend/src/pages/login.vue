@@ -28,15 +28,15 @@ async function handleLogin() {
       password: password.value,
     });
     
-    // Lưu token vào localStorage
-    if (result.tokenData) {
-      localStorage.setItem('token', result.tokenData.sub);
+    // Lưu thông tin xác thực vào localStorage
+    if (result.token) {
+      localStorage.setItem('token', result.token);
       localStorage.setItem('user', JSON.stringify(result.user));
       
       // Chuyển hướng đến trang chủ
       router.push('/');
     } else {
-      throw new Error('Không nhận được token từ server');
+      throw new Error('Không nhận được thông tin xác thực từ server');
     }
   } catch (err: any) {
     console.error('Login failed:', err);

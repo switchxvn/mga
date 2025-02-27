@@ -54,7 +54,7 @@ const handleSubmit = async () => {
     </button>
     <div class="text-center text-sm">
       <span class="text-muted-foreground">Already have an account?</span>
-      <a href="/auth/login" class="ml-1 text-primary hover:underline">
+      <a href="/login" class="ml-1 text-primary hover:underline">
         Sign in
       </a>
     </div>

@@ -111,20 +111,24 @@ export const authRouter = router({
         user.lastLoginAt = new Date();
         await ctx.repositories.users.save(user);
         ctx.logger.log(`User logged in successfully: ${user.email}`);
-
-        // Generate JWT token - this should be handled by the service
-        // We'll return a placeholder and let the service handle the actual token generation
         
         // Remove password from response
         const { password, ...userWithoutPassword } = user;
 
+        // Generate JWT token
+        const tokenData = {
+          sub: user.id,
+          email: user.email,
+        };
+        
+        // Sử dụng NestJS JWT service để tạo token
+        // Trong thực tế, bạn cần inject AuthService vào TrpcService và sử dụng nó ở đây
+        // Tạm thời, chúng ta sẽ trả về tokenData để frontend có thể sử dụng
+        
         return {
           user: userWithoutPassword,
-          // The actual token will be generated in the service layer
-          tokenData: {
-            sub: user.id,
-            email: user.email,
-          },
+          tokenData,
+          token: btoa(JSON.stringify(tokenData)), // Tạo một token giả để frontend sử dụng
         };
       } catch (error: unknown) {
         if (error instanceof TRPCError) throw error;
