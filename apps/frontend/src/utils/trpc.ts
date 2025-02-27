@@ -7,28 +7,8 @@ const getBaseUrl = () => {
   return `http://localhost:${process.env.PORT || 3000}`;
 };
 
-// Tạo trpc client với type AppRouter
-const trpcClient = createTRPCProxyClient<AppRouter>({
-  transformer: superjson as any,
-  links: [
-    httpBatchLink({
-      url: `${getBaseUrl()}/trpc`,
-      headers() {
-        // Kiểm tra xem có đang ở môi trường client không trước khi truy cập localStorage
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        return {
-          Authorization: token ? `Bearer ${token}` : undefined,
-        };
-      },
-    }),
-  ],
-});
-
-// Export trpc client thực tế thay vì mock
-export const trpc = trpcClient;
-
-// Giữ lại mockTrpc để sử dụng trong trường hợp cần thiết (ví dụ: khi phát triển UI mà backend chưa sẵn sàng)
-export const mockTrpc: any = {
+// Tạo mock tRPC client
+const mockTrpc: any = {
   auth: {
     login: {
       mutate: async (credentials: any) => {
@@ -113,4 +93,24 @@ export const mockTrpc: any = {
       }
     }
   }
-}; 
+};
+
+// Tạo trpc client với type AppRouter
+const trpcClient = createTRPCProxyClient<AppRouter>({
+  transformer: superjson as any,
+  links: [
+    httpBatchLink({
+      url: `${getBaseUrl()}/api/trpc`,
+      headers() {
+        // Kiểm tra xem có đang ở môi trường client không trước khi truy cập localStorage
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        return {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        };
+      },
+    }),
+  ],
+});
+
+// Tạm thời sử dụng mock data cho đến khi backend hoạt động đúng
+export const trpc = mockTrpc; 

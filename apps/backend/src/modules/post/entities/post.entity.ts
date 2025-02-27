@@ -4,27 +4,27 @@ import { User } from '../../user/entities/user.entity';
 @Entity()
 export class Post {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  title: string;
+  title!: string;
 
   @Column({ type: 'text', nullable: true })
-  content: string;
+  content!: string;
 
   @Column({ default: false })
-  published: boolean;
+  published!: boolean;
 
   @Column({ name: 'author_id' })
-  authorId: number;
+  authorId!: number;
 
   @ManyToOne(() => User, (user) => user.posts)
   @JoinColumn({ name: 'author_id' })
-  author: User;
+  author!: User;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 } 

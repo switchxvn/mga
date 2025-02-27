@@ -4,38 +4,38 @@ import { Post } from '../../post/entities/post.entity';
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column({ name: 'username', nullable: true })
-  username: string;
+  username!: string;
 
   @Column({ name: 'password', select: false })
-  password: string;
+  password!: string;
 
   @Column({ name: 'is_email_verified', default: false })
-  isEmailVerified: boolean;
+  isEmailVerified!: boolean;
 
   @Column({ name: 'is_active', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Column({ name: 'last_login_at', nullable: true })
-  lastLoginAt: Date;
+  lastLoginAt!: Date;
 
   @Column({ nullable: true })
-  name: string;
+  name!: string;
 
   @Column({ nullable: true })
-  bio: string;
+  bio!: string;
 
   @OneToMany(() => Post, post => post.author)
-  posts: Post[];
+  posts!: Post[];
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 } 
