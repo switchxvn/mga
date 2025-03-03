@@ -5,56 +5,96 @@ import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
 @Controller('trpc')
 export class TrpcController {
-  constructor(private readonly trpcService: TrpcService, private readonly logger: Logger) {}
+  private readonly logger = new Logger(TrpcController.name);
+
+  constructor(private readonly trpcService: TrpcService) {}
 
   @All('*')
-  async handleRequest(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Param('path') path: string,
-  ) {
+  async handleRequest(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     try {
-      // Ghi log thông tin request
-      this.logger.log(`tRPC request received for path: ${path || 'root'}`);
-      this.logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+      // Log request details
+      this.logger.debug(`Processing tRPC request: ${req.url}`);
+      this.logger.debug(`Request path: ${req.url}`);
+      this.logger.debug(`Request method: ${req.method}`);
+      this.logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+      
+      if (req.body) {
+        this.logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+      }
 
-      // Xử lý request bằng fetchRequestHandler từ tRPC
-      await fetchRequestHandler({
+      // Create context
+      const ctx = await this.trpcService.createContext(req);
+
+      // Tạo URL đầy đủ từ request
+      const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      
+      // Tạo Request object cho fetchRequestHandler
+      const request = new Request(url, {
+        method: req.method,
+        headers: new Headers(req.headers as Record<string, string>),
+        body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+      });
+
+      // Process request
+      const result = await fetchRequestHandler({
         endpoint: '/api/trpc',
-        req: req as any,
-        res: res as any,
-        router: this.trpcService.appRouter,
-        createContext: () => this.trpcService.createContext(req, res),
+        req: request,
+        router: this.trpcService.getRouter(),
+        createContext: () => ctx,
         onError: ({ error, path }) => {
-          this.logger.error(`Error in tRPC request to ${path}: ${error.message}`);
-          this.logger.debug(error.stack);
-        },
-        responseMeta: ({ ctx, paths, errors, type }) => {
-          // Thiết lập headers cho response
-          const headers: Record<string, string> = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          };
-
-          // Thêm header cache-control cho các query không có lỗi
-          const allOk = errors.length === 0;
-          const isQuery = type === 'query';
-          if (allOk && isQuery) {
-            headers['cache-control'] = `s-maxage=1, stale-while-revalidate=${60 * 60 * 24}`;
+          this.logger.error(`tRPC error on path ${path}: ${error.message}`);
+          this.logger.error(error.stack);
+          if (error.cause) {
+            this.logger.error(`Cause: ${error.cause instanceof Error ? error.cause.message : String(error.cause)}`);
           }
-
-          return { headers };
         },
       });
-    } catch (error) {
-      this.logger.error(`Error handling tRPC request: ${error.message}`);
-      this.logger.debug(error.stack);
+
+      // Log response details
+      this.logger.debug(`tRPC response status: ${result.status}`);
       
-      // Trả về lỗi 500 nếu có lỗi xảy ra
-      res.status(500).json({
-        message: 'Internal server error',
-        error: error.message,
+      // Lấy headers từ response
+      const headers: Record<string, string> = {};
+      result.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+      
+      this.logger.debug(`tRPC response headers: ${JSON.stringify(headers)}`);
+      
+      // Set response headers
+      Object.entries(headers).forEach(([key, value]) => {
+        if (value !== undefined) {
+          res.header(key, value);
+        }
+      });
+
+      // Set CORS headers
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      
+      // Set cache control headers
+      res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.header('Pragma', 'no-cache');
+      res.header('Expires', '0');
+
+      // Send response
+      res.status(result.status);
+      
+      // Log response body for debugging
+      const responseBody = await result.text();
+      this.logger.debug(`Response body: ${responseBody.substring(0, 200)}${responseBody.length > 200 ? '...' : ''}`);
+      
+      res.send(responseBody);
+    } catch (error) {
+      this.logger.error(`Error handling tRPC request: ${error instanceof Error ? error.message : String(error)}`);
+      if (error instanceof Error) {
+        this.logger.error(error.stack);
+      }
+      
+      res.status(500).send({
+        message: 'Internal Server Error in tRPC handler',
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }

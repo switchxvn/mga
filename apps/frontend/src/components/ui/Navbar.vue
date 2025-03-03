@@ -34,17 +34,42 @@ const fetchMenuItems = async () => {
     menuError.value = '';
     
     // Gọi tRPC endpoint settings.getAllMenuItems
+    console.log('Calling tRPC endpoint settings.getAllMenuItems...');
     const response = await trpc.settings.getAllMenuItems.query();
     console.log('Raw API response:', response);
     
     // Xử lý dữ liệu từ API
     let menuData: any[] = [];
     
-    // Kiểm tra xem response có cấu trúc { result: { data: [...] } } không
-    if (response && typeof response === 'object' && 'result' in response && 
-        response.result && typeof response.result === 'object' && 'data' in response.result) {
-      menuData = response.result.data as any[];
-      console.log('Using response.result.data structure');
+    // Kiểm tra các cấu trúc dữ liệu có thể có
+    if (response && typeof response === 'object') {
+      if ('result' in response && response.result && typeof response.result === 'object' && 'data' in response.result) {
+        // Cấu trúc { result: { data: [...] } }
+        menuData = response.result.data as any[];
+        console.log('Using response.result.data structure');
+      } else if ('data' in response && Array.isArray(response.data)) {
+        // Cấu trúc { data: [...] }
+        menuData = response.data as any[];
+        console.log('Using response.data structure');
+      } else if (Array.isArray(response)) {
+        // Cấu trúc mảng trực tiếp
+        menuData = response as any[];
+        console.log('Using direct array response');
+      } else {
+        // Kiểm tra xem response có phải là mảng menu items không
+        const isMenuItemArray = 
+          'id' in response && 
+          'label' in response && 
+          'href' in response;
+        
+        if (isMenuItemArray) {
+          menuData = [response] as any[];
+          console.log('Using single menu item response');
+        } else {
+          console.warn('Unexpected response structure:', response);
+          menuData = [];
+        }
+      }
     } else if (Array.isArray(response)) {
       // Nếu response là mảng trực tiếp
       menuData = response;

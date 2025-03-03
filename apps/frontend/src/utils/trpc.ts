@@ -127,6 +127,7 @@ const trpcClient = createTRPCProxyClient<AppRouter>({
       headers() {
         // Kiểm tra xem có đang ở môi trường client không trước khi truy cập localStorage
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        console.log('tRPC client using URL:', `${getBaseUrl()}/api/trpc`);
         return {
           Authorization: token ? `Bearer ${token}` : undefined,
         };
