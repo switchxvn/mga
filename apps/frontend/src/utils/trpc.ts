@@ -3,8 +3,13 @@ import superjson from 'superjson';
 import type { AppRouter } from '../../../backend/src/modules/trpc/routers';
 
 const getBaseUrl = () => {
-  // Sử dụng URL tương đối để Nuxt server middleware có thể xử lý
-  return '';
+  // Trong môi trường phát triển, frontend và backend có thể chạy trên các port khác nhau
+  if (typeof window !== 'undefined') {
+    // Trong môi trường trình duyệt, sử dụng URL tương đối để proxy trong vite hoạt động
+    return '';
+  }
+  // Trong môi trường server (SSR), cần URL đầy đủ
+  return process.env.API_BASE || 'http://localhost:3000';
 };
 
 // Tạo mock tRPC client
@@ -172,4 +177,4 @@ const trpcClient = createTRPCProxyClient<AppRouter>({
 });
 
 // Tạm thời sử dụng mock data cho đến khi backend hoạt động đúng
-export const trpc = trpcClient; 
+export const trpc = mockTrpc; 

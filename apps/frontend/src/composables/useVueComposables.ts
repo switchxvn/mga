@@ -1,14 +1,15 @@
 /**
- * Composable để export các API của Vue để sử dụng trong Nuxt 3
- * Trong Nuxt 3, chúng ta không cần import trực tiếp từ 'vue'
- * vì Nuxt 3 tự động import các API này
+ * Composable trung tâm để export các API của Vue
+ * 
+ * Chúng tôi đã cấu hình Nuxt để KHÔNG tự động import các API từ Vue
+ * mà thay vào đó tất cả các components nên import từ file này.
+ * 
+ * Điều này giúp tránh cảnh báo về import trùng lặp và cung cấp một 
+ * điểm truy cập nhất quán cho tất cả các Vue composables.
  */
 
-// Import các composables từ Vue
+// Import trực tiếp từ Vue - đây là cách duy nhất để import Vue composables trong dự án này
 import { ref, computed, onMounted, watch, reactive, toRef, toRefs, nextTick } from 'vue';
 
-// Re-export các composables từ Vue
-// Không cần phải định nghĩa lại các composables này vì Nuxt 3 đã tự động import chúng
-// Chỉ cần export lại để các component có thể import từ file này
-
+// Re-export các composables
 export { ref, computed, onMounted, watch, reactive, toRef, toRefs, nextTick }; 

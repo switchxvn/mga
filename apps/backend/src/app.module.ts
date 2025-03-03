@@ -12,7 +12,7 @@ import { TrpcModule } from './modules/trpc/trpc.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: process.env.NODE_ENV === 'production' ? '.env' : 'apps/backend/.env',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

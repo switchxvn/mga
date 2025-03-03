@@ -9,7 +9,10 @@
     "migration:run": "npm run typeorm -- migration:run -d libs/database/src/config/typeorm.config.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d libs/database/src/config/typeorm.config.ts",
     "migration:show": "npm run typeorm -- migration:show -d libs/database/src/config/typeorm.config.ts",
-    "seed": "ts-node -r tsconfig-paths/register apps/backend/src/database/commands/seed.ts seed"
+    "seed": "ts-node -r tsconfig-paths/register apps/backend/src/database/commands/seed.ts seed",
+    "dev:backend": "NODE_ENV=development npx nx serve backend --env-file=apps/backend/.env",
+    "dev:frontend": "cd apps/frontend && npx nuxt dev --dotenv apps/frontend/.env",
+    "dev": "npm run dev:backend & npm run dev:frontend"
   },
   "private": true,
   "dependencies": {

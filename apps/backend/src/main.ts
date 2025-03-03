@@ -99,11 +99,16 @@ async function bootstrap() {
 
   // Start Server
   const port = configService.get('PORT', 3000);
-  await app.listen(port, '0.0.0.0');
+  await app.listen(port, 'localhost');
   
-  const serverUrl = await app.getUrl();
-  console.log(`Application is running on: ${serverUrl}`);
-  console.log(`API is available at: ${serverUrl}/${apiPrefix}`);
-  console.log(`Swagger documentation is available at: ${serverUrl}/${apiPrefix}/docs`);
+  // Tạo URL với hostname là 'localhost' thay vì địa chỉ IP
+  const displayUrl = `http://localhost:${port}`;
+  console.log(`Application is running on: ${displayUrl}`);
+  console.log(`API is available at: ${displayUrl}/${apiPrefix}`);
+  console.log(`Swagger documentation is available at: ${displayUrl}/${apiPrefix}/docs`);
+  
+  // Hiển thị thông tin về frontend URL
+  const frontendUrl = configService.get('FRONTEND_URL', 'http://localhost:4200');
+  console.log(`Frontend is expected to run at: ${frontendUrl}`);
 }
 bootstrap();

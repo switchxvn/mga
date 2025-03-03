@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
 import { useColorMode } from '@vueuse/core';
-import { computed } from 'vue';
+import { computed } from '../composables/useVueComposables';
 import { ref } from '../composables/useVueComposables';
 
 const colorMode = useColorMode();

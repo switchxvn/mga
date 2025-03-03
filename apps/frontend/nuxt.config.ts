@@ -7,8 +7,8 @@ export default defineNuxtConfig({
   srcDir: 'src',
   devtools: { enabled: true },
   devServer: {
-    host: 'localhost',
-    port: 4200,
+    host: process.env.NUXT_HOST || 'localhost',
+    port: process.env.NUXT_PORT ? parseInt(process.env.NUXT_PORT) : 4200,
   },
   typescript: {
     strict: true,
@@ -30,6 +30,12 @@ export default defineNuxtConfig({
   },
   imports: {
     dirs: ['composables/**', 'utils/**'],
+    presets: [
+      {
+        from: 'vue',
+        imports: [] as string[]
+      }
+    ]
   },
   css: [
     '@/assets/styles/main.scss',

@@ -2,7 +2,8 @@
 import { useRouter } from 'vue-router';
 import { TRPCClientError } from '@trpc/client';
 import { trpc } from '@/utils/trpc';
-import { ref } from 'vue';
+import { ref } from './useVueComposables';
+import type { User } from '../types/User';
 
 export interface LoginCredentials {
   email: string;
@@ -17,7 +18,7 @@ export function useAuth() {
   const router = useRouter();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const user = ref(null);
+  const user = ref<User | null>(null);
 
   const login = async (credentials: LoginCredentials) => {
     try {
