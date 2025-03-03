@@ -1,13 +1,9 @@
-import { initTRPC, TRPCError } from '@trpc/server';
-import { Repository } from 'typeorm';
-import { User } from '../user/entities/user.entity';
-import { Post } from '../post/entities/post.entity';
 import { Logger } from '@nestjs/common';
-import { UserProfile, CountryPhoneCode } from '@ew/database';
-import { UserService } from '../user/services/user.service';
+import { initTRPC, TRPCError } from '@trpc/server';
+import { IAuthService } from '../auth/interfaces/auth.interface';
 import { PostService } from '../post/services/post.service';
 import { ProfileService } from '../profile/services/profile.service';
-import { IAuthService } from '../auth/interfaces/auth.interface';
+import { UserService } from '../user/services/user.service';
 
 // Define context type
 export interface Context {
@@ -70,4 +66,4 @@ export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(isAuthed);
 
 // Export context creator
-export { createContext }; 
+export { createContext };

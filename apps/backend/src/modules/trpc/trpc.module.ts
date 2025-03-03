@@ -6,8 +6,10 @@ import { ProfileModule } from '../profile/profile.module';
 import { AuthModule } from '../auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { TrpcController } from './trpc.controller';
 
 @Module({
+  controllers: [TrpcController],
   imports: [
     UserModule,
     PostModule,
