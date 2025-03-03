@@ -62,41 +62,7 @@ async function handleLogout() {
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <header class="bg-white shadow">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <NuxtLink to="/" class="text-xl font-bold text-blue-600">My App</NuxtLink>
-        
-        <nav class="flex items-center space-x-6">
-          <NuxtLink to="/" class="text-gray-700 hover:text-blue-600">Trang chủ</NuxtLink>
-          <NuxtLink to="/posts" class="text-gray-700 hover:text-blue-600">Bài viết</NuxtLink>
-          
-          <!-- Authentication links -->
-          <template v-if="isLoading">
-            <div class="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>
-          </template>
-          <template v-else-if="user">
-            <div class="relative group">
-              <button class="flex items-center text-gray-700 hover:text-blue-600">
-                <span class="mr-2">{{ user.name || user.email }}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-              </button>
-              <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
-                <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Hồ sơ</NuxtLink>
-                <button @click="handleLogout" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Đăng xuất
-                </button>
-              </div>
-            </div>
-          </template>
-          <template v-else>
-            <NuxtLink to="/login" class="text-gray-700 hover:text-blue-600">Đăng nhập</NuxtLink>
-            <NuxtLink to="/register" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Đăng ký</NuxtLink>
-          </template>
-        </nav>
-      </div>
-    </header>
+    <Navbar logo="/logo.svg" hotline="1900 1234" />
     
     <!-- Main content -->
     <main class="flex-grow">
