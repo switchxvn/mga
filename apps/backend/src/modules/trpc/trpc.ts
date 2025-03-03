@@ -3,6 +3,11 @@ import { Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { Post } from '../post/entities/post.entity';
 import { Logger } from '@nestjs/common';
+import { UserProfile, CountryPhoneCode } from '@ew/database';
+import { UserService } from '../user/services/user.service';
+import { PostService } from '../post/services/post.service';
+import { ProfileService } from '../profile/services/profile.service';
+import { IAuthService } from '../auth/interfaces/auth.interface';
 
 // Define context type
 export interface Context {
@@ -11,16 +16,18 @@ export interface Context {
     email: string;
     name: string;
   };
-  repositories: {
-    users: Repository<User>;
-    posts: Repository<Post>;
+  services: {
+    userService: UserService;
+    postService: PostService;
+    profileService: ProfileService;
+    authService: IAuthService;
   };
   logger: Logger;
 }
 
 // Create empty context
 const createContext = (): Context => ({
-  repositories: {} as any, // Will be injected by NestJS
+  services: {} as any, // Will be injected by NestJS
   logger: new Logger('tRPC'),
 });
 

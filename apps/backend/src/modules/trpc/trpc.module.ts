@@ -1,27 +1,29 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { TrpcController } from './trpc.controller';
+import { Module, forwardRef } from '@nestjs/common';
 import { TrpcService } from './trpc.service';
-import { User } from '../user/entities/user.entity';
-import { Post } from '../post/entities/post.entity';
-import { JwtModule } from '@nestjs/jwt';
+import { UserModule } from '../user/user.module';
+import { PostModule } from '../post/post.module';
+import { ProfileModule } from '../profile/profile.module';
+import { AuthModule } from '../auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Post]),
+    UserModule,
+    PostModule,
+    ProfileModule,
+    forwardRef(() => AuthModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET', 'your-secret-key'),
-        signOptions: { 
-          expiresIn: configService.get('JWT_EXPIRES_IN', '1d') 
-        },
       }),
+      inject: [ConfigService],
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
   ],
-  controllers: [TrpcController],
   providers: [TrpcService],
   exports: [TrpcService],
 })

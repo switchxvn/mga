@@ -1,20 +1,13 @@
 import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
+import { createPostSchema, updatePostSchema, getPostByIdSchema } from '../../post/dto/post.dto';
 
 export const postRouter = router({
   all: publicProcedure.query(async ({ ctx }) => {
     try {
       ctx.logger.log('Fetching all posts');
-      
-      const posts = await ctx.repositories.posts.find({
-        relations: ['author'],
-        order: { createdAt: 'DESC' },
-      });
-      
-      ctx.logger.debug(`Retrieved ${posts.length} posts`);
-      return posts;
-    } catch (error: unknown) {
+      return ctx.services.postService.findAll();
+    } catch (error) {
       ctx.logger.error(`Error fetching all posts: ${error instanceof Error ? error.message : String(error)}`);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -25,15 +18,11 @@ export const postRouter = router({
   }),
 
   byId: publicProcedure
-    .input(z.number())
+    .input(getPostByIdSchema)
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Fetching post by ID: ${input}`);
-        
-        const post = await ctx.repositories.posts.findOne({
-          where: { id: input },
-          relations: ['author'],
-        });
+        const post = await ctx.services.postService.findOne(input);
 
         if (!post) {
           ctx.logger.warn(`Post not found for ID: ${input}`);
@@ -45,7 +34,7 @@ export const postRouter = router({
 
         ctx.logger.debug(`Successfully retrieved post ID: ${input}`);
         return post;
-      } catch (error: unknown) {
+      } catch (error) {
         if (error instanceof TRPCError) throw error;
         
         ctx.logger.error(`Error fetching post by ID ${input}: ${error instanceof Error ? error.message : String(error)}`);
@@ -58,26 +47,14 @@ export const postRouter = router({
     }),
 
   create: protectedProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(100),
-        content: z.string().min(1),
-      }),
-    )
+    .input(createPostSchema)
     .mutation(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Creating new post for user ID: ${ctx.user.id}`);
-        
-        const newPost = ctx.repositories.posts.create({
-          ...input,
-          authorId: ctx.user.id,
-        });
-
-        const savedPost = await ctx.repositories.posts.save(newPost);
-        ctx.logger.log(`Successfully created post ID: ${savedPost.id}`);
-        
-        return savedPost;
-      } catch (error: unknown) {
+        const newPost = await ctx.services.postService.create(input, ctx.user.id);
+        ctx.logger.log(`Successfully created post ID: ${newPost.id}`);
+        return newPost;
+      } catch (error) {
         ctx.logger.error(`Error creating post: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -88,50 +65,14 @@ export const postRouter = router({
     }),
 
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        title: z.string().min(1).max(100).optional(),
-        content: z.string().min(1).optional(),
-      }),
-    )
+    .input(updatePostSchema)
     .mutation(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Updating post ID: ${input.id} for user ID: ${ctx.user.id}`);
-        
-        // Find post
-        const post = await ctx.repositories.posts.findOne({
-          where: { id: input.id },
-        });
-
-        if (!post) {
-          ctx.logger.warn(`Post not found for ID: ${input.id}`);
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Post with ID ${input.id} not found`,
-          });
-        }
-
-        // Check ownership
-        if (post.authorId !== ctx.user.id) {
-          ctx.logger.warn(`Unauthorized update attempt on post ID: ${input.id} by user ID: ${ctx.user.id}`);
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You can only update your own posts',
-          });
-        }
-
-        // Update post
-        const updatedPost = await ctx.repositories.posts.save({
-          ...post,
-          title: input.title ?? post.title,
-          content: input.content ?? post.content,
-          updatedAt: new Date(),
-        });
-
+        const updatedPost = await ctx.services.postService.update(input.id, input, ctx.user.id);
         ctx.logger.log(`Successfully updated post ID: ${updatedPost.id}`);
         return updatedPost;
-      } catch (error: unknown) {
+      } catch (error) {
         if (error instanceof TRPCError) throw error;
         
         ctx.logger.error(`Error updating post ID ${input.id}: ${error instanceof Error ? error.message : String(error)}`);
@@ -144,39 +85,14 @@ export const postRouter = router({
     }),
 
   delete: protectedProcedure
-    .input(z.number())
+    .input(getPostByIdSchema)
     .mutation(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Deleting post ID: ${input} for user ID: ${ctx.user.id}`);
-        
-        // Find post
-        const post = await ctx.repositories.posts.findOne({
-          where: { id: input },
-        });
-
-        if (!post) {
-          ctx.logger.warn(`Post not found for ID: ${input}`);
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Post with ID ${input} not found`,
-          });
-        }
-
-        // Check ownership
-        if (post.authorId !== ctx.user.id) {
-          ctx.logger.warn(`Unauthorized delete attempt on post ID: ${input} by user ID: ${ctx.user.id}`);
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You can only delete your own posts',
-          });
-        }
-
-        // Delete post
-        await ctx.repositories.posts.remove(post);
+        await ctx.services.postService.remove(input, ctx.user.id);
         ctx.logger.log(`Successfully deleted post ID: ${input}`);
-        
         return { success: true, message: 'Post deleted successfully' };
-      } catch (error: unknown) {
+      } catch (error) {
         if (error instanceof TRPCError) throw error;
         
         ctx.logger.error(`Error deleting post ID ${input}: ${error instanceof Error ? error.message : String(error)}`);

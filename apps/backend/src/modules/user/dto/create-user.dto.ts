@@ -1,18 +1,14 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { z } from 'zod';
 
-export class CreateUserDto {
-  @ApiProperty({ example: 'user@example.com' })
-  @IsEmail()
-  email: string;
+export const createUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  username: z.string().optional(),
+  name: z.string().optional(),
+  bio: z.string().optional(),
+  isEmailVerified: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  lastLoginAt: z.date().optional(),
+});
 
-  @ApiProperty({ example: 'johndoe' })
-  @IsString()
-  @IsOptional()
-  username?: string;
-
-  @ApiProperty({ example: 'password123' })
-  @IsString()
-  @MinLength(6)
-  password: string;
-}
+export type CreateUserDto = z.infer<typeof createUserSchema>; 

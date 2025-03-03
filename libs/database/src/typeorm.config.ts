@@ -14,7 +14,7 @@ export const dataSourceOptions: DataSourceOptions = {
   database: process.env.DB_NAME || 'mydb',
   entities: [User, Post],
   migrations: ['libs/database/src/migrations/*.ts'],
-  synchronize: process.env.NODE_ENV === 'development',
+  synchronize: false,
   logging: process.env.NODE_ENV === 'development',
 };
 

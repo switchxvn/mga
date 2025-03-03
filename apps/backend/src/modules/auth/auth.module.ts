@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../user/entities/user.entity';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { TrpcModule } from '../trpc/trpc.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -23,10 +24,17 @@ import { TrpcModule } from '../trpc/trpc.module';
         },
       }),
     }),
-    TrpcModule,
+    UserModule,
+    forwardRef(() => TrpcModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  providers: [
+    {
+      provide: AuthService,
+      useClass: AuthService,
+    },
+    JwtStrategy
+  ],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {} 

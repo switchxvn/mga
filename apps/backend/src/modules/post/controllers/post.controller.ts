@@ -1,8 +1,7 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PostService } from '../services/post.service';
-import { CreatePostDto } from '../dto/create-post.dto';
-import { UpdatePostDto } from '../dto/update-post.dto';
+import { CreatePostDto, UpdatePostDto } from '../dto/post.dto';
 import { Post as PostEntity } from '../entities/post.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 

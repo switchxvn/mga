@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
@@ -9,7 +9,13 @@ import { router } from './trpc';
 import { authRouter } from './routers/auth.router';
 import { postRouter } from './routers/post.router';
 import { userRouter } from './routers/user.router';
+import { profileRouter } from './routers/profile.router';
 import { ConfigService } from '@nestjs/config';
+import { ProfileService } from '../profile/services/profile.service';
+import { UserService } from '../user/services/user.service';
+import { PostService } from '../post/services/post.service';
+import { AuthService } from '../auth/services/auth.service';
+import { IAuthService } from '../auth/interfaces/auth.interface';
 
 @Injectable()
 export class TrpcService {
@@ -18,13 +24,15 @@ export class TrpcService {
     auth: authRouter,
     post: postRouter,
     user: userRouter,
+    profile: profileRouter,
   });
 
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Post)
-    private readonly postRepository: Repository<Post>,
+    private readonly userService: UserService,
+    private readonly postService: PostService,
+    private readonly profileService: ProfileService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: IAuthService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -36,10 +44,12 @@ export class TrpcService {
   async createContext(req: any) {
     const context = createContext();
     
-    // Inject repositories
-    context.repositories = {
-      users: this.userRepository,
-      posts: this.postRepository,
+    // Inject services
+    context.services = {
+      userService: this.userService,
+      postService: this.postService,
+      profileService: this.profileService,
+      authService: this.authService,
     };
 
     // Extract and verify JWT token if present
@@ -51,10 +61,7 @@ export class TrpcService {
         
         if (payload && payload.sub) {
           try {
-            const user = await this.userRepository.findOne({
-              where: { id: payload.sub },
-              select: ['id', 'email', 'name'],
-            });
+            const user = await this.userService.findOne(payload.sub);
             
             if (user) {
               context.user = {
