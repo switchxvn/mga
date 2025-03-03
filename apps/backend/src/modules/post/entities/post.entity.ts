@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 
-@Entity()
+@Entity('posts')
 export class Post {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -27,4 +27,4 @@ export class Post {
 
   @UpdateDateColumn()
   updatedAt!: Date;
-} 
+}

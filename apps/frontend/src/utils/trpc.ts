@@ -6,7 +6,7 @@ const getBaseUrl = () => {
   // Trong môi trường phát triển, frontend và backend có thể chạy trên các port khác nhau
   if (typeof window !== 'undefined') {
     // Trong môi trường trình duyệt, sử dụng URL tương đối để proxy trong vite hoạt động
-    return '';
+    return process.env.API_BASE || 'http://localhost:3000';
   }
   // Trong môi trường server (SSR), cần URL đầy đủ
   return process.env.API_BASE || 'http://localhost:3000';
@@ -177,4 +177,4 @@ const trpcClient = createTRPCProxyClient<AppRouter>({
 });
 
 // Tạm thời sử dụng mock data cho đến khi backend hoạt động đúng
-export const trpc = mockTrpc; 
+export const trpc = trpcClient; 

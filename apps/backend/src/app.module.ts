@@ -7,6 +7,8 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PostModule } from './modules/post/post.module';
 import { TrpcModule } from './modules/trpc/trpc.module';
+import { User } from './modules/user/entities/user.entity';
+import { Post } from './modules/post/entities/post.entity';
 
 @Module({
   imports: [
@@ -24,8 +26,9 @@ import { TrpcModule } from './modules/trpc/trpc.module';
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'nestjs'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [User, Post],
         synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
+        logging: true,
       }),
     }),
     UserModule,
