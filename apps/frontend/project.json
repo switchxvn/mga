@@ -4,5 +4,18 @@
   "projectType": "application",
   "sourceRoot": "apps/frontend/src",
   "// targets": "to see all targets run: nx show project ew --web",
-  "targets": {}
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd apps/frontend && npx nuxt dev --dotenv apps/frontend/.env --no-typecheck"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd apps/frontend && npx nuxt build"
+      }
+    }
+  }
 }

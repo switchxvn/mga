@@ -11,8 +11,11 @@
     "migration:show": "npm run typeorm -- migration:show -d libs/database/src/config/typeorm.config.ts",
     "seed": "ts-node -r tsconfig-paths/register apps/backend/src/database/commands/seed.ts seed",
     "dev:backend": "nx run backend:serve:development",
-    "dev:frontend": "cd apps/frontend && npx nuxt dev --dotenv apps/frontend/.env",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd apps/frontend && npx nuxt dev --dotenv apps/frontend/.env --no-typecheck",
+    "typecheck:frontend": "cd apps/frontend && vue-tsc --project vue-tsc.config.json",
+    "typecheck:frontend:watch": "cd apps/frontend && vue-tsc --project vue-tsc.config.json --watch",
+    "nx:frontend": "nx run frontend:serve --verbose",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run typecheck:frontend:watch\"",
     "dev:daemon": "npx nx daemon"
   },
   "private": true,

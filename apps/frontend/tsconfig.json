@@ -24,6 +24,11 @@
     ".nuxt/types/app.d.ts",
     "src/**/*"
   ],
+  "exclude": [
+    "node_modules",
+    "../../apps/backend/**/*",
+    "../../libs/database/**/*"
+  ],
   "ts-node": {
     "compilerOptions": {
       "module": "commonjs"

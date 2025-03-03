@@ -36,8 +36,7 @@ const mockTrpc: any = {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           },
-          tokenData,
-          token: btoa(JSON.stringify(tokenData))
+          accessToken: btoa(JSON.stringify(tokenData))
         };
       }
     },

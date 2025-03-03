@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, router } from '../trpc';
+import { publicProcedure, router, protectedProcedure } from '../trpc';
 import * as bcrypt from 'bcrypt';
 import { loginSchema, registerSchema } from '../../auth/dto/auth.dto';
 import { CreateUserDto } from '../../user/dto/create-user.dto';
@@ -135,7 +135,7 @@ export const authRouter = router({
       }
     }),
 
-  me: publicProcedure
+  me: protectedProcedure
     .query(async ({ ctx }) => {
       try {
         ctx.logger.log(`Fetching current user data for user ID: ${ctx.user.id}`);

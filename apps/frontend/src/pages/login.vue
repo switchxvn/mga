@@ -29,8 +29,8 @@ async function handleLogin() {
     });
     
     // Lưu thông tin xác thực vào localStorage
-    if (result.token) {
-      localStorage.setItem('token', result.token);
+    if (result.accessToken) {
+      localStorage.setItem('token', result.accessToken);
       localStorage.setItem('user', JSON.stringify(result.user));
       
       // Chuyển hướng đến trang chủ

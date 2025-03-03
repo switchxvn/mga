@@ -6,28 +6,27 @@ export default defineNuxtConfig({
   workspaceDir: '../../',
   srcDir: 'src',
   devtools: { enabled: true },
+
   devServer: {
     host: process.env.NUXT_HOST || 'localhost',
     port: process.env.NUXT_PORT ? parseInt(process.env.NUXT_PORT) : 4200,
   },
+
   typescript: {
     strict: true,
-    typeCheck: true,
+    typeCheck: false,
     shim: false,
     tsConfig: {
-      extends: './tsconfig.json',
-      compilerOptions: {
-        paths: {
-          '#app': ['./.nuxt/types/app']
-        }
-      }
+      extends: './nuxt.tsconfig.json'
     },
   },
+
   runtimeConfig: {
     public: {
       apiBase: process.env.API_BASE || 'http://localhost:3000',
     },
   },
+
   imports: {
     dirs: ['composables/**', 'utils/**'],
     presets: [
@@ -37,9 +36,11 @@ export default defineNuxtConfig({
       }
     ]
   },
+
   css: [
     '@/assets/styles/main.scss',
   ],
+
   postcss: {
     plugins: {
       'postcss-import': {},
@@ -48,6 +49,7 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
+
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
@@ -69,4 +71,6 @@ export default defineNuxtConfig({
       },
     },
   },
+
+  compatibilityDate: '2025-03-03',
 });

@@ -12,7 +12,6 @@ export const createUserSchema = userBaseSchema;
 
 // Update user schema
 export const updateUserSchema = z.object({
-  id: z.number(),
   ...userBaseSchema.partial().shape,
   isActive: z.boolean().optional(),
   isEmailVerified: z.boolean().optional(),

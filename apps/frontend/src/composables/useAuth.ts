@@ -27,9 +27,9 @@ export function useAuth() {
       
       const result = await trpc.auth.login.mutate(credentials);
       
-      if (result.token) {
+      if (result.accessToken) {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('token', result.token);
+          localStorage.setItem('token', result.accessToken);
           localStorage.setItem('user', JSON.stringify(result.user));
         }
         user.value = result.user;
