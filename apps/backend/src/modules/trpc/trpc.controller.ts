@@ -1,68 +1,60 @@
-import { Controller, All, Req, Res, NotFoundException } from '@nestjs/common';
+import { Controller, All, Req, Res, NotFoundException, Param, Logger } from '@nestjs/common';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { TrpcService } from './trpc.service';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
-@Controller('trpc/:path')
+@Controller('trpc')
 export class TrpcController {
-  constructor(private readonly trpcService: TrpcService) {}
+  constructor(private readonly trpcService: TrpcService, private readonly logger: Logger) {}
 
-  @All()
+  @All('*')
   async handleRequest(
-    @Req() req: FastifyRequest,
-    @Res() res: FastifyReply,
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('path') path: string,
   ) {
     try {
-      // Kiểm tra và trích xuất path từ params
-      const params = req.params as Record<string, string>;
-      if (!params || !params.path) {
-        throw new NotFoundException('tRPC path not found');
-      }
-      
-      const path = params.path;
-      
-      // Create context
-      const context = await this.trpcService.createContext(req);
+      // Ghi log thông tin request
+      this.logger.log(`tRPC request received for path: ${path || 'root'}`);
+      this.logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
-      // Process request through tRPC using fetchRequestHandler
-      const response = await fetchRequestHandler({
-        router: this.trpcService.getRouter(),
-        req: new Request(`http://localhost/trpc/${path}`, {
-          method: req.method,
-          headers: new Headers(req.headers as Record<string, string>),
-          body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
-        }),
-        createContext: () => context,
-        endpoint: '/trpc',
-        onError: ({ error }) => {
-          console.error('tRPC error:', error);
+      // Xử lý request bằng fetchRequestHandler từ tRPC
+      await fetchRequestHandler({
+        endpoint: '/api/trpc',
+        req: req as any,
+        res: res as any,
+        router: this.trpcService.appRouter,
+        createContext: () => this.trpcService.createContext(req, res),
+        onError: ({ error, path }) => {
+          this.logger.error(`Error in tRPC request to ${path}: ${error.message}`);
+          this.logger.debug(error.stack);
+        },
+        responseMeta: ({ ctx, paths, errors, type }) => {
+          // Thiết lập headers cho response
+          const headers: Record<string, string> = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          };
+
+          // Thêm header cache-control cho các query không có lỗi
+          const allOk = errors.length === 0;
+          const isQuery = type === 'query';
+          if (allOk && isQuery) {
+            headers['cache-control'] = `s-maxage=1, stale-while-revalidate=${60 * 60 * 24}`;
+          }
+
+          return { headers };
         },
       });
-
-      // Extract response data
-      const status = response.status;
+    } catch (error) {
+      this.logger.error(`Error handling tRPC request: ${error.message}`);
+      this.logger.debug(error.stack);
       
-      // Get headers safely
-      const headers: Record<string, string> = {};
-      response.headers.forEach((value, key) => {
-        headers[key] = value;
-      });
-      
-      const body = await response.text();
-
-      // Set response headers
-      Object.keys(headers).forEach((key) => {
-        res.header(key, headers[key]);
-      });
-
-      // Set status and send response
-      res.status(status);
-      return res.send(body);
-    } catch (error: unknown) {
-      console.error('Error handling tRPC request:', error);
-      res.status(500).send({
-        message: 'Internal server error processing tRPC request',
-        error: error instanceof Error ? error.message : String(error),
+      // Trả về lỗi 500 nếu có lỗi xảy ra
+      res.status(500).json({
+        message: 'Internal server error',
+        error: error.message,
       });
     }
   }

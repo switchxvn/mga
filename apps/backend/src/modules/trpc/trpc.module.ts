@@ -4,6 +4,7 @@ import { UserModule } from '../user/user.module';
 import { PostModule } from '../post/post.module';
 import { ProfileModule } from '../profile/profile.module';
 import { AuthModule } from '../auth/auth.module';
+import { SettingsModule } from '../settings/settings.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TrpcController } from './trpc.controller';
@@ -14,6 +15,7 @@ import { TrpcController } from './trpc.controller';
     UserModule,
     PostModule,
     ProfileModule,
+    SettingsModule,
     forwardRef(() => AuthModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],

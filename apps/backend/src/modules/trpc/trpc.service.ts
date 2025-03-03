@@ -10,12 +10,15 @@ import { authRouter } from './routers/auth.router';
 import { postRouter } from './routers/post.router';
 import { userRouter } from './routers/user.router';
 import { profileRouter } from './routers/profile.router';
+import { settingsRouter } from './routers/settings.router';
 import { ConfigService } from '@nestjs/config';
 import { ProfileService } from '../profile/services/profile.service';
 import { UserService } from '../user/services/user.service';
 import { PostService } from '../post/services/post.service';
 import { AuthService } from '../auth/services/auth.service';
 import { IAuthService } from '../auth/interfaces/auth.interface';
+import { SettingsAdminService } from '../settings/admin/services/settings-admin.service';
+import { SettingsFrontendService } from '../settings/frontend/services/settings-frontend.service';
 
 @Injectable()
 export class TrpcService {
@@ -25,12 +28,15 @@ export class TrpcService {
     post: postRouter,
     user: userRouter,
     profile: profileRouter,
+    settings: settingsRouter,
   });
 
   constructor(
     private readonly userService: UserService,
     private readonly postService: PostService,
     private readonly profileService: ProfileService,
+    private readonly settingsAdminService: SettingsAdminService,
+    private readonly settingsFrontendService: SettingsFrontendService,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: IAuthService,
     private readonly jwtService: JwtService,
@@ -50,6 +56,8 @@ export class TrpcService {
       postService: this.postService,
       profileService: this.profileService,
       authService: this.authService,
+      settingsAdminService: this.settingsAdminService,
+      settingsFrontendService: this.settingsFrontendService,
     };
 
     // Extract and verify JWT token if present

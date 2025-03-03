@@ -4,6 +4,8 @@ import { IAuthService } from '../auth/interfaces/auth.interface';
 import { PostService } from '../post/services/post.service';
 import { ProfileService } from '../profile/services/profile.service';
 import { UserService } from '../user/services/user.service';
+import { SettingsAdminService } from '../settings/admin/services/settings-admin.service';
+import { SettingsFrontendService } from '../settings/frontend/services/settings-frontend.service';
 
 // Define context type
 export interface Context {
@@ -17,6 +19,8 @@ export interface Context {
     postService: PostService;
     profileService: ProfileService;
     authService: IAuthService;
+    settingsAdminService: SettingsAdminService;
+    settingsFrontendService: SettingsFrontendService;
   };
   logger: Logger;
 }

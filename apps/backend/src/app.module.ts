@@ -7,8 +7,11 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PostModule } from './modules/post/post.module';
 import { TrpcModule } from './modules/trpc/trpc.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { User } from './modules/user/entities/user.entity';
 import { Post } from './modules/post/entities/post.entity';
+import { MenuItem } from './modules/settings/entities/menu-item.entity';
+import { Logo } from './modules/settings/entities/logo.entity';
 
 @Module({
   imports: [
@@ -26,7 +29,7 @@ import { Post } from './modules/post/entities/post.entity';
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'nestjs'),
-        entities: [User, Post],
+        entities: [User, Post, MenuItem, Logo],
         synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
         logging: true,
       }),
@@ -35,6 +38,7 @@ import { Post } from './modules/post/entities/post.entity';
     AuthModule,
     PostModule,
     TrpcModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
