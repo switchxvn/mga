@@ -1,0 +1,39 @@
+@import '../variables';
+
+.navbar {
+  &-link {
+    color: $navbar-link-color;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: $navbar-link-hover;
+    }
+  }
+
+  &-megamenu {
+    &-item {
+      color: $navbar-megamenu-text;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        color: $navbar-megamenu-hover;
+        background-color: $navbar-megamenu-bg-hover;
+      }
+    }
+  }
+}
+
+// Mega menu animations
+.mega-menu {
+  &-enter-active,
+  &-leave-active {
+    transition: opacity 0.3s, transform 0.3s;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+} 

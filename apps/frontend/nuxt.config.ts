@@ -74,6 +74,13 @@ export default defineNuxtConfig({
       alias: {
         '@ew/shared': '../../libs/shared/src/index.ts'
       }
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: '@use "@/assets/styles/_variables.scss" as *;'
+        }
+      }
     }
   },
 

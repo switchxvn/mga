@@ -4,5 +4,8 @@
     "@trpc/client": "^10.45.2",
     "@trpc/server": "^10.45.2",
     "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "sass": "^1.85.1"
   }
 }

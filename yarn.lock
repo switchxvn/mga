@@ -9672,6 +9672,11 @@ lru-cache@^5.1.1:
   dependencies:
     yallist "^3.0.2"
 
+lucide-vue-next@^0.477.0:
+  version "0.477.0"
+  resolved "https://registry.yarnpkg.com/lucide-vue-next/-/lucide-vue-next-0.477.0.tgz#1aea3671642398af00897912377dc68d730f817a"
+  integrity sha512-C7azIKO7aJKf5MD7OIzV7NRDtnjXH3KSXfyJgGqRIMemuMzW/9esuMxDXIXDhBZcJgRtXMUN0FcJwOJZQ8SywA==
+
 magic-string-ast@^0.7.0:
   version "0.7.0"
   resolved "https://registry.npmjs.org/magic-string-ast/-/magic-string-ast-0.7.0.tgz"
@@ -13447,14 +13452,7 @@ sucrase@^3.32.0, sucrase@^3.35.0:
     pirates "^4.0.1"
     ts-interface-checker "^0.1.9"
 
-superjson@^2.2.1:
-  version "2.2.2"
-  resolved "https://registry.npmjs.org/superjson/-/superjson-2.2.2.tgz"
-  integrity sha512-5JRxVqC8I8NuOUjzBbvVJAKNM8qoVuH0O77h4WInc/qC2q5IreqKxYwgkga3PfA22OayK2ikceb/B26dztPl+Q==
-  dependencies:
-    copy-anything "^3.0.2"
-
-superjson@^2.2.2:
+superjson@^2.2.1, superjson@^2.2.2:
   version "2.2.2"
   resolved "https://registry.yarnpkg.com/superjson/-/superjson-2.2.2.tgz#9d52bf0bf6b5751a3c3472f1292e714782ba3173"
   integrity sha512-5JRxVqC8I8NuOUjzBbvVJAKNM8qoVuH0O77h4WInc/qC2q5IreqKxYwgkga3PfA22OayK2ikceb/B26dztPl+Q==

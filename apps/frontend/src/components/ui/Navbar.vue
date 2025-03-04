@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useMenuItems } from '../../composables/useMenuItems';
-import type { MenuItem, MenuColumn, MenuItemLink } from '@ew/shared';
+import type { MenuItem, MenuColumn } from '@ew/shared';
+import Icon from './Icon.vue';
 
 // Props cho component
 interface NavbarProps {
@@ -134,7 +135,7 @@ onUnmounted(() => {
             <!-- eslint-disable-next-line vue/valid-v-for -->
             <div
               v-for="(item, index) in processedMenuItems"
-              :key="index"
+              :key="item.id || `menu-item-${index}`"
               class="relative group"
               @mouseenter="item.hasMegaMenu ? showMegaMenu(index) : null"
               @mouseleave="item.hasMegaMenu ? hideMegaMenu() : null"
@@ -144,21 +145,11 @@ onUnmounted(() => {
                 class="text-sm font-medium transition-colors hover:text-primary py-5 flex items-center space-x-1"
               >
                 <span>{{ item.label }}</span>
-                <svg
+                <Icon
                   v-if="item.hasMegaMenu"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="transition-transform duration-300 group-hover:rotate-180"
-                >
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+                  name="ChevronDown"
+                  class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
+                />
               </NuxtLink>
 
               <!-- Mega Menu -->
@@ -172,19 +163,19 @@ onUnmounted(() => {
                 <div class="grid grid-cols-3 gap-6 p-6">
                   <div
                     v-for="(column, columnIndex) in item.megaMenuColumns || []"
-                    :key="column.title"
+                    :key="column.id || `column-${columnIndex}-${column.title}`"
                     class="space-y-3"
                   >
                     <h3 class="font-medium text-sm text-gray-900">{{ column.title }}</h3>
                     <ul class="space-y-2">
                       <li 
                         v-for="(subItem, subIndex) in column.items" 
-                        :key="subItem.href"
+                        :key="subItem.id || `subitem-${subIndex}-${subItem.href}`"
                         class="block"
                       >
                         <NuxtLink
                           :to="subItem.href"
-                          class="text-sm text-gray-600 hover:text-primary hover:bg-gray-50 transition-all duration-200 block py-1.5 px-2 rounded-md"
+                          class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm"
                           @click="activeMegaMenu = null"
                         >
                           {{ subItem.label }}
@@ -201,20 +192,10 @@ onUnmounted(() => {
         <!-- Hotline -->
         <div class="hidden md:flex items-center">
           <a :href="`tel:${hotline}`" class="flex items-center space-x-2 text-sm">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="text-primary"
-            >
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-            </svg>
+            <Icon
+              name="Phone"
+              class="text-primary h-[18px] w-[18px]"
+            />
             <span class="font-medium">{{ hotline }}</span>
           </a>
         </div>
@@ -225,37 +206,10 @@ onUnmounted(() => {
           @click="toggleMobileMenu"
           aria-label="Toggle Menu"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            :class="{ hidden: isMobileMenuOpen }"
-          >
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            :class="{ hidden: !isMobileMenuOpen }"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <Icon
+            :name="isMobileMenuOpen ? 'X' : 'Menu'"
+            class="h-6 w-6"
+          />
         </button>
       </div>
     </div>
@@ -272,7 +226,7 @@ onUnmounted(() => {
           <!-- eslint-disable-next-line vue/valid-v-for -->
           <NuxtLink
             v-for="(item, index) in processedMenuItems"
-            :key="index"
+            :key="item.id || `mobile-menu-${index}`"
             :to="item.href"
             class="block px-3 py-2 text-base font-medium rounded-md hover:bg-gray-100"
             @click="isMobileMenuOpen = false"
@@ -283,20 +237,10 @@ onUnmounted(() => {
       </div>
       <div class="px-4 py-3 border-t">
         <a :href="`tel:${hotline}`" class="flex items-center space-x-2 px-3 py-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-primary"
-          >
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-          </svg>
+          <Icon
+            name="Phone"
+            class="text-primary h-[18px] w-[18px]"
+          />
           <span class="font-medium">{{ hotline }}</span>
         </a>
       </div>
@@ -306,17 +250,3 @@ onUnmounted(() => {
   <!-- Spacer to prevent content from being hidden under fixed navbar -->
   <div class="h-16"></div>
 </template>
-
-<style scoped>
-/* Fade animation for mega menu */
-.mega-menu-enter-active,
-.mega-menu-leave-active {
-  transition: opacity 0.3s, transform 0.3s;
-}
-
-.mega-menu-enter-from,
-.mega-menu-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-</style>
