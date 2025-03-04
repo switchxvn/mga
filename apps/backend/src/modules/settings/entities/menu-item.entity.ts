@@ -24,7 +24,7 @@ export class MenuItem {
   isActive: boolean;
 
   @Column({ name: 'parent_id', nullable: true })
-  parentId: number;
+  parentId: number | null;
 
   @ManyToOne(() => MenuItem, menuItem => menuItem.children, { nullable: true, onDelete: 'CASCADE' })
   parent: MenuItem;

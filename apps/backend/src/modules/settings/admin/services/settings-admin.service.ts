@@ -3,8 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MenuItem } from '../../entities/menu-item.entity';
 import { Logo } from '../../entities/logo.entity';
-import { CreateMenuItemDto, UpdateMenuItemDto } from '../dto/menu-item.dto';
-import { CreateLogoDto, UpdateLogoDto } from '../dto/logo.dto';
+import { z } from 'zod';
+import {
+  createMenuItemSchema,
+  updateMenuItemSchema,
+  createLogoSchema,
+  updateLogoSchema,
+} from '../../dto/trpc-schemas';
+
+type CreateMenuItem = z.infer<typeof createMenuItemSchema>;
+type UpdateMenuItem = z.infer<typeof updateMenuItemSchema>['data'];
+type CreateLogo = z.infer<typeof createLogoSchema>;
+type UpdateLogo = z.infer<typeof updateLogoSchema>['data'];
 
 @Injectable()
 export class SettingsAdminService {
@@ -37,16 +47,16 @@ export class SettingsAdminService {
     return menuItem;
   }
 
-  async createMenuItem(createMenuItemDto: CreateMenuItemDto): Promise<MenuItem> {
-    const menuItem = this.menuItemRepository.create(createMenuItemDto);
+  async createMenuItem(data: CreateMenuItem): Promise<MenuItem> {
+    const menuItem = this.menuItemRepository.create(data);
     
-    if (createMenuItemDto.parentId) {
+    if (data.parentId) {
       const parent = await this.menuItemRepository.findOne({
-        where: { id: createMenuItemDto.parentId },
+        where: { id: data.parentId },
       });
       
       if (!parent) {
-        throw new NotFoundException(`Parent menu item with ID ${createMenuItemDto.parentId} not found`);
+        throw new NotFoundException(`Parent menu item with ID ${data.parentId} not found`);
       }
       
       menuItem.parent = parent;
@@ -55,30 +65,30 @@ export class SettingsAdminService {
     return this.menuItemRepository.save(menuItem);
   }
 
-  async updateMenuItem(id: number, updateMenuItemDto: UpdateMenuItemDto): Promise<MenuItem> {
+  async updateMenuItem(id: number, data: UpdateMenuItem): Promise<MenuItem> {
     const menuItem = await this.findMenuItemById(id);
     
     // Update parent if parentId is provided
-    if (updateMenuItemDto.parentId !== undefined) {
-      if (updateMenuItemDto.parentId === null) {
+    if (data.parentId !== undefined) {
+      if (data.parentId === null) {
         menuItem.parent = null;
       } else {
         const parent = await this.menuItemRepository.findOne({
-          where: { id: updateMenuItemDto.parentId },
+          where: { id: data.parentId },
         });
         
         if (!parent) {
-          throw new NotFoundException(`Parent menu item with ID ${updateMenuItemDto.parentId} not found`);
+          throw new NotFoundException(`Parent menu item with ID ${data.parentId} not found`);
         }
         
         menuItem.parent = parent;
       }
       
-      delete updateMenuItemDto.parentId;
+      delete data.parentId;
     }
     
     // Update other properties
-    Object.assign(menuItem, updateMenuItemDto);
+    Object.assign(menuItem, data);
     
     return this.menuItemRepository.save(menuItem);
   }
@@ -123,15 +133,23 @@ export class SettingsAdminService {
     return logo;
   }
 
-  async createLogo(createLogoDto: CreateLogoDto): Promise<Logo> {
-    const logo = this.logoRepository.create(createLogoDto);
+  async createLogo(data: CreateLogo): Promise<Logo> {
+    const logo = this.logoRepository.create({
+      ...data,
+      altText: data.alt,
+    });
     return this.logoRepository.save(logo);
   }
 
-  async updateLogo(id: number, updateLogoDto: UpdateLogoDto): Promise<Logo> {
+  async updateLogo(id: number, data: UpdateLogo): Promise<Logo> {
     const logo = await this.findLogoById(id);
     
-    Object.assign(logo, updateLogoDto);
+    const updatedData = {
+      ...data,
+      altText: data.alt,
+    };
+    
+    Object.assign(logo, updatedData);
     
     return this.logoRepository.save(logo);
   }

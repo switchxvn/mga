@@ -13,7 +13,7 @@ export class UserFrontendService {
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({ 
       where: { id },
-      select: ['id', 'email', 'firstName', 'lastName', 'createdAt', 'updatedAt']
+      select: ['id', 'email', 'createdAt', 'updatedAt']
     });
     
     if (!user) {
@@ -26,7 +26,7 @@ export class UserFrontendService {
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ 
       where: { email },
-      select: ['id', 'email', 'firstName', 'lastName', 'createdAt', 'updatedAt']
+      select: ['id', 'email', 'createdAt', 'updatedAt']
     });
   }
 } 

@@ -15,7 +15,7 @@ export const createMenuItemSchema = z.object({
   order: z.number().optional(),
   hasMegaMenu: z.boolean().optional(),
   isActive: z.boolean().optional(),
-});
+}).required();
 
 export const updateMenuItemSchema = z.object({
   id: z.number(),
@@ -40,24 +40,24 @@ export const getLogosSchema = z.object({
 export const getLogoByIdSchema = z.number();
 
 export const createLogoSchema = z.object({
-  url: z.string(),
+  url: z.string().url(),
   type: z.string(),
   alt: z.string().optional(),
-  width: z.string().optional(),
-  height: z.string().optional(),
-  isActive: z.boolean().optional(),
-});
+  width: z.number().optional(),
+  height: z.number().optional(),
+  isActive: z.boolean().optional().default(true),
+}).required();
 
 export const updateLogoSchema = z.object({
   id: z.number(),
   data: z.object({
-    url: z.string().optional(),
+    url: z.string().url().optional(),
     type: z.string().optional(),
     alt: z.string().optional(),
-    width: z.string().optional(),
-    height: z.string().optional(),
+    width: z.number().optional(),
+    height: z.number().optional(),
     isActive: z.boolean().optional(),
-  }),
-});
+  }).required(),
+}).required();
 
 export const deleteLogoSchema = z.number(); 

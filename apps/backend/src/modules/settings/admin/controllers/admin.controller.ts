@@ -2,17 +2,24 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } fro
 import { SettingsAdminService } from '../services/settings-admin.service';
 import { MenuItem } from '../../entities/menu-item.entity';
 import { Logo } from '../../entities/logo.entity';
-import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
-// Tạm thời comment các import không tồn tại
 // import { RolesGuard } from '../../../auth/guards/roles.guard';
 // import { Roles } from '../../../auth/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { CreateMenuItemDto, UpdateMenuItemDto } from '../dto/menu-item.dto';
-import { CreateLogoDto, UpdateLogoDto } from '../dto/logo.dto';
+import { z } from 'zod';
+import {
+  createMenuItemSchema,
+  updateMenuItemSchema,
+  createLogoSchema,
+  updateLogoSchema,
+} from '../../dto/trpc-schemas';
+
+type CreateMenuItem = z.infer<typeof createMenuItemSchema>;
+type UpdateMenuItem = z.infer<typeof updateMenuItemSchema>['data'];
+type CreateLogo = z.infer<typeof createLogoSchema>;
+type UpdateLogo = z.infer<typeof updateLogoSchema>['data'];
 
 @ApiTags('admin/settings')
 @Controller('admin/settings')
-@UseGuards(JwtAuthGuard)
 // @UseGuards(JwtAuthGuard, RolesGuard)
 // @Roles('admin')
 @ApiBearerAuth()
@@ -45,8 +52,8 @@ export class SettingsAdminController {
   @Post('menu-items')
   @ApiOperation({ summary: 'Create menu item' })
   @ApiResponse({ status: 201, description: 'Menu item created successfully', type: MenuItem })
-  async createMenuItem(@Body() createMenuItemDto: CreateMenuItemDto): Promise<MenuItem> {
-    return this.settingsService.createMenuItem(createMenuItemDto);
+  async createMenuItem(@Body() data: CreateMenuItem): Promise<MenuItem> {
+    return this.settingsService.createMenuItem(data);
   }
 
   @Put('menu-items/:id')
@@ -55,15 +62,14 @@ export class SettingsAdminController {
   @ApiResponse({ status: 404, description: 'Menu item not found' })
   async updateMenuItem(
     @Param('id') id: number,
-    @Body() updateMenuItemDto: UpdateMenuItemDto,
+    @Body() data: UpdateMenuItem,
   ): Promise<MenuItem> {
-    return this.settingsService.updateMenuItem(id, updateMenuItemDto);
+    return this.settingsService.updateMenuItem(id, data);
   }
 
   @Delete('menu-items/:id')
   @ApiOperation({ summary: 'Delete menu item' })
   @ApiResponse({ status: 200, description: 'Menu item deleted successfully' })
-  @ApiResponse({ status: 400, description: 'Cannot delete menu item with children' })
   @ApiResponse({ status: 404, description: 'Menu item not found' })
   async deleteMenuItem(@Param('id') id: number): Promise<{ success: boolean; message: string }> {
     return this.settingsService.deleteMenuItem(id);
@@ -95,8 +101,8 @@ export class SettingsAdminController {
   @Post('logos')
   @ApiOperation({ summary: 'Create logo' })
   @ApiResponse({ status: 201, description: 'Logo created successfully', type: Logo })
-  async createLogo(@Body() createLogoDto: CreateLogoDto): Promise<Logo> {
-    return this.settingsService.createLogo(createLogoDto);
+  async createLogo(@Body() data: CreateLogo): Promise<Logo> {
+    return this.settingsService.createLogo(data);
   }
 
   @Put('logos/:id')
@@ -105,9 +111,9 @@ export class SettingsAdminController {
   @ApiResponse({ status: 404, description: 'Logo not found' })
   async updateLogo(
     @Param('id') id: number,
-    @Body() updateLogoDto: UpdateLogoDto,
+    @Body() data: UpdateLogo,
   ): Promise<Logo> {
-    return this.settingsService.updateLogo(id, updateLogoDto);
+    return this.settingsService.updateLogo(id, data);
   }
 
   @Delete('logos/:id')
