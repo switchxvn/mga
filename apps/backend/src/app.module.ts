@@ -9,11 +9,13 @@ import { PostModule } from './modules/post/post.module';
 import { TrpcModule } from './modules/trpc/trpc.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { SeoModule } from './modules/seo/seo.module';
+import { FooterModule } from './modules/footer/footer.module';
 import { User } from './modules/user/entities/user.entity';
 import { Post } from './modules/post/entities/post.entity';
 import { MenuItem } from './modules/settings/entities/menu-item.entity';
 import { Logo } from './modules/settings/entities/logo.entity';
 import { Seo } from './modules/seo/entities/seo.entity';
+import { Footer } from './modules/footer/entities/footer.entity';
 
 @Module({
   imports: [
@@ -31,7 +33,7 @@ import { Seo } from './modules/seo/entities/seo.entity';
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'nestjs'),
-        entities: [User, Post, MenuItem, Logo, Seo],
+        entities: [User, Post, MenuItem, Logo, Seo, Footer],
         synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
         logging: true,
       }),
@@ -42,6 +44,7 @@ import { Seo } from './modules/seo/entities/seo.entity';
     TrpcModule,
     SettingsModule,
     SeoModule,
+    FooterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

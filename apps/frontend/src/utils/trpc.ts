@@ -59,7 +59,7 @@ const trpcClient = createTRPCProxyClient<AppRouter>({
   ],
 });
 
-// Tạm thời sử dụng mock data cho đến khi backend hoạt động đúng
+// Sử dụng trpc client thực tế
 export const trpc = trpcClient; 
 
 // Nếu muốn sử dụng mock data, hãy uncomment dòng dưới đây và comment dòng trên

@@ -9,6 +9,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TrpcController } from './trpc.controller';
 import { SeoModule } from '../seo/seo.module';
+import { FooterModule } from '../footer/footer.module';
+
 @Module({
   controllers: [TrpcController],
   imports: [
@@ -17,6 +19,7 @@ import { SeoModule } from '../seo/seo.module';
     ProfileModule,
     SettingsModule,
     SeoModule,
+    FooterModule,
     forwardRef(() => AuthModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],

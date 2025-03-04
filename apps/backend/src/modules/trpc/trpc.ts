@@ -9,7 +9,8 @@ import { SettingsAdminService } from '../settings/admin/services/settings-admin.
 import { SettingsFrontendService } from '../settings/frontend/services/settings-frontend.service';
 import { SeoAdminService } from '../seo/admin/services/seo-admin.service';
 import { SeoFrontendService } from '../seo/frontend/services/seo-frontend.service';
-
+import { FooterAdminService } from '../footer/admin/services/footer-admin.service';
+import { FooterFrontendService } from '../footer/frontend/services/footer-frontend.service';
 // Define context type
 export interface Context {
   user?: {
@@ -26,6 +27,8 @@ export interface Context {
     settingsFrontendService: SettingsFrontendService;
     seoAdminService: SeoAdminService;
     seoFrontendService: SeoFrontendService;
+    footerAdminService: FooterAdminService;
+    footerFrontendService: FooterFrontendService;
   };
   logger: Logger;
 }

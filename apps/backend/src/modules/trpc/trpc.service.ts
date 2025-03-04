@@ -22,6 +22,9 @@ import { SettingsAdminService } from '../settings/admin/services/settings-admin.
 import { SettingsFrontendService } from '../settings/frontend/services/settings-frontend.service';
 import { SeoAdminService } from '../seo/admin/services/seo-admin.service';
 import { SeoFrontendService } from '../seo/frontend/services/seo-frontend.service';
+import { FooterAdminService } from '../footer/admin/services/footer-admin.service';
+import { FooterFrontendService } from '../footer/frontend/services/footer-frontend.service';
+import { footerRouter } from './routers/footer.router';
 
 @Injectable()
 export class TrpcService {
@@ -33,6 +36,7 @@ export class TrpcService {
     profile: profileRouter,
     settings: settingsRouter,
     seo: seoRouter,
+    footer: footerRouter,
   });
 
   constructor(
@@ -47,6 +51,8 @@ export class TrpcService {
     private readonly configService: ConfigService,
     private readonly seoAdminService: SeoAdminService,
     private readonly seoFrontendService: SeoFrontendService,
+    private readonly footerAdminService: FooterAdminService,
+    private readonly footerFrontendService: FooterFrontendService,
   ) {}
 
   getRouter() {
@@ -66,6 +72,8 @@ export class TrpcService {
       settingsFrontendService: this.settingsFrontendService,
       seoAdminService: this.seoAdminService,
       seoFrontendService: this.seoFrontendService,
+      footerAdminService: this.footerAdminService,
+      footerFrontendService: this.footerFrontendService,
     };
 
     // Extract and verify JWT token if present

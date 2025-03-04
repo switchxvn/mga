@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useTrpc } from '../composables/useTrpc';
 import { ref, onMounted } from '../composables/useVueComposables';
+import { useSeo } from '../composables/useSeo';
+import { useRoute } from 'vue-router';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface Post {
@@ -19,18 +21,24 @@ interface Post {
   [key: string]: any;
 }
 
+const route = useRoute();
 const trpc = useTrpc();
 const latestPosts = ref<Post[]>([]);
 const isLoading = ref(false);
-const error = ref('');
+const error = ref<string | null>(null);
 
 onMounted(async () => {
-  await fetchLatestPosts();
+  try {
+    // Fetch posts
+    await fetchLatestPosts();
+  } catch (err) {
+    console.error('Error in page initialization:', err);
+  }
 });
 
 async function fetchLatestPosts() {
   isLoading.value = true;
-  error.value = '';
+  error.value = null;
   try {
     // Gọi tRPC endpoint để lấy danh sách bài viết mới nhất
     const result = await trpc.post.all.query();
@@ -93,8 +101,8 @@ async function fetchLatestPosts() {
         <!-- Posts grid -->
         <div v-else-if="latestPosts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <Card 
-            v-for="(post, index) in latestPosts" 
-            :key="index" 
+            v-for="post in latestPosts" 
+            :key="post.id" 
             class="hover:shadow-lg transition-shadow duration-300"
           >
             <CardHeader>
