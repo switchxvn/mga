@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { initTRPC, TRPCError } from '@trpc/server';
+import superjson from 'superjson';
 import { IAuthService } from '../auth/interfaces/auth.interface';
 import { PostService } from '../post/services/post.service';
 import { ProfileService } from '../profile/services/profile.service';
@@ -33,6 +34,7 @@ const createContext = (): Context => ({
 
 // Initialize tRPC
 const t = initTRPC.context<Context>().create({
+  transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
       ...shape,

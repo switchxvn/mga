@@ -38,63 +38,23 @@ const fetchMenuItems = async () => {
     const response = await trpc.settings.getAllMenuItems.query();
     console.log('Raw API response:', response);
     
-    // Xử lý dữ liệu từ API
-    let menuData: any[] = [];
-    
-    // Kiểm tra các cấu trúc dữ liệu có thể có
-    if (response && typeof response === 'object') {
-      if ('result' in response && response.result && typeof response.result === 'object' && 'data' in response.result) {
-        // Cấu trúc { result: { data: [...] } }
-        menuData = response.result.data as any[];
-        console.log('Using response.result.data structure');
-      } else if ('data' in response && Array.isArray(response.data)) {
-        // Cấu trúc { data: [...] }
-        menuData = response.data as any[];
-        console.log('Using response.data structure');
-      } else if (Array.isArray(response)) {
-        // Cấu trúc mảng trực tiếp
-        menuData = response as any[];
-        console.log('Using direct array response');
-      } else {
-        // Kiểm tra xem response có phải là mảng menu items không
-        const isMenuItemArray = 
-          'id' in response && 
-          'label' in response && 
-          'href' in response;
-        
-        if (isMenuItemArray) {
-          menuData = [response] as any[];
-          console.log('Using single menu item response');
-        } else {
-          console.warn('Unexpected response structure:', response);
-          menuData = [];
-        }
-      }
-    } else if (Array.isArray(response)) {
-      // Nếu response là mảng trực tiếp
-      menuData = response;
-      console.log('Using direct array response');
-    } else {
-      console.warn('Unexpected response structure:', response);
-      menuData = [];
-    }
-    
-    if (menuData && Array.isArray(menuData) && menuData.length > 0) {
-      // Chuyển đổi dữ liệu từ API sang định dạng menu
-      menuItems.value = menuData.map((item: any) => ({
-        label: item.label,
-        href: item.href || '#',
-        hasMegaMenu: Boolean(item.hasMegaMenu),
-        megaMenuColumns: item.megaMenuColumns || [],
-        order: item.order || 0,
-        isActive: item.isActive
-      })).filter((item: any) => item.isActive !== false)
-        .sort((a: any, b: any) => a.order - b.order);
-      
+    // Xử lý dữ liệu từ API - response là mảng trực tiếp
+    if (Array.isArray(response)) {
+      menuItems.value = response
+        .filter(item => item.isActive !== false)
+        .sort((a, b) => a.order - b.order)
+        .map(item => ({
+          label: item.label,
+          href: item.href || '#',
+          hasMegaMenu: Boolean(item.hasMegaMenu),
+          megaMenuColumns: item.megaMenuColumns || [],
+          order: item.order || 0,
+          isActive: item.isActive
+        }));
       console.log('Menu items processed:', menuItems.value);
     } else {
+      console.warn('Unexpected response structure:', response);
       menuItems.value = [];
-      console.warn('No menu items returned from API');
     }
   } catch (err) {
     console.error('Error fetching menu items:', err);
