@@ -19,9 +19,10 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@ew/database": ["libs/database/src"]
+      "@ew/database": ["libs/database/src"],
+      "@ew/shared": ["libs/shared/src"]
     }
   },
-  "include": ["libs/database/src/**/*"],
+  "include": ["libs/database/src/**/*", "libs/shared/src/**/*"],
   "exclude": ["node_modules", "dist"]
 } 

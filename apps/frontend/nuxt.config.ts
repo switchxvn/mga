@@ -70,6 +70,11 @@ export default defineNuxtConfig({
         },
       },
     },
+    resolve: {
+      alias: {
+        '@ew/shared': '../../libs/shared/src/index.ts'
+      }
+    }
   },
 
   compatibilityDate: '2025-03-03',

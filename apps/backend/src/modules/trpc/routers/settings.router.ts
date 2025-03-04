@@ -11,7 +11,7 @@ import {
   createLogoSchema,
   updateLogoSchema,
   deleteLogoSchema,
-} from '../../settings/dto/trpc-schemas';
+} from '@ew/shared';
 
 export const settingsRouter = router({
   // Menu Items - Public

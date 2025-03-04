@@ -16,7 +16,8 @@
     "baseUrl": ".",
     "paths": {
       "@ew/database": ["libs/database/src/index.ts"],
-      "@ew/backend/*": ["apps/backend/src/*"]
+      "@ew/backend/*": ["apps/backend/src/*"],
+      "@ew/shared": ["libs/shared/src/index.ts"]
     },
     "useDefineForClassFields": false,
     "strict": false,

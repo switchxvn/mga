@@ -9,7 +9,7 @@ import {
   updateMenuItemSchema,
   createLogoSchema,
   updateLogoSchema,
-} from '../../dto/trpc-schemas';
+} from '@ew/shared';
 
 type CreateMenuItem = z.infer<typeof createMenuItemSchema>;
 type UpdateMenuItem = z.infer<typeof updateMenuItemSchema>['data'];

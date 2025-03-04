@@ -15,14 +15,16 @@
     "paths": {
       "~/*": ["./src/*"],
       "@/*": ["./src/*"],
-      "#app": ["./.nuxt/types/app"]
+      "#app": ["./.nuxt/types/app"],
+      "@ew/shared": ["../../libs/shared/src/index.ts"]
     },
     "skipLibCheck": true
   },
   "include": [
     ".nuxt/nuxt.d.ts",
     ".nuxt/types/app.d.ts",
-    "src/**/*"
+    "src/**/*",
+    "../../libs/shared/src/**/*"
   ],
   "exclude": [
     "node_modules",

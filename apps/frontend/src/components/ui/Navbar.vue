@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import { useTrpc } from '../../composables/useTrpc';
-import { TRPCClientError } from '@trpc/client';
+import { useMenuItems } from '../../composables/useMenuItems';
+import type { MenuItem, MenuColumn, MenuItemLink } from '@ew/shared';
 
 // Props cho component
 interface NavbarProps {
@@ -19,56 +19,25 @@ const isScrolled = ref(false);
 const lastScrollPosition = ref(0);
 const isNavbarVisible = ref(true);
 
-// tRPC client
-const trpc = useTrpc();
+// Menu items from composable
+const { menuItems, isLoading, error, fetchMenuItems } = useMenuItems();
 
-// Menu items from tRPC
-const menuItems = ref<any[]>([]);
-const isLoadingMenu = ref(true);
-const menuError = ref('');
+// Process menu items for display
+interface ProcessedMenuItem extends MenuItem {
+  megaMenuColumns: MenuColumn[];
+}
 
-// Fetch menu items from tRPC
-const fetchMenuItems = async () => {
-  try {
-    isLoadingMenu.value = true;
-    menuError.value = '';
-    
-    // Gọi tRPC endpoint settings.getAllMenuItems
-    console.log('Calling tRPC endpoint settings.getAllMenuItems...');
-    const response = await trpc.settings.getAllMenuItems.query();
-    console.log('Raw API response:', response);
-    
-    // Xử lý dữ liệu từ API - response là mảng trực tiếp
-    if (Array.isArray(response)) {
-      menuItems.value = response
-        .filter(item => item.isActive !== false)
-        .sort((a, b) => a.order - b.order)
-        .map(item => ({
-          label: item.label,
-          href: item.href || '#',
-          hasMegaMenu: Boolean(item.hasMegaMenu),
-          megaMenuColumns: item.megaMenuColumns || [],
-          order: item.order || 0,
-          isActive: item.isActive
-        }));
-      console.log('Menu items processed:', menuItems.value);
-    } else {
-      console.warn('Unexpected response structure:', response);
-      menuItems.value = [];
-    }
-  } catch (err) {
-    console.error('Error fetching menu items:', err);
-    menuItems.value = [];
-    
-    if (err instanceof TRPCClientError) {
-      menuError.value = err.message;
-    } else {
-      menuError.value = 'Không thể tải menu.';
-    }
-  } finally {
-    isLoadingMenu.value = false;
-  }
-};
+const processedMenuItems = computed<ProcessedMenuItem[]>(() => {
+  return menuItems.value
+    .filter(item => item.isActive !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+    .map(item => ({
+      ...item,
+      href: item.href || '#',
+      hasMegaMenu: Boolean(item.hasMegaMenu),
+      megaMenuColumns: item.megaMenuColumns || []
+    }));
+});
 
 // Active mega menu
 const activeMegaMenu = ref<number | null>(null);
@@ -105,16 +74,10 @@ const toggleMobileMenu = () => {
 // Scroll handler
 const handleScroll = () => {
   const currentScrollPosition = window.scrollY;
-
-  // Determine if scrolled
   isScrolled.value = currentScrollPosition > 50;
 
-  // Hide navbar when scrolling down, show when scrolling up
-  if (currentScrollPosition < 0) {
-    return;
-  }
+  if (currentScrollPosition < 0) return;
 
-  // Determine scroll direction and visibility
   if (currentScrollPosition > lastScrollPosition.value + 50) {
     isNavbarVisible.value = false;
   } else if (currentScrollPosition < lastScrollPosition.value - 10) {
@@ -125,20 +88,18 @@ const handleScroll = () => {
 };
 
 // Computed classes for navbar
-const navbarClasses = computed(() => {
-  return {
-    "shadow-md": isScrolled.value,
-    "bg-background/95 backdrop-blur-sm": isScrolled.value,
-    "bg-background": !isScrolled.value,
-    "translate-y-0 opacity-100": isNavbarVisible.value,
-    "-translate-y-full opacity-0": !isNavbarVisible.value,
-  };
-});
+const navbarClasses = computed(() => ({
+  "shadow-md": isScrolled.value,
+  "bg-background/95 backdrop-blur-sm": isScrolled.value,
+  "bg-background": !isScrolled.value,
+  "translate-y-0 opacity-100": isNavbarVisible.value,
+  "-translate-y-full opacity-0": !isNavbarVisible.value,
+}));
 
 // Lifecycle hooks
 onMounted(() => {
   window.addEventListener("scroll", handleScroll);
-  fetchMenuItems(); // Tải menu khi component được mount
+  fetchMenuItems();
 });
 
 onUnmounted(() => {
@@ -167,12 +128,13 @@ onUnmounted(() => {
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-6">
-          <div v-if="isLoadingMenu" class="text-sm text-gray-500">Đang tải menu...</div>
-          <div v-else-if="menuError" class="text-sm text-red-500">{{ menuError }}</div>
+          <div v-if="isLoading" class="text-sm text-gray-500">Đang tải menu...</div>
+          <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
           <template v-else>
+            <!-- eslint-disable-next-line vue/valid-v-for -->
             <div
-              v-for="(item, index) in menuItems"
-              :key="item.label"
+              v-for="(item, index) in processedMenuItems"
+              :key="index"
               class="relative group"
               @mouseenter="item.hasMegaMenu ? showMegaMenu(index) : null"
               @mouseleave="item.hasMegaMenu ? hideMegaMenu() : null"
@@ -202,23 +164,27 @@ onUnmounted(() => {
               <!-- Mega Menu -->
               <div
                 v-if="item.hasMegaMenu && activeMegaMenu === index"
-                class="absolute top-full left-0 w-screen max-w-4xl bg-white shadow-lg rounded-b-lg border-t border-gray-100 transition-all duration-300 transform origin-top"
+                class="absolute top-full left-0 w-screen max-w-4xl bg-white shadow-lg rounded-b-lg border-t border-gray-100 transition-all duration-300 transform origin-top z-50"
                 style="left: 50%; transform: translateX(-50%)"
                 @mouseenter="keepMegaMenu"
                 @mouseleave="hideMegaMenu"
               >
                 <div class="grid grid-cols-3 gap-6 p-6">
                   <div
-                    v-for="(column, colIndex) in item.megaMenuColumns"
-                    :key="colIndex"
+                    v-for="(column, columnIndex) in item.megaMenuColumns || []"
+                    :key="column.title"
                     class="space-y-3"
                   >
-                    <h3 class="font-medium text-sm text-gray-500">{{ column.title }}</h3>
+                    <h3 class="font-medium text-sm text-gray-900">{{ column.title }}</h3>
                     <ul class="space-y-2">
-                      <li v-for="subItem in column.items" :key="subItem.label">
+                      <li 
+                        v-for="(subItem, subIndex) in column.items" 
+                        :key="subItem.href"
+                        class="block"
+                      >
                         <NuxtLink
                           :to="subItem.href"
-                          class="text-sm hover:text-primary transition-colors block py-1"
+                          class="text-sm text-gray-600 hover:text-primary hover:bg-gray-50 transition-all duration-200 block py-1.5 px-2 rounded-md"
                           @click="activeMegaMenu = null"
                         >
                           {{ subItem.label }}
@@ -234,7 +200,7 @@ onUnmounted(() => {
 
         <!-- Hotline -->
         <div class="hidden md:flex items-center">
-          <a href="tel:1900-1234" class="flex items-center space-x-2 text-sm">
+          <a :href="`tel:${hotline}`" class="flex items-center space-x-2 text-sm">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="18"
@@ -300,12 +266,13 @@ onUnmounted(() => {
       :class="{ hidden: !isMobileMenuOpen }"
     >
       <div class="px-4 py-3 space-y-1">
-        <div v-if="isLoadingMenu" class="text-sm text-gray-500 px-3 py-2">Đang tải menu...</div>
-        <div v-else-if="menuError" class="text-sm text-red-500 px-3 py-2">{{ menuError }}</div>
+        <div v-if="isLoading" class="text-sm text-gray-500 px-3 py-2">Đang tải menu...</div>
+        <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
         <template v-else>
+          <!-- eslint-disable-next-line vue/valid-v-for -->
           <NuxtLink
-            v-for="item in menuItems"
-            :key="item.label"
+            v-for="(item, index) in processedMenuItems"
+            :key="index"
             :to="item.href"
             class="block px-3 py-2 text-base font-medium rounded-md hover:bg-gray-100"
             @click="isMobileMenuOpen = false"
@@ -315,7 +282,7 @@ onUnmounted(() => {
         </template>
       </div>
       <div class="px-4 py-3 border-t">
-        <a href="tel:1900-1234" class="flex items-center space-x-2 px-3 py-2">
+        <a :href="`tel:${hotline}`" class="flex items-center space-x-2 px-3 py-2">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
