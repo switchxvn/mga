@@ -7,6 +7,8 @@ import { ProfileService } from '../profile/services/profile.service';
 import { UserService } from '../user/services/user.service';
 import { SettingsAdminService } from '../settings/admin/services/settings-admin.service';
 import { SettingsFrontendService } from '../settings/frontend/services/settings-frontend.service';
+import { SeoAdminService } from '../seo/admin/services/seo-admin.service';
+import { SeoFrontendService } from '../seo/frontend/services/seo-frontend.service';
 
 // Define context type
 export interface Context {
@@ -22,6 +24,8 @@ export interface Context {
     authService: IAuthService;
     settingsAdminService: SettingsAdminService;
     settingsFrontendService: SettingsFrontendService;
+    seoAdminService: SeoAdminService;
+    seoFrontendService: SeoFrontendService;
   };
   logger: Logger;
 }

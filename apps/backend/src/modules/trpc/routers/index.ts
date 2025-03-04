@@ -4,6 +4,7 @@ import { postRouter } from './post.router';
 import { userRouter } from './user.router';
 import { exampleRouter } from './example';
 import { settingsRouter } from './settings.router';
+import { seoRouter } from './seo.router';
 
 export const appRouter = router({
   auth: authRouter,
@@ -11,6 +12,7 @@ export const appRouter = router({
   user: userRouter,
   example: exampleRouter,
   settings: settingsRouter,
+  seo: seoRouter,
 });
 
 export type AppRouter = typeof appRouter; 

@@ -11,6 +11,7 @@ import { postRouter } from './routers/post.router';
 import { userRouter } from './routers/user.router';
 import { profileRouter } from './routers/profile.router';
 import { settingsRouter } from './routers/settings.router';
+import { seoRouter } from './routers/seo.router';
 import { ConfigService } from '@nestjs/config';
 import { ProfileService } from '../profile/services/profile.service';
 import { UserService } from '../user/services/user.service';
@@ -19,6 +20,8 @@ import { AuthService } from '../auth/services/auth.service';
 import { IAuthService } from '../auth/interfaces/auth.interface';
 import { SettingsAdminService } from '../settings/admin/services/settings-admin.service';
 import { SettingsFrontendService } from '../settings/frontend/services/settings-frontend.service';
+import { SeoAdminService } from '../seo/admin/services/seo-admin.service';
+import { SeoFrontendService } from '../seo/frontend/services/seo-frontend.service';
 
 @Injectable()
 export class TrpcService {
@@ -29,6 +32,7 @@ export class TrpcService {
     user: userRouter,
     profile: profileRouter,
     settings: settingsRouter,
+    seo: seoRouter,
   });
 
   constructor(
@@ -41,6 +45,8 @@ export class TrpcService {
     private readonly authService: IAuthService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly seoAdminService: SeoAdminService,
+    private readonly seoFrontendService: SeoFrontendService,
   ) {}
 
   getRouter() {
@@ -58,6 +64,8 @@ export class TrpcService {
       authService: this.authService,
       settingsAdminService: this.settingsAdminService,
       settingsFrontendService: this.settingsFrontendService,
+      seoAdminService: this.seoAdminService,
+      seoFrontendService: this.seoFrontendService,
     };
 
     // Extract and verify JWT token if present
