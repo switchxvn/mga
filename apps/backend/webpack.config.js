@@ -25,5 +25,27 @@ module.exports = composePlugins(withNx(), (config) => {
       ignored: /node_modules/,
     },
     mode: process.env.NODE_ENV || 'development',
+    experiments: {
+      topLevelAwait: true,
+    },
+    resolve: {
+      ...config.resolve,
+      extensionAlias: {
+        '.js': ['.ts', '.js'],
+        '.mjs': ['.mts', '.mjs']
+      }
+    },
+    module: {
+      ...config.module,
+      rules: [
+        ...(config.module?.rules || []),
+        {
+          test: /\.m?js/,
+          resolve: {
+            fullySpecified: false
+          }
+        }
+      ]
+    }
   };
 });

@@ -120,7 +120,6 @@ const mockTrpc: any = {
 
 // Tạo trpc client với type AppRouter
 const trpcClient = createTRPCProxyClient<AppRouter>({
-  transformer: superjson,
   links: [
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
