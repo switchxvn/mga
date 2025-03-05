@@ -34,7 +34,7 @@ import { Footer } from './modules/footer/entities/footer.entity';
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'nestjs'),
         entities: [User, Post, MenuItem, Logo, Seo, Footer],
-        synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
+        synchronize: false,
         logging: true,
       }),
     }),

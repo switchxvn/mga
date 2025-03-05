@@ -19,7 +19,7 @@ export const dataSourceOptions: DataSourceOptions = {
   entities: [User, UserProfile, Post, CountryPhoneCode],
   migrations: ['libs/database/src/migrations/*.{ts,js}'],
   migrationsRun: true,
-  synchronize: process.env['DB_SYNCHRONIZE'] === 'true',
+  synchronize: false,
   logging: process.env['NODE_ENV'] === 'development',
 };
 
