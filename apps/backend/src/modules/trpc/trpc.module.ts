@@ -11,16 +11,28 @@ import { TrpcController } from './trpc.controller';
 import { SeoModule } from '../seo/seo.module';
 import { FooterModule } from '../footer/footer.module';
 
+/**
+ * TrpcModule - Main module for tRPC integration with NestJS
+ * 
+ * This module integrates tRPC with NestJS, allowing for type-safe API calls
+ * between the frontend and backend. It imports all necessary modules that
+ * will be exposed through tRPC endpoints.
+ */
 @Module({
   controllers: [TrpcController],
   imports: [
+    // Feature modules that will be exposed through tRPC
     UserModule,
     PostModule,
     ProfileModule,
     SettingsModule,
     SeoModule,
     FooterModule,
+    
+    // Auth module is imported with forwardRef to avoid circular dependency
     forwardRef(() => AuthModule),
+    
+    // JWT configuration for authentication
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -28,6 +40,8 @@ import { FooterModule } from '../footer/footer.module';
       }),
       inject: [ConfigService],
     }),
+    
+    // Global configuration module
     ConfigModule.forRoot({
       isGlobal: true,
     }),

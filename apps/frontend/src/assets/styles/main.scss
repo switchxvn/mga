@@ -1,8 +1,8 @@
-@import 'base/variables';
-@import 'base/reset';
-@import 'base/mixins';
-@import 'variables';
-@import 'components/navbar';
+@use 'base/variables' as *;
+@use 'base/reset' as *;
+@use 'base/mixins' as *;
+@use 'variables' as *;
+@use 'components/navbar' as *;
 
 @tailwind base;
 @tailwind components;

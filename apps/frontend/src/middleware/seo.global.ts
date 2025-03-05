@@ -5,6 +5,11 @@ type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
 
 export default defineNuxtRouteMiddleware(async (to) => {
+  // Bỏ qua các tài nguyên tĩnh
+  if (to.path.match(/\.(svg|png|jpg|jpeg|gif|css|js|ico|woff|woff2|ttf|eot|json|xml)$/i)) {
+    return;
+  }
+  
   const { $trpc } = useNuxtApp();
   
   try {

@@ -1,3 +1,9 @@
+<script setup lang="ts">
+defineOptions({
+  name: 'CardTitleComponent'
+})
+</script>
+
 <template>
   <h3 class="text-2xl font-semibold leading-none tracking-tight">
     <slot />
