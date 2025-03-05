@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PostService } from '../services/post.service';
-import { CreatePostDto, UpdatePostDto } from '../dto/post.dto';
+import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 import { Post as PostEntity } from '../entities/post.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
@@ -14,7 +14,7 @@ export class PostController {
   @Post()
   @ApiOperation({ summary: 'Create post' })
   @ApiResponse({ status: 201, description: 'Post created successfully', type: PostEntity })
-  create(@Request() req, @Body() createPostDto: CreatePostDto) {
+  create(@Request() req, @Body() createPostDto: CreatePostInput) {
     return this.postService.create(createPostDto, req.user.id);
   }
 
@@ -35,7 +35,7 @@ export class PostController {
   @Put(':id')
   @ApiOperation({ summary: 'Update post' })
   @ApiResponse({ status: 200, description: 'Post updated successfully', type: PostEntity })
-  update(@Request() req, @Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
+  update(@Request() req, @Param('id') id: string, @Body() updatePostDto: UpdatePostInput) {
     return this.postService.update(+id, updatePostDto, req.user.id);
   }
 

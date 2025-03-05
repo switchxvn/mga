@@ -15,6 +15,31 @@ export class Post {
   @Column({ default: false })
   published!: boolean;
 
+  // SEO fields
+  @Column({ nullable: true })
+  slug!: string;
+
+  @Column({ name: 'meta_title', nullable: true })
+  metaTitle!: string;
+
+  @Column({ name: 'meta_description', type: 'text', nullable: true })
+  metaDescription!: string;
+
+  @Column({ name: 'meta_keywords', nullable: true })
+  metaKeywords!: string;
+
+  @Column({ name: 'og_title', nullable: true })
+  ogTitle!: string;
+
+  @Column({ name: 'og_description', type: 'text', nullable: true })
+  ogDescription!: string;
+
+  @Column({ name: 'og_image', nullable: true })
+  ogImage!: string;
+
+  @Column({ name: 'canonical_url', nullable: true })
+  canonicalUrl!: string;
+
   @Column({ name: 'author_id' })
   authorId!: number;
 

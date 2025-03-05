@@ -1,8 +1,4 @@
 import { DataSource } from 'typeorm';
-import { User } from './entities/user.entity';
-import { UserProfile } from './entities/user-profile.entity';
-import { CountryPhoneCode } from './entities/country-phone-code.entity';
-import { Post } from './entities/post.entity';
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -13,7 +9,7 @@ const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE || 'ew_db',
   synchronize: false,
   logging: true,
-  entities: [User, UserProfile, CountryPhoneCode, Post],
+  entities: ['apps/backend/src/modules/**/*.entity.ts'],
   migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
   subscribers: [],
 });

@@ -40,6 +40,17 @@ onMounted(() => {
 function goBack() {
   router.back();
 }
+
+const getAuthorName = (author) => {
+  if (author?.profile) {
+    const firstName = author.profile.firstName || '';
+    const lastName = author.profile.lastName || '';
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+  }
+  return author?.username || author?.email?.split('@')[0] || 'Không xác định';
+};
 </script>
 
 <template>
@@ -73,7 +84,7 @@ function goBack() {
       
       <div class="flex items-center mb-6">
         <div class="text-gray-600">
-          <p>Tác giả: {{ post.author?.name || 'Không xác định' }}</p>
+          <p>Tác giả: {{ getAuthorName(post.author) }}</p>
           <p>Ngày đăng: {{ new Date(post.createdAt).toLocaleDateString('vi-VN') }}</p>
         </div>
       </div>

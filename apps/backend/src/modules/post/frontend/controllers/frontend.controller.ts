@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PostFrontendService } from '../services/post-frontend.service';
-import { CreatePostDto, UpdatePostDto } from '../../dto/post.dto';
+import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 import { Post as PostEntity } from '../../entities/post.entity';
 import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
 
@@ -29,7 +29,7 @@ export class PostFrontendController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create post' })
   @ApiResponse({ status: 201, description: 'Post created successfully', type: PostEntity })
-  create(@Request() req, @Body() createPostDto: CreatePostDto): Promise<PostEntity> {
+  create(@Request() req, @Body() createPostDto: CreatePostInput): Promise<PostEntity> {
     return this.postFrontendService.create(createPostDto, req.user.id);
   }
 
@@ -38,7 +38,7 @@ export class PostFrontendController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update post' })
   @ApiResponse({ status: 200, description: 'Post updated successfully', type: PostEntity })
-  update(@Request() req, @Param('id') id: string, @Body() updatePostDto: UpdatePostDto): Promise<PostEntity> {
+  update(@Request() req, @Param('id') id: string, @Body() updatePostDto: UpdatePostInput): Promise<PostEntity> {
     return this.postFrontendService.update(+id, updatePostDto, req.user.id);
   }
 

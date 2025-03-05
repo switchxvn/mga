@@ -10,12 +10,15 @@ import { TrpcModule } from './modules/trpc/trpc.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { FooterModule } from './modules/footer/footer.module';
+import { ProfileModule } from './modules/profile/profile.module';
 import { User } from './modules/user/entities/user.entity';
 import { Post } from './modules/post/entities/post.entity';
 import { MenuItem } from './modules/settings/entities/menu-item.entity';
 import { Logo } from './modules/settings/entities/logo.entity';
 import { Seo } from './modules/seo/entities/seo.entity';
 import { Footer } from './modules/footer/entities/footer.entity';
+import { UserProfile } from './modules/profile/entities/user-profile.entity';
+import { CountryPhoneCode } from './modules/common/entities/country-phone-code.entity';
 
 @Module({
   imports: [
@@ -33,7 +36,7 @@ import { Footer } from './modules/footer/entities/footer.entity';
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'nestjs'),
-        entities: [User, Post, MenuItem, Logo, Seo, Footer],
+        entities: [User, Post, MenuItem, Logo, Seo, Footer, UserProfile, CountryPhoneCode],
         synchronize: false,
         logging: true,
       }),
@@ -45,6 +48,7 @@ import { Footer } from './modules/footer/entities/footer.entity';
     SettingsModule,
     SeoModule,
     FooterModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

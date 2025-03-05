@@ -2,7 +2,8 @@ import { Controller, Get, Patch, Body, UseGuards, Request } from '@nestjs/common
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ProfileFrontendService } from '../services/profile-frontend.service';
 import { UpdateProfileDto } from '../../dto/update-profile.dto';
-import { UserProfile, CountryPhoneCode } from '@ew/database';
+import { UserProfile } from '../../entities/user-profile.entity';
+import { CountryPhoneCode } from '../../../common/entities/country-phone-code.entity';
 import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
 
 @ApiTags('profile')

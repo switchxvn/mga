@@ -1,9 +1,5 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
-import { User } from '../entities/user.entity';
-import { UserProfile } from '../entities/user-profile.entity';
-import { Post } from '../entities/post.entity';
-import { CountryPhoneCode } from '../entities/country-phone-code.entity';
 import * as path from 'path';
 
 // Load environment variables from backend's .env file
@@ -16,7 +12,7 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env['DB_USERNAME'],
   password: process.env['DB_PASSWORD'],
   database: process.env['DB_DATABASE'],
-  entities: [User, UserProfile, Post, CountryPhoneCode],
+  entities: ['apps/backend/src/modules/**/*.entity.ts'],
   migrations: ['libs/database/src/migrations/*.{ts,js}'],
   migrationsRun: true,
   synchronize: false,
@@ -25,4 +21,4 @@ export const dataSourceOptions: DataSourceOptions = {
 
 const dataSource = new DataSource(dataSourceOptions);
 
-export default dataSource; 
+export default dataSource;

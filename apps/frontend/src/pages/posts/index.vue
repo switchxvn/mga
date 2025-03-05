@@ -24,6 +24,17 @@ async function fetchPosts() {
   }
 }
 
+const getAuthorName = (author) => {
+  if (author?.profile) {
+    const firstName = author.profile.firstName || '';
+    const lastName = author.profile.lastName || '';
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+  }
+  return author?.username || author?.email?.split('@')[0] || 'Không xác định';
+};
+
 onMounted(() => {
   fetchPosts();
 });
@@ -66,7 +77,7 @@ onMounted(() => {
           <p class="text-gray-600 mb-4 line-clamp-3">{{ post.content }}</p>
           <div class="flex justify-between items-center">
             <span class="text-sm text-gray-500">
-              Tác giả: {{ post.author?.name || 'Không xác định' }}
+              Tác giả: {{ getAuthorName(post.author) }}
             </span>
             <NuxtLink 
               :to="`/posts/${post.id}`" 

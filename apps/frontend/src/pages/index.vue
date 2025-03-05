@@ -50,6 +50,17 @@ async function fetchLatestPosts() {
     isLoading.value = false;
   }
 }
+
+const getAuthorName = (author) => {
+  if (author?.profile) {
+    const firstName = author.profile.firstName || '';
+    const lastName = author.profile.lastName || '';
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+  }
+  return author?.username || author?.email?.split('@')[0] || 'Ẩn danh';
+};
 </script>
 
 <template>
@@ -116,7 +127,7 @@ async function fetchLatestPosts() {
             </CardContent>
             <CardFooter class="justify-between">
               <span class="text-sm text-muted-foreground">
-                {{ post.author?.name || 'Ẩn danh' }}
+                {{ getAuthorName(post.author) }}
               </span>
               <NuxtLink :to="`/posts/${post.id}`">
                 <Button variant="ghost" size="sm" class="text-primary">

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from '../../entities/post.entity';
-import { CreatePostDto, UpdatePostDto } from '../../dto/post.dto';
+import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 
 @Injectable()
 export class PostAdminService {
@@ -11,7 +11,7 @@ export class PostAdminService {
     private readonly postRepository: Repository<Post>,
   ) {}
 
-  async create(createPostDto: CreatePostDto, authorId: number): Promise<Post> {
+  async create(createPostDto: CreatePostInput, authorId: number): Promise<Post> {
     const post = this.postRepository.create({
       ...createPostDto,
       authorId,
@@ -20,23 +20,26 @@ export class PostAdminService {
   }
 
   async findAll(): Promise<Post[]> {
-    return this.postRepository.find({
-      relations: ['author'],
-    });
+    return this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('author.profile', 'profile', 'profile.user_id = author.id')
+      .getMany();
   }
 
   async findOne(id: number): Promise<Post> {
-    const post = await this.postRepository.findOne({
-      where: { id },
-      relations: ['author'],
-    });
+    const post = await this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('author.profile', 'profile', 'profile.user_id = author.id')
+      .where('post.id = :id', { id })
+      .getOne();
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
     return post;
   }
 
-  async update(id: number, updatePostDto: UpdatePostDto): Promise<Post> {
+  async update(id: number, updatePostDto: UpdatePostInput): Promise<Post> {
     const post = await this.findOne(id);
     Object.assign(post, updatePostDto);
     return this.postRepository.save(post);

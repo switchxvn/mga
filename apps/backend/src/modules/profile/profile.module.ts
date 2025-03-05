@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserProfile, CountryPhoneCode } from '@ew/database';
+import { UserProfile } from './entities/user-profile.entity';
+import { CountryPhoneCode } from '../common/entities/country-phone-code.entity';
 import { ProfileService } from './services/profile.service';
 import { ProfileAdminController } from './admin/controllers/admin.controller';
 import { ProfileFrontendController } from './frontend/controllers/frontend.controller';

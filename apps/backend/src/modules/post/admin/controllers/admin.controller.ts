@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PostAdminService } from '../services/post-admin.service';
-import { CreatePostDto, UpdatePostDto } from '../../dto/post.dto';
+import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 import { Post as PostEntity } from '../../entities/post.entity';
 import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
 // import { RolesGuard } from '../../../auth/roles.guard';
@@ -18,7 +18,7 @@ export class PostAdminController {
   // @Roles('admin')
   @ApiOperation({ summary: 'Create post' })
   @ApiResponse({ status: 201, description: 'Post created successfully', type: PostEntity })
-  create(@Body() createPostDto: CreatePostDto): Promise<PostEntity> {
+  create(@Body() createPostDto: CreatePostInput): Promise<PostEntity> {
     // Assuming admin ID is 1 for now, in a real app you would get this from the request
     return this.postAdminService.create(createPostDto, 1);
   }
@@ -43,7 +43,7 @@ export class PostAdminController {
   // @Roles('admin')
   @ApiOperation({ summary: 'Update post' })
   @ApiResponse({ status: 200, description: 'Post updated successfully', type: PostEntity })
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto): Promise<PostEntity> {
+  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostInput): Promise<PostEntity> {
     return this.postAdminService.update(+id, updatePostDto);
   }
 

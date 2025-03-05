@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from '../entities/post.entity';
-import { CreatePostDto, UpdatePostDto } from '../dto/post.dto';
+import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 
 @Injectable()
 export class PostService {
@@ -11,7 +11,7 @@ export class PostService {
     private readonly postRepository: Repository<Post>,
   ) {}
 
-  async create(createPostDto: CreatePostDto, authorId: number): Promise<Post> {
+  async create(createPostDto: CreatePostInput, authorId: number): Promise<Post> {
     const post = this.postRepository.create({
       ...createPostDto,
       authorId,
@@ -20,23 +20,26 @@ export class PostService {
   }
 
   async findAll(): Promise<Post[]> {
-    return this.postRepository.find({
-      relations: ['author'],
-    });
+    return this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('author.profile', 'profile', 'profile.user_id = author.id')
+      .getMany();
   }
 
   async findOne(id: number): Promise<Post> {
-    const post = await this.postRepository.findOne({
-      where: { id },
-      relations: ['author'],
-    });
+    const post = await this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('author.profile', 'profile', 'profile.user_id = author.id')
+      .where('post.id = :id', { id })
+      .getOne();
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
     return post;
   }
 
-  async update(id: number, updatePostDto: UpdatePostDto, userId: number): Promise<Post> {
+  async update(id: number, updatePostDto: UpdatePostInput, userId: number): Promise<Post> {
     const post = await this.findOne(id);
     
     if (post.authorId !== userId) {
@@ -58,16 +61,19 @@ export class PostService {
   }
 
   async findByAuthorId(authorId: number): Promise<Post[]> {
-    return this.postRepository.find({
-      where: { authorId },
-      order: { createdAt: 'DESC' },
-    });
+    return this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('author.profile', 'profile', 'profile.user_id = author.id')
+      .where('post.authorId = :authorId', { authorId })
+      .orderBy('post.createdAt', 'DESC')
+      .getMany();
   }
 
   async findPublished(): Promise<Post[]> {
-    return this.postRepository.find({
-      where: { published: true },
-      relations: ['author'],
-    });
+    return this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('author.profile', 'profile', 'profile.user_id = author.id')
+      .where('post.published = :published', { published: true })
+      .getMany();
   }
 } 

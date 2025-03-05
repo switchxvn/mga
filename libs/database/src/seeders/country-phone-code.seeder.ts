@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CountryPhoneCodeService } from '@ew/backend/services/country-phone-code.service';
-
+import { CountryPhoneCodeService } from '../services/country-phone-code.service';
 @Injectable()
 export class CountryPhoneCodeSeeder {
   constructor(private readonly countryPhoneCodeService: CountryPhoneCodeService) {}

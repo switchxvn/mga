@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { CountryPhoneCode, CountryPhoneCodeRepository } from '@ew/database';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CountryPhoneCode } from './entities/country-phone-code.entity';
 
 @Injectable()
 export class CountryPhoneCodeService {
   constructor(
-    private readonly countryPhoneCodeRepository: CountryPhoneCodeRepository,
+    @InjectRepository(CountryPhoneCode)
+    private readonly countryPhoneCodeRepository: Repository<CountryPhoneCode>,
   ) {}
 
   async findAll(): Promise<CountryPhoneCode[]> {

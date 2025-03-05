@@ -2,7 +2,7 @@ import { Controller, Get, Patch, Param, Delete, Body, UseGuards } from '@nestjs/
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ProfileAdminService } from '../services/profile-admin.service';
 import { UpdateProfileDto } from '../../dto/update-profile.dto';
-import { UserProfile } from '@ew/database';
+import { UserProfile } from '../../entities/user-profile.entity';
 import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
 // import { RolesGuard } from '../../../auth/roles.guard';
 // import { Roles } from '../../../auth/roles.decorator';

@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
-import { createPostSchema, updatePostSchema, getPostByIdSchema } from '../../post/dto/post.dto';
+import { createPostSchema, updatePostSchema, getPostByIdSchema } from '@ew/shared';
 
 export const postRouter = router({
   all: publicProcedure.query(async ({ ctx }) => {
