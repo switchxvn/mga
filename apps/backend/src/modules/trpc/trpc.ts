@@ -12,6 +12,9 @@ import { SeoAdminService } from '../seo/admin/services/seo-admin.service';
 import { SeoFrontendService } from '../seo/frontend/services/seo-frontend.service';
 import { FooterAdminService } from '../footer/admin/services/footer-admin.service';
 import { FooterFrontendService } from '../footer/frontend/services/footer-frontend.service';
+import { CategoryFrontendService } from '../category/frontend/services/category-frontend.service';
+import { CategoryAdminService } from '../category/admin/services/category-admin.service';
+
 // Define context type
 export interface Context {
   user?: {
@@ -30,6 +33,8 @@ export interface Context {
     seoFrontendService: SeoFrontendService;
     footerAdminService: FooterAdminService;
     footerFrontendService: FooterFrontendService;
+    categoryFrontendService: CategoryFrontendService;
+    categoryAdminService: CategoryAdminService;
   };
   logger: Logger;
 }

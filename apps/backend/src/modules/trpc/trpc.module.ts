@@ -10,6 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { TrpcController } from './trpc.controller';
 import { SeoModule } from '../seo/seo.module';
 import { FooterModule } from '../footer/footer.module';
+import { CategoryModule } from '../category/category.module';
 
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
@@ -28,6 +29,7 @@ import { FooterModule } from '../footer/footer.module';
     SettingsModule,
     SeoModule,
     FooterModule,
+    CategoryModule,
     
     // Auth module is imported with forwardRef to avoid circular dependency
     forwardRef(() => AuthModule),

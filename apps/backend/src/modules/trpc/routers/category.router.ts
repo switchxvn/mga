@@ -7,9 +7,8 @@ export const categoryRouter = router({
   all: publicProcedure.query(async ({ ctx }) => {
     try {
       ctx.logger.log('Fetching all categories');
-      // Sử dụng service thay vì dữ liệu giả lập
-      const categoryService = ctx.nestjs.get('CategoryFrontendService');
-      const categories = await categoryService.findAll();
+      // Sử dụng service từ context
+      const categories = await ctx.services.categoryFrontendService.findAll();
       return categories;
     } catch (error) {
       ctx.logger.error(`Error fetching all categories: ${error instanceof Error ? error.message : String(error)}`);
@@ -26,10 +25,9 @@ export const categoryRouter = router({
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Fetching category by ID: ${input}`);
-        const categoryService = ctx.nestjs.get('CategoryFrontendService');
         
         try {
-          const category = await categoryService.findOne(input);
+          const category = await ctx.services.categoryFrontendService.findOne(input);
           ctx.logger.debug(`Successfully retrieved category ID: ${input}`);
           return category;
         } catch (err) {
@@ -56,10 +54,9 @@ export const categoryRouter = router({
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Fetching category by slug: ${input}`);
-        const categoryService = ctx.nestjs.get('CategoryFrontendService');
         
         try {
-          const category = await categoryService.findBySlug(input);
+          const category = await ctx.services.categoryFrontendService.findBySlug(input);
           ctx.logger.debug(`Successfully retrieved category with slug: ${input}`);
           return category;
         } catch (err) {
@@ -85,8 +82,7 @@ export const categoryRouter = router({
   featured: publicProcedure.query(async ({ ctx }) => {
     try {
       ctx.logger.log('Fetching featured categories');
-      const categoryService = ctx.nestjs.get('CategoryFrontendService');
-      const featuredCategories = await categoryService.findFeatured();
+      const featuredCategories = await ctx.services.categoryFrontendService.findFeatured();
       return featuredCategories;
     } catch (error) {
       ctx.logger.error(`Error fetching featured categories: ${error instanceof Error ? error.message : String(error)}`);
@@ -108,8 +104,7 @@ export const categoryRouter = router({
         const limit = input?.limit || 5;
         ctx.logger.log(`Fetching popular categories with limit: ${limit}`);
         
-        const categoryService = ctx.nestjs.get('CategoryFrontendService');
-        const allCategories = await categoryService.findAll();
+        const allCategories = await ctx.services.categoryFrontendService.findAll();
         
         // Sắp xếp theo số lượng bài viết (từ cao đến thấp)
         const popularCategories = allCategories
@@ -137,8 +132,7 @@ export const categoryRouter = router({
         const limit = input?.limit || 5;
         ctx.logger.log(`Fetching hot categories with limit: ${limit}`);
         
-        const categoryService = ctx.nestjs.get('CategoryFrontendService');
-        const allCategories = await categoryService.findAll();
+        const allCategories = await ctx.services.categoryFrontendService.findAll();
         
         // Lọc các danh mục có bài viết
         const categoriesWithPosts = allCategories.filter(cat => cat.posts && cat.posts.length > 0);
@@ -178,8 +172,7 @@ export const categoryRouter = router({
   tree: publicProcedure.query(async ({ ctx }) => {
     try {
       ctx.logger.log('Fetching category tree');
-      const categoryService = ctx.nestjs.get('CategoryFrontendService');
-      const categoryTree = await categoryService.getCategoryTree();
+      const categoryTree = await ctx.services.categoryFrontendService.getCategoryTree();
       return categoryTree;
     } catch (error) {
       ctx.logger.error(`Error fetching category tree: ${error instanceof Error ? error.message : String(error)}`);
