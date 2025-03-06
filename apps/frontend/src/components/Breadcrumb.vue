@@ -61,21 +61,29 @@ const breadcrumbClass = computed(() => {
       </li>
       
       <template v-if="items && items.length">
-        <li 
-          v-for="(item, index) in items" 
-          :key="index"
-          class="breadcrumb__item"
-          :class="{ 'breadcrumb__item--active': index === items.length - 1 }"
-        >
-          <template v-if="index === items.length - 1 || !item.to">
-            <span class="breadcrumb__text">{{ item.label }}</span>
-          </template>
-          <template v-else>
-            <NuxtLink :to="item.to" class="breadcrumb__link">
-              {{ item.label }}
-            </NuxtLink>
-          </template>
+        <li class="breadcrumb__separator" aria-hidden="true">
+          <span class="breadcrumb__separator-icon">{{ separator }}</span>
         </li>
+        
+        <template v-for="(item, index) in items" :key="index">
+          <li 
+            class="breadcrumb__item"
+            :class="{ 'breadcrumb__item--active': index === items.length - 1 }"
+          >
+            <template v-if="index === items.length - 1 || !item.to">
+              <span class="breadcrumb__text">{{ item.label }}</span>
+            </template>
+            <template v-else>
+              <NuxtLink :to="item.to" class="breadcrumb__link">
+                {{ item.label }}
+              </NuxtLink>
+            </template>
+          </li>
+          
+          <li v-if="index < items.length - 1" class="breadcrumb__separator" aria-hidden="true">
+            <span class="breadcrumb__separator-icon">{{ separator }}</span>
+          </li>
+        </template>
       </template>
       
       <!-- Slot cho phép thêm các mục tùy chỉnh -->
@@ -147,10 +155,15 @@ const breadcrumbClass = computed(() => {
   align-items: center;
 }
 
-.breadcrumb__item:not(:last-child)::after {
-  content: v-bind('`${props.separator}`');
+.breadcrumb__separator {
+  display: flex;
+  align-items: center;
   margin: 0 0.5rem;
+}
+
+.breadcrumb__separator-icon {
   color: var(--breadcrumb-separator-color);
+  font-weight: 300;
 }
 
 .breadcrumb__link {
@@ -225,7 +238,7 @@ const breadcrumbClass = computed(() => {
   color: var(--breadcrumb-active-color);
 }
 
-:global(.dark) .breadcrumb__item:not(:last-child)::after {
+:global(.dark) .breadcrumb__separator-icon {
   color: var(--breadcrumb-separator-color);
 }
 </style> 
