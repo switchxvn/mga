@@ -3,18 +3,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MenuItem } from '../../entities/menu-item.entity';
 import { Logo } from '../../entities/logo.entity';
+import { Tag } from '../../entities/tag.entity';
 import { z } from 'zod';
 import {
   createMenuItemSchema,
   updateMenuItemSchema,
   createLogoSchema,
   updateLogoSchema,
+  createTagSchema,
+  updateTagSchema,
 } from '@ew/shared';
 
 type CreateMenuItem = z.infer<typeof createMenuItemSchema>;
-type UpdateMenuItem = z.infer<typeof updateMenuItemSchema>['data'];
+type UpdateMenuItem = z.infer<typeof updateMenuItemSchema>;
 type CreateLogo = z.infer<typeof createLogoSchema>;
-type UpdateLogo = z.infer<typeof updateLogoSchema>['data'];
+type UpdateLogo = z.infer<typeof updateLogoSchema>;
+type CreateTag = z.infer<typeof createTagSchema>;
+type UpdateTag = z.infer<typeof updateTagSchema>;
 
 @Injectable()
 export class SettingsAdminService {
@@ -23,6 +28,8 @@ export class SettingsAdminService {
     private menuItemRepository: Repository<MenuItem>,
     @InjectRepository(Logo)
     private logoRepository: Repository<Logo>,
+    @InjectRepository(Tag)
+    private tagRepository: Repository<Tag>,
   ) {}
 
   // Menu Items
@@ -163,5 +170,44 @@ export class SettingsAdminService {
       success: true,
       message: `Logo with ID ${id} has been deleted`,
     };
+  }
+
+  // Tags
+  async findAllTags(filters: any = {}): Promise<Tag[]> {
+    return this.tagRepository.find({
+      where: filters,
+      order: { order: 'ASC' },
+    });
+  }
+
+  async findTagById(id: number): Promise<Tag> {
+    const tag = await this.tagRepository.findOne({
+      where: { id },
+    });
+    
+    if (!tag) {
+      throw new NotFoundException(`Tag with ID ${id} not found`);
+    }
+    
+    return tag;
+  }
+
+  async createTag(data: CreateTag): Promise<Tag> {
+    const tag = this.tagRepository.create(data);
+    return this.tagRepository.save(tag);
+  }
+
+  async updateTag(id: number, data: UpdateTag): Promise<Tag> {
+    const tag = await this.findTagById(id);
+    
+    // Update the tag with the new data
+    Object.assign(tag, data);
+    
+    return this.tagRepository.save(tag);
+  }
+
+  async deleteTag(id: number): Promise<void> {
+    const tag = await this.findTagById(id);
+    await this.tagRepository.remove(tag);
   }
 } 

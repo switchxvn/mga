@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MenuItem } from '../../entities/menu-item.entity';
 import { Logo } from '../../entities/logo.entity';
+import { Tag } from '../../entities/tag.entity';
 
 @Injectable()
 export class SettingsFrontendService {
@@ -11,6 +12,8 @@ export class SettingsFrontendService {
     private menuItemRepository: Repository<MenuItem>,
     @InjectRepository(Logo)
     private logoRepository: Repository<Logo>,
+    @InjectRepository(Tag)
+    private tagRepository: Repository<Tag>,
   ) {}
 
   // Menu Items - Frontend chỉ cần các phương thức đọc
@@ -67,5 +70,46 @@ export class SettingsFrontendService {
     }
     
     return logos[0];
+  }
+
+  // Tags - Frontend chỉ cần các phương thức đọc
+  async findActiveTags(filters: any = {}): Promise<Tag[]> {
+    return this.tagRepository.find({
+      where: {
+        isActive: true,
+        ...filters,
+      },
+      order: { order: 'ASC' },
+    });
+  }
+
+  async findActiveTagById(id: number): Promise<Tag> {
+    const tag = await this.tagRepository.findOne({
+      where: { 
+        id,
+        isActive: true 
+      },
+    });
+    
+    if (!tag) {
+      throw new NotFoundException(`Active tag with ID ${id} not found`);
+    }
+    
+    return tag;
+  }
+
+  async findActiveTagBySlug(slug: string): Promise<Tag> {
+    const tag = await this.tagRepository.findOne({
+      where: { 
+        slug,
+        isActive: true 
+      },
+    });
+    
+    if (!tag) {
+      throw new NotFoundException(`Active tag with slug ${slug} not found`);
+    }
+    
+    return tag;
   }
 } 
