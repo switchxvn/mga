@@ -96,11 +96,11 @@ const breadcrumbClass = computed(() => {
 /* Định nghĩa biến CSS cho light mode và dark mode */
 :root {
   --breadcrumb-bg-color: #f9fafb;
-  --breadcrumb-text-color: #4b5563;
+  --breadcrumb-text-color: #111827;
   --breadcrumb-text-hover: #1d4ed8;
-  --breadcrumb-separator-color: #9ca3af;
-  --breadcrumb-active-color: #111827;
-  --breadcrumb-inactive-color: #6b7280;
+  --breadcrumb-separator-color: #6b7280;
+  --breadcrumb-active-color: #000000;
+  --breadcrumb-inactive-color: #374151;
   --breadcrumb-border-color: #e5e7eb;
 }
 
