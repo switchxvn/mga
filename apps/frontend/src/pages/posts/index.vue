@@ -3,6 +3,11 @@
 import { useTrpc } from '../../composables/useTrpc';
 import { ref, computed } from 'vue';
 
+// Định nghĩa alias cho URL tiếng Việt
+definePageMeta({
+  alias: ['/bai-viet']
+});
+
 const trpc = useTrpc();
 const posts = ref<any[]>([]);
 const loading = ref(true);
@@ -95,7 +100,7 @@ onMounted(() => {
               Tác giả: {{ getAuthorName(post.author) }}
             </span>
             <NuxtLink 
-              :to="`/posts/${getPostSlug(post)}`" 
+              :to="`/bai-viet/${getPostSlug(post)}`" 
               class="text-blue-500 hover:text-blue-700"
             >
               Xem chi tiết

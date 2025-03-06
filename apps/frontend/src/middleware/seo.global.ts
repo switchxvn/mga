@@ -16,6 +16,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const detailPagePatterns = [
     /^\/posts\/[^\/]+$/,  // Trang chi tiết bài viết: /posts/slug
     /^\/products\/[^\/]+$/,  // Trang chi tiết sản phẩm: /products/slug
+    /^\/bai-viet\/[^\/]+$/,  // Trang chi tiết bài viết: /bai-viet/slug
+    /^\/san-pham\/[^\/]+$/,  // Trang chi tiết sản phẩm: /san-pham/slug
     // Thêm các mẫu URL khác nếu cần
   ];
   

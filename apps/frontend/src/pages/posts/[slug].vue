@@ -5,6 +5,11 @@ import { useTrpc } from '../../composables/useTrpc';
 import { ref, computed, onMounted, watch } from 'vue';
 import RelatedPosts from '../../components/RelatedPosts.vue';
 
+// Định nghĩa alias cho URL tiếng Việt
+definePageMeta({
+  alias: ['/bai-viet/:slug']
+});
+
 const route = useRoute();
 const router = useRouter();
 const trpc = useTrpc();
@@ -31,8 +36,8 @@ async function fetchPost() {
       // Tạo slug từ tiêu đề nếu bài viết không có slug
       const postSlug = post.value.slug || createSlugFromTitle(post.value.title);
       
-      // Chuyển hướng đến URL có slug
-      const slugUrl = `/posts/${postSlug}`;
+      // Chuyển hướng đến URL có slug với đường dẫn tiếng Việt
+      const slugUrl = `/bai-viet/${postSlug}`;
       router.replace({ path: slugUrl, query: route.query });
       return;
     } else {
@@ -155,12 +160,12 @@ watch(() => post.value, (newPost) => {
 <template>
   <div>
     <div class="container mx-auto px-4 py-8">
-      <button 
-        @click="goBack" 
+      <NuxtLink 
+        to="/bai-viet" 
         class="mb-6 flex items-center text-blue-500 hover:text-blue-700"
       >
-        <span class="mr-2">←</span> Quay lại
-      </button>
+        <span class="mr-2">←</span> Quay lại danh sách bài viết
+      </NuxtLink>
       
       <!-- Loading state -->
       <div v-if="loading" class="flex justify-center items-center py-12">
@@ -217,8 +222,8 @@ watch(() => post.value, (newPost) => {
         <div v-if="post.metaKeywords" class="px-6 py-4 bg-gray-50 border-t border-gray-200">
           <div class="flex flex-wrap gap-2">
             <span 
-              v-for="(tag, index) in post.metaKeywords.split(',')" 
-              :key="index"
+              v-for="tag in post.metaKeywords.split(',')" 
+              :key="tag"
               class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
             >
               {{ tag.trim() }}
@@ -230,12 +235,12 @@ watch(() => post.value, (newPost) => {
       <!-- Not found state -->
       <div v-else class="text-center py-12">
         <p class="text-gray-500 mb-4">Không tìm thấy bài viết</p>
-        <button 
-          @click="goBack" 
+        <NuxtLink 
+          to="/bai-viet" 
           class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
         >
-          Quay lại
-        </button>
+          Quay lại danh sách bài viết
+        </NuxtLink>
       </div>
       
       <!-- Related posts -->

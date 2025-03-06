@@ -73,7 +73,7 @@ function getAuthorName(author: any): string {
 </script>
 
 <template>
-  <NuxtLink :to="`/posts/${postSlug}`" class="block">
+  <NuxtLink :to="`/bai-viet/${postSlug}`" class="block">
     <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <!-- Hình ảnh bài viết nếu có -->
       <div v-if="post.ogImage && !compact" class="h-48 overflow-hidden">

@@ -50,6 +50,13 @@ export default defineNuxtConfig({
     },
   },
 
+  // Cấu hình router cho Nuxt 3
+  router: {
+    options: {
+      strict: false
+    }
+  },
+
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
