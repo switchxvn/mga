@@ -14,7 +14,10 @@ const tagBaseSchema = z.object({
 export const createTagSchema = tagBaseSchema;
 
 // Schema for updating an existing tag
-export const updateTagSchema = tagBaseSchema.partial();
+export const updateTagSchema = z.object({
+  id: z.number().int().positive(),
+  ...tagBaseSchema.partial().shape
+});
 
 // Schema for getting a tag by ID
 export const getTagByIdSchema = z.number().int().positive();

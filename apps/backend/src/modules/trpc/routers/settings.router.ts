@@ -18,6 +18,7 @@ import {
   getTagsSchema,
   deleteTagSchema,
 } from '@ew/shared';
+import { z } from 'zod';
 
 export const settingsRouter = router({
   // Menu Items - Public
@@ -146,9 +147,10 @@ export const settingsRouter = router({
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Fetching logo by ID: ${input}`);
-        const logo = await ctx.services.settingsFrontendService.findActiveLogoByType(input);
-
-        if (!logo) {
+        // Sử dụng frontend service để lấy logo theo ID
+        const logo = await ctx.services.settingsFrontendService.findActiveLogos({ id: input });
+        
+        if (!logo || logo.length === 0) {
           ctx.logger.warn(`Logo not found for ID: ${input}`);
           throw new TRPCError({
             code: 'NOT_FOUND',
@@ -156,7 +158,7 @@ export const settingsRouter = router({
           });
         }
 
-        return logo;
+        return logo[0];
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         
@@ -318,7 +320,10 @@ export const settingsRouter = router({
     }),
 
   updateTag: protectedProcedure
-    .input(updateTagSchema)
+    .input(z.object({
+      id: z.number(),
+      ...updateTagSchema.shape
+    }))
     .mutation(async ({ input, ctx }) => {
       try {
         const { id, ...data } = input;

@@ -76,26 +76,28 @@ export class SettingsAdminService {
     const menuItem = await this.findMenuItemById(id);
     
     // Update parent if parentId is provided
-    if (data.parentId !== undefined) {
+    if ('parentId' in data && data.parentId !== undefined) {
       if (data.parentId === null) {
         menuItem.parent = null;
       } else {
         const parent = await this.menuItemRepository.findOne({
           where: { id: data.parentId },
         });
-        
+
         if (!parent) {
           throw new NotFoundException(`Parent menu item with ID ${data.parentId} not found`);
         }
-        
+
         menuItem.parent = parent;
       }
-      
-      delete data.parentId;
+
+      // Create a new object without parentId to avoid TypeORM issues
+      const { parentId, ...restData } = data;
+      Object.assign(menuItem, restData);
+    } else {
+      // Update other properties
+      Object.assign(menuItem, data);
     }
-    
-    // Update other properties
-    Object.assign(menuItem, data);
     
     return this.menuItemRepository.save(menuItem);
   }
@@ -151,12 +153,20 @@ export class SettingsAdminService {
   async updateLogo(id: number, data: UpdateLogo): Promise<Logo> {
     const logo = await this.findLogoById(id);
     
-    const updatedData = {
-      ...data,
-      altText: data.alt,
-    };
-    
-    Object.assign(logo, updatedData);
+    // Handle altText if alt is provided
+    if ('alt' in data) {
+      const updatedData = {
+        ...data,
+        altText: data.alt,
+      };
+      
+      // Remove alt property
+      const { alt, ...cleanData } = updatedData;
+      Object.assign(logo, cleanData);
+    } else {
+      // Update with original data
+      Object.assign(logo, data);
+    }
     
     return this.logoRepository.save(logo);
   }

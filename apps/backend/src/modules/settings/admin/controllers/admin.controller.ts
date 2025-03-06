@@ -76,8 +76,9 @@ export class SettingsAdminController {
   @ApiOperation({ summary: 'Delete a menu item' })
   @ApiResponse({ status: 200, description: 'The menu item has been deleted' })
   @ApiResponse({ status: 404, description: 'Menu item not found' })
-  async deleteMenuItem(@Param('id') id: number): Promise<void> {
-    return this.settingsService.deleteMenuItem(id);
+  async deleteMenuItem(@Param('id') id: number): Promise<{ success: boolean; message: string }> {
+    await this.settingsService.deleteMenuItem(id);
+    return { success: true, message: `Menu item with ID ${id} deleted successfully` };
   }
 
   // Logos
@@ -125,8 +126,9 @@ export class SettingsAdminController {
   @ApiOperation({ summary: 'Delete a logo' })
   @ApiResponse({ status: 200, description: 'The logo has been deleted' })
   @ApiResponse({ status: 404, description: 'Logo not found' })
-  async deleteLogo(@Param('id') id: number): Promise<void> {
-    return this.settingsService.deleteLogo(id);
+  async deleteLogo(@Param('id') id: number): Promise<{ success: boolean; message: string }> {
+    await this.settingsService.deleteLogo(id);
+    return { success: true, message: `Logo with ID ${id} deleted successfully` };
   }
 
   // Tags
@@ -172,7 +174,8 @@ export class SettingsAdminController {
   @ApiOperation({ summary: 'Delete a tag' })
   @ApiResponse({ status: 200, description: 'The tag has been deleted' })
   @ApiResponse({ status: 404, description: 'Tag not found' })
-  async deleteTag(@Param('id') id: number): Promise<void> {
-    return this.settingsService.deleteTag(id);
+  async deleteTag(@Param('id') id: number): Promise<{ success: boolean; message: string }> {
+    await this.settingsService.deleteTag(id);
+    return { success: true, message: `Tag with ID ${id} deleted successfully` };
   }
 } 
