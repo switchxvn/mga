@@ -2,7 +2,8 @@ import { Logger } from '@nestjs/common';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from "superjson";
 import { IAuthService } from '../auth/interfaces/auth.interface';
-import { PostService } from '../post/services/post.service';
+import { PostFrontendService } from '../post/frontend/services/post-frontend.service';
+import { PostAdminService } from '../post/admin/services/post-admin.service';
 import { ProfileService } from '../profile/services/profile.service';
 import { UserService } from '../user/services/user.service';
 import { SettingsAdminService } from '../settings/admin/services/settings-admin.service';
@@ -20,7 +21,8 @@ export interface Context {
   };
   services: {
     userService: UserService;
-    postService: PostService;
+    postService: PostFrontendService;
+    postAdminService: PostAdminService;
     profileService: ProfileService;
     authService: IAuthService;
     settingsAdminService: SettingsAdminService;

@@ -43,9 +43,9 @@ export class Post {
   @Column({ name: 'author_id' })
   authorId!: number;
 
-  @ManyToOne(() => User, (user) => user.posts)
+  @ManyToOne(() => User, (user) => user.posts, { lazy: true })
   @JoinColumn({ name: 'author_id' })
-  author!: User;
+  author!: Promise<User>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

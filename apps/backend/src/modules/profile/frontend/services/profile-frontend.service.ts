@@ -44,14 +44,14 @@ export class ProfileFrontendService {
     // If phone code is provided, validate and set country phone code
     if (updateProfileDto.phoneCode) {
       const countryPhoneCode = await this.countryPhoneCodeRepository.findOne({
-        where: { phoneCode: updateProfileDto.phoneCode },
+        where: { phoneCode: updateProfileDto.phoneCode }
       });
 
       if (!countryPhoneCode) {
         throw new NotFoundException(`Country phone code ${updateProfileDto.phoneCode} not found`);
       }
 
-      profile.countryPhoneCode = countryPhoneCode;
+      profile.phoneCode = updateProfileDto.phoneCode;
     }
 
     return this.userProfileRepository.save(profile);

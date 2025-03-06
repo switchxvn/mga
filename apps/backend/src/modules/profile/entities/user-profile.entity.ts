@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { CountryPhoneCode } from '../../common/entities/country-phone-code.entity';
 
@@ -10,9 +10,9 @@ export class UserProfile {
   @Column({ name: 'user_id' })
   userId: number;
 
-  @ManyToOne(() => User)
+  @OneToOne(() => User, user => user.profile, { lazy: true })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: Promise<User>;
 
   @Column({ name: 'first_name', nullable: true })
   firstName: string;
@@ -26,25 +26,13 @@ export class UserProfile {
   @Column({ name: 'phone_code', nullable: true })
   phoneCode: string;
 
-  @ManyToOne(() => CountryPhoneCode, { nullable: true })
+  @ManyToOne(() => CountryPhoneCode, { nullable: true, lazy: true })
   @JoinColumn({ name: 'phone_code', referencedColumnName: 'phoneCode' })
-  countryPhoneCode: CountryPhoneCode;
+  countryPhoneCode: Promise<CountryPhoneCode>;
 
   @Column({ nullable: true })
   address: string;
-
-  @Column({ nullable: true })
-  city: string;
-
-  @Column({ nullable: true })
-  state: string;
-
-  @Column({ nullable: true })
-  country: string;
-
-  @Column({ name: 'zip_code', nullable: true })
-  zipCode: string;
-
+  
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

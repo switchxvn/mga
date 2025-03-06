@@ -58,7 +58,7 @@ export class ProfileService {
       // If phone code is provided, validate and set country phone code
       if (data.phoneCode) {
         const countryPhoneCode = await this.countryPhoneCodeRepository.findOne({
-          where: { phoneCode: data.phoneCode },
+          where: { phoneCode: data.phoneCode }
         });
 
         if (!countryPhoneCode) {
@@ -68,7 +68,7 @@ export class ProfileService {
           });
         }
 
-        profile.countryPhoneCode = countryPhoneCode;
+        profile.phoneCode = data.phoneCode;
       }
 
       const updatedProfile = await this.userProfileRepository.save(profile);

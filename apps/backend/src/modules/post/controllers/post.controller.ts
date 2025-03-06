@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PostService } from '../services/post.service';
+import { PostFrontendService } from '../frontend/services/post-frontend.service';
 import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 import { Post as PostEntity } from '../entities/post.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -9,7 +9,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(private readonly postService: PostFrontendService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create post' })

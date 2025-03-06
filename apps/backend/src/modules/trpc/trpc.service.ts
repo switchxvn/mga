@@ -15,7 +15,8 @@ import { seoRouter } from './routers/seo.router';
 import { ConfigService } from '@nestjs/config';
 import { ProfileService } from '../profile/services/profile.service';
 import { UserService } from '../user/services/user.service';
-import { PostService } from '../post/services/post.service';
+import { PostFrontendService } from '../post/frontend/services/post-frontend.service';
+import { PostAdminService } from '../post/admin/services/post-admin.service';
 import { AuthService } from '../auth/services/auth.service';
 import { IAuthService } from '../auth/interfaces/auth.interface';
 import { SettingsAdminService } from '../settings/admin/services/settings-admin.service';
@@ -41,7 +42,8 @@ export class TrpcService {
 
   constructor(
     private readonly userService: UserService,
-    private readonly postService: PostService,
+    private readonly postFrontendService: PostFrontendService,
+    private readonly postAdminService: PostAdminService,
     private readonly profileService: ProfileService,
     private readonly settingsAdminService: SettingsAdminService,
     private readonly settingsFrontendService: SettingsFrontendService,
@@ -65,7 +67,8 @@ export class TrpcService {
     // Inject services
     context.services = {
       userService: this.userService,
-      postService: this.postService,
+      postService: this.postFrontendService,
+      postAdminService: this.postAdminService,
       profileService: this.profileService,
       authService: this.authService,
       settingsAdminService: this.settingsAdminService,

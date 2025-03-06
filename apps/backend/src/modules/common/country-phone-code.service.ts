@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { CountryPhoneCode } from './entities/country-phone-code.entity';
 
 @Injectable()
@@ -15,19 +15,26 @@ export class CountryPhoneCodeService {
   }
 
   async findActive(): Promise<CountryPhoneCode[]> {
-    return this.countryPhoneCodeRepository.findActive();
+    return this.countryPhoneCodeRepository.find({ where: { isActive: true } });
   }
 
   async findByPhoneCode(phoneCode: string): Promise<CountryPhoneCode | null> {
-    return this.countryPhoneCodeRepository.findByPhoneCode(phoneCode);
+    return this.countryPhoneCodeRepository.findOne({ where: { phoneCode } });
   }
 
   async findByCountryCode(countryCode: string): Promise<CountryPhoneCode | null> {
-    return this.countryPhoneCodeRepository.findByCountryCode(countryCode);
+    return this.countryPhoneCodeRepository.findOne({ where: { countryCode } });
   }
 
   async searchByCountryName(query: string): Promise<CountryPhoneCode[]> {
-    return this.countryPhoneCodeRepository.searchByCountryName(query);
+    if (!query) {
+      return this.findAll();
+    }
+    return this.countryPhoneCodeRepository.find({
+      where: {
+        countryName: ILike(`%${query}%`)
+      }
+    });
   }
 
   async create(data: Partial<CountryPhoneCode>): Promise<CountryPhoneCode> {
@@ -42,7 +49,7 @@ export class CountryPhoneCodeService {
 
   async update(phoneCode: string, data: Partial<CountryPhoneCode>): Promise<CountryPhoneCode | null> {
     await this.countryPhoneCodeRepository.update({ phoneCode }, data);
-    return this.countryPhoneCodeRepository.findByPhoneCode(phoneCode);
+    return this.findByPhoneCode(phoneCode);
   }
 
   async delete(phoneCode: string): Promise<void> {

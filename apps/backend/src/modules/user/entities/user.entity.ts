@@ -31,11 +31,11 @@ export class User {
   @Column({ nullable: true })
   bio!: string;
 
-  @OneToMany(() => Post, post => post.author)
-  posts!: Post[];
+  @OneToMany(() => Post, post => post.author, { lazy: true })
+  posts!: Promise<Post[]>;
 
-  @OneToOne(() => UserProfile, profile => profile.user)
-  profile!: UserProfile;
+  @OneToOne(() => UserProfile, profile => profile.user, { lazy: true })
+  profile!: Promise<UserProfile>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

@@ -20,18 +20,13 @@ export class PostAdminService {
   }
 
   async findAll(): Promise<Post[]> {
-    return this.postRepository.createQueryBuilder('post')
-      .leftJoinAndSelect('post.author', 'author')
-      .leftJoinAndSelect('author.profile', 'profile', 'profile.user_id = author.id')
-      .getMany();
+    return this.postRepository.find();
   }
 
   async findOne(id: number): Promise<Post> {
-    const post = await this.postRepository.createQueryBuilder('post')
-      .leftJoinAndSelect('post.author', 'author')
-      .leftJoinAndSelect('author.profile', 'profile', 'profile.user_id = author.id')
-      .where('post.id = :id', { id })
-      .getOne();
+    const post = await this.postRepository.findOne({
+      where: { id }
+    });
 
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
