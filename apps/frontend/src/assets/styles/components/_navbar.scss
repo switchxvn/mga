@@ -1,25 +1,75 @@
 @use '../variables' as *;
+@use '../_theme.scss' as *;
 
 .navbar {
-  &-link {
-    color: $navbar-link-color;
-    transition: all 0.2s ease;
-
+  border-bottom: 1px solid $navbar-border-default;
+  background-color: $navbar-bg-default;
+  
+  html.dark & {
+    border-color: $navbar-border-dark !important;
+    background-color: $navbar-bg-dark !important;
+  }
+  
+  &__link {
+    color: $navbar-text-default;
+    transition: color 0.2s ease;
+    
+    html.dark & {
+      color: $navbar-text-dark !important;
+    }
+    
     &:hover {
-      color: $navbar-link-hover;
+      color: $navbar-link-hover-default;
+      
+      html.dark & {
+        color: $navbar-link-hover-dark !important;
+      }
     }
   }
-
-  &-megamenu {
+  
+  &__megamenu {
+    background-color: $navbar-megamenu-bg-default;
+    border-color: $navbar-megamenu-border-default;
+    
+    html.dark & {
+      background-color: $navbar-megamenu-bg-dark !important;
+      border-color: $navbar-megamenu-border-dark !important;
+    }
+    
+    &-title {
+      color: $navbar-megamenu-text-default;
+      
+      html.dark & {
+        color: $navbar-megamenu-text-dark !important;
+      }
+    }
+    
     &-item {
-      color: $navbar-megamenu-text;
-      font-weight: 500;
-      transition: all 0.2s ease;
+      color: $navbar-text-default;
+      
+      html.dark & {
+        color: $navbar-text-dark !important;
+      }
       
       &:hover {
-        color: $navbar-megamenu-hover;
-        background-color: $navbar-megamenu-bg-hover;
+        background-color: $navbar-megamenu-hover-bg-default;
+        color: $navbar-link-hover-default;
+        
+        html.dark & {
+          background-color: $navbar-megamenu-hover-bg-dark !important;
+          color: $navbar-link-hover-dark !important;
+        }
       }
+    }
+  }
+  
+  &__mobile-menu {
+    background-color: $navbar-bg-default;
+    border-top: 1px solid $navbar-border-default;
+    
+    html.dark & {
+      background-color: $navbar-bg-dark !important;
+      border-color: $navbar-border-dark !important;
     }
   }
 }

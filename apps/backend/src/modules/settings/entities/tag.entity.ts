@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { PostTag } from '../../post/entities/post-tag.entity';
 
 @Entity('tags')
 export class Tag {
@@ -28,4 +29,7 @@ export class Tag {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @OneToMany(() => PostTag, postTag => postTag.tag)
+  postTags: PostTag[];
 } 

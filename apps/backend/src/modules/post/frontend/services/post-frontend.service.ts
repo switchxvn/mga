@@ -3,12 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Not, In } from 'typeorm';
 import { Post } from '../../entities/post.entity';
 import { CreatePostInput, UpdatePostInput } from '@ew/shared';
+import { PostTag } from '../../entities/post-tag.entity';
+import { Tag } from '../../../settings/entities/tag.entity';
 
 @Injectable()
 export class PostFrontendService {
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
+    @InjectRepository(PostTag)
+    private readonly postTagRepository: Repository<PostTag>,
+    @InjectRepository(Tag)
+    private readonly tagRepository: Repository<Tag>,
   ) {}
 
   async create(createPostDto: CreatePostInput, authorId: number): Promise<Post> {
@@ -264,5 +270,69 @@ export class PostFrontendService {
     }
 
     return post;
+  }
+
+  async findBySlugWithAuthorAndTags(slug: string): Promise<any> {
+    const post = await this.postRepository.findOne({
+      where: { slug, published: true },
+      relations: ['author', 'author.profile', 'categories']
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post with slug "${slug}" not found`);
+    }
+
+    // Lấy tags của bài viết
+    const postTags = await this.postTagRepository.find({
+      where: { postId: post.id },
+      relations: ['tag']
+    });
+
+    const tags = postTags.map(pt => pt.tag).filter(tag => tag.isActive);
+
+    // Đảm bảo author đã được load
+    const author = post.author instanceof Promise ? await post.author : post.author;
+    const authorProfile = author?.profile || {};
+
+    return {
+      ...post,
+      tags,
+      __author__: {
+        ...author,
+        __profile__: authorProfile
+      }
+    };
+  }
+
+  async findByIdWithAuthorAndTags(id: number): Promise<any> {
+    const post = await this.postRepository.findOne({
+      where: { id, published: true },
+      relations: ['author', 'author.profile', 'categories']
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post with id "${id}" not found`);
+    }
+
+    // Lấy tags của bài viết
+    const postTags = await this.postTagRepository.find({
+      where: { postId: post.id },
+      relations: ['tag']
+    });
+
+    const tags = postTags.map(pt => pt.tag).filter(tag => tag.isActive);
+
+    // Đảm bảo author đã được load
+    const author = post.author instanceof Promise ? await post.author : post.author;
+    const authorProfile = author?.profile || {};
+
+    return {
+      ...post,
+      tags,
+      __author__: {
+        ...author,
+        __profile__: authorProfile
+      }
+    };
   }
 } 

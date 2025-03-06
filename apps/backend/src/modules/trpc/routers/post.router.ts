@@ -239,4 +239,62 @@ export const postRouter = router({
         });
       }
     }),
+
+  bySlugWithAuthorAndTags: publicProcedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching post with author and tags by slug: ${input}`);
+        const post = await ctx.services.postService.findBySlugWithAuthorAndTags(input);
+
+        if (!post) {
+          ctx.logger.warn(`Post not found for slug: ${input}`);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Post with slug "${input}" not found`,
+          });
+        }
+
+        ctx.logger.debug(`Successfully retrieved post with author and tags by slug: ${input}`);
+        return post;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching post with author and tags by slug ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve post with author and tags',
+          cause: error,
+        });
+      }
+    }),
+
+  byIdWithAuthorAndTags: publicProcedure
+    .input(z.number())
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching post with author and tags by id: ${input}`);
+        const post = await ctx.services.postService.findByIdWithAuthorAndTags(input);
+
+        if (!post) {
+          ctx.logger.warn(`Post not found for id: ${input}`);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Post with id "${input}" not found`,
+          });
+        }
+
+        ctx.logger.debug(`Successfully retrieved post with author and tags by id: ${input}`);
+        return post;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching post with author and tags by id ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve post with author and tags',
+          cause: error,
+        });
+      }
+    }),
 }); 

@@ -21,6 +21,8 @@ import { Footer } from './modules/footer/entities/footer.entity';
 import { UserProfile } from './modules/profile/entities/user-profile.entity';
 import { CountryPhoneCode } from './modules/common/entities/country-phone-code.entity';
 import { Category } from './modules/category/entities/category.entity';
+import { PostTag } from './modules/post/entities/post-tag.entity';
+import { Tag } from './modules/settings/entities/tag.entity';
 
 @Module({
   imports: [
@@ -38,7 +40,7 @@ import { Category } from './modules/category/entities/category.entity';
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'nestjs'),
-        entities: [User, Post, MenuItem, Logo, Seo, Footer, UserProfile, CountryPhoneCode, Category],
+        entities: [User, Post, MenuItem, Logo, Seo, Footer, UserProfile, CountryPhoneCode, Category, PostTag, Tag],
         synchronize: false,
         logging: true,
       }),

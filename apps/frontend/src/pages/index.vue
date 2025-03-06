@@ -3,12 +3,20 @@ import { useTrpc } from '../composables/useTrpc';
 import { ref, onMounted } from '../composables/useVueComposables';
 import { useSeo } from '../composables/useSeo';
 import { useRoute } from 'vue-router';
+import PostCard from '../components/ui/card/PostCard.vue';
+// Import Swiper
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface Post {
   id: number | string;
   title: string;
   content: string;
+  thumbnail?: string | null;
   createdAt: string | Date;
   updatedAt?: string | Date;
   authorId?: number;
@@ -18,6 +26,9 @@ interface Post {
     email?: string;
     [key: string]: any;
   };
+  ogImage?: string;
+  slug?: string;
+  metaDescription?: string;
   [key: string]: any;
 }
 
@@ -26,6 +37,30 @@ const trpc = useTrpc();
 const latestPosts = ref<Post[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
+
+// Cấu hình Swiper
+const swiperOptions = {
+  modules: [Navigation, Pagination, Autoplay],
+  slidesPerView: 1,
+  spaceBetween: 20,
+  navigation: true,
+  pagination: { clickable: true },
+  autoplay: {
+    delay: 5000,
+    disableOnInteraction: false,
+  },
+  breakpoints: {
+    640: {
+      slidesPerView: 2,
+    },
+    1024: {
+      slidesPerView: 3,
+    },
+    1280: {
+      slidesPerView: 4,
+    },
+  },
+};
 
 onMounted(async () => {
   try {
@@ -42,7 +77,7 @@ async function fetchLatestPosts() {
   try {
     // Gọi tRPC endpoint để lấy danh sách bài viết mới nhất
     const result = await trpc.post.all.query();
-    latestPosts.value = result.slice(0, 3); // Chỉ lấy 3 bài viết mới nhất
+    latestPosts.value = result.slice(0, 20); // Lấy tối đa 20 bài viết
   } catch (err: any) {
     console.error('Failed to fetch latest posts:', err);
     error.value = err.message || 'Đã xảy ra lỗi khi tải bài viết';
@@ -109,33 +144,16 @@ const getAuthorName = (author) => {
           </Button>
         </div>
         
-        <!-- Posts grid -->
-        <div v-else-if="latestPosts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <Card 
-            v-for="post in latestPosts" 
-            :key="post.id" 
-            class="hover:shadow-lg transition-shadow duration-300"
-          >
-            <CardHeader>
-              <CardTitle>{{ post.title }}</CardTitle>
-              <CardDescription>
-                {{ new Date(post.createdAt).toLocaleDateString('vi-VN') }}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p class="line-clamp-3 text-muted-foreground">{{ post.content }}</p>
-            </CardContent>
-            <CardFooter class="justify-between">
-              <span class="text-sm text-muted-foreground">
-                {{ getAuthorName(post.author) }}
-              </span>
-              <NuxtLink :to="`/posts/${post.id}`">
-                <Button variant="ghost" size="sm" class="text-primary">
-                  Xem chi tiết
-                </Button>
-              </NuxtLink>
-            </CardFooter>
-          </Card>
+        <!-- Posts Slider -->
+        <div v-else-if="latestPosts.length > 0" class="post-slider">
+          <Swiper v-bind="swiperOptions" class="w-full">
+            <SwiperSlide v-for="post in latestPosts" :key="post.id" class="pb-12">
+              <PostCard 
+                :post="post"
+                :compact="false"
+              />
+            </SwiperSlide>
+          </Swiper>
         </div>
         
         <!-- Empty state -->
@@ -217,3 +235,31 @@ const getAuthorName = (author) => {
     </section>
   </div>
 </template>
+
+<style scoped>
+.post-slider :deep(.swiper-pagination) {
+  bottom: 0;
+}
+
+.post-slider :deep(.swiper-button-next),
+.post-slider :deep(.swiper-button-prev) {
+  color: var(--color-primary);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.post-slider :deep(.swiper-button-next) {
+  right: 10px;
+}
+
+.post-slider :deep(.swiper-button-prev) {
+  left: 10px;
+}
+
+@media (max-width: 640px) {
+  .post-slider :deep(.swiper-button-next),
+  .post-slider :deep(.swiper-button-prev) {
+    display: none;
+  }
+}
+</style>

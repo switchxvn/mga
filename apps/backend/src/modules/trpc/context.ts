@@ -5,6 +5,8 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../user/entities/user.entity';
 import { Post } from '../post/entities/post.entity';
+import { PostTag } from '../post/entities/post-tag.entity';
+import { Tag } from '../settings/entities/tag.entity';
 import { ConfigService } from '@nestjs/config';
 
 let dataSource: DataSource | null = null;
@@ -19,7 +21,7 @@ async function getDataSource() {
       username: configService.get('database.username') || 'postgres',
       password: configService.get('database.password') || 'password',
       database: configService.get('database.database') || 'mydb',
-      entities: [User, Post],
+      entities: ['dist/apps/backend/src/modules/**/*.entity.js'],
       synchronize: configService.get('database.synchronize') || false,
       logging: configService.get('database.logging') || false,
     });
@@ -59,6 +61,8 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
     repositories: {
       users: ds.getRepository(User),
       posts: ds.getRepository(Post),
+      postTags: ds.getRepository(PostTag),
+      tags: ds.getRepository(Tag),
     }
   };
 }

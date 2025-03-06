@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, ManyToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, ManyToMany, OneToMany } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Category } from '../../category/entities/category.entity';
+import { PostTag } from './post-tag.entity';
 
 @Entity('posts')
 export class Post {
@@ -12,6 +13,12 @@ export class Post {
 
   @Column({ type: 'text', nullable: true })
   content!: string;
+
+  @Column({ name: 'short_description', type: 'text', nullable: true })
+  shortDescription!: string;
+
+  @Column({ nullable: true })
+  thumbnail!: string;
 
   @Column({ default: false })
   published!: boolean;
@@ -44,9 +51,9 @@ export class Post {
   @Column({ name: 'author_id' })
   authorId!: number;
 
-  @ManyToOne(() => User, (user) => user.posts, { lazy: true })
+  @ManyToOne(() => User, (user) => user.posts)
   @JoinColumn({ name: 'author_id' })
-  author!: Promise<User>;
+  author!: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
@@ -56,4 +63,7 @@ export class Post {
 
   @ManyToMany(() => Category, (category) => category.posts)
   categories!: Category[];
+
+  @OneToMany(() => PostTag, postTag => postTag.post)
+  postTags!: PostTag[];
 }

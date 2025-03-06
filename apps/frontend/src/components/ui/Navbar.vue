@@ -110,7 +110,7 @@ onUnmounted(() => {
 
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300"
+    class="navbar fixed top-0 left-0 right-0 z-50 transition-all duration-300"
     :class="navbarClasses"
   >
     <div class="container mx-auto px-4">
@@ -129,7 +129,7 @@ onUnmounted(() => {
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-6">
-          <div v-if="isLoading" class="text-sm text-gray-500">Đang tải menu...</div>
+          <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Đang tải menu...</div>
           <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
           <template v-else>
             <!-- eslint-disable-next-line vue/valid-v-for -->
@@ -142,7 +142,7 @@ onUnmounted(() => {
             >
               <NuxtLink
                 :to="item.href"
-                class="text-sm font-medium transition-colors hover:text-primary py-5 flex items-center space-x-1"
+                class="navbar__link text-sm font-medium py-5 flex items-center space-x-1"
               >
                 <span>{{ item.label }}</span>
                 <Icon
@@ -155,7 +155,7 @@ onUnmounted(() => {
               <!-- Mega Menu -->
               <div
                 v-if="item.hasMegaMenu && activeMegaMenu === index"
-                class="absolute top-full left-0 w-screen max-w-4xl bg-white shadow-lg rounded-b-lg border-t border-gray-100 transition-all duration-300 transform origin-top z-50"
+                class="navbar__megamenu absolute top-full left-0 w-screen max-w-4xl shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50"
                 style="left: 50%; transform: translateX(-50%)"
                 @mouseenter="keepMegaMenu"
                 @mouseleave="hideMegaMenu"
@@ -163,19 +163,19 @@ onUnmounted(() => {
                 <div class="grid grid-cols-3 gap-6 p-6">
                   <div
                     v-for="(column, columnIndex) in item.megaMenuColumns || []"
-                    :key="column.id || `column-${columnIndex}-${column.title}`"
+                    :key="`column-${columnIndex}-${column.title}`"
                     class="space-y-3"
                   >
-                    <h3 class="font-medium text-sm text-gray-900">{{ column.title }}</h3>
+                    <h3 class="navbar__megamenu-title font-medium text-sm">{{ column.title }}</h3>
                     <ul class="space-y-2">
                       <li 
                         v-for="(subItem, subIndex) in column.items" 
-                        :key="subItem.id || `subitem-${subIndex}-${subItem.href}`"
+                        :key="`subitem-${subIndex}-${subItem.href}`"
                         class="block"
                       >
                         <NuxtLink
                           :to="subItem.href"
-                          class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm"
+                          class="navbar__megamenu-item block py-1.5 px-2 rounded-md text-sm"
                           @click="activeMegaMenu = null"
                         >
                           {{ subItem.label }}
@@ -191,10 +191,10 @@ onUnmounted(() => {
 
         <!-- Hotline -->
         <div class="hidden md:flex items-center">
-          <a :href="`tel:${hotline}`" class="flex items-center space-x-2 text-sm">
+          <a :href="`tel:${hotline}`" class="navbar__link flex items-center space-x-2 text-sm">
             <Icon
               name="Phone"
-              class="text-primary h-[18px] w-[18px]"
+              class="text-primary h-[18px] w-[18px] dark:text-blue-400"
             />
             <span class="font-medium">{{ hotline }}</span>
           </a>
@@ -202,7 +202,7 @@ onUnmounted(() => {
 
         <!-- Mobile Menu Button -->
         <button
-          class="md:hidden flex items-center"
+          class="navbar__link md:hidden flex items-center"
           @click="toggleMobileMenu"
           aria-label="Toggle Menu"
         >
@@ -216,11 +216,11 @@ onUnmounted(() => {
 
     <!-- Mobile Menu -->
     <div
-      class="md:hidden"
+      class="navbar__mobile-menu md:hidden"
       :class="{ hidden: !isMobileMenuOpen }"
     >
       <div class="px-4 py-3 space-y-1">
-        <div v-if="isLoading" class="text-sm text-gray-500 px-3 py-2">Đang tải menu...</div>
+        <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">Đang tải menu...</div>
         <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
         <template v-else>
           <!-- eslint-disable-next-line vue/valid-v-for -->
@@ -228,18 +228,18 @@ onUnmounted(() => {
             v-for="(item, index) in processedMenuItems"
             :key="item.id || `mobile-menu-${index}`"
             :to="item.href"
-            class="block px-3 py-2 text-base font-medium rounded-md hover:bg-gray-100"
+            class="navbar__link block px-3 py-2 text-base font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
             @click="isMobileMenuOpen = false"
           >
             {{ item.label }}
           </NuxtLink>
         </template>
       </div>
-      <div class="px-4 py-3 border-t">
-        <a :href="`tel:${hotline}`" class="flex items-center space-x-2 px-3 py-2">
+      <div class="px-4 py-3 border-t dark:border-gray-700">
+        <a :href="`tel:${hotline}`" class="navbar__link flex items-center space-x-2 px-3 py-2">
           <Icon
             name="Phone"
-            class="text-primary h-[18px] w-[18px]"
+            class="text-primary h-[18px] w-[18px] dark:text-blue-400"
           />
           <span class="font-medium">{{ hotline }}</span>
         </a>

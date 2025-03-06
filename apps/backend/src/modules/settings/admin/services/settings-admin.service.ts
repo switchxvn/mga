@@ -81,7 +81,7 @@ export class SettingsAdminService {
         menuItem.parent = null;
       } else {
         const parent = await this.menuItemRepository.findOne({
-          where: { id: data.parentId },
+          where: { id: data.parentId as number },
         });
 
         if (!parent) {

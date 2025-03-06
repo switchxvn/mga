@@ -12,7 +12,7 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env['DB_USERNAME'],
   password: process.env['DB_PASSWORD'],
   database: process.env['DB_DATABASE'],
-  entities: ['apps/backend/src/modules/**/*.entity.ts'],
+  entities: ['dist/apps/backend/src/modules/**/*.entity.js'],
   migrations: ['libs/database/src/migrations/*.{ts,js}'],
   migrationsRun: true,
   synchronize: false,

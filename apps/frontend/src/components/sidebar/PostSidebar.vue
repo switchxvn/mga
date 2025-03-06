@@ -2,11 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useTrpc } from '../../composables/useTrpc';
 import { useCategory, type Category } from '../../composables/useCategory';
-
-interface Author {
-  name: string;
-  bio?: string | null;
-}
+import Icon from '../ui/Icon.vue';
 
 interface Post {
   id: number;
@@ -18,7 +14,6 @@ interface Post {
 
 const props = defineProps<{
   postId: number;
-  authorInfo?: Author;
 }>();
 
 const trpc = useTrpc();
@@ -92,23 +87,12 @@ function formatDate(dateString: string): string {
 
 <template>
   <div class="post-sidebar">
-    <!-- Author Info -->
-    <div v-if="authorInfo" class="post-sidebar__section">
-      <h3 class="post-sidebar__title">Tác giả</h3>
-      <div class="post-sidebar__author">
-        <div class="post-sidebar__author-avatar">
-          {{ authorInfo.name ? authorInfo.name.charAt(0) : 'U' }}
-        </div>
-        <div>
-          <p class="post-sidebar__author-name">{{ authorInfo.name }}</p>
-          <p v-if="authorInfo.bio" class="post-sidebar__author-bio">{{ authorInfo.bio }}</p>
-        </div>
-      </div>
-    </div>
-
     <!-- Popular Posts -->
     <div class="post-sidebar__section">
-      <h3 class="post-sidebar__title">Bài viết phổ biến</h3>
+      <h3 class="post-sidebar__title">
+        <Icon name="TrendingUp" :size="18" class="mr-2" />
+        Bài viết phổ biến
+      </h3>
       
       <div v-if="loading.popular" class="post-sidebar__loading">
         <div class="post-sidebar__loading-spinner"></div>
@@ -130,7 +114,10 @@ function formatDate(dateString: string): string {
               </div>
               <div>
                 <h4 class="post-sidebar__post-item-title">{{ post.title }}</h4>
-                <p class="post-sidebar__post-item-date">{{ formatDate(post.createdAt) }}</p>
+                <p class="post-sidebar__post-item-date">
+                  <Icon name="Calendar" :size="14" class="mr-1" />
+                  {{ formatDate(post.createdAt) }}
+                </p>
               </div>
             </div>
           </NuxtLink>
@@ -140,7 +127,10 @@ function formatDate(dateString: string): string {
 
     <!-- Featured Categories -->
     <div class="post-sidebar__section">
-      <h3 class="post-sidebar__title">Danh mục nổi bật</h3>
+      <h3 class="post-sidebar__title">
+        <Icon name="Star" :size="18" class="mr-2" />
+        Danh mục nổi bật
+      </h3>
       
       <div v-if="loading.featuredCategories" class="post-sidebar__loading">
         <div class="post-sidebar__loading-spinner"></div>
@@ -169,7 +159,10 @@ function formatDate(dateString: string): string {
 
     <!-- Categories -->
     <div class="post-sidebar__section">
-      <h3 class="post-sidebar__title">Tất cả danh mục</h3>
+      <h3 class="post-sidebar__title">
+        <Icon name="FolderOpen" :size="18" class="mr-2" />
+        Tất cả danh mục
+      </h3>
       
       <div v-if="loading.categories" class="post-sidebar__loading">
         <div class="post-sidebar__loading-spinner"></div>
@@ -193,8 +186,11 @@ function formatDate(dateString: string): string {
 
     <!-- Subscribe -->
     <div class="post-sidebar__section post-sidebar__section--highlight">
-      <h3 class="post-sidebar__title">Đăng ký nhận tin</h3>
-      <p class="post-sidebar__author-bio mb-4">Nhận thông báo khi có bài viết mới</p>
+      <h3 class="post-sidebar__title">
+        <Icon name="Bell" :size="18" class="mr-2" />
+        Đăng ký nhận tin
+      </h3>
+      <p class="post-sidebar__description mb-4">Nhận thông báo khi có bài viết mới</p>
       
       <form class="post-sidebar__form">
         <input 
@@ -212,3 +208,105 @@ function formatDate(dateString: string): string {
     </div>
   </div>
 </template>
+
+<style scoped>
+.post-sidebar {
+  @apply w-full;
+}
+
+.post-sidebar__section {
+  @apply mb-8 p-6 rounded-lg bg-white border border-gray-100 shadow-sm;
+}
+
+.post-sidebar__section--highlight {
+  @apply bg-blue-50 border-blue-100;
+}
+
+.post-sidebar__title {
+  @apply text-lg font-semibold mb-4 pb-2 border-b border-gray-200 flex items-center text-gray-800;
+}
+
+.post-sidebar__loading {
+  @apply flex justify-center items-center py-4;
+}
+
+.post-sidebar__loading-spinner {
+  @apply w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin;
+}
+
+.post-sidebar__empty {
+  @apply text-gray-500 py-2 text-center italic;
+}
+
+.post-sidebar__post-list {
+  @apply space-y-4;
+}
+
+.post-sidebar__post-item {
+  @apply border-b border-gray-100 pb-4 last:border-0 last:pb-0;
+}
+
+.post-sidebar__post-item-link {
+  @apply hover:text-blue-600 transition-colors duration-200;
+}
+
+.post-sidebar__post-item-content {
+  @apply flex items-start gap-3;
+}
+
+.post-sidebar__post-item-image {
+  @apply w-16 h-16 rounded-md overflow-hidden flex-shrink-0;
+}
+
+.post-sidebar__post-item-image img {
+  @apply w-full h-full object-cover;
+}
+
+.post-sidebar__post-item-title {
+  @apply text-sm font-medium text-gray-800 line-clamp-2 mb-1;
+}
+
+.post-sidebar__post-item-date {
+  @apply text-xs text-gray-500 flex items-center;
+}
+
+.post-sidebar__featured-categories {
+  @apply space-y-3;
+}
+
+.post-sidebar__featured-category {
+  @apply block p-3 rounded-md bg-gray-50 hover:bg-blue-50 transition-colors duration-200;
+}
+
+.post-sidebar__featured-category-title {
+  @apply text-sm font-medium text-gray-800 mb-1;
+}
+
+.post-sidebar__featured-category-description {
+  @apply text-xs text-gray-500 line-clamp-2;
+}
+
+.post-sidebar__categories {
+  @apply flex flex-wrap gap-2;
+}
+
+.post-sidebar__category {
+  @apply px-3 py-1 text-sm bg-gray-50 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200;
+}
+
+.post-sidebar__description {
+  @apply text-sm text-gray-600;
+}
+
+.post-sidebar__form {
+  @apply flex flex-col gap-3;
+}
+
+.post-sidebar__form-input {
+  @apply w-full px-4 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all duration-200;
+}
+
+.post-sidebar__form-button {
+  @apply w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 font-medium;
+}
+</style>
