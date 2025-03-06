@@ -2,7 +2,7 @@
 // Auto-imported by Nuxt 3;
 import { useRoute, useRouter } from 'vue-router';
 import { useTrpc } from '../../composables/useTrpc';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import RelatedPosts from '../../components/RelatedPosts.vue';
 import PostSidebar from '../../components/sidebar/PostSidebar.vue';
 import Breadcrumb from '../../components/Breadcrumb.vue';
@@ -184,33 +184,35 @@ const authorInfo = computed(() => {
   };
 });
 
-// Lấy URL hiện tại - đảm bảo chỉ gọi useRequestURL trong setup function
-const currentURL = computed(() => {
-  // Sử dụng config.public.siteUrl nếu có
-  if (process.server) {
-    try {
-      const config = useRuntimeConfig();
-      if (config.public.siteUrl) {
-        return config.public.siteUrl;
-      }
-    } catch (e) {
-      console.error('Error accessing runtime config:', e);
-    }
-  }
-  
-  // Fallback
-  if (process.client) {
-    return window.location.origin;
-  } else {
-    try {
-      // Trong SSR, sử dụng useRequestURL nhưng bọc trong try-catch
+// Lấy URL hiện tại từ server - đặt ở ngoài computed
+let serverUrl = '';
+if (process.server) {
+  try {
+    const config = useRuntimeConfig();
+    if (config.public.siteUrl) {
+      serverUrl = config.public.siteUrl;
+    } else {
       const reqURL = useRequestURL();
-      return `${reqURL.protocol}//${reqURL.host}`;
-    } catch (e) {
-      console.error('Error using useRequestURL:', e);
-      return '';
+      serverUrl = `${reqURL.protocol}//${reqURL.host}`;
     }
+  } catch (e) {
+    console.error('Error in server URL setup:', e);
   }
+}
+
+// Sử dụng ref để lưu trữ URL
+const baseUrl = ref(serverUrl);
+
+// Cập nhật URL ở client side khi component được mount
+onMounted(() => {
+  if (process.client && !baseUrl.value) {
+    baseUrl.value = window.location.origin;
+  }
+});
+
+// Sử dụng giá trị đã lưu trong ref
+const currentURL = computed(() => {
+  return baseUrl.value || '';
 });
 
 // Tạo canonical URL từ server - Đặt trong computed để đảm bảo chạy trong setup function
