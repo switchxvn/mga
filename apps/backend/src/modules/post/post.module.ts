@@ -7,9 +7,11 @@ import { PostAdminController } from './admin/controllers/admin.controller';
 import { PostFrontendController } from './frontend/controllers/frontend.controller';
 import { PostAdminService } from './admin/services/post-admin.service';
 import { PostFrontendService } from './frontend/services/post-frontend.service';
+import { User } from '../user/entities/user.entity';
+import { UserProfile } from '../profile/entities/user-profile.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, PostTag, Tag])],
+  imports: [TypeOrmModule.forFeature([Post, PostTag, Tag, User, UserProfile])],
   controllers: [PostAdminController, PostFrontendController],
   providers: [PostAdminService, PostFrontendService],
   exports: [PostAdminService, PostFrontendService],

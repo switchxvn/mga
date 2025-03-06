@@ -10,3 +10,12 @@ $navbar-link-hover: $primary;
 $navbar-megamenu-text: $text-dark;
 $navbar-megamenu-hover: $primary;
 $navbar-megamenu-bg-hover: $background-hover; 
+
+// Main menu enhancements
+$main-menu-color: #1e3a8a; // Đậm hơn, màu xanh navy
+$main-menu-hover-color: #3b82f6; // Màu xanh dương sáng hơn khi hover
+$main-menu-active-color: #2563eb; // Màu khi active
+$main-menu-letter-spacing: 0.05em; // Khoảng cách chữ cho menu chính
+$main-menu-font-weight: 700; // Độ đậm của font (tăng từ 600 lên 700)
+$main-menu-dark-color: #e5e7eb; // Màu chữ trong dark mode
+$main-menu-dark-hover-color: #60a5fa; // Màu hover trong dark mode 

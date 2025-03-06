@@ -376,6 +376,7 @@ useHead(() => {
                   class="post-detail__tags-item"
                   :style="tag.color ? { backgroundColor: tag.color + '20', borderColor: tag.color } : {}"
                 >
+                  <span class="tag-hash">#</span>
                   <span>{{ tag.name }}</span>
                 </NuxtLink>
               </div>
@@ -469,7 +470,7 @@ useHead(() => {
 }
 
 .post-detail__tags {
-  @apply mt-6 border-t border-gray-200 pt-4;
+  @apply mt-6 border-t border-gray-200 dark:border-gray-700 pt-4;
 }
 
 .post-detail__tags-title {
@@ -481,6 +482,15 @@ useHead(() => {
 }
 
 .post-detail__tags-item {
-  @apply px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 inline-flex items-center;
+  @apply px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 inline-flex items-center;
+  height: 28px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tag-hash {
+  @apply mr-0.5 text-gray-500 dark:text-gray-400 font-medium;
 }
 </style> 

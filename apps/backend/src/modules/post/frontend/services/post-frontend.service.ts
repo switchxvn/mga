@@ -292,8 +292,9 @@ export class PostFrontendService {
 
     // Đảm bảo author đã được load
     const author = post.author instanceof Promise ? await post.author : post.author;
-    const authorProfile = author?.profile || {};
-
+    // Đảm bảo profile đã được load
+    const authorProfile = author?.profile instanceof Promise ? await author.profile : author?.profile || {};
+    
     return {
       ...post,
       tags,
@@ -324,7 +325,8 @@ export class PostFrontendService {
 
     // Đảm bảo author đã được load
     const author = post.author instanceof Promise ? await post.author : post.author;
-    const authorProfile = author?.profile || {};
+    // Đảm bảo profile đã được load
+    const authorProfile = author?.profile instanceof Promise ? await author.profile : author?.profile || {};
 
     return {
       ...post,

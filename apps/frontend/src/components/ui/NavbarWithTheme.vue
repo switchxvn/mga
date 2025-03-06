@@ -4,6 +4,7 @@ import { useMenuItems } from '../../composables/useMenuItems';
 import type { MenuItem, MenuColumn } from '@ew/shared';
 import Icon from './Icon.vue';
 import ThemeToggle from '../ThemeToggle.vue';
+import { useRoute } from 'vue-router';
 
 // Props cho component
 interface NavbarProps {
@@ -15,6 +16,9 @@ const props = withDefaults(defineProps<NavbarProps>(), {
   logo: "/logo.svg",
   hotline: "1900 1234",
 });
+
+// Lấy route hiện tại
+const route = useRoute();
 
 // Scroll behavior
 const isScrolled = ref(false);
@@ -40,6 +44,14 @@ const processedMenuItems = computed<ProcessedMenuItem[]>(() => {
       megaMenuColumns: item.megaMenuColumns || []
     }));
 });
+
+// Kiểm tra xem menu có active không
+const isMenuActive = (href: string) => {
+  if (href === '/') {
+    return route.path === '/';
+  }
+  return href !== '/' && route.path.startsWith(href);
+};
 
 // Active mega menu
 const activeMegaMenu = ref<number | null>(null);
@@ -142,7 +154,8 @@ onUnmounted(() => {
             >
               <NuxtLink
                 :to="item.href"
-                class="text-sm font-medium transition-colors hover:text-primary py-5 flex items-center space-x-1 dark:text-gray-200 dark:hover:text-white"
+                class="main-menu-item text-sm font-semibold uppercase transition-colors py-5 flex items-center space-x-1"
+                :class="{ 'menu-active': isMenuActive(item.href) }"
               >
                 <span>{{ item.label }}</span>
                 <Icon
@@ -235,7 +248,8 @@ onUnmounted(() => {
             v-for="(item, index) in processedMenuItems"
             :key="item.id || `mobile-menu-${index}`"
             :to="item.href"
-            class="block px-3 py-2 text-base font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+            class="mobile-main-menu-item block px-3 py-2 text-base font-semibold uppercase rounded-md"
+            :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
             @click="isMobileMenuOpen = false"
           >
             {{ item.label }}
@@ -258,7 +272,108 @@ onUnmounted(() => {
   <div class="h-16"></div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '../../assets/styles/_variables.scss';
+
+.main-menu-item {
+  color: $main-menu-color;
+  font-weight: $main-menu-font-weight;
+  letter-spacing: $main-menu-letter-spacing;
+  position: relative;
+  text-shadow: 0 0 0.5px $main-menu-color;
+  
+  &:hover {
+    color: $main-menu-hover-color;
+    text-shadow: 0 0 0.5px $main-menu-hover-color;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: $main-menu-hover-color;
+    transition: width 0.3s ease;
+  }
+  
+  &:hover::after {
+    width: 100%;
+  }
+}
+
+.menu-active {
+  color: $main-menu-active-color !important;
+  text-shadow: 0 0 1px $main-menu-active-color !important;
+  
+  &::after {
+    width: 100%;
+    background-color: $main-menu-active-color;
+  }
+}
+
+.mobile-main-menu-item {
+  color: $main-menu-color;
+  font-weight: $main-menu-font-weight;
+  letter-spacing: $main-menu-letter-spacing;
+  text-shadow: 0 0 0.5px $main-menu-color;
+  
+  &:hover {
+    color: $main-menu-hover-color;
+    background-color: rgba($main-menu-hover-color, 0.05);
+    text-shadow: 0 0 0.5px $main-menu-hover-color;
+  }
+}
+
+.mobile-menu-active {
+  color: $main-menu-active-color !important;
+  background-color: rgba($main-menu-active-color, 0.1);
+  text-shadow: 0 0 1px $main-menu-active-color !important;
+  border-left: 3px solid $main-menu-active-color;
+}
+
+.dark .main-menu-item {
+  color: $main-menu-dark-color;
+  text-shadow: 0 0 0.5px $main-menu-dark-color;
+  
+  &:hover {
+    color: $main-menu-dark-hover-color;
+    text-shadow: 0 0 0.5px $main-menu-dark-hover-color;
+  }
+  
+  &::after {
+    background-color: $main-menu-dark-hover-color;
+  }
+}
+
+.dark .menu-active {
+  color: $main-menu-dark-hover-color !important;
+  text-shadow: 0 0 1px $main-menu-dark-hover-color !important;
+  
+  &::after {
+    background-color: $main-menu-dark-hover-color;
+  }
+}
+
+.dark .mobile-main-menu-item {
+  color: $main-menu-dark-color;
+  text-shadow: 0 0 0.5px $main-menu-dark-color;
+  
+  &:hover {
+    color: $main-menu-dark-hover-color;
+    background-color: rgba($main-menu-dark-hover-color, 0.1);
+    text-shadow: 0 0 0.5px $main-menu-dark-hover-color;
+  }
+}
+
+.dark .mobile-menu-active {
+  color: $main-menu-dark-hover-color !important;
+  background-color: rgba($main-menu-dark-hover-color, 0.15);
+  text-shadow: 0 0 1px $main-menu-dark-hover-color !important;
+  border-left: 3px solid $main-menu-dark-hover-color;
+}
+
 .navbar-megamenu-item {
   @apply hover:bg-gray-100 transition-colors text-gray-700;
 }
