@@ -14,6 +14,8 @@ import { FooterAdminService } from '../footer/admin/services/footer-admin.servic
 import { FooterFrontendService } from '../footer/frontend/services/footer-frontend.service';
 import { CategoryFrontendService } from '../category/frontend/services/category-frontend.service';
 import { CategoryAdminService } from '../category/admin/services/category-admin.service';
+import { ServiceAdminService } from '../service/admin/services/service-admin.service';
+import { ServiceFrontendService } from '../service/frontend/services/service-frontend.service';
 
 // Define context type
 export interface Context {
@@ -35,6 +37,8 @@ export interface Context {
     footerFrontendService: FooterFrontendService;
     categoryFrontendService: CategoryFrontendService;
     categoryAdminService: CategoryAdminService;
+    serviceAdminService: ServiceAdminService;
+    serviceFrontendService: ServiceFrontendService;
   };
   logger: Logger;
 }
@@ -78,10 +82,32 @@ const isAuthed = t.middleware(({ ctx, next }) => {
   });
 });
 
+// Create middleware for admin routes
+const isAdmin = t.middleware(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Not authenticated',
+    });
+  }
+  
+  // Kiểm tra quyền admin ở đây (có thể cần thêm logic)
+  // Ví dụ: if (ctx.user.role !== 'ADMIN') throw new TRPCError({...})
+  
+  ctx.logger.log(`Admin user accessing protected route: ${ctx.user.email}`);
+  
+  return next({
+    ctx: {
+      user: ctx.user,
+    },
+  });
+});
+
 // Export reusable router and procedures
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(isAuthed);
+export const adminProcedure = t.procedure.use(isAdmin);
 
 // Export context creator
 export { createContext };

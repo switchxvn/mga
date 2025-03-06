@@ -12,6 +12,7 @@ import { SeoModule } from './modules/seo/seo.module';
 import { FooterModule } from './modules/footer/footer.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { CategoryModule } from './modules/category/category.module';
+import { ServiceModule } from './modules/service/service.module';
 import { User } from './modules/user/entities/user.entity';
 import { Post } from './modules/post/entities/post.entity';
 import { MenuItem } from './modules/settings/entities/menu-item.entity';
@@ -23,6 +24,7 @@ import { CountryPhoneCode } from './modules/common/entities/country-phone-code.e
 import { Category } from './modules/category/entities/category.entity';
 import { PostTag } from './modules/post/entities/post-tag.entity';
 import { Tag } from './modules/settings/entities/tag.entity';
+import { Service } from './modules/service/entities/service.entity';
 
 @Module({
   imports: [
@@ -40,7 +42,7 @@ import { Tag } from './modules/settings/entities/tag.entity';
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'nestjs'),
-        entities: [User, Post, MenuItem, Logo, Seo, Footer, UserProfile, CountryPhoneCode, Category, PostTag, Tag],
+        entities: [User, Post, MenuItem, Logo, Seo, Footer, UserProfile, CountryPhoneCode, Category, PostTag, Tag, Service],
         synchronize: false,
         logging: true,
       }),
@@ -54,6 +56,7 @@ import { Tag } from './modules/settings/entities/tag.entity';
     FooterModule,
     ProfileModule,
     CategoryModule,
+    ServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

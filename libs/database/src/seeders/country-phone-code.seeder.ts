@@ -1,10 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { CountryPhoneCodeService } from '../services/country-phone-code.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CountryPhoneCode } from '../entities/country-phone-code.entity';
+
 @Injectable()
 export class CountryPhoneCodeSeeder {
-  constructor(private readonly countryPhoneCodeService: CountryPhoneCodeService) {}
+  constructor(
+    @InjectRepository(CountryPhoneCode)
+    private countryPhoneCodeRepository: Repository<CountryPhoneCode>,
+  ) {}
 
   async seed() {
+    // Kiểm tra xem đã có dữ liệu chưa
+    const count = await this.countryPhoneCodeRepository.count();
+    if (count > 0) {
+      console.log('Country phone codes already exist, skipping seed');
+      return;
+    }
+    
     const countryPhoneCodes = [
       { phoneCode: '+84', countryCode: 'VN', countryName: 'Vietnam', flagEmoji: '🇻🇳' },
       { phoneCode: '+1', countryCode: 'US', countryName: 'United States', flagEmoji: '🇺🇸' },
@@ -38,7 +51,8 @@ export class CountryPhoneCodeSeeder {
       { phoneCode: '+380', countryCode: 'UA', countryName: 'Ukraine', flagEmoji: '🇺🇦' },
     ];
 
-    await this.countryPhoneCodeService.createMany(countryPhoneCodes);
+    const entities = this.countryPhoneCodeRepository.create(countryPhoneCodes);
+    await this.countryPhoneCodeRepository.save(entities);
     console.log('Country phone codes seeded successfully');
   }
 } 

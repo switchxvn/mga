@@ -11,6 +11,7 @@ import { TrpcController } from './trpc.controller';
 import { SeoModule } from '../seo/seo.module';
 import { FooterModule } from '../footer/footer.module';
 import { CategoryModule } from '../category/category.module';
+import { ServiceModule } from '../service/service.module';
 
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
@@ -30,6 +31,7 @@ import { CategoryModule } from '../category/category.module';
     SeoModule,
     FooterModule,
     CategoryModule,
+    ServiceModule,
     
     // Auth module is imported with forwardRef to avoid circular dependency
     forwardRef(() => AuthModule),

@@ -6,6 +6,7 @@ import { exampleRouter } from './example';
 import { settingsRouter } from './settings.router';
 import { seoRouter } from './seo.router';
 import { categoryRouter } from './category.router';
+import { serviceRouter } from './service.router';
 
 export const appRouter = router({
   auth: authRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   settings: settingsRouter,
   seo: seoRouter,
   category: categoryRouter,
+  service: serviceRouter,
 });
 
 export type AppRouter = typeof appRouter; 
