@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
 import { useTrpc } from '../../composables/useTrpc';
-import { ref } from '../../composables/useVueComposables';
+import { ref, computed } from 'vue';
 
 const trpc = useTrpc();
 const posts = ref<any[]>([]);
@@ -22,6 +22,21 @@ async function fetchPosts() {
   } finally {
     loading.value = false;
   }
+}
+
+/**
+ * Tạo slug từ tiêu đề nếu không có slug
+ */
+function getPostSlug(post: any): string {
+  if (post.slug) return post.slug;
+  
+  // Fallback: Tạo slug từ tiêu đề nếu không có slug
+  return post.title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Loại bỏ ký tự đặc biệt
+    .replace(/\s+/g, '-') // Thay thế khoảng trắng bằng dấu gạch ngang
+    .replace(/--+/g, '-') // Loại bỏ nhiều dấu gạch ngang liên tiếp
+    .trim();
 }
 
 const getAuthorName = (author) => {
@@ -80,7 +95,7 @@ onMounted(() => {
               Tác giả: {{ getAuthorName(post.author) }}
             </span>
             <NuxtLink 
-              :to="`/posts/${post.id}`" 
+              :to="`/posts/${getPostSlug(post)}`" 
               class="text-blue-500 hover:text-blue-700"
             >
               Xem chi tiết

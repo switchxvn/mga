@@ -82,4 +82,33 @@ export class ProfileService {
       });
     }
   }
+
+  async createUserProfile(data: { userId: number, firstName?: string, lastName?: string }) {
+    try {
+      let profile = await this.userProfileRepository.findOne({
+        where: { userId: data.userId },
+      });
+
+      if (profile) {
+        // Profile already exists, update it
+        profile.firstName = data.firstName || profile.firstName;
+        profile.lastName = data.lastName || profile.lastName;
+      } else {
+        // Create new profile
+        profile = this.userProfileRepository.create({
+          userId: data.userId,
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+        });
+      }
+
+      return await this.userProfileRepository.save(profile);
+    } catch (error) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to create user profile',
+        cause: error,
+      });
+    }
+  }
 } 

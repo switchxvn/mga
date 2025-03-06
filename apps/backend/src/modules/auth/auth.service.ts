@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from '../user/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { TrpcService } from '../trpc/trpc.service';
+import { ProfileService } from '../profile/services/profile.service';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +14,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
-    private readonly trpcService: TrpcService,
+    private readonly profileService: ProfileService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -69,12 +69,27 @@ export class AuthService {
     const newUser = this.userRepository.create({
       email,
       password: hashedPassword,
-      name,
+      username: email.split('@')[0], // Use part of email as username
       isActive: true,
       isEmailVerified: false,
     });
 
     const savedUser = await this.userRepository.save(newUser);
+    
+    // Create user profile with name
+    if (name) {
+      const nameParts = name.split(' ');
+      const lastName = nameParts.length > 1 ? nameParts.pop() : '';
+      const firstName = nameParts.join(' ');
+      
+      // Create profile using profile service
+      await this.profileService.createUserProfile({
+        userId: savedUser.id,
+        firstName,
+        lastName: lastName || '',
+      });
+    }
+    
     const { password: _, ...result } = savedUser;
 
     return {

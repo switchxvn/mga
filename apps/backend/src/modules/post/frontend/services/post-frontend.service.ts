@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike, Not } from 'typeorm';
 import { Post } from '../../entities/post.entity';
 import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 
@@ -38,6 +38,115 @@ export class PostFrontendService {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
     return post;
+  }
+
+  async findOneWithAuthor(id: number): Promise<Post> {
+    const post = await this.postRepository.findOne({
+      where: { id, published: true },
+      relations: ['author', 'author.profile']
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post with ID ${id} not found`);
+    }
+
+    // Đảm bảo author đã được load
+    if (post.author) {
+      await post.author;
+    }
+
+    return post;
+  }
+
+  async findRelatedPosts(id: number, limit = 3): Promise<Post[]> {
+    // Lấy bài viết hiện tại để tìm các bài viết liên quan
+    const currentPost = await this.postRepository.findOne({
+      where: { id, published: true }
+    });
+
+    if (!currentPost) {
+      throw new NotFoundException(`Post with ID ${id} not found`);
+    }
+
+    // Tìm các bài viết cùng tác giả hoặc có từ khóa tương tự
+    const relatedPosts: Post[] = [];
+    
+    // Nếu có từ khóa, tìm bài viết có từ khóa tương tự
+    if (currentPost.metaKeywords) {
+      const keywords = currentPost.metaKeywords.split(',').map(k => k.trim());
+      
+      // Tìm bài viết có từ khóa tương tự
+      for (const keyword of keywords) {
+        const keywordPosts = await this.postRepository.find({
+          where: { 
+            metaKeywords: ILike(`%${keyword}%`),
+            published: true,
+            id: Not(id)
+          },
+          order: { createdAt: 'DESC' },
+          take: limit
+        });
+        
+        // Thêm các bài viết không trùng lặp
+        for (const post of keywordPosts) {
+          if (!relatedPosts.some(p => p.id === post.id)) {
+            relatedPosts.push(post);
+            if (relatedPosts.length >= limit) break;
+          }
+        }
+        
+        if (relatedPosts.length >= limit) break;
+      }
+    }
+    
+    // Nếu không đủ bài viết liên quan, tìm thêm bài viết cùng tác giả
+    if (relatedPosts.length < limit) {
+      const remainingLimit = limit - relatedPosts.length;
+      const relatedPostIds = relatedPosts.map(post => post.id);
+      
+      // Tìm bài viết cùng tác giả
+      const authorPosts = await this.postRepository.find({
+        where: {
+          authorId: currentPost.authorId,
+          published: true,
+          id: Not(id)
+        },
+        order: { createdAt: 'DESC' },
+        take: remainingLimit
+      });
+      
+      // Thêm các bài viết không trùng lặp
+      for (const post of authorPosts) {
+        if (!relatedPosts.some(p => p.id === post.id)) {
+          relatedPosts.push(post);
+          if (relatedPosts.length >= limit) break;
+        }
+      }
+    }
+    
+    // Nếu vẫn không đủ, lấy các bài viết mới nhất
+    if (relatedPosts.length < limit) {
+      const remainingLimit = limit - relatedPosts.length;
+      
+      const recentPosts = await this.postRepository.find({
+        where: {
+          published: true,
+          id: Not(id)
+        },
+        order: { createdAt: 'DESC' },
+        take: remainingLimit
+      });
+      
+      // Thêm các bài viết không trùng lặp
+      for (const post of recentPosts) {
+        if (!relatedPosts.some(p => p.id === post.id)) {
+          relatedPosts.push(post);
+          if (relatedPosts.length >= limit) break;
+        }
+      }
+    }
+    
+    return relatedPosts;
   }
 
   async update(id: number, updatePostDto: UpdatePostInput, userId: number): Promise<Post> {
@@ -78,5 +187,34 @@ export class PostFrontendService {
       where: { authorId },
       order: { createdAt: 'DESC' }
     });
+  }
+
+  async findBySlug(slug: string): Promise<Post> {
+    const post = await this.postRepository.findOne({
+      where: { slug, published: true }
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post with slug "${slug}" not found`);
+    }
+    return post;
+  }
+
+  async findBySlugWithAuthor(slug: string): Promise<Post> {
+    const post = await this.postRepository.findOne({
+      where: { slug, published: true },
+      relations: ['author', 'author.profile']
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post with slug "${slug}" not found`);
+    }
+
+    // Đảm bảo author đã được load
+    if (post.author) {
+      await post.author;
+    }
+
+    return post;
   }
 } 

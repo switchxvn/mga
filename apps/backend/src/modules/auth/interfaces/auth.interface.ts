@@ -8,4 +8,9 @@ export interface IAuthService {
   register(registerInput: RegisterInput): Promise<{ accessToken: string; user: Omit<User, 'password'> }>;
   getCurrentUser(userId: number): Promise<User>;
   logout(userId: number): Promise<{ success: boolean }>;
+}
+
+export interface JwtPayload {
+  sub: number;
+  email: string;
 } 

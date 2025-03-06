@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { createPostSchema, updatePostSchema, getPostByIdSchema } from '@ew/shared';
+import { z } from 'zod';
 
 export const postRouter = router({
   all: publicProcedure.query(async ({ ctx }) => {
@@ -41,6 +42,59 @@ export const postRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve post',
+          cause: error,
+        });
+      }
+    }),
+
+  byIdWithAuthor: publicProcedure
+    .input(getPostByIdSchema)
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching post with author by ID: ${input}`);
+        const post = await ctx.services.postService.findOneWithAuthor(input);
+
+        if (!post) {
+          ctx.logger.warn(`Post not found for ID: ${input}`);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Post with ID ${input} not found`,
+          });
+        }
+
+        ctx.logger.debug(`Successfully retrieved post with author ID: ${input}`);
+        return post;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching post with author by ID ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve post with author',
+          cause: error,
+        });
+      }
+    }),
+
+  relatedPosts: publicProcedure
+    .input(z.object({
+      id: getPostByIdSchema,
+      limit: z.number().min(1).max(10).optional().default(3)
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching related posts for ID: ${input.id}, limit: ${input.limit}`);
+        const posts = await ctx.services.postService.findRelatedPosts(input.id, input.limit);
+        
+        ctx.logger.debug(`Successfully retrieved ${posts.length} related posts for ID: ${input.id}`);
+        return posts;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching related posts for ID ${input.id}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve related posts',
           cause: error,
         });
       }
@@ -99,6 +153,64 @@ export const postRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to delete post',
+          cause: error,
+        });
+      }
+    }),
+
+  bySlug: publicProcedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching post by slug: ${input}`);
+        const post = await ctx.services.postService.findBySlug(input);
+
+        if (!post) {
+          ctx.logger.warn(`Post not found for slug: ${input}`);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Post with slug "${input}" not found`,
+          });
+        }
+
+        ctx.logger.debug(`Successfully retrieved post with slug: ${input}`);
+        return post;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching post by slug ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve post',
+          cause: error,
+        });
+      }
+    }),
+
+  bySlugWithAuthor: publicProcedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching post with author by slug: ${input}`);
+        const post = await ctx.services.postService.findBySlugWithAuthor(input);
+
+        if (!post) {
+          ctx.logger.warn(`Post not found for slug: ${input}`);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Post with slug "${input}" not found`,
+          });
+        }
+
+        ctx.logger.debug(`Successfully retrieved post with author by slug: ${input}`);
+        return post;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching post with author by slug ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve post with author',
           cause: error,
         });
       }

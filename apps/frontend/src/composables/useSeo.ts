@@ -15,7 +15,23 @@ export function useSeo() {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
+  // Kiểm tra xem đường dẫn có phải là trang chi tiết không
+  const isDetailPage = (path: string): boolean => {
+    const detailPagePatterns = [
+      /^\/posts\/[^\/]+$/,  // Trang chi tiết bài viết: /posts/slug
+      /^\/products\/[^\/]+$/,  // Trang chi tiết sản phẩm: /products/slug
+      // Thêm các mẫu URL khác nếu cần
+    ];
+    
+    return detailPagePatterns.some(pattern => pattern.test(path));
+  };
+
   const getSeoData = async (path: string = route.path) => {
+    // Nếu là trang chi tiết, không gọi API
+    if (isDetailPage(path)) {
+      return null;
+    }
+    
     isLoading.value = true;
     error.value = null;
     try {
@@ -50,6 +66,11 @@ export function useSeo() {
 
   // Fetch SEO data for current route
   const refreshSeoData = async () => {
+    // Nếu là trang chi tiết, không gọi API
+    if (isDetailPage(route.path)) {
+      return null;
+    }
+    
     const data = await getSeoData();
     if (data) {
       updateMetaTags(data);
@@ -64,5 +85,6 @@ export function useSeo() {
     getSeoData,
     updateMetaTags,
     refreshSeoData,
+    isDetailPage,
   };
 }

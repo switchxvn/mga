@@ -23,8 +23,7 @@ export class AuthService implements IAuthService {
   generateToken(user: Partial<User>): string {
     const payload: JwtPayload = {
       sub: user.id,
-      email: user.email,
-      name: user.name
+      email: user.email
     };
     
     return this.jwtService.sign(payload);

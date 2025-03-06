@@ -1,5 +1,6 @@
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
+import { useTrpc } from '../composables/useTrpc';
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
@@ -10,10 +11,23 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
   
-  const { $trpc } = useNuxtApp();
+  // Bỏ qua các trang chi tiết vì chúng đã có SEO riêng
+  // Kiểm tra các mẫu URL của trang chi tiết
+  const detailPagePatterns = [
+    /^\/posts\/[^\/]+$/,  // Trang chi tiết bài viết: /posts/slug
+    /^\/products\/[^\/]+$/,  // Trang chi tiết sản phẩm: /products/slug
+    // Thêm các mẫu URL khác nếu cần
+  ];
+  
+  // Nếu URL hiện tại khớp với bất kỳ mẫu nào, bỏ qua việc gọi API SEO
+  if (detailPagePatterns.some(pattern => pattern.test(to.path))) {
+    return;
+  }
+  
+  const trpc = useTrpc();
   
   try {
-    const seo = await $trpc.seo.getSeoByPath.query(to.path || '/');
+    const seo = await trpc.seo.getSeoByPath.query(to.path || '/');
     if (!seo) return;
 
     useSeoMeta({
