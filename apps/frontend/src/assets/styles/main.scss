@@ -5,6 +5,7 @@
 @use 'components/navbar' as *;
 @use 'components/post-detail' as *;
 @use 'components/sidebar' as *;
+@use 'components/post-sidebar' as *;
 
 @tailwind base;
 @tailwind components;

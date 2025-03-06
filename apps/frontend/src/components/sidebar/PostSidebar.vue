@@ -1,19 +1,40 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useTrpc } from '../../composables/useTrpc';
+import { useCategory, type Category } from '../../composables/useCategory';
+
+interface Author {
+  name: string;
+  bio?: string | null;
+}
+
+interface Post {
+  id: number;
+  title: string;
+  slug?: string;
+  createdAt: string;
+  ogImage?: string;
+}
 
 const props = defineProps<{
   postId: number;
-  authorInfo?: any;
+  authorInfo?: Author;
 }>();
 
 const trpc = useTrpc();
-const popularPosts = ref<any[]>([]);
-const categories = ref<any[]>([]);
+const popularPosts = ref<Post[]>([]);
+const categories = ref<Category[]>([]);
 const loading = ref({
   popular: true,
-  categories: true
+  categories: true,
+  featuredCategories: true
 });
+
+// Sử dụng composable useCategory
+const { 
+  featuredCategories,
+  fetchFeaturedCategories
+} = useCategory();
 
 async function fetchPopularPosts() {
   try {
@@ -42,9 +63,21 @@ async function fetchCategories() {
   }
 }
 
+async function loadFeaturedCategories() {
+  try {
+    loading.value.featuredCategories = true;
+    await fetchFeaturedCategories();
+  } catch (error) {
+    console.error('Failed to fetch featured categories:', error);
+  } finally {
+    loading.value.featuredCategories = false;
+  }
+}
+
 onMounted(() => {
   fetchPopularPosts();
   fetchCategories();
+  loadFeaturedCategories();
 });
 
 function formatDate(dateString: string): string {
@@ -86,7 +119,7 @@ function formatDate(dateString: string): string {
       </div>
       
       <ul v-else class="post-sidebar__post-list">
-        <li v-for="post in popularPosts" :key="post.id" class="post-sidebar__post-item">
+        <li v-for="(post, postIndex) in popularPosts" :key="postIndex" class="post-sidebar__post-item">
           <NuxtLink 
             :to="`/bai-viet/${post.slug || post.id}`" 
             class="post-sidebar__post-item-link"
@@ -105,9 +138,38 @@ function formatDate(dateString: string): string {
       </ul>
     </div>
 
+    <!-- Featured Categories -->
+    <div class="post-sidebar__section">
+      <h3 class="post-sidebar__title">Danh mục nổi bật</h3>
+      
+      <div v-if="loading.featuredCategories" class="post-sidebar__loading">
+        <div class="post-sidebar__loading-spinner"></div>
+      </div>
+      
+      <div v-else-if="featuredCategories.length === 0" class="post-sidebar__empty">
+        Không có danh mục nổi bật
+      </div>
+      
+      <div v-else class="post-sidebar__featured-categories">
+        <NuxtLink 
+          v-for="(category, categoryIndex) in featuredCategories" 
+          :key="categoryIndex"
+          :to="`/danh-muc/${category.slug || category.id}`"
+          class="post-sidebar__featured-category"
+        >
+          <div class="post-sidebar__featured-category-content">
+            <h4 class="post-sidebar__featured-category-title">{{ category.name }}</h4>
+            <p v-if="category.description" class="post-sidebar__featured-category-description">
+              {{ category.description }}
+            </p>
+          </div>
+        </NuxtLink>
+      </div>
+    </div>
+
     <!-- Categories -->
     <div class="post-sidebar__section">
-      <h3 class="post-sidebar__title">Danh mục</h3>
+      <h3 class="post-sidebar__title">Tất cả danh mục</h3>
       
       <div v-if="loading.categories" class="post-sidebar__loading">
         <div class="post-sidebar__loading-spinner"></div>
@@ -119,8 +181,8 @@ function formatDate(dateString: string): string {
       
       <div v-else class="post-sidebar__categories">
         <NuxtLink 
-          v-for="category in categories" 
-          :key="category.id"
+          v-for="(category, categoryIndex) in categories" 
+          :key="categoryIndex"
           :to="`/danh-muc/${category.slug || category.id}`"
           class="post-sidebar__category"
         >
@@ -149,4 +211,4 @@ function formatDate(dateString: string): string {
       </form>
     </div>
   </div>
-</template> 
+</template>
