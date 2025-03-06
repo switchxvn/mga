@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useTrpc } from '../composables/useTrpc';
 import { ref, onMounted } from '../composables/useVueComposables';
 // Import components
-import Navbar from '../components/ui/Navbar.vue';
+import NavbarWithTheme from '../components/ui/NavbarWithTheme.vue';
 import Footer from '../components/ui/Footer.vue';
 
 const router = useRouter();
@@ -65,7 +65,7 @@ async function handleLogout() {
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <Navbar logo="/logo.svg" hotline="1900 1234" />
+    <NavbarWithTheme logo="/logo.svg" hotline="1900 1234" />
     
     <!-- Main content -->
     <main class="flex-grow">

@@ -3,6 +3,8 @@
 @use 'base/mixins' as *;
 @use 'variables' as *;
 @use 'components/navbar' as *;
+@use 'components/post-detail' as *;
+@use 'components/sidebar' as *;
 
 @tailwind base;
 @tailwind components;

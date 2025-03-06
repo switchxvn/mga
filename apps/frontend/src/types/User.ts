@@ -17,7 +17,6 @@ export interface User {
   isActive: boolean;
   isEmailVerified: boolean;
   lastLoginAt: string;
-  bio: string;
   posts: Post[];
   createdAt: string;
   updatedAt: string;

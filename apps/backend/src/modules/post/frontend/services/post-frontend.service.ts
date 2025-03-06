@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, Not } from 'typeorm';
+import { Repository, ILike, Not, In } from 'typeorm';
 import { Post } from '../../entities/post.entity';
 import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 
@@ -101,18 +101,14 @@ export class PostFrontendService {
     
     // Nếu không đủ bài viết liên quan, tìm thêm bài viết cùng tác giả
     if (relatedPosts.length < limit) {
-      const remainingLimit = limit - relatedPosts.length;
-      const relatedPostIds = relatedPosts.map(post => post.id);
-      
-      // Tìm bài viết cùng tác giả
       const authorPosts = await this.postRepository.find({
-        where: {
+        where: { 
           authorId: currentPost.authorId,
           published: true,
           id: Not(id)
         },
         order: { createdAt: 'DESC' },
-        take: remainingLimit
+        take: limit - relatedPosts.length
       });
       
       // Thêm các bài viết không trùng lặp
@@ -126,15 +122,13 @@ export class PostFrontendService {
     
     // Nếu vẫn không đủ, lấy các bài viết mới nhất
     if (relatedPosts.length < limit) {
-      const remainingLimit = limit - relatedPosts.length;
-      
       const recentPosts = await this.postRepository.find({
-        where: {
+        where: { 
           published: true,
           id: Not(id)
         },
         order: { createdAt: 'DESC' },
-        take: remainingLimit
+        take: limit - relatedPosts.length
       });
       
       // Thêm các bài viết không trùng lặp
@@ -147,6 +141,60 @@ export class PostFrontendService {
     }
     
     return relatedPosts;
+  }
+
+  async findPopularPosts(limit = 5, excludeId?: number): Promise<Post[]> {
+    // Trong thực tế, bạn có thể dựa vào số lượt xem, lượt thích, bình luận, v.v.
+    // Ở đây, chúng ta sẽ giả định bài viết phổ biến dựa trên một số tiêu chí đơn giản
+    
+    // Điều kiện cơ bản: bài viết được xuất bản
+    const whereCondition: any = { published: true };
+    
+    // Nếu có excludeId, loại trừ bài viết hiện tại
+    if (excludeId) {
+      whereCondition.id = Not(excludeId);
+    }
+    
+    // Ví dụ: Lấy các bài viết có hình ảnh (ogImage) và được xuất bản
+    const postsWithImage = await this.postRepository.find({
+      where: { 
+        ...whereCondition,
+        ogImage: Not('') // Có hình ảnh
+      },
+      order: { 
+        createdAt: 'DESC' // Sắp xếp theo thời gian tạo mới nhất
+      },
+      take: limit
+    });
+    
+    // Nếu không đủ bài viết có hình ảnh, lấy thêm các bài viết mới nhất
+    if (postsWithImage.length < limit) {
+      // Lấy ID của các bài viết đã có
+      const existingIds = postsWithImage.map(p => p.id);
+      
+      // Điều kiện để lấy thêm bài viết
+      const additionalWhereCondition: any = { 
+        published: true,
+        id: Not(In(existingIds)) // Loại trừ các bài viết đã có
+      };
+      
+      // Nếu có excludeId và chưa có trong existingIds, thêm vào điều kiện loại trừ
+      if (excludeId && !existingIds.includes(excludeId)) {
+        // Cập nhật điều kiện để loại trừ cả bài viết hiện tại
+        additionalWhereCondition.id = Not(In([...existingIds, excludeId]));
+      }
+      
+      // Lấy thêm bài viết mới nhất
+      const remainingPosts = await this.postRepository.find({
+        where: additionalWhereCondition,
+        order: { createdAt: 'DESC' },
+        take: limit - postsWithImage.length
+      });
+      
+      return [...postsWithImage, ...remainingPosts];
+    }
+    
+    return postsWithImage;
   }
 
   async update(id: number, updatePostDto: UpdatePostInput, userId: number): Promise<Post> {

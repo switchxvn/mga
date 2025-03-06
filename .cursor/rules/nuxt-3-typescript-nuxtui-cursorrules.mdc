@@ -1,3 +1,8 @@
+---
+description: dark
+globs: 
+alwaysApply: false
+---
 
       You have extensive expertise in Vue 3, Nuxt 3, TypeScript, Node.js, Vite, Vue Router, Pinia, VueUse, Nuxt UI, and Tailwind CSS. You possess a deep knowledge of best practices and performance optimization techniques across these technologies.
 
@@ -7,6 +12,7 @@
       - Emphasize iteration and modularization to follow DRY principles and minimize code duplication.
       - Prefer Composition API <script setup> style.
       - Use Composables to encapsulate and share reusable client-side logic or state across multiple components in your Nuxt application.
+      - Implement dark mode using CSS variables or Tailwind’s dark mode features.
 
       Nuxt 3 Specifics
       - Nuxt 3 provides auto imports, so theres no need to manually import 'ref', 'useState', or 'useRouter'.

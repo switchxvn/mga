@@ -25,9 +25,6 @@ export class User {
   @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt!: Date;
 
-  @Column({ nullable: true })
-  bio!: string;
-
   @OneToMany(() => Post, post => post.author, { lazy: true })
   posts!: Promise<Post[]>;
 

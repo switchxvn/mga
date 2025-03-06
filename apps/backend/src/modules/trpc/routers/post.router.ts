@@ -100,6 +100,30 @@ export const postRouter = router({
       }
     }),
 
+  popular: publicProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(10).optional().default(5),
+      excludeId: z.number().optional()
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching popular posts, limit: ${input.limit}, excludeId: ${input.excludeId || 'none'}`);
+        const posts = await ctx.services.postService.findPopularPosts(input.limit, input.excludeId);
+        
+        ctx.logger.debug(`Successfully retrieved ${posts.length} popular posts`);
+        return posts;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching popular posts: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve popular posts',
+          cause: error,
+        });
+      }
+    }),
+
   create: protectedProcedure
     .input(createPostSchema)
     .mutation(async ({ input, ctx }) => {

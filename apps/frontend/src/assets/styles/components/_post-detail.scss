@@ -1,0 +1,319 @@
+// Post detail page styles
+.post-detail {
+  @apply min-h-screen pb-12;
+  
+  // Light mode
+  @apply bg-gray-50;
+  
+  // Dark mode
+  .dark & {
+    @apply bg-gray-900;
+  }
+  
+  &__container {
+    @apply container mx-auto px-4 py-8;
+  }
+  
+  &__back-link {
+    @apply mb-6 inline-flex items-center font-medium transition-colors;
+    
+    // Light mode
+    @apply text-blue-600 hover:text-blue-800;
+    
+    // Dark mode
+    .dark & {
+      @apply text-blue-400 hover:text-blue-300;
+    }
+  }
+  
+  &__loading {
+    @apply flex justify-center items-center py-16;
+    
+    &-spinner {
+      @apply animate-spin rounded-full h-12 w-12 border-t-2 border-b-2;
+      
+      // Light mode
+      @apply border-blue-600;
+      
+      // Dark mode
+      .dark & {
+        @apply border-blue-400;
+      }
+    }
+  }
+  
+  &__error {
+    @apply mb-6 max-w-4xl mx-auto px-6 py-4 rounded-lg;
+    
+    // Light mode
+    @apply bg-red-100 border border-red-400 text-red-700;
+    
+    // Dark mode
+    .dark & {
+      @apply bg-red-900/30 border-red-800 text-red-300;
+    }
+    
+    &-message {
+      @apply font-medium;
+    }
+    
+    &-button {
+      @apply mt-3 font-medium py-2 px-4 rounded-md transition-colors;
+      
+      // Light mode
+      @apply bg-red-600 hover:bg-red-700 text-white;
+      
+      // Dark mode
+      .dark & {
+        @apply bg-red-700 hover:bg-red-600;
+      }
+    }
+  }
+  
+  &__content {
+    @apply grid grid-cols-1 lg:grid-cols-12 gap-8;
+  }
+  
+  &__main {
+    @apply lg:col-span-8;
+  }
+  
+  &__sidebar {
+    @apply lg:col-span-4;
+  }
+  
+  &__article {
+    @apply rounded-xl overflow-hidden;
+    
+    // Light mode
+    @apply bg-white shadow-md;
+    
+    // Dark mode
+    .dark & {
+      @apply bg-gray-800 shadow-xl shadow-gray-900/50;
+    }
+  }
+  
+  &__featured-image {
+    @apply w-full h-64 md:h-96 overflow-hidden;
+    
+    img {
+      @apply w-full h-full object-cover;
+    }
+  }
+  
+  &__header {
+    @apply p-6 md:p-8 border-b;
+    
+    // Light mode
+    @apply border-gray-100;
+    
+    // Dark mode
+    .dark & {
+      @apply border-gray-700;
+    }
+  }
+  
+  &__title {
+    @apply text-3xl md:text-4xl font-bold mb-6 leading-tight;
+    
+    // Light mode
+    @apply text-gray-900;
+    
+    // Dark mode
+    .dark & {
+      @apply text-white;
+    }
+  }
+  
+  &__meta {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4;
+  }
+  
+  &__author {
+    @apply flex items-center;
+    
+    &-avatar {
+      @apply w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4;
+      
+      // Light mode
+      @apply bg-blue-600;
+      
+      // Dark mode
+      .dark & {
+        @apply bg-blue-500;
+      }
+    }
+    
+    &-info {
+      &-name {
+        @apply font-medium;
+        
+        // Light mode
+        @apply text-gray-900;
+        
+        // Dark mode
+        .dark & {
+          @apply text-white;
+        }
+      }
+      
+      &-date {
+        @apply text-sm;
+        
+        // Light mode
+        @apply text-gray-500;
+        
+        // Dark mode
+        .dark & {
+          @apply text-gray-400;
+        }
+      }
+    }
+  }
+  
+  &__updated {
+    @apply text-sm italic;
+    
+    // Light mode
+    @apply text-gray-500;
+    
+    // Dark mode
+    .dark & {
+      @apply text-gray-400;
+    }
+  }
+  
+  &__body {
+    @apply p-6 md:p-8;
+  }
+  
+  &__tags {
+    @apply px-6 md:px-8 py-4 border-t flex flex-wrap gap-2;
+    
+    // Light mode
+    @apply bg-gray-50 border-gray-100;
+    
+    // Dark mode
+    .dark & {
+      @apply bg-gray-700/50 border-gray-700;
+    }
+    
+    &-item {
+      @apply px-3 py-1 text-sm rounded-full;
+      
+      // Light mode
+      @apply bg-blue-100 text-blue-800;
+      
+      // Dark mode
+      .dark & {
+        @apply bg-blue-900/50 text-blue-300;
+      }
+    }
+  }
+  
+  &__not-found {
+    @apply text-center py-16 max-w-2xl mx-auto;
+    
+    &-emoji {
+      @apply text-5xl mb-4;
+    }
+    
+    &-title {
+      @apply text-2xl font-bold mb-4;
+      
+      // Light mode
+      @apply text-gray-800;
+      
+      // Dark mode
+      .dark & {
+        @apply text-gray-100;
+      }
+    }
+    
+    &-message {
+      @apply mb-6;
+      
+      // Light mode
+      @apply text-gray-600;
+      
+      // Dark mode
+      .dark & {
+        @apply text-gray-400;
+      }
+    }
+    
+    &-button {
+      @apply font-medium py-3 px-6 rounded-lg inline-block transition-colors;
+      
+      // Light mode
+      @apply bg-blue-600 hover:bg-blue-700 text-white;
+      
+      // Dark mode
+      .dark & {
+        @apply bg-blue-700 hover:bg-blue-600;
+      }
+    }
+  }
+}
+
+// Post content prose styles
+.post-prose {
+  @apply max-w-none;
+  
+  // Light mode
+  @apply prose-lg text-gray-800;
+  
+  // Dark mode
+  .dark & {
+    @apply prose-invert text-gray-200;
+  }
+  
+  p {
+    @apply mb-4;
+  }
+  
+  a {
+    @apply underline;
+    
+    // Light mode
+    @apply text-blue-600 hover:text-blue-800;
+    
+    // Dark mode
+    .dark & {
+      @apply text-blue-400 hover:text-blue-300;
+    }
+  }
+  
+  strong {
+    @apply font-bold;
+  }
+  
+  h2 {
+    @apply text-2xl font-bold mt-8 mb-4;
+  }
+  
+  h3 {
+    @apply text-xl font-bold mt-6 mb-3;
+  }
+  
+  ul, ol {
+    @apply my-4 pl-6;
+  }
+  
+  li {
+    @apply mb-2;
+  }
+  
+  blockquote {
+    @apply pl-4 border-l-4 italic my-4;
+    
+    // Light mode
+    @apply border-gray-300 text-gray-600;
+    
+    // Dark mode
+    .dark & {
+      @apply border-gray-600 text-gray-400;
+    }
+  }
+} 
