@@ -56,6 +56,24 @@
     "relatedProducts": "Sản phẩm liên quan",
     "notFound": "Không tìm thấy sản phẩm",
     "notFoundDescription": "Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.",
-    "backToProducts": "Quay lại danh sách sản phẩm"
+    "backToProducts": "Quay lại danh sách sản phẩm",
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Tìm kiếm sản phẩm...",
+    "priceRange": "Khoảng giá",
+    "minPrice": "Giá thấp nhất",
+    "maxPrice": "Giá cao nhất",
+    "categories": "Danh mục",
+    "productType": "Loại sản phẩm",
+    "resetFilters": "Đặt lại bộ lọc",
+    "applyFilters": "Áp dụng bộ lọc",
+    "sortBy": "Sắp xếp theo",
+    "sortNewest": "Mới nhất",
+    "sortOldest": "Cũ nhất",
+    "sortPriceAsc": "Giá: Thấp đến cao",
+    "sortPriceDesc": "Giá: Cao đến thấp",
+    "showing": "Hiển thị",
+    "items": "sản phẩm",
+    "filters": "Bộ lọc",
+    "searchingFor": "Đang tìm kiếm"
   }
 } 

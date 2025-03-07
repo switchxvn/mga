@@ -72,4 +72,19 @@
   html.dark {
     color-scheme: dark;
   }
+}
+
+/* Custom styles for Nuxt UI inputs */
+.u-input-leading {
+  padding-right: 0.75rem !important;
+}
+
+.u-input input {
+  padding-left: 0.5rem !important;
+}
+
+/* Ensure the input has proper padding */
+.u-input {
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
 } 

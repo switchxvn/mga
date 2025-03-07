@@ -60,6 +60,7 @@ export default defineNuxtConfig({
   // Cấu hình i18n
   modules: [
     '@nuxtjs/i18n',
+    '@nuxt/ui',
   ],
 
   // @ts-ignore - i18n module types
