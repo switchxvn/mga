@@ -13,6 +13,7 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import FeaturedProducts from '../components/sections/FeaturedProducts.vue';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface Post {
@@ -164,6 +165,15 @@ const getAuthorName = (author: any) => {
           <div class="md:w-1/2">
           </div>
         </div>
+      </div>
+    </section>
+    
+    <!-- Featured Products Section -->
+    <section class="py-16 bg-white dark:bg-gray-900">
+      <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold mb-8 text-center">{{ t('products.featured') }}</h2>
+        
+        <FeaturedProducts />
       </div>
     </section>
     

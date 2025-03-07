@@ -33,6 +33,7 @@
     "@nestjs/platform-fastify": "^11.0.10",
     "@nestjs/swagger": "^11.0.5",
     "@nestjs/typeorm": "^11.0.0",
+    "@nuxtjs/i18n": "^9.2.1",
     "@tanstack/vue-query": "^4.36.1",
     "@trpc/client": "^10.45.0",
     "@trpc/react-query": "^10.45.2",

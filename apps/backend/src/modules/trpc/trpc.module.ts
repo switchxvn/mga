@@ -12,6 +12,7 @@ import { SeoModule } from '../seo/seo.module';
 import { FooterModule } from '../footer/footer.module';
 import { CategoryModule } from '../category/category.module';
 import { ServiceModule } from '../service/service.module';
+import { ProductModule } from '../product/product.module';
 
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
@@ -32,6 +33,7 @@ import { ServiceModule } from '../service/service.module';
     FooterModule,
     CategoryModule,
     ServiceModule,
+    ProductModule,
     
     // Auth module is imported with forwardRef to avoid circular dependency
     forwardRef(() => AuthModule),

@@ -2,14 +2,10 @@
 import { useLocalization } from '../composables/useLocalization';
 import { computed, onMounted, ref } from 'vue';
 
-const { t, locale, locales, switchLanguage } = useLocalization();
+const { t, locale, locales, switchLanguage, initializeLanguage } = useLocalization();
 const isOpen = ref(false);
-
-// Debug: Log locales to console
-onMounted(() => {
-  console.log('Locales:', locales.value);
-  console.log('Current locale:', locale.value);
-});
+const flagLoaded = ref(false); // Bắt đầu với trạng thái chưa tải
+const flagLoadError = ref(false); // Theo dõi lỗi tải hình ảnh
 
 // Define locale interface
 interface Locale {
@@ -45,8 +41,26 @@ const currentLocaleDisplay = computed(() => {
 // Function to get flag image path
 const getFlagPath = (langCode: string) => {
   const flagCode = languageToFlagMap[langCode] || langCode;
-  // Use relative path from public directory
   return `/images/flag/${flagCode}.svg`;
+};
+
+// Preload flag images
+const preloadFlags = () => {
+  availableLocales.value.forEach(loc => {
+    const img = new Image();
+    img.onload = () => {
+      if (loc.code === locale.value) {
+        flagLoaded.value = true;
+        flagLoadError.value = false;
+      }
+    };
+    img.onerror = () => {
+      if (loc.code === locale.value) {
+        flagLoadError.value = true;
+      }
+    };
+    img.src = getFlagPath(loc.code);
+  });
 };
 
 // Toggle dropdown
@@ -59,10 +73,25 @@ const closeDropdown = () => {
   isOpen.value = false;
 };
 
-// Handle language selection
+// Handle language selection and save to localStorage
 const handleSelectLanguage = (code: string) => {
+  // Reset flag states before changing language
+  flagLoaded.value = false;
+  flagLoadError.value = false;
+  
   switchLanguage(code);
   closeDropdown();
+  
+  // Preload the new flag
+  const img = new Image();
+  img.onload = () => {
+    flagLoaded.value = true;
+    flagLoadError.value = false;
+  };
+  img.onerror = () => {
+    flagLoadError.value = true;
+  };
+  img.src = getFlagPath(code);
 };
 
 // Handle click outside
@@ -73,9 +102,30 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
-// Add event listener for click outside
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
+// Handle image load success
+const handleImageLoad = () => {
+  flagLoaded.value = true;
+  flagLoadError.value = false;
+};
+
+// Handle image error
+const handleImageError = () => {
+  flagLoadError.value = true;
+};
+
+// Initialize language from localStorage or set default to Vietnamese
+onMounted(async () => {
+  // Chỉ thêm event listener ở phía client
+  if (process.client) {
+    // Add event listener for click outside
+    document.addEventListener('click', handleClickOutside);
+  }
+  
+  // Initialize language from localStorage
+  await initializeLanguage();
+  
+  // Preload flag images
+  preloadFlags();
 });
 </script>
 
@@ -85,14 +135,21 @@ onMounted(() => {
       @click.stop="toggleDropdown"
       class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 dark:bg-muted/30 dark:hover:bg-muted/50 transition-colors"
       type="button"
+      :title="t('language')"
     >
-      <img 
-        v-if="locale" 
-        :src="getFlagPath(locale)" 
-        :alt="`${currentLocaleDisplay} flag`" 
-        class="w-4 h-4 rounded-sm object-cover"
-        onerror="this.style.display='none'"
-      />
+      <div class="w-4 h-4 flex items-center justify-center">
+        <!-- Hiển thị flag khi đã tải xong -->
+        <img 
+          v-if="locale && flagLoaded && !flagLoadError"
+          :src="getFlagPath(locale)" 
+          :alt="`${currentLocaleDisplay} flag`" 
+          class="w-4 h-4 rounded-sm object-cover"
+          @load="handleImageLoad"
+          @error="handleImageError"
+        />
+        <!-- Hiển thị mã ngôn ngữ khi chưa tải được flag -->
+        <span v-else class="text-xs font-bold">{{ locale?.toUpperCase().substring(0, 2) }}</span>
+      </div>
       <span class="text-sm font-medium">{{ currentLocaleDisplay }}</span>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isOpen }">
         <path d="m6 9 6 6 6-6"/>
@@ -112,12 +169,18 @@ onMounted(() => {
           class="flex items-center w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           :class="{ 'bg-gray-100 dark:bg-gray-700': locale === loc.code }"
         >
-          <img 
-            :src="getFlagPath(loc.code)" 
-            :alt="`${loc.name} flag`" 
-            class="w-4 h-4 rounded-sm object-cover mr-2"
-            onerror="this.style.display='none'"
-          />
+          <div class="w-4 h-4 flex items-center justify-center mr-2">
+            <!-- Hiển thị flag trong dropdown -->
+            <img 
+              v-if="loc.code === locale ? (flagLoaded && !flagLoadError) : true"
+              :src="getFlagPath(loc.code)" 
+              :alt="`${loc.name} flag`" 
+              class="w-4 h-4 rounded-sm object-cover"
+              @error="$event.target.style.display = 'none'"
+            />
+            <!-- Hiển thị mã ngôn ngữ khi không có flag -->
+            <span v-else class="text-xs font-bold">{{ loc.code.toUpperCase().substring(0, 2) }}</span>
+          </div>
           <span>{{ loc.name }}</span>
         </button>
       </div>

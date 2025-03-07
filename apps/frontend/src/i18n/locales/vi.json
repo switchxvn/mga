@@ -41,5 +41,21 @@
     "loginSuccess": "Đăng nhập thành công",
     "registerSuccess": "Đăng ký thành công",
     "logoutSuccess": "Đăng xuất thành công"
+  },
+  "products": {
+    "title": "Sản phẩm",
+    "description": "Khám phá bộ sưu tập sản phẩm của chúng tôi",
+    "all": "Tất cả sản phẩm",
+    "featured": "Nổi bật",
+    "new": "Hàng mới về",
+    "sale": "Khuyến mãi",
+    "addToCart": "Thêm vào giỏ hàng",
+    "contact": "Liên hệ",
+    "description": "Mô tả sản phẩm",
+    "specifications": "Thông số kỹ thuật",
+    "relatedProducts": "Sản phẩm liên quan",
+    "notFound": "Không tìm thấy sản phẩm",
+    "notFoundDescription": "Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.",
+    "backToProducts": "Quay lại danh sách sản phẩm"
   }
 } 

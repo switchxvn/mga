@@ -1,5 +1,5 @@
 export default {
-  lazy: false,
+  lazy: true,
   langDir: 'src/i18n/locales',
   defaultLocale: 'vi',
   locales: [
@@ -20,4 +20,5 @@ export default {
     cookieKey: 'i18n_locale',
     redirectOn: 'root',
   },
+  vueI18n: './src/plugins/i18n.ts'
 } 

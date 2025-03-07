@@ -32,6 +32,9 @@ import { CategoryAdminService } from '../category/admin/services/category-admin.
 import { serviceRouter } from './routers/service.router';
 import { ServiceAdminService } from '../service/admin/services/service-admin.service';
 import { ServiceFrontendService } from '../service/frontend/services/service-frontend.service';
+import { productRouter } from './routers/product.router';
+import { ProductAdminService } from '../product/admin/services/product-admin.service';
+import { ProductFrontendService } from '../product/frontend/services/product-frontend.service';
 
 @Injectable()
 export class TrpcService {
@@ -46,6 +49,7 @@ export class TrpcService {
     footer: footerRouter,
     category: categoryRouter,
     service: serviceRouter,
+    product: productRouter,
   });
 
   constructor(
@@ -67,6 +71,8 @@ export class TrpcService {
     private readonly categoryAdminService: CategoryAdminService,
     private readonly serviceAdminService: ServiceAdminService,
     private readonly serviceFrontendService: ServiceFrontendService,
+    private readonly productAdminService: ProductAdminService,
+    private readonly productFrontendService: ProductFrontendService,
   ) {}
 
   getRouter() {
@@ -93,6 +99,8 @@ export class TrpcService {
       categoryAdminService: this.categoryAdminService,
       serviceAdminService: this.serviceAdminService,
       serviceFrontendService: this.serviceFrontendService,
+      productAdminService: this.productAdminService,
+      productFrontendService: this.productFrontendService,
     };
 
     // Extract and verify JWT token if present
