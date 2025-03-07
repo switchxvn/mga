@@ -28,12 +28,16 @@ import { Tag } from './modules/settings/entities/tag.entity';
 import { Service } from './modules/service/entities/service.entity';
 import { Product } from './modules/product/entities/product.entity';
 import { ProductTranslation } from './modules/product/entities/product-translation.entity';
+import { CrossSellProduct } from './modules/product/entities/cross-sell-product.entity';
+import { ProductSpecification } from './modules/product/entities/product-specification.entity';
+import { ProductSpecificationTranslation } from './modules/product/entities/product-specification-translation.entity';
+import { ProductCombo } from './modules/product/entities/product-combo.entity';
+import { PriceRequestModule } from './modules/price-request/price-request.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.NODE_ENV === 'production' ? '.env' : 'apps/backend/.env',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -41,13 +45,12 @@ import { ProductTranslation } from './modules/product/entities/product-translati
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 5432),
+        port: configService.get('DB_PORT', 5432),
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
-        database: configService.get('DB_DATABASE', 'nestjs'),
-        entities: [User, Post, MenuItem, Logo, Seo, Footer, UserProfile, CountryPhoneCode, Category, PostTag, Tag, Service, Product, ProductTranslation],
+        database: configService.get('DB_DATABASE', 'ecommerce'),
+        autoLoadEntities: true,
         synchronize: false,
-        logging: true,
       }),
     }),
     UserModule,
@@ -61,6 +64,7 @@ import { ProductTranslation } from './modules/product/entities/product-translati
     CategoryModule,
     ServiceModule,
     ProductModule,
+    PriceRequestModule,
   ],
   controllers: [AppController],
   providers: [AppService],

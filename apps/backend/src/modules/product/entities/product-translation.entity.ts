@@ -21,6 +21,10 @@ export class ProductTranslation {
   @Column({ name: 'short_description', type: 'text', nullable: true })
   shortDescription!: string;
 
+  // Video title field
+  @Column({ name: 'video_title', nullable: true })
+  videoTitle!: string;
+
   // SEO fields
   @Column({ name: 'meta_title', nullable: true })
   metaTitle!: string;

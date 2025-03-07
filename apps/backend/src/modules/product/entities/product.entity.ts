@@ -1,6 +1,10 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany, JoinTable } from 'typeorm';
 import { ProductTranslation } from './product-translation.entity';
 import { Category } from '../../category/entities/category.entity';
+import { CrossSellProduct } from './cross-sell-product.entity';
+import { ProductSpecification } from './product-specification.entity';
+import { ProductCombo } from './product-combo.entity';
+import { PriceRequest } from '../../price-request/entities/price-request.entity';
 
 @Entity('products')
 export class Product {
@@ -37,6 +41,10 @@ export class Product {
   @Column({ name: 'is_sale', default: false })
   isSale!: boolean;
 
+  // Video review field
+  @Column({ name: 'video_review', nullable: true })
+  videoReview!: string;
+
   // SEO fields
   @Column({ nullable: true })
   slug!: string;
@@ -64,4 +72,28 @@ export class Product {
     }
   })
   categories!: Category[];
+
+  // Cross-sell products relationship
+  @OneToMany(() => CrossSellProduct, crossSell => crossSell.product)
+  crossSellProducts!: CrossSellProduct[];
+
+  // Relationship for products that have this product as a cross-sell
+  @OneToMany(() => CrossSellProduct, crossSell => crossSell.relatedProduct)
+  crossSellOf!: CrossSellProduct[];
+
+  // Product specifications relationship
+  @OneToMany(() => ProductSpecification, specification => specification.product, { cascade: true })
+  specifications!: ProductSpecification[];
+  
+  // Product combos relationship - products that can be bought together with this product
+  @OneToMany(() => ProductCombo, combo => combo.mainProduct)
+  productCombos!: ProductCombo[];
+  
+  // Relationship for products that include this product in their combos
+  @OneToMany(() => ProductCombo, combo => combo.comboProduct)
+  includedInCombos!: ProductCombo[];
+
+  // Relationship with PriceRequest
+  @OneToMany(() => PriceRequest, priceRequest => priceRequest.product)
+  priceRequests!: PriceRequest[];
 } 

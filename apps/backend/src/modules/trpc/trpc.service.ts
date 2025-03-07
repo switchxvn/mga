@@ -35,6 +35,11 @@ import { ServiceFrontendService } from '../service/frontend/services/service-fro
 import { productRouter } from './routers/product.router';
 import { ProductAdminService } from '../product/admin/services/product-admin.service';
 import { ProductFrontendService } from '../product/frontend/services/product-frontend.service';
+import { CrossSellService } from '../product/frontend/services/cross-sell.service';
+import { ProductSpecificationService } from '../product/services/product-specification.service';
+import { ProductComboService } from '../product/frontend/services/product-combo.service';
+import { priceRequestRouter } from './routers/price-request.router';
+import { PriceRequestService } from '../price-request/services/price-request.service';
 
 @Injectable()
 export class TrpcService {
@@ -50,6 +55,7 @@ export class TrpcService {
     category: categoryRouter,
     service: serviceRouter,
     product: productRouter,
+    priceRequest: priceRequestRouter,
   });
 
   constructor(
@@ -73,6 +79,10 @@ export class TrpcService {
     private readonly serviceFrontendService: ServiceFrontendService,
     private readonly productAdminService: ProductAdminService,
     private readonly productFrontendService: ProductFrontendService,
+    private readonly crossSellService: CrossSellService,
+    private readonly productSpecificationService: ProductSpecificationService,
+    private readonly productComboService: ProductComboService,
+    private readonly priceRequestService: PriceRequestService,
   ) {}
 
   getRouter() {
@@ -101,6 +111,10 @@ export class TrpcService {
       serviceFrontendService: this.serviceFrontendService,
       productAdminService: this.productAdminService,
       productFrontendService: this.productFrontendService,
+      crossSellService: this.crossSellService,
+      productSpecificationService: this.productSpecificationService,
+      productComboService: this.productComboService,
+      priceRequestService: this.priceRequestService,
     };
 
     // Extract and verify JWT token if present

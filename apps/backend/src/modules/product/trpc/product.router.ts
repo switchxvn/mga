@@ -29,6 +29,7 @@ export class ProductRouter {
             title: translation?.title || '',
             content: translation?.content || '',
             shortDescription: translation?.shortDescription || '',
+            videoTitle: translation?.videoTitle || '',
             metaTitle: translation?.metaTitle || '',
             metaDescription: translation?.metaDescription || '',
             metaKeywords: translation?.metaKeywords || '',
@@ -52,6 +53,7 @@ export class ProductRouter {
             title: translation?.title || '',
             content: translation?.content || '',
             shortDescription: translation?.shortDescription || '',
+            videoTitle: translation?.videoTitle || '',
             metaTitle: translation?.metaTitle || '',
             metaDescription: translation?.metaDescription || '',
             metaKeywords: translation?.metaKeywords || '',
@@ -75,6 +77,7 @@ export class ProductRouter {
             title: translation?.title || '',
             content: translation?.content || '',
             shortDescription: translation?.shortDescription || '',
+            videoTitle: translation?.videoTitle || '',
             metaTitle: translation?.metaTitle || '',
             metaDescription: translation?.metaDescription || '',
             metaKeywords: translation?.metaKeywords || '',
@@ -98,6 +101,7 @@ export class ProductRouter {
             title: translation?.title || '',
             content: translation?.content || '',
             shortDescription: translation?.shortDescription || '',
+            videoTitle: translation?.videoTitle || '',
             metaTitle: translation?.metaTitle || '',
             metaDescription: translation?.metaDescription || '',
             metaKeywords: translation?.metaKeywords || '',
@@ -123,10 +127,18 @@ export class ProductRouter {
           title: translation?.title || '',
           content: translation?.content || '',
           shortDescription: translation?.shortDescription || '',
+          videoTitle: translation?.videoTitle || '',
           metaTitle: translation?.metaTitle || '',
           metaDescription: translation?.metaDescription || '',
           metaKeywords: translation?.metaKeywords || '',
           formattedPrice: this.productFrontendService.formatPrice(product.price),
+          categories: product.categories ? product.categories.map(category => ({
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            description: category.description,
+            thumbnail: category.thumbnail
+          })) : []
         };
       }),
 
@@ -147,10 +159,18 @@ export class ProductRouter {
           title: translation?.title || '',
           content: translation?.content || '',
           shortDescription: translation?.shortDescription || '',
+          videoTitle: translation?.videoTitle || '',
           metaTitle: translation?.metaTitle || '',
           metaDescription: translation?.metaDescription || '',
           metaKeywords: translation?.metaKeywords || '',
           formattedPrice: this.productFrontendService.formatPrice(product.price),
+          categories: product.categories ? product.categories.map(category => ({
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            description: category.description,
+            thumbnail: category.thumbnail
+          })) : []
         };
       }),
   });

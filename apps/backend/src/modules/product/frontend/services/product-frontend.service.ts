@@ -186,14 +186,14 @@ export class ProductFrontendService {
   async findBySlug(slug: string, locale: string = 'en'): Promise<Product> {
     return this.productRepository.findOne({
       where: { slug, published: true },
-      relations: ['translations'],
+      relations: ['translations', 'categories'],
     });
   }
 
   async findById(id: number, locale: string = 'en'): Promise<Product> {
     return this.productRepository.findOne({
       where: { id, published: true },
-      relations: ['translations'],
+      relations: ['translations', 'categories'],
     });
   }
 

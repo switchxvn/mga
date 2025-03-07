@@ -16,6 +16,12 @@ import { CategoryFrontendService } from '../category/frontend/services/category-
 import { CategoryAdminService } from '../category/admin/services/category-admin.service';
 import { ServiceAdminService } from '../service/admin/services/service-admin.service';
 import { ServiceFrontendService } from '../service/frontend/services/service-frontend.service';
+import { ProductAdminService } from '../product/admin/services/product-admin.service';
+import { ProductFrontendService } from '../product/frontend/services/product-frontend.service';
+import { CrossSellService } from '../product/frontend/services/cross-sell.service';
+import { ProductSpecificationService } from '../product/services/product-specification.service';
+import { ProductComboService } from '../product/frontend/services/product-combo.service';
+import { PriceRequestService } from '../price-request/services/price-request.service';
 
 // Define context type
 export interface Context {
@@ -39,6 +45,12 @@ export interface Context {
     categoryAdminService: CategoryAdminService;
     serviceAdminService: ServiceAdminService;
     serviceFrontendService: ServiceFrontendService;
+    productAdminService: ProductAdminService;
+    productFrontendService: ProductFrontendService;
+    crossSellService: CrossSellService;
+    productSpecificationService: ProductSpecificationService;
+    productComboService: ProductComboService;
+    priceRequestService: PriceRequestService;
   };
   logger: Logger;
 }
