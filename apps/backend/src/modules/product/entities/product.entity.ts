@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToMany, JoinTable } from 'typeorm';
 import { ProductTranslation } from './product-translation.entity';
+import { Category } from '../../category/entities/category.entity';
 
 @Entity('products')
 export class Product {
@@ -49,4 +50,18 @@ export class Product {
   // Relationships
   @OneToMany(() => ProductTranslation, translation => translation.product, { cascade: true })
   translations!: ProductTranslation[];
+
+  @ManyToMany(() => Category, (category) => category.products)
+  @JoinTable({
+    name: 'product_categories',
+    joinColumn: {
+      name: 'product_id',
+      referencedColumnName: 'id'
+    },
+    inverseJoinColumn: {
+      name: 'category_id',
+      referencedColumnName: 'id'
+    }
+  })
+  categories!: Category[];
 } 

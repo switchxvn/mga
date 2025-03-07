@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Post } from '../../post/entities/post.entity';
+import { Product } from '../../product/entities/product.entity';
 
 @Entity('categories')
 export class Category {
@@ -67,6 +68,9 @@ export class Category {
     }
   })
   posts!: Post[];
+
+  @ManyToMany(() => Product, (product) => product.categories)
+  products!: Product[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

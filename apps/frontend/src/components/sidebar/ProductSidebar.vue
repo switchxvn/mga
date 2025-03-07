@@ -283,32 +283,23 @@ onMounted(() => {
     <!-- Search -->
     <div class="p-4">
       <div class="relative">
-        <UInput
-          v-model="search"
-          :placeholder="t('products.searchPlaceholder')"
-          class="w-full search-input"
-          :ui="{
-            wrapper: 'relative',
-            base: 'relative block w-full disabled:cursor-not-allowed disabled:opacity-75 focus:outline-none border-0',
-            form: 'group flex items-center',
-            input: 'w-full px-3 py-2 border-0 bg-transparent focus:outline-none focus:ring-0 appearance-none disabled:cursor-not-allowed disabled:opacity-75',
-            inputSize: {
-              '2xs': 'text-xs',
-              'xs': 'text-xs',
-              'sm': 'text-sm',
-              'md': 'text-sm',
-              'lg': 'text-sm',
-              'xl': 'text-base'
-            }
-          }"
-        >
-          <template #leading>
-            <Search class="h-4 w-4 text-gray-500" />
-          </template>
-          <template #trailing v-if="isSearching">
-            <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
-          </template>
-        </UInput>
+        <div class="custom-input-container">
+          <UInput
+            v-model="search"
+            :placeholder="t('products.searchPlaceholder')"
+            class="w-full search-input"
+            size="md"
+          >
+            <template #leading>
+              <div class="leading-icon-wrapper">
+                <Search class="h-4 w-4 text-gray-500" />
+              </div>
+            </template>
+            <template #trailing v-if="isSearching">
+              <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+            </template>
+          </UInput>
+        </div>
         <div v-if="search" class="mt-2 text-xs text-gray-500">
           {{ t('products.searchingFor') }}: <span class="font-medium">{{ search }}</span>
         </div>
@@ -361,58 +352,40 @@ onMounted(() => {
           <div class="mt-4 flex items-center justify-between gap-4">
             <div class="w-1/2">
               <label class="mb-1 block text-xs text-gray-500">{{ t('products.minPrice') }}</label>
-              <UInput
-                v-model="minPriceInput"
-                class="w-full price-input"
-                :ui="{
-                  wrapper: 'relative',
-                  base: 'relative block w-full disabled:cursor-not-allowed disabled:opacity-75 focus:outline-none border-0',
-                  form: 'group flex items-center',
-                  input: 'w-full px-3 py-2 border-0 bg-transparent focus:outline-none focus:ring-0 appearance-none disabled:cursor-not-allowed disabled:opacity-75',
-                  inputSize: {
-                    '2xs': 'text-xs',
-                    'xs': 'text-xs',
-                    'sm': 'text-sm',
-                    'md': 'text-sm',
-                    'lg': 'text-sm',
-                    'xl': 'text-base'
-                  }
-                }"
-                @blur="updatePriceRange"
-                @keyup.enter="updatePriceRange"
-              >
-                <template #leading>
-                  <span class="text-xs text-gray-500">₫</span>
-                </template>
-              </UInput>
+              <div class="custom-input-container">
+                <UInput
+                  v-model="minPriceInput"
+                  class="w-full price-input"
+                  size="md"
+                  @blur="updatePriceRange"
+                  @keyup.enter="updatePriceRange"
+                >
+                  <template #leading>
+                    <div class="leading-icon-wrapper">
+                      <span class="text-xs text-gray-500">₫</span>
+                    </div>
+                  </template>
+                </UInput>
+              </div>
             </div>
             <div class="text-gray-400">-</div>
             <div class="w-1/2">
               <label class="mb-1 block text-xs text-gray-500">{{ t('products.maxPrice') }}</label>
-              <UInput
-                v-model="maxPriceInput"
-                class="w-full price-input"
-                :ui="{
-                  wrapper: 'relative',
-                  base: 'relative block w-full disabled:cursor-not-allowed disabled:opacity-75 focus:outline-none border-0',
-                  form: 'group flex items-center',
-                  input: 'w-full px-3 py-2 border-0 bg-transparent focus:outline-none focus:ring-0 appearance-none disabled:cursor-not-allowed disabled:opacity-75',
-                  inputSize: {
-                    '2xs': 'text-xs',
-                    'xs': 'text-xs',
-                    'sm': 'text-sm',
-                    'md': 'text-sm',
-                    'lg': 'text-sm',
-                    'xl': 'text-base'
-                  }
-                }"
-                @blur="updatePriceRange"
-                @keyup.enter="updatePriceRange"
-              >
-                <template #leading>
-                  <span class="text-xs text-gray-500">₫</span>
-                </template>
-              </UInput>
+              <div class="custom-input-container">
+                <UInput
+                  v-model="maxPriceInput"
+                  class="w-full price-input"
+                  size="md"
+                  @blur="updatePriceRange"
+                  @keyup.enter="updatePriceRange"
+                >
+                  <template #leading>
+                    <div class="leading-icon-wrapper">
+                      <span class="text-xs text-gray-500">₫</span>
+                    </div>
+                  </template>
+                </UInput>
+              </div>
             </div>
           </div>
         </div>
@@ -566,16 +539,41 @@ onMounted(() => {
   --slider-bg: #374151;
 }
 
-/* Custom input styles */
+/* Custom input container */
+.custom-input-container {
+  position: relative;
+}
+
+/* Leading icon wrapper */
+.leading-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  margin-right: 12px;
+}
+
+/* Adjust input padding */
 :deep(.search-input), :deep(.price-input) {
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.rem;
 }
 
-:deep(.search-input .u-input-leading), :deep(.price-input .u-input-leading) {
-  margin-right: 0.75rem;
+/* Adjust input field padding */
+:deep(.search-input input), :deep(.price-input input) {
+  padding-left: 36px !important;
 }
 
+/* Position the leading icon */
 :deep(.u-input-leading) {
-  padding-left: 0.75rem;
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+/* Ensure the input form has proper spacing */
+:deep(.u-input-form) {
+  position: relative;
 }
 </style> 
