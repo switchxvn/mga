@@ -6,6 +6,7 @@ import { useRoute } from 'vue-router';
 import { useLocalization } from '../composables/useLocalization';
 import PostCard from '../components/ui/card/PostCard.vue';
 import ServicesList from '../components/sections/ServicesList.vue';
+import LanguageSwitcher from '../components/LanguageSwitcher.vue';
 // Import Swiper
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -153,6 +154,11 @@ const getAuthorName = (author: any) => {
               <button class="bg-transparent border border-white hover:bg-white/10 px-6 py-3 rounded-lg font-medium transition-colors">
                 {{ t('common.edit') }}
               </button>
+            </div>
+            
+            <!-- Language Switcher -->
+            <div class="mt-6">
+              <LanguageSwitcher />
             </div>
           </div>
           <div class="md:w-1/2">
