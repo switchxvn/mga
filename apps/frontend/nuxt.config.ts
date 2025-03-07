@@ -57,6 +57,14 @@ export default defineNuxtConfig({
     }
   },
 
+  // Cấu hình i18n
+  modules: [
+    '@nuxtjs/i18n',
+  ],
+
+  // @ts-ignore - i18n module types
+  i18n: './i18n.config.ts',
+
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {

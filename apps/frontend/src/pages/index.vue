@@ -3,6 +3,7 @@ import { useTrpc } from '../composables/useTrpc';
 import { ref, onMounted } from '../composables/useVueComposables';
 import { useSeo } from '../composables/useSeo';
 import { useRoute } from 'vue-router';
+import { useLocalization } from '../composables/useLocalization';
 import PostCard from '../components/ui/card/PostCard.vue';
 import ServicesList from '../components/sections/ServicesList.vue';
 // Import Swiper
@@ -43,6 +44,7 @@ interface Service {
 
 const route = useRoute();
 const trpc = useTrpc();
+const { t } = useLocalization();
 const latestPosts = ref<Post[]>([]);
 const services = ref<Service[]>([]);
 const isLoading = ref(false);
@@ -136,23 +138,25 @@ const getAuthorName = (author: any) => {
 <template>
   <div>
     <!-- Hero Section -->
-    <section class="bg-primary text-primary-foreground py-20">
-      <div class="container mx-auto px-4 text-center">
-        <h1 class="text-4xl md:text-5xl font-bold mb-6">Chào mừng đến với ứng dụng của chúng tôi</h1>
-        <p class="text-xl mb-8 max-w-3xl mx-auto">
-          Một ứng dụng hiện đại sử dụng Nuxt 3, NestJS và tRPC trong một monorepo Nx.
-        </p>
-        <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <NuxtLink to="/posts">
-            <Button variant="outline" class="bg-white text-primary hover:bg-gray-100 w-full sm:w-auto">
-              Xem bài viết
-            </Button>
-          </NuxtLink>
-          <NuxtLink to="/register">
-            <Button class="w-full sm:w-auto">
-              Đăng ký ngay
-            </Button>
-          </NuxtLink>
+    <section class="hero-section bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-16 md:py-24">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+          <div class="md:w-1/2 mb-8 md:mb-0">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">{{ t('welcome') }}</h1>
+            <p class="text-xl mb-6">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisl eget aliquam ultricies.
+            </p>
+            <div class="flex space-x-4">
+              <button class="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium transition-colors">
+                {{ t('common.create') }}
+              </button>
+              <button class="bg-transparent border border-white hover:bg-white/10 px-6 py-3 rounded-lg font-medium transition-colors">
+                {{ t('common.edit') }}
+              </button>
+            </div>
+          </div>
+          <div class="md:w-1/2">
+          </div>
         </div>
       </div>
     </section>

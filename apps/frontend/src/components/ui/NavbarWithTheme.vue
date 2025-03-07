@@ -4,6 +4,7 @@ import { useMenuItems } from '../../composables/useMenuItems';
 import type { MenuItem, MenuColumn } from '@ew/shared';
 import Icon from './Icon.vue';
 import ThemeToggle from '../ThemeToggle.vue';
+import LanguageSwitcher from '../LanguageSwitcher.vue';
 import { useRoute } from 'vue-router';
 
 // Props cho component
@@ -204,6 +205,9 @@ onUnmounted(() => {
 
         <!-- Right side actions -->
         <div class="hidden md:flex items-center space-x-4">
+          <!-- Language Switcher -->
+          <LanguageSwitcher />
+          
           <!-- Theme Toggle -->
           <ThemeToggle />
           
@@ -257,6 +261,11 @@ onUnmounted(() => {
         </template>
       </div>
       <div class="px-4 py-3 border-t dark:border-gray-700">
+        <!-- Language Switcher in Mobile Menu -->
+        <div class="px-3 py-2 mb-2">
+          <LanguageSwitcher />
+        </div>
+        
         <a :href="`tel:${hotline}`" class="flex items-center space-x-2 px-3 py-2 dark:text-gray-200">
           <Icon
             name="Phone"
