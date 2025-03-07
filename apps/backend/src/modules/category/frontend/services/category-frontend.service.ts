@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Category } from '../../entities/category.entity';
+import { Category, CategoryType } from '../../entities/category.entity';
 
 @Injectable()
 export class CategoryFrontendService {
@@ -14,6 +14,17 @@ export class CategoryFrontendService {
     return this.categoryRepository.find({
       where: { active: true },
       relations: ['posts'],
+      order: { name: 'ASC' }
+    });
+  }
+
+  async findByType(type: CategoryType): Promise<Category[]> {
+    return this.categoryRepository.find({
+      where: [
+        { active: true, type: type },
+        { active: true, type: CategoryType.BOTH }
+      ],
+      relations: ['posts', 'products'],
       order: { name: 'ASC' }
     });
   }

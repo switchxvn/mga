@@ -1,5 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { CategoryFrontendService } from '../services/category-frontend.service';
+import { CategoryType } from '../../entities/category.entity';
 
 @Controller('categories')
 export class CategoryFrontendController {
@@ -8,6 +9,11 @@ export class CategoryFrontendController {
   @Get()
   findAll() {
     return this.categoryFrontendService.findAll();
+  }
+
+  @Get('type/:type')
+  findByType(@Param('type') type: CategoryType) {
+    return this.categoryFrontendService.findByType(type);
   }
 
   @Get('featured')

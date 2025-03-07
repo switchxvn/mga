@@ -2,6 +2,13 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Post } from '../../post/entities/post.entity';
 import { Product } from '../../product/entities/product.entity';
 
+// Enum để phân biệt loại category
+export enum CategoryType {
+  NEWS = 'news',
+  PRODUCT = 'product',
+  BOTH = 'both' // Trường hợp category có thể dùng cho cả news và product
+}
+
 @Entity('categories')
 export class Category {
   @PrimaryGeneratedColumn()
@@ -21,6 +28,15 @@ export class Category {
 
   @Column({ default: false, name: 'is_featured' })
   isFeatured!: boolean;
+
+  // Thêm trường type để phân biệt loại category
+  @Column({
+    type: 'enum',
+    enum: CategoryType,
+    default: CategoryType.BOTH,
+    name: 'category_type'
+  })
+  type!: CategoryType;
 
   // SEO fields
   @Column({ name: 'meta_title', nullable: true })

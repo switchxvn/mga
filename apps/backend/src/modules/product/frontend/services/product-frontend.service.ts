@@ -8,6 +8,7 @@ export interface ProductFilterOptions {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
+  includeNullPrice?: boolean;
   categories?: number[];
   isFeatured?: boolean;
   isNew?: boolean;
@@ -39,6 +40,7 @@ export class ProductFrontendService {
       search,
       minPrice,
       maxPrice,
+      includeNullPrice,
       categories,
       isFeatured,
       isNew,
@@ -53,11 +55,24 @@ export class ProductFrontendService {
     
     // Add filters
     if (minPrice !== undefined && maxPrice !== undefined) {
-      where.price = Between(minPrice, maxPrice);
+      if (includeNullPrice) {
+        // Sử dụng queryBuilder để xử lý điều kiện OR với null
+        // Sẽ được xử lý bên dưới
+      } else {
+        where.price = Between(minPrice, maxPrice);
+      }
     } else if (minPrice !== undefined) {
-      where.price = Between(minPrice, 999999999);
+      if (includeNullPrice) {
+        // Sẽ được xử lý bên dưới
+      } else {
+        where.price = Between(minPrice, 999999999);
+      }
     } else if (maxPrice !== undefined) {
-      where.price = Between(0, maxPrice);
+      if (includeNullPrice) {
+        // Sẽ được xử lý bên dưới
+      } else {
+        where.price = Between(0, maxPrice);
+      }
     }
 
     if (isFeatured !== undefined) {
@@ -76,6 +91,24 @@ export class ProductFrontendService {
     const queryBuilder = this.productRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.translations', 'translations')
       .where(where);
+
+    // Xử lý lọc giá với includeNullPrice
+    if (includeNullPrice) {
+      if (minPrice !== undefined && maxPrice !== undefined) {
+        queryBuilder.andWhere('(product.price BETWEEN :minPrice AND :maxPrice OR product.price IS NULL)', {
+          minPrice,
+          maxPrice
+        });
+      } else if (minPrice !== undefined) {
+        queryBuilder.andWhere('(product.price >= :minPrice OR product.price IS NULL)', {
+          minPrice
+        });
+      } else if (maxPrice !== undefined) {
+        queryBuilder.andWhere('(product.price <= :maxPrice OR product.price IS NULL)', {
+          maxPrice
+        });
+      }
+    }
 
     // Add search condition
     if (search) {

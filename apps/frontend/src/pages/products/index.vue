@@ -2,6 +2,7 @@
 import { ref, onMounted, watch, reactive } from 'vue';
 import { useLocalization } from '../../composables/useLocalization';
 import { useTrpc } from '../../composables/useTrpc';
+import { useCategory, CategoryType } from '../../composables/useCategory';
 import { useRoute, useRouter } from 'vue-router';
 import ProductSidebar from '../../components/sidebar/ProductSidebar.vue';
 import ProductMobileSidebar from '../../components/sidebar/ProductMobileSidebar.vue';
@@ -10,23 +11,64 @@ const { t, locale } = useLocalization();
 const trpc = useTrpc();
 const route = useRoute();
 const router = useRouter();
+const { fetchProductCategories } = useCategory();
 
 definePageMeta({
   layout: 'default',
 });
 
-useHead({
-  title: t('products.title'),
-  meta: [
-    { name: 'description', content: t('products.description') },
-  ],
+// SEO data
+const seoData = ref({
+  title: '',
+  description: '',
+  keywords: '',
+  ogTitle: '',
+  ogDescription: '',
+  ogImage: '',
+  canonicalUrl: '',
 });
+
+// Fetch SEO data
+const fetchSeoData = async () => {
+  try {
+    const seo = await trpc.seo.getSeoByPath.query('/products');
+    if (seo) {
+      seoData.value = seo;
+      
+      // Update head with SEO data
+      useHead({
+        title: seo.title || t('products.title'),
+        meta: [
+          { name: 'description', content: seo.description || t('products.description') },
+          { name: 'keywords', content: seo.keywords || '' },
+          { property: 'og:title', content: seo.ogTitle || seo.title || t('products.title') },
+          { property: 'og:description', content: seo.ogDescription || seo.description || t('products.description') },
+          { property: 'og:image', content: seo.ogImage || '' },
+        ],
+        link: [
+          { rel: 'canonical', href: seo.canonicalUrl || window.location.href }
+        ]
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching SEO data:', error);
+    
+    // Fallback to default SEO
+    useHead({
+      title: t('products.title'),
+      meta: [
+        { name: 'description', content: t('products.description') },
+      ],
+    });
+  }
+};
 
 // Filter state
 const filters = reactive({
   search: route.query.search as string || '',
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
+  includeNullPrice: route.query.includeNullPrice === 'true',
   categories: route.query.categories ? String(route.query.categories).split(',').map(Number) : undefined,
   isFeatured: route.query.isFeatured === 'true',
   isNew: route.query.isNew === 'true',
@@ -105,6 +147,7 @@ const updateQueryParams = () => {
   if (filters.search) query.search = filters.search;
   if (filters.minPrice !== undefined) query.minPrice = filters.minPrice;
   if (filters.maxPrice !== undefined) query.maxPrice = filters.maxPrice;
+  if (filters.includeNullPrice) query.includeNullPrice = 'true';
   if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
   if (filters.isFeatured) query.isFeatured = 'true';
   if (filters.isNew) query.isNew = 'true';
@@ -122,11 +165,14 @@ const updateQueryParams = () => {
 
 // Initial fetch
 onMounted(() => {
+  fetchSeoData();
   fetchProducts();
+  fetchProductCategories();
 });
 
 // Watch for locale changes
 watch(locale, () => {
+  fetchSeoData();
   fetchProducts();
 });
 </script>
@@ -134,8 +180,12 @@ watch(locale, () => {
 <template>
   <div class="products-page container mx-auto px-4 py-8">
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">{{ t('products.title') }}</h1>
-      <p class="mt-2 text-gray-600 dark:text-gray-400">{{ t('products.description') }}</p>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
+        {{ seoData.title || t('products.title') }}
+      </h1>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">
+        {{ seoData.description || t('products.description') }}
+      </p>
     </div>
     
     <!-- Mobile Sidebar -->

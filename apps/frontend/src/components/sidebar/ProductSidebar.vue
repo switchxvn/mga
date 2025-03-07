@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useLocalization } from '../../composables/useLocalization';
 import { useTrpc } from '../../composables/useTrpc';
+import { useCategory, CategoryType } from '../../composables/useCategory';
 import { 
   Search, 
   DollarSign, 
@@ -19,6 +20,37 @@ import '@vueform/slider/themes/default.css';
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
+const categoryComposable = useCategory();
+const { loading: categoriesLoading } = categoryComposable;
+const productCategories = ref([]);
+
+// Computed để lọc và gộp các danh mục trùng tên
+const uniqueCategories = computed(() => {
+  if (!productCategories.value || productCategories.value.length === 0) {
+    return [];
+  }
+  
+  // Tạo map để gộp các danh mục theo slug
+  const categoryMap = new Map();
+  
+  productCategories.value.forEach(category => {
+    const existingCategory = categoryMap.get(category.slug);
+    
+    if (existingCategory) {
+      // Nếu danh mục đã tồn tại, gộp số lượng sản phẩm
+      const combinedProducts = [...(existingCategory.products || []), ...(category.products || [])];
+      categoryMap.set(category.slug, {
+        ...category,
+        products: combinedProducts
+      });
+    } else {
+      categoryMap.set(category.slug, category);
+    }
+  });
+  
+  // Chuyển map thành mảng và sắp xếp theo tên
+  return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+});
 
 const props = defineProps<{
   initialFilters?: {
@@ -67,7 +99,7 @@ const isSearching = ref(false);
 const searchTimeout = ref<NodeJS.Timeout | null>(null);
 
 // Categories data
-const categories = ref<{ id: number; name: string; count: number }[]>([]);
+// const categories = ref<{ id: number; name: string; count: number }[]>([]);
 const isLoadingCategories = ref(true);
 
 // Computed percentage values for slider positioning
@@ -87,16 +119,7 @@ const sliderOptions = computed(() => ({
     'max': minMaxPrice.value.max
   },
   step: 10000,
-  tooltips: [
-    {
-      to: (value: number) => formatPriceSimple(value),
-      from: (value: string) => parsePriceInput(value) || 0
-    },
-    {
-      to: (value: number) => formatPriceSimple(value),
-      from: (value: string) => parsePriceInput(value) || 0
-    }
-  ],
+  tooltips: false,
   pips: false
 }));
 
@@ -182,23 +205,28 @@ const parsePriceInput = (value: string): number | null => {
   return numericValue ? Number(numericValue) : null;
 };
 
-// Fetch categories (placeholder - replace with actual category fetching)
+// Fetch categories from API
 const fetchCategories = async () => {
   isLoadingCategories.value = true;
   try {
-    // This is a placeholder - replace with actual category fetching
-    // const result = await trpc.category.all.query();
-    // categories.value = result;
+    // Lấy danh mục sản phẩm
+    const result = await categoryComposable.fetchProductCategories();
     
-    // Placeholder data
-    categories.value = [
-      { id: 1, name: 'Điện thoại', count: 12 },
-      { id: 2, name: 'Laptop', count: 8 },
-      { id: 3, name: 'Máy tính bảng', count: 5 },
-      { id: 4, name: 'Phụ kiện', count: 20 },
-    ];
+    // Lọc các danh mục trùng lặp dựa trên slug
+    const uniqueSlugs = new Set();
+    const filteredCategories = [];
+    
+    for (const category of result) {
+      if (!uniqueSlugs.has(category.slug)) {
+        uniqueSlugs.add(category.slug);
+        filteredCategories.push(category);
+      }
+    }
+    
+    // Cập nhật danh sách danh mục
+    productCategories.value = filteredCategories;
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('Error fetching product categories:', error);
   } finally {
     isLoadingCategories.value = false;
   }
@@ -220,6 +248,7 @@ const applyFilters = () => {
     search: search.value,
     minPrice: priceRange.value[0],
     maxPrice: priceRange.value[1],
+    includeNullPrice: true,
     categories: selectedCategories.value.length > 0 ? selectedCategories.value : undefined,
     isFeatured: isFeatured.value ? true : undefined,
     isNew: isNew.value ? true : undefined,
@@ -330,10 +359,10 @@ onMounted(() => {
         <div v-else>
           <!-- Price Range Display -->
           <div class="mb-2 flex items-center justify-between">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
               {{ formatPrice(priceRange[0]) }}
             </span>
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
               {{ formatPrice(priceRange[1]) }}
             </span>
           </div>
@@ -351,7 +380,6 @@ onMounted(() => {
           <!-- Price Inputs -->
           <div class="mt-4 flex items-center justify-between gap-4">
             <div class="w-1/2">
-              <label class="mb-1 block text-xs text-gray-500">{{ t('products.minPrice') }}</label>
               <div class="custom-input-container">
                 <UInput
                   v-model="minPriceInput"
@@ -370,7 +398,6 @@ onMounted(() => {
             </div>
             <div class="text-gray-400">-</div>
             <div class="w-1/2">
-              <label class="mb-1 block text-xs text-gray-500">{{ t('products.maxPrice') }}</label>
               <div class="custom-input-container">
                 <UInput
                   v-model="maxPriceInput"
@@ -413,9 +440,13 @@ onMounted(() => {
           <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
         </div>
         
+        <div v-else-if="uniqueCategories.length === 0" class="py-2 text-sm text-gray-500 text-center">
+          {{ t('products.noCategories') || 'Không có danh mục nào' }}
+        </div>
+        
         <div v-else class="space-y-2">
           <div 
-            v-for="category in categories" 
+            v-for="category in uniqueCategories" 
             :key="category.id"
             class="flex items-center"
           >
@@ -427,7 +458,7 @@ onMounted(() => {
             />
             <label :for="`category-${category.id}`" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
               {{ category.name }} 
-              <span class="text-xs text-gray-500">({{ category.count }})</span>
+              <span class="text-xs text-gray-500">({{ category.products?.length || 0 }})</span>
             </label>
           </div>
         </div>
@@ -512,31 +543,28 @@ onMounted(() => {
 <style scoped>
 /* Custom styles for @vueform/slider */
 .slider-primary {
-  --slider-connect-bg: rgb(240 5.9% 10%);
-  --slider-tooltip-bg: rgb(240 5.9% 10%);
-  --slider-handle-ring-color: rgb(240 5.9% 10%);
+  --slider-connect-bg: #0ea5e9; /* Màu xanh dương - primary color */
+  --slider-handle-ring-color: #0ea5e9;
   --slider-handle-bg: white;
-  --slider-handle-border-color: rgb(240 5.9% 10%);
+  --slider-handle-border-color: #0ea5e9;
   --slider-handle-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   --slider-handle-width: 18px;
   --slider-handle-height: 18px;
   --slider-bg: #e5e7eb;
   --slider-height: 8px;
-  --slider-tooltip-color: white;
-  --slider-tooltip-font-size: 0.75rem;
-  --slider-tooltip-py: 0.25rem;
-  --slider-tooltip-px: 0.5rem;
-  --slider-tooltip-arrow-size: 0.5rem;
+  --slider-touch-area-bg: rgba(14, 165, 233, 0.15); /* Màu xanh dương nhạt cho vùng touch */
+  --slider-touch-area-width: 40px;
+  --slider-touch-area-height: 40px;
 }
 
 /* Dark mode adjustments */
 :deep(.dark) .slider-primary {
-  --slider-connect-bg: rgb(0 0% 100%);
-  --slider-tooltip-bg: rgb(0 0% 100%);
-  --slider-handle-ring-color: rgb(0 0% 100%);
+  --slider-connect-bg: #38bdf8; /* Màu xanh dương sáng hơn cho dark mode */
+  --slider-handle-ring-color: #38bdf8;
   --slider-handle-bg: #1f2937;
-  --slider-handle-border-color: rgb(0 0% 100%);
+  --slider-handle-border-color: #38bdf8;
   --slider-bg: #374151;
+  --slider-touch-area-bg: rgba(56, 189, 248, 0.2); /* Màu xanh dương nhạt cho vùng touch trong dark mode */
 }
 
 /* Custom input container */

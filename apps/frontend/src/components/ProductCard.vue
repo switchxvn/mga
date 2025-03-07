@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import LazyImage from './ui/LazyImage.vue';
 
 interface ProductTranslation {
   title: string;
@@ -84,11 +85,14 @@ const productLink = computed(() => {
     </div>
     
     <!-- Product image -->
-    <NuxtLink :to="productLink" class="block overflow-hidden">
-      <img 
-        :src="product.thumbnail || '/images/placeholder-product.png'" 
+    <NuxtLink :to="productLink" class="block h-48 overflow-hidden">
+      <LazyImage 
+        :src="product.thumbnail || ''" 
         :alt="title"
-        class="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        fallbackSrc="/images/default-image.jpg"
+        customClass="transition-transform duration-300 group-hover:scale-105"
+        height="100%"
+        width="100%"
       />
     </NuxtLink>
     

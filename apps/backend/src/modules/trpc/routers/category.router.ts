@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { CategoryType } from '../../category/entities/category.entity';
 
 export const categoryRouter = router({
   all: publicProcedure.query(async ({ ctx }) => {
@@ -19,6 +20,24 @@ export const categoryRouter = router({
       });
     }
   }),
+
+  // Thêm phương thức mới để lấy danh mục theo loại
+  byType: publicProcedure
+    .input(z.enum(['news', 'product', 'both']))
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching categories by type: ${input}`);
+        const categories = await ctx.services.categoryFrontendService.findByType(input as CategoryType);
+        return categories;
+      } catch (error) {
+        ctx.logger.error(`Error fetching categories by type ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve categories by type',
+          cause: error,
+        });
+      }
+    }),
 
   byId: publicProcedure
     .input(z.number())

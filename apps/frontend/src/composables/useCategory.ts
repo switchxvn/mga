@@ -1,6 +1,13 @@
 import { useTrpc } from './useTrpc';
 import { ref, computed } from 'vue';
 
+// Định nghĩa enum CategoryType
+export enum CategoryType {
+  NEWS = 'news',
+  PRODUCT = 'product',
+  BOTH = 'both'
+}
+
 // Định nghĩa kiểu dữ liệu Category
 export interface Category {
   id: number;
@@ -17,8 +24,10 @@ export interface Category {
   parentId?: number | null;
   isFeatured?: boolean;
   active?: boolean;
+  type?: CategoryType;
   children?: Category[];
   posts?: any[];
+  products?: any[];
 }
 
 /**
@@ -30,6 +39,7 @@ export function useCategory() {
   
   // State
   const categories = ref<Category[]>([]);
+  const productCategories = ref<Category[]>([]);
   const featuredCategories = ref<Category[]>([]);
   const popularCategories = ref<Category[]>([]);
   const hotCategories = ref<Category[]>([]);
@@ -177,9 +187,42 @@ export function useCategory() {
     return categories.value.filter(cat => cat.parentId === parentId);
   };
   
+  /**
+   * Lấy danh mục theo loại (product, news, both)
+   * @param type Loại danh mục cần lấy
+   */
+  const fetchCategoriesByType = async (type: CategoryType) => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const result = await trpc.category.byType.query(type);
+      
+      if (type === CategoryType.PRODUCT) {
+        productCategories.value = result;
+      }
+      
+      return result;
+    } catch (err: any) {
+      console.error(`Error fetching categories by type ${type}:`, err);
+      error.value = err.message || 'Có lỗi xảy ra khi tải danh mục theo loại';
+      return [];
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  /**
+   * Lấy tất cả danh mục sản phẩm
+   */
+  const fetchProductCategories = async () => {
+    return fetchCategoriesByType(CategoryType.PRODUCT);
+  };
+  
   return {
     // State
     categories,
+    productCategories,
     featuredCategories,
     popularCategories,
     hotCategories,
@@ -198,6 +241,8 @@ export function useCategory() {
     fetchPopularCategories,
     fetchHotCategories,
     fetchCategoryTree,
+    fetchCategoriesByType,
+    fetchProductCategories,
     getChildCategories
   };
 } 
