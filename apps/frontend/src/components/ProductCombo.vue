@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useTrpc } from '../composables/useTrpc';
 import { useLocalization } from '../composables/useLocalization';
 import LazyImage from './ui/LazyImage.vue';
+import AddToCartButton from './cart/AddToCartButton.vue';
 
 const props = defineProps({
   productId: {
@@ -220,17 +221,12 @@ onMounted(() => {
           </div>
         </div>
         
-        <UButton 
+        <AddToCartButton 
           v-if="selectedCombos.length > 0"
-          color="primary" 
-          size="xs"
-          block
-          icon="i-heroicons-shopping-cart"
-          class="text-[10px] py-0.5"
-          @click="addSelectedCombosToCart"
-        >
-          {{ t('products.addSelectedToCart') || 'Thêm sản phẩm đã chọn vào giỏ hàng' }}
-        </UButton>
+          :product="{ id: combo.id, name: combo.name, price: totalPrice }" 
+          :buttonText="t('products.addSelectedToCart') || 'Thêm sản phẩm đã chọn vào giỏ hàng'"
+          buttonClass="text-[10px] py-0.5 w-full"
+        />
       </div>
     </div>
   </div>

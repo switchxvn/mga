@@ -7,6 +7,7 @@ import { settingsRouter } from './settings.router';
 import { seoRouter } from './seo.router';
 import { categoryRouter } from './category.router';
 import { serviceRouter } from './service.router';
+import { featureFlagsRouter } from './feature-flags.router';
 
 export const appRouter = router({
   auth: authRouter,
@@ -17,6 +18,7 @@ export const appRouter = router({
   seo: seoRouter,
   category: categoryRouter,
   service: serviceRouter,
+  featureFlags: featureFlagsRouter,
 });
 
 export type AppRouter = typeof appRouter; 

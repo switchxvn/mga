@@ -18,10 +18,14 @@ const getBaseUrl = () => {
   // In development environment, frontend and backend may run on different ports
   if (typeof window !== 'undefined') {
     // In browser environment, use relative URL for Vite proxy to work
-    return process.env.API_BASE || 'http://localhost:3000';
+    const baseUrl = process.env.API_BASE || 'http://localhost:3000';
+    console.log('tRPC client base URL (browser):', baseUrl);
+    return baseUrl;
   }
   // In server environment (SSR), need full URL
-  return process.env.API_BASE || 'http://localhost:3000';
+  const baseUrl = process.env.API_BASE || 'http://localhost:3000';
+  console.log('tRPC client base URL (server):', baseUrl);
+  return baseUrl;
 };
 
 /**

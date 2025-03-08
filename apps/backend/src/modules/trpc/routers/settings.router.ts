@@ -17,6 +17,11 @@ import {
   getTagBySlugSchema,
   getTagsSchema,
   deleteTagSchema,
+  getSettingByKeySchema,
+  getSettingsByGroupSchema,
+  createSettingSchema,
+  updateSettingSchema,
+  deleteSettingSchema,
 } from '@ew/shared';
 import { z } from 'zod';
 
@@ -354,6 +359,220 @@ export const settingsRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to delete tag',
+          cause: error,
+        });
+      }
+    }),
+
+  // Settings - Public
+  getPublicSettings: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        ctx.logger.log('Fetching all public settings');
+        return ctx.services.settingsFrontendService.getPublicSettings();
+      } catch (error) {
+        ctx.logger.error(`Error fetching public settings: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve public settings',
+          cause: error,
+        });
+      }
+    }),
+
+  getPublicSettingByKey: publicProcedure
+    .input(getSettingByKeySchema)
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching public setting by key: ${input}`);
+        const setting = await ctx.services.settingsFrontendService.getPublicSettingByKey(input);
+        
+        if (!setting) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Setting with key ${input} not found`,
+          });
+        }
+        
+        return setting;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
+        ctx.logger.error(`Error fetching public setting by key: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve public setting',
+          cause: error,
+        });
+      }
+    }),
+
+  getPublicSettingsByGroup: publicProcedure
+    .input(getSettingsByGroupSchema)
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching public settings by group: ${input}`);
+        return ctx.services.settingsFrontendService.getPublicSettingsByGroup(input);
+      } catch (error) {
+        ctx.logger.error(`Error fetching public settings by group: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve public settings by group',
+          cause: error,
+        });
+      }
+    }),
+
+  // Settings - Admin
+  getAllSettings: protectedProcedure
+    .query(async ({ ctx }) => {
+      try {
+        ctx.logger.log('Fetching all settings');
+        return ctx.services.settingsAdminService.findAll();
+      } catch (error) {
+        ctx.logger.error(`Error fetching settings: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve settings',
+          cause: error,
+        });
+      }
+    }),
+
+  getSettingByKey: protectedProcedure
+    .input(getSettingByKeySchema)
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching setting by key: ${input}`);
+        const setting = await ctx.services.settingsAdminService.findByKey(input);
+        
+        if (!setting) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Setting with key ${input} not found`,
+          });
+        }
+        
+        return setting;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
+        ctx.logger.error(`Error fetching setting by key: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve setting',
+          cause: error,
+        });
+      }
+    }),
+
+  getSettingsByGroup: protectedProcedure
+    .input(getSettingsByGroupSchema)
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching settings by group: ${input}`);
+        return ctx.services.settingsAdminService.findByGroup(input);
+      } catch (error) {
+        ctx.logger.error(`Error fetching settings by group: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve settings by group',
+          cause: error,
+        });
+      }
+    }),
+
+  createSetting: protectedProcedure
+    .input(createSettingSchema)
+    .mutation(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Creating new setting: ${input.key}`);
+        const newSetting = await ctx.services.settingsAdminService.create(input);
+        ctx.logger.log(`Successfully created setting ID: ${newSetting.id}`);
+        return newSetting;
+      } catch (error) {
+        ctx.logger.error(`Error creating setting: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create setting',
+          cause: error,
+        });
+      }
+    }),
+
+  updateSetting: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      ...updateSettingSchema.shape
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const { id, ...data } = input;
+        ctx.logger.log(`Updating setting ID: ${id}`);
+        const updatedSetting = await ctx.services.settingsAdminService.update(id, data);
+        ctx.logger.log(`Successfully updated setting ID: ${id}`);
+        return updatedSetting;
+      } catch (error) {
+        ctx.logger.error(`Error updating setting: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update setting',
+          cause: error,
+        });
+      }
+    }),
+
+  updateSettingByKey: protectedProcedure
+    .input(z.object({
+      key: z.string(),
+      value: z.string()
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const { key, value } = input;
+        ctx.logger.log(`Updating setting by key: ${key}`);
+        const updatedSetting = await ctx.services.settingsAdminService.updateByKey(key, value);
+        
+        if (!updatedSetting) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Setting with key ${key} not found`,
+          });
+        }
+        
+        ctx.logger.log(`Successfully updated setting with key: ${key}`);
+        return updatedSetting;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
+        ctx.logger.error(`Error updating setting by key: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update setting by key',
+          cause: error,
+        });
+      }
+    }),
+
+  deleteSetting: protectedProcedure
+    .input(deleteSettingSchema)
+    .mutation(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Deleting setting ID: ${input}`);
+        await ctx.services.settingsAdminService.delete(input);
+        ctx.logger.log(`Successfully deleted setting ID: ${input}`);
+        return { success: true, message: `Setting with ID ${input} deleted successfully` };
+      } catch (error) {
+        ctx.logger.error(`Error deleting setting: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to delete setting',
           cause: error,
         });
       }

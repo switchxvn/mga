@@ -12,6 +12,7 @@ import ProductDetailSidebar from '../../components/ProductDetailSidebar.vue';
 import { useHead } from 'unhead';
 import PriceRequestModal from '../../components/PriceRequestModal.vue';
 import { useNotification } from '../../composables/useNotification';
+import AddToCartButton from '~/components/cart/AddToCartButton.vue';
 
 // Định nghĩa interface cho Product
 interface Product {
@@ -542,16 +543,12 @@ const handlePriceRequestSuccess = () => {
             </div>
           </div>
           
-          <UButton 
+          <AddToCartButton 
             v-if="productData.price !== null"
-            color="primary" 
-            size="lg" 
-            block
-            icon="i-heroicons-shopping-cart"
-            class="mb-4"
-          >
-            {{ t('products.addToCart') }}
-          </UButton>
+            :product="productData" 
+            :buttonText="t('products.addToCart')"
+            buttonClass="mb-4 w-full"
+          />
           
           <UButton 
             v-else

@@ -5,6 +5,7 @@ import type { MenuItem, MenuColumn } from '@ew/shared';
 import Icon from './Icon.vue';
 import ThemeToggle from '../ThemeToggle.vue';
 import LanguageSwitcher from '../LanguageSwitcher.vue';
+import CartIcon from '../cart/CartIcon.vue';
 import { useRoute } from 'vue-router';
 
 // Props cho component
@@ -211,6 +212,9 @@ onUnmounted(() => {
           <!-- Theme Toggle -->
           <ThemeToggle />
           
+          <!-- Cart Icon -->
+          <CartIcon />
+          
           <!-- Hotline -->
           <a :href="`tel:${hotline}`" class="flex items-center space-x-2 text-sm dark:text-gray-200">
             <Icon
@@ -223,6 +227,9 @@ onUnmounted(() => {
 
         <!-- Mobile Menu Button and Theme Toggle -->
         <div class="md:hidden flex items-center space-x-2">
+          <!-- Cart Icon for Mobile -->
+          <CartIcon />
+          
           <ThemeToggle />
           
           <button

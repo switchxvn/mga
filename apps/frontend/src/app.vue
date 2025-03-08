@@ -11,6 +11,15 @@ useHead({
     }
   ]
 });
+
+import { onMounted } from 'vue';
+import { useFeatureFlags } from './composables/useFeatureFlags';
+
+// Khởi tạo feature flags khi ứng dụng được tải
+onMounted(async () => {
+  const { fetchFeatureFlags } = useFeatureFlags();
+  await fetchFeatureFlags();
+});
 </script>
 
 <template>

@@ -40,6 +40,9 @@ import { ProductSpecificationService } from '../product/services/product-specifi
 import { ProductComboService } from '../product/frontend/services/product-combo.service';
 import { priceRequestRouter } from './routers/price-request.router';
 import { PriceRequestService } from '../price-request/services/price-request.service';
+import { featureFlagsRouter } from './routers/feature-flags.router';
+import { FeatureFlagsAdminService } from '../feature-flags/admin/services/feature-flags-admin.service';
+import { FeatureFlagsFrontendService } from '../feature-flags/frontend/services/feature-flags-frontend.service';
 
 @Injectable()
 export class TrpcService {
@@ -56,6 +59,7 @@ export class TrpcService {
     service: serviceRouter,
     product: productRouter,
     priceRequest: priceRequestRouter,
+    featureFlags: featureFlagsRouter,
   });
 
   constructor(
@@ -83,6 +87,8 @@ export class TrpcService {
     private readonly productSpecificationService: ProductSpecificationService,
     private readonly productComboService: ProductComboService,
     private readonly priceRequestService: PriceRequestService,
+    private readonly featureFlagsAdminService: FeatureFlagsAdminService,
+    private readonly featureFlagsFrontendService: FeatureFlagsFrontendService,
   ) {}
 
   getRouter() {
@@ -115,6 +121,8 @@ export class TrpcService {
       productSpecificationService: this.productSpecificationService,
       productComboService: this.productComboService,
       priceRequestService: this.priceRequestService,
+      featureFlagsAdminService: this.featureFlagsAdminService,
+      featureFlagsFrontendService: this.featureFlagsFrontendService,
     };
 
     // Extract and verify JWT token if present

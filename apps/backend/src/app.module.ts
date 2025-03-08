@@ -3,36 +3,19 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { PostModule } from './modules/post/post.module';
-import { TrpcModule } from './modules/trpc/trpc.module';
-import { SettingsModule } from './modules/settings/settings.module';
-import { SeoModule } from './modules/seo/seo.module';
-import { FooterModule } from './modules/footer/footer.module';
-import { ProfileModule } from './modules/profile/profile.module';
 import { CategoryModule } from './modules/category/category.module';
-import { ServiceModule } from './modules/service/service.module';
-import { ProductModule } from './modules/product/product.module';
-import { User } from './modules/user/entities/user.entity';
-import { Post } from './modules/post/entities/post.entity';
-import { MenuItem } from './modules/settings/entities/menu-item.entity';
-import { Logo } from './modules/settings/entities/logo.entity';
-import { Seo } from './modules/seo/entities/seo.entity';
-import { Footer } from './modules/footer/entities/footer.entity';
-import { UserProfile } from './modules/profile/entities/user-profile.entity';
-import { CountryPhoneCode } from './modules/common/entities/country-phone-code.entity';
-import { Category } from './modules/category/entities/category.entity';
-import { PostTag } from './modules/post/entities/post-tag.entity';
-import { Tag } from './modules/settings/entities/tag.entity';
-import { Service } from './modules/service/entities/service.entity';
-import { Product } from './modules/product/entities/product.entity';
-import { ProductTranslation } from './modules/product/entities/product-translation.entity';
-import { CrossSellProduct } from './modules/product/entities/cross-sell-product.entity';
-import { ProductSpecification } from './modules/product/entities/product-specification.entity';
-import { ProductSpecificationTranslation } from './modules/product/entities/product-specification-translation.entity';
-import { ProductCombo } from './modules/product/entities/product-combo.entity';
+import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
+import { FooterModule } from './modules/footer/footer.module';
+import { PostModule } from './modules/post/post.module';
 import { PriceRequestModule } from './modules/price-request/price-request.module';
+import { ProductModule } from './modules/product/product.module';
+import { ProfileModule } from './modules/profile/profile.module';
+import { SeoModule } from './modules/seo/seo.module';
+import { ServiceModule } from './modules/service/service.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { TrpcModule } from './modules/trpc/trpc.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -65,6 +48,7 @@ import { PriceRequestModule } from './modules/price-request/price-request.module
     ServiceModule,
     ProductModule,
     PriceRequestModule,
+    FeatureFlagsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

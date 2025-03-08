@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import LazyImage from './ui/LazyImage.vue';
+import AddToCartButton from './cart/AddToCartButton.vue';
 
 interface ProductTranslation {
   title: string;
@@ -114,13 +115,10 @@ const productLink = computed(() => {
           </div>
         </div>
         
-        <UButton 
-          icon="i-heroicons-shopping-cart" 
-          color="primary" 
-          variant="ghost" 
-          :to="productLink"
-          size="sm"
-          :aria-label="`Xem chi tiết ${title}`"
+        <AddToCartButton 
+          :product="{ id: product.id, name: title, price: product.price }" 
+          iconOnly 
+          buttonClass="p-2"
         />
       </div>
     </div>
