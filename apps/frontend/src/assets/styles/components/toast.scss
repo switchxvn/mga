@@ -1,0 +1,57 @@
+/* CSS cho vue-toast-notification */
+.v-toast {
+  z-index: 9999 !important;
+}
+
+.v-toast__item {
+  min-width: 250px !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.v-toast__text {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.v-toast__item--success {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+.v-toast__item--error {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+.v-toast__item--info {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.v-toast__item--warning {
+  background-color: #f59e0b !important;
+  color: white !important;
+}
+
+/* Dark mode support */
+.dark .v-toast__item {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark .v-toast__item--success {
+  background-color: #059669 !important;
+}
+
+.dark .v-toast__item--error {
+  background-color: #dc2626 !important;
+}
+
+.dark .v-toast__item--info {
+  background-color: #2563eb !important;
+}
+
+.dark .v-toast__item--warning {
+  background-color: #d97706 !important;
+} 

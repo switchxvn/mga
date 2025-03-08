@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { MenuItem } from '../../entities/menu-item.entity';
 import { Logo } from '../../entities/logo.entity';
 import { Tag } from '../../entities/tag.entity';
+import { Settings } from '../../entities/settings.entity';
 
 @Injectable()
 export class SettingsFrontendService {
@@ -14,6 +15,8 @@ export class SettingsFrontendService {
     private logoRepository: Repository<Logo>,
     @InjectRepository(Tag)
     private tagRepository: Repository<Tag>,
+    @InjectRepository(Settings)
+    private settingsRepository: Repository<Settings>,
   ) {}
 
   // Menu Items - Frontend chỉ cần các phương thức đọc
@@ -111,5 +114,27 @@ export class SettingsFrontendService {
     }
     
     return tag;
+  }
+
+  async getPublicSettings(): Promise<Settings[]> {
+    return this.settingsRepository.find({ where: { is_public: true } });
+  }
+
+  async getPublicSettingsByGroup(group: string): Promise<Settings[]> {
+    return this.settingsRepository.find({ 
+      where: { 
+        is_public: true,
+        group 
+      } 
+    });
+  }
+
+  async getPublicSettingByKey(key: string): Promise<Settings> {
+    return this.settingsRepository.findOne({ 
+      where: { 
+        is_public: true,
+        key 
+      } 
+    });
   }
 } 

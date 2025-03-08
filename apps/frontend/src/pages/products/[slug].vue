@@ -950,4 +950,16 @@ const handlePriceRequestSuccess = () => {
   visibility: visible;
   opacity: 1;
 }
+
+/* Fix cho UButton trong trang chi tiết sản phẩm */
+:deep(.u-button) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:deep(.u-button[block]) {
+  display: flex !important;
+  width: 100% !important;
+}
 </style> 

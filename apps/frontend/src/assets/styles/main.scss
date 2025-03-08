@@ -9,6 +9,8 @@
 @use 'components/post-sidebar' as *;
 @use 'components/breadcrumb' as *;
 @use 'components/footer' as *;
+@use 'components/toast' as *;
+@use 'components/button' as *;
 
 @tailwind base;
 @tailwind components;
@@ -87,4 +89,9 @@
 .u-input {
   padding-left: 0.75rem !important;
   padding-right: 0.75rem !important;
+}
+
+/* Fix for vue-toast-notification z-index */
+.v-toast {
+  z-index: 9999 !important;
 } 

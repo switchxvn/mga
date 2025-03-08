@@ -3,6 +3,7 @@ import { SettingsAdminService } from '../services/settings-admin.service';
 import { MenuItem } from '../../entities/menu-item.entity';
 import { Logo } from '../../entities/logo.entity';
 import { Tag } from '../../entities/tag.entity';
+import { Settings } from '../../entities/settings.entity';
 // import { RolesGuard } from '../../../auth/guards/roles.guard';
 // import { Roles } from '../../../auth/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -177,5 +178,47 @@ export class SettingsAdminController {
   async deleteTag(@Param('id') id: number): Promise<{ success: boolean; message: string }> {
     await this.settingsService.deleteTag(id);
     return { success: true, message: `Tag with ID ${id} deleted successfully` };
+  }
+
+  // Settings endpoints
+  @Get('config')
+  async getAllSettings(): Promise<Settings[]> {
+    return this.settingsService.findAll();
+  }
+
+  @Get('config/:key')
+  async getSettingByKey(@Param('key') key: string): Promise<Settings> {
+    return this.settingsService.findByKey(key);
+  }
+
+  @Get('config/group/:group')
+  async getSettingsByGroup(@Param('group') group: string): Promise<Settings[]> {
+    return this.settingsService.findByGroup(group);
+  }
+
+  @Post('config')
+  async createSetting(@Body() settingData: Partial<Settings>): Promise<Settings> {
+    return this.settingsService.create(settingData);
+  }
+
+  @Put('config/:id')
+  async updateSetting(
+    @Param('id') id: number,
+    @Body() settingData: Partial<Settings>,
+  ): Promise<Settings> {
+    return this.settingsService.update(id, settingData);
+  }
+
+  @Put('config/key/:key')
+  async updateSettingByKey(
+    @Param('key') key: string,
+    @Body('value') value: string,
+  ): Promise<Settings> {
+    return this.settingsService.updateByKey(key, value);
+  }
+
+  @Delete('config/:id')
+  async deleteSetting(@Param('id') id: number): Promise<void> {
+    return this.settingsService.delete(id);
   }
 } 

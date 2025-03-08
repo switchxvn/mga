@@ -7,6 +7,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { GetMenuItemsQueryDto } from '../dto/menu-item.dto';
 import { GetLogosQueryDto } from '../dto/logo.dto';
 import { GetTagsQueryDto } from '../dto/tag.dto';
+import { Settings } from '../../entities/settings.entity';
 
 @ApiTags('settings')
 @Controller('settings')
@@ -67,5 +68,21 @@ export class SettingsFrontendController {
   @ApiResponse({ status: 404, description: 'Tag not found' })
   async getActiveTagBySlug(@Param('slug') slug: string): Promise<Tag> {
     return this.settingsService.findActiveTagBySlug(slug);
+  }
+
+  // Settings endpoints
+  @Get('config')
+  async getPublicSettings(): Promise<Settings[]> {
+    return this.settingsService.getPublicSettings();
+  }
+
+  @Get('config/:key')
+  async getPublicSettingByKey(@Param('key') key: string): Promise<Settings> {
+    return this.settingsService.getPublicSettingByKey(key);
+  }
+
+  @Get('config/group/:group')
+  async getPublicSettingsByGroup(@Param('group') group: string): Promise<Settings[]> {
+    return this.settingsService.getPublicSettingsByGroup(group);
   }
 } 

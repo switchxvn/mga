@@ -13,6 +13,7 @@ import {
   createTagSchema,
   updateTagSchema,
 } from '@ew/shared';
+import { Settings } from '../../entities/settings.entity';
 
 type CreateMenuItem = z.infer<typeof createMenuItemSchema>;
 type UpdateMenuItem = z.infer<typeof updateMenuItemSchema>;
@@ -30,6 +31,8 @@ export class SettingsAdminService {
     private logoRepository: Repository<Logo>,
     @InjectRepository(Tag)
     private tagRepository: Repository<Tag>,
+    @InjectRepository(Settings)
+    private settingsRepository: Repository<Settings>,
   ) {}
 
   // Menu Items
@@ -219,5 +222,40 @@ export class SettingsAdminService {
   async deleteTag(id: number): Promise<void> {
     const tag = await this.findTagById(id);
     await this.tagRepository.remove(tag);
+  }
+
+  async findAll(): Promise<Settings[]> {
+    return this.settingsRepository.find();
+  }
+
+  async findByKey(key: string): Promise<Settings> {
+    return this.settingsRepository.findOne({ where: { key } });
+  }
+
+  async findByGroup(group: string): Promise<Settings[]> {
+    return this.settingsRepository.find({ where: { group } });
+  }
+
+  async create(settingsData: Partial<Settings>): Promise<Settings> {
+    const settings = this.settingsRepository.create(settingsData);
+    return this.settingsRepository.save(settings);
+  }
+
+  async update(id: number, settingsData: Partial<Settings>): Promise<Settings> {
+    await this.settingsRepository.update(id, settingsData);
+    return this.settingsRepository.findOne({ where: { id } });
+  }
+
+  async updateByKey(key: string, value: string): Promise<Settings> {
+    const settings = await this.settingsRepository.findOne({ where: { key } });
+    if (settings) {
+      settings.value = value;
+      return this.settingsRepository.save(settings);
+    }
+    return null;
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.settingsRepository.delete(id);
   }
 } 
