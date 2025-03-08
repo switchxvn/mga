@@ -2,7 +2,10 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useLocalization } from '../composables/useLocalization';
 import { useTrpc } from '../composables/useTrpc';
-import { X, Check, Send, ChevronDown, Search } from 'lucide-vue-next';
+import { X, Check, Send } from 'lucide-vue-next';
+import PhoneInput from './form/PhoneInput.vue';
+import { useVuelidate } from '@vuelidate/core';
+import { required, email, helpers } from '@vuelidate/validators';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -20,22 +23,10 @@ const trpc = useTrpc();
 
 // Form data
 const fullName = ref('');
-const email = ref('');
+const emailValue = ref('');
 const phoneNumber = ref('');
 const selectedPhoneCode = ref('+84'); // Default to Vietnam
 const message = ref('');
-
-// Country phone codes
-const countryPhoneCodes = ref<Array<{
-  phoneCode: string;
-  countryCode: string;
-  countryName: string;
-  flagIcon: string;
-}>>([]);
-
-const isLoadingCountries = ref(false);
-const showPhoneCodeDropdown = ref(false);
-const countrySearchQuery = ref(''); // Thêm biến để lưu trữ từ khóa tìm kiếm
 
 // Form validation
 const errors = ref({
@@ -44,120 +35,138 @@ const errors = ref({
   phoneNumber: '',
 });
 
+// Phone validation state
+const phoneValidation = ref({
+  valid: true,
+  message: ''
+});
+
 // Form submission
 const isSubmitting = ref(false);
 const submitSuccess = ref(false);
 
-// Fetch country phone codes
-const fetchCountryPhoneCodes = async () => {
-  isLoadingCountries.value = true;
-  try {
-    const result = await trpc.common.getCountryPhoneCodes.query();
-    countryPhoneCodes.value = result;
-    
-    // Set default to Vietnam if available, otherwise use the first one
-    const vietnam = result.find(c => c.countryCode === 'VN');
-    if (vietnam) {
-      selectedPhoneCode.value = vietnam.phoneCode;
-    } else if (result.length > 0) {
-      selectedPhoneCode.value = result[0].phoneCode;
+// Tham chiếu đến component PhoneInput
+const phoneInputRef = ref(null);
+
+// Định nghĩa quy tắc xác thực
+const rules = computed(() => {
+  return {
+    fullName: { 
+      required: helpers.withMessage(
+        t('priceRequest.fullNameRequired') || 'Vui lòng nhập họ tên',
+        required
+      ) 
+    },
+    emailValue: { 
+      required: helpers.withMessage(
+        t('priceRequest.emailRequired') || 'Vui lòng nhập email',
+        required
+      ),
+      email: helpers.withMessage(
+        t('priceRequest.emailInvalid') || 'Email không hợp lệ',
+        email
+      )
     }
-  } catch (error) {
-    console.error('Error fetching country phone codes:', error);
-  } finally {
-    isLoadingCountries.value = false;
-  }
-};
-
-// Get selected country
-const selectedCountry = computed(() => {
-  return countryPhoneCodes.value.find(c => c.phoneCode === selectedPhoneCode.value);
+    // Loại bỏ validation cho phoneNumber ở đây, sẽ xử lý riêng
+  };
 });
 
-// Lọc danh sách quốc gia theo từ khóa tìm kiếm
-const filteredCountries = computed(() => {
-  if (!countrySearchQuery.value) return countryPhoneCodes.value;
+// Tạo đối tượng Vuelidate
+const v$ = useVuelidate(rules, { fullName, emailValue });
+
+// Xử lý khi nhận kết quả xác thực từ PhoneInput
+const handlePhoneValidation = (result: { valid: boolean; message?: string }) => {
+  // Chỉ lưu trạng thái validation, không hiển thị lỗi ngay
+  phoneValidation.value = result;
+};
+
+// Add new method to validate phone field
+const validatePhoneField = async () => {
+  // Reset thông báo lỗi
+  errors.value.phoneNumber = '';
   
-  const query = countrySearchQuery.value.toLowerCase();
-  return countryPhoneCodes.value.filter(country => 
-    country.countryName.toLowerCase().includes(query) || 
-    country.phoneCode.includes(query) ||
-    country.countryCode.toLowerCase().includes(query)
-  );
-});
-
-// Toggle phone code dropdown
-const togglePhoneCodeDropdown = () => {
-  showPhoneCodeDropdown.value = !showPhoneCodeDropdown.value;
-  if (showPhoneCodeDropdown.value) {
-    // Reset search query when opening dropdown
-    countrySearchQuery.value = '';
-    // Focus vào ô tìm kiếm sau khi dropdown mở
-    setTimeout(() => {
-      const searchInput = document.getElementById('country-search-input');
-      if (searchInput) {
-        searchInput.focus();
-      }
-    }, 100);
+  // Kiểm tra xem số điện thoại có được nhập không
+  if (!phoneNumber.value.trim()) {
+    errors.value.phoneNumber = t('priceRequest.phoneRequired') || 'Vui lòng nhập số điện thoại';
+    return false;
   }
+  
+  // Xác thực số điện thoại
+  let isPhoneValid = true;
+  if (phoneInputRef.value) {
+    isPhoneValid = await phoneInputRef.value.validate();
+  }
+  
+  // Cập nhật thông báo lỗi cho số điện thoại
+  if (!isPhoneValid && phoneValidation.value && !phoneValidation.value.valid) {
+    errors.value.phoneNumber = phoneValidation.value.message || t('priceRequest.phoneInvalid') || 'Số điện thoại không hợp lệ';
+  }
+  
+  return isPhoneValid;
 };
 
-// Select phone code
-const selectPhoneCode = (phoneCode: string) => {
-  selectedPhoneCode.value = phoneCode;
-  showPhoneCodeDropdown.value = false;
-  countrySearchQuery.value = ''; // Reset search query after selection
+// Validate fullName field
+const validateFullNameField = async () => {
+  // Reset thông báo lỗi
+  errors.value.fullName = '';
+  
+  // Xác thực trường họ tên
+  await v$.value.fullName.$validate();
+  
+  // Cập nhật thông báo lỗi nếu có
+  if (v$.value.fullName.$error) {
+    errors.value.fullName = v$.value.fullName.$errors[0].$message;
+    return false;
+  }
+  
+  return true;
 };
 
-// Close dropdown when clicking outside
-const closeDropdownOnClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.phone-code-selector')) {
-    showPhoneCodeDropdown.value = false;
-    countrySearchQuery.value = ''; // Reset search query when closing dropdown
+// Validate email field
+const validateEmailField = async () => {
+  // Reset thông báo lỗi
+  errors.value.email = '';
+  
+  // Xác thực trường email
+  await v$.value.emailValue.$validate();
+  
+  // Cập nhật thông báo lỗi nếu có
+  if (v$.value.emailValue.$error) {
+    errors.value.email = v$.value.emailValue.$errors[0].$message;
+    return false;
   }
+  
+  return true;
 };
 
 // Validate form
-const validateForm = () => {
-  let isValid = true;
+const validateForm = async () => {
+  // Reset thông báo lỗi
   errors.value = {
     fullName: '',
     email: '',
     phoneNumber: '',
   };
-
-  if (!fullName.value.trim()) {
-    errors.value.fullName = t('priceRequest.fullNameRequired') || 'Vui lòng nhập họ tên';
-    isValid = false;
-  }
-
-  if (!email.value.trim()) {
-    errors.value.email = t('priceRequest.emailRequired') || 'Vui lòng nhập email';
-    isValid = false;
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    errors.value.email = t('priceRequest.emailInvalid') || 'Email không hợp lệ';
-    isValid = false;
-  }
-
-  if (!phoneNumber.value.trim()) {
-    errors.value.phoneNumber = t('priceRequest.phoneRequired') || 'Vui lòng nhập số điện thoại';
-    isValid = false;
-  }
-
-  return isValid;
+  
+  // Xác thực từng trường riêng biệt
+  const isFullNameValid = await validateFullNameField();
+  const isEmailValid = await validateEmailField();
+  const isPhoneValid = await validatePhoneField();
+  
+  return isFullNameValid && isEmailValid && isPhoneValid;
 };
 
 // Submit form
 const submitForm = async () => {
-  if (!validateForm()) return;
+  const isValid = await validateForm();
+  if (!isValid) return;
 
   isSubmitting.value = true;
 
   try {
     await trpc.priceRequest.create.mutate({
       fullName: fullName.value,
-      email: email.value,
+      email: emailValue.value,
       phone: `${selectedPhoneCode.value} ${phoneNumber.value}`,
       message: message.value,
       productId: props.productId,
@@ -179,7 +188,7 @@ const submitForm = async () => {
 // Reset form
 const resetForm = () => {
   fullName.value = '';
-  email.value = '';
+  emailValue.value = '';
   phoneNumber.value = '';
   message.value = '';
   errors.value = {
@@ -187,7 +196,14 @@ const resetForm = () => {
     email: '',
     phoneNumber: '',
   };
+  phoneValidation.value = {
+    valid: true,
+    message: ''
+  };
   submitSuccess.value = false;
+  
+  // Reset validation
+  v$.value.$reset();
 };
 
 // Close modal
@@ -203,16 +219,11 @@ const modalTitle = computed(() => {
     : t('priceRequest.title') || 'Yêu cầu báo giá';
 });
 
-// Add event listener for click outside
-onMounted(() => {
-  document.addEventListener('click', closeDropdownOnClickOutside);
-  fetchCountryPhoneCodes();
-});
-
 // Debug log khi props.isOpen thay đổi
 watch(() => props.isOpen, (newValue) => {
   console.log('Modal isOpen changed:', newValue);
 });
+
 </script>
 
 <template>
@@ -278,95 +289,35 @@ watch(() => props.isOpen, (newValue) => {
             :placeholder="t('priceRequest.fullNamePlaceholder') || 'Nhập họ tên của bạn'"
             :error="!!errors.fullName"
             size="md"
+            @blur="validateFullNameField"
           />
         </UFormGroup>
 
         <UFormGroup :label="t('priceRequest.email') || 'Email'" required :error="errors.email" class="mb-3" size="md">
           <UInput
-            v-model="email"
+            v-model="emailValue"
             type="email"
             :placeholder="t('priceRequest.emailPlaceholder') || 'Nhập email của bạn'"
             :error="!!errors.email"
             size="md"
+            @blur="validateEmailField"
           />
         </UFormGroup>
 
         <UFormGroup :label="t('priceRequest.phone') || 'Số điện thoại'" required :error="errors.phoneNumber" class="mb-3" size="md">
-          <div class="flex">
-            <div class="phone-code-selector relative">
-              <button 
-                type="button" 
-                @click="togglePhoneCodeDropdown" 
-                class="flex items-center gap-2 border rounded-l-md px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 h-[42px]"
-              >
-                <img 
-                  v-if="selectedCountry?.flagIcon" 
-                  :src="selectedCountry.flagIcon" 
-                  :alt="selectedCountry.countryName" 
-                  class="w-5 h-auto"
-                />
-                <span>{{ selectedPhoneCode }}</span>
-                <ChevronDown size="16" />
-              </button>
-              
-              <div 
-                v-if="showPhoneCodeDropdown" 
-                class="absolute z-50 mt-1 w-64 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto"
-              >
-                <div v-if="isLoadingCountries" class="p-3 text-center text-gray-500 dark:text-gray-400">
-                  {{ t('priceRequest.loadingCountries') || 'Đang tải...' }}
-                </div>
-                <div v-else>
-                  <!-- Thêm ô tìm kiếm -->
-                  <div class="p-2 border-b dark:border-gray-700">
-                    <div class="relative">
-                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search size="16" class="text-gray-400" />
-                      </div>
-                      <input
-                        id="country-search-input"
-                        v-model="countrySearchQuery"
-                        type="text"
-                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                        :placeholder="t('priceRequest.searchCountry') || 'Tìm kiếm quốc gia...'"
-                      />
-                    </div>
-                  </div>
-                  
-                  <!-- Danh sách quốc gia đã lọc -->
-                  <div class="py-1 max-h-48 overflow-y-auto">
-                    <div v-if="filteredCountries.length === 0" class="p-3 text-center text-gray-500 dark:text-gray-400">
-                      {{ t('priceRequest.noCountriesFound') || 'Không tìm thấy quốc gia phù hợp' }}
-                    </div>
-                    <button
-                      v-for="country in filteredCountries"
-                      :key="country.phoneCode"
-                      type="button"
-                      @click="selectPhoneCode(country.phoneCode)"
-                      class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
-                    >
-                      <img 
-                        v-if="country.flagIcon" 
-                        :src="country.flagIcon" 
-                        :alt="country.countryName" 
-                        class="w-5 h-auto"
-                      />
-                      <span>{{ country.phoneCode }}</span>
-                      <span class="text-gray-500 dark:text-gray-400 text-sm">{{ country.countryName }}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <UInput
-              v-model="phoneNumber"
-              :placeholder="t('priceRequest.phonePlaceholder') || 'Nhập số điện thoại của bạn'"
-              :error="!!errors.phoneNumber"
-              size="md"
-              class="flex-1 rounded-l-none"
-            />
-          </div>
+          <PhoneInput
+            ref="phoneInputRef"
+            v-model="phoneNumber"
+            v-model:phoneCode="selectedPhoneCode"
+            :error="!!errors.phoneNumber"
+            size="md"
+            required
+            :validateOnInput="false"
+            :showErrorMessage="false"
+            @validation="handlePhoneValidation"
+            @blur="validatePhoneField"
+          />
+          
         </UFormGroup>
 
         <UFormGroup :label="t('priceRequest.message') || 'Lời nhắn'" class="mb-3" size="md">
@@ -558,16 +509,17 @@ body.u-modal-open {
   transform: none !important;
 }
 
-/* Thêm CSS cho ô tìm kiếm quốc gia */
-.phone-code-selector .max-h-48 {
-  max-height: 12rem;
+/* Thêm style cho thông báo lỗi */
+.text-red-500 {
+  color: #ef4444 !important;
 }
 
-.phone-code-selector input:focus {
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+.text-sm {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
 }
 
-.dark .phone-code-selector input:focus {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+.mt-1 {
+  margin-top: 0.25rem !important;
 }
 </style> 

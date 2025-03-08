@@ -30,7 +30,9 @@
     "email": "Email không hợp lệ",
     "minLength": "Phải có ít nhất {min} ký tự",
     "maxLength": "Không được vượt quá {max} ký tự",
-    "passwordMatch": "Mật khẩu không khớp"
+    "passwordMatch": "Mật khẩu không khớp",
+    "phoneInvalid": "Số điện thoại không hợp lệ",
+    "phoneFormat": "Số điện thoại phải đúng định dạng"
   },
   "auth": {
     "email": "Email",
@@ -134,6 +136,7 @@
     "phone": "Số điện thoại",
     "phonePlaceholder": "Nhập số điện thoại của bạn",
     "phoneRequired": "Vui lòng nhập số điện thoại",
+    "phoneInvalid": "Số điện thoại không hợp lệ",
     "message": "Lời nhắn",
     "messagePlaceholder": "Nhập lời nhắn của bạn (không bắt buộc)",
     "submit": "Gửi yêu cầu",
@@ -145,6 +148,9 @@
     "successToast": "Yêu cầu báo giá đã được gửi",
     "successToastDescription": "Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất",
     "error": "Lỗi",
-    "errorDescription": "Có lỗi xảy ra khi gửi yêu cầu báo giá. Vui lòng thử lại sau."
+    "errorDescription": "Có lỗi xảy ra khi gửi yêu cầu báo giá. Vui lòng thử lại sau.",
+    "searchCountry": "Tìm kiếm quốc gia...",
+    "noCountriesFound": "Không tìm thấy quốc gia phù hợp",
+    "loadingCountries": "Đang tải danh sách quốc gia..."
   }
 } 
