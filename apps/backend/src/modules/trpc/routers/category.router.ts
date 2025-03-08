@@ -202,4 +202,118 @@ export const categoryRouter = router({
       });
     }
   }),
+
+  // API mới: Lấy sản phẩm theo danh mục
+  getProductsByCategory: publicProcedure
+    .input(z.object({
+      categoryId: z.number().optional(),
+      categorySlug: z.string().optional(),
+      page: z.number().min(1).default(1),
+      limit: z.number().min(1).max(50).default(12),
+      sortBy: z.enum(['price_asc', 'price_desc', 'newest', 'oldest']).optional(),
+      minPrice: z.number().optional(),
+      maxPrice: z.number().optional(),
+      includeNullPrice: z.boolean().optional(),
+      locale: z.string().default('vi'),
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching products by category: ${input.categoryId || input.categorySlug}`);
+        
+        // Lấy thông tin danh mục
+        let category;
+        if (input.categoryId) {
+          category = await ctx.services.categoryFrontendService.findOne(input.categoryId);
+        } else if (input.categorySlug) {
+          category = await ctx.services.categoryFrontendService.findBySlug(input.categorySlug);
+        } else {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Either categoryId or categorySlug must be provided',
+          });
+        }
+        
+        // Lấy danh sách sản phẩm theo danh mục
+        const result = await ctx.services.productFrontendService.findAll(input.locale, {
+          categories: [category.id],
+          page: input.page,
+          limit: input.limit,
+          sortBy: input.sortBy,
+          minPrice: input.minPrice,
+          maxPrice: input.maxPrice,
+          includeNullPrice: input.includeNullPrice,
+        });
+        
+        return {
+          category,
+          products: {
+            items: result.items.map(product => {
+              const translation = ctx.services.productFrontendService.getTranslation(product, input.locale);
+              return {
+                ...product,
+                title: translation?.title || '',
+                content: translation?.content || '',
+                shortDescription: translation?.shortDescription || '',
+                metaTitle: translation?.metaTitle || '',
+                metaDescription: translation?.metaDescription || '',
+                metaKeywords: translation?.metaKeywords || '',
+                formattedPrice: ctx.services.productFrontendService.formatPrice(product.price),
+              };
+            }),
+            total: result.total,
+            page: result.page,
+            limit: result.limit,
+            totalPages: result.totalPages,
+          }
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching products by category: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve products by category',
+          cause: error,
+        });
+      }
+    }),
+
+  // Thêm procedure getBySlug để lấy thông tin danh mục theo slug
+  getBySlug: publicProcedure
+    .input(z.object({
+      slug: z.string(),
+      locale: z.string().default('vi')
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Fetching category by slug: ${input.slug}`);
+        
+        try {
+          const category = await ctx.services.categoryFrontendService.findBySlug(input.slug);
+          
+          // Nếu có children, đảm bảo chỉ lấy các danh mục con đang active
+          if (category.children) {
+            category.children = category.children.filter(child => child.active);
+          }
+          
+          ctx.logger.debug(`Successfully retrieved category with slug: ${input.slug}`);
+          return category;
+        } catch (err) {
+          ctx.logger.warn(`Category not found for slug: ${input.slug}`);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Category with slug "${input.slug}" not found`,
+          });
+        }
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching category by slug ${input.slug}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve category',
+          cause: error,
+        });
+      }
+    }),
 }); 

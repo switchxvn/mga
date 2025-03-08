@@ -10,7 +10,8 @@ export const productRouter = router({
         minPrice: z.number().optional(),
         maxPrice: z.number().optional(),
         includeNullPrice: z.boolean().optional(),
-        categories: z.array(z.number()).optional(),
+        categories: z.array(z.number().nullable()).optional(),
+        categorySlug: z.string().optional(),
         isFeatured: z.boolean().optional(),
         isNew: z.boolean().optional(),
         isSale: z.boolean().optional(),
@@ -20,12 +21,29 @@ export const productRouter = router({
       }).optional(),
     )
     .query(async ({ ctx, input }) => {
+      // Nếu có categorySlug, lấy category ID từ slug
+      let categoryIds = input?.categories;
+      
+      if (input?.categorySlug) {
+        try {
+          const category = await ctx.services.categoryFrontendService.findBySlug(input.categorySlug);
+          if (category) {
+            categoryIds = [category.id];
+          }
+        } catch (error) {
+          ctx.logger.warn(`Category not found for slug: ${input.categorySlug}`);
+        }
+      }
+      
+      // Lọc bỏ các giá trị null trong mảng categories
+      const filteredCategoryIds = categoryIds?.filter(id => id !== null) || undefined;
+      
       const result = await ctx.services.productFrontendService.findAll(input?.locale, {
         search: input?.search,
         minPrice: input?.minPrice,
         maxPrice: input?.maxPrice,
         includeNullPrice: input?.includeNullPrice,
-        categories: input?.categories,
+        categories: filteredCategoryIds,
         isFeatured: input?.isFeatured,
         isNew: input?.isNew,
         isSale: input?.isSale,

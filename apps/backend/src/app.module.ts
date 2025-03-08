@@ -34,6 +34,7 @@ import { UserModule } from './modules/user/user.module';
         database: configService.get('DB_DATABASE', 'ecommerce'),
         autoLoadEntities: true,
         synchronize: false,
+        logging: true,
       }),
     }),
     UserModule,

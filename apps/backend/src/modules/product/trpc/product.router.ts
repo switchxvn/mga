@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { TrpcService } from '../../trpc/trpc.service';
 import { ProductFrontendService } from '../frontend/services/product-frontend.service';
 import { ProductAdminService } from '../admin/services/product-admin.service';
+import { publicProcedure, router } from '../../trpc/trpc';
 
 @Injectable()
 export class ProductRouter {
@@ -12,9 +13,9 @@ export class ProductRouter {
     private readonly productAdminService: ProductAdminService,
   ) {}
 
-  router = this.trpc.router({
+  router = router({
     // Public procedures
-    getAll: this.trpc.procedure
+    getAll: publicProcedure
       .input(
         z.object({
           locale: z.string().default('en'),
@@ -22,7 +23,7 @@ export class ProductRouter {
       )
       .query(async ({ input }) => {
         const products = await this.productFrontendService.findAll(input?.locale);
-        return products.map(product => {
+        return products.items.map(product => {
           const translation = this.productFrontendService.getTranslation(product, input?.locale);
           return {
             ...product,
@@ -38,7 +39,7 @@ export class ProductRouter {
         });
       }),
 
-    getFeatured: this.trpc.procedure
+    getFeatured: publicProcedure
       .input(
         z.object({
           locale: z.string().default('en'),
@@ -62,7 +63,7 @@ export class ProductRouter {
         });
       }),
 
-    getNew: this.trpc.procedure
+    getNew: publicProcedure
       .input(
         z.object({
           locale: z.string().default('en'),
@@ -86,7 +87,7 @@ export class ProductRouter {
         });
       }),
 
-    getOnSale: this.trpc.procedure
+    getOnSale: publicProcedure
       .input(
         z.object({
           locale: z.string().default('en'),
@@ -110,7 +111,7 @@ export class ProductRouter {
         });
       }),
 
-    getById: this.trpc.procedure
+    getById: publicProcedure
       .input(
         z.object({
           id: z.number(),
@@ -137,12 +138,12 @@ export class ProductRouter {
             name: category.name,
             slug: category.slug,
             description: category.description,
-            thumbnail: category.thumbnail
+            thumbnail: category.ogImage || null
           })) : []
         };
       }),
 
-    getBySlug: this.trpc.procedure
+    getBySlug: publicProcedure
       .input(
         z.object({
           slug: z.string(),
@@ -169,7 +170,7 @@ export class ProductRouter {
             name: category.name,
             slug: category.slug,
             description: category.description,
-            thumbnail: category.thumbnail
+            thumbnail: category.ogImage || null
           })) : []
         };
       }),
