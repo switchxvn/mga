@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useMenuItems } from '../../composables/useMenuItems';
 import type { MenuItem, MenuColumn } from '@ew/shared';
 import Icon from './Icon.vue';
@@ -7,6 +7,7 @@ import ThemeToggle from '../ThemeToggle.vue';
 import LanguageSwitcher from '../LanguageSwitcher.vue';
 import CartIcon from '../cart/CartIcon.vue';
 import { useRoute } from 'vue-router';
+import { useFeatureFlags } from '../../composables/useFeatureFlags';
 
 // Props cho component
 interface NavbarProps {
@@ -21,6 +22,25 @@ const props = withDefaults(defineProps<NavbarProps>(), {
 
 // Lấy route hiện tại
 const route = useRoute();
+
+// Feature flags
+const { isFeatureEnabled } = useFeatureFlags();
+const isCartEnabled = ref<boolean | null>(null);
+const isLoadingFeatureFlag = ref(true);
+
+// Kiểm tra feature flag enable_add_to_cart
+const checkCartFeatureFlag = async () => {
+  try {
+    isLoadingFeatureFlag.value = true;
+    isCartEnabled.value = await isFeatureEnabled('enable_add_to_cart', true);
+    console.log('Cart feature flag in NavbarWithTheme:', isCartEnabled.value);
+  } catch (err) {
+    console.error('Error checking cart feature flag:', err);
+    isCartEnabled.value = false;
+  } finally {
+    isLoadingFeatureFlag.value = false;
+  }
+};
 
 // Scroll behavior
 const isScrolled = ref(false);
@@ -116,6 +136,7 @@ const navbarClasses = computed(() => ({
 onMounted(() => {
   window.addEventListener("scroll", handleScroll);
   fetchMenuItems();
+  checkCartFeatureFlag();
 });
 
 onUnmounted(() => {
@@ -212,8 +233,8 @@ onUnmounted(() => {
           <!-- Theme Toggle -->
           <ThemeToggle />
           
-          <!-- Cart Icon -->
-          <CartIcon />
+          <!-- Cart Icon - Chỉ render khi feature flag là true -->
+          <CartIcon v-if="isCartEnabled" />
           
           <!-- Hotline -->
           <a :href="`tel:${hotline}`" class="flex items-center space-x-2 text-sm dark:text-gray-200">
@@ -227,8 +248,8 @@ onUnmounted(() => {
 
         <!-- Mobile Menu Button and Theme Toggle -->
         <div class="md:hidden flex items-center space-x-2">
-          <!-- Cart Icon for Mobile -->
-          <CartIcon />
+          <!-- Cart Icon for Mobile - Chỉ render khi feature flag là true -->
+          <CartIcon v-if="isCartEnabled" />
           
           <ThemeToggle />
           

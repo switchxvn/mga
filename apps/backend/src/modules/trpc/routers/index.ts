@@ -8,8 +8,12 @@ import { seoRouter } from './seo.router';
 import { categoryRouter } from './category.router';
 import { serviceRouter } from './service.router';
 import { featureFlagsRouter } from './feature-flags.router';
+import { productRouter } from './product.router';
+import { priceRequestRouter } from './price-request.router';
+import { profileRouter } from './profile.router';
+import { footerRouter } from './footer.router';
 
-export const appRouter = router({
+export const appRouter = (commonRouter) => router({
   auth: authRouter,
   post: postRouter,
   user: userRouter,
@@ -19,6 +23,11 @@ export const appRouter = router({
   category: categoryRouter,
   service: serviceRouter,
   featureFlags: featureFlagsRouter,
+  product: productRouter,
+  priceRequest: priceRequestRouter,
+  profile: profileRouter,
+  footer: footerRouter,
+  common: commonRouter.router,
 });
 
-export type AppRouter = typeof appRouter; 
+export type AppRouter = ReturnType<typeof appRouter>; 

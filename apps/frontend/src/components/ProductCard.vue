@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import LazyImage from './ui/LazyImage.vue';
 import AddToCartButton from './cart/AddToCartButton.vue';
+import Icon from './ui/Icon.vue';
 
 interface ProductTranslation {
   title: string;
@@ -115,11 +116,18 @@ const productLink = computed(() => {
           </div>
         </div>
         
-        <AddToCartButton 
-          :product="{ id: product.id, name: title, price: product.price }" 
-          iconOnly 
-          buttonClass="p-2"
-        />
+        <!-- Sử dụng custom button thay vì AddToCartButton nếu feature flag bị tắt -->
+        <div class="flex items-center">
+          <AddToCartButton 
+            :product="{ id: product.id, name: title, price: product.price }" 
+            iconOnly 
+            buttonClass="p-2 flex items-center justify-center"
+          >
+            <template #default>
+              <Icon name="ShoppingCart" class="w-5 h-5 text-black dark:text-white" />
+            </template>
+          </AddToCartButton>
+        </div>
       </div>
     </div>
   </div>

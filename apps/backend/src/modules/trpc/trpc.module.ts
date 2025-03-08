@@ -15,6 +15,9 @@ import { ServiceModule } from '../service/service.module';
 import { ProductModule } from '../product/product.module';
 import { PriceRequestModule } from '../price-request/price-request.module';
 import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
+import { CommonModule } from '../common';
+import { CommonRouter } from './routers/common.router';
+import { TrpcRouter } from './trpc.router';
 
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
@@ -37,6 +40,7 @@ import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
     ServiceModule,
     ProductModule,
     FeatureFlagsModule,
+    CommonModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency
@@ -56,7 +60,7 @@ import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
       isGlobal: true,
     }),
   ],
-  providers: [TrpcService],
-  exports: [TrpcService],
+  providers: [TrpcService, CommonRouter, TrpcRouter],
+  exports: [TrpcService, TrpcRouter],
 })
 export class TrpcModule {} 

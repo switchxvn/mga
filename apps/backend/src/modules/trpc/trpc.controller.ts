@@ -1,13 +1,17 @@
 import { Controller, All, Req, Res, NotFoundException, Param, Logger } from '@nestjs/common';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { TrpcService } from './trpc.service';
+import { TrpcRouter } from './trpc.router';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
 @Controller('trpc')
 export class TrpcController {
   private readonly logger = new Logger(TrpcController.name);
 
-  constructor(private readonly trpcService: TrpcService) {}
+  constructor(
+    private readonly trpcService: TrpcService,
+    private readonly trpcRouter: TrpcRouter
+  ) {}
 
   @All('*')
   async handleRequest(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
@@ -39,7 +43,7 @@ export class TrpcController {
       const result = await fetchRequestHandler({
         endpoint: '/api/trpc',
         req: request,
-        router: this.trpcService.getRouter(),
+        router: this.trpcRouter.getRouter(),
         createContext: () => ctx,
         onError: ({ error, path }) => {
           this.logger.error(`tRPC error on path ${path}: ${error.message}`);

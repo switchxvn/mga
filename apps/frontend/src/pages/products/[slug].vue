@@ -347,12 +347,16 @@ const isPriceRequestModalOpen = ref(false);
 
 // Hàm mở modal yêu cầu báo giá
 const openPriceRequestModal = () => {
+  console.log('Opening modal...');
   isPriceRequestModalOpen.value = true;
+  console.log('Modal state after open:', isPriceRequestModalOpen.value);
 };
 
 // Hàm đóng modal yêu cầu báo giá
 const closePriceRequestModal = () => {
+  console.log('Closing modal...');
   isPriceRequestModalOpen.value = false;
+  console.log('Modal state after close:', isPriceRequestModalOpen.value);
 };
 
 // Hàm xử lý khi gửi yêu cầu báo giá thành công
@@ -365,10 +369,15 @@ const handlePriceRequestSuccess = () => {
     timeout: 5000
   });
 };
+
+// Theo dõi trạng thái modal
+watch(isPriceRequestModalOpen, (newVal) => {
+  console.log('Modal state changed:', newVal);
+});
 </script>
 
 <template>
-  <div class="product-detail container mx-auto px-4 py-8">
+  <div class="product-detail container mx-auto px-4 py-8 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-sm">
     <div v-if="isLoading" class="py-12">
       <USkeleton class="mb-4 h-8 w-2/3" />
       <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -556,7 +565,7 @@ const handlePriceRequestSuccess = () => {
             size="lg" 
             block
             icon="i-heroicons-currency-dollar"
-            class="mb-4"
+            class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
             @click="openPriceRequestModal"
           >
             {{ t('products.requestPrice') || 'Yêu cầu báo giá' }}
@@ -753,6 +762,13 @@ const handlePriceRequestSuccess = () => {
 .tab-content {
   min-height: 300px;
   transition: all 0.3s ease;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+}
+
+.dark .tab-content {
+  background-color: var(--color-gray-800);
+  border-color: var(--color-gray-700);
 }
 
 .tab-content-inner {
@@ -958,5 +974,97 @@ const handlePriceRequestSuccess = () => {
 :deep(.u-button[block]) {
   display: flex !important;
   width: 100% !important;
+}
+
+/* Thêm CSS cho product-info */
+.product-info {
+  background-color: var(--color-white);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .product-info {
+  background-color: var(--color-gray-800);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Thêm CSS cho product-images */
+.product-images {
+  background-color: var(--color-white);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .product-images {
+  background-color: var(--color-gray-800);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* CSS cho modal overlay */
+:deep(.u-modal-overlay) {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(2px) !important;
+  z-index: 9998 !important;
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+:deep(.u-modal-container) {
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  z-index: 9999 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:deep(.u-modal) {
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  z-index: 10000 !important;
+  position: relative !important;
+}
+
+/* Ghi đè CSS cho modal để đảm bảo nó hiển thị đúng */
+.u-modal {
+  z-index: 9999 !important;
+}
+
+.u-modal-overlay {
+  z-index: 9998 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+.u-modal-container {
+  z-index: 9999 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow-y: auto !important;
+}
+
+.u-modal-content {
+  z-index: 10000 !important;
+  position: relative !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  background-color: white !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.u-modal-open {
+  overflow: auto !important;
+  padding-right: 0 !important;
 }
 </style> 

@@ -90,10 +90,16 @@ const handleAddToCart = async () => {
       :loading="isAdding"
       @click="handleAddToCart"
     >
-      <UIcon v-if="iconOnly" name="i-heroicons-shopping-cart" class="w-5 h-5" />
+      <!-- Sử dụng slot mặc định nếu được cung cấp -->
+      <slot v-if="$slots.default"></slot>
+      
+      <!-- Sử dụng icon mặc định nếu không có slot -->
       <template v-else>
-        <UIcon name="i-heroicons-shopping-cart" class="w-5 h-5 mr-2" />
-        {{ buttonText || 'Thêm vào giỏ hàng' }}
+        <UIcon v-if="iconOnly" name="i-heroicons-shopping-cart" class="w-5 h-5" />
+        <template v-else>
+          <UIcon name="i-heroicons-shopping-cart" class="w-5 h-5 mr-2" />
+          {{ buttonText || 'Thêm vào giỏ hàng' }}
+        </template>
       </template>
     </UButton>
     <div v-else class="hidden"><!-- Không hiển thị gì khi tính năng bị tắt --></div>

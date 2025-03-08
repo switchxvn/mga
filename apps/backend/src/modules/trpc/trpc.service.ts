@@ -5,7 +5,7 @@ import { User } from '../user/entities/user.entity';
 import { Post } from '../post/entities/post.entity';
 import { JwtService } from '@nestjs/jwt';
 import { createContext } from './trpc';
-import { router } from './trpc';
+import { appRouter } from './routers';
 import { authRouter } from './routers/auth.router';
 import { postRouter } from './routers/post.router';
 import { userRouter } from './routers/user.router';
@@ -43,24 +43,12 @@ import { PriceRequestService } from '../price-request/services/price-request.ser
 import { featureFlagsRouter } from './routers/feature-flags.router';
 import { FeatureFlagsAdminService } from '../feature-flags/admin/services/feature-flags-admin.service';
 import { FeatureFlagsFrontendService } from '../feature-flags/frontend/services/feature-flags-frontend.service';
+import { CommonRouter } from './routers/common.router';
 
 @Injectable()
 export class TrpcService {
   private readonly logger = new Logger(TrpcService.name);
-  private appRouter = router({
-    auth: authRouter,
-    post: postRouter,
-    user: userRouter,
-    profile: profileRouter,
-    settings: settingsRouter,
-    seo: seoRouter,
-    footer: footerRouter,
-    category: categoryRouter,
-    service: serviceRouter,
-    product: productRouter,
-    priceRequest: priceRequestRouter,
-    featureFlags: featureFlagsRouter,
-  });
+  private router;
 
   constructor(
     private readonly userService: UserService,
@@ -89,10 +77,13 @@ export class TrpcService {
     private readonly priceRequestService: PriceRequestService,
     private readonly featureFlagsAdminService: FeatureFlagsAdminService,
     private readonly featureFlagsFrontendService: FeatureFlagsFrontendService,
-  ) {}
+    private readonly commonRouter: CommonRouter,
+  ) {
+    this.router = appRouter(commonRouter);
+  }
 
   getRouter() {
-    return this.appRouter;
+    return this.router;
   }
 
   async createContext(req: any) {

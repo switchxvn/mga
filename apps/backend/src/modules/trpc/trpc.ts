@@ -22,6 +22,8 @@ import { CrossSellService } from '../product/frontend/services/cross-sell.servic
 import { ProductSpecificationService } from '../product/services/product-specification.service';
 import { ProductComboService } from '../product/frontend/services/product-combo.service';
 import { PriceRequestService } from '../price-request/services/price-request.service';
+import { FeatureFlagsAdminService } from '../feature-flags/admin/services/feature-flags-admin.service';
+import { FeatureFlagsFrontendService } from '../feature-flags/frontend/services/feature-flags-frontend.service';
 
 // Define context type
 export interface Context {
@@ -51,6 +53,8 @@ export interface Context {
     productSpecificationService: ProductSpecificationService;
     productComboService: ProductComboService;
     priceRequestService: PriceRequestService;
+    featureFlagsAdminService: FeatureFlagsAdminService;
+    featureFlagsFrontendService: FeatureFlagsFrontendService;
   };
   logger: Logger;
 }

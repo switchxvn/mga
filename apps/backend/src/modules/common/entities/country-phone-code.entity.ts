@@ -2,24 +2,27 @@ import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } fro
 
 @Entity('country_phone_codes')
 export class CountryPhoneCode {
-  @PrimaryColumn()
+  @PrimaryColumn({ name: 'phone_code' })
   phoneCode: string;
 
-  @Column()
+  @Column({ name: 'country_code' })
   countryCode: string;
 
-  @Column()
+  @Column({ name: 'country_name' })
   countryName: string;
 
-  @Column({ default: true })
+  @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @Column({ nullable: true })
+  @Column({ name: 'flag_icon', nullable: true })
   flagIcon: string;
 
-  @CreateDateColumn()
+  @Column({ name: 'flag_emoji', nullable: true })
+  flagEmoji: string;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 } 
