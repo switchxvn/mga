@@ -310,7 +310,6 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-@import '../../assets/styles/_variables.scss';
 
 .main-menu-item {
   color: $main-menu-color;

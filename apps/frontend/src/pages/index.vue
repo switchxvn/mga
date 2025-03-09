@@ -238,7 +238,7 @@ const getAuthorName = (author: any) => {
 <template>
   <div>
     <!-- Hero Section -->
-    <section class="hero-section bg-gradient-to-r from-primary-500 to-blue-600 text-white py-8 md:py-12 overflow-hidden">
+    <section class="hero-section bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-[hsl(var(--background))] py-8 md:py-12 overflow-hidden">
       <div class="container mx-auto px-4">
         <div class="flex flex-col lg:flex-row items-stretch gap-6">
           <!-- Left Column - Video Thumbnails (30%) -->
@@ -248,18 +248,18 @@ const getAuthorName = (author: any) => {
               <div 
                 v-for="video in videoThumbnails" 
                 :key="video.id"
-                class="video-thumbnail relative rounded-lg overflow-hidden cursor-pointer group row-span-1 shadow-md hover:shadow-lg transition-shadow duration-300"
+                class="video-thumbnail relative rounded-[var(--radius)] overflow-hidden cursor-pointer group row-span-1 shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all duration-[var(--transition-normal)]"
                 @click="openVideo(video.videoUrl)"
               >
                 <div class="absolute inset-0">
                   <img 
                     :src="video.thumbnail" 
                     :alt="video.title"
-                    class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    class="w-full h-full object-cover transition-transform duration-[var(--transition-normal)] group-hover:scale-105"
                     @error="handleImageError($event, video)"
                   />
-                  <div class="absolute inset-0 bg-gray-900/40 group-hover:bg-gray-900/30 transition-colors duration-300 flex items-center justify-center">
-                    <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-primary-600 transform group-hover:scale-110 transition-transform duration-300">
+                  <div class="absolute inset-0 bg-[hsl(var(--foreground)/0.4)] group-hover:bg-[hsl(var(--foreground)/0.3)] transition-colors duration-[var(--transition-normal)] flex items-center justify-center">
+                    <div class="w-12 h-12 rounded-full bg-[hsl(var(--background)/0.9)] flex items-center justify-center text-[hsl(var(--primary))] transform group-hover:scale-110 transition-transform duration-[var(--transition-normal)]">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
                         <path d="M8 5.14v14l11-7-11-7z" />
                       </svg>
@@ -272,7 +272,7 @@ const getAuthorName = (author: any) => {
           
           <!-- Right Column - Hero Slider (70%) -->
           <div class="lg:w-[70%] hero-slider-container">
-            <Swiper v-bind="heroSwiperOptions" class="w-full h-[500px] rounded-lg overflow-hidden shadow-lg">
+            <Swiper v-bind="heroSwiperOptions" class="w-full h-[500px] rounded-[var(--radius)] overflow-hidden shadow-[var(--shadow-lg)]">
               <SwiperSlide v-for="slide in heroSlides" :key="slide.id" class="relative">
                 <div class="relative h-full">
                   <!-- Background Image -->
@@ -283,17 +283,17 @@ const getAuthorName = (author: any) => {
                   />
                   
                   <!-- Overlay -->
-                  <div class="absolute inset-0 bg-gradient-to-r from-gray-900/70 to-gray-900/20"></div>
+                  <div class="absolute inset-0 bg-gradient-to-r from-[hsl(var(--foreground)/0.7)] to-[hsl(var(--foreground)/0.2)]"></div>
                   
                   <!-- Content -->
                   <div class="absolute inset-0 flex items-center">
                     <div class="container mx-auto px-8 md:px-12 max-w-3xl">
-                      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">{{ slide.title }}</h2>
-                      <p class="text-lg md:text-xl mb-6 max-w-xl text-gray-100">{{ slide.description }}</p>
+                      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[hsl(var(--background))]">{{ slide.title }}</h2>
+                      <p class="text-lg md:text-xl mb-6 max-w-xl text-[hsl(var(--background)/0.9)]">{{ slide.description }}</p>
                       <NuxtLink 
                         v-if="slide.buttonText && slide.buttonLink" 
                         :to="slide.buttonLink"
-                        class="inline-block bg-white text-primary-600 hover:bg-gray-50 px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+                        class="inline-block bg-[hsl(var(--background))] text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))] px-6 py-3 rounded-[var(--radius)] font-medium transition-colors shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]"
                       >
                         {{ slide.buttonText }}
                       </NuxtLink>
@@ -382,47 +382,49 @@ const getAuthorName = (author: any) => {
 </template>
 
 <style lang="scss">
+@use "@/assets/styles/base/_variables.scss" as *;
+
 .hero-section {
   .hero-slider-container {
     :deep {
       .swiper-pagination {
-        bottom: 20px;
+        bottom: var(--spacing-5);
       }
 
       .swiper-pagination-bullet {
-        width: 10px;
-        height: 10px;
-        background: white;
+        width: var(--spacing-2-5);
+        height: var(--spacing-2-5);
+        background: hsl(var(--background));
         opacity: 0.5;
-        transition: all 0.3s ease;
+        transition: all var(--transition-normal);
       }
 
       .swiper-pagination-bullet-active {
         opacity: 1;
-        background: white;
+        background: hsl(var(--background));
         transform: scale(1.2);
       }
 
       .swiper-button-next,
       .swiper-button-prev {
-        color: white;
-        background: rgba(255, 255, 255, 0.1);
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
+        color: hsl(var(--background));
+        background: var(--background-10);
+        width: var(--spacing-10);
+        height: var(--spacing-10);
+        border-radius: var(--radius-full);
         backdrop-filter: blur(4px);
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.3s ease;
+        transition: all var(--transition-normal);
 
         &:hover {
-          background: rgba(255, 255, 255, 0.2);
+          background: var(--background-20);
           transform: scale(1.1);
         }
 
         &::after {
-          font-size: 18px;
+          font-size: var(--font-size-lg);
         }
       }
     }
@@ -437,17 +439,17 @@ const getAuthorName = (author: any) => {
 
     .swiper-button-next,
     .swiper-button-prev {
-      color: var(--color-primary);
+      color: hsl(var(--primary));
       top: 50%;
       transform: translateY(-50%);
     }
 
     .swiper-button-next {
-      right: 10px;
+      right: var(--spacing-2-5);
     }
 
     .swiper-button-prev {
-      left: 10px;
+      left: var(--spacing-2-5);
     }
   }
 }

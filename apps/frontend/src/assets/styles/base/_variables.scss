@@ -12,6 +12,32 @@
   --primary-900: 240 5.9% 10%;
   --primary-950: 240 7.3% 8%;
 
+  /* Gray scale */
+  --gray-50: 0 0% 98%;
+  --gray-100: 240 4.8% 95.9%;
+  --gray-200: 240 5.9% 90%;
+  --gray-300: 240 4.9% 83.9%;
+  --gray-400: 240 5% 64.9%;
+  --gray-500: 240 3.8% 46.1%;
+  --gray-600: 240 5.2% 33.9%;
+  --gray-700: 240 5.9% 10%;
+  --gray-800: 240 3.8% 15.9%;
+  --gray-900: 240 10% 3.9%;
+  --gray-950: 240 7.3% 8%;
+
+  /* Blue scale */
+  --blue-50: 214 100% 97%;
+  --blue-100: 214 94% 93%;
+  --blue-200: 213 97% 87%;
+  --blue-300: 212 96% 78%;
+  --blue-400: 213 94% 68%;
+  --blue-500: 217 91% 60%;
+  --blue-600: 221 83% 53%;
+  --blue-700: 224 76% 48%;
+  --blue-800: 226 71% 40%;
+  --blue-900: 224 71% 45%;
+  --blue-950: 226 57% 21%;
+
   /* Semantic colors */
   --background: 0 0% 100%;
   --foreground: 240 10% 3.9%;
@@ -32,7 +58,34 @@
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
   --ring: 240 5.9% 10%;
+
+  /* Success colors */
+  --success-light: 142 72% 29%;
+  --success: 142 71% 45%;
+  --success-dark: 142 76% 36%;
+
+  /* Warning colors */
+  --warning-light: 38 92% 50%;
+  --warning: 38 93% 53%;
+  --warning-dark: 38 94% 47%;
+
+  /* Error colors */
+  --error-light: 0 84% 60%;
+  --error: 0 84% 60%;
+  --error-dark: 0 74% 54%;
+
+  /* Info colors */
+  --info-light: 214 94% 68%;
+  --info: 217 91% 60%;
+  --info-dark: 221 83% 53%;
+
+  /* Border radius */
   --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
 
   /* Font sizes */
   --font-size-xs: 0.75rem;
@@ -48,6 +101,7 @@
   --spacing-0: 0;
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
+  --spacing-2-5: 0.625rem;
   --spacing-3: 0.75rem;
   --spacing-4: 1rem;
   --spacing-5: 1.25rem;
@@ -76,6 +130,34 @@
   --transition-normal: 250ms;
   --transition-slow: 350ms;
   --transition-slower: 500ms;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* Navigation */
+  --navbar-bg: var(--background);
+  --navbar-text: var(--foreground);
+  --navbar-link: var(--foreground);
+  --navbar-link-hover: var(--primary);
+  --navbar-active: var(--primary);
+
+  /* Main Menu */
+  --main-menu-color: var(--blue-900);
+  --main-menu-hover: var(--blue-500);
+  --main-menu-active: var(--blue-600);
+  --main-menu-dark: var(--gray-200);
+  --main-menu-dark-hover: var(--blue-400);
+  --main-menu-letter-spacing: 0.05em;
+  --main-menu-font-weight: 600;
+
+  /* Background opacity */
+  --background-10: rgba(255, 255, 255, 0.1);
+  --background-20: rgba(255, 255, 255, 0.2);
+  --background-30: rgba(255, 255, 255, 0.3);
+  --background-40: rgba(255, 255, 255, 0.4);
 }
 
 .dark {
@@ -98,4 +180,183 @@
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
+
+  /* Background opacity for dark mode */
+  --background-10: rgba(0, 0, 0, 0.1);
+  --background-20: rgba(0, 0, 0, 0.2);
+  --background-30: rgba(0, 0, 0, 0.3);
+  --background-40: rgba(0, 0, 0, 0.4);
 } 
+
+// Base Colors
+$colors: (
+  'primary': (
+    50: #f0f9ff,
+    100: #e0f2fe,
+    200: #bae6fd,
+    300: #7dd3fc,
+    400: #38bdf8,
+    500: #0ea5e9,  // Main primary color
+    600: #0284c7,
+    700: #0369a1,
+    800: #075985,
+    900: #0c4a6e,
+    950: #082f49
+  ),
+  'gray': (
+    50: #f8fafc,
+    100: #f1f5f9,
+    200: #e2e8f0,
+    300: #cbd5e1,
+    400: #94a3b8,
+    500: #64748b,
+    600: #475569,
+    700: #334155,
+    800: #1e293b,
+    900: #0f172a,
+    950: #020617
+  ),
+  'blue': (
+    50: #eff6ff,
+    100: #dbeafe,
+    200: #bfdbfe,
+    300: #93c5fd,
+    400: #60a5fa,
+    500: #3b82f6,
+    600: #2563eb,
+    700: #1d4ed8,
+    800: #1e40af,
+    900: #1e3a8a,
+    950: #172554
+  )
+);
+
+// Legacy Colors - Giữ lại để tương thích ngược
+$primary: map-get(map-get($colors, 'primary'), 500);
+$text-dark: map-get(map-get($colors, 'gray'), 700);
+$text-light: map-get(map-get($colors, 'gray'), 500);
+$background-hover: map-get(map-get($colors, 'gray'), 50);
+
+// Semantic Colors
+$semantic-colors: (
+  'success': #10b981,  // Emerald-500
+  'warning': #f59e0b,  // Amber-500
+  'error': #ef4444,    // Red-500
+  'info': #3b82f6      // Blue-500
+);
+
+// Theme Colors
+$theme: (
+  // Brand Colors
+  'primary': $primary,
+  'primary-light': map-get(map-get($colors, 'primary'), 400),
+  'primary-dark': map-get(map-get($colors, 'primary'), 600),
+  
+  // Text Colors
+  'text': $text-dark,
+  'text-light': $text-light,
+  'text-lighter': map-get(map-get($colors, 'gray'), 400),
+  'text-dark': $text-dark,
+  
+  // Background Colors
+  'background': #ffffff,
+  'background-alt': map-get(map-get($colors, 'gray'), 50),
+  'background-hover': $background-hover,
+  
+  // Border Colors
+  'border': map-get(map-get($colors, 'gray'), 200),
+  'border-light': map-get(map-get($colors, 'gray'), 100),
+  'border-dark': map-get(map-get($colors, 'gray'), 300)
+);
+
+// Dark Theme Colors
+$theme-dark: (
+  'background': map-get(map-get($colors, 'gray'), 900),
+  'background-alt': map-get(map-get($colors, 'gray'), 800),
+  'text': map-get(map-get($colors, 'gray'), 100),
+  'text-light': map-get(map-get($colors, 'gray'), 300),
+  'border': map-get(map-get($colors, 'gray'), 700)
+);
+
+// Navigation
+$navbar: (
+  'background': map-get($theme, 'background'),
+  'text': map-get($theme, 'text'),
+  'link-color': $text-dark,
+  'link-hover': $primary,
+  'active': $primary
+);
+
+// Main Menu
+$main-menu: (
+  'color': map-get(map-get($colors, 'blue'), 900),
+  'hover-color': map-get(map-get($colors, 'blue'), 500),
+  'active-color': map-get(map-get($colors, 'blue'), 600),
+  'dark-color': map-get(map-get($colors, 'gray'), 200),
+  'dark-hover-color': map-get(map-get($colors, 'blue'), 400),
+  'letter-spacing': 0.05em,
+  'font-weight': 600
+);
+
+// Typography
+$typography: (
+  'font-family': ('Inter', system-ui, sans-serif),
+  'base-size': 16px,
+  'line-height': 1.5,
+  'heading-weight': 700
+);
+
+// Spacing
+$spacing: (
+  'xs': 0.25rem,  // 4px
+  'sm': 0.5rem,   // 8px
+  'md': 1rem,     // 16px
+  'lg': 1.5rem,   // 24px
+  'xl': 2rem,     // 32px
+  '2xl': 3rem,    // 48px
+  '3xl': 4rem     // 64px
+);
+
+// Border Radius
+$radius: (
+  'sm': 0.25rem,  // 4px
+  'md': 0.375rem, // 6px
+  'lg': 0.5rem,   // 8px
+  'xl': 0.75rem,  // 12px
+  'full': 9999px
+);
+
+// Shadows
+$shadows: (
+  'sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+  'md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+  'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+  'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+);
+
+// Z-index
+$z-index: (
+  'dropdown': 1000,
+  'sticky': 1020,
+  'fixed': 1030,
+  'modal-backdrop': 1040,
+  'modal': 1050,
+  'popover': 1060,
+  'tooltip': 1070
+);
+
+// Navbar specific
+$navbar-link-color: $text-dark;
+$navbar-link-hover: $primary;
+$navbar-megamenu-text: $text-dark;
+$navbar-megamenu-hover: $primary;
+$navbar-megamenu-bg-hover: $background-hover;
+
+// Main menu enhancements
+$main-menu-color: #1e3a8a; // Đậm hơn, màu xanh navy
+$main-menu-hover-color: #3b82f6; // Màu xanh dương sáng hơn khi hover
+$main-menu-active-color: #2563eb; // Màu khi active
+$main-menu-letter-spacing: 0.05em; // Khoảng cách chữ cho menu chính
+$main-menu-font-weight: 700; // Độ đậm của font (tăng từ 600 lên 700)
+$main-menu-dark-color: #e5e7eb; // Màu chữ trong dark mode
+$main-menu-dark-hover-color: #60a5fa; // Màu hover trong dark mode 
