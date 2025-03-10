@@ -15,6 +15,7 @@ import { ServiceModule } from '../service/service.module';
 import { ProductModule } from '../product/product.module';
 import { PriceRequestModule } from '../price-request/price-request.module';
 import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
+import { HeroModule } from '../hero/hero.module';
 import { CommonModule } from '../common';
 import { CommonRouter } from './routers/common.router';
 import { TrpcRouter } from './trpc.router';
@@ -40,6 +41,7 @@ import { TrpcRouter } from './trpc.router';
     ServiceModule,
     ProductModule,
     FeatureFlagsModule,
+    HeroModule,
     CommonModule,
     forwardRef(() => PriceRequestModule),
     

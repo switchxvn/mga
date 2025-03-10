@@ -24,6 +24,8 @@ import { ProductComboService } from '../product/frontend/services/product-combo.
 import { PriceRequestService } from '../price-request/services/price-request.service';
 import { FeatureFlagsAdminService } from '../feature-flags/admin/services/feature-flags-admin.service';
 import { FeatureFlagsFrontendService } from '../feature-flags/frontend/services/feature-flags-frontend.service';
+import { HeroService } from '../hero/admin/services/hero.service';
+import { HeroSliderService } from '../hero/admin/services/hero-slider.service';
 
 // Define context type
 export interface Context {
@@ -55,6 +57,8 @@ export interface Context {
     priceRequestService: PriceRequestService;
     featureFlagsAdminService: FeatureFlagsAdminService;
     featureFlagsFrontendService: FeatureFlagsFrontendService;
+    heroService: HeroService;
+    heroSliderService: HeroSliderService;
   };
   logger: Logger;
 }

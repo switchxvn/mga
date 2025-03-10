@@ -44,6 +44,9 @@ import { featureFlagsRouter } from './routers/feature-flags.router';
 import { FeatureFlagsAdminService } from '../feature-flags/admin/services/feature-flags-admin.service';
 import { FeatureFlagsFrontendService } from '../feature-flags/frontend/services/feature-flags-frontend.service';
 import { CommonRouter } from './routers/common.router';
+import { HeroService } from '../hero/admin/services/hero.service';
+import { HeroSliderService } from '../hero/admin/services/hero-slider.service';
+import { heroRouter } from './routers/hero.router';
 
 @Injectable()
 export class TrpcService {
@@ -77,6 +80,8 @@ export class TrpcService {
     private readonly priceRequestService: PriceRequestService,
     private readonly featureFlagsAdminService: FeatureFlagsAdminService,
     private readonly featureFlagsFrontendService: FeatureFlagsFrontendService,
+    private readonly heroService: HeroService,
+    private readonly heroSliderService: HeroSliderService,
     private readonly commonRouter: CommonRouter,
   ) {
     this.router = appRouter(commonRouter);
@@ -114,6 +119,8 @@ export class TrpcService {
       priceRequestService: this.priceRequestService,
       featureFlagsAdminService: this.featureFlagsAdminService,
       featureFlagsFrontendService: this.featureFlagsFrontendService,
+      heroService: this.heroService,
+      heroSliderService: this.heroSliderService,
     };
 
     // Extract and verify JWT token if present
