@@ -16,6 +16,7 @@ import { ServiceModule } from './modules/service/service.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { TrpcModule } from './modules/trpc/trpc.module';
 import { UserModule } from './modules/user/user.module';
+import { ThemeModule } from './modules/theme/theme.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { UserModule } from './modules/user/user.module';
     ProductModule,
     PriceRequestModule,
     FeatureFlagsModule,
+    ThemeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

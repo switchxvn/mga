@@ -13,6 +13,7 @@ import { priceRequestRouter } from './price-request.router';
 import { profileRouter } from './profile.router';
 import { footerRouter } from './footer.router';
 import { heroRouter } from './hero.router';
+import { themeRouter } from './theme.router';
 
 export const appRouter = (commonRouter) => router({
   auth: authRouter,
@@ -29,6 +30,7 @@ export const appRouter = (commonRouter) => router({
   profile: profileRouter,
   footer: footerRouter,
   hero: heroRouter,
+  theme: themeRouter,
   common: commonRouter.router,
 });
 

@@ -9,8 +9,8 @@ import {
 } from 'typeorm';
 import { Theme } from '../../theme/entities/theme.entity';
 
-@Entity('hero_slider')
-export class HeroSlider {
+@Entity('hero_videos')
+export class HeroVideo {
   @PrimaryGeneratedColumn()
   id!: number;
 
@@ -20,14 +20,14 @@ export class HeroSlider {
   @Column({ type: 'text', nullable: true })
   description!: string;
 
-  @Column({ length: 255, name: 'image_url' })
-  imageUrl!: string;
+  @Column({ length: 255, name: 'video_url' })
+  videoUrl!: string;
 
-  @Column({ length: 255, nullable: true, name: 'button_text' })
-  buttonText!: string;
+  @Column({ length: 255, nullable: true, name: 'thumbnail_url' })
+  thumbnailUrl!: string;
 
-  @Column({ length: 255, nullable: true, name: 'button_link' })
-  buttonLink!: string;
+  @Column({ length: 255, nullable: true })
+  link!: string;
 
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive!: boolean;

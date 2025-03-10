@@ -19,6 +19,7 @@ import { HeroModule } from '../hero/hero.module';
 import { CommonModule } from '../common';
 import { CommonRouter } from './routers/common.router';
 import { TrpcRouter } from './trpc.router';
+import { ThemeModule } from '../theme/theme.module';
 
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
@@ -26,6 +27,13 @@ import { TrpcRouter } from './trpc.router';
  * This module integrates tRPC with NestJS, allowing for type-safe API calls
  * between the frontend and backend. It imports all necessary modules that
  * will be exposed through tRPC endpoints.
+ * 
+ * Features:
+ * - User management and authentication
+ * - Content management (posts, products, categories)
+ * - Site configuration (settings, SEO, footer)
+ * - Theme management and customization
+ * - Feature flags for conditional functionality
  */
 @Module({
   controllers: [TrpcController],
@@ -43,6 +51,7 @@ import { TrpcRouter } from './trpc.router';
     FeatureFlagsModule,
     HeroModule,
     CommonModule,
+    ThemeModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

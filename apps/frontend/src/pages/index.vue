@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTrpc } from '../composables/useTrpc';
-import { ref, onMounted } from '../composables/useVueComposables';
+import { ref, onMounted, computed } from '../composables/useVueComposables';
 import { useSeo } from '../composables/useSeo';
 import { useRoute } from 'vue-router';
 import { useLocalization } from '../composables/useLocalization';
@@ -54,6 +54,67 @@ interface VideoThumbnail {
   videoUrl: string;
 }
 
+// Theme section interface
+interface ThemeSection {
+  id: number;
+  type: string;
+  title: string;
+  order: number;
+  settings: Record<string, any>;
+  isActive: boolean;
+}
+
+// Theme interface
+interface Theme {
+  id: number;
+  name: string;
+  colors: {
+    primary: Record<string, string>;
+    secondary: Record<string, string>;
+    success: Record<string, string>;
+    error: Record<string, string>;
+    warning: Record<string, string>;
+    info: Record<string, string>;
+  };
+  sections: ThemeSection[];
+  isActive: boolean;
+}
+
+// Section config interfaces
+interface SliderConfig {
+  height?: string;
+  layout?: 'split' | 'full';
+  autoplay?: boolean;
+  interval?: number;
+  showDots?: boolean;
+  showArrows?: boolean;
+  videoWidth?: string;
+  sliderWidth?: string;
+  videoPosition?: 'left' | 'right';
+  sliderPosition?: 'left' | 'right';
+  items?: Array<{
+    image_url: string;
+    title: string;
+    description: string;
+    link: string;
+    order: number;
+  }>;
+}
+
+interface ProductsConfig {
+  layout?: 'grid' | 'slider';
+  columns?: number;
+  maxItems?: number;
+  showPrice?: boolean;
+  showRating?: boolean;
+  limit?: number;
+  slidesPerView?: {
+    desktop: number;
+    tablet: number;
+    mobile: number;
+  };
+}
+
 const route = useRoute();
 const trpc = useTrpc();
 const { t } = useLocalization();
@@ -63,35 +124,67 @@ const isLoading = ref(false);
 const isLoadingServices = ref(false);
 const error = ref<string | null>(null);
 const serviceError = ref<string | null>(null);
+const activeTheme = ref<Theme | null>(null);
+const isLoadingTheme = ref(false);
+const themeError = ref<string | null>(null);
 
-// Cấu hình Swiper cho posts
-const postsSwiperOptions = {
-  modules: [Navigation, Pagination, Autoplay],
-  slidesPerView: 1,
-  spaceBetween: 20,
-  navigation: true,
-  pagination: { clickable: true },
-  autoplay: {
-    delay: 5000,
-    disableOnInteraction: false,
-  },
-  breakpoints: {
-    640: {
-      slidesPerView: 2,
+// Cấu hình Swiper cho posts dựa trên theme
+const getPostsSwiperOptions = (theme: Theme | null) => {
+  const defaultConfig = {
+    modules: [Navigation, Pagination, Autoplay],
+    slidesPerView: 1,
+    spaceBetween: 20,
+    navigation: true,
+    pagination: { clickable: true },
+    autoplay: {
+      delay: 5000,
+      disableOnInteraction: false,
     },
-    1024: {
-      slidesPerView: 3,
+    breakpoints: {
+      640: {
+        slidesPerView: 2,
+      },
+      1024: {
+        slidesPerView: 3,
+      },
+      1280: {
+        slidesPerView: 4,
+      },
     },
-    1280: {
-      slidesPerView: 4,
+  };
+
+  if (!theme) return defaultConfig;
+
+  const newsSection = theme.sections.find(section => section.type === 'news');
+  if (!newsSection) return defaultConfig;
+
+  return {
+    ...defaultConfig,
+    autoplay: {
+      delay: newsSection.settings.delay || 5000,
+      disableOnInteraction: false,
     },
-  },
+    breakpoints: {
+      640: {
+        slidesPerView: newsSection.settings.slidesPerView?.mobile || 1,
+      },
+      1024: {
+        slidesPerView: newsSection.settings.slidesPerView?.tablet || 2,
+      },
+      1280: {
+        slidesPerView: newsSection.settings.slidesPerView?.desktop || 4,
+      },
+    },
+  };
 };
+
+const postsSwiperOptions = computed(() => getPostsSwiperOptions(activeTheme.value));
 
 onMounted(async () => {
   try {
-    // Fetch posts and services
+    // Fetch theme, posts and services
     await Promise.all([
+      fetchActiveTheme(),
       fetchLatestPosts(),
       fetchServices()
     ]);
@@ -99,6 +192,30 @@ onMounted(async () => {
     console.error('Error in page initialization:', err);
   }
 });
+
+async function fetchActiveTheme() {
+  isLoadingTheme.value = true;
+  themeError.value = null;
+  try {
+    const theme = await trpc.theme.getActive.query();
+    activeTheme.value = theme;
+    
+    // Apply theme colors
+    if (theme.colors) {
+      document.documentElement.style.setProperty('--primary', theme.colors.primary[500]);
+      document.documentElement.style.setProperty('--secondary', theme.colors.secondary[500]);
+      document.documentElement.style.setProperty('--success', theme.colors.success[500]);
+      document.documentElement.style.setProperty('--error', theme.colors.error[500]);
+      document.documentElement.style.setProperty('--warning', theme.colors.warning[500]);
+      document.documentElement.style.setProperty('--info', theme.colors.info[500]);
+    }
+  } catch (err: any) {
+    console.error('Failed to fetch active theme:', err);
+    themeError.value = err.message || 'Đã xảy ra lỗi khi tải theme';
+  } finally {
+    isLoadingTheme.value = false;
+  }
+}
 
 async function fetchLatestPosts() {
   isLoading.value = true;
@@ -145,53 +262,101 @@ const getAuthorName = (author: any) => {
   }
   return author?.username || author?.email?.split('@')[0] || 'Ẩn danh';
 };
+
+const getSectionConfig = (type: string) => {
+  if (!activeTheme.value?.sections) return null;
+  const section = activeTheme.value.sections.find(section => section.type === type);
+  if (!section) return null;
+  
+  return {
+    ...section.settings,
+    title: section.title,
+    isActive: section.isActive
+  };
+};
+
+const getSliderConfig = computed(() => {
+  const config = getSectionConfig('hero');
+  return config as SliderConfig | null;
+});
+
+const getProductsConfig = computed(() => {
+  const config = getSectionConfig('featured_products');
+  return config as ProductsConfig | null;
+});
 </script>
 
 <template>
   <div>
-    <!-- Hero Section -->
-    <HeroSection />
+    <!-- Loading State -->
+    <div v-if="isLoadingTheme" class="flex justify-center items-center min-h-screen">
+      <ULoader size="lg" />
+    </div>
 
-    <!-- Featured Products Section -->
-    <section class="featured-products-section py-12 bg-white dark:bg-gray-900">
-      <div class="container mx-auto px-4">
-        <h2 class="text-3xl font-bold mb-8 text-center">{{ t('products.featured') }}</h2>
-        <FeaturedProducts />
-      </div>
-    </section>
+    <template v-else>
+      <!-- Hero Section with Theme Config -->
+      <HeroSection 
+        v-if="getSliderConfig"
+        :slides="getSliderConfig?.items || []"
+        :config="getSliderConfig"
+      />
 
-    <!-- Services Section -->
-    <ServicesList :services="services" :is-loading="isLoadingServices" :error="serviceError" />
+      <!-- Featured Products Section -->
+      <section 
+        v-if="getProductsConfig"
+        class="featured-products-section py-12 bg-white dark:bg-gray-900"
+      >
+        <div class="container mx-auto px-4">
+          <h2 class="text-3xl font-bold mb-8 text-center">
+            {{ getSectionConfig('featured_products')?.title || t('products.featured') }}
+          </h2>
+          <FeaturedProducts :config="getProductsConfig" />
+        </div>
+      </section>
 
-    <!-- Latest Posts Section -->
-    <section class="latest-posts-section py-12 bg-[hsl(var(--muted))]">
-      <div class="container mx-auto px-4">
-        <h2 class="text-3xl font-bold mb-8 text-center">{{ t('home.latest_posts') }}</h2>
-        
-        <div v-if="isLoading" class="flex justify-center items-center py-12">
-          <ULoader size="lg" />
+      <!-- Services Section -->
+      <ServicesList 
+        :services="services" 
+        :is-loading="isLoadingServices" 
+        :error="serviceError"
+        :config="getSectionConfig('services')"
+      />
+
+      <!-- Latest Posts Section -->
+      <section 
+        v-if="getSectionConfig('news')"
+        class="latest-posts-section py-12 bg-[hsl(var(--muted))]"
+      >
+        <div class="container mx-auto px-4">
+          <h2 class="text-3xl font-bold mb-8 text-center">
+            {{ getSectionConfig('news')?.title || t('home.latest_posts') }}
+          </h2>
+          
+          <div v-if="isLoading" class="flex justify-center items-center py-12">
+            <ULoader size="lg" />
+          </div>
+          
+          <div v-else-if="error" class="text-center text-red-500 py-8">
+            {{ error }}
+          </div>
+          
+          <div v-else-if="latestPosts.length === 0" class="text-center py-8">
+            {{ t('home.no_posts') }}
+          </div>
+          
+          <div v-else>
+            <Swiper v-bind="postsSwiperOptions" class="w-full">
+              <SwiperSlide v-for="post in latestPosts" :key="post.id" class="h-full">
+                <PostCard 
+                  :post="post"
+                  :compact="false"
+                />
+              </SwiperSlide>
+            </Swiper>
+          </div>
         </div>
-        
-        <div v-else-if="error" class="text-center text-red-500 py-8">
-          {{ error }}
-        </div>
-        
-        <div v-else-if="latestPosts.length === 0" class="text-center py-8">
-          {{ t('home.no_posts') }}
-        </div>
-        
-        <div v-else>
-          <Swiper v-bind="postsSwiperOptions" class="w-full">
-            <SwiperSlide v-for="post in latestPosts" :key="post.id" class="h-full">
-              <PostCard 
-                :post="post"
-                :compact="false"
-              />
-            </SwiperSlide>
-          </Swiper>
-        </div>
-      </div>
-    </section>
+      </section>
+    </template>
   </div>
 </template>
 

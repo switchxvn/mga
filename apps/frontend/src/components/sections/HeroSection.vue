@@ -8,6 +8,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
+import { useLocalization } from '../../composables/useLocalization';
 
 interface Hero {
   id: number;
@@ -44,6 +45,7 @@ interface VideoThumbnail {
 }
 
 const { t } = useI18n();
+const { t: localT } = useLocalization();
 const currentSlide = ref(0);
 const isLoading = ref(true);
 const error = ref<Error | null>(null);
@@ -127,85 +129,140 @@ const handleImageError = (event: Event, video: VideoThumbnail) => {
   // Thay thế bằng hình ảnh mặc định khi lỗi
   imgElement.src = 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400&auto=format&fit=crop';
 };
+
+interface Slide {
+  image_url: string;
+  title: string;
+  description: string;
+  link: string;
+  order: number;
+}
+
+interface Props {
+  slides?: Slide[];
+  config?: {
+    height?: string;
+    layout?: 'split' | 'full';
+    autoplay?: boolean;
+    interval?: number;
+    showDots?: boolean;
+    showArrows?: boolean;
+    videoWidth?: string;
+    sliderWidth?: string;
+    videoPosition?: 'left' | 'right';
+    sliderPosition?: 'left' | 'right';
+  };
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  slides: () => [],
+  config: () => ({
+    height: '600px',
+    layout: 'full',
+    autoplay: true,
+    interval: 5000,
+    showDots: true,
+    showArrows: true,
+    videoWidth: '30%',
+    sliderWidth: '70%',
+    videoPosition: 'left',
+    sliderPosition: 'right'
+  })
+});
+
+const swiperOptions = computed(() => ({
+  modules: [Navigation, Pagination, Autoplay, EffectFade],
+  slidesPerView: 1,
+  effect: 'fade',
+  navigation: props.config.showArrows,
+  pagination: props.config.showDots ? { clickable: true } : false,
+  autoplay: props.config.autoplay ? {
+    delay: props.config.interval,
+    disableOnInteraction: false,
+  } : false,
+}));
+
+const sortedSlides = computed(() => {
+  return [...props.slides].sort((a, b) => a.order - b.order);
+});
 </script>
 
 <template>
-  <section class="hero-section bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-[hsl(var(--background))] py-8 md:py-12 overflow-hidden">
-    <div class="container mx-auto px-4">
-      <!-- Loading state -->
-      <div v-if="isLoading" class="flex justify-center items-center py-12">
-        <ULoader size="lg" />
+  <section class="hero-section relative" :style="{ height: config?.height || '600px' }">
+    <div v-if="isLoading" class="flex items-center justify-center w-full h-full">
+      <ULoader size="lg" />
+    </div>
+    
+    <div v-else-if="error" class="flex items-center justify-center w-full h-full">
+      <p class="text-red-500">{{ error.message }}</p>
+    </div>
+    
+    <div v-else :class="[
+      'flex w-full h-full',
+      config?.layout === 'split' ? 'flex-row' : ''
+    ]">
+      <!-- Video Section -->
+      <div v-if="config?.layout === 'split'" 
+           :class="[
+             'flex flex-col gap-4 p-4',
+             config.videoPosition === 'left' ? 'order-1' : 'order-2'
+           ]"
+           :style="{ width: config.videoWidth }">
+        <div v-for="video in videoThumbnails" 
+             :key="video.id" 
+             class="relative cursor-pointer group"
+             @click="openVideo(video.videoUrl)">
+          <img :src="video.thumbnail" 
+               :alt="video.title"
+               @error="handleImageError($event, video)"
+               class="w-full h-32 object-cover rounded-lg transition-transform group-hover:scale-105" />
+          <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Icon name="heroicons:play-circle" class="w-12 h-12 text-white" />
+          </div>
+          <h3 class="mt-2 text-sm font-medium">{{ video.title }}</h3>
+        </div>
       </div>
 
-      <!-- Error state -->
-      <div v-else-if="error" class="text-center text-red-500 py-8">
-        <p>{{ t('common.error_loading') }}</p>
-      </div>
-
-      <!-- Hero content -->
-      <div v-else class="flex flex-col lg:flex-row items-stretch gap-6">
-        <!-- Left Column - Video Thumbnails (30%) -->
-        <div class="lg:w-[30%] h-[500px] flex flex-col">
-          <!-- 3 Video Thumbnails -->
-          <div class="grid grid-cols-1 grid-rows-3 gap-4 h-full">
-            <div 
-              v-for="video in videoThumbnails" 
-              :key="video.id"
-              class="video-thumbnail relative rounded-[var(--radius)] overflow-hidden cursor-pointer group row-span-1 shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all duration-[var(--transition-normal)]"
-              @click="openVideo(video.videoUrl)"
-            >
-              <div class="absolute inset-0">
-                <img 
-                  :src="video.thumbnail" 
-                  :alt="video.title"
-                  class="w-full h-full object-cover transition-transform duration-[var(--transition-normal)] group-hover:scale-105"
-                  @error="handleImageError($event, video)"
-                />
-                <div class="absolute inset-0 bg-[hsl(var(--foreground)/0.4)] group-hover:bg-[hsl(var(--foreground)/0.3)] transition-colors duration-[var(--transition-normal)] flex items-center justify-center">
-                  <div class="w-12 h-12 rounded-full bg-[hsl(var(--background)/0.9)] flex items-center justify-center text-[hsl(var(--primary))] transform group-hover:scale-110 transition-transform duration-[var(--transition-normal)]">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                      <path d="M8 5.14v14l11-7-11-7z" />
-                    </svg>
-                  </div>
+      <!-- Slider Section -->
+      <div :class="[
+        config?.layout === 'split' ? (config.sliderPosition === 'left' ? 'order-1' : 'order-2') : '',
+        'relative'
+      ]"
+      :style="{ width: config?.layout === 'split' ? config.sliderWidth : '100%' }">
+        <Swiper v-bind="swiperOptions" class="w-full h-full">
+          <SwiperSlide v-for="slide in sortedSlides" :key="slide.order" class="relative">
+            <div class="relative w-full h-full">
+              <!-- Background Image -->
+              <img 
+                :src="slide.image_url" 
+                :alt="slide.title"
+                class="absolute inset-0 w-full h-full object-cover"
+              />
+              
+              <!-- Overlay -->
+              <div class="absolute inset-0 bg-black/40"></div>
+              
+              <!-- Content -->
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="container mx-auto px-4 text-center text-white">
+                  <h1 class="text-4xl md:text-6xl font-bold mb-4">
+                    {{ slide.title }}
+                  </h1>
+                  <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">
+                    {{ slide.description }}
+                  </p>
+                  <NuxtLink 
+                    v-if="slide.link"
+                    :to="slide.link"
+                    class="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+                  >
+                    {{ localT('common.learn_more') }}
+                  </NuxtLink>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-        
-        <!-- Right Column - Hero Slider (70%) -->
-        <div class="lg:w-[70%] hero-slider-container">
-          <Swiper v-bind="heroSwiperOptions" class="w-full h-[500px] rounded-[var(--radius)] overflow-hidden shadow-[var(--shadow-lg)]">
-            <SwiperSlide v-for="slide in sliders" :key="slide.id" class="relative">
-              <div class="relative h-full">
-                <!-- Background Image -->
-                <img 
-                  :src="slide.imageUrl" 
-                  :alt="slide.title"
-                  class="absolute inset-0 w-full h-full object-cover"
-                />
-                
-                <!-- Overlay -->
-                <div class="absolute inset-0 bg-gradient-to-r from-[hsl(var(--foreground)/0.7)] to-[hsl(var(--foreground)/0.2)]"></div>
-                
-                <!-- Content -->
-                <div class="absolute inset-0 flex items-center">
-                  <div class="container mx-auto px-8 md:px-12 max-w-3xl">
-                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[hsl(var(--background))]">{{ slide.title }}</h2>
-                    <p class="text-lg md:text-xl mb-6 max-w-xl text-[hsl(var(--background)/0.9)]">{{ slide.description }}</p>
-                    <NuxtLink 
-                      v-if="slide.buttonText && slide.buttonLink" 
-                      :to="slide.buttonLink"
-                      class="inline-block bg-[hsl(var(--background))] text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))] px-6 py-3 rounded-[var(--radius)] font-medium transition-colors shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]"
-                    >
-                      {{ slide.buttonText }}
-                    </NuxtLink>
-                  </div>
-                </div>
-              </div>
-            </SwiperSlide>
-          </Swiper>
-        </div>
+          </SwiperSlide>
+        </Swiper>
       </div>
     </div>
   </section>
@@ -213,64 +270,23 @@ const handleImageError = (event: Event, video: VideoThumbnail) => {
 
 <style lang="scss" scoped>
 .hero-section {
-  .hero-slider-container {
-    :deep {
-      .swiper-pagination {
-        bottom: var(--spacing-5);
-      }
-
-      .swiper-pagination-bullet {
-        width: var(--spacing-2-5);
-        height: var(--spacing-2-5);
-        background: hsl(var(--background));
-        opacity: 0.5;
-        transition: all var(--transition-normal);
-      }
-
-      .swiper-pagination-bullet-active {
-        opacity: 1;
-        background: hsl(var(--background));
-        transform: scale(1.2);
-      }
-
-      .swiper-button-next,
-      .swiper-button-prev {
-        color: hsl(var(--background));
-        background: var(--background-10);
-        width: var(--spacing-10);
-        height: var(--spacing-10);
-        border-radius: var(--radius-full);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all var(--transition-normal);
-
-        &:hover {
-          background: var(--background-20);
-          transform: scale(1.1);
-        }
-
-        &::after {
-          font-size: var(--font-size-lg);
-        }
+  :deep(.swiper) {
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: white;
+      
+      &:hover {
+        color: hsl(var(--primary));
       }
     }
-  }
-}
-
-.video-thumbnail {
-  &:hover img {
-    transform: scale(1.05);
-  }
-}
-
-@media (max-width: 640px) {
-  .hero-slider-container {
-    :deep {
-      .swiper-button-next,
-      .swiper-button-prev {
-        display: none;
+    
+    .swiper-pagination-bullet {
+      background: white;
+      opacity: 0.5;
+      
+      &-active {
+        opacity: 1;
+        background: hsl(var(--primary));
       }
     }
   }

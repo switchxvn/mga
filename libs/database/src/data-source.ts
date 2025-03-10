@@ -1,17 +1,25 @@
-import { DataSource } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
+import { config } from 'dotenv';
+import { join } from 'path';
+import { Theme } from '../../apps/backend/src/modules/theme/entities/theme.entity';
+import { ThemeSection } from '../../apps/backend/src/modules/theme/entities/theme-section.entity';
 
-const AppDataSource = new DataSource({
+config();
+
+export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_DATABASE || 'ew_db',
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  entities: [
+    Theme,
+    ThemeSection,
+  ],
+  migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
   synchronize: false,
-  logging: true,
-  entities: ['apps/backend/src/modules/**/*.entity.ts'],
-  migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
-  subscribers: [],
-});
+};
 
-export default AppDataSource; 
+const dataSource = new DataSource(dataSourceOptions);
+export default dataSource; 

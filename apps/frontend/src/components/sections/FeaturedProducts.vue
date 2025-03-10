@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { useLocalization } from '../../composables/useLocalization';
+import { ref, onMounted, computed } from 'vue';
 import { useTrpc } from '../../composables/useTrpc';
+import { useLocalization } from '../../composables/useLocalization';
+import ProductCard from '../ProductCard.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -9,151 +10,151 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 interface ProductTranslation {
+  locale: string;
   title: string;
-  shortDescription?: string | undefined;
-  metaTitle?: string | undefined;
-  metaDescription?: string | undefined;
-  metaKeywords?: string | undefined;
+  shortDescription: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
 }
 
-interface Product {
+interface ApiProduct {
   id: number;
   sku?: string;
   price: number | null;
-  comparePrice?: number | null;
+  comparePrice: number | null;
   thumbnail?: string;
   slug?: string;
   isFeatured: boolean;
   isNew: boolean;
   isSale: boolean;
   translations: ProductTranslation[];
-  [key: string]: any;
+  formattedPrice?: string;
 }
 
-const { t, locale } = useLocalization();
-const trpc = useTrpc();
+interface Props {
+  config?: {
+    limit?: number;
+    slidesPerView?: {
+      desktop: number;
+      tablet: number;
+      mobile: number;
+    };
+  };
+}
 
-const isLoading = ref(true);
-const featuredProducts = ref<any[]>([]);
+const props = withDefaults(defineProps<Props>(), {
+  config: () => ({
+    limit: 8,
+    slidesPerView: {
+      desktop: 4,
+      tablet: 2,
+      mobile: 1
+    }
+  })
+});
+
+const trpc = useTrpc();
+const { t } = useLocalization();
+const products = ref<ApiProduct[]>([]);
+const isLoading = ref(false);
 const error = ref<string | null>(null);
 
-// Cấu hình Swiper cho sản phẩm nổi bật
-const productSwiperOptions = {
+const swiperOptions = computed(() => ({
   modules: [Navigation, Pagination, Autoplay],
   slidesPerView: 1,
   spaceBetween: 20,
   navigation: true,
   pagination: { clickable: true },
-  autoplay: {
-    delay: 5000,
-    disableOnInteraction: false,
-  },
   breakpoints: {
     640: {
-      slidesPerView: 2,
+      slidesPerView: props.config?.slidesPerView?.mobile || 1,
     },
     1024: {
-      slidesPerView: 3,
+      slidesPerView: props.config?.slidesPerView?.tablet || 2,
     },
     1280: {
-      slidesPerView: 4,
+      slidesPerView: props.config?.slidesPerView?.desktop || 4,
     },
   },
-};
+}));
 
-const fetchFeaturedProducts = async () => {
+onMounted(async () => {
+  await fetchFeaturedProducts();
+});
+
+async function fetchFeaturedProducts() {
   isLoading.value = true;
   error.value = null;
   try {
-    const result = await trpc.product.getFeatured.query({ locale: locale.value });
-    featuredProducts.value = result;
+    const result = await trpc.product.getFeatured.query({
+      limit: props.config?.limit || 8
+    });
+    products.value = result.map(product => ({
+      ...product,
+      isFeatured: true,
+      isNew: product.isNew || false,
+      isSale: !!product.comparePrice,
+      translations: product.translations || []
+    }));
   } catch (err: any) {
     console.error('Failed to fetch featured products:', err);
-    error.value = err.message || 'Đã xảy ra lỗi khi tải sản phẩm nổi bật';
+    error.value = err.message || t('errors.failed_to_load');
   } finally {
     isLoading.value = false;
   }
-};
-
-onMounted(() => {
-  fetchFeaturedProducts();
-});
-
-watch(locale, () => {
-  fetchFeaturedProducts();
-});
+}
 </script>
 
 <template>
-  <!-- Loading state -->
-  <div v-if="isLoading" class="flex justify-center items-center py-12">
-    <ULoader size="lg" />
-  </div>
-  
-  <!-- Error state -->
-  <div v-else-if="error" class="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded mb-4 max-w-2xl mx-auto">
-    <p>{{ error }}</p>
-    <UButton 
-      @click="fetchFeaturedProducts" 
-      color="red"
-      class="mt-2"
-    >
-      {{ t('common.retry') }}
-    </UButton>
-  </div>
-  
-  <!-- Products Slider -->
-  <div v-else class="product-slider">
-    <Swiper v-bind="productSwiperOptions" class="w-full">
-      <SwiperSlide v-for="product in featuredProducts" :key="product.id" class="h-full pb-12">
-        <ProductCard 
-          :product="product"
-          :locale="locale"
-        />
-      </SwiperSlide>
-    </Swiper>
-  </div>
-  
-  <!-- View all button -->
-  <div v-if="featuredProducts.length > 0" class="text-center mt-10">
-    <NuxtLink to="/products">
-      <UButton size="lg">
-        {{ t('products.all') }}
-      </UButton>
-    </NuxtLink>
+  <div class="featured-products">
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex justify-center items-center py-12">
+      <ULoader size="lg" />
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="text-center text-red-500 py-8">
+      {{ error }}
+    </div>
+
+    <!-- No Products State -->
+    <div v-else-if="products.length === 0" class="text-center py-8">
+      {{ t('products.no_featured_products') }}
+    </div>
+
+    <!-- Products Grid -->
+    <div v-else>
+      <Swiper v-bind="swiperOptions" class="w-full">
+        <SwiperSlide v-for="product in products" :key="product.id" class="h-full">
+          <ProductCard :product="product" />
+        </SwiperSlide>
+      </Swiper>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.product-slider {
-  :deep {
-    .swiper-pagination {
-      bottom: 0;
-    }
-
+.featured-products {
+  :deep(.swiper) {
+    padding: 1rem;
+    
     .swiper-button-next,
     .swiper-button-prev {
       color: hsl(var(--primary));
-      top: 50%;
-      transform: translateY(-50%);
+      
+      &:hover {
+        color: hsl(var(--primary-foreground));
+      }
     }
-
-    .swiper-button-next {
-      right: var(--spacing-2-5);
-    }
-
-    .swiper-button-prev {
-      left: var(--spacing-2-5);
-    }
-  }
-}
-
-@media (max-width: 640px) {
-  .product-slider {
-    :deep {
-      .swiper-button-next,
-      .swiper-button-prev {
-        display: none;
+    
+    .swiper-pagination-bullet {
+      background: hsl(var(--muted-foreground));
+      opacity: 0.5;
+      
+      &-active {
+        opacity: 1;
+        background: hsl(var(--primary));
       }
     }
   }

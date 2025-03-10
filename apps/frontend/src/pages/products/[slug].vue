@@ -555,8 +555,9 @@ watch(isPriceRequestModalOpen, (newVal) => {
           <AddToCartButton 
             v-if="productData.price !== null"
             :product="productData" 
-            :buttonText="t('products.addToCart')"
-            buttonClass="mb-4 w-full"
+            :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
+            :showQuantity="true"
+            buttonClass="flex-1"
           />
           
           <UButton 
@@ -962,6 +963,16 @@ watch(isPriceRequestModalOpen, (newVal) => {
 .tooltip:hover .tooltip-text {
   visibility: visible;
   opacity: 1;
+}
+
+/* CSS cho nút thêm vào giỏ hàng */
+:deep(.add-to-cart-container) {
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+:deep(.add-to-cart-button) {
+  margin-bottom: 0;
 }
 
 /* Fix cho UButton trong trang chi tiết sản phẩm */
