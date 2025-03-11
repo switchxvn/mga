@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, ManyToMany, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, ManyToMany, OneToMany, JoinTable } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Category } from '../../category/entities/category.entity';
 import { PostTag } from './post-tag.entity';
@@ -24,31 +24,6 @@ export class Post {
   @Column({ default: false })
   published!: boolean;
 
-  // SEO fields
-  @Column({ nullable: true })
-  slug!: string;
-
-  @Column({ name: 'meta_title', nullable: true })
-  metaTitle!: string;
-
-  @Column({ name: 'meta_description', type: 'text', nullable: true })
-  metaDescription!: string;
-
-  @Column({ name: 'meta_keywords', nullable: true })
-  metaKeywords!: string;
-
-  @Column({ name: 'og_title', nullable: true })
-  ogTitle!: string;
-
-  @Column({ name: 'og_description', type: 'text', nullable: true })
-  ogDescription!: string;
-
-  @Column({ name: 'og_image', nullable: true })
-  ogImage!: string;
-
-  @Column({ name: 'canonical_url', nullable: true })
-  canonicalUrl!: string;
-
   @Column({ name: 'author_id' })
   authorId!: number;
 
@@ -70,6 +45,17 @@ export class Post {
   updatedAt!: Date;
 
   @ManyToMany(() => Category, (category) => category.posts)
+  @JoinTable({
+    name: 'post_categories',
+    joinColumn: {
+      name: 'post_id',
+      referencedColumnName: 'id'
+    },
+    inverseJoinColumn: {
+      name: 'category_id',
+      referencedColumnName: 'id'
+    }
+  })
   categories!: Category[];
 
   @OneToMany(() => PostTag, postTag => postTag.post)

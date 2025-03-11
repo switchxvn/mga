@@ -190,7 +190,7 @@ export const postRouter = router({
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Fetching post with author and tags by slug: ${input.slug}`);
-        const post = await ctx.services.postService.findBySlugWithAuthorAndTags(input.slug);
+        const post = await ctx.services.postService.findBySlugWithAuthorAndTags(input.slug, input.locale);
 
         if (!post) {
           ctx.logger.warn(`Post not found for slug: ${input.slug}`);

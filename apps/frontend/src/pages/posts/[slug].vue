@@ -9,68 +9,7 @@ import Breadcrumb from '../../components/Breadcrumb.vue';
 import LazyImage from '../../components/ui/LazyImage.vue';
 import Icon from '../../components/ui/Icon.vue';
 import { useI18n } from 'vue-i18n';
-
-// Định nghĩa kiểu dữ liệu cho post
-interface Profile {
-  id?: number;
-  userId?: number;
-  firstName?: string;
-  lastName?: string;
-  bio?: string;
-  phoneNumber?: string | null;
-  phoneCode?: string | null;
-  address?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface Author {
-  id: number;
-  email?: string;
-  username?: string;
-  isEmailVerified?: boolean;
-  isActive?: boolean;
-  lastLoginAt?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-  __profile__?: Profile;
-}
-
-interface Tag {
-  id: number;
-  name: string;
-  slug: string;
-  color?: string;
-  description?: string;
-}
-
-interface Post {
-  id: number;
-  createdAt: string;
-  updatedAt: string;
-  title: string;
-  content: string;
-  shortDescription?: string;
-  published: boolean;
-  authorId: number;
-  slug: string;
-  thumbnail?: string | null;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
-  ogTitle?: string;
-  ogDescription?: string;
-  ogImage?: string | null;
-  canonicalUrl?: string | null;
-  __author__?: Author;
-  categories?: any[];
-  tags?: Tag[];
-  translations?: {
-    locale: string;
-    slug: string;
-    title: string;
-  }[];
-}
+import type { Post, Profile, Author, Tag } from '@ew/shared';
 
 // Định nghĩa alias cho URL tiếng Việt và tiếng Anh
 definePageMeta({
@@ -101,49 +40,11 @@ const { data: post, pending: loading, error, refresh } = useAsyncData<Post | nul
   `post-${slug}`,
   async () => {
     try {
-      // Kiểm tra xem slug có phải là số không (trường hợp URL cũ dùng ID)
-      const isNumeric = /^\d+$/.test(slug);
-      
-      if (isNumeric) {
-        // Nếu là số, gọi API theo ID
-        const postId = Number(slug);
-        const result = await trpc.post.byIdWithAuthorAndTags.query(postId);
-        
-        // Lấy slug phù hợp với locale hiện tại
-        const translation = result.translations?.find(t => t.locale === locale.value);
-        const postSlug = translation?.slug || createSlugFromTitle(translation?.title || result.title);
-        
-        // Chuyển hướng đến URL có slug với đường dẫn phù hợp với locale
-        if (process.client) {
-          const baseUrl = locale.value === 'vi' ? '/bai-viet' : '/posts';
-          const slugUrl = `${baseUrl}/${postSlug}`;
-          router.replace({ path: slugUrl, query: route.query });
-        }
-        
-        return result as unknown as Post;
-      } else {
-        // Nếu không phải số, gọi API theo slug
-        try {
-          return await trpc.post.bySlugWithAuthorAndTags.query({
-            slug,
-            locale: locale.value
-          }) as unknown as Post;
-        } catch (err) {
-          // Nếu không tìm thấy bài viết theo slug, có thể slug được tạo từ tiêu đề
-          // Tìm tất cả bài viết và so sánh slug được tạo từ tiêu đề
-          const allPosts = await trpc.post.byLocale.query({ locale: locale.value });
-          const matchedPost = allPosts.find(p => {
-            const translation = p.translations?.find(t => t.locale === locale.value);
-            return translation?.slug === slug || createSlugFromTitle(translation?.title || '') === slug;
-          });
-          
-          if (matchedPost) {
-            return await trpc.post.byIdWithAuthorAndTags.query(matchedPost.id) as unknown as Post;
-          } else {
-            throw new Error('Không tìm thấy bài viết');
-          }
-        }
-      }
+      // Gọi API theo slug
+      return await trpc.post.bySlugWithAuthorAndTags.query({
+        slug,
+        locale: locale.value
+      }) as unknown as Post;
     } catch (err: any) {
       console.error('Failed to fetch post:', err);
       throw new Error(err.message || 'Có lỗi xảy ra khi tải chi tiết bài viết');
@@ -157,13 +58,25 @@ const { data: post, pending: loading, error, refresh } = useAsyncData<Post | nul
 );
 
 // Watch locale changes to update URL
-watch(locale, (newLocale) => {
-  if (post.value) {
-    const translation = post.value.translations?.find(t => t.locale === newLocale);
-    if (translation?.slug) {
-      const baseUrl = newLocale === 'vi' ? '/bai-viet' : '/posts';
-      router.replace(`${baseUrl}/${translation.slug}`);
-    }
+watch(locale, async (newLocale) => {
+  if (!post.value) return;
+
+  // Tìm translation cho locale mới
+  const newTranslation = post.value.translations?.find(t => t.locale === newLocale);
+  if (newTranslation?.slug) {
+    // Cập nhật URL với slug mới mà không reload trang
+    const newPath = newLocale === 'vi' 
+      ? `/bai-viet/${newTranslation.slug}`
+      : `/posts/${newTranslation.slug}`;
+    
+    // Sử dụng replace để cập nhật URL và trigger lại query
+    await router.replace(newPath);
+    
+    // Refresh data để lấy nội dung mới
+    await refresh();
+  } else {
+    // Nếu không có bản dịch cho locale mới, refresh để hiển thị trang 404
+    refresh();
   }
 });
 
@@ -189,39 +102,52 @@ function goBack() {
   router.back();
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
+/**
+ * Format date to Vietnamese locale
+ */
+const formatDate = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
 };
 
 // Tạo các computed properties để truy cập dữ liệu post một cách an toàn
-const postData = computed(() => post.value || {} as unknown as Post);
-const postTitle = computed(() => postData.value.title || '');
-const postContent = computed(() => postData.value.content || '');
-const postShortDescription = computed(() => postData.value.shortDescription || '');
-const postCreatedAt = computed(() => postData.value.createdAt || '');
-const postUpdatedAt = computed(() => postData.value.updatedAt || '');
-const postId = computed(() => postData.value.id || 0);
-const postThumbnail = computed(() => postData.value.thumbnail || '');
-const postOgImage = computed(() => postData.value.ogImage || '');
-const postMetaKeywords = computed(() => postData.value.metaKeywords || '');
-const postTags = computed(() => {
-  return postData.value.tags || [];
+const postData = computed(() => post.value || {} as Post);
+const currentTranslation = computed(() => {
+  return postData.value.translations?.find(t => t.locale === locale.value);
 });
 
+const postTitle = computed(() => currentTranslation.value?.title || '');
+const postContent = computed(() => currentTranslation.value?.content || '');
+const postShortDescription = computed(() => currentTranslation.value?.shortDescription || '');
+const postCreatedAt = computed(() => postData.value.createdAt?.toString() || '');
+const postUpdatedAt = computed(() => postData.value.updatedAt?.toString() || '');
+const postId = computed(() => postData.value.id || 0);
+const postThumbnail = computed(() => postData.value.thumbnail || '');
+const postOgImage = computed(() => currentTranslation.value?.ogImage || '');
+const postMetaKeywords = computed(() => currentTranslation.value?.metaKeywords || '');
+const postTags = computed(() => postData.value.tags || []);
+
 const getAuthorName = computed(() => {
-  if (!postData.value.__author__) return 'Không xác định';
+  if (!postData.value.author) return 'Không xác định';
   
-  const author = postData.value.__author__;
-  if (author.__profile__) {
-    const firstName = author.__profile__.firstName || '';
-    const lastName = author.__profile__.lastName || '';
+  const author = postData.value.author;
+  if (author.profile) {
+    const firstName = author.profile.firstName || '';
+    const lastName = author.profile.lastName || '';
     if (firstName || lastName) {
       return `${firstName} ${lastName}`.trim();
     }
@@ -230,12 +156,12 @@ const getAuthorName = computed(() => {
 });
 
 const authorInfo = computed(() => {
-  if (!postData.value.__author__) return undefined;
+  if (!postData.value.author) return undefined;
   
-  const author = postData.value.__author__;
+  const author = postData.value.author;
   return {
     name: getAuthorName.value,
-    bio: author.__profile__?.bio || null
+    bio: author.profile?.bio || null
   };
 });
 
@@ -272,34 +198,38 @@ const currentURL = computed(() => {
 
 // Tạo canonical URL từ server - Đặt trong computed để đảm bảo chạy trong setup function
 const canonicalUrl = computed(() => {
-  if (!postData.value || !postData.value.slug) return '';
+  const translation = currentTranslation.value;
+  if (!translation) return '';
   
   // Nếu bài viết có canonicalUrl, sử dụng nó
-  if (postData.value.canonicalUrl) {
-    return postData.value.canonicalUrl;
+  if (translation.canonicalUrl) {
+    return translation.canonicalUrl;
   }
   
   // Nếu không, tạo canonical URL từ slug
-  const postSlug = postData.value.slug || createSlugFromTitle(postData.value.title);
+  const postSlug = translation.slug;
   return `${currentURL.value}/bai-viet/${postSlug}`;
 });
 
 // Thiết lập meta tags ở phía server
 useHead(() => {
+  const translation = currentTranslation.value;
+  if (!translation) return {};
+
   return {
-    title: postData.value.metaTitle || postTitle.value || 'Bài viết',
+    title: translation.metaTitle || postTitle.value || 'Bài viết',
     meta: [
-      { name: 'description', content: postData.value.metaDescription || postShortDescription.value || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
-      { name: 'keywords', content: postMetaKeywords.value },
-      { property: 'og:title', content: postData.value.ogTitle || postTitle.value || '' },
-      { property: 'og:description', content: postData.value.ogDescription || postShortDescription.value || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
-      { property: 'og:image', content: postOgImage.value },
+      { name: 'description', content: translation.metaDescription || postShortDescription.value || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
+      { name: 'keywords', content: translation.metaKeywords || '' },
+      { property: 'og:title', content: translation.ogTitle || postTitle.value || '' },
+      { property: 'og:description', content: translation.ogDescription || postShortDescription.value || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
+      { property: 'og:image', content: translation.ogImage || '' },
       { property: 'og:url', content: canonicalUrl.value },
       { property: 'og:type', content: 'article' },
       { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: postData.value.ogTitle || postTitle.value || '' },
-      { name: 'twitter:description', content: postData.value.ogDescription || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
-      { name: 'twitter:image', content: postOgImage.value }
+      { name: 'twitter:title', content: translation.ogTitle || postTitle.value || '' },
+      { name: 'twitter:description', content: translation.ogDescription || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
+      { name: 'twitter:image', content: translation.ogImage || '' }
     ],
     link: [
       { rel: 'canonical', href: canonicalUrl.value }

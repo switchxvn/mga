@@ -15,6 +15,34 @@ export class PostTranslation {
   @Column({ length: 2 })
   locale: string;
 
+  @Column()
+  slug: string;
+
+  @Column({ name: 'short_description', type: 'text', nullable: true })
+  shortDescription: string;
+
+  // SEO fields
+  @Column({ name: 'meta_title', nullable: true })
+  metaTitle: string;
+
+  @Column({ name: 'meta_description', type: 'text', nullable: true })
+  metaDescription: string;
+
+  @Column({ name: 'meta_keywords', nullable: true })
+  metaKeywords: string;
+
+  @Column({ name: 'og_title', nullable: true })
+  ogTitle: string;
+
+  @Column({ name: 'og_description', type: 'text', nullable: true })
+  ogDescription: string;
+
+  @Column({ name: 'og_image', nullable: true })
+  ogImage: string;
+
+  @Column({ name: 'canonical_url', nullable: true })
+  canonicalUrl: string;
+
   @Column({ name: 'post_id' })
   postId: number;
 

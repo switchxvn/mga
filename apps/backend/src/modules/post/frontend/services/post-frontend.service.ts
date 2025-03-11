@@ -4,6 +4,7 @@ import { Repository, ILike, Not, In } from 'typeorm';
 import { Post } from '../../entities/post.entity';
 import { PostTranslation } from '../../entities/post-translation.entity';
 import { CreatePostInput, UpdatePostInput } from '@ew/shared';
+import { Post as IPost } from '@ew/shared';
 import { PostTag } from '../../entities/post-tag.entity';
 import { Tag } from '../../../settings/entities/tag.entity';
 
@@ -309,37 +310,119 @@ export class PostFrontendService {
     return post;
   }
 
-  async findBySlugWithAuthorAndTags(slug: string): Promise<any> {
-    const post = await this.postRepository.findOne({
-      where: { slug, published: true },
-      relations: ['author', 'author.profile', 'categories']
-    });
+  async findBySlugWithAuthorAndTags(slug: string, locale = 'vi'): Promise<IPost> {
+    try {
+      // First, find the translation to get the postId
+      const translation = await this.postTranslationRepository.findOne({
+        where: { slug, locale },
+        relations: ['post']
+      });
 
-    if (!post) {
-      throw new NotFoundException(`Post with slug "${slug}" not found`);
-    }
-
-    // Lấy tags của bài viết
-    const postTags = await this.postTagRepository.find({
-      where: { postId: post.id },
-      relations: ['tag']
-    });
-
-    const tags = postTags.map(pt => pt.tag).filter(tag => tag.isActive);
-
-    // Đảm bảo author đã được load
-    const author = post.author instanceof Promise ? await post.author : post.author;
-    // Đảm bảo profile đã được load
-    const authorProfile = author?.profile instanceof Promise ? await author.profile : author?.profile || {};
-    
-    return {
-      ...post,
-      tags,
-      __author__: {
-        ...author,
-        __profile__: authorProfile
+      if (!translation || !translation.post) {
+        throw new NotFoundException(`Post with slug "${slug}" not found`);
       }
-    };
+
+      // Then use the postId to get all data including all translations
+      const qb = this.postRepository.createQueryBuilder('post')
+        .innerJoinAndSelect('post.translations', 'translations')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoinAndSelect('author.profile', 'profile')
+        .leftJoinAndSelect('post.postTags', 'postTags')
+        .leftJoinAndSelect('postTags.tag', 'tag')
+        .where('post.id = :postId', { postId: translation.post.id })
+        .andWhere('post.published = :published', { published: true });
+
+      const post = await qb.getOne();
+
+      if (!post) {
+        throw new NotFoundException(`Post with id "${translation.post.id}" not found`);
+      }
+
+      const currentTranslation = post.translations.find(t => t.locale === locale);
+      if (!currentTranslation) {
+        throw new NotFoundException(`Translation not found for locale "${locale}"`);
+      }
+
+      const tags = post.postTags
+        .map(pt => pt.tag)
+        .filter(tag => tag.isActive)
+        .map(tag => ({
+          id: tag.id,
+          name: tag.name,
+          slug: tag.slug,
+          color: tag.color,
+          description: tag.description,
+          isActive: tag.isActive
+        }));
+
+      // Format response
+      const authorProfile = await post.author.profile;
+      const profile = authorProfile ? {
+        id: authorProfile.id,
+        firstName: authorProfile.firstName,
+        lastName: authorProfile.lastName,
+        phoneNumber: authorProfile.phoneNumber,
+        phoneCode: authorProfile.phoneCode,
+        address: authorProfile.address,
+        createdAt: authorProfile.createdAt.toISOString(),
+        updatedAt: authorProfile.updatedAt.toISOString()
+      } : {
+        id: null,
+        firstName: null,
+        lastName: null,
+        phoneNumber: null,
+        phoneCode: null,
+        address: null,
+        createdAt: null,
+        updatedAt: null
+      };
+
+      return {
+        id: post.id,
+        title: currentTranslation.title,
+        content: currentTranslation.content,
+        shortDescription: currentTranslation.shortDescription,
+        published: post.published,
+        authorId: post.authorId,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        // Additional fields
+        tags,
+        author: {
+          id: post.author.id,
+          email: post.author.email,
+          username: post.author.username,
+          isEmailVerified: post.author.isEmailVerified,
+          isActive: post.author.isActive,
+          lastLoginAt: post.author.lastLoginAt,
+          createdAt: post.author.createdAt,
+          updatedAt: post.author.updatedAt,
+          profile
+        },
+        // Add full translations array
+        translations: post.translations.map(t => ({
+          id: t.id,
+          locale: t.locale,
+          title: t.title,
+          content: t.content,
+          shortDescription: t.shortDescription,
+          slug: t.slug,
+          metaTitle: t.metaTitle,
+          metaDescription: t.metaDescription,
+          metaKeywords: t.metaKeywords,
+          ogTitle: t.ogTitle,
+          ogDescription: t.ogDescription,
+          ogImage: t.ogImage,
+          canonicalUrl: t.canonicalUrl,
+          postId: t.postId,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt
+        }))
+      };
+    } catch (error) {
+      this.logger.error('Error in findBySlugWithAuthorAndTags:', error);
+      throw new NotFoundException(`Failed to retrieve post with slug "${slug}"`);
+    }
   }
 
   async findByIdWithAuthorAndTags(id: number): Promise<any> {

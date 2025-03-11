@@ -8,4 +8,7 @@ export * from './schemas/tag.schema';
 export * from './schemas/settings.schema';
 
 // Transformers
-export * from './transformers/date.transformer'; 
+export * from './transformers/date.transformer';
+
+// Interfaces
+export * from './lib/interfaces'; 

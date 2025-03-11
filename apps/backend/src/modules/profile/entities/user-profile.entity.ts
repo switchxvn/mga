@@ -26,6 +26,9 @@ export class UserProfile {
   @Column({ name: 'phone_code', nullable: true })
   phoneCode: string;
 
+  @Column({ name: 'bio', nullable: true })
+  bio: string;
+
   @ManyToOne(() => CountryPhoneCode, { nullable: true, lazy: true })
   @JoinColumn({ name: 'phone_code', referencedColumnName: 'phoneCode' })
   countryPhoneCode: Promise<CountryPhoneCode>;

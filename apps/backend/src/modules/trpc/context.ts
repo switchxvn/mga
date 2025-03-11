@@ -13,6 +13,7 @@ import { CountryPhoneCode } from '../common/entities/country-phone-code.entity';
 import { Hero } from '../hero/entities/hero.entity';
 import { HeroVideo } from '../hero/entities/hero-video.entity';
 import { HeroSlider } from '../hero/entities/hero-slider.entity';
+import { Category } from '../category/entities/category.entity';
 import { ITrpcServices } from './interfaces/trpc-services.interface';
 
 let dataSource: DataSource | null = null;
@@ -26,7 +27,7 @@ async function getDataSource() {
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Post, PostTag, Tag, Theme, ThemeSection, PostTranslation, UserProfile, CountryPhoneCode, Hero, HeroVideo, HeroSlider],
+      entities: [User, Post, PostTag, Tag, Theme, ThemeSection, PostTranslation, UserProfile, CountryPhoneCode, Hero, HeroVideo, HeroSlider, Category],
       synchronize: false,
     });
     await dataSource.initialize();
