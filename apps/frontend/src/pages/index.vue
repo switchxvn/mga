@@ -8,6 +8,7 @@ import PostCard from '../components/ui/card/PostCard.vue';
 import ServicesList from '../components/sections/ServicesList.vue';
 import HeroSection from '../components/sections/HeroSection.vue';
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
+import ProductCategoriesSection from '../components/sections/ProductCategoriesSection.vue';
 // Import Swiper
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay, EffectFade } from 'swiper/modules';
@@ -83,7 +84,7 @@ interface Theme {
 // Section config interfaces
 interface SliderConfig {
   height?: string;
-  layout?: 'split' | 'full';
+  layout?: 'split-columns' | 'stacked-rows';
   autoplay?: boolean;
   interval?: number;
   showDots?: boolean;
@@ -92,6 +93,7 @@ interface SliderConfig {
   sliderWidth?: string;
   videoPosition?: 'left' | 'right';
   sliderPosition?: 'left' | 'right';
+  themeId?: number;
   items?: Array<{
     image_url: string;
     title: string;
@@ -113,6 +115,114 @@ interface ProductsConfig {
     tablet: number;
     mobile: number;
   };
+}
+
+interface ServicesConfig {
+  layout: 'grid';
+  columns: number;
+  maxItems: number;
+  showIcon: boolean;
+  showTitle: boolean;
+  showDescription: boolean;
+  showPrice: boolean;
+  showButton: boolean;
+  descriptionLength: number;
+  gap: string;
+  backgroundGradient: {
+    from: string;
+    to: string;
+    direction: string;
+  };
+  overlayOpacity: string;
+  padding: {
+    top: string;
+    bottom: string;
+  };
+  buttonText: string;
+  buttonStyle: string;
+  cardStyle: {
+    background: string;
+    shadow: string;
+    border: string;
+    rounded: string;
+    padding: string;
+    transition: string;
+  };
+  iconStyle: {
+    size: string;
+    background: string;
+    color: string;
+    rounded: string;
+    padding: string;
+  };
+  titleStyle: {
+    size: string;
+    weight: string;
+    color: string;
+    margin: string;
+  };
+  descriptionStyle: {
+    size: string;
+    color: string;
+    margin: string;
+  };
+  priceStyle: {
+    size: string;
+    weight: string;
+    color: string;
+    margin: string;
+  };
+}
+
+interface CategoriesConfig {
+  title: string;
+  layout: 'grid' | 'slider';
+  columns: number;
+  maxItems: number;
+  showIcon: boolean;
+  showTitle: boolean;
+  showDescription: boolean;
+  descriptionLength: number;
+  gap: string;
+  backgroundGradient: {
+    from: string;
+    to: string;
+    direction: string;
+  };
+  overlayOpacity: string;
+  padding: {
+    top: string;
+    bottom: string;
+  };
+  cardStyle: {
+    background: string;
+    shadow: string;
+    border: string;
+    rounded: string;
+    padding: string;
+    transition: string;
+  };
+  iconStyle: {
+    size: string;
+    background: string;
+    color: string;
+    rounded: string;
+    padding: string;
+  };
+  titleStyle: {
+    size: string;
+    weight: string;
+    color: string;
+    margin: string;
+  };
+  descriptionStyle: {
+    size: string;
+    color: string;
+    margin: string;
+  };
+  categoryIds?: number[];
+  productsPerCategory?: number;
+  displayMode: 'grid' | 'slider';
 }
 
 const route = useRoute();
@@ -271,7 +381,8 @@ const getSectionConfig = (type: string) => {
   return {
     ...section.settings,
     title: section.title,
-    isActive: section.isActive
+    isActive: section.isActive,
+    themeId: activeTheme.value.id
   };
 };
 
@@ -283,6 +394,16 @@ const getSliderConfig = computed(() => {
 const getProductsConfig = computed(() => {
   const config = getSectionConfig('featured_products');
   return config as ProductsConfig | null;
+});
+
+const getServicesConfig = computed(() => {
+  const config = getSectionConfig('services');
+  return config as ServicesConfig | null;
+});
+
+const getCategoriesConfig = computed(() => {
+  const config = getSectionConfig('categories');
+  return config as CategoriesConfig | null;
 });
 </script>
 
@@ -297,7 +418,6 @@ const getProductsConfig = computed(() => {
       <!-- Hero Section with Theme Config -->
       <HeroSection 
         v-if="getSliderConfig"
-        :slides="getSliderConfig?.items || []"
         :config="getSliderConfig"
       />
 
@@ -314,13 +434,46 @@ const getProductsConfig = computed(() => {
         </div>
       </section>
 
-      <!-- Services Section -->
-      <ServicesList 
-        :services="services" 
-        :is-loading="isLoadingServices" 
-        :error="serviceError"
-        :config="getSectionConfig('services')"
+      <!-- Categories Section -->
+      <ProductCategoriesSection
+        v-if="getCategoriesConfig"
+        :config="getCategoriesConfig"
       />
+
+      <!-- Services Section -->
+      <section 
+        v-if="getServicesConfig"
+        class="services-section relative"
+        :style="{
+          paddingTop: getServicesConfig.padding.top,
+          paddingBottom: getServicesConfig.padding.bottom
+        }"
+      >
+        <!-- Background gradient overlay -->
+        <div 
+          class="absolute inset-0" 
+          :style="{ 
+            backgroundImage: getServicesConfig.backgroundGradient ? 
+              `linear-gradient(${getServicesConfig.backgroundGradient.direction.replace('to-', 'to ')}, ${getServicesConfig.backgroundGradient.from}, ${getServicesConfig.backgroundGradient.to})` : 
+              'none',
+            opacity: getServicesConfig.overlayOpacity,
+            pointerEvents: 'none'
+          }"
+        />
+
+        <div class="container mx-auto px-4 relative">
+          <h2 class="text-3xl font-bold mb-8 text-center">
+            {{ getSectionConfig('services')?.title || t('services.title') }}
+          </h2>
+          
+          <ServicesList 
+            :services="services" 
+            :is-loading="isLoadingServices" 
+            :error="serviceError"
+            :config="getServicesConfig"
+          />
+        </div>
+      </section>
 
       <!-- Latest Posts Section -->
       <section 

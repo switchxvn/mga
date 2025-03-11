@@ -7,7 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { createContext } from './context';
 import { ConfigService } from '@nestjs/config';
 import { initTRPC } from '@trpc/server';
-import { Context } from './context';
+import { TRPCContext } from './context';
 import { UserService } from '../user/services/user.service';
 import { PostFrontendService } from '../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../post/admin/services/post-admin.service';
@@ -34,13 +34,14 @@ import { FeatureFlagsAdminService } from '../feature-flags/admin/services/featur
 import { FeatureFlagsFrontendService } from '../feature-flags/frontend/services/feature-flags-frontend.service';
 import { HeroService } from '../hero/admin/services/hero.service';
 import { HeroSliderService } from '../hero/admin/services/hero-slider.service';
+import { HeroVideoService } from '../hero/services/hero-video.service';
 import { ThemeAdminService } from '../theme/admin/services/theme-admin.service';
 import { ThemeFrontendService } from '../theme/frontend/services/theme-frontend.service';
 
 @Injectable()
 export class TrpcService {
   private readonly logger = new Logger(TrpcService.name);
-  private readonly t = initTRPC.context<Context>().create();
+  private readonly t = initTRPC.context<TRPCContext>().create();
   public readonly router = this.t.router;
   public readonly publicProcedure = this.t.procedure;
   public readonly middleware = this.t.middleware;
@@ -74,6 +75,7 @@ export class TrpcService {
     private readonly featureFlagsFrontendService: FeatureFlagsFrontendService,
     private readonly heroService: HeroService,
     private readonly heroSliderService: HeroSliderService,
+    private readonly heroVideoService: HeroVideoService,
     private readonly themeAdminService: ThemeAdminService,
     private readonly themeFrontendService: ThemeFrontendService,
   ) {}
@@ -113,6 +115,7 @@ export class TrpcService {
         featureFlagsFrontendService: this.featureFlagsFrontendService,
         heroService: this.heroService,
         heroSliderService: this.heroSliderService,
+        heroVideoService: this.heroVideoService,
         themeAdminService: this.themeAdminService,
         themeFrontendService: this.themeFrontendService,
       }
@@ -134,4 +137,4 @@ export class TrpcService {
 }
 
 // Export the procedures for use in routers
-export const { router, procedure: publicProcedure } = initTRPC.context<Context>().create(); 
+export const { router, procedure: publicProcedure } = initTRPC.context<TRPCContext>().create(); 

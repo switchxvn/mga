@@ -152,5 +152,16 @@
     "searchCountry": "Search country...",
     "noCountriesFound": "No matching countries found",
     "loadingCountries": "Loading countries..."
+  },
+  "categories": {
+    "viewAllIn": "View all in {category}",
+    "noProductsInCategory": "No products in {category} yet",
+    "no_categories": "No categories found",
+    "title": "Product Categories",
+    "description": "Explore our product categories",
+    "subcategories": "Subcategories",
+    "productsIn": "Products in",
+    "defaultTitle": "Product Categories",
+    "defaultKeywords": "product categories, products"
   }
 } 

@@ -18,13 +18,29 @@ export const heroRouter = router({
     }),
 
   getHeroSliders: publicProcedure
-    .query(async ({ ctx }) => {
+    .input(z.object({ themeId: z.number().optional() }))
+    .query(async ({ ctx, input }) => {
       try {
-        return await ctx.services.heroSliderService.findActive();
+        return await ctx.services.heroSliderService.findActive(input?.themeId);
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch hero sliders',
+          cause: error,
+        });
+      }
+    }),
+
+  getHeroVideos: publicProcedure
+    .input(z.object({ themeId: z.number().optional() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await ctx.services.heroVideoService.findActive(input?.themeId);
+      } catch (error) {
+        ctx.logger.error('Failed to fetch hero videos:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch hero videos',
           cause: error,
         });
       }

@@ -152,5 +152,16 @@
     "searchCountry": "Tìm kiếm quốc gia...",
     "noCountriesFound": "Không tìm thấy quốc gia phù hợp",
     "loadingCountries": "Đang tải danh sách quốc gia..."
+  },
+  "categories": {
+    "viewAllIn": "Xem tất cả trong {category}",
+    "noProductsInCategory": "Chưa có sản phẩm nào trong {category}",
+    "no_categories": "Không có danh mục nào",
+    "title": "Danh mục sản phẩm",
+    "description": "Khám phá các danh mục sản phẩm của chúng tôi",
+    "subcategories": "Danh mục con",
+    "productsIn": "Sản phẩm trong",
+    "defaultTitle": "Danh mục sản phẩm",
+    "defaultKeywords": "danh mục sản phẩm, sản phẩm"
   }
 } 

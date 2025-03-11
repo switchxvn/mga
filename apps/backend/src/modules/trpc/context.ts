@@ -10,6 +10,7 @@ import { Theme } from '../theme/entities/theme.entity';
 import { ThemeSection } from '../theme/entities/theme-section.entity';
 import { ThemeAdminService } from '../theme/admin/services/theme-admin.service';
 import { ThemeFrontendService } from '../theme/frontend/services/theme-frontend.service';
+import { HeroVideoService } from '../hero/services/hero-video.service';
 
 let dataSource: DataSource | null = null;
 
@@ -47,6 +48,7 @@ export type TRPCContext = {
   services: {
     themeAdminService: ThemeAdminService;
     themeFrontendService: ThemeFrontendService;
+    heroVideoService: HeroVideoService;
     // ... other services
   };
 };
@@ -96,6 +98,7 @@ export async function createContext({ req, res }: CreateFastifyContextOptions): 
     services: {
       themeAdminService,
       themeFrontendService,
+      heroVideoService: new HeroVideoService(),
       // Add other services as needed
     }
   };

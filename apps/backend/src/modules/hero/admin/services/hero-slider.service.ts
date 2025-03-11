@@ -18,11 +18,17 @@ export class HeroSliderService {
     });
   }
 
-  async findActive(): Promise<HeroSlider[]> {
+  async findActive(themeId?: number): Promise<HeroSlider[]> {
+    const query: any = {
+      isActive: true,
+    };
+
+    if (themeId) {
+      query.themeId = themeId;
+    }
+
     return this.heroSliderRepository.find({
-      where: {
-        isActive: true,
-      },
+      where: query,
       order: {
         order: 'ASC',
       },

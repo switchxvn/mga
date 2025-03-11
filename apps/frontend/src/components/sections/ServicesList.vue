@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import ServiceCard from '../ui/card/ServiceCard.vue';
 import Button from '../ui/button/Button.vue';
 
@@ -14,10 +14,68 @@ interface Service {
   updatedAt: string | Date;
 }
 
+interface ServicesConfig {
+  layout: 'grid';
+  columns: number;
+  maxItems: number;
+  showIcon: boolean;
+  showTitle: boolean;
+  showDescription: boolean;
+  showPrice: boolean;
+  showButton: boolean;
+  descriptionLength: number;
+  gap: string;
+  backgroundGradient: {
+    from: string;
+    to: string;
+    direction: string;
+  };
+  overlayOpacity: string;
+  padding: {
+    top: string;
+    bottom: string;
+  };
+  buttonText: string;
+  buttonStyle: string;
+  cardStyle: {
+    background: string;
+    shadow: string;
+    border: string;
+    rounded: string;
+    padding: string;
+    transition: string;
+  };
+  iconStyle: {
+    size: string;
+    background: string;
+    color: string;
+    rounded: string;
+    padding: string;
+  };
+  titleStyle: {
+    size: string;
+    weight: string;
+    color: string;
+    margin: string;
+  };
+  descriptionStyle: {
+    size: string;
+    color: string;
+    margin: string;
+  };
+  priceStyle: {
+    size: string;
+    weight: string;
+    color: string;
+    margin: string;
+  };
+}
+
 const props = defineProps<{
   services: Service[];
   isLoading: boolean;
   error: string | null;
+  config?: ServicesConfig;
 }>();
 
 const emit = defineEmits<{
@@ -27,142 +85,89 @@ const emit = defineEmits<{
 const handleRetry = () => {
   emit('retry');
 };
+
+// Computed để lấy số cột dựa trên config hoặc responsive default
+const gridColumns = computed(() => {
+  if (props.config?.columns) {
+    return props.config.columns;
+  }
+  return 3; // default columns
+});
+
+// Computed để lấy gap từ config hoặc default
+const gridGap = computed(() => {
+  return props.config?.gap || '2rem';
+});
+
+// Computed để tạo grid styles
+const gridStyles = computed(() => ({
+  display: 'grid',
+  gridTemplateColumns: `repeat(${gridColumns.value}, minmax(0, 1fr))`,
+  gap: gridGap.value
+}));
 </script>
 
 <template>
-  <section class="services-section">
-    <div class="container">
-      <h2 class="services-section__title">Dịch vụ của chúng tôi</h2>
-      
-      <!-- Loading state -->
-      <div v-if="isLoading" class="services-section__loading">
-        <div class="services-section__spinner"></div>
-      </div>
-      
-      <!-- Error state -->
-      <div v-else-if="error" class="services-section__error">
-        <p>{{ error }}</p>
-        <Button 
-          @click="handleRetry" 
-          variant="destructive"
-          class="services-section__retry-btn"
-        >
-          Thử lại
-        </Button>
-      </div>
-      
-      <!-- Services Grid -->
-      <div v-else-if="services.length > 0" class="services-section__grid">
-        <ServiceCard 
-          v-for="service in services" 
-          :key="service.id"
-          :service="service"
-        />
-      </div>
-      
-      <!-- Empty state -->
-      <div v-else class="services-section__empty">
-        <p>Không có dịch vụ nào</p>
-      </div>
-    </div>
-  </section>
+  <!-- Loading state -->
+  <div v-if="isLoading" class="flex justify-center items-center py-12">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Error state -->
+  <div v-else-if="error" class="text-center text-red-500 py-8">
+    <p>{{ error }}</p>
+    <Button 
+      @click="handleRetry" 
+      variant="destructive"
+      class="mt-4"
+    >
+      Thử lại
+    </Button>
+  </div>
+  
+  <!-- Services Grid -->
+  <div 
+    v-else-if="services.length > 0" 
+    class="grid"
+    :style="gridStyles"
+  >
+    <ServiceCard 
+      v-for="service in services.slice(0, config?.maxItems || services.length)" 
+      :key="service.id"
+      :service="service"
+      :config="config"
+    />
+  </div>
+  
+  <!-- Empty state -->
+  <div v-else class="text-center text-gray-500 dark:text-gray-400 py-8">
+    <p>Không có dịch vụ nào</p>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.services-section {
-  padding: 5rem 0;
-  background-color: var(--color-background-subtle, #f9fafb);
-  
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+.grid {
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
   
-  &__title {
-    font-size: 2rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 3rem;
-    color: var(--color-foreground);
-    position: relative;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -0.75rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 3px;
-      background-color: var(--color-primary);
-      border-radius: 3px;
-    }
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr !important;
   }
-  
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-  }
-  
-  &__loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 200px;
-  }
-  
-  &__spinner {
-    width: 50px;
-    height: 50px;
-    border: 3px solid rgba(var(--color-primary-rgb), 0.3);
-    border-radius: 50%;
-    border-top-color: var(--color-primary);
-    animation: spin 1s ease-in-out infinite;
-  }
-  
-  &__error {
-    background-color: var(--color-destructive-light, rgba(var(--color-destructive-rgb), 0.1));
-    border: 1px solid var(--color-destructive);
-    color: var(--color-destructive);
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    text-align: center;
-    max-width: 500px;
-    margin: 0 auto;
-  }
-  
-  &__retry-btn {
-    margin-top: 1rem;
-  }
-  
-  &__empty {
-    text-align: center;
-    color: var(--color-muted-foreground);
-    padding: 3rem 0;
-  }
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid hsl(var(--primary) / 0.2);
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 768px) {
-  .services-section {
-    padding: 3rem 0;
-    
-    &__title {
-      font-size: 1.75rem;
-      margin-bottom: 2rem;
-    }
-    
-    &__grid {
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
   }
 }
 </style> 
