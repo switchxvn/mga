@@ -15,6 +15,7 @@ import { priceRequestRouter } from './routers/price-request.router';
 import { featureFlagsRouter } from './routers/feature-flags.router';
 import { heroRouter } from './routers/hero.router';
 import { CommonRouter } from './routers/common.router';
+import { componentStyleConfigRouter } from './routers/component-style-config.router';
 
 @Injectable()
 export class TrpcRouter {
@@ -39,6 +40,7 @@ export class TrpcRouter {
       priceRequest: priceRequestRouter,
       featureFlags: featureFlagsRouter,
       hero: heroRouter,
+      componentStyleConfig: componentStyleConfigRouter,
       common: this.commonRouter.router,
     });
   }

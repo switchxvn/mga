@@ -19,7 +19,7 @@ async function fetchRelatedPosts() {
     loading.value = true;
     error.value = null;
     
-    const result = await trpc.post.relatedPosts.query({
+    const result = await trpc.post.related.query({
       id: props.postId,
       limit: props.limit || 3
     });

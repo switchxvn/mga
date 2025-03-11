@@ -37,6 +37,9 @@ import { HeroSliderService } from '../hero/admin/services/hero-slider.service';
 import { HeroVideoService } from '../hero/services/hero-video.service';
 import { ThemeAdminService } from '../theme/admin/services/theme-admin.service';
 import { ThemeFrontendService } from '../theme/frontend/services/theme-frontend.service';
+import { ComponentStyleConfigAdminService } from '../theme/admin/services/component-style-config-admin.service';
+import { ComponentStyleConfigFrontendService } from '../theme/frontend/services/component-style-config-frontend.service';
+import { ITrpcServices } from './interfaces/trpc-services.interface';
 
 @Injectable()
 export class TrpcService {
@@ -78,6 +81,8 @@ export class TrpcService {
     private readonly heroVideoService: HeroVideoService,
     private readonly themeAdminService: ThemeAdminService,
     private readonly themeFrontendService: ThemeFrontendService,
+    private readonly componentStyleConfigAdminService: ComponentStyleConfigAdminService,
+    private readonly componentStyleConfigFrontendService: ComponentStyleConfigFrontendService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -88,37 +93,42 @@ export class TrpcService {
     const context = await createContext({ req, res: {} as any });
     return {
       ...context,
-      services: {
-        ...context.services,
-        userService: this.userService,
-        postService: this.postFrontendService,
-        postAdminService: this.postAdminService,
-        profileService: this.profileService,
-        authService: this.authService,
-        settingsAdminService: this.settingsAdminService,
-        settingsFrontendService: this.settingsFrontendService,
-        seoAdminService: this.seoAdminService,
-        seoFrontendService: this.seoFrontendService,
-        footerAdminService: this.footerAdminService,
-        footerFrontendService: this.footerFrontendService,
-        categoryFrontendService: this.categoryFrontendService,
-        categoryAdminService: this.categoryAdminService,
-        serviceAdminService: this.serviceAdminService,
-        serviceFrontendService: this.serviceFrontendService,
-        productAdminService: this.productAdminService,
-        productFrontendService: this.productFrontendService,
-        crossSellService: this.crossSellService,
-        productSpecificationService: this.productSpecificationService,
-        productComboService: this.productComboService,
-        priceRequestService: this.priceRequestService,
-        featureFlagsAdminService: this.featureFlagsAdminService,
-        featureFlagsFrontendService: this.featureFlagsFrontendService,
-        heroService: this.heroService,
-        heroSliderService: this.heroSliderService,
-        heroVideoService: this.heroVideoService,
-        themeAdminService: this.themeAdminService,
-        themeFrontendService: this.themeFrontendService,
-      }
+      services: this.getServices(),
+    };
+  }
+
+  public getServices(): ITrpcServices {
+    return {
+      userService: this.userService,
+      postService: this.postFrontendService,
+      postAdminService: this.postAdminService,
+      profileService: this.profileService,
+      authService: this.authService,
+      settingsAdminService: this.settingsAdminService,
+      settingsFrontendService: this.settingsFrontendService,
+      seoAdminService: this.seoAdminService,
+      seoFrontendService: this.seoFrontendService,
+      footerAdminService: this.footerAdminService,
+      footerFrontendService: this.footerFrontendService,
+      categoryFrontendService: this.categoryFrontendService,
+      categoryAdminService: this.categoryAdminService,
+      serviceAdminService: this.serviceAdminService,
+      serviceFrontendService: this.serviceFrontendService,
+      productAdminService: this.productAdminService,
+      productFrontendService: this.productFrontendService,
+      crossSellService: this.crossSellService,
+      productSpecificationService: this.productSpecificationService,
+      productComboService: this.productComboService,
+      priceRequestService: this.priceRequestService,
+      featureFlagsAdminService: this.featureFlagsAdminService,
+      featureFlagsFrontendService: this.featureFlagsFrontendService,
+      heroService: this.heroService,
+      heroSliderService: this.heroSliderService,
+      heroVideoService: this.heroVideoService,
+      themeAdminService: this.themeAdminService,
+      themeFrontendService: this.themeFrontendService,
+      componentStyleConfigAdminService: this.componentStyleConfigAdminService,
+      componentStyleConfigFrontendService: this.componentStyleConfigFrontendService,
     };
   }
 

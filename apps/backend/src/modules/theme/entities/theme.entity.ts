@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ThemeSection } from './theme-section.entity';
+import { ComponentStyleConfig } from './component-style-config.entity';
 
 @Entity('themes')
 export class Theme {
@@ -37,4 +38,7 @@ export class Theme {
 
   @OneToMany(() => ThemeSection, section => section.theme)
   sections!: ThemeSection[];
+
+  @OneToMany(() => ComponentStyleConfig, config => config.theme)
+  componentStyleConfigs!: ComponentStyleConfig[];
 } 

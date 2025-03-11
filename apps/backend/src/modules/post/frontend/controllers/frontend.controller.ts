@@ -36,8 +36,11 @@ export class PostFrontendController {
 
   @Get(':id/related')
   @ApiOperation({ summary: 'Get related posts' })
-  findRelatedPosts(@Param('id') id: string) {
-    return this.postService.findRelatedPosts(+id);
+  findRelatedPosts(
+    @Param('id') id: string,
+    @Query('limit') limit?: number
+  ) {
+    return this.postService.findRelatedPosts(+id, limit);
   }
 
   @Get('popular')

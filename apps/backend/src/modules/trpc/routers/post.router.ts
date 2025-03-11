@@ -35,7 +35,10 @@ export const postRouter = router({
     }),
 
   bySlug: publicProcedure
-    .input(z.object({ slug: z.string() }))
+    .input(z.object({ 
+      slug: z.string(),
+      locale: z.string().optional()
+    }))
     .query(async ({ ctx, input }) => {
       try {
         const post = await ctx.services.postService.findBySlug(input.slug);
@@ -57,10 +60,13 @@ export const postRouter = router({
     }),
 
   related: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ 
+      id: z.number(),
+      limit: z.number().optional().default(3)
+    }))
     .query(async ({ ctx, input }) => {
       try {
-        const posts = await ctx.services.postService.findRelatedPosts(input.id);
+        const posts = await ctx.services.postService.findRelatedPosts(input.id, input.limit);
         return posts;
       } catch (error) {
         console.error(`Failed to fetch related posts for post ${input.id}:`, error);
@@ -145,26 +151,29 @@ export const postRouter = router({
     }),
 
   bySlugWithAuthor: publicProcedure
-    .input(z.string())
+    .input(z.object({
+      slug: z.string(),
+      locale: z.string().optional()
+    }))
     .query(async ({ input, ctx }) => {
       try {
-        ctx.logger.log(`Fetching post with author by slug: ${input}`);
-        const post = await ctx.services.postService.findBySlugWithAuthor(input);
+        ctx.logger.log(`Fetching post with author by slug: ${input.slug}`);
+        const post = await ctx.services.postService.findBySlugWithAuthor(input.slug);
 
         if (!post) {
-          ctx.logger.warn(`Post not found for slug: ${input}`);
+          ctx.logger.warn(`Post not found for slug: ${input.slug}`);
           throw new TRPCError({
             code: 'NOT_FOUND',
-            message: `Post with slug "${input}" not found`,
+            message: `Post with slug "${input.slug}" not found`,
           });
         }
 
-        ctx.logger.debug(`Successfully retrieved post with author by slug: ${input}`);
+        ctx.logger.debug(`Successfully retrieved post with author by slug: ${input.slug}`);
         return post;
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error fetching post with author by slug ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        ctx.logger.error(`Error fetching post with author by slug ${input.slug}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve post with author',
@@ -174,26 +183,29 @@ export const postRouter = router({
     }),
 
   bySlugWithAuthorAndTags: publicProcedure
-    .input(z.string())
+    .input(z.object({
+      slug: z.string(),
+      locale: z.string().optional()
+    }))
     .query(async ({ input, ctx }) => {
       try {
-        ctx.logger.log(`Fetching post with author and tags by slug: ${input}`);
-        const post = await ctx.services.postService.findBySlugWithAuthorAndTags(input);
+        ctx.logger.log(`Fetching post with author and tags by slug: ${input.slug}`);
+        const post = await ctx.services.postService.findBySlugWithAuthorAndTags(input.slug);
 
         if (!post) {
-          ctx.logger.warn(`Post not found for slug: ${input}`);
+          ctx.logger.warn(`Post not found for slug: ${input.slug}`);
           throw new TRPCError({
             code: 'NOT_FOUND',
-            message: `Post with slug "${input}" not found`,
+            message: `Post with slug "${input.slug}" not found`,
           });
         }
 
-        ctx.logger.debug(`Successfully retrieved post with author and tags by slug: ${input}`);
+        ctx.logger.debug(`Successfully retrieved post with author and tags by slug: ${input.slug}`);
         return post;
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error fetching post with author and tags by slug ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        ctx.logger.error(`Error fetching post with author and tags by slug ${input.slug}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve post with author and tags',
