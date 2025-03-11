@@ -163,5 +163,14 @@
     "productsIn": "Products in",
     "defaultTitle": "Product Categories",
     "defaultKeywords": "product categories, products"
+  },
+  "sidebar": {
+    "popularPosts": "Popular Posts",
+    "featuredCategories": "Featured Categories",
+    "allCategories": "All Categories",
+    "subscribe": "Subscribe",
+    "subscribeDescription": "Get notified when new posts are published",
+    "emailPlaceholder": "Your email",
+    "subscribeButton": "Subscribe"
   }
 } 

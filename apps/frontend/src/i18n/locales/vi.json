@@ -163,5 +163,14 @@
     "productsIn": "Sản phẩm trong",
     "defaultTitle": "Danh mục sản phẩm",
     "defaultKeywords": "danh mục sản phẩm, sản phẩm"
+  },
+  "sidebar": {
+    "popularPosts": "Bài viết phổ biến",
+    "featuredCategories": "Danh mục nổi bật",
+    "allCategories": "Tất cả danh mục",
+    "subscribe": "Đăng ký nhận tin",
+    "subscribeDescription": "Nhận thông báo khi có bài viết mới",
+    "emailPlaceholder": "Email của bạn",
+    "subscribeButton": "Đăng ký"
   }
 } 

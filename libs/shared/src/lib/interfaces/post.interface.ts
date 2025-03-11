@@ -10,8 +10,8 @@ export interface Post {
   content?: string;
   shortDescription?: string;
   thumbnail?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string | Date;
+  updatedAt: string | Date;
   author?: Author;
   categories?: any[];
   tags?: Tag[];

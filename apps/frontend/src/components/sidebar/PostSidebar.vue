@@ -1,65 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useTrpc } from '../../composables/useTrpc';
 import { useCategory, type Category } from '../../composables/useCategory';
 import { useI18n } from 'vue-i18n';
 import Icon from '../ui/Icon.vue';
 import type { Post } from '@ew/shared';
-
-interface PopularPostsParams {
-  limit: number;
-  excludeId: number;
-  locale: string;
-}
-
-interface ApiPost extends Omit<Post, 'createdAt' | 'updatedAt'> {
-  createdAt: string;
-  updatedAt: string;
-}
+import { usePopularPosts } from '../../composables/usePopularPosts';
+import { usePost } from '../../composables/usePost';
+import { formatDate } from '../../utils/date';
 
 const props = defineProps<{
   postId: number;
 }>();
 
 const trpc = useTrpc();
-const { locale } = useI18n();
-const popularPosts = ref<Post[]>([]);
 const categories = ref<Category[]>([]);
 const loading = ref({
-  popular: true,
   categories: true,
   featuredCategories: true
 });
 
-// Sử dụng composable useCategory
+// Sử dụng composables
+const { t } = useI18n();
+const { locale } = useI18n();
+const { popularPosts, loading: loadingPopular, fetchPopularPosts } = usePopularPosts();
+const { getTranslationByLocale, getPostUrl } = usePost();
 const { 
   featuredCategories,
   fetchFeaturedCategories
 } = useCategory();
-
-async function fetchPopularPosts() {
-  try {
-    loading.value.popular = true;
-    const params: PopularPostsParams = {
-      limit: 5,
-      excludeId: props.postId,
-      locale: locale.value
-    };
-
-    const result = await trpc.post.popular.query(params) as ApiPost[];
-
-    // Convert string dates to Date objects
-    popularPosts.value = result.map(post => ({
-      ...post,
-      createdAt: new Date(post.createdAt),
-      updatedAt: new Date(post.updatedAt)
-    }));
-  } catch (error) {
-    console.error('Failed to fetch popular posts:', error);
-  } finally {
-    loading.value.popular = false;
-  }
-}
 
 async function fetchCategories() {
   try {
@@ -85,23 +54,10 @@ async function loadFeaturedCategories() {
 }
 
 onMounted(() => {
-  fetchPopularPosts();
+  fetchPopularPosts({ limit: 5, excludeId: props.postId });
   fetchCategories();
   loadFeaturedCategories();
 });
-
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(new Date(date));
-}
-
-// Computed để lấy translation hiện tại
-function getCurrentTranslation(post: Post) {
-  return post.translations?.find(t => t.locale === locale.value);
-}
 </script>
 
 <template>
@@ -110,10 +66,10 @@ function getCurrentTranslation(post: Post) {
     <div class="post-sidebar__section">
       <h3 class="post-sidebar__title">
         <Icon name="TrendingUp" :size="18" class="mr-2" />
-        Bài viết phổ biến
+        {{ t('sidebar.popularPosts') }}
       </h3>
       
-      <div v-if="loading.popular" class="post-sidebar__loading">
+      <div v-if="loadingPopular" class="post-sidebar__loading">
         <div class="post-sidebar__loading-spinner"></div>
       </div>
       
@@ -122,17 +78,23 @@ function getCurrentTranslation(post: Post) {
       </div>
       
       <ul v-else class="post-sidebar__post-list">
-        <li v-for="post in popularPosts" :key="post.id" class="post-sidebar__post-item">
+        <li v-for="(post, index) in popularPosts" 
+            :key="post.id" 
+            class="post-sidebar__post-item"
+        >
           <NuxtLink 
-            :to="`/bai-viet/${getCurrentTranslation(post)?.slug || post.id}`" 
-            class="post-sidebar__post-item-link"
+            :to="getPostUrl(post)" 
+            class="post-sidebar__post-item-link group"
           >
             <div class="post-sidebar__post-item-content">
-              <div v-if="getCurrentTranslation(post)?.ogImage" class="post-sidebar__post-item-image">
-                <img :src="getCurrentTranslation(post)?.ogImage" :alt="getCurrentTranslation(post)?.title">
+              <div class="post-sidebar__post-item-number">{{ index + 1 }}</div>
+              <div v-if="getTranslationByLocale(post)?.ogImage" class="post-sidebar__post-item-image">
+                <img :src="getTranslationByLocale(post)?.ogImage" :alt="getTranslationByLocale(post)?.title">
               </div>
-              <div>
-                <h4 class="post-sidebar__post-item-title">{{ getCurrentTranslation(post)?.title }}</h4>
+              <div class="flex-grow min-w-0">
+                <h4 class="post-sidebar__post-item-title group-hover:text-blue-600">
+                  {{ getTranslationByLocale(post)?.title }}
+                </h4>
                 <p class="post-sidebar__post-item-date">
                   <Icon name="Calendar" :size="14" class="mr-1" />
                   {{ formatDate(post.createdAt) }}
@@ -148,7 +110,7 @@ function getCurrentTranslation(post: Post) {
     <div class="post-sidebar__section">
       <h3 class="post-sidebar__title">
         <Icon name="Star" :size="18" class="mr-2" />
-        Danh mục nổi bật
+        {{ t('sidebar.featuredCategories') }}
       </h3>
       
       <div v-if="loading.featuredCategories" class="post-sidebar__loading">
@@ -164,13 +126,20 @@ function getCurrentTranslation(post: Post) {
           v-for="(category, categoryIndex) in featuredCategories" 
           :key="categoryIndex"
           :to="`/danh-muc/${category.slug || category.id}`"
-          class="post-sidebar__featured-category"
+          class="post-sidebar__featured-category group"
         >
           <div class="post-sidebar__featured-category-content">
-            <h4 class="post-sidebar__featured-category-title">{{ category.name }}</h4>
-            <p v-if="category.description" class="post-sidebar__featured-category-description">
-              {{ category.description }}
-            </p>
+            <div class="post-sidebar__featured-category-icon">
+              <Icon name="Folder" :size="20" />
+            </div>
+            <div>
+              <h4 class="post-sidebar__featured-category-title group-hover:text-blue-600">
+                {{ category.name }}
+              </h4>
+              <p v-if="category.description" class="post-sidebar__featured-category-description">
+                {{ category.description }}
+              </p>
+            </div>
           </div>
         </NuxtLink>
       </div>
@@ -180,7 +149,7 @@ function getCurrentTranslation(post: Post) {
     <div class="post-sidebar__section">
       <h3 class="post-sidebar__title">
         <Icon name="FolderOpen" :size="18" class="mr-2" />
-        Tất cả danh mục
+        {{ t('sidebar.allCategories') }}
       </h3>
       
       <div v-if="loading.categories" class="post-sidebar__loading">
@@ -207,21 +176,21 @@ function getCurrentTranslation(post: Post) {
     <div class="post-sidebar__section post-sidebar__section--highlight">
       <h3 class="post-sidebar__title">
         <Icon name="Bell" :size="18" class="mr-2" />
-        Đăng ký nhận tin
+        {{ t('sidebar.subscribe') }}
       </h3>
-      <p class="post-sidebar__description mb-4">Nhận thông báo khi có bài viết mới</p>
+      <p class="post-sidebar__description mb-4">{{ t('sidebar.subscribeDescription') }}</p>
       
       <form class="post-sidebar__form">
         <input 
           type="email" 
-          placeholder="Email của bạn" 
+          :placeholder="t('sidebar.emailPlaceholder')"
           class="post-sidebar__form-input"
         >
         <button 
           type="submit" 
           class="post-sidebar__form-button"
         >
-          Đăng ký
+          {{ t('sidebar.subscribeButton') }}
         </button>
       </form>
     </div>
@@ -270,11 +239,15 @@ function getCurrentTranslation(post: Post) {
 }
 
 .post-sidebar__post-item-content {
-  @apply flex items-start gap-3;
+  @apply flex items-center w-full;
+}
+
+.post-sidebar__post-item-number {
+  @apply flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 font-bold text-sm mr-3;
 }
 
 .post-sidebar__post-item-image {
-  @apply w-16 h-16 rounded-md overflow-hidden flex-shrink-0;
+  @apply w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 mr-3;
 }
 
 .post-sidebar__post-item-image img {
@@ -282,7 +255,11 @@ function getCurrentTranslation(post: Post) {
 }
 
 .post-sidebar__post-item-title {
-  @apply text-sm font-medium text-gray-800 line-clamp-2 mb-1;
+  @apply text-sm font-medium text-gray-800 line-clamp-2 mb-1 transition-colors duration-200;
+}
+
+.dark .post-sidebar__post-item-title {
+  @apply text-gray-200;
 }
 
 .post-sidebar__post-item-date {
@@ -290,19 +267,44 @@ function getCurrentTranslation(post: Post) {
 }
 
 .post-sidebar__featured-categories {
-  @apply space-y-3;
+  @apply space-y-2;
 }
 
 .post-sidebar__featured-category {
-  @apply block p-3 rounded-md bg-gray-50 hover:bg-blue-50 transition-colors duration-200;
+  @apply block p-3 rounded-md bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 
+    border border-gray-100 shadow-sm transition-all duration-200 mb-2 last:mb-0;
+}
+
+.dark .post-sidebar__featured-category {
+  @apply from-gray-800 to-gray-700 border-gray-700 hover:from-gray-700 hover:to-gray-600;
+}
+
+.post-sidebar__featured-category-content {
+  @apply flex items-center gap-2;
+}
+
+.post-sidebar__featured-category-icon {
+  @apply w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0;
+}
+
+.dark .post-sidebar__featured-category-icon {
+  @apply bg-blue-900 text-blue-300;
 }
 
 .post-sidebar__featured-category-title {
-  @apply text-sm font-medium text-gray-800 mb-1;
+  @apply text-sm font-medium text-gray-800 mb-0.5 transition-colors duration-200;
+}
+
+.dark .post-sidebar__featured-category-title {
+  @apply text-gray-200;
 }
 
 .post-sidebar__featured-category-description {
   @apply text-xs text-gray-500 line-clamp-2;
+}
+
+.dark .post-sidebar__featured-category-description {
+  @apply text-gray-400;
 }
 
 .post-sidebar__categories {

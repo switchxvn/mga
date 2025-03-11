@@ -1,103 +1,51 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import LazyImage from '../LazyImage.vue';
+import type { Post } from '@ew/shared';
+import { useI18n } from 'vue-i18n';
+import { usePost } from '../../../composables/usePost';
+import { formatDate } from '../../../utils/date';
+import { truncateContent } from '../../../utils/text';
+import { getAuthorName } from '../../../utils/author';
+
+const { locale } = useI18n();
+const { getTranslationByLocale, getPostUrl } = usePost();
 
 const props = defineProps<{
-  post: {
-    id: number;
-    title: string;
-    content?: string;
-    shortDescription?: string;
-    thumbnail?: string | null;
-    createdAt: string;
-    updatedAt: string;
-    author?: any;
-    metaDescription?: string;
-    ogImage?: string;
-    slug?: string;
-  };
+  post: Post;
   compact?: boolean;
 }>();
 
-/**
- * Tạo slug từ tiêu đề nếu không có slug
- */
-const postSlug = computed(() => {
-  if (props.post.slug) return props.post.slug;
-  
-  // Fallback: Tạo slug từ tiêu đề nếu không có slug
-  return props.post.title
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Loại bỏ ký tự đặc biệt
-    .replace(/\s+/g, '-') // Thay thế khoảng trắng bằng dấu gạch ngang
-    .replace(/--+/g, '-') // Loại bỏ nhiều dấu gạch ngang liên tiếp
-    .trim();
-});
-
-/**
- * Rút gọn nội dung bài viết để hiển thị trong card
- */
-function truncateContent(content: string, maxLength: number = 150): string {
-  if (!content) return '';
-  if (content.length <= maxLength) return content;
-  
-  // Cắt nội dung và thêm dấu "..."
-  return content.substring(0, maxLength) + '...';
-}
-
-/**
- * Format ngày tháng theo định dạng Việt Nam
- */
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(date);
-}
-
-/**
- * Lấy tên tác giả từ thông tin author
- */
-function getAuthorName(author: any): string {
-  if (!author) return 'Không xác định';
-  
-  if (author.profile) {
-    const firstName = author.profile.firstName || '';
-    const lastName = author.profile.lastName || '';
-    if (firstName || lastName) {
-      return `${firstName} ${lastName}`.trim();
-    }
-  }
-  
-  return author.email?.split('@')[0] || 'Không xác định';
-}
+const currentTranslation = computed(() => getTranslationByLocale(props.post));
+const postTitle = computed(() => currentTranslation.value?.title || '');
+const postContent = computed(() => currentTranslation.value?.content || '');
+const postShortDescription = computed(() => currentTranslation.value?.shortDescription || '');
+const postMetaDescription = computed(() => currentTranslation.value?.metaDescription || '');
 
 /**
  * Kiểm tra xem bài viết có hình ảnh không
  */
 const hasImage = computed(() => {
-  return !!props.post.thumbnail || !!props.post.ogImage;
+  return !!props.post.thumbnail;
 });
 
 /**
  * Lấy mô tả ngắn gọn của bài viết
  */
 const getDescription = computed(() => {
-  return props.post.shortDescription || props.post.metaDescription || props.post.content || '';
+  return postShortDescription.value || postMetaDescription.value || postContent.value || '';
 });
 </script>
 
 <template>
-  <NuxtLink :to="`/bai-viet/${postSlug}`" class="block h-full">
+  <NuxtLink :to="getPostUrl(post)" class="block h-full">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
       <div class="flex" :class="{ 'flex-col flex-grow': !compact, 'flex-row': compact }">
         <!-- Hình ảnh bài viết - phiên bản lớn khi không compact -->
         <div v-if="!compact" class="image-container">
           <LazyImage 
-            :src="post.thumbnail || post.ogImage" 
-            :alt="post.title" 
+            :src="post.thumbnail || '/images/default-image.jpg'" 
+            :alt="postTitle" 
             class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
         </div>
@@ -105,15 +53,15 @@ const getDescription = computed(() => {
         <!-- Hình ảnh bài viết - phiên bản nhỏ khi compact -->
         <div v-else-if="compact && hasImage" class="compact-image-container">
           <LazyImage 
-            :src="post.thumbnail || post.ogImage" 
-            :alt="post.title" 
+            :src="post.thumbnail || '/images/default-image.jpg'" 
+            :alt="postTitle" 
             class="w-full h-full object-cover"
           />
         </div>
         
         <!-- Nội dung bài viết -->
         <div class="p-4 flex-grow flex flex-col">
-          <h3 class="title-container">{{ post.title }}</h3>
+          <h3 class="title-container">{{ postTitle }}</h3>
           
           <p v-if="!compact && getDescription" class="description-container">
             {{ truncateContent(getDescription) }}
