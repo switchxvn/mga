@@ -1,14 +1,11 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Post } from '../../entities/post.entity';
-import { PostTranslation } from '../../entities/post-translation.entity';
-import { CreatePostInput, UpdatePostInput } from '@ew/shared';
+import { Post } from '../entities/post.entity';
+import { PostTranslation } from '../entities/post-translation.entity';
 
 @Injectable()
 export class PostAdminService {
-  private readonly logger = new Logger(PostAdminService.name);
-
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
@@ -16,52 +13,27 @@ export class PostAdminService {
     private readonly postTranslationRepository: Repository<PostTranslation>
   ) {}
 
-  async create(data: Partial<Post>, authorId: number) {
-    const post = this.postRepository.create({
-      ...data,
-      authorId
-    });
+  async create(data: Partial<Post>) {
+    const post = this.postRepository.create(data);
     return this.postRepository.save(post);
   }
 
-  async findAll() {
-    return this.postRepository.find({
-      relations: ['translations', 'author', 'author.profile'],
-      order: { createdAt: 'DESC' }
-    });
-  }
-
-  async findOne(id: number) {
+  async update(id: number, data: Partial<Post>) {
+    await this.postRepository.update(id, data);
     return this.postRepository.findOne({
       where: { id },
-      relations: ['translations', 'author', 'author.profile']
+      relations: ['translations', 'author']
     });
   }
 
-  async update(id: number, data: Partial<Post>, authorId: number) {
+  async remove(id: number) {
     const post = await this.postRepository.findOne({
-      where: { id, authorId },
+      where: { id },
       relations: ['translations']
     });
-
-    if (!post) {
-      throw new Error('Post not found or unauthorized');
+    if (post) {
+      await this.postRepository.remove(post);
     }
-
-    Object.assign(post, data);
-    return this.postRepository.save(post);
-  }
-
-  async remove(id: number, authorId: number) {
-    const post = await this.postRepository.findOne({
-      where: { id, authorId }
-    });
-
-    if (!post) {
-      throw new Error('Post not found or unauthorized');
-    }
-
-    await this.postRepository.remove(post);
     return { success: true };
   }
 

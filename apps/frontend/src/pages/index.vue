@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTrpc } from '../composables/useTrpc';
-import { ref, onMounted, computed } from '../composables/useVueComposables';
+import { ref, onMounted, computed, watch } from '../composables/useVueComposables';
 import { useSeo } from '../composables/useSeo';
 import { useRoute } from 'vue-router';
 import { useLocalization } from '../composables/useLocalization';
@@ -32,6 +32,12 @@ interface Post {
   ogImage?: string;
   slug?: string;
   metaDescription?: string;
+  translations?: Array<{
+    id: number;
+    title: string;
+    content: string;
+    locale: string;
+  }>;
   [key: string]: any;
 }
 
@@ -227,7 +233,7 @@ interface CategoriesConfig {
 
 const route = useRoute();
 const trpc = useTrpc();
-const { t } = useLocalization();
+const { t, locale } = useLocalization();
 const latestPosts = ref<Post[]>([]);
 const services = ref<Service[]>([]);
 const isLoading = ref(false);
@@ -307,7 +313,7 @@ async function fetchActiveTheme() {
   isLoadingTheme.value = true;
   themeError.value = null;
   try {
-    const theme = await trpc.theme.getActive.query();
+    const theme = await trpc.theme.getActiveTheme.query();
     activeTheme.value = theme;
     
     // Apply theme colors
@@ -331,14 +337,23 @@ async function fetchLatestPosts() {
   isLoading.value = true;
   error.value = null;
   try {
-    // Gọi tRPC endpoint để lấy danh sách bài viết mới nhất
-    const result = await trpc.post.all.query();
+    // Gọi tRPC endpoint để lấy danh sách bài viết theo locale hiện tại
+    const result = await trpc.post.byLocale.query({ locale: locale.value });
+    
     // Chuyển đổi dữ liệu để phù hợp với kiểu Post
-    latestPosts.value = result.map(post => ({
-      ...post,
-      id: Number(post.id), // Đảm bảo id là kiểu number
-      author: post.author || {}
-    })).slice(0, 20); // Lấy tối đa 20 bài viết
+    latestPosts.value = result.map((post: Post) => {
+      // Tìm bản dịch cho locale hiện tại
+      const translation = post.translations?.find((t: { locale: string }) => t.locale === locale.value);
+      
+      return {
+        ...post,
+        id: Number(post.id),
+        // Sử dụng title và content từ bản dịch nếu có, nếu không sử dụng giá trị mặc định
+        title: translation?.title || post.title,
+        content: translation?.content || post.content,
+        author: post.author || {}
+      };
+    }).slice(0, 20); // Lấy tối đa 20 bài viết
   } catch (err: any) {
     console.error('Failed to fetch latest posts:', err);
     error.value = err.message || 'Đã xảy ra lỗi khi tải bài viết';
@@ -346,6 +361,11 @@ async function fetchLatestPosts() {
     isLoading.value = false;
   }
 }
+
+// Thêm watcher để theo dõi thay đổi ngôn ngữ
+watch(locale, () => {
+  fetchLatestPosts();
+});
 
 async function fetchServices() {
   isLoadingServices.value = true;

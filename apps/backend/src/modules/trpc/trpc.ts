@@ -26,7 +26,9 @@ import { FeatureFlagsAdminService } from '../feature-flags/admin/services/featur
 import { FeatureFlagsFrontendService } from '../feature-flags/frontend/services/feature-flags-frontend.service';
 import { HeroService } from '../hero/admin/services/hero.service';
 import { HeroSliderService } from '../hero/admin/services/hero-slider.service';
-
+import { ThemeAdminService } from '../theme/admin/services/theme-admin.service';
+import { ThemeFrontendService } from '../theme/frontend/services/theme-frontend.service';
+import { HeroVideoService } from '../hero/services/hero-video.service';
 // Define context type
 export interface Context {
   user?: {
@@ -59,6 +61,9 @@ export interface Context {
     featureFlagsFrontendService: FeatureFlagsFrontendService;
     heroService: HeroService;
     heroSliderService: HeroSliderService;
+    themeAdminService: ThemeAdminService;
+    themeFrontendService: ThemeFrontendService;
+    heroVideoService: HeroVideoService;
   };
   logger: Logger;
 }

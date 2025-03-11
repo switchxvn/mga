@@ -10,14 +10,14 @@ import { UpdateProfileDto } from '../dto/update-profile.dto';
 export class ProfileService {
   constructor(
     @InjectRepository(UserProfile)
-    private readonly userProfileRepository: Repository<UserProfile>,
+    private readonly profileRepository: Repository<UserProfile>,
     @InjectRepository(CountryPhoneCode)
     private readonly countryPhoneCodeRepository: Repository<CountryPhoneCode>,
   ) {}
 
   async getProfileByUserId(userId: number) {
     try {
-      const profile = await this.userProfileRepository.findOne({
+      const profile = await this.profileRepository.findOne({
         where: { userId },
         relations: ['countryPhoneCode'],
       });
@@ -42,12 +42,12 @@ export class ProfileService {
 
   async updateProfile(userId: number, data: UpdateProfileDto) {
     try {
-      let profile = await this.userProfileRepository.findOne({
+      let profile = await this.profileRepository.findOne({
         where: { userId },
       });
 
       if (!profile) {
-        profile = this.userProfileRepository.create({
+        profile = this.profileRepository.create({
           userId,
         });
       }
@@ -71,7 +71,7 @@ export class ProfileService {
         profile.phoneCode = data.phoneCode;
       }
 
-      const updatedProfile = await this.userProfileRepository.save(profile);
+      const updatedProfile = await this.profileRepository.save(profile);
       return updatedProfile;
     } catch (error) {
       if (error instanceof TRPCError) throw error;
@@ -85,7 +85,7 @@ export class ProfileService {
 
   async createUserProfile(data: { userId: number, firstName?: string, lastName?: string }) {
     try {
-      let profile = await this.userProfileRepository.findOne({
+      let profile = await this.profileRepository.findOne({
         where: { userId: data.userId },
       });
 
@@ -95,14 +95,14 @@ export class ProfileService {
         profile.lastName = data.lastName || profile.lastName;
       } else {
         // Create new profile
-        profile = this.userProfileRepository.create({
+        profile = this.profileRepository.create({
           userId: data.userId,
           firstName: data.firstName || '',
           lastName: data.lastName || '',
         });
       }
 
-      return await this.userProfileRepository.save(profile);
+      return await this.profileRepository.save(profile);
     } catch (error) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -110,5 +110,28 @@ export class ProfileService {
         cause: error,
       });
     }
+  }
+
+  async findOne(userId: number) {
+    return this.profileRepository.findOne({
+      where: { userId }
+    });
+  }
+
+  async update(userId: number, data: Partial<UserProfile>) {
+    let profile = await this.profileRepository.findOne({
+      where: { userId }
+    });
+
+    if (!profile) {
+      profile = this.profileRepository.create({
+        userId,
+        ...data
+      });
+    } else {
+      Object.assign(profile, data);
+    }
+
+    return this.profileRepository.save(profile);
   }
 } 

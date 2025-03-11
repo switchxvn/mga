@@ -44,14 +44,16 @@ export class PostAdminController {
   @ApiOperation({ summary: 'Update post' })
   @ApiResponse({ status: 200, description: 'Post updated successfully', type: PostEntity })
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostInput): Promise<PostEntity> {
-    return this.postAdminService.update(+id, updatePostDto);
+    // Assuming admin ID is 1 for now, in a real app you would get this from the request
+    return this.postAdminService.update(+id, updatePostDto, 1);
   }
 
   @Delete(':id')
   // @Roles('admin')
   @ApiOperation({ summary: 'Delete post' })
   @ApiResponse({ status: 200, description: 'Post deleted successfully' })
-  remove(@Param('id') id: string): Promise<void> {
-    return this.postAdminService.remove(+id);
+  remove(@Param('id') id: string): Promise<{ success: boolean }> {
+    // Assuming admin ID is 1 for now, in a real app you would get this from the request
+    return this.postAdminService.remove(+id, 1);
   }
 } 

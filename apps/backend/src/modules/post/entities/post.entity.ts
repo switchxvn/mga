@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { User } from '../../user/entities/user.entity';
 import { Category } from '../../category/entities/category.entity';
 import { PostTag } from './post-tag.entity';
+import { PostTranslation } from './post-translation.entity';
 
 @Entity('posts')
 export class Post {
@@ -51,9 +52,16 @@ export class Post {
   @Column({ name: 'author_id' })
   authorId!: number;
 
-  @ManyToOne(() => User, (user) => user.posts)
+  @ManyToOne(() => User, (user) => user.posts, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'author_id' })
   author!: User;
+
+  @OneToMany(() => PostTranslation, (translation) => translation.post, {
+    cascade: true
+  })
+  translations!: PostTranslation[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

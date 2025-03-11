@@ -34,12 +34,12 @@ export class ThemeService {
 
   async getActiveTheme(): Promise<Theme> {
     return await this.themeRepository.findOneOrFail({ 
-      where: { is_active: true } 
+      where: { isActive: true } 
     });
   }
 
   async setActiveTheme(id: number): Promise<void> {
-    await this.themeRepository.update({}, { is_active: false });
-    await this.themeRepository.update(id, { is_active: true });
+    await this.themeRepository.update({}, { isActive: false });
+    await this.themeRepository.update(id, { isActive: true });
   }
 } 

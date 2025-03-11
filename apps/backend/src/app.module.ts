@@ -17,6 +17,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { TrpcModule } from './modules/trpc/trpc.module';
 import { UserModule } from './modules/user/user.module';
 import { ThemeModule } from './modules/theme/theme.module';
+import { NestFactory } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -56,4 +57,13 @@ import { ThemeModule } from './modules/theme/theme.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  private static app: any;
+
+  static async getApp() {
+    if (!this.app) {
+      this.app = await NestFactory.create(AppModule);
+    }
+    return this.app;
+  }
+}

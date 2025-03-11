@@ -2,12 +2,13 @@
 // Auto-imported by Nuxt 3;
 import { useRoute, useRouter } from 'vue-router';
 import { useTrpc } from '../../composables/useTrpc';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import RelatedPosts from '../../components/RelatedPosts.vue';
 import PostSidebar from '../../components/sidebar/PostSidebar.vue';
 import Breadcrumb from '../../components/Breadcrumb.vue';
 import LazyImage from '../../components/ui/LazyImage.vue';
 import Icon from '../../components/ui/Icon.vue';
+import { useI18n } from 'vue-i18n';
 
 // Định nghĩa kiểu dữ liệu cho post
 interface Profile {
@@ -64,9 +65,14 @@ interface Post {
   __author__?: Author;
   categories?: any[];
   tags?: Tag[];
+  translations?: {
+    locale: string;
+    slug: string;
+    title: string;
+  }[];
 }
 
-// Định nghĩa alias cho URL tiếng Việt
+// Định nghĩa alias cho URL tiếng Việt và tiếng Anh
 definePageMeta({
   alias: ['/bai-viet/:slug']
 });
@@ -74,6 +80,7 @@ definePageMeta({
 const route = useRoute();
 const router = useRouter();
 const trpc = useTrpc();
+const { locale } = useI18n();
 
 const slug = route.params.slug as string;
 
@@ -102,12 +109,14 @@ const { data: post, pending: loading, error, refresh } = useAsyncData<Post | nul
         const postId = Number(slug);
         const result = await trpc.post.byIdWithAuthorAndTags.query(postId);
         
-        // Tạo slug từ tiêu đề nếu bài viết không có slug
-        const postSlug = result.slug || createSlugFromTitle(result.title);
+        // Lấy slug phù hợp với locale hiện tại
+        const translation = result.translations?.find(t => t.locale === locale.value);
+        const postSlug = translation?.slug || createSlugFromTitle(translation?.title || result.title);
         
-        // Chuyển hướng đến URL có slug với đường dẫn tiếng Việt
+        // Chuyển hướng đến URL có slug với đường dẫn phù hợp với locale
         if (process.client) {
-          const slugUrl = `/bai-viet/${postSlug}`;
+          const baseUrl = locale.value === 'vi' ? '/bai-viet' : '/posts';
+          const slugUrl = `${baseUrl}/${postSlug}`;
           router.replace({ path: slugUrl, query: route.query });
         }
         
@@ -115,12 +124,18 @@ const { data: post, pending: loading, error, refresh } = useAsyncData<Post | nul
       } else {
         // Nếu không phải số, gọi API theo slug
         try {
-          return await trpc.post.bySlugWithAuthorAndTags.query(slug) as unknown as Post;
+          return await trpc.post.bySlugWithAuthorAndTags.query({
+            slug,
+            locale: locale.value
+          }) as unknown as Post;
         } catch (err) {
           // Nếu không tìm thấy bài viết theo slug, có thể slug được tạo từ tiêu đề
           // Tìm tất cả bài viết và so sánh slug được tạo từ tiêu đề
-          const allPosts = await trpc.post.all.query();
-          const matchedPost = allPosts.find(p => createSlugFromTitle(p.title) === slug);
+          const allPosts = await trpc.post.byLocale.query({ locale: locale.value });
+          const matchedPost = allPosts.find(p => {
+            const translation = p.translations?.find(t => t.locale === locale.value);
+            return translation?.slug === slug || createSlugFromTitle(translation?.title || '') === slug;
+          });
           
           if (matchedPost) {
             return await trpc.post.byIdWithAuthorAndTags.query(matchedPost.id) as unknown as Post;
@@ -136,9 +151,21 @@ const { data: post, pending: loading, error, refresh } = useAsyncData<Post | nul
   },
   {
     // Đảm bảo dữ liệu được tải ngay lập tức
-    immediate: true
+    immediate: true,
+    watch: [locale] // Theo dõi thay đổi locale để refresh data
   }
 );
+
+// Watch locale changes to update URL
+watch(locale, (newLocale) => {
+  if (post.value) {
+    const translation = post.value.translations?.find(t => t.locale === newLocale);
+    if (translation?.slug) {
+      const baseUrl = newLocale === 'vi' ? '/bai-viet' : '/posts';
+      router.replace(`${baseUrl}/${translation.slug}`);
+    }
+  }
+});
 
 // Đảm bảo dữ liệu được tải ở phía server
 onMounted(() => {

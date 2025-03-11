@@ -14,11 +14,13 @@ import { productRouter } from './routers/product.router';
 import { priceRequestRouter } from './routers/price-request.router';
 import { featureFlagsRouter } from './routers/feature-flags.router';
 import { heroRouter } from './routers/hero.router';
+import { CommonRouter } from './routers/common.router';
 
 @Injectable()
 export class TrpcRouter {
   constructor(
     private readonly trpc: TrpcService,
+    private readonly commonRouter: CommonRouter,
   ) {}
 
   public getRouter() {
@@ -37,6 +39,7 @@ export class TrpcRouter {
       priceRequest: priceRequestRouter,
       featureFlags: featureFlagsRouter,
       hero: heroRouter,
+      common: this.commonRouter.router,
     });
   }
 }

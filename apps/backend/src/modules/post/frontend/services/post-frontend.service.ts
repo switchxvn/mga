@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Not, In } from 'typeorm';
 import { Post } from '../../entities/post.entity';
+import { PostTranslation } from '../../entities/post-translation.entity';
 import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 import { PostTag } from '../../entities/post-tag.entity';
 import { Tag } from '../../../settings/entities/tag.entity';
 
 @Injectable()
 export class PostFrontendService {
+  private readonly logger: Logger;
+
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
@@ -15,7 +18,11 @@ export class PostFrontendService {
     private readonly postTagRepository: Repository<PostTag>,
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
-  ) {}
+    @InjectRepository(PostTranslation)
+    private readonly postTranslationRepository: Repository<PostTranslation>,
+  ) {
+    this.logger = new Logger(PostFrontendService.name);
+  }
 
   async create(createPostDto: CreatePostInput, authorId: number): Promise<Post> {
     const post = this.postRepository.create({
@@ -27,6 +34,36 @@ export class PostFrontendService {
 
   async findAll(): Promise<Post[]> {
     return this.postRepository.find();
+  }
+
+  async findByLocale(locale: string): Promise<Post[]> {
+    this.logger.debug(`Finding posts for locale: ${locale}`);
+
+    try {
+      const posts = await this.postRepository.find({
+        where: { published: true },
+        relations: ['translations', 'author', 'author.profile'],
+        order: { createdAt: 'DESC' }
+      });
+
+      this.logger.debug(`Found ${posts.length} published posts before filtering by locale`);
+
+      // Filter posts that have translations in the requested locale
+      const postsWithTranslations = posts.filter(post => {
+        return post.translations?.some(translation => translation.locale === locale);
+      });
+
+      this.logger.debug(`Found ${postsWithTranslations.length} posts with translations in locale ${locale}`);
+
+      // Map the posts to include only the translation for the requested locale
+      return postsWithTranslations.map(post => ({
+        ...post,
+        translations: post.translations.filter(translation => translation.locale === locale)
+      }));
+    } catch (error) {
+      this.logger.error(`Error finding posts by locale ${locale}:`, error);
+      throw error;
+    }
   }
 
   async findPublished(): Promise<Post[]> {
