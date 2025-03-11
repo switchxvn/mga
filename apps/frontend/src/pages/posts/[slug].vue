@@ -2,7 +2,7 @@
 // Auto-imported by Nuxt 3;
 import { useRoute, useRouter } from 'vue-router';
 import { useTrpc } from '../../composables/useTrpc';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeMount } from 'vue';
 import RelatedPosts from '../../components/RelatedPosts.vue';
 import PostSidebar from '../../components/sidebar/PostSidebar.vue';
 import Breadcrumb from '../../components/Breadcrumb.vue';
@@ -22,7 +22,7 @@ const trpc = useTrpc();
 const { locale } = useI18n();
 
 const slug = route.params.slug as string;
-
+console.log('slug', slug);
 /**
  * Tạo slug từ tiêu đề
  */
@@ -35,98 +35,44 @@ function createSlugFromTitle(title: string): string {
     .trim();
 }
 
+const currentKey = computed(() => `post-${slug}-${locale.value}`);
+
 // Sử dụng useAsyncData thay vì useLazyAsyncData để hỗ trợ SSR tốt hơn
-const { data: post, pending: loading, error, refresh } = useAsyncData<Post | null>(
+const { data: post, pending: loading, error, refresh } = useAsyncData(
   `post-${slug}`,
-  async () => {
-    try {
-      // Gọi API theo slug
-      return await trpc.post.bySlugWithAuthorAndTags.query({
-        slug,
-        locale: locale.value
-      }) as unknown as Post;
-    } catch (err: any) {
-      console.error('Failed to fetch post:', err);
-      throw new Error(err.message || 'Có lỗi xảy ra khi tải chi tiết bài viết');
-    }
-  },
-  {
-    // Đảm bảo dữ liệu được tải ngay lập tức
-    immediate: true,
-    watch: [locale] // Theo dõi thay đổi locale để refresh data
-  }
+  () => fetchPost(slug)
 );
 
-// Watch locale changes to update URL
-watch(locale, async (newLocale) => {
-  if (!post.value) return;
-
-  // Tìm translation cho locale mới
-  const newTranslation = post.value.translations?.find(t => t.locale === newLocale);
-  if (newTranslation?.slug) {
-    // Cập nhật URL với slug mới mà không reload trang
-    const newPath = newLocale === 'vi' 
-      ? `/bai-viet/${newTranslation.slug}`
-      : `/posts/${newTranslation.slug}`;
-    
-    // Sử dụng replace để cập nhật URL và trigger lại query
-    await router.replace(newPath);
-    
-    // Refresh data để lấy nội dung mới
-    await refresh();
-  } else {
-    // Nếu không có bản dịch cho locale mới, refresh để hiển thị trang 404
-    refresh();
-  }
-});
-
-// Đảm bảo dữ liệu được tải ở phía server
-onMounted(() => {
-  if (!post.value) {
-    refresh();
-  }
-});
-
-// Breadcrumb items
-const breadcrumbItems = computed(() => [
-  {
-    label: 'Bài viết',
-    to: '/bai-viet'
-  },
-  {
-    label: postTitle.value || 'Chi tiết bài viết'
-  }
-]);
-
-function goBack() {
-  router.back();
-}
-
-/**
- * Format date to Vietnamese locale
- */
-const formatDate = (dateStr: string) => {
+async function fetchPost(postSlug: string) {
+  console.log('fetchPost', postSlug);
   try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) {
-      return '';
+    const result = await trpc.post.bySlugWithAuthorAndTags.query({
+      slug: postSlug
+    });
+
+    // Sau khi fetch được data, set locale dựa trên translation có slug match
+    if (result) {
+      const matchedTranslation = result.translations?.find(t => t.slug === postSlug);
+      if (matchedTranslation && matchedTranslation.locale !== locale.value) {
+        locale.value = matchedTranslation.locale;
+      }
     }
-    return new Intl.DateTimeFormat('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return '';
+
+    return result;
+  } catch (err: any) {
+    console.error('Failed to fetch post:', err);
+    throw new Error(err.message || 'Có lỗi xảy ra khi tải chi tiết bài viết');
   }
-};
+}
 
 // Tạo các computed properties để truy cập dữ liệu post một cách an toàn
 const postData = computed(() => post.value || {} as Post);
 const currentTranslation = computed(() => {
+  // Ưu tiên tìm translation có slug match với URL hiện tại
+  const matchedTranslation = postData.value.translations?.find(t => t.slug === slug);
+  if (matchedTranslation) return matchedTranslation;
+
+  // Fallback về locale hiện tại nếu không tìm thấy
   return postData.value.translations?.find(t => t.locale === locale.value);
 });
 
@@ -236,6 +182,60 @@ useHead(() => {
     ]
   };
 });
+
+// Watch locale changes to update URL and content
+watch(locale, async (newLocale) => {
+  if (!post.value) return;
+
+  // Tìm translation cho locale mới
+  const newTranslation = post.value.translations?.find(t => t.locale === newLocale);
+  if (newTranslation?.slug) {
+    // Cập nhật URL với slug mới
+    const newPath = newLocale === 'vi' 
+      ? `/bai-viet/${newTranslation.slug}`
+      : `/posts/${newTranslation.slug}`;
+    
+    // Chỉ thay đổi route, không fetch lại data
+    await router.replace(newPath);
+  }
+});
+
+// Breadcrumb items
+const breadcrumbItems = computed(() => [
+  {
+    label: 'Bài viết',
+    to: '/bai-viet'
+  },
+  {
+    label: postTitle.value || 'Chi tiết bài viết'
+  }
+]);
+
+function goBack() {
+  router.back();
+}
+
+/**
+ * Format date to Vietnamese locale
+ */
+const formatDate = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
+};
 </script>
 
 <template>

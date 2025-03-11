@@ -2,14 +2,19 @@
 import { ref, onMounted } from 'vue';
 import { useTrpc } from '../../composables/useTrpc';
 import { useCategory, type Category } from '../../composables/useCategory';
+import { useI18n } from 'vue-i18n';
 import Icon from '../ui/Icon.vue';
+import type { Post } from '@ew/shared';
 
-interface Post {
-  id: number;
-  title: string;
-  slug?: string;
+interface PopularPostsParams {
+  limit: number;
+  excludeId: number;
+  locale: string;
+}
+
+interface ApiPost extends Omit<Post, 'createdAt' | 'updatedAt'> {
   createdAt: string;
-  ogImage?: string;
+  updatedAt: string;
 }
 
 const props = defineProps<{
@@ -17,6 +22,7 @@ const props = defineProps<{
 }>();
 
 const trpc = useTrpc();
+const { locale } = useI18n();
 const popularPosts = ref<Post[]>([]);
 const categories = ref<Category[]>([]);
 const loading = ref({
@@ -34,11 +40,20 @@ const {
 async function fetchPopularPosts() {
   try {
     loading.value.popular = true;
-    const result = await trpc.post.popular.query({ 
+    const params: PopularPostsParams = {
       limit: 5,
-      excludeId: props.postId 
-    });
-    popularPosts.value = result;
+      excludeId: props.postId,
+      locale: locale.value
+    };
+
+    const result = await trpc.post.popular.query(params) as ApiPost[];
+
+    // Convert string dates to Date objects
+    popularPosts.value = result.map(post => ({
+      ...post,
+      createdAt: new Date(post.createdAt),
+      updatedAt: new Date(post.updatedAt)
+    }));
   } catch (error) {
     console.error('Failed to fetch popular posts:', error);
   } finally {
@@ -75,13 +90,17 @@ onMounted(() => {
   loadFeaturedCategories();
 });
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('vi-VN', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
-  }).format(date);
+  }).format(new Date(date));
+}
+
+// Computed để lấy translation hiện tại
+function getCurrentTranslation(post: Post) {
+  return post.translations?.find(t => t.locale === locale.value);
 }
 </script>
 
@@ -103,17 +122,17 @@ function formatDate(dateString: string): string {
       </div>
       
       <ul v-else class="post-sidebar__post-list">
-        <li v-for="(post, postIndex) in popularPosts" :key="postIndex" class="post-sidebar__post-item">
+        <li v-for="post in popularPosts" :key="post.id" class="post-sidebar__post-item">
           <NuxtLink 
-            :to="`/bai-viet/${post.slug || post.id}`" 
+            :to="`/bai-viet/${getCurrentTranslation(post)?.slug || post.id}`" 
             class="post-sidebar__post-item-link"
           >
             <div class="post-sidebar__post-item-content">
-              <div v-if="post.ogImage" class="post-sidebar__post-item-image">
-                <img :src="post.ogImage" :alt="post.title">
+              <div v-if="getCurrentTranslation(post)?.ogImage" class="post-sidebar__post-item-image">
+                <img :src="getCurrentTranslation(post)?.ogImage" :alt="getCurrentTranslation(post)?.title">
               </div>
               <div>
-                <h4 class="post-sidebar__post-item-title">{{ post.title }}</h4>
+                <h4 class="post-sidebar__post-item-title">{{ getCurrentTranslation(post)?.title }}</h4>
                 <p class="post-sidebar__post-item-date">
                   <Icon name="Calendar" :size="14" class="mr-1" />
                   {{ formatDate(post.createdAt) }}

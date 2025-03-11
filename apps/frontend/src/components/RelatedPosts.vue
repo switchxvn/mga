@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useTrpc } from '../composables/useTrpc';
 import PostCard from './ui/card/PostCard.vue';
 import Icon from './ui/Icon.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   postId: number;
@@ -10,6 +11,7 @@ const props = defineProps<{
 }>();
 
 const trpc = useTrpc();
+const { locale } = useI18n();
 const relatedPosts = ref<any[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -21,6 +23,7 @@ async function fetchRelatedPosts() {
     
     const result = await trpc.post.related.query({
       id: props.postId,
+      locale: locale.value,
       limit: props.limit || 3
     });
     

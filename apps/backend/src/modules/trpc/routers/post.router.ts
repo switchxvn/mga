@@ -62,11 +62,12 @@ export const postRouter = router({
   related: publicProcedure
     .input(z.object({ 
       id: z.number(),
+      locale: z.string(),
       limit: z.number().optional().default(3)
     }))
     .query(async ({ ctx, input }) => {
       try {
-        const posts = await ctx.services.postService.findRelatedPosts(input.id, input.limit);
+        const posts = await ctx.services.postService.findRelatedPosts(input.id, input.locale, input.limit);
         return posts;
       } catch (error) {
         console.error(`Failed to fetch related posts for post ${input.id}:`, error);
@@ -78,19 +79,25 @@ export const postRouter = router({
       }
     }),
 
-  popular: publicProcedure.query(async ({ ctx }) => {
-    try {
-      const posts = await ctx.services.postService.findPopularPosts();
-      return posts;
-    } catch (error) {
-      console.error('Failed to fetch popular posts:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to fetch popular posts',
-        cause: error,
-      });
-    }
-  }),
+  popular: publicProcedure
+    .input(z.object({
+      locale: z.string(),
+      limit: z.number().min(1).max(20).default(5),
+      excludeId: z.number().optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const posts = await ctx.services.postService.findPopularPosts(input.locale, input.limit, input.excludeId);
+        return posts;
+      } catch (error) {
+        console.error('Failed to fetch popular posts:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch popular posts',
+          cause: error,
+        });
+      }
+    }),
 
   byId: publicProcedure
     .input(getPostByIdSchema)
@@ -184,13 +191,12 @@ export const postRouter = router({
 
   bySlugWithAuthorAndTags: publicProcedure
     .input(z.object({
-      slug: z.string(),
-      locale: z.string().optional()
+      slug: z.string()
     }))
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Fetching post with author and tags by slug: ${input.slug}`);
-        const post = await ctx.services.postService.findBySlugWithAuthorAndTags(input.slug, input.locale);
+        const post = await ctx.services.postService.findBySlugWithAuthorAndTags(input.slug);
 
         if (!post) {
           ctx.logger.warn(`Post not found for slug: ${input.slug}`);
