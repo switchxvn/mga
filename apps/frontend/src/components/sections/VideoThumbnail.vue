@@ -11,7 +11,7 @@
     <!-- Play button overlay -->
     <div class="absolute inset-0 flex items-center justify-center">
       <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-        <div class="i-heroicons-play-solid w-6 h-6 text-white"></div>
+        <Play class="w-6 h-6 text-white" />
       </div>
     </div>
     
@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import type { PropType } from 'vue';
 import type { VideoThumbnail as VideoThumbnailType } from '~/types';
+import { Play } from 'lucide-vue-next';
 
 defineProps({
   video: {

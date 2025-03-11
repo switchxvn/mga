@@ -314,6 +314,10 @@ async function fetchActiveTheme() {
   themeError.value = null;
   try {
     const theme = await trpc.theme.getActiveTheme.query();
+    // Sort sections by order field
+    if (theme.sections) {
+      theme.sections.sort((a, b) => a.order - b.order);
+    }
     activeTheme.value = theme;
     
     // Apply theme colors
@@ -394,9 +398,9 @@ const getAuthorName = (author: any) => {
 };
 
 const getSectionConfig = (type: string) => {
-  if (!activeTheme.value?.sections) return null;
+  if (!activeTheme.value?.sections) return undefined;
   const section = activeTheme.value.sections.find(section => section.type === type);
-  if (!section) return null;
+  if (!section) return undefined;
   
   return {
     ...section.settings,
@@ -408,22 +412,22 @@ const getSectionConfig = (type: string) => {
 
 const getSliderConfig = computed(() => {
   const config = getSectionConfig('hero');
-  return config as SliderConfig | null;
+  return config as SliderConfig | undefined;
 });
 
 const getProductsConfig = computed(() => {
   const config = getSectionConfig('featured_products');
-  return config as ProductsConfig | null;
+  return config as ProductsConfig | undefined;
 });
 
 const getServicesConfig = computed(() => {
   const config = getSectionConfig('services');
-  return config as ServicesConfig | null;
+  return config as ServicesConfig | undefined;
 });
 
 const getCategoriesConfig = computed(() => {
-  const config = getSectionConfig('categories');
-  return config as CategoriesConfig | null;
+  const config = getSectionConfig('product_categories');
+  return config as CategoriesConfig | undefined;
 });
 </script>
 
@@ -435,100 +439,103 @@ const getCategoriesConfig = computed(() => {
     </div>
 
     <template v-else>
-      <!-- Hero Section with Theme Config -->
-      <HeroSection 
-        v-if="getSliderConfig"
-        :config="getSliderConfig"
-      />
-
-      <!-- Featured Products Section -->
-      <section 
-        v-if="getProductsConfig"
-        class="featured-products-section py-12 bg-white dark:bg-gray-900"
-      >
-        <div class="container mx-auto px-4">
-          <h2 class="text-3xl font-bold mb-8 text-center">
-            {{ getSectionConfig('featured_products')?.title || t('products.featured') }}
-          </h2>
-          <FeaturedProducts :config="getProductsConfig" />
-        </div>
-      </section>
-
-      <!-- Categories Section -->
-      <ProductCategoriesSection
-        v-if="getCategoriesConfig"
-        :config="getCategoriesConfig"
-      />
-
-      <!-- Services Section -->
-      <section 
-        v-if="getServicesConfig"
-        class="services-section relative"
-        :style="{
-          paddingTop: getServicesConfig.padding.top,
-          paddingBottom: getServicesConfig.padding.bottom
-        }"
-      >
-        <!-- Background gradient overlay -->
-        <div 
-          class="absolute inset-0" 
-          :style="{ 
-            backgroundImage: getServicesConfig.backgroundGradient ? 
-              `linear-gradient(${getServicesConfig.backgroundGradient.direction.replace('to-', 'to ')}, ${getServicesConfig.backgroundGradient.from}, ${getServicesConfig.backgroundGradient.to})` : 
-              'none',
-            opacity: getServicesConfig.overlayOpacity,
-            pointerEvents: 'none'
-          }"
+      <!-- Render sections based on their order -->
+      <template v-for="section in activeTheme?.sections" :key="section.id">
+        <!-- Hero Section -->
+        <HeroSection 
+          v-if="section.type === 'hero' && section.isActive"
+          :config="getSliderConfig"
         />
 
-        <div class="container mx-auto px-4 relative">
-          <h2 class="text-3xl font-bold mb-8 text-center">
-            {{ getSectionConfig('services')?.title || t('services.title') }}
-          </h2>
-          
-          <ServicesList 
-            :services="services" 
-            :is-loading="isLoadingServices" 
-            :error="serviceError"
-            :config="getServicesConfig"
-          />
-        </div>
-      </section>
+        <!-- Featured Products Section -->
+        <section 
+          v-if="section.type === 'featured_products' && section.isActive"
+          class="featured-products-section py-12 bg-white dark:bg-gray-900"
+        >
+          <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-8 text-center">
+              {{ section.title || t('products.featured') }}
+            </h2>
+            <FeaturedProducts :config="getProductsConfig" />
+          </div>
+        </section>
 
-      <!-- Latest Posts Section -->
-      <section 
-        v-if="getSectionConfig('news')"
-        class="latest-posts-section py-12 bg-[hsl(var(--muted))]"
-      >
-        <div class="container mx-auto px-4">
-          <h2 class="text-3xl font-bold mb-8 text-center">
-            {{ getSectionConfig('news')?.title || t('home.latest_posts') }}
-          </h2>
-          
-          <div v-if="isLoading" class="flex justify-center items-center py-12">
-            <ULoader size="lg" />
+        <!-- Categories Section -->
+        <ProductCategoriesSection
+          v-if="section.type === 'product_categories' && section.isActive && getCategoriesConfig"
+          :config="getCategoriesConfig"
+        />
+
+        <!-- Services Section -->
+        <section 
+          v-if="section.type === 'services' && section.isActive"
+          class="services-section relative"
+          :style="{
+            paddingTop: getServicesConfig?.padding?.top,
+            paddingBottom: getServicesConfig?.padding?.bottom
+          }"
+        >
+          <!-- Background gradient overlay -->
+          <div 
+            class="absolute inset-0" 
+            :style="{ 
+              backgroundImage: getServicesConfig?.backgroundGradient ? 
+                `linear-gradient(${getServicesConfig.backgroundGradient.direction.replace('to-', 'to ')}, ${getServicesConfig.backgroundGradient.from}, ${getServicesConfig.backgroundGradient.to})` : 
+                'none',
+              opacity: getServicesConfig?.overlayOpacity,
+              pointerEvents: 'none'
+            }"
+          />
+
+          <div class="container mx-auto px-4 relative">
+            <h2 class="text-3xl font-bold mb-8 text-center">
+              {{ section.title || t('services.title') }}
+            </h2>
+            
+            <ServicesList 
+              :services="services" 
+              :is-loading="isLoadingServices" 
+              :error="serviceError"
+              :config="getServicesConfig"
+            />
           </div>
-          
-          <div v-else-if="error" class="text-center text-red-500 py-8">
-            {{ error }}
+        </section>
+
+        <!-- Latest Posts Section -->
+        <section 
+          v-if="section.type === 'news' && section.isActive"
+          class="latest-posts-section py-12 bg-[hsl(var(--muted))]"
+        >
+          <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-8 text-center">
+              {{ section.title || t('home.latest_posts') }}
+            </h2>
+            
+            <div v-if="isLoading" class="flex justify-center items-center py-12">
+              <ULoader size="lg" />
+            </div>
+            
+            <div v-else-if="error" class="text-center text-red-500 py-8">
+              {{ error }}
+            </div>
+            
+            <div v-else-if="latestPosts.length === 0" class="text-center py-8">
+              {{ t('home.no_posts') }}
+            </div>
+            
+            <div v-else>
+              <Swiper v-bind="postsSwiperOptions" class="w-full">
+                <SwiperSlide v-for="post in latestPosts" :key="post.id" class="h-full">
+                  <PostCard 
+                    :post="post"
+                    :compact="false"
+                  />
+                </SwiperSlide>
+              </Swiper>
+            </div>
           </div>
-          
-          <div v-else-if="latestPosts.length === 0" class="text-center py-8">
-            {{ t('home.no_posts') }}
-          </div>
-          
-          <div v-else>
-            <Swiper v-bind="postsSwiperOptions" class="w-full">
-              <SwiperSlide v-for="post in latestPosts" :key="post.id" class="h-full">
-                <PostCard 
-                  :post="post"
-                  :compact="false"
-                />
-              </SwiperSlide>
-            </Swiper>
-          </div>
-        </div>
-      </section>
+        </section>
+      </template>
     </template>
   </div>
 </template>

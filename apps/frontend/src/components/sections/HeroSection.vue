@@ -277,7 +277,7 @@ const components = {
 </script>
 
 <template>
-  <section class="hero-section relative mb-6" :style="{ height: config?.height || '600px' }">
+  <section class="hero-section relative" :style="{ height: config?.height || '600px' }">
     <!-- Background gradient overlay -->
     <div class="absolute inset-0" 
          :style="{ 
@@ -364,9 +364,7 @@ const components = {
 </template>
 
 <style lang="scss" scoped>
-.hero-section {
-  margin-bottom: 2rem;
-  
+.hero-section {  
   :deep(.swiper) {
     .swiper-button-next,
     .swiper-button-prev {

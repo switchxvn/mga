@@ -147,95 +147,107 @@ onMounted(() => {
       }"
     />
 
-    <div class="container mx-auto px-4 relative">
-      <!-- Categories Grid/Slider -->
-      <div v-if="!loading && !error && categories.length > 0" class="space-y-12">
-        <div
-          v-for="category in categories.slice(0, config.maxItems)"
-          :key="category.id"
-          class="category-section"
-        >
-          <!-- Category Header -->
-          <div class="mb-8">
-            <div class="flex items-center justify-between">
-              <div class="category-header">
-                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  {{ category.name }}
-                </h2>
-                <div
-                  class="mt-2 h-1 w-20 bg-primary-600 dark:bg-primary-500 rounded-full"
-                ></div>
-              </div>
-              <NuxtLink
-                :to="`/categories/${category.slug}`"
-                class="inline-flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium transition-colors duration-200"
-              >
-                {{ t("categories.viewAllIn", { category: category.name }) }}
-                <UIcon name="i-heroicons-arrow-right" class="ml-1 h-5 w-5" />
-              </NuxtLink>
-            </div>
-            <p v-if="category.description" class="mt-3 text-gray-600 dark:text-gray-400">
-              {{ truncateDescription(category.description) }}
-            </p>
-          </div>
-
-          <!-- Products Display -->
-          <template v-if="categoryProducts[category.id]?.length > 0">
-            <!-- Grid Layout -->
-            <div
-              v-if="config.displayMode === 'grid'"
-              class="grid gap-6"
-              :class="gridClasses"
-            >
-              <ProductCard
-                v-for="product in categoryProducts[category.id]"
-                :key="product.id"
-                :product="product"
-                :locale="locale"
-              />
-            </div>
-
-            <!-- Slider Layout -->
-            <UCarousel
-              v-else
-              :items="categoryProducts[category.id]"
-              :options="{
-                itemsToShow: 1.2,
-                snapAlign: 'start',
-                breakpoints: {
-                  640: { itemsToShow: 2.2 },
-                  768: { itemsToShow: 3.2 },
-                  1024: { itemsToShow: 4.2 },
-                },
-              }"
-            >
-              <template #item="{ item: product }">
-                <div class="px-2">
-                  <ProductCard :product="product" :locale="locale" />
+    <!-- Categories Grid/Slider -->
+    <div v-if="!loading && !error && categories.length > 0" class="space-y-0">
+      <div
+        v-for="(category, index) in categories.slice(0, config.maxItems)"
+        :key="category.id"
+        class="category-section w-full"
+        :class="{
+          'bg-gray-50 dark:bg-gray-800/50': index % 2 === 0,
+          'bg-white dark:bg-gray-900/50': index % 2 === 1
+        }"
+      >
+        <div class="container mx-auto px-4">
+          <div class="py-12">
+            <!-- Category Header -->
+            <div class="mb-8">
+              <div class="flex items-center justify-between">
+                <div class="category-header">
+                  <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                    {{ category.name }}
+                  </h2>
+                  <div
+                    class="mt-2 h-1 w-20 bg-primary-600 dark:bg-primary-500 rounded-full"
+                  ></div>
                 </div>
-              </template>
-            </UCarousel>
-          </template>
+                <NuxtLink
+                  :to="`/categories/${category.slug}`"
+                  class="inline-flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium transition-colors duration-200"
+                >
+                  {{ t("categories.viewAllIn", { category: category.name }) }}
+                  <UIcon name="i-heroicons-arrow-right" class="ml-1 h-5 w-5" />
+                </NuxtLink>
+              </div>
+              <p v-if="category.description" class="mt-3 text-gray-600 dark:text-gray-400">
+                {{ truncateDescription(category.description) }}
+              </p>
+            </div>
 
-          <!-- No Products Message -->
-          <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
-            {{ t("categories.noProductsInCategory", { category: category.name }) }}
+            <!-- Products Display -->
+            <template v-if="categoryProducts[category.id]?.length > 0">
+              <!-- Grid Layout -->
+              <div
+                v-if="config.displayMode === 'grid'"
+                class="grid gap-6"
+                :class="gridClasses"
+              >
+                <ProductCard
+                  v-for="product in categoryProducts[category.id]"
+                  :key="product.id"
+                  :product="product"
+                  :locale="locale"
+                />
+              </div>
+
+              <!-- Slider Layout -->
+              <UCarousel
+                v-else
+                :items="categoryProducts[category.id]"
+                :options="{
+                  itemsToShow: 1.2,
+                  snapAlign: 'start',
+                  breakpoints: {
+                    640: { itemsToShow: 2.2 },
+                    768: { itemsToShow: 3.2 },
+                    1024: { itemsToShow: 4.2 },
+                  },
+                }"
+              >
+                <template #item="{ item: product }">
+                  <div class="px-2">
+                    <ProductCard :product="product" :locale="locale" />
+                  </div>
+                </template>
+              </UCarousel>
+            </template>
+
+            <!-- No Products Message -->
+            <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
+              {{ t("categories.noProductsInCategory", { category: category.name }) }}
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Loading State -->
-      <div v-else-if="loading" class="flex justify-center items-center py-12">
+    <!-- Loading State -->
+    <div v-else-if="loading" class="container mx-auto px-4">
+      <div class="flex justify-center items-center py-12">
         <ULoader size="lg" />
       </div>
+    </div>
 
-      <!-- Error State -->
-      <div v-else-if="error" class="text-center text-red-500 py-8">
+    <!-- Error State -->
+    <div v-else-if="error" class="container mx-auto px-4">
+      <div class="text-center text-red-500 py-8">
         {{ error }}
       </div>
+    </div>
 
-      <!-- Empty State -->
-      <div v-else class="text-center py-8">
+    <!-- Empty State -->
+    <div v-else class="container mx-auto px-4">
+      <div class="text-center py-8">
         {{ t("categories.no_categories") }}
       </div>
     </div>
@@ -245,8 +257,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .category-section {
   &:not(:last-child) {
-    border-bottom: 1px solid rgb(var(--color-gray-200));
-    padding-bottom: 3rem;
+    margin-bottom: 0;
   }
 }
 
