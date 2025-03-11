@@ -108,4 +108,26 @@ export function formatFullProductContent(content: string): string {
   // Định dạng nội dung và thêm ID cho các thẻ heading
   const formattedContent = formatProductContent(content);
   return addIdsToHeadings(formattedContent);
+}
+
+export function formatFullPostContent(content: string): string {
+  if (!content) return '';
+
+  // Tách nội dung thành các đoạn
+  const paragraphs = content.split('\n\n');
+
+  // Xử lý từng đoạn
+  const formattedParagraphs = paragraphs.map((paragraph, index) => {
+    // Nếu đoạn bắt đầu bằng "##" hoặc "# ", coi như đó là heading
+    if (paragraph.startsWith('##') || paragraph.startsWith('# ')) {
+      const headingText = paragraph.replace(/^#+\s/, '');
+      const headingId = `heading-${index}`;
+      return `<h2 id="${headingId}">${headingText}</h2>`;
+    }
+
+    // Xử lý các đoạn văn bản thông thường
+    return `<p>${paragraph}</p>`;
+  });
+
+  return formattedParagraphs.join('\n');
 } 

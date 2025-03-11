@@ -46,10 +46,6 @@ watch(locale, () => {
 
 <template>
   <div v-if="crossSellProducts.length > 0" class="cross-sell-products">
-    <h2 class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
-      {{ t('products.crossSell') || 'Sản phẩm liên quan' }}
-    </h2>
-    
     <div v-if="isLoading" class="grid grid-cols-2 gap-4 md:grid-cols-4">
       <div v-for="i in limit || 4" :key="i" class="product-card-skeleton">
         <USkeleton class="h-40 w-full rounded-lg" />
@@ -71,7 +67,7 @@ watch(locale, () => {
 
 <style scoped>
 .cross-sell-products {
-  margin-top: 2rem;
+  margin-top: 1rem;
   padding-top: 2rem;
   border-top: 1px solid #e5e7eb;
 }

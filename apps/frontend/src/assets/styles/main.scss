@@ -10,6 +10,8 @@
 @use 'components/footer' as *;
 @use 'components/toast' as *;
 @use 'components/button' as *;
+@import './detail-page';
+@import './product-detail';
 
 @tailwind base;
 @tailwind components;

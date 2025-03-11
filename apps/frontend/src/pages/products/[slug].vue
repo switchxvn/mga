@@ -13,6 +13,7 @@ import { useHead } from 'unhead';
 import PriceRequestModal from '../../components/PriceRequestModal.vue';
 import { useNotification } from '../../composables/useNotification';
 import AddToCartButton from '~/components/cart/AddToCartButton.vue';
+import Breadcrumb from '../../components/Breadcrumb.vue';
 
 // Định nghĩa interface cho Product
 interface Product {
@@ -377,216 +378,214 @@ watch(isPriceRequestModalOpen, (newVal) => {
 </script>
 
 <template>
-  <div class="product-detail container mx-auto px-4 py-8 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-sm">
-    <div v-if="isLoading" class="py-12">
-      <USkeleton class="mb-4 h-8 w-2/3" />
-      <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <USkeleton class="h-96 w-full rounded-lg" />
-        <div>
-          <USkeleton class="mb-4 h-6 w-1/3" />
-          <USkeleton class="mb-4 h-6 w-1/4" />
-          <USkeleton class="mb-6 h-24 w-full" />
-          <USkeleton class="mb-4 h-10 w-full" />
+  <div class="product-detail min-h-screen bg-gray-100 dark:bg-gray-900 py-8">
+    <div class="container mx-auto px-4">
+      <!-- Breadcrumb -->
+      <div class="mb-6">
+        <Breadcrumb :items="[
+          { label: t('home'), to: '/' },
+          { label: t('products.title'), to: '/products' },
+          { label: productTitle }
+        ]" />
+      </div>
+
+      <div v-if="isLoading" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <USkeleton class="mb-4 h-8 w-2/3" />
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <USkeleton class="h-96 w-full rounded-lg" />
+          <div>
+            <USkeleton class="mb-4 h-6 w-1/3" />
+            <USkeleton class="mb-4 h-6 w-1/4" />
+            <USkeleton class="mb-6 h-24 w-full" />
+            <USkeleton class="mb-4 h-10 w-full" />
+          </div>
         </div>
       </div>
-    </div>
-    
-    <div v-else-if="error" class="py-12 text-center">
-      <UIcon name="i-heroicons-exclamation-circle" class="mx-auto mb-4 h-16 w-16 text-red-500" />
-      <h2 class="mb-2 text-2xl font-bold">{{ t('products.error') || 'Lỗi' }}</h2>
-      <p class="mb-6 text-gray-600 dark:text-gray-400">{{ error.message || t('products.errorDescription') || 'Có lỗi xảy ra khi tải thông tin sản phẩm' }}</p>
-      <UButton @click="refresh" color="primary" class="mr-2">
-        {{ t('products.tryAgain') || 'Thử lại' }}
-      </UButton>
-      <UButton to="/products" color="gray">
-        {{ t('products.backToProducts') || 'Quay lại danh sách sản phẩm' }}
-      </UButton>
-    </div>
-    
-    <div v-else-if="product" class="product-content">
-      <Breadcrumb :items="[
-        { label: t('home'), to: '/' },
-        { label: t('products.title'), to: '/products' },
-        { label: productTitle, to: '' }
-      ]" class="mb-6" />
       
-      <!-- Phần thông tin sản phẩm -->
-      <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <!-- Product Images -->
-        <div class="product-images">
-          <LazyImage 
-            :src="productData.thumbnail || ''" 
-            :alt="productTitle"
-            fallbackSrc="/images/default-image.jpg"
-            customClass="h-auto w-full rounded-lg"
-          />
-          
-          <div v-if="productData.gallery && productData.gallery.length > 0" class="mt-4 grid grid-cols-4 gap-2">
-            <LazyImage 
-              v-for="(image, index) in productData.gallery" 
-              :key="index" 
-              :src="image" 
-              :alt="`${productTitle} - ${index + 1}`"
-              fallbackSrc="/images/default-image.jpg"
-              customClass="h-20 w-full cursor-pointer rounded-md"
-            />
+      <div v-else-if="error" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
+        <UIcon name="i-heroicons-exclamation-circle" class="mx-auto mb-4 h-16 w-16 text-red-500" />
+        <h2 class="mb-2 text-2xl font-bold">{{ t('products.error') || 'Lỗi' }}</h2>
+        <p class="mb-6 text-gray-600 dark:text-gray-400">{{ error.message || t('products.errorDescription') || 'Có lỗi xảy ra khi tải thông tin sản phẩm' }}</p>
+        <UButton @click="refresh" color="primary" class="mr-2">
+          {{ t('products.tryAgain') || 'Thử lại' }}
+        </UButton>
+        <UButton to="/products" color="gray">
+          {{ t('products.backToProducts') || 'Quay lại danh sách sản phẩm' }}
+        </UButton>
+      </div>
+      
+      <div v-else-if="product" class="product-content space-y-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <!-- Phần thông tin sản phẩm -->
+          <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+            <!-- Product Images -->
+            <div class="product-images bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <LazyImage 
+                :src="productData.thumbnail || ''" 
+                :alt="productTitle"
+                fallbackSrc="/images/default-image.jpg"
+                customClass="h-auto w-full rounded-lg"
+              />
+              
+              <div v-if="productData.gallery && productData.gallery.length > 0" class="mt-4 grid grid-cols-4 gap-2">
+                <LazyImage 
+                  v-for="(image, index) in productData.gallery" 
+                  :key="index" 
+                  :src="image" 
+                  :alt="`${productTitle} - ${index + 1}`"
+                  fallbackSrc="/images/default-image.jpg"
+                  customClass="h-20 w-full cursor-pointer rounded-md"
+                />
+              </div>
+            </div>
+            
+            <!-- Product Info -->
+            <div class="product-info bg-white dark:bg-gray-800 rounded-lg p-6">
+              <div v-if="productData.isNew || productData.isSale || productData.isFeatured" class="mb-4 flex flex-wrap gap-2">
+                <UBadge v-if="productData.isNew" color="blue" variant="solid">Mới</UBadge>
+                <UBadge v-if="productData.isSale" color="red" variant="solid">Giảm giá</UBadge>
+                <UBadge v-if="productData.isFeatured" color="amber" variant="solid">Nổi bật</UBadge>
+              </div>
+              
+              <h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">{{ productTitle }}</h1>
+              
+              <div v-if="productData.sku" class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                SKU: {{ productData.sku }}
+              </div>
+              
+              <!-- Hiển thị danh mục sản phẩm -->
+              <div v-if="productData.categories && productData.categories.length > 0" class="mb-5">
+                <div class="category-title text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <UIcon name="i-heroicons-rectangle-stack" class="inline-block mr-1 h-5 w-5 text-primary-500" />
+                  {{ t('products.categories') || 'Danh mục:' }}
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <UBadge
+                    v-for="category in productData.categories"
+                    :key="category.id"
+                    color="primary"
+                    variant="soft"
+                    size="lg"
+                    class="category-badge cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-800 transition-colors"
+                    @click="router.push(`/categories/${category.slug}`)"
+                  >
+                    <template #default>
+                      <div class="flex items-center gap-1">
+                        <UIcon name="i-heroicons-tag" class="h-4 w-4" />
+                        <span class="text-sm font-medium">{{ category.name }}</span>
+                      </div>
+                    </template>
+                  </UBadge>
+                </div>
+              </div>
+              
+              <div class="mb-6 flex items-center gap-3">
+                <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                  {{ productData.formattedPrice }}
+                </span>
+                <span v-if="productData.comparePrice" class="text-lg text-gray-500 line-through dark:text-gray-400">
+                  {{ new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(productData.comparePrice) }}
+                </span>
+              </div>
+              
+              <div v-if="productShortDescription" class="mb-6 text-gray-700 dark:text-gray-300">
+                {{ productShortDescription }}
+              </div>
+              
+              <!-- Nút chia sẻ mạng xã hội -->
+              <div class="mb-6">
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ t('products.shareProduct') || 'Chia sẻ sản phẩm:' }}</div>
+                <div class="share-buttons flex flex-wrap gap-2">
+                  <div class="tooltip">
+                    <UButton
+                      color="blue"
+                      variant="soft"
+                      icon="i-mdi-facebook"
+                      size="sm"
+                      @click="shareToFacebook"
+                      class="share-button"
+                    />
+                    <span class="tooltip-text">{{ t('products.shareOnFacebook') || 'Chia sẻ lên Facebook' }}</span>
+                  </div>
+                  
+                  <div class="tooltip">
+                    <UButton
+                      color="sky"
+                      variant="soft"
+                      icon="i-mdi-twitter"
+                      size="sm"
+                      @click="shareToTwitter"
+                      class="share-button"
+                    />
+                    <span class="tooltip-text">{{ t('products.shareOnTwitter') || 'Chia sẻ lên Twitter' }}</span>
+                  </div>
+                  
+                  <div class="tooltip">
+                    <UButton
+                      color="blue"
+                      variant="soft"
+                      icon="i-mdi-linkedin"
+                      size="sm"
+                      @click="shareToLinkedIn"
+                      class="share-button"
+                    />
+                    <span class="tooltip-text">{{ t('products.shareOnLinkedIn') || 'Chia sẻ lên LinkedIn' }}</span>
+                  </div>
+                  
+                  <div class="tooltip">
+                    <UButton
+                      color="emerald"
+                      variant="soft"
+                      icon="i-heroicons-envelope"
+                      size="sm"
+                      @click="shareViaEmail"
+                      class="share-button"
+                    />
+                    <span class="tooltip-text">{{ t('products.shareViaEmail') || 'Chia sẻ qua Email' }}</span>
+                  </div>
+                  
+                  <div class="tooltip">
+                    <UButton
+                      color="gray"
+                      variant="soft"
+                      icon="i-heroicons-link"
+                      size="sm"
+                      @click="copyProductLink"
+                      class="share-button"
+                    />
+                    <span class="tooltip-text">{{ t('products.copyLink') || 'Sao chép liên kết' }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <AddToCartButton 
+                v-if="productData.price !== null"
+                :product="productData" 
+                :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
+                :showQuantity="true"
+                buttonClass="flex-1"
+              />
+              
+              <UButton 
+                v-else
+                color="primary" 
+                size="lg" 
+                block
+                icon="i-heroicons-currency-dollar"
+                class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
+                @click="openPriceRequestModal"
+              >
+                {{ t('products.requestPrice') || 'Yêu cầu báo giá' }}
+              </UButton>
+            </div>
           </div>
         </div>
         
-        <!-- Product Info -->
-        <div class="product-info">
-          <div v-if="productData.isNew || productData.isSale || productData.isFeatured" class="mb-4 flex flex-wrap gap-2">
-            <UBadge v-if="productData.isNew" color="blue" variant="solid">Mới</UBadge>
-            <UBadge v-if="productData.isSale" color="red" variant="solid">Giảm giá</UBadge>
-            <UBadge v-if="productData.isFeatured" color="amber" variant="solid">Nổi bật</UBadge>
-          </div>
-          
-          <h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">{{ productTitle }}</h1>
-          
-          <div v-if="productData.sku" class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            SKU: {{ productData.sku }}
-          </div>
-          
-          <!-- Hiển thị danh mục sản phẩm -->
-          <div v-if="productData.categories && productData.categories.length > 0" class="mb-5">
-            <div class="category-title text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <UIcon name="i-heroicons-rectangle-stack" class="inline-block mr-1 h-5 w-5 text-primary-500" />
-              {{ t('products.categories') || 'Danh mục:' }}
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <UBadge
-                v-for="category in productData.categories"
-                :key="category.id"
-                color="primary"
-                variant="soft"
-                size="lg"
-                class="category-badge cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-800 transition-colors"
-                @click="router.push(`/categories/${category.slug}`)"
-              >
-                <template #default>
-                  <div class="flex items-center gap-1">
-                    <UIcon name="i-heroicons-tag" class="h-4 w-4" />
-                    <span class="text-sm font-medium">{{ category.name }}</span>
-                  </div>
-                </template>
-              </UBadge>
-            </div>
-          </div>
-          
-          <div class="mb-6 flex items-center gap-3">
-            <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
-              {{ productData.formattedPrice }}
-            </span>
-            <span v-if="productData.comparePrice" class="text-lg text-gray-500 line-through dark:text-gray-400">
-              {{ new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(productData.comparePrice) }}
-            </span>
-          </div>
-          
-          <div v-if="productShortDescription" class="mb-6 text-gray-700 dark:text-gray-300">
-            {{ productShortDescription }}
-          </div>
-          
-          <!-- Nút chia sẻ mạng xã hội -->
-          <div class="mb-6">
-            <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ t('products.shareProduct') || 'Chia sẻ sản phẩm:' }}</div>
-            <div class="share-buttons flex flex-wrap gap-2">
-              <div class="tooltip">
-                <UButton
-                  color="blue"
-                  variant="soft"
-                  icon="i-mdi-facebook"
-                  size="sm"
-                  @click="shareToFacebook"
-                  class="share-button"
-                />
-                <span class="tooltip-text">{{ t('products.shareOnFacebook') || 'Chia sẻ lên Facebook' }}</span>
-              </div>
-              
-              <div class="tooltip">
-                <UButton
-                  color="sky"
-                  variant="soft"
-                  icon="i-mdi-twitter"
-                  size="sm"
-                  @click="shareToTwitter"
-                  class="share-button"
-                />
-                <span class="tooltip-text">{{ t('products.shareOnTwitter') || 'Chia sẻ lên Twitter' }}</span>
-              </div>
-              
-              <div class="tooltip">
-                <UButton
-                  color="blue"
-                  variant="soft"
-                  icon="i-mdi-linkedin"
-                  size="sm"
-                  @click="shareToLinkedIn"
-                  class="share-button"
-                />
-                <span class="tooltip-text">{{ t('products.shareOnLinkedIn') || 'Chia sẻ lên LinkedIn' }}</span>
-              </div>
-              
-              <div class="tooltip">
-                <UButton
-                  color="emerald"
-                  variant="soft"
-                  icon="i-heroicons-envelope"
-                  size="sm"
-                  @click="shareViaEmail"
-                  class="share-button"
-                />
-                <span class="tooltip-text">{{ t('products.shareViaEmail') || 'Chia sẻ qua Email' }}</span>
-              </div>
-              
-              <div class="tooltip">
-                <UButton
-                  color="gray"
-                  variant="soft"
-                  icon="i-heroicons-link"
-                  size="sm"
-                  @click="copyProductLink"
-                  class="share-button"
-                />
-                <span class="tooltip-text">{{ t('products.copyLink') || 'Sao chép liên kết' }}</span>
-              </div>
-            </div>
-          </div>
-          
-          <AddToCartButton 
-            v-if="productData.price !== null"
-            :product="productData" 
-            :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
-            :showQuantity="true"
-            buttonClass="flex-1"
-          />
-          
-          <UButton 
-            v-else
-            color="primary" 
-            size="lg" 
-            block
-            icon="i-heroicons-currency-dollar"
-            class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
-            @click="openPriceRequestModal"
-          >
-            {{ t('products.requestPrice') || 'Yêu cầu báo giá' }}
-          </UButton>
-        </div>
-      </div>
-      
-      <!-- Short Description (if not shown above) -->
-      <div v-if="productShortDescription && productShortDescription.length > 100" class="mt-8 mb-4">
-        <div class="prose prose-lg max-w-none dark:prose-invert">
-          <p>{{ productShortDescription }}</p>
-        </div>
-      </div>
-      
-      <!-- Phần mô tả sản phẩm và sidebar -->
-      <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <!-- Phần mô tả sản phẩm và tabs - chiếm 2/3 màn hình trên desktop -->
-        <div class="lg:col-span-2">
-          <!-- Table of Contents -->
-          <div v-if="productContent">
+        <!-- Phần mô tả sản phẩm và sidebar -->
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <!-- Phần mô tả sản phẩm và tabs -->
+          <div class="lg:col-span-2">
+            <!-- Table of Contents -->
             <Transition name="fade" mode="out-in">
               <TableOfContents 
                 v-if="activeTab === 'description'"
@@ -594,120 +593,124 @@ watch(isPriceRequestModalOpen, (newVal) => {
                 :offset="100"
                 :collapsible="true"
                 :defaultCollapsed="false"
-                class="mb-4"
                 key="table-of-contents"
+                class="mb-6"
               />
             </Transition>
-          </div>
-          
-          <!-- Product Description and Video Review Tabs -->
-          <div v-if="productContent || productData.videoReview || productData.id" class="product-tabs">
-            <div class="border-b border-gray-200 dark:border-gray-700">
-              <div class="flex flex-wrap space-x-4 md:space-x-8">
-                <button 
-                  v-for="tab in tabs" 
-                  :key="tab.id"
-                  @click="activeTab = tab.id"
-                  class="inline-flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm md:text-base uppercase tracking-wide"
-                  :class="[
-                    activeTab === tab.id 
-                      ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                  ]"
-                >
-                  <UIcon :name="tab.icon" class="h-5 w-5" />
-                  {{ tab.label }}
-                  <UBadge v-if="tab.badge" color="blue" variant="soft" size="xs">
-                    {{ tab.badge.label }}
-                  </UBadge>
-                </button>
+            
+            <!-- Product Description and Video Review Tabs -->
+            <div v-if="productContent || productData.videoReview || productData.id" class="product-tabs bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+              <div class="border-b border-gray-200 dark:border-gray-700 px-6">
+                <div class="flex flex-wrap space-x-4 md:space-x-8">
+                  <button 
+                    v-for="tab in tabs" 
+                    :key="tab.id"
+                    @click="activeTab = tab.id"
+                    class="inline-flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm md:text-base uppercase tracking-wide"
+                    :class="[
+                      activeTab === tab.id 
+                        ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                    ]"
+                  >
+                    <UIcon :name="tab.icon" class="h-5 w-5" />
+                    {{ tab.label }}
+                    <UBadge v-if="tab.badge" color="blue" variant="soft" size="xs">
+                      {{ tab.badge.label }}
+                    </UBadge>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Tab Content -->
+              <div class="tab-content p-6 bg-white dark:bg-gray-800 rounded-b-lg shadow-sm border-x border-b border-gray-200 dark:border-gray-700">
+                <transition name="tab-fade" mode="out-in">
+                  <!-- Description Tab Content -->
+                  <div v-if="activeTab === 'description'" :key="'description'" class="tab-content-inner">
+                    <div 
+                      :id="productContentId" 
+                      class="prose prose-lg max-w-none dark:prose-invert product-content-wrapper" 
+                      v-html="formattedProductContent"
+                    ></div>
+                  </div>
+                  
+                  <!-- Specifications Tab Content -->
+                  <div v-else-if="activeTab === 'specifications'" :key="'specifications'" class="tab-content-inner">
+                    <ProductSpecifications 
+                      v-if="productData.id" 
+                      :productId="productData.id" 
+                      :locale="locale"
+                    />
+                  </div>
+                  
+                  <!-- Video Review Tab Content -->
+                  <div v-else-if="activeTab === 'video'" :key="'video'" class="tab-content-inner">
+                    <div v-if="productData.videoReview" class="video-review-container">
+                      <h2 v-if="productData.videoTitle" class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
+                        {{ productData.videoTitle }}
+                      </h2>
+                      <div class="aspect-w-16 aspect-h-9 mb-6 overflow-hidden rounded-lg shadow-md">
+                        <iframe 
+                          class="h-full w-full"
+                          :src="productData.videoReview"
+                          frameborder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowfullscreen
+                        ></iframe>
+                      </div>
+                    </div>
+                    <div v-else class="empty-state flex h-64 items-center justify-center">
+                      <div class="text-center">
+                        <UIcon name="i-heroicons-video-camera" class="mx-auto mb-4 h-16 w-16 text-gray-400" />
+                        <p class="text-gray-600 dark:text-gray-400">
+                          {{ t('products.noVideoAvailable') || 'Chưa có video review cho sản phẩm này' }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </transition>
               </div>
             </div>
-            
-            <!-- Tab Content -->
-            <div class="tab-content p-6 bg-white dark:bg-gray-900 rounded-b-lg shadow-sm border-x border-b border-gray-200 dark:border-gray-800">
-              <transition name="tab-fade" mode="out-in">
-                <!-- Description Tab Content -->
-                <div v-if="activeTab === 'description'" :key="'description'" class="tab-content-inner">
-                  <div 
-                    :id="productContentId" 
-                    class="prose prose-lg max-w-none dark:prose-invert product-content-wrapper" 
-                    v-html="formattedProductContent"
-                  ></div>
-                </div>
-                
-                <!-- Specifications Tab Content -->
-                <div v-else-if="activeTab === 'specifications'" :key="'specifications'" class="tab-content-inner">
-                  <ProductSpecifications 
-                    v-if="productData.id" 
-                    :productId="productData.id" 
-                    :locale="locale"
-                  />
-                </div>
-                
-                <!-- Video Review Tab Content -->
-                <div v-else-if="activeTab === 'video'" :key="'video'" class="tab-content-inner">
-                  <div v-if="productData.videoReview" class="video-review-container">
-                    <h2 v-if="productData.videoTitle" class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
-                      {{ productData.videoTitle }}
-                    </h2>
-                    <div class="aspect-w-16 aspect-h-9 mb-6 overflow-hidden rounded-lg shadow-md">
-                      <iframe 
-                        class="h-full w-full"
-                        :src="productData.videoReview"
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen
-                      ></iframe>
-                    </div>
-                  </div>
-                  <div v-else class="empty-state flex h-64 items-center justify-center">
-                    <div class="text-center">
-                      <UIcon name="i-heroicons-video-camera" class="mx-auto mb-4 h-16 w-16 text-gray-400" />
-                      <p class="text-gray-600 dark:text-gray-400">
-                        {{ t('products.noVideoAvailable') || 'Chưa có video review cho sản phẩm này' }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </transition>
+          </div>
+          
+          <!-- Sidebar -->
+          <div class="lg:col-span-1">
+            <div class="sticky top-24">
+              <ProductDetailSidebar :product="productData" />
             </div>
           </div>
         </div>
         
-        <!-- Sidebar - chiếm 1/3 màn hình trên desktop và có thể trượt theo trang -->
-        <div class="lg:col-span-1">
-          <div class="sticky top-24">
-            <ProductDetailSidebar :product="productData" />
-          </div>
+        <!-- Cross-Sell Products -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ t('products.relatedProducts') || 'Sản phẩm bạn có thể thích' }}
+          </h2>
+          <CrossSellProducts 
+            v-if="productData.id" 
+            :productId="productData.id" 
+            :limit="4"
+          />
         </div>
+        
+        <!-- Modal yêu cầu báo giá -->
+        <PriceRequestModal
+          :is-open="isPriceRequestModalOpen"
+          :product-id="productData.id"
+          :product-name="productTitle"
+          @close="closePriceRequestModal"
+          @success="handlePriceRequestSuccess"
+        />
       </div>
       
-      <!-- Cross-Sell Products -->
-      <CrossSellProducts 
-        v-if="productData.id" 
-        :productId="productData.id" 
-        :limit="4"
-        class="mt-8"
-      />
-      
-      <!-- Modal yêu cầu báo giá -->
-      <PriceRequestModal
-        :is-open="isPriceRequestModalOpen"
-        :product-id="productData.id"
-        :product-name="productTitle"
-        @close="closePriceRequestModal"
-        @success="handlePriceRequestSuccess"
-      />
-    </div>
-    
-    <div v-else class="py-12 text-center">
-      <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto mb-4 h-16 w-16 text-amber-500" />
-      <h2 class="mb-2 text-2xl font-bold">{{ t('products.notFound') }}</h2>
-      <p class="mb-6 text-gray-600 dark:text-gray-400">{{ t('products.notFoundDescription') }}</p>
-      <UButton to="/products" color="primary">
-        {{ t('products.backToProducts') }}
-      </UButton>
+      <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
+        <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto mb-4 h-16 w-16 text-amber-500" />
+        <h2 class="mb-2 text-2xl font-bold">{{ t('products.notFound') }}</h2>
+        <p class="mb-6 text-gray-600 dark:text-gray-400">{{ t('products.notFoundDescription') }}</p>
+        <UButton to="/products" color="primary">
+          {{ t('products.backToProducts') }}
+        </UButton>
+      </div>
     </div>
   </div>
 </template>
@@ -749,6 +752,11 @@ watch(isPriceRequestModalOpen, (newVal) => {
   transition: all 0.3s ease;
   position: relative;
   font-weight: 600;
+  margin-right: 1rem;
+}
+
+.product-tabs button:last-child {
+  margin-right: 0;
 }
 
 .product-tabs button:hover {
@@ -763,13 +771,6 @@ watch(isPriceRequestModalOpen, (newVal) => {
 .tab-content {
   min-height: 300px;
   transition: all 0.3s ease;
-  background-color: var(--color-white);
-  border: 1px solid var(--color-gray-200);
-}
-
-.dark .tab-content {
-  background-color: var(--color-gray-800);
-  border-color: var(--color-gray-700);
 }
 
 .tab-content-inner {
@@ -989,27 +990,19 @@ watch(isPriceRequestModalOpen, (newVal) => {
 
 /* Thêm CSS cho product-info */
 .product-info {
-  background-color: var(--color-white);
-  padding: 1.5rem;
-  border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .dark .product-info {
-  background-color: var(--color-gray-800);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* Thêm CSS cho product-images */
 .product-images {
-  background-color: var(--color-white);
-  padding: 1rem;
-  border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .dark .product-images {
-  background-color: var(--color-gray-800);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -1077,5 +1070,15 @@ watch(isPriceRequestModalOpen, (newVal) => {
 body.u-modal-open {
   overflow: auto !important;
   padding-right: 0 !important;
+}
+
+/* CSS cho table of contents */
+:deep(.table-of-contents) {
+  background-color: white;
+  border-radius: 0.5rem;
+}
+
+.dark :deep(.table-of-contents) {
+  background-color: var(--color-gray-800);
 }
 </style> 

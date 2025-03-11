@@ -308,9 +308,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="product-sidebar rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+  <div class="product-sidebar">
     <!-- Search -->
-    <div class="p-4">
+    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
       <div class="relative">
         <div class="custom-input-container">
           <UInput
@@ -336,10 +336,10 @@ onMounted(() => {
     </div>
     
     <!-- Price Range -->
-    <div class="border-t border-gray-200 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
       <div 
         @click="toggleSection('priceRange')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800"
+        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
       >
         <div class="flex items-center gap-2">
           <DollarSign class="h-5 w-5 text-primary-500" />
@@ -420,10 +420,10 @@ onMounted(() => {
     </div>
     
     <!-- Categories -->
-    <div class="border-t border-gray-200 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
       <div 
         @click="toggleSection('categories')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800"
+        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
       >
         <div class="flex items-center gap-2">
           <LayoutGrid class="h-5 w-5 text-primary-500" />
@@ -466,10 +466,10 @@ onMounted(() => {
     </div>
     
     <!-- Product Flags -->
-    <div class="border-t border-gray-200 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
       <div 
         @click="toggleSection('productType')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800"
+        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
       >
         <div class="flex items-center gap-2">
           <Tag class="h-5 w-5 text-primary-500" />
@@ -523,7 +523,7 @@ onMounted(() => {
     </div>
     
     <!-- Reset Filters -->
-    <div class="border-t border-gray-200 p-4 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
       <UButton
         @click="resetFilters"
         variant="ghost"
@@ -543,7 +543,7 @@ onMounted(() => {
 <style scoped>
 /* Custom styles for @vueform/slider */
 .slider-primary {
-  --slider-connect-bg: #0ea5e9; /* Màu xanh dương - primary color */
+  --slider-connect-bg: #0ea5e9;
   --slider-handle-ring-color: #0ea5e9;
   --slider-handle-bg: white;
   --slider-handle-border-color: #0ea5e9;
@@ -552,19 +552,19 @@ onMounted(() => {
   --slider-handle-height: 18px;
   --slider-bg: #e5e7eb;
   --slider-height: 8px;
-  --slider-touch-area-bg: rgba(14, 165, 233, 0.15); /* Màu xanh dương nhạt cho vùng touch */
+  --slider-touch-area-bg: rgba(14, 165, 233, 0.15);
   --slider-touch-area-width: 40px;
   --slider-touch-area-height: 40px;
 }
 
 /* Dark mode adjustments */
 :deep(.dark) .slider-primary {
-  --slider-connect-bg: #38bdf8; /* Màu xanh dương sáng hơn cho dark mode */
+  --slider-connect-bg: #38bdf8;
   --slider-handle-ring-color: #38bdf8;
   --slider-handle-bg: #1f2937;
   --slider-handle-border-color: #38bdf8;
   --slider-bg: #374151;
-  --slider-touch-area-bg: rgba(56, 189, 248, 0.2); /* Màu xanh dương nhạt cho vùng touch trong dark mode */
+  --slider-touch-area-bg: rgba(56, 189, 248, 0.2);
 }
 
 /* Custom input container */
@@ -603,5 +603,11 @@ onMounted(() => {
 /* Ensure the input form has proper spacing */
 :deep(.u-input-form) {
   position: relative;
+}
+
+.product-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 </style> 

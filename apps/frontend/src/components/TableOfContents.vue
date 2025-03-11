@@ -186,7 +186,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="tableOfContents.length > 0" class="table-of-contents">
+  <div v-if="tableOfContents.length > 0" class="table-of-contents bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
     <div
       class="table-of-contents__header"
       :class="{ 'cursor-pointer': props.collapsible }"
@@ -241,7 +241,7 @@ onMounted(() => {
       </ul>
     </transition>
   </div>
-  <div v-else-if="isInitialized" class="table-of-contents table-of-contents--empty">
+  <div v-else-if="isInitialized" class="table-of-contents table-of-contents--empty bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
     <div class="table-of-contents__header">
       <h3 class="table-of-contents__title">
         {{ title || t("products.tableOfContents") || "Nội dung chính" }}
@@ -256,15 +256,14 @@ onMounted(() => {
 <style scoped>
 .table-of-contents {
   margin: 0 0 1.5rem 0;
-  padding: 1.25rem;
-  border: 1px solid #e5e7eb;
+  background-color: white;
   border-radius: 0.5rem;
-  background-color: #f9fafb;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .dark .table-of-contents {
   background-color: #1f2937;
-  border-color: #374151;
+  border: none;
 }
 
 .table-of-contents__header {
@@ -371,7 +370,7 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .table-of-contents {
-    padding: 1rem;
+    padding: 1.5rem;
   }
 }
 </style>
