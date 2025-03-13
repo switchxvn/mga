@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useTrpc } from '../../composables/useTrpc';
 import { computed, ref, watch, onMounted, onBeforeMount } from 'vue';
 import RelatedPosts from '../../components/RelatedPosts.vue';
-import PostSidebar from '../../components/sidebar/PostSidebar.vue';
+import PostDetailSidebar from '../../components/sidebar/PostDetailSidebar.vue';
 import Breadcrumb from '../../components/Breadcrumb.vue';
 import LazyImage from '../../components/ui/LazyImage.vue';
 import Icon from '../../components/ui/Icon.vue';
@@ -244,7 +244,7 @@ useHead(() => {
         
         <!-- Sidebar -->
         <div class="post-detail__sidebar">
-          <PostSidebar 
+          <PostDetailSidebar 
             :postId="postId" 
           />
         </div>

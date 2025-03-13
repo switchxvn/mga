@@ -1,23 +1,57 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch, reactive, computed } from 'vue';
 import { useTrpc } from '../../composables/useTrpc';
 import { useCategory, type Category } from '../../composables/useCategory';
 import { useI18n } from 'vue-i18n';
-import Icon from '../ui/Icon.vue';
+import { useRoute, useRouter } from 'vue-router';
 import type { Post } from '@ew/shared';
 import { usePopularPosts } from '../../composables/usePopularPosts';
 import { usePost } from '../../composables/usePost';
 import { formatDate } from '../../utils/date';
+import {
+  TrendingUp,
+  Star,
+  FolderOpen,
+  Calendar,
+  Bell,
+  ChevronUp,
+  ChevronDown,
+  Search,
+  Folder,
+  RotateCcw,
+  Filter,
+  Hash
+} from 'lucide-vue-next';
+
+// Định nghĩa CategoryType enum giống như trong backend
+enum CategoryType {
+  NEWS = 'news',
+  PRODUCT = 'product',
+  BOTH = 'both'
+}
 
 const props = defineProps<{
-  postId: number;
+  initialFilters?: {
+    search?: string;
+    categories?: number[];
+    tags?: string[];
+    sortBy?: string;
+  };
 }>();
 
+const emit = defineEmits<{
+  (e: 'filter-change', filters: any): void;
+}>();
+
+const route = useRoute();
+const router = useRouter();
 const trpc = useTrpc();
 const categories = ref<Category[]>([]);
 const loading = ref({
   categories: true,
-  featuredCategories: true
+  featuredCategories: true,
+  popularPosts: true,
+  searching: false
 });
 
 // Sử dụng composables
@@ -25,15 +59,35 @@ const { t } = useI18n();
 const { locale } = useI18n();
 const { popularPosts, loading: loadingPopular, fetchPopularPosts } = usePopularPosts();
 const { getTranslationByLocale, getPostUrl } = usePost();
-const { 
+const {
   featuredCategories,
   fetchFeaturedCategories
 } = useCategory();
 
+// Filter state
+const filters = reactive({
+  search: props.initialFilters?.search || '',
+  categories: props.initialFilters?.categories || [],
+  tags: props.initialFilters?.tags || [],
+});
+
+// Search state
+const isSearching = ref(false);
+const searchTimeout = ref<NodeJS.Timeout | null>(null);
+
+// UI state
+const expandedSections = ref({
+  filter: true,
+  popularPosts: true,
+  featuredCategories: true,
+  subscribe: true
+});
+
 async function fetchCategories() {
   try {
     loading.value.categories = true;
-    const result = await trpc.category.all.query();
+    // Chỉ lấy danh mục có type là NEWS
+    const result = await trpc.category.byType.query(CategoryType.NEWS);
     categories.value = result;
   } catch (error) {
     console.error('Failed to fetch categories:', error);
@@ -46,6 +100,10 @@ async function loadFeaturedCategories() {
   try {
     loading.value.featuredCategories = true;
     await fetchFeaturedCategories();
+    // Lọc chỉ lấy các featured categories có type là NEWS
+    featuredCategories.value = featuredCategories.value.filter(
+      cat => cat.type === CategoryType.NEWS
+    );
   } catch (error) {
     console.error('Failed to fetch featured categories:', error);
   } finally {
@@ -53,8 +111,96 @@ async function loadFeaturedCategories() {
   }
 }
 
+// Handle search input
+const handleSearchInput = () => {
+  isSearching.value = true;
+
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value);
+  }
+
+  searchTimeout.value = setTimeout(() => {
+    applyFilters();
+    isSearching.value = false;
+  }, 500);
+};
+
+// Toggle category selection
+const toggleCategory = (categoryId: number) => {
+  const index = filters.categories.indexOf(categoryId);
+  if (index === -1) {
+    filters.categories.push(categoryId);
+  } else {
+    filters.categories.splice(index, 1);
+  }
+};
+
+// Toggle section expansion
+const toggleSection = (section: keyof typeof expandedSections.value) => {
+  expandedSections.value[section] = !expandedSections.value[section];
+};
+
+// Apply filters
+const applyFilters = () => {
+  emit('filter-change', {
+    search: filters.search,
+    categories: filters.categories.length > 0 ? filters.categories : undefined,
+    tags: filters.tags.length > 0 ? filters.tags : undefined,
+  });
+
+  // Update URL query params
+  updateQueryParams();
+};
+
+// Update URL query params
+const updateQueryParams = () => {
+  // Build query params object
+  const query: Record<string, string> = {};
+
+  if (filters.search) query.search = filters.search;
+  if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
+  if (filters.tags && filters.tags.length > 0) query.tags = filters.tags.join(',');
+
+  // Update route
+  router.replace({ query });
+};
+
+// Reset filters
+const resetFilters = () => {
+  filters.search = '';
+  filters.categories = [];
+  filters.tags = [];
+
+  applyFilters();
+};
+
+// Watch for changes and apply filters
+watch([() => filters.categories, () => filters.tags], () => {
+  applyFilters();
+}, { deep: true });
+
+// Watch for search changes
+watch(() => filters.search, () => {
+  handleSearchInput();
+});
+
 onMounted(() => {
-  fetchPopularPosts({ limit: 5, excludeId: props.postId });
+  // Initialize from URL if not provided in props
+  if (!props.initialFilters) {
+    if (route.query.search) {
+      filters.search = route.query.search as string;
+    }
+
+    if (route.query.categories) {
+      filters.categories = (route.query.categories as string).split(',').map(Number);
+    }
+
+    if (route.query.tags) {
+      filters.tags = (route.query.tags as string).split(',');
+    }
+  }
+
+  fetchPopularPosts({ limit: 5 });
   fetchCategories();
   loadFeaturedCategories();
 });
@@ -62,272 +208,235 @@ onMounted(() => {
 
 <template>
   <div class="post-sidebar">
-    <!-- Popular Posts -->
-    <div class="post-sidebar__section">
-      <h3 class="post-sidebar__title">
-        <Icon name="TrendingUp" :size="18" class="mr-2" />
-        {{ t('sidebar.popularPosts') }}
-      </h3>
-      
-      <div v-if="loadingPopular" class="post-sidebar__loading">
-        <div class="post-sidebar__loading-spinner"></div>
-      </div>
-      
-      <div v-else-if="popularPosts.length === 0" class="post-sidebar__empty">
-        Không có bài viết phổ biến
-      </div>
-      
-      <ul v-else class="post-sidebar__post-list">
-        <li v-for="(post, index) in popularPosts" 
-            :key="post.id" 
-            class="post-sidebar__post-item"
-        >
-          <NuxtLink 
-            :to="getPostUrl(post)" 
-            class="post-sidebar__post-item-link group"
+    <!-- Search -->
+    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
+      <div class="relative">
+        <div class="custom-input-container">
+          <UInput
+            v-model="filters.search"
+            :placeholder="t('posts.searchPlaceholder')"
+            class="w-full search-input"
+            size="md"
+            :loading="isSearching"
           >
-            <div class="post-sidebar__post-item-content">
-              <div class="post-sidebar__post-item-number">{{ index + 1 }}</div>
-              <div v-if="getTranslationByLocale(post)?.ogImage" class="post-sidebar__post-item-image">
-                <img :src="getTranslationByLocale(post)?.ogImage" :alt="getTranslationByLocale(post)?.title">
+            <template #leading>
+              <div class="leading-icon-wrapper">
+                <Search class="h-4 w-4 text-gray-500" />
               </div>
-              <div class="flex-grow min-w-0">
-                <h4 class="post-sidebar__post-item-title group-hover:text-blue-600">
+            </template>
+          </UInput>
+        </div>
+        <div v-if="filters.search" class="mt-2 text-xs text-gray-500">
+          {{ t("posts.searchingFor") }}:
+          <span class="font-medium">{{ filters.search }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
+      <div
+        @click="toggleSection('filter')"
+        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+      >
+        <div class="flex items-center gap-2">
+          <Filter class="h-5 w-5 text-primary-500" />
+          <h3 class="font-medium text-gray-900 dark:text-white">
+            {{ t("sidebar.filters") }}
+          </h3>
+        </div>
+        <component
+          :is="expandedSections.filter ? ChevronUp : ChevronDown"
+          class="h-5 w-5 text-gray-500"
+        />
+      </div>
+
+      <div v-if="expandedSections.filter" class="px-4 pb-4">
+        <!-- Categories Filter -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {{ t("sidebar.filterByCategory") }}
+          </label>
+          <div v-if="loading.categories" class="flex justify-center py-2">
+            <div
+              class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
+            ></div>
+          </div>
+          <div
+            v-else-if="categories.length === 0"
+            class="text-sm text-gray-500 text-center py-2"
+          >
+            {{ t("sidebar.noCategories") }}
+          </div>
+          <div v-else class="flex flex-wrap gap-2">
+            <UBadge
+              v-for="category in categories"
+              :key="category.id"
+              :color="filters.categories.includes(category.id) ? 'primary' : 'gray'"
+              :variant="filters.categories.includes(category.id) ? 'solid' : 'soft'"
+              class="cursor-pointer"
+              @click="toggleCategory(category.id)"
+            >
+              {{ category.name }}
+            </UBadge>
+          </div>
+        </div>
+
+        <!-- Reset Button -->
+        <UButton
+          @click="resetFilters"
+          variant="ghost"
+          color="gray"
+          block
+          size="sm"
+          class="mt-4"
+        >
+          <template #leading>
+            <RotateCcw class="h-4 w-4" />
+          </template>
+          {{ t("posts.resetFilters") }}
+        </UButton>
+      </div>
+    </div>
+
+    <!-- Popular Posts -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
+      <div
+        @click="toggleSection('popularPosts')"
+        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+      >
+        <div class="flex items-center gap-2">
+          <TrendingUp class="h-5 w-5 text-primary-500" />
+          <h3 class="font-medium text-gray-900 dark:text-white">
+            {{ t("sidebar.popularPosts") }}
+          </h3>
+        </div>
+        <component
+          :is="expandedSections.popularPosts ? ChevronUp : ChevronDown"
+          class="h-5 w-5 text-gray-500"
+        />
+      </div>
+
+      <div v-if="expandedSections.popularPosts" class="px-4 pb-4">
+        <div v-if="loadingPopular" class="flex justify-center py-4">
+          <div
+            class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
+          ></div>
+        </div>
+
+        <div
+          v-else-if="popularPosts.length === 0"
+          class="py-2 text-sm text-gray-500 text-center"
+        >
+          {{ t("sidebar.noPopularPosts") }}
+        </div>
+
+        <ul v-else class="space-y-4">
+          <li
+            v-for="(post, index) in popularPosts"
+            :key="post.id"
+            class="border-b border-gray-100 dark:border-gray-700 last:border-0 pb-4 last:pb-0"
+          >
+            <NuxtLink :to="getPostUrl(post)" class="group flex items-start gap-3">
+              <div
+                class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400 font-medium text-xs"
+              >
+                {{ index + 1 }}
+              </div>
+
+              <div class="flex-grow min-w-0 text-left">
+                <h4
+                  class="line-clamp-2 text-sm font-medium text-gray-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400"
+                >
                   {{ getTranslationByLocale(post)?.title }}
                 </h4>
-                <p class="post-sidebar__post-item-date">
-                  <Icon name="Calendar" :size="14" class="mr-1" />
+                <p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                  <Calendar :size="14" />
                   {{ formatDate(post.createdAt) }}
                 </p>
               </div>
-            </div>
-          </NuxtLink>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Featured Categories -->
-    <div class="post-sidebar__section">
-      <h3 class="post-sidebar__title">
-        <Icon name="Star" :size="18" class="mr-2" />
-        {{ t('sidebar.featuredCategories') }}
-      </h3>
-      
-      <div v-if="loading.featuredCategories" class="post-sidebar__loading">
-        <div class="post-sidebar__loading-spinner"></div>
-      </div>
-      
-      <div v-else-if="featuredCategories.length === 0" class="post-sidebar__empty">
-        Không có danh mục nổi bật
-      </div>
-      
-      <div v-else class="post-sidebar__featured-categories">
-        <NuxtLink 
-          v-for="(category, categoryIndex) in featuredCategories" 
-          :key="categoryIndex"
-          :to="`/danh-muc/${category.slug || category.id}`"
-          class="post-sidebar__featured-category group"
-        >
-          <div class="post-sidebar__featured-category-content">
-            <div class="post-sidebar__featured-category-icon">
-              <Icon name="Folder" :size="20" />
-            </div>
-            <div>
-              <h4 class="post-sidebar__featured-category-title group-hover:text-blue-600">
-                {{ category.name }}
-              </h4>
-              <p v-if="category.description" class="post-sidebar__featured-category-description">
-                {{ category.description }}
-              </p>
-            </div>
-          </div>
-        </NuxtLink>
-      </div>
-    </div>
-
-    <!-- Categories -->
-    <div class="post-sidebar__section">
-      <h3 class="post-sidebar__title">
-        <Icon name="FolderOpen" :size="18" class="mr-2" />
-        {{ t('sidebar.allCategories') }}
-      </h3>
-      
-      <div v-if="loading.categories" class="post-sidebar__loading">
-        <div class="post-sidebar__loading-spinner"></div>
-      </div>
-      
-      <div v-else-if="categories.length === 0" class="post-sidebar__empty">
-        Không có danh mục
-      </div>
-      
-      <div v-else class="post-sidebar__categories">
-        <NuxtLink 
-          v-for="(category, categoryIndex) in categories" 
-          :key="categoryIndex"
-          :to="`/danh-muc/${category.slug || category.id}`"
-          class="post-sidebar__category"
-        >
-          {{ category.name }}
-        </NuxtLink>
+            </NuxtLink>
+          </li>
+        </ul>
       </div>
     </div>
 
     <!-- Subscribe -->
-    <div class="post-sidebar__section post-sidebar__section--highlight">
-      <h3 class="post-sidebar__title">
-        <Icon name="Bell" :size="18" class="mr-2" />
-        {{ t('sidebar.subscribe') }}
-      </h3>
-      <p class="post-sidebar__description mb-4">{{ t('sidebar.subscribeDescription') }}</p>
-      
-      <form class="post-sidebar__form">
-        <input 
-          type="email" 
-          :placeholder="t('sidebar.emailPlaceholder')"
-          class="post-sidebar__form-input"
-        >
-        <button 
-          type="submit" 
-          class="post-sidebar__form-button"
-        >
-          {{ t('sidebar.subscribeButton') }}
-        </button>
-      </form>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
+      <div
+        @click="toggleSection('subscribe')"
+        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+      >
+        <div class="flex items-center gap-2">
+          <Bell class="h-5 w-5 text-primary-500" />
+          <h3 class="font-medium text-gray-900 dark:text-white">
+            {{ t("sidebar.subscribe") }}
+          </h3>
+        </div>
+        <component
+          :is="expandedSections.subscribe ? ChevronUp : ChevronDown"
+          class="h-5 w-5 text-gray-500"
+        />
+      </div>
+
+      <div v-if="expandedSections.subscribe" class="px-4 pb-4">
+        <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          {{ t("sidebar.subscribeDescription") }}
+        </p>
+
+        <form class="space-y-3">
+          <UInput type="email" :placeholder="t('sidebar.emailPlaceholder')" size="md" />
+          <UButton type="submit" color="primary" variant="solid" size="md" block>
+            {{ t("sidebar.subscribeButton") }}
+          </UButton>
+        </form>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
 .post-sidebar {
-  @apply w-full;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.post-sidebar__section {
-  @apply mb-8 p-6 rounded-lg bg-white border border-gray-100 shadow-sm;
+/* Custom input container */
+.custom-input-container {
+  position: relative;
 }
 
-.post-sidebar__section--highlight {
-  @apply bg-blue-50 border-blue-100;
+/* Leading icon wrapper */
+.leading-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  margin-right: 12px;
 }
 
-.post-sidebar__title {
-  @apply text-lg font-semibold mb-4 pb-2 border-b border-gray-200 flex items-center text-gray-800;
+/* Adjust input padding */
+:deep(.search-input) {
+  padding: 0.5rem 0rem;
 }
 
-.post-sidebar__loading {
-  @apply flex justify-center items-center py-4;
+/* Adjust input field padding */
+:deep(.search-input input) {
+  padding-left: 36px !important;
 }
 
-.post-sidebar__loading-spinner {
-  @apply w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin;
+/* Position the leading icon */
+:deep(.u-input-leading) {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
 }
 
-.post-sidebar__empty {
-  @apply text-gray-500 py-2 text-center italic;
-}
-
-.post-sidebar__post-list {
-  @apply space-y-4;
-}
-
-.post-sidebar__post-item {
-  @apply border-b border-gray-100 pb-4 last:border-0 last:pb-0;
-}
-
-.post-sidebar__post-item-link {
-  @apply hover:text-blue-600 transition-colors duration-200;
-}
-
-.post-sidebar__post-item-content {
-  @apply flex items-center w-full;
-}
-
-.post-sidebar__post-item-number {
-  @apply flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 font-bold text-sm mr-3;
-}
-
-.post-sidebar__post-item-image {
-  @apply w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 mr-3;
-}
-
-.post-sidebar__post-item-image img {
-  @apply w-full h-full object-cover;
-}
-
-.post-sidebar__post-item-title {
-  @apply text-sm font-medium text-gray-800 line-clamp-2 mb-1 transition-colors duration-200;
-}
-
-.dark .post-sidebar__post-item-title {
-  @apply text-gray-200;
-}
-
-.post-sidebar__post-item-date {
-  @apply text-xs text-gray-500 flex items-center;
-}
-
-.post-sidebar__featured-categories {
-  @apply space-y-2;
-}
-
-.post-sidebar__featured-category {
-  @apply block p-3 rounded-md bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 
-    border border-gray-100 shadow-sm transition-all duration-200 mb-2 last:mb-0;
-}
-
-.dark .post-sidebar__featured-category {
-  @apply from-gray-800 to-gray-700 border-gray-700 hover:from-gray-700 hover:to-gray-600;
-}
-
-.post-sidebar__featured-category-content {
-  @apply flex items-center gap-2;
-}
-
-.post-sidebar__featured-category-icon {
-  @apply w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0;
-}
-
-.dark .post-sidebar__featured-category-icon {
-  @apply bg-blue-900 text-blue-300;
-}
-
-.post-sidebar__featured-category-title {
-  @apply text-sm font-medium text-gray-800 mb-0.5 transition-colors duration-200;
-}
-
-.dark .post-sidebar__featured-category-title {
-  @apply text-gray-200;
-}
-
-.post-sidebar__featured-category-description {
-  @apply text-xs text-gray-500 line-clamp-2;
-}
-
-.dark .post-sidebar__featured-category-description {
-  @apply text-gray-400;
-}
-
-.post-sidebar__categories {
-  @apply flex flex-wrap gap-2;
-}
-
-.post-sidebar__category {
-  @apply px-3 py-1 text-sm bg-gray-50 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200;
-}
-
-.post-sidebar__description {
-  @apply text-sm text-gray-600;
-}
-
-.post-sidebar__form {
-  @apply flex flex-col gap-3;
-}
-
-.post-sidebar__form-input {
-  @apply w-full px-4 py-2 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all duration-200;
-}
-
-.post-sidebar__form-button {
-  @apply w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 font-medium;
+/* Ensure the input form has proper spacing */
+:deep(.u-input-form) {
+  position: relative;
 }
 </style>

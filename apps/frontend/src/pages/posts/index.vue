@@ -1,50 +1,193 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
-import { useTrpc } from '../../composables/useTrpc';
-import { ref, computed } from 'vue';
+import { useTrpc } from "../../composables/useTrpc";
+import { ref, computed, onMounted, reactive, watch } from "vue";
+import { useLocalization } from "../../composables/useLocalization";
+import { useRoute, useRouter } from 'vue-router';
+import PostSidebar from "../../components/sidebar/PostSidebar.vue";
+import PostCard from "../../components/ui/card/PostCard.vue";
+import type { Post } from "@ew/shared";
 
-// Định nghĩa alias cho URL tiếng Việt
+const { t, locale } = useLocalization();
+const route = useRoute();
+const router = useRouter();
+
+// Định nghĩa alias cho URL tiếng Việt và meta
 definePageMeta({
-  alias: ['/bai-viet']
+  alias: ["/bai-viet"],
+  layout: "default",
 });
 
 const trpc = useTrpc();
-const posts = ref<any[]>([]);
-const loading = ref(true);
+const posts = ref<Post[]>([]);
+const isLoading = ref(false);
 const error = ref<string | null>(null);
 
-async function fetchPosts() {
+// SEO data
+const seoData = ref({
+  title: '',
+  description: '',
+  keywords: '',
+  ogTitle: '',
+  ogDescription: '',
+  ogImage: '',
+  canonicalUrl: '',
+});
+
+// Fetch SEO data
+const fetchSeoData = async () => {
   try {
-    loading.value = true;
-    error.value = null;
-    
-    // Gọi tRPC endpoint để lấy danh sách bài viết
-    const result = await trpc.post.all.query();
-    posts.value = result;
-  } catch (err: any) {
-    console.error('Failed to fetch posts:', err);
-    error.value = err.message || 'Có lỗi xảy ra khi tải danh sách bài viết';
-  } finally {
-    loading.value = false;
+    const seo = await trpc.seo.getSeoByPath.query('/posts');
+    if (seo) {
+      seoData.value = seo;
+    }
+  } catch (error) {
+    console.error('Error fetching SEO data:', error);
   }
-}
+};
+
+// Filter state
+const filters = reactive({
+  search: route.query.search as string || '',
+  categories: route.query.categories ? (route.query.categories as string).split(',').map(Number) : [],
+  sort: (route.query.sort as string) || 'newest',
+});
+
+// Sort options
+const sortOptions = [
+  { value: "newest", label: t("sort.newest") },
+  { value: "oldest", label: t("sort.oldest") },
+  { value: "title_asc", label: t("sort.title_asc") },
+  { value: "title_desc", label: t("sort.title_desc") },
+];
+
+/**
+ * Chuyển đổi dữ liệu post từ API thành đúng type Post
+ */
+const transformPost = (post: any): Post => {
+  return {
+    ...post,
+    author: post.author ? {
+      ...post.author,
+      lastLoginAt: post.author.lastLoginAt ? new Date(post.author.lastLoginAt) : null
+    } : null
+  };
+};
+
+const fetchPosts = async () => {
+  isLoading.value = true;
+  error.value = null;
+  try {
+    const result = await trpc.post.latest.query({
+      filters: {
+        categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
+        locale: locale.value,
+      },
+    });
+    posts.value = Array.isArray(result) ? result.map(transformPost) : [];
+  } catch (err) {
+    error.value = "Failed to fetch posts";
+    console.error("Error fetching posts:", err);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Handle filter changes from sidebar
+const handleFilterChange = (newFilters: any) => {
+  // Update filters
+  if (newFilters.search !== undefined) filters.search = newFilters.search;
+  if (newFilters.categories !== undefined) filters.categories = newFilters.categories || [];
+  if (newFilters.sortBy !== undefined) filters.sort = newFilters.sortBy;
+  
+  // Update URL query params
+  updateQueryParams();
+  
+  // Fetch posts with new filters
+  fetchPosts();
+};
+
+// Update URL query params
+const updateQueryParams = () => {
+  // Build query params object
+  const query: Record<string, string> = {};
+  
+  if (filters.search) query.search = filters.search;
+  if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
+  if (filters.sort && filters.sort !== 'newest') query.sort = filters.sort;
+  
+  // Update route
+  router.replace({ query });
+};
+
+// Watch for locale changes
+watch(locale, () => {
+  fetchSeoData();
+  fetchPosts();
+});
+
+// Sort posts
+const sortedPosts = computed(() => {
+  if (!posts.value) return [];
+
+  const sorted = [...posts.value];
+  switch (filters.sort) {
+    case "oldest":
+      return sorted.sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    case "title_asc":
+      return sorted.sort((a, b) => {
+        const titleA =
+          a.translations?.find((t) => t.locale === locale.value)?.title || "";
+        const titleB =
+          b.translations?.find((t) => t.locale === locale.value)?.title || "";
+        return titleA.localeCompare(titleB);
+      });
+    case "title_desc":
+      return sorted.sort((a, b) => {
+        const titleA =
+          a.translations?.find((t) => t.locale === locale.value)?.title || "";
+        const titleB =
+          b.translations?.find((t) => t.locale === locale.value)?.title || "";
+        return titleB.localeCompare(titleA);
+      });
+    default:
+      // newest
+      return sorted.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  }
+});
+
+const handleSortChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  filters.sort = target.value;
+  updateQueryParams();
+};
+
+onMounted(() => {
+  fetchSeoData();
+  fetchPosts();
+});
 
 /**
  * Tạo slug từ tiêu đề nếu không có slug
  */
-function getPostSlug(post: any): string {
-  if (post.slug) return post.slug;
+function getPostSlug(post: Post): string {
+  const translation = post.translations?.[0];
+  if (translation?.slug) return translation.slug;
   
   // Fallback: Tạo slug từ tiêu đề nếu không có slug
-  return post.title
+  return (post.title || '')
     .toLowerCase()
     .replace(/[^\w\s-]/g, '') // Loại bỏ ký tự đặc biệt
     .replace(/\s+/g, '-') // Thay thế khoảng trắng bằng dấu gạch ngang
     .replace(/--+/g, '-') // Loại bỏ nhiều dấu gạch ngang liên tiếp
-    .trim();
+    .trim() || 'untitled';
 }
 
-const getAuthorName = (author) => {
+const getAuthorName = (author: Post['author']) => {
   if (author?.profile) {
     const firstName = author.profile.firstName || '';
     const lastName = author.profile.lastName || '';
@@ -54,60 +197,95 @@ const getAuthorName = (author) => {
   }
   return author?.username || author?.email?.split('@')[0] || 'Không xác định';
 };
-
-onMounted(() => {
-  fetchPosts();
-});
 </script>
 
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Danh sách bài viết</h1>
-    
-    <!-- Loading state -->
-    <div v-if="loading" class="flex justify-center items-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  <div class="posts-page container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
+        {{ seoData.title || t("posts.title") }}
+      </h1>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">
+        {{ seoData.description || t("posts.description") }}
+      </p>
     </div>
-    
-    <!-- Error state -->
-    <div v-else-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-      <p>{{ error }}</p>
-      <button 
-        @click="fetchPosts" 
-        class="mt-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-      >
-        Thử lại
-      </button>
-    </div>
-    
-    <!-- Empty state -->
-    <div v-else-if="posts.length === 0" class="text-center py-12">
-      <p class="text-gray-500 mb-4">Chưa có bài viết nào</p>
-    </div>
-    
-    <!-- Posts list -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div 
-        v-for="post in posts" 
-        :key="post.id" 
-        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
-      >
-        <div class="p-6">
-          <h2 class="text-xl font-semibold mb-2">{{ post.title }}</h2>
-          <p class="text-gray-600 mb-4 line-clamp-3">{{ post.content }}</p>
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-500">
-              Tác giả: {{ getAuthorName(post.author) }}
+
+    <div class="flex flex-col gap-8 lg:flex-row">
+      <!-- Sidebar -->
+      <aside class="lg:w-1/4">
+        <PostSidebar 
+          :initial-filters="filters" 
+          @filter-change="handleFilterChange" 
+        />
+      </aside>
+
+      <!-- Main Content -->
+      <main class="lg:w-3/4">
+        <!-- Toolbar -->
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-600 dark:text-gray-400">
+              {{ posts.length }} {{ t('posts.itemCount', { count: posts.length }) }}
             </span>
-            <NuxtLink 
-              :to="`/bai-viet/${getPostSlug(post)}`" 
-              class="text-blue-500 hover:text-blue-700"
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">
+              {{ t('posts.sortBy') }}:
+            </label>
+            <select
+              id="sort"
+              v-model="filters.sort"
+              @change="handleSortChange"
+              class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
             >
-              Xem chi tiết
-            </NuxtLink>
+              <option
+                v-for="option in sortOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
           </div>
         </div>
-      </div>
+
+        <!-- Loading State -->
+        <div v-if="isLoading" class="flex justify-center py-12">
+          <div
+            class="h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"
+          ></div>
+        </div>
+
+        <!-- Error State -->
+        <div
+          v-else-if="error"
+          class="rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-900/50 dark:text-red-400"
+        >
+          <p>{{ error }}</p>
+          <button
+            @click="fetchPosts"
+            class="mt-2 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors hover:bg-red-600"
+          >
+            {{ t('common.tryAgain') }}
+          </button>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else-if="posts.length === 0" class="py-12 text-center">
+          <p class="text-gray-500 dark:text-gray-400">{{ t('posts.noPosts') }}</p>
+        </div>
+
+        <!-- Posts Grid -->
+        <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+          <PostCard
+            v-for="post in sortedPosts"
+            :key="post.id"
+            :post="post"
+          />
+        </div>
+      </main>
     </div>
   </div>
-</template> 
+</template>

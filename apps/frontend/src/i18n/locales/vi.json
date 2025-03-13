@@ -170,6 +170,28 @@
     "subscribe": "Đăng ký nhận tin",
     "subscribeDescription": "Nhận thông báo khi có bài viết mới",
     "emailPlaceholder": "Email của bạn",
-    "subscribeButton": "Đăng ký"
+    "subscribeButton": "Đăng ký",
+    "search": "Tìm kiếm",
+    "noPopularPosts": "Chưa có bài viết phổ biến",
+    "noFeaturedCategories": "Chưa có danh mục nổi bật",
+    "noCategories": "Chưa có danh mục nào",
+    "filters": "Bộ lọc",
+    "filterByCategory": "Lọc theo danh mục"
+  },
+  "posts": {
+    "searchPlaceholder": "Tìm kiếm bài viết...",
+    "searchingFor": "Đang tìm kiếm",
+    "title": "Bài viết",
+    "description": "Khám phá các bài viết mới nhất của chúng tôi",
+    "itemCount": "bài viết",
+    "sortBy": "Sắp xếp theo",
+    "noPosts": "Chưa có bài viết nào",
+    "resetFilters": "Đặt lại bộ lọc"
+  },
+  "sort": {
+    "newest": "Mới nhất",
+    "oldest": "Cũ nhất",
+    "title_asc": "Tiêu đề: A-Z",
+    "title_desc": "Tiêu đề: Z-A"
   }
 } 

@@ -4,19 +4,51 @@ import { createPostSchema, updatePostSchema, getPostByIdSchema } from '@ew/share
 import { z } from 'zod';
 
 export const postRouter = router({
-  latest: publicProcedure.query(async ({ ctx }) => {
-    try {
-      const posts = await ctx.services.postService.findAll();
-      return posts;
-    } catch (error) {
-      console.error('Failed to fetch latest posts:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to fetch latest posts',
-        cause: error,
-      });
-    }
-  }),
+  latest: publicProcedure
+    .input(z.object({
+      filters: z.object({
+        categoryId: z.number().optional(),
+        categories: z.string().optional(),
+        locale: z.string().optional()
+      }).optional()
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        const { filters } = input || {};
+        const { locale, categories, categoryId } = filters || {};
+
+        // Xử lý danh sách categories nếu có
+        let categoryIds: number[] = [];
+        
+        if (categories) {
+          // Chuyển đổi chuỗi categories thành mảng số
+          categoryIds = categories.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
+        } else if (categoryId) {
+          // Hỗ trợ ngược cho categoryId cũ
+          categoryIds = [categoryId];
+        }
+
+        if (locale) {
+          if (categoryIds.length > 0) {
+            return ctx.services.postService.findByLocaleAndCategories(locale, categoryIds);
+          }
+          return ctx.services.postService.findByLocale(locale);
+        }
+
+        if (categoryIds.length > 0) {
+          return ctx.services.postService.findByCategories(categoryIds);
+        }
+
+        return ctx.services.postService.findPublished();
+      } catch (error) {
+        console.error('Failed to fetch latest posts:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch latest posts',
+          cause: error,
+        });
+      }
+    }),
 
   byLocale: publicProcedure
     .input(z.object({ locale: z.string() }))

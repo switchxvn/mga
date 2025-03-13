@@ -171,6 +171,28 @@
     "subscribe": "Subscribe",
     "subscribeDescription": "Get notified when new posts are published",
     "emailPlaceholder": "Your email",
-    "subscribeButton": "Subscribe"
+    "subscribeButton": "Subscribe",
+    "search": "Search",
+    "noPopularPosts": "No popular posts yet",
+    "noFeaturedCategories": "No featured categories yet",
+    "noCategories": "No categories yet",
+    "filters": "Filters",
+    "filterByCategory": "Filter by category"
+  },
+  "posts": {
+    "searchPlaceholder": "Search posts...",
+    "searchingFor": "Searching for",
+    "title": "Blog Posts",
+    "description": "Explore our latest articles and updates",
+    "itemCount": "posts",
+    "sortBy": "Sort by",
+    "noPosts": "No posts found",
+    "resetFilters": "Reset filters"
+  },
+  "sort": {
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "title_asc": "Title: A-Z",
+    "title_desc": "Title: Z-A"
   }
 } 

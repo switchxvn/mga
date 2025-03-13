@@ -412,4 +412,69 @@ export class PostFrontendService {
       throw new NotFoundException(`Failed to retrieve post with id "${id}"`);
     }
   }
+
+  async findByLocaleAndCategories(locale: string, categoryIds: number[]): Promise<IPost[]> {
+    this.logger.debug(`Finding posts for locale: ${locale} and categories: ${categoryIds.join(',')}`);
+
+    try {
+      const posts = await this.postRepository.createQueryBuilder('post')
+        .innerJoin('post.categories', 'category', 'category.id IN (:...categoryIds)', { categoryIds })
+        .innerJoinAndSelect('post.translations', 'translations')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoinAndSelect('author.profile', 'profile')
+        .leftJoinAndSelect('post.postTags', 'postTags')
+        .leftJoinAndSelect('postTags.tag', 'tag')
+        .where('post.published = :published', { published: true })
+        .orderBy('post.createdAt', 'DESC')
+        .getMany();
+
+      this.logger.debug(`Found ${posts.length} published posts with categories ${categoryIds.join(',')}`);
+
+      // Filter posts that have translations in the requested locale
+      const postsWithTranslations = posts.filter(post => {
+        return post.translations?.some(translation => translation.locale === locale);
+      });
+
+      this.logger.debug(`Found ${postsWithTranslations.length} posts with translations in locale ${locale}`);
+
+      // Format each post
+      const formattedPosts = await Promise.all(
+        postsWithTranslations.map(post => this.formatPostResponse(post, locale))
+      );
+
+      return formattedPosts;
+    } catch (error) {
+      this.logger.error(`Error finding posts by locale ${locale} and categories ${categoryIds.join(',')}:`, error);
+      throw error;
+    }
+  }
+
+  async findByCategories(categoryIds: number[]): Promise<IPost[]> {
+    this.logger.debug(`Finding posts for categories: ${categoryIds.join(',')}`);
+
+    try {
+      const posts = await this.postRepository.createQueryBuilder('post')
+        .innerJoin('post.categories', 'category', 'category.id IN (:...categoryIds)', { categoryIds })
+        .innerJoinAndSelect('post.translations', 'translations')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoinAndSelect('author.profile', 'profile')
+        .leftJoinAndSelect('post.postTags', 'postTags')
+        .leftJoinAndSelect('postTags.tag', 'tag')
+        .where('post.published = :published', { published: true })
+        .orderBy('post.createdAt', 'DESC')
+        .getMany();
+
+      this.logger.debug(`Found ${posts.length} published posts with categories ${categoryIds.join(',')}`);
+
+      // Format each post
+      const formattedPosts = await Promise.all(
+        posts.map(post => this.formatPostResponse(post))
+      );
+
+      return formattedPosts;
+    } catch (error) {
+      this.logger.error(`Error finding posts by categories ${categoryIds.join(',')}:`, error);
+      throw error;
+    }
+  }
 } 
