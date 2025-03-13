@@ -17,7 +17,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
 
   // Khôi phục ngôn ngữ từ localStorage (chỉ ở phía client)
   if (process.client) {
-    const savedLocale = localStorage.getItem('user-language');
+    const savedLocale = localStorage.getItem('locale');
     if (savedLocale) {
       i18n.global.locale.value = savedLocale;
     }

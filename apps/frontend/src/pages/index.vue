@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import { useTrpc } from '../composables/useTrpc';
-import { ref, onMounted, computed, watch } from '../composables/useVueComposables';
-import { useSeo } from '../composables/useSeo';
-import { useRoute } from 'vue-router';
-import { useLocalization } from '../composables/useLocalization';
-import PostCard from '../components/ui/card/PostCard.vue';
-import ServicesList from '../components/sections/ServicesList.vue';
-import HeroSection from '../components/sections/HeroSection.vue';
-import LanguageSwitcher from '../components/LanguageSwitcher.vue';
-import ProductCategoriesSection from '../components/sections/ProductCategoriesSection.vue';
+import { useRoute } from "vue-router";
+import HeroSection from "../components/sections/HeroSection.vue";
+import ProductCategoriesSection from "../components/sections/ProductCategoriesSection.vue";
+import ServicesList from "../components/sections/ServicesList.vue";
+import PostCard from "../components/ui/card/PostCard.vue";
+import { useLocalization } from "../composables/useLocalization";
+import { useTrpc } from "../composables/useTrpc";
+import { computed, onMounted, ref, watch } from "../composables/useVueComposables";
 // Import Swiper
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Navigation, Pagination, Autoplay, EffectFade } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-import 'swiper/css/effect-fade';
-import FeaturedProducts from '../components/sections/FeaturedProducts.vue';
+import "swiper/css";
+import "swiper/css/effect-fade";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/vue";
+import FeaturedProducts from "../components/sections/FeaturedProducts.vue";
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface Post {
@@ -90,15 +88,15 @@ interface Theme {
 // Section config interfaces
 interface SliderConfig {
   height?: string;
-  layout?: 'split-columns' | 'stacked-rows';
+  layout?: "split-columns" | "stacked-rows";
   autoplay?: boolean;
   interval?: number;
   showDots?: boolean;
   showArrows?: boolean;
   videoWidth?: string;
   sliderWidth?: string;
-  videoPosition?: 'left' | 'right';
-  sliderPosition?: 'left' | 'right';
+  videoPosition?: "left" | "right";
+  sliderPosition?: "left" | "right";
   themeId?: number;
   items?: Array<{
     image_url: string;
@@ -110,7 +108,7 @@ interface SliderConfig {
 }
 
 interface ProductsConfig {
-  layout?: 'grid' | 'slider';
+  layout?: "grid" | "slider";
   columns?: number;
   maxItems?: number;
   showPrice?: boolean;
@@ -124,7 +122,7 @@ interface ProductsConfig {
 }
 
 interface ServicesConfig {
-  layout: 'grid';
+  layout: "grid";
   columns: number;
   maxItems: number;
   showIcon: boolean;
@@ -182,7 +180,7 @@ interface ServicesConfig {
 
 interface CategoriesConfig {
   title: string;
-  layout: 'grid' | 'slider';
+  layout: "grid" | "slider";
   columns: number;
   maxItems: number;
   showIcon: boolean;
@@ -228,7 +226,7 @@ interface CategoriesConfig {
   };
   categoryIds?: number[];
   productsPerCategory?: number;
-  displayMode: 'grid' | 'slider';
+  displayMode: "grid" | "slider";
 }
 
 const route = useRoute();
@@ -271,7 +269,7 @@ const getPostsSwiperOptions = (theme: Theme | null) => {
 
   if (!theme) return defaultConfig;
 
-  const newsSection = theme.sections.find(section => section.type === 'news');
+  const newsSection = theme.sections.find((section) => section.type === "news");
   if (!newsSection) return defaultConfig;
 
   return {
@@ -299,13 +297,9 @@ const postsSwiperOptions = computed(() => getPostsSwiperOptions(activeTheme.valu
 onMounted(async () => {
   try {
     // Fetch theme, posts and services
-    await Promise.all([
-      fetchActiveTheme(),
-      fetchLatestPosts(),
-      fetchServices()
-    ]);
+    await Promise.all([fetchActiveTheme(), fetchLatestPosts(), fetchServices()]);
   } catch (err) {
-    console.error('Error in page initialization:', err);
+    console.error("Error in page initialization:", err);
   }
 });
 
@@ -319,19 +313,22 @@ async function fetchActiveTheme() {
       theme.sections.sort((a, b) => a.order - b.order);
     }
     activeTheme.value = theme;
-    
+
     // Apply theme colors
     if (theme.colors) {
-      document.documentElement.style.setProperty('--primary', theme.colors.primary[500]);
-      document.documentElement.style.setProperty('--secondary', theme.colors.secondary[500]);
-      document.documentElement.style.setProperty('--success', theme.colors.success[500]);
-      document.documentElement.style.setProperty('--error', theme.colors.error[500]);
-      document.documentElement.style.setProperty('--warning', theme.colors.warning[500]);
-      document.documentElement.style.setProperty('--info', theme.colors.info[500]);
+      document.documentElement.style.setProperty("--primary", theme.colors.primary[500]);
+      document.documentElement.style.setProperty(
+        "--secondary",
+        theme.colors.secondary[500]
+      );
+      document.documentElement.style.setProperty("--success", theme.colors.success[500]);
+      document.documentElement.style.setProperty("--error", theme.colors.error[500]);
+      document.documentElement.style.setProperty("--warning", theme.colors.warning[500]);
+      document.documentElement.style.setProperty("--info", theme.colors.info[500]);
     }
   } catch (err: any) {
-    console.error('Failed to fetch active theme:', err);
-    themeError.value = err.message || 'Đã xảy ra lỗi khi tải theme';
+    console.error("Failed to fetch active theme:", err);
+    themeError.value = err.message || "Đã xảy ra lỗi khi tải theme";
   } finally {
     isLoadingTheme.value = false;
   }
@@ -343,24 +340,28 @@ async function fetchLatestPosts() {
   try {
     // Gọi tRPC endpoint để lấy danh sách bài viết theo locale hiện tại
     const result = await trpc.post.byLocale.query({ locale: locale.value });
-    
+
     // Chuyển đổi dữ liệu để phù hợp với kiểu Post
-    latestPosts.value = result.map((post: Post) => {
-      // Tìm bản dịch cho locale hiện tại
-      const translation = post.translations?.find((t: { locale: string }) => t.locale === locale.value);
-      
-      return {
-        ...post,
-        id: Number(post.id),
-        // Sử dụng title và content từ bản dịch nếu có, nếu không sử dụng giá trị mặc định
-        title: translation?.title || post.title,
-        content: translation?.content || post.content,
-        author: post.author || {}
-      };
-    }).slice(0, 20); // Lấy tối đa 20 bài viết
+    latestPosts.value = result
+      .map((post: Post) => {
+        // Tìm bản dịch cho locale hiện tại
+        const translation = post.translations?.find(
+          (t: { locale: string }) => t.locale === locale.value
+        );
+
+        return {
+          ...post,
+          id: Number(post.id),
+          // Sử dụng title và content từ bản dịch nếu có, nếu không sử dụng giá trị mặc định
+          title: translation?.title || post.title,
+          content: translation?.content || post.content,
+          author: post.author || {},
+        };
+      })
+      .slice(0, 20); // Lấy tối đa 20 bài viết
   } catch (err: any) {
-    console.error('Failed to fetch latest posts:', err);
-    error.value = err.message || 'Đã xảy ra lỗi khi tải bài viết';
+    console.error("Failed to fetch latest posts:", err);
+    error.value = err.message || "Đã xảy ra lỗi khi tải bài viết";
   } finally {
     isLoading.value = false;
   }
@@ -379,8 +380,8 @@ async function fetchServices() {
     const result = await trpc.service.all.query();
     services.value = result;
   } catch (err: any) {
-    console.error('Failed to fetch services:', err);
-    serviceError.value = err.message || 'Đã xảy ra lỗi khi tải dịch vụ';
+    console.error("Failed to fetch services:", err);
+    serviceError.value = err.message || "Đã xảy ra lỗi khi tải dịch vụ";
   } finally {
     isLoadingServices.value = false;
   }
@@ -388,45 +389,45 @@ async function fetchServices() {
 
 const getAuthorName = (author: any) => {
   if (author?.profile) {
-    const firstName = author.profile.firstName || '';
-    const lastName = author.profile.lastName || '';
+    const firstName = author.profile.firstName || "";
+    const lastName = author.profile.lastName || "";
     if (firstName || lastName) {
       return `${firstName} ${lastName}`.trim();
     }
   }
-  return author?.username || author?.email?.split('@')[0] || 'Ẩn danh';
+  return author?.username || author?.email?.split("@")[0] || "Ẩn danh";
 };
 
 const getSectionConfig = (type: string) => {
   if (!activeTheme.value?.sections) return undefined;
-  const section = activeTheme.value.sections.find(section => section.type === type);
+  const section = activeTheme.value.sections.find((section) => section.type === type);
   if (!section) return undefined;
-  
+
   return {
     ...section.settings,
     title: section.title,
     isActive: section.isActive,
-    themeId: activeTheme.value.id
+    themeId: activeTheme.value.id,
   };
 };
 
 const getSliderConfig = computed(() => {
-  const config = getSectionConfig('hero');
+  const config = getSectionConfig("hero");
   return config as SliderConfig | undefined;
 });
 
 const getProductsConfig = computed(() => {
-  const config = getSectionConfig('featured_products');
+  const config = getSectionConfig("featured_products");
   return config as ProductsConfig | undefined;
 });
 
 const getServicesConfig = computed(() => {
-  const config = getSectionConfig('services');
+  const config = getSectionConfig("services");
   return config as ServicesConfig | undefined;
 });
 
 const getCategoriesConfig = computed(() => {
-  const config = getSectionConfig('product_categories');
+  const config = getSectionConfig("product_categories");
   return config as CategoriesConfig | undefined;
 });
 </script>
@@ -442,19 +443,19 @@ const getCategoriesConfig = computed(() => {
       <!-- Render sections based on their order -->
       <template v-for="section in activeTheme?.sections" :key="section.id">
         <!-- Hero Section -->
-        <HeroSection 
+        <HeroSection
           v-if="section.type === 'hero' && section.isActive"
           :config="getSliderConfig"
         />
 
         <!-- Featured Products Section -->
-        <section 
+        <section
           v-if="section.type === 'featured_products' && section.isActive"
           class="featured-products-section py-12 bg-white dark:bg-gray-900"
         >
           <div class="container mx-auto px-4">
             <h2 class="text-3xl font-bold mb-8 text-center">
-              {{ section.title || t('products.featured') }}
+              {{ section.title || t("products.featured") }}
             </h2>
             <FeaturedProducts :config="getProductsConfig" />
           </div>
@@ -462,39 +463,48 @@ const getCategoriesConfig = computed(() => {
 
         <!-- Categories Section -->
         <ProductCategoriesSection
-          v-if="section.type === 'product_categories' && section.isActive && getCategoriesConfig"
+          v-if="
+            section.type === 'product_categories' &&
+            section.isActive &&
+            getCategoriesConfig
+          "
           :config="getCategoriesConfig"
         />
 
         <!-- Services Section -->
-        <section 
+        <section
           v-if="section.type === 'services' && section.isActive"
           class="services-section relative"
           :style="{
             paddingTop: getServicesConfig?.padding?.top,
-            paddingBottom: getServicesConfig?.padding?.bottom
+            paddingBottom: getServicesConfig?.padding?.bottom,
           }"
         >
           <!-- Background gradient overlay -->
-          <div 
-            class="absolute inset-0" 
-            :style="{ 
-              backgroundImage: getServicesConfig?.backgroundGradient ? 
-                `linear-gradient(${getServicesConfig.backgroundGradient.direction.replace('to-', 'to ')}, ${getServicesConfig.backgroundGradient.from}, ${getServicesConfig.backgroundGradient.to})` : 
-                'none',
+          <div
+            class="absolute inset-0"
+            :style="{
+              backgroundImage: getServicesConfig?.backgroundGradient
+                ? `linear-gradient(${getServicesConfig.backgroundGradient.direction.replace(
+                    'to-',
+                    'to '
+                  )}, ${getServicesConfig.backgroundGradient.from}, ${
+                    getServicesConfig.backgroundGradient.to
+                  })`
+                : 'none',
               opacity: getServicesConfig?.overlayOpacity,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
             }"
           />
 
           <div class="container mx-auto px-4 relative">
             <h2 class="text-3xl font-bold mb-8 text-center">
-              {{ section.title || t('services.title') }}
+              {{ section.title || t("services.title") }}
             </h2>
-            
-            <ServicesList 
-              :services="services" 
-              :is-loading="isLoadingServices" 
+
+            <ServicesList
+              :services="services"
+              :is-loading="isLoadingServices"
               :error="serviceError"
               :config="getServicesConfig"
             />
@@ -502,34 +512,31 @@ const getCategoriesConfig = computed(() => {
         </section>
 
         <!-- Latest Posts Section -->
-        <section 
+        <section
           v-if="section.type === 'news' && section.isActive"
           class="latest-posts-section py-12 bg-[hsl(var(--muted))]"
         >
           <div class="container mx-auto px-4">
             <h2 class="text-3xl font-bold mb-8 text-center">
-              {{ section.title || t('home.latest_posts') }}
+              {{ section.title || t("home.latest_posts") }}
             </h2>
-            
+
             <div v-if="isLoading" class="flex justify-center items-center py-12">
               <ULoader size="lg" />
             </div>
-            
+
             <div v-else-if="error" class="text-center text-red-500 py-8">
               {{ error }}
             </div>
-            
+
             <div v-else-if="latestPosts.length === 0" class="text-center py-8">
-              {{ t('home.no_posts') }}
+              {{ t("home.no_posts") }}
             </div>
-            
+
             <div v-else>
               <Swiper v-bind="postsSwiperOptions" class="w-full">
                 <SwiperSlide v-for="post in latestPosts" :key="post.id" class="h-full">
-                  <PostCard 
-                    :post="post"
-                    :compact="false"
-                  />
+                  <PostCard :post="post" :compact="false" />
                 </SwiperSlide>
               </Swiper>
             </div>

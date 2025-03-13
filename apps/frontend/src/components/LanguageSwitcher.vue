@@ -1,11 +1,30 @@
 <script setup lang="ts">
 import { useLocalization } from '../composables/useLocalization';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useAsyncData } from '#imports';
+import { useLanguageInitializer } from '../composables/useLanguageInitializer';
 
 const { t, locale, locales, switchLanguage } = useLocalization();
+const { initializeOnce, isInitializing, hasInitialized } = useLanguageInitializer();
+
 const isOpen = ref(false);
-const flagLoaded = ref(false); // Bắt đầu với trạng thái chưa tải
-const flagLoadError = ref(false); // Theo dõi lỗi tải hình ảnh
+const flagLoaded = ref(false);
+const flagLoadError = ref(false);
+
+// Sử dụng useAsyncData để load danh sách ngôn ngữ trong quá trình SSR
+const { pending: isLoadingLanguages } = useAsyncData(
+  'languages-list',
+  async () => {
+    await initializeOnce();
+  },
+  {
+    server: true,
+    lazy: false,
+    // Cache kết quả trong 5 phút
+    watch: false,
+    maxAge: 300
+  }
+);
 
 // Computed
 const availableLocales = computed(() => locales.value);
@@ -25,21 +44,20 @@ const getFlagPath = (langCode: string) => {
 
 // Preload flag images
 const preloadFlags = () => {
-  availableLocales.value.forEach(loc => {
-    const img = new Image();
-    img.onload = () => {
-      if (loc.code === locale.value) {
-        flagLoaded.value = true;
-        flagLoadError.value = false;
-      }
-    };
-    img.onerror = () => {
-      if (loc.code === locale.value) {
-        flagLoadError.value = true;
-      }
-    };
-    img.src = getFlagPath(loc.code);
-  });
+  if (!process.client || !locale.value) return;
+  
+  const currentLang = availableLocales.value.find(loc => loc.code === locale.value);
+  if (!currentLang) return;
+
+  const img = new Image();
+  img.onload = () => {
+    flagLoaded.value = true;
+    flagLoadError.value = false;
+  };
+  img.onerror = () => {
+    flagLoadError.value = true;
+  };
+  img.src = getFlagPath(locale.value);
 };
 
 // Toggle dropdown
@@ -53,24 +71,31 @@ const closeDropdown = () => {
 };
 
 // Handle language selection and save to localStorage
-const handleSelectLanguage = (code: string) => {
+const handleSelectLanguage = async (code: string) => {
+  if (code === locale.value) {
+    closeDropdown();
+    return;
+  }
+
   // Reset flag states before changing language
   flagLoaded.value = false;
   flagLoadError.value = false;
   
-  switchLanguage(code);
+  await switchLanguage(code);
   closeDropdown();
   
   // Preload the new flag
-  const img = new Image();
-  img.onload = () => {
-    flagLoaded.value = true;
-    flagLoadError.value = false;
-  };
-  img.onerror = () => {
-    flagLoadError.value = true;
-  };
-  img.src = getFlagPath(code);
+  if (process.client) {
+    const img = new Image();
+    img.onload = () => {
+      flagLoaded.value = true;
+      flagLoadError.value = false;
+    };
+    img.onerror = () => {
+      flagLoadError.value = true;
+    };
+    img.src = getFlagPath(code);
+  }
 };
 
 // Handle click outside
@@ -100,20 +125,28 @@ const handleDropdownImageError = (event: Event) => {
   }
 };
 
-// Watch for locale changes to update flag
-watch(locale, () => {
-  preloadFlags();
-});
+// Watch for locale and locales changes to update flag
+watch([locale, locales], () => {
+  if (process.client && locale.value && locales.value.length > 0) {
+    preloadFlags();
+  }
+}, { immediate: true });
 
 // Initialize
 onMounted(() => {
-  // Add event listener for click outside
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
+    if (locale.value && locales.value.length > 0) {
+      preloadFlags();
+    }
   }
-  
-  // Preload flag images
-  preloadFlags();
+});
+
+// Cleanup
+onBeforeUnmount(() => {
+  if (process.client) {
+    document.removeEventListener('click', handleClickOutside);
+  }
 });
 </script>
 
@@ -124,11 +157,15 @@ onMounted(() => {
       class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 dark:bg-muted/30 dark:hover:bg-muted/50 transition-colors"
       type="button"
       :title="t('language')"
+      :disabled="isLoadingLanguages"
     >
-      <div class="w-4 h-4 flex items-center justify-center">
+      <div v-if="isLoadingLanguages" class="w-4 h-4 flex items-center justify-center">
+        <span class="animate-pulse">...</span>
+      </div>
+      <div v-else class="w-4 h-4 flex items-center justify-center">
         <!-- Hiển thị flag khi đã tải xong -->
         <img 
-          v-if="locale && flagLoaded && !flagLoadError"
+          v-if="locale && !isLoadingLanguages && flagLoaded && !flagLoadError"
           :src="getFlagPath(locale)" 
           :alt="`${currentLocaleDisplay} flag`" 
           class="w-4 h-4 rounded-sm object-cover"
@@ -149,7 +186,10 @@ onMounted(() => {
       v-if="isOpen" 
       class="absolute z-50 mt-1 w-40 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none"
     >
-      <div class="py-1">
+      <div v-if="isLoadingLanguages" class="py-4 px-4 text-center text-sm text-gray-500">
+        <span>Loading...</span>
+      </div>
+      <div v-else class="py-1">
         <button
           v-for="loc in availableLocales"
           :key="loc.code"
@@ -160,14 +200,11 @@ onMounted(() => {
           <div class="w-4 h-4 flex items-center justify-center mr-2">
             <!-- Hiển thị flag trong dropdown -->
             <img 
-              v-if="loc.code === locale ? (flagLoaded && !flagLoadError) : true"
               :src="getFlagPath(loc.code)" 
               :alt="`${loc.name} flag`" 
               class="w-4 h-4 rounded-sm object-cover"
               @error="handleDropdownImageError"
             />
-            <!-- Hiển thị mã ngôn ngữ khi không có flag -->
-            <span v-else class="text-xs font-bold">{{ loc.code.toUpperCase().substring(0, 2) }}</span>
           </div>
           <span>{{ loc.nativeName }}</span>
         </button>

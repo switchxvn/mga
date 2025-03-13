@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import LazyImage from '../LazyImage.vue';
 import type { Post } from '@ew/shared';
-import { useI18n } from 'vue-i18n';
+import { useLocalization } from '../../../composables/useLocalization';
 import { usePost } from '../../../composables/usePost';
 import { formatDate } from '../../../utils/date';
 import { truncateContent } from '../../../utils/text';
 import { getAuthorName } from '../../../utils/author';
 
-const { locale } = useI18n();
+const { locale } = useLocalization();
 const { getTranslationByLocale, getPostUrl } = usePost();
 
 const props = defineProps<{
@@ -16,7 +16,7 @@ const props = defineProps<{
   compact?: boolean;
 }>();
 
-const currentTranslation = computed(() => getTranslationByLocale(props.post));
+const currentTranslation = computed(() => getTranslationByLocale(props.post, locale.value));
 const postTitle = computed(() => currentTranslation.value?.title || '');
 const postContent = computed(() => currentTranslation.value?.content || '');
 const postShortDescription = computed(() => currentTranslation.value?.shortDescription || '');
@@ -35,6 +35,13 @@ const hasImage = computed(() => {
 const getDescription = computed(() => {
   return postShortDescription.value || postMetaDescription.value || postContent.value || '';
 });
+
+// Watch for locale changes to trigger re-computation
+watch(locale, () => {
+  // The computed properties will automatically re-compute
+  // when locale changes because they depend on currentTranslation
+  // which in turn depends on locale.value
+}, { immediate: true });
 </script>
 
 <template>

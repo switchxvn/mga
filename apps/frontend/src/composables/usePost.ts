@@ -1,14 +1,14 @@
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useTrpc } from './useTrpc';
 import type { Post } from '@ew/shared';
+import { useLocalization } from './useLocalization';
 
 export function usePost() {
   const route = useRoute();
   const router = useRouter();
   const trpc = useTrpc();
-  const { locale } = useI18n();
+  const { locale } = useLocalization();
 
   /**
    * Fetch post by slug
