@@ -1,85 +1,153 @@
-import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
-import { computed, ref } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useLocalStorage } from '@vueuse/core';
+import { useTrpc } from './useTrpc';
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
+
+// Define types for tRPC outputs
+type RouterOutput = inferRouterOutputs<AppRouter>;
+type LanguageOutput = RouterOutput['language']['getLanguages'][0];
+type TranslationsOutput = RouterOutput['language']['getAllTranslations'];
+
+// Define locale interface
+export interface Locale {
+  id: number;
+  code: string;
+  name: string;
+  nativeName: string;
+  flagCode: string;
+  isActive: boolean;
+  isDefault: boolean;
+}
+
+// Define translations interface
+export interface Translations {
+  [languageCode: string]: {
+    [namespace: string]: {
+      [key: string]: string;
+    };
+  };
+}
+
+// Create singleton state
+const state = {
+  locale: useLocalStorage('locale', ''),
+  locales: ref<Locale[]>([]),
+  translations: ref<Translations>({}),
+  isLoading: ref(false),
+  error: ref<string | null>(null),
+  isInitialized: ref(false)
+};
 
 export function useLocalization() {
-  // Sử dụng useI18n từ vue-i18n
-  const i18n = useI18n();
-  const route = useRoute();
-  const router = useRouter();
-  
-  // Biến để lưu trữ ngôn ngữ đã chọn
-  const selectedLanguage = ref<string | null>(null);
+  const trpc = useTrpc();
 
-  // Danh sách ngôn ngữ có sẵn
-  const availableLocales = computed(() => {
-    return [
-      { code: 'en', name: 'English' },
-      { code: 'vi', name: 'Tiếng Việt' }
-    ];
+  // Computed
+  const currentTranslations = computed(() => {
+    if (!state.locale.value || !state.translations.value[state.locale.value]) {
+      return {};
+    }
+    return state.translations.value[state.locale.value];
   });
 
-  // Ngôn ngữ hiện tại
-  const currentLocale = computed(() => {
-    return i18n.locale.value;
-  });
+  // Methods
+  const initializeLocalization = async () => {
+    // Skip if already initialized
+    if (state.isInitialized.value) return;
 
-  // Thay đổi ngôn ngữ và cập nhật URL
-  const switchLanguage = async (localeCode: string) => {
+    state.isLoading.value = true;
+    state.error.value = null;
+
     try {
-      // Lưu locale hiện tại
-      const oldLocale = i18n.locale.value;
-      
-      // Thay đổi locale
-      i18n.locale.value = localeCode;
-      
-      // Lưu vào biến ref
-      selectedLanguage.value = localeCode;
-      
-      // Lưu vào localStorage (chỉ ở phía client)
-      if (process.client) {
-        localStorage.setItem('user-language', localeCode);
+      // Get all languages first
+      const languages = await trpc.language.getLanguages.query();
+      state.locales.value = languages;
+
+      // Find default language
+      const defaultLang = languages.find(lang => lang.isDefault);
+      if (defaultLang && !state.locale.value) {
+        state.locale.value = defaultLang.code;
       }
+
+      // Get translations for default or current language
+      const langCode = state.locale.value || defaultLang?.code || 'en';
+      const translations = await trpc.language.getAllTranslations.query({ languageCode: langCode });
       
-      // Nếu route hiện tại có locale prefix, cập nhật URL
-      if (route.path.startsWith(`/${oldLocale}/`) && oldLocale !== localeCode) {
-        const newPath = route.path.replace(`/${oldLocale}/`, `/${localeCode}/`);
-        await router.push(newPath);
-      }
-      
-      // Log để debug
-      console.log('Language switched to:', localeCode);
-    } catch (error) {
-      console.error('Error switching language:', error);
+      state.translations.value = {
+        [langCode]: translations
+      };
+
+      state.isInitialized.value = true;
+    } catch (err) {
+      console.error('Failed to initialize localization:', err);
+      state.error.value = 'Failed to initialize localization';
+    } finally {
+      state.isLoading.value = false;
     }
   };
 
-  // Khởi tạo ngôn ngữ từ localStorage khi component được tạo
-  const initializeLanguage = async () => {
+  const fetchTranslations = async (languageCode: string) => {
+    if (state.translations.value[languageCode]) return; // Skip if already loaded
+    
+    state.isLoading.value = true;
+    state.error.value = null;
+    
     try {
-      let savedLanguage = 'vi'; // Mặc định là tiếng Việt
-      
-      // Chỉ đọc localStorage ở phía client
-      if (process.client) {
-        savedLanguage = localStorage.getItem('user-language') || 'vi';
-      }
-      
-      selectedLanguage.value = savedLanguage;
-      
-      if (savedLanguage !== i18n.locale.value) {
-        await switchLanguage(savedLanguage);
-      }
-    } catch (error) {
-      console.error('Error initializing language:', error);
+      const result = await trpc.language.getAllTranslations.query({ languageCode });
+      state.translations.value = {
+        ...state.translations.value,
+        [languageCode]: result,
+      };
+    } catch (err) {
+      console.error(`Failed to fetch translations for ${languageCode}:`, err);
+      state.error.value = `Failed to fetch translations for ${languageCode}`;
+    } finally {
+      state.isLoading.value = false;
     }
   };
+
+  const switchLanguage = async (code: string) => {
+    if (code === state.locale.value) return;
+    
+    // If we don't have translations for this language yet, fetch them
+    if (!state.translations.value[code]) {
+      await fetchTranslations(code);
+    }
+    
+    state.locale.value = code;
+    
+    // Update HTML lang attribute
+    if (process.client) {
+      document.documentElement.setAttribute('lang', code);
+    }
+  };
+
+  // Translation function
+  const t = (key: string, namespace = 'common') => {
+    if (!state.locale.value || !state.translations.value[state.locale.value]) {
+      return key;
+    }
+    
+    const ns = state.translations.value[state.locale.value][namespace] || {};
+    return ns[key] || key;
+  };
+
+  // Watch for language changes to update HTML lang attribute
+  watch(state.locale, (newLocale) => {
+    if (process.client && newLocale) {
+      document.documentElement.setAttribute('lang', newLocale);
+    }
+  });
 
   return {
-    t: i18n.t,
-    locale: currentLocale,
-    locales: availableLocales,
+    locale: state.locale,
+    locales: state.locales,
+    translations: state.translations,
+    currentTranslations,
+    isLoading: state.isLoading,
+    error: state.error,
+    t,
     switchLanguage,
-    initializeLanguage,
-    selectedLanguage,
+    initializeLocalization,
   };
 } 

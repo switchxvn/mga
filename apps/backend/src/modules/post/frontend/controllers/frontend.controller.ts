@@ -38,15 +38,20 @@ export class PostFrontendController {
   @ApiOperation({ summary: 'Get related posts' })
   findRelatedPosts(
     @Param('id') id: string,
+    @Query('locale') locale = 'vi',
     @Query('limit') limit?: number
   ) {
-    return this.postService.findRelatedPosts(+id, limit);
+    return this.postService.findRelatedPosts(+id, locale, limit);
   }
 
   @Get('popular')
   @ApiOperation({ summary: 'Get popular posts' })
-  findPopularPosts() {
-    return this.postService.findPopularPosts();
+  findPopularPosts(
+    @Query('locale') locale = 'vi',
+    @Query('limit') limit?: number,
+    @Query('excludeId') excludeId?: number
+  ) {
+    return this.postService.findPopularPosts(locale, limit, excludeId);
   }
 
   @Post()

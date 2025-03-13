@@ -40,6 +40,8 @@ import { ThemeFrontendService } from '../theme/frontend/services/theme-frontend.
 import { ComponentStyleConfigAdminService } from '../theme/admin/services/component-style-config-admin.service';
 import { ComponentStyleConfigFrontendService } from '../theme/frontend/services/component-style-config-frontend.service';
 import { ITrpcServices } from './interfaces/trpc-services.interface';
+import { LanguageFrontendService } from '../language/frontend/services/language-frontend.service';
+import { LanguageAdminService } from '../language/admin/services/language-admin.service';
 
 @Injectable()
 export class TrpcService {
@@ -83,6 +85,8 @@ export class TrpcService {
     private readonly themeFrontendService: ThemeFrontendService,
     private readonly componentStyleConfigAdminService: ComponentStyleConfigAdminService,
     private readonly componentStyleConfigFrontendService: ComponentStyleConfigFrontendService,
+    private readonly languageFrontendService: LanguageFrontendService,
+    private readonly languageAdminService: LanguageAdminService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -129,6 +133,8 @@ export class TrpcService {
       themeFrontendService: this.themeFrontendService,
       componentStyleConfigAdminService: this.componentStyleConfigAdminService,
       componentStyleConfigFrontendService: this.componentStyleConfigFrontendService,
+      languageFrontendService: this.languageFrontendService,
+      languageAdminService: this.languageAdminService,
     };
   }
 

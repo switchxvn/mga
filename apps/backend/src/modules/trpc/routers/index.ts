@@ -14,7 +14,7 @@ import { profileRouter } from './profile.router';
 import { footerRouter } from './footer.router';
 import { heroRouter } from './hero.router';
 import { themeRouter } from './theme.router';
-
+import { languageRouter } from './language.router';
 export const appRouter = (commonRouter) => router({
   auth: authRouter,
   post: postRouter,
@@ -32,6 +32,7 @@ export const appRouter = (commonRouter) => router({
   hero: heroRouter,
   theme: themeRouter,
   common: commonRouter.router,
+  language: languageRouter,
 });
 
 export type AppRouter = ReturnType<typeof appRouter>; 

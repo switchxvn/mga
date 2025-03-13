@@ -1,46 +1,25 @@
 <script setup lang="ts">
 import { useLocalization } from '../composables/useLocalization';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
-const { t, locale, locales, switchLanguage, initializeLanguage } = useLocalization();
+const { t, locale, locales, switchLanguage } = useLocalization();
 const isOpen = ref(false);
 const flagLoaded = ref(false); // Bắt đầu với trạng thái chưa tải
 const flagLoadError = ref(false); // Theo dõi lỗi tải hình ảnh
 
-// Define locale interface
-interface Locale {
-  code: string;
-  name: string;
-}
-
-// Fallback locales if none are provided
-const availableLocales = computed<Locale[]>(() => {
-  if (locales.value && locales.value.length > 0) {
-    return locales.value;
-  }
-  // Fallback locales
-  return [
-    { code: 'en', name: 'English' },
-    { code: 'vi', name: 'Tiếng Việt' }
-  ];
-});
-
-// Map language codes to country flag codes
-const languageToFlagMap: Record<string, string> = {
-  en: 'us', // English -> USA flag
-  vi: 'vn', // Vietnamese -> Vietnam flag
-  // Add more mappings as needed
-};
+// Computed
+const availableLocales = computed(() => locales.value);
 
 // Get current locale display
 const currentLocaleDisplay = computed(() => {
-  const current = availableLocales.value.find((loc: Locale) => loc.code === locale.value);
-  return current ? current.name : 'Language';
+  const current = availableLocales.value.find(loc => loc.code === locale.value);
+  return current ? current.nativeName : 'Language';
 });
 
 // Function to get flag image path
 const getFlagPath = (langCode: string) => {
-  const flagCode = languageToFlagMap[langCode] || langCode;
+  const lang = availableLocales.value.find(loc => loc.code === langCode);
+  const flagCode = lang ? lang.flagCode : langCode;
   return `/images/flag/${flagCode}.svg`;
 };
 
@@ -113,16 +92,25 @@ const handleImageError = () => {
   flagLoadError.value = true;
 };
 
-// Initialize language from localStorage or set default to Vietnamese
-onMounted(async () => {
-  // Chỉ thêm event listener ở phía client
+// Handle flag image error in dropdown
+const handleDropdownImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.style.display = 'none';
+  }
+};
+
+// Watch for locale changes to update flag
+watch(locale, () => {
+  preloadFlags();
+});
+
+// Initialize
+onMounted(() => {
+  // Add event listener for click outside
   if (process.client) {
-    // Add event listener for click outside
     document.addEventListener('click', handleClickOutside);
   }
-  
-  // Initialize language from localStorage
-  await initializeLanguage();
   
   // Preload flag images
   preloadFlags();
@@ -176,12 +164,12 @@ onMounted(async () => {
               :src="getFlagPath(loc.code)" 
               :alt="`${loc.name} flag`" 
               class="w-4 h-4 rounded-sm object-cover"
-              @error="$event.target.style.display = 'none'"
+              @error="handleDropdownImageError"
             />
             <!-- Hiển thị mã ngôn ngữ khi không có flag -->
             <span v-else class="text-xs font-bold">{{ loc.code.toUpperCase().substring(0, 2) }}</span>
           </div>
-          <span>{{ loc.name }}</span>
+          <span>{{ loc.nativeName }}</span>
         </button>
       </div>
     </div>

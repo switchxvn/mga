@@ -1,8 +1,8 @@
 import { trpc } from '../utils/trpc';
 
 /**
- * Composable để sử dụng tRPC client trong các components
- * @returns tRPC client
+ * Composable để truy cập tRPC client
+ * Cung cấp một cách nhất quán để truy cập tRPC client trong toàn bộ ứng dụng
  */
 export function useTrpc() {
   return trpc;
