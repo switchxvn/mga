@@ -381,7 +381,7 @@ watch(() => categoryData.value?.id, (newId) => {
           <!-- Products Content -->
           <div class="lg:w-3/4">
             <!-- Toolbar -->
-            <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+              <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div class="flex items-center gap-2">
                 <span class="text-sm text-gray-600 dark:text-gray-400">
                   {{ t('products.showing') }} {{ totalProducts }} {{ t('products.items') }}
@@ -389,7 +389,7 @@ watch(() => categoryData.value?.id, (newId) => {
               </div>
               
               <div class="flex items-center gap-2">
-                <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t('products.sortBy') }}:</label>
+                <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t('posts.sortBy') }}:</label>
                 <select
                   id="sort"
                   v-model="filters.sortBy"
@@ -404,24 +404,9 @@ watch(() => categoryData.value?.id, (newId) => {
             </div>
             
             <!-- Products Grid -->
-            <div v-if="isLoading" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <div v-for="i in 6" :key="i" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-                <div class="aspect-square w-full animate-pulse rounded-md bg-gray-200 dark:bg-gray-700"></div>
-                <div class="mt-4 h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-                <div class="mt-2 h-4 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-              </div>
-            </div>
-            
-            <div v-else-if="products.length === 0" class="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
-              <UIcon name="i-heroicons-shopping-bag" class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-              <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">{{ t('products.noProducts') }}</h3>
-              <p class="mt-1 text-gray-500 dark:text-gray-400">{{ t('products.tryDifferentFilters') }}</p>
-            </div>
-            
-            <ProductGrid 
-              v-else
-              :products="products" 
-              :loading="false" 
+            <ProductGrid
+              :products="products"
+              :loading="isLoading"
               :locale="locale"
               :columns="3"
             />

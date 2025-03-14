@@ -284,234 +284,244 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="category-sidebar rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-    <!-- Search -->
-    <div class="p-4">
-      <div class="relative">
-        <div class="custom-input-container">
-          <UInput
-            v-model="search"
-            :placeholder="t('products.searchPlaceholder')"
-            class="w-full search-input"
-            size="md"
-          >
-            <template #leading>
-              <div class="leading-icon-wrapper">
-                <Search class="h-4 w-4 text-gray-500" />
-              </div>
-            </template>
-            <template #trailing v-if="isSearching">
-              <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
-            </template>
-          </UInput>
+  <div class="category-sidebar">
+    <!-- Single Card Container -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <!-- Search -->
+      <div class="p-4">
+        <div class="relative">
+          <div class="custom-input-container">
+            <UInput
+              v-model="search"
+              :placeholder="t('products.searchPlaceholder')"
+              class="w-full search-input"
+              size="md"
+              :loading="isSearching"
+            >
+              <template #leading>
+                <div class="leading-icon-wrapper">
+                  <Search class="h-4 w-4 text-gray-500" />
+                </div>
+              </template>
+            </UInput>
+          </div>
+          <div v-if="search" class="mt-2 text-xs text-gray-500">
+            {{ t('products.searchingFor') }}: <span class="font-medium">{{ search }}</span>
+          </div>
         </div>
-        <div v-if="search" class="mt-2 text-xs text-gray-500">
-          {{ t('products.searchingFor') }}: <span class="font-medium">{{ search }}</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Price Range -->
-    <div class="border-t border-gray-200 dark:border-gray-700">
-      <div 
-        @click="toggleSection('priceRange')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800"
-      >
-        <div class="flex items-center gap-2">
-          <DollarSign class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.priceRange') }}</h3>
-        </div>
-        <component 
-          :is="expandedSections.priceRange ? ChevronUp : ChevronDown" 
-          class="h-5 w-5 text-gray-500"
-        />
       </div>
       
-      <div v-if="expandedSections.priceRange" class="px-4 pb-4">
-        <div v-if="isLoadingPriceRange" class="flex justify-center py-4">
-          <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
+      
+      <!-- Price Range -->
+      <div>
+        <div 
+          @click="toggleSection('priceRange')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <DollarSign class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.priceRange') }}</h3>
+          </div>
+          <component 
+            :is="expandedSections.priceRange ? ChevronUp : ChevronDown" 
+            class="h-5 w-5 text-gray-500"
+          />
         </div>
         
-        <div v-else>
-          <!-- Price Range Display -->
-          <div class="mb-2 flex items-center justify-between">
-            <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
-              {{ formatPrice(priceRange[0]) }}
-            </span>
-            <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
-              {{ formatPrice(priceRange[1]) }}
-            </span>
+        <div v-if="expandedSections.priceRange" class="px-4 pb-4">
+          <div v-if="isLoadingPriceRange" class="flex justify-center py-4">
+            <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
           </div>
           
-          <!-- Vueform Slider -->
-          <div class="mb-6 mt-6 px-2">
-            <Slider
-              v-model="priceRange"
-              :options="sliderOptions"
-              class="slider-primary"
-              @update="handlePriceRangeChange"
-            />
-          </div>
-          
-          <!-- Price Inputs -->
-          <div class="mt-4 flex items-center justify-between gap-4">
-            <div class="w-1/2">
-              <div class="custom-input-container">
-                <UInput
-                  v-model="minPriceInput"
-                  class="w-full price-input"
-                  size="md"
-                  @blur="updatePriceRange"
-                  @keyup.enter="updatePriceRange"
-                >
-                  <template #leading>
-                    <div class="leading-icon-wrapper">
-                      <span class="text-xs text-gray-500">₫</span>
-                    </div>
-                  </template>
-                </UInput>
+          <div v-else>
+            <!-- Price Range Display -->
+            <div class="mb-2 flex items-center justify-between">
+              <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
+                {{ formatPrice(priceRange[0]) }}
+              </span>
+              <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
+                {{ formatPrice(priceRange[1]) }}
+              </span>
+            </div>
+            
+            <!-- Vueform Slider -->
+            <div class="mb-6 mt-6 px-2">
+              <Slider
+                v-model="priceRange"
+                :options="sliderOptions"
+                class="slider-primary"
+                @update="handlePriceRangeChange"
+              />
+            </div>
+            
+            <!-- Price Inputs -->
+            <div class="mt-4 flex items-center justify-between gap-4">
+              <div class="w-1/2">
+                <div class="custom-input-container">
+                  <UInput
+                    v-model="minPriceInput"
+                    class="w-full price-input"
+                    size="md"
+                    @blur="updatePriceRange"
+                    @keyup.enter="updatePriceRange"
+                  >
+                    <template #leading>
+                      <div class="leading-icon-wrapper">
+                        <span class="text-xs text-gray-500">₫</span>
+                      </div>
+                    </template>
+                  </UInput>
+                </div>
+              </div>
+              <div class="text-gray-400">-</div>
+              <div class="w-1/2">
+                <div class="custom-input-container">
+                  <UInput
+                    v-model="maxPriceInput"
+                    class="w-full price-input"
+                    size="md"
+                    @blur="updatePriceRange"
+                    @keyup.enter="updatePriceRange"
+                  >
+                    <template #leading>
+                      <div class="leading-icon-wrapper">
+                        <span class="text-xs text-gray-500">₫</span>
+                      </div>
+                    </template>
+                  </UInput>
+                </div>
               </div>
             </div>
-            <div class="text-gray-400">-</div>
-            <div class="w-1/2">
-              <div class="custom-input-container">
-                <UInput
-                  v-model="maxPriceInput"
-                  class="w-full price-input"
-                  size="md"
-                  @blur="updatePriceRange"
-                  @keyup.enter="updatePriceRange"
-                >
-                  <template #leading>
-                    <div class="leading-icon-wrapper">
-                      <span class="text-xs text-gray-500">₫</span>
-                    </div>
-                  </template>
-                </UInput>
-              </div>
-            </div>
           </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- Product Flags -->
-    <div class="border-t border-gray-200 dark:border-gray-700">
-      <div 
-        @click="toggleSection('productType')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800"
-      >
-        <div class="flex items-center gap-2">
-          <Tag class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.productType') }}</h3>
-        </div>
-        <component 
-          :is="expandedSections.productType ? ChevronUp : ChevronDown" 
-          class="h-5 w-5 text-gray-500"
-        />
       </div>
       
-      <div v-if="expandedSections.productType" class="px-4 pb-4">
-        <div class="space-y-2">
-          <div class="flex items-center">
-            <UCheckbox
-              v-model="isFeatured"
-              name="featured"
-              color="primary"
-            />
-            <label for="featured" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-              <Star class="h-4 w-4 text-amber-500" />
-              {{ t('products.featured') }}
-            </label>
-          </div>
-          
-          <div class="flex items-center">
-            <UCheckbox
-              v-model="isNew"
-              name="new"
-              color="primary"
-            />
-            <label for="new" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-              <Sparkles class="h-4 w-4 text-blue-500" />
-              {{ t('products.new') }}
-            </label>
-          </div>
-          
-          <div class="flex items-center">
-            <UCheckbox
-              v-model="isSale"
-              name="sale"
-              color="primary"
-            />
-            <label for="sale" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-              <Flame class="h-4 w-4 text-red-500" />
-              {{ t('products.sale') }}
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Category Attributes -->
-    <div v-if="categoryAttributes.length > 0" class="border-t border-gray-200 dark:border-gray-700">
-      <div 
-        @click="toggleSection('attributes')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800"
-      >
-        <div class="flex items-center gap-2">
-          <UIcon name="i-heroicons-adjustments-horizontal" class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.attributes') }}</h3>
-        </div>
-        <component 
-          :is="expandedSections.attributes ? ChevronUp : ChevronDown" 
-          class="h-5 w-5 text-gray-500"
-        />
-      </div>
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
       
-      <div v-if="expandedSections.attributes" class="px-4 pb-4">
-        <div v-if="isLoadingAttributes" class="flex justify-center py-4">
-          <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+      <!-- Product Flags -->
+      <div>
+        <div 
+          @click="toggleSection('productType')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <Tag class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.productType') }}</h3>
+          </div>
+          <component 
+            :is="expandedSections.productType ? ChevronUp : ChevronDown" 
+            class="h-5 w-5 text-gray-500"
+          />
         </div>
         
-        <div v-else class="space-y-4">
-          <div v-for="attribute in categoryAttributes" :key="attribute.id" class="border-b border-gray-100 pb-3 dark:border-gray-800">
-            <h4 class="mb-2 font-medium text-sm text-gray-800 dark:text-gray-200">{{ attribute.name }}</h4>
-            <div class="space-y-1">
-              <div 
-                v-for="value in attribute.values" 
-                :key="`${attribute.id}-${value}`"
-                class="flex items-center"
-              >
-                <UCheckbox
-                  :model-value="selectedAttributes[attribute.id]?.includes(value)"
-                  @update:model-value="() => toggleAttributeValue(attribute.id, value)"
-                  :name="`attr-${attribute.id}-${value}`"
-                  color="primary"
-                />
-                <label :for="`attr-${attribute.id}-${value}`" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
-                  {{ value }}
-                </label>
-              </div>
+        <div v-if="expandedSections.productType" class="px-4 pb-4">
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <UCheckbox
+                v-model="isFeatured"
+                name="featured"
+                color="primary"
+              />
+              <label for="featured" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <Star class="h-4 w-4 text-amber-500" />
+                {{ t('products.featured') }}
+              </label>
+            </div>
+            
+            <div class="flex items-center">
+              <UCheckbox
+                v-model="isNew"
+                name="new"
+                color="primary"
+              />
+              <label for="new" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <Sparkles class="h-4 w-4 text-blue-500" />
+                {{ t('products.new') }}
+              </label>
+            </div>
+            
+            <div class="flex items-center">
+              <UCheckbox
+                v-model="isSale"
+                name="sale"
+                color="primary"
+              />
+              <label for="sale" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <Flame class="h-4 w-4 text-red-500" />
+                {{ t('products.sale') }}
+              </label>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- Reset Filters -->
-    <div class="border-t border-gray-200 p-4 dark:border-gray-700">
-      <UButton
-        @click="resetFilters"
-        variant="ghost"
-        color="gray"
-        block
-        size="sm"
-      >
-        <template #leading>
-          <RotateCcw class="h-4 w-4" />
-        </template>
-        {{ t('products.resetFilters') }}
-      </UButton>
+      
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
+      
+      <!-- Category Attributes -->
+      <div v-if="categoryAttributes.length > 0">
+        <div 
+          @click="toggleSection('attributes')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <UIcon name="i-heroicons-adjustments-horizontal" class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.attributes') }}</h3>
+          </div>
+          <component 
+            :is="expandedSections.attributes ? ChevronUp : ChevronDown" 
+            class="h-5 w-5 text-gray-500"
+          />
+        </div>
+        
+        <div v-if="expandedSections.attributes" class="px-4 pb-4">
+          <div v-if="isLoadingAttributes" class="flex justify-center py-4">
+            <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+          </div>
+          
+          <div v-else class="space-y-4">
+            <div v-for="attribute in categoryAttributes" :key="attribute.id" class="border-b border-gray-100 pb-3 dark:border-gray-800 last:border-0 last:pb-0">
+              <h4 class="mb-2 font-medium text-sm text-gray-800 dark:text-gray-200">{{ attribute.name }}</h4>
+              <div class="space-y-1">
+                <div 
+                  v-for="value in attribute.values" 
+                  :key="`${attribute.id}-${value}`"
+                  class="flex items-center"
+                >
+                  <UCheckbox
+                    :model-value="selectedAttributes[attribute.id]?.includes(value)"
+                    @update:model-value="() => toggleAttributeValue(attribute.id, value)"
+                    :name="`attr-${attribute.id}-${value}`"
+                    color="primary"
+                  />
+                  <label :for="`attr-${attribute.id}-${value}`" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                    {{ value }}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <hr class="border-gray-200 dark:border-gray-700 mx-4">
+      </div>
+      
+      <!-- Reset Filters -->
+      <div class="p-4">
+        <UButton
+          @click="resetFilters"
+          variant="ghost"
+          color="gray"
+          block
+          size="sm"
+          class="mt-0"
+        >
+          <template #leading>
+            <RotateCcw class="h-4 w-4 mr-1.5" />
+          </template>
+          {{ t('products.resetFilters') }}
+        </UButton>
+      </div>
     </div>
   </div>
 </template>
@@ -559,7 +569,7 @@ onMounted(() => {
 
 /* Adjust input padding */
 :deep(.search-input), :deep(.price-input) {
-  padding: 0.5rem 0.rem;
+  padding: 0.5rem 0rem;
 }
 
 /* Adjust input field padding */
@@ -579,5 +589,11 @@ onMounted(() => {
 /* Ensure the input form has proper spacing */
 :deep(.u-input-form) {
   position: relative;
+}
+
+.category-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 </style> 
