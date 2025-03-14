@@ -21,6 +21,7 @@ import { CommonRouter } from './routers/common.router';
 import { TrpcRouter } from './trpc.router';
 import { ThemeModule } from '../theme/theme.module';
 import { LanguageModule } from '../language/language.module';
+import { AboutModule } from '../about/about.module';
 
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
@@ -36,6 +37,7 @@ import { LanguageModule } from '../language/language.module';
  * - Theme management and customization
  * - Feature flags for conditional functionality
  * - Language and translation management
+ * - About page management
  */
 @Module({
   controllers: [TrpcController],
@@ -55,6 +57,7 @@ import { LanguageModule } from '../language/language.module';
     CommonModule,
     ThemeModule,
     LanguageModule,
+    AboutModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

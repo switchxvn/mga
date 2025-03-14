@@ -17,6 +17,7 @@ import { heroRouter } from './routers/hero.router';
 import { CommonRouter } from './routers/common.router';
 import { componentStyleConfigRouter } from './routers/component-style-config.router';
 import { languageRouter } from './routers/language.router';
+import { aboutRouter } from './routers/about.router';
 
 @Injectable()
 export class TrpcRouter {
@@ -44,6 +45,7 @@ export class TrpcRouter {
       componentStyleConfig: componentStyleConfigRouter,
       common: this.commonRouter.router,
       language: languageRouter,
+      about: aboutRouter,
     });
   }
 }

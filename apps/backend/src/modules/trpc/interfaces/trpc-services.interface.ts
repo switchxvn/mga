@@ -30,6 +30,8 @@ import { ComponentStyleConfigAdminService } from '../../theme/admin/services/com
 import { ComponentStyleConfigFrontendService } from '../../theme/frontend/services/component-style-config-frontend.service';
 import { LanguageFrontendService } from '../../language/frontend/services/language-frontend.service';
 import { LanguageAdminService } from '../../language/admin/services/language-admin.service';
+import { AboutAdminService } from '../../about/admin/services/about-admin.service';
+import { AboutFrontendService } from '../../about/frontend/services/about-frontend.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -64,4 +66,6 @@ export interface ITrpcServices {
   componentStyleConfigFrontendService: ComponentStyleConfigFrontendService;
   languageFrontendService: LanguageFrontendService;
   languageAdminService: LanguageAdminService;
+  aboutAdminService: AboutAdminService;
+  aboutFrontendService: AboutFrontendService;
 } 
