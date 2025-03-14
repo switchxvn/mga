@@ -86,7 +86,7 @@ const navigateToCategory = (slug: string) => {
 </script>
 
 <template>
-  <div class="categories-page">
+  <div class="categories-page bg-gray-50 dark:bg-gray-900">
     <UContainer>
       <!-- Breadcrumb -->
       <nav class="py-4">

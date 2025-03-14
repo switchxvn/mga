@@ -187,12 +187,14 @@
     "itemCount": "posts",
     "sortBy": "Sort by",
     "noPosts": "No posts found",
-    "resetFilters": "Reset filters"
+    "resetFilters": "Reset Filters"
   },
   "sort": {
     "newest": "Newest",
     "oldest": "Oldest",
     "title_asc": "Title: A-Z",
-    "title_desc": "Title: Z-A"
+    "title_desc": "Title: Z-A",
+    "price_asc": "Price: Low to High",
+    "price_desc": "Price: High to Low"
   }
 } 

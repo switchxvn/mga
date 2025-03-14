@@ -53,13 +53,13 @@ const filters = reactive({
   sort: (route.query.sort as string) || 'newest',
 });
 
-// Sort options
-const sortOptions = [
+// Sort options as computed property to ensure translations are updated
+const sortOptions = computed(() => [
   { value: "newest", label: t("sort.newest") },
   { value: "oldest", label: t("sort.oldest") },
   { value: "title_asc", label: t("sort.title_asc") },
   { value: "title_desc", label: t("sort.title_desc") },
-];
+]);
 
 /**
  * Chuyển đổi dữ liệu post từ API thành đúng type Post
@@ -98,7 +98,6 @@ const handleFilterChange = (newFilters: any) => {
   // Update filters
   if (newFilters.search !== undefined) filters.search = newFilters.search;
   if (newFilters.categories !== undefined) filters.categories = newFilters.categories || [];
-  if (newFilters.sortBy !== undefined) filters.sort = newFilters.sortBy;
   
   // Update URL query params
   updateQueryParams();
@@ -200,92 +199,94 @@ const getAuthorName = (author: Post['author']) => {
 </script>
 
 <template>
-  <div class="posts-page container mx-auto px-4 py-8">
-    <!-- Page Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
-        {{ seoData.title || t("posts.title") }}
-      </h1>
-      <p class="mt-2 text-gray-600 dark:text-gray-400">
-        {{ seoData.description || t("posts.description") }}
-      </p>
-    </div>
+  <div class="posts-page bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
+          {{ seoData.title || t("posts.title") }}
+        </h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">
+          {{ seoData.description || t("posts.description") }}
+        </p>
+      </div>
 
-    <div class="flex flex-col gap-8 lg:flex-row">
-      <!-- Sidebar -->
-      <aside class="lg:w-1/4">
-        <PostSidebar 
-          :initial-filters="filters" 
-          @filter-change="handleFilterChange" 
-        />
-      </aside>
-
-      <!-- Main Content -->
-      <main class="lg:w-3/4">
-        <!-- Toolbar -->
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-600 dark:text-gray-400">
-              {{ posts.length }} {{ t('posts.itemCount', { count: posts.length }) }}
-            </span>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">
-              {{ t('posts.sortBy') }}:
-            </label>
-            <select
-              id="sort"
-              v-model="filters.sort"
-              @change="handleSortChange"
-              class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
-            >
-              <option
-                v-for="option in sortOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Loading State -->
-        <div v-if="isLoading" class="flex justify-center py-12">
-          <div
-            class="h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"
-          ></div>
-        </div>
-
-        <!-- Error State -->
-        <div
-          v-else-if="error"
-          class="rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-900/50 dark:text-red-400"
-        >
-          <p>{{ error }}</p>
-          <button
-            @click="fetchPosts"
-            class="mt-2 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors hover:bg-red-600"
-          >
-            {{ t('common.tryAgain') }}
-          </button>
-        </div>
-
-        <!-- Empty State -->
-        <div v-else-if="posts.length === 0" class="py-12 text-center">
-          <p class="text-gray-500 dark:text-gray-400">{{ t('posts.noPosts') }}</p>
-        </div>
-
-        <!-- Posts Grid -->
-        <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
-          <PostCard
-            v-for="post in sortedPosts"
-            :key="post.id"
-            :post="post"
+      <div class="flex flex-col gap-8 lg:flex-row">
+        <!-- Sidebar -->
+        <aside class="lg:w-1/4">
+          <PostSidebar 
+            :initial-filters="filters" 
+            @filter-change="handleFilterChange" 
           />
-        </div>
-      </main>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="lg:w-3/4">
+          <!-- Toolbar -->
+          <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                {{ posts.length }} {{ t('posts.itemCount', { count: posts.length }) }}
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">
+                {{ t('posts.sortBy') }}:
+              </label>
+              <select
+                id="sort"
+                v-model="filters.sort"
+                @change="handleSortChange"
+                class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+              >
+                <option
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="isLoading" class="flex justify-center py-12">
+            <div
+              class="h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"
+            ></div>
+          </div>
+
+          <!-- Error State -->
+          <div
+            v-else-if="error"
+            class="rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-900/50 dark:text-red-400"
+          >
+            <p>{{ error }}</p>
+            <button
+              @click="fetchPosts"
+              class="mt-2 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors hover:bg-red-600"
+            >
+              {{ t('common.tryAgain') }}
+            </button>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="posts.length === 0" class="py-12 text-center">
+            <p class="text-gray-500 dark:text-gray-400">{{ t('posts.noPosts') }}</p>
+          </div>
+
+          <!-- Posts Grid -->
+          <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+            <PostCard
+              v-for="post in sortedPosts"
+              :key="post.id"
+              :post="post"
+            />
+          </div>
+        </main>
+      </div>
     </div>
   </div>
 </template>

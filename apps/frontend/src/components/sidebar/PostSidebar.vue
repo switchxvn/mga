@@ -35,7 +35,6 @@ const props = defineProps<{
     search?: string;
     categories?: number[];
     tags?: string[];
-    sortBy?: string;
   };
 }>();
 
@@ -208,200 +207,209 @@ onMounted(() => {
 
 <template>
   <div class="post-sidebar">
-    <!-- Search -->
-    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
-      <div class="relative">
-        <div class="custom-input-container">
-          <UInput
-            v-model="filters.search"
-            :placeholder="t('posts.searchPlaceholder')"
-            class="w-full search-input"
-            size="md"
-            :loading="isSearching"
+    <!-- Single Card Container -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <!-- Search -->
+      <div class="p-4">
+        <div class="relative">
+          <div class="custom-input-container">
+            <UInput
+              v-model="filters.search"
+              :placeholder="t('posts.searchPlaceholder')"
+              class="w-full search-input"
+              size="md"
+              :loading="isSearching"
+            >
+              <template #leading>
+                <div class="leading-icon-wrapper">
+                  <Search class="h-4 w-4 text-gray-500" />
+                </div>
+              </template>
+            </UInput>
+          </div>
+          <div v-if="filters.search" class="mt-2 text-xs text-gray-500">
+            {{ t("posts.searchingFor") }}:
+            <span class="font-medium">{{ filters.search }}</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
+
+      <!-- Filter Section -->
+      <div>
+        <div
+          @click="toggleSection('filter')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <Filter class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">
+              {{ t("sidebar.filters") }}
+            </h3>
+          </div>
+          <component
+            :is="expandedSections.filter ? ChevronUp : ChevronDown"
+            class="h-5 w-5 text-gray-500"
+          />
+        </div>
+
+        <div v-if="expandedSections.filter" class="px-4 pb-4">
+          <!-- Categories Filter -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {{ t("sidebar.filterByCategory") }}
+            </label>
+            <div v-if="loading.categories" class="flex justify-center py-2">
+              <div
+                class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
+              ></div>
+            </div>
+            <div
+              v-else-if="categories.length === 0"
+              class="text-sm text-gray-500 text-center py-2"
+            >
+              {{ t("sidebar.noCategories") }}
+            </div>
+            <div v-else class="space-y-2">
+              <div 
+                v-for="category in categories" 
+                :key="category.id"
+                class="flex items-center"
+              >
+                <UCheckbox
+                  :model-value="filters.categories.includes(category.id)"
+                  @update:model-value="toggleCategory(category.id)"
+                  :name="`category-${category.id}`"
+                  color="primary"
+                />
+                <label :for="`category-${category.id}`" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                  {{ category.name }}
+                  <span class="text-xs text-gray-500">({{ category.posts?.length || 0 }})</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reset Button -->
+          <UButton
+            @click="resetFilters"
+            variant="ghost"
+            color="gray"
+            block
+            size="sm"
+            class="mt-0"
           >
             <template #leading>
-              <div class="leading-icon-wrapper">
-                <Search class="h-4 w-4 text-gray-500" />
-              </div>
+              <RotateCcw class="h-4 w-4 mr-1.5" />
             </template>
-          </UInput>
-        </div>
-        <div v-if="filters.search" class="mt-2 text-xs text-gray-500">
-          {{ t("posts.searchingFor") }}:
-          <span class="font-medium">{{ filters.search }}</span>
+            {{ t("posts.resetFilters") }}
+          </UButton>
         </div>
       </div>
-    </div>
 
-    <!-- Filter Section -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
-      <div
-        @click="toggleSection('filter')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        <div class="flex items-center gap-2">
-          <Filter class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">
-            {{ t("sidebar.filters") }}
-          </h3>
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
+
+      <!-- Popular Posts -->
+      <div>
+        <div
+          @click="toggleSection('popularPosts')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <TrendingUp class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">
+              {{ t("sidebar.popularPosts") }}
+            </h3>
+          </div>
+          <component
+            :is="expandedSections.popularPosts ? ChevronUp : ChevronDown"
+            class="h-5 w-5 text-gray-500"
+          />
         </div>
-        <component
-          :is="expandedSections.filter ? ChevronUp : ChevronDown"
-          class="h-5 w-5 text-gray-500"
-        />
-      </div>
 
-      <div v-if="expandedSections.filter" class="px-4 pb-4">
-        <!-- Categories Filter -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t("sidebar.filterByCategory") }}
-          </label>
-          <div v-if="loading.categories" class="flex justify-center py-2">
+        <div v-if="expandedSections.popularPosts" class="px-4 pb-4">
+          <div v-if="loadingPopular" class="flex justify-center py-4">
             <div
-              class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
+              class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
             ></div>
           </div>
+
           <div
-            v-else-if="categories.length === 0"
-            class="text-sm text-gray-500 text-center py-2"
+            v-else-if="popularPosts.length === 0"
+            class="py-2 text-sm text-gray-500 text-center"
           >
-            {{ t("sidebar.noCategories") }}
+            {{ t("sidebar.noPopularPosts") }}
           </div>
-          <div v-else class="flex flex-wrap gap-2">
-            <UBadge
-              v-for="category in categories"
-              :key="category.id"
-              :color="filters.categories.includes(category.id) ? 'primary' : 'gray'"
-              :variant="filters.categories.includes(category.id) ? 'solid' : 'soft'"
-              class="cursor-pointer"
-              @click="toggleCategory(category.id)"
+
+          <ul v-else class="space-y-4">
+            <li
+              v-for="(post, index) in popularPosts"
+              :key="post.id"
+              class="border-b border-gray-100 dark:border-gray-700 last:border-0 pb-4 last:pb-0"
             >
-              {{ category.name }}
-            </UBadge>
-          </div>
-        </div>
-
-        <!-- Reset Button -->
-        <UButton
-          @click="resetFilters"
-          variant="ghost"
-          color="gray"
-          block
-          size="sm"
-          class="mt-4"
-        >
-          <template #leading>
-            <RotateCcw class="h-4 w-4" />
-          </template>
-          {{ t("posts.resetFilters") }}
-        </UButton>
-      </div>
-    </div>
-
-    <!-- Popular Posts -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
-      <div
-        @click="toggleSection('popularPosts')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        <div class="flex items-center gap-2">
-          <TrendingUp class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">
-            {{ t("sidebar.popularPosts") }}
-          </h3>
-        </div>
-        <component
-          :is="expandedSections.popularPosts ? ChevronUp : ChevronDown"
-          class="h-5 w-5 text-gray-500"
-        />
-      </div>
-
-      <div v-if="expandedSections.popularPosts" class="px-4 pb-4">
-        <div v-if="loadingPopular" class="flex justify-center py-4">
-          <div
-            class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
-          ></div>
-        </div>
-
-        <div
-          v-else-if="popularPosts.length === 0"
-          class="py-2 text-sm text-gray-500 text-center"
-        >
-          {{ t("sidebar.noPopularPosts") }}
-        </div>
-
-        <ul v-else class="space-y-4">
-          <li
-            v-for="(post, index) in popularPosts"
-            :key="post.id"
-            class="border-b border-gray-100 dark:border-gray-700 last:border-0 pb-4 last:pb-0"
-          >
-            <NuxtLink :to="getPostUrl(post)" class="group flex items-start gap-3">
-              <div
-                class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400 font-medium text-xs"
-              >
-                {{ index + 1 }}
-              </div>
-
-              <div class="flex-grow min-w-0 text-left">
-                <h4
-                  class="line-clamp-2 text-sm font-medium text-gray-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400"
+              <NuxtLink :to="getPostUrl(post)" class="group flex items-start gap-3">
+                <div
+                  class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400 font-medium text-xs"
                 >
-                  {{ getTranslationByLocale(post)?.title }}
-                </h4>
-                <p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                  <Calendar :size="14" />
-                  {{ formatDate(post.createdAt) }}
-                </p>
-              </div>
-            </NuxtLink>
-          </li>
-        </ul>
-      </div>
-    </div>
+                  {{ index + 1 }}
+                </div>
 
-    <!-- Subscribe -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
-      <div
-        @click="toggleSection('subscribe')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        <div class="flex items-center gap-2">
-          <Bell class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">
-            {{ t("sidebar.subscribe") }}
-          </h3>
+                <div class="flex-grow min-w-0 text-left">
+                  <h4
+                    class="line-clamp-2 text-sm font-medium text-gray-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400"
+                  >
+                    {{ getTranslationByLocale(post)?.title }}
+                  </h4>
+                  <p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                    <Calendar :size="14" />
+                    {{ formatDate(post.createdAt) }}
+                  </p>
+                </div>
+              </NuxtLink>
+            </li>
+          </ul>
         </div>
-        <component
-          :is="expandedSections.subscribe ? ChevronUp : ChevronDown"
-          class="h-5 w-5 text-gray-500"
-        />
       </div>
 
-      <div v-if="expandedSections.subscribe" class="px-4 pb-4">
-        <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          {{ t("sidebar.subscribeDescription") }}
-        </p>
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
 
-        <form class="space-y-3">
-          <UInput type="email" :placeholder="t('sidebar.emailPlaceholder')" size="md" />
-          <UButton type="submit" color="primary" variant="solid" size="md" block>
-            {{ t("sidebar.subscribeButton") }}
-          </UButton>
-        </form>
+      <!-- Subscribe -->
+      <div>
+        <div
+          @click="toggleSection('subscribe')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <Bell class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">
+              {{ t("sidebar.subscribe") }}
+            </h3>
+          </div>
+          <component
+            :is="expandedSections.subscribe ? ChevronUp : ChevronDown"
+            class="h-5 w-5 text-gray-500"
+          />
+        </div>
+
+        <div v-if="expandedSections.subscribe" class="px-4 pb-4">
+          <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+            {{ t("sidebar.subscribeDescription") }}
+          </p>
+
+          <form class="space-y-3">
+            <UInput type="email" :placeholder="t('sidebar.emailPlaceholder')" size="md" />
+            <UButton type="submit" color="primary" variant="solid" size="md" block>
+              {{ t("sidebar.subscribeButton") }}
+            </UButton>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.post-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
 /* Custom input container */
 .custom-input-container {
   position: relative;
@@ -438,5 +446,11 @@ onMounted(() => {
 /* Ensure the input form has proper spacing */
 :deep(.u-input-form) {
   position: relative;
+}
+
+.post-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 </style>

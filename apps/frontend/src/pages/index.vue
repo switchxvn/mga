@@ -433,12 +433,17 @@ const getCategoriesConfig = computed(() => {
 </script>
 
 <template>
-  <div>
-    <!-- Loading State -->
-    <div v-if="isLoadingTheme" class="flex justify-center items-center min-h-screen">
-      <ULoader size="lg" />
-    </div>
-
+  <div class="bg-gray-50 dark:bg-gray-900">
+    <template v-if="isLoadingTheme">
+      <div class="flex justify-center items-center min-h-screen">
+        <ULoader size="lg" />
+      </div>
+    </template>
+    <template v-else-if="themeError">
+      <div class="container mx-auto px-4 py-12 text-center">
+        {{ themeError }}
+      </div>
+    </template>
     <template v-else>
       <!-- Render sections based on their order -->
       <template v-for="section in activeTheme?.sections" :key="section.id">

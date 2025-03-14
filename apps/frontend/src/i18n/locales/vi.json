@@ -192,6 +192,8 @@
     "newest": "Mới nhất",
     "oldest": "Cũ nhất",
     "title_asc": "Tiêu đề: A-Z",
-    "title_desc": "Tiêu đề: Z-A"
+    "title_desc": "Tiêu đề: Z-A",
+    "price_asc": "Giá: Thấp đến cao",
+    "price_desc": "Giá: Cao đến thấp"
   }
 } 

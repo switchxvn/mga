@@ -188,13 +188,14 @@ const products = ref<any[]>([]) // Sử dụng any[] để tránh lỗi TypeScri
 const totalProducts = ref(0)
 const totalPages = ref(1)
 
-// Sort options
-const sortOptions = [
-  { value: 'newest', label: t('products.sortNewest') },
-  { value: 'oldest', label: t('products.sortOldest') },
-  { value: 'price_asc', label: t('products.sortPriceAsc') },
-  { value: 'price_desc', label: t('products.sortPriceDesc') },
-]
+
+// Sort options as computed property to ensure translations are updated
+const sortOptions = computed(() => [
+  { value: "newest", label: t("sort.newest") },
+  { value: "oldest", label: t("sort.oldest") },
+  { value: "price_asc", label: t("sort.price_asc") },
+  { value: "price_desc", label: t("sort.price_desc") },
+]);
 
 // Fetch products with filters
 const fetchProducts = async () => {
@@ -321,122 +322,124 @@ watch(() => categoryData.value?.id, (newId) => {
 </script>
 
 <template>
-  <div class="products-page container mx-auto px-4 py-8">
-    <div v-if="error" class="mb-8 rounded-lg border border-red-200 bg-red-50 p-8 text-center dark:border-red-800 dark:bg-red-900/20">
-      <UIcon name="i-heroicons-exclamation-circle" class="mx-auto mb-4 h-12 w-12 text-red-500" />
-      <h3 class="mb-2 text-lg font-medium text-red-800 dark:text-red-400">{{ t('common.error') }}</h3>
-      <p class="text-red-600 dark:text-red-300">{{ error }}</p>
-      <UButton color="red" variant="soft" class="mt-4" @click="refreshCategory">
-        {{ t('common.tryAgain') }}
-      </UButton>
-    </div>
-    
-    <template v-else>
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
-          {{ categoryName || slug }}
-        </h1>
-        <p v-if="categoryDescription" class="mt-2 text-gray-600 dark:text-gray-400">
-          {{ categoryDescription }}
-        </p>
+  <div class="products-page bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
+      <div v-if="error" class="mb-8 rounded-lg border border-red-200 bg-red-50 p-8 text-center dark:border-red-800 dark:bg-red-900/20">
+        <UIcon name="i-heroicons-exclamation-circle" class="mx-auto mb-4 h-12 w-12 text-red-500" />
+        <h3 class="mb-2 text-lg font-medium text-red-800 dark:text-red-400">{{ t('common.error') }}</h3>
+        <p class="text-red-600 dark:text-red-300">{{ error }}</p>
+        <UButton color="red" variant="soft" class="mt-4" @click="refreshCategory">
+          {{ t('common.tryAgain') }}
+        </UButton>
       </div>
       
-      <!-- Subcategories (if any) -->
-      <div v-if="categoryData?.children && categoryData.children.length > 0" class="mb-8">
-        <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-          {{ t('categories.subcategories') }}
-        </h2>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          <NuxtLink
-            v-for="subcat in categoryData.children"
-            :key="subcat.id"
-            :to="`/categories/${subcat.slug}`"
-            class="flex flex-col items-center rounded-lg border border-gray-200 bg-white p-4 text-center transition-colors hover:border-primary-500 hover:bg-primary-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-primary-500 dark:hover:bg-primary-900/30"
-          >
-            <span class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ subcat.name }}</span>
-          </NuxtLink>
-        </div>
-      </div>
-      
-      <!-- Mobile Sidebar -->
-      <CategoryMobileSidebar
-        :initial-filters="filters"
-        :category-id="categoryData?.id"
-        @filter-change="handleFilterChange"
-        class="mb-6 lg:hidden"
-      />
-      
-      <div class="flex flex-col gap-8 lg:flex-row">
-        <!-- Desktop Sidebar -->
-        <div class="hidden lg:block lg:w-1/4">
-          <CategorySidebar
-            :initial-filters="filters"
-            :category-id="categoryData?.id"
-            @filter-change="handleFilterChange"
-          />
+      <template v-else>
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
+            {{ categoryName || slug }}
+          </h1>
+          <p v-if="categoryDescription" class="mt-2 text-gray-600 dark:text-gray-400">
+            {{ categoryDescription }}
+          </p>
         </div>
         
-        <!-- Products Content -->
-        <div class="lg:w-3/4">
-          <!-- Toolbar -->
-          <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ t('products.showing') }} {{ totalProducts }} {{ t('products.items') }}
-              </span>
-            </div>
-            
-            <div class="flex items-center gap-2">
-              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t('products.sortBy') }}:</label>
-              <select
-                id="sort"
-                v-model="filters.sortBy"
-                @change="handleSortChange"
-                class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
-              >
-                <option v-for="option in sortOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-          
-          <!-- Products Grid -->
-          <div v-if="isLoading" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <div v-for="i in 6" :key="i" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <div class="aspect-square w-full animate-pulse rounded-md bg-gray-200 dark:bg-gray-700"></div>
-              <div class="mt-4 h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-              <div class="mt-2 h-4 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-            </div>
-          </div>
-          
-          <div v-else-if="products.length === 0" class="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
-            <UIcon name="i-heroicons-shopping-bag" class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-            <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">{{ t('products.noProducts') }}</h3>
-            <p class="mt-1 text-gray-500 dark:text-gray-400">{{ t('products.tryDifferentFilters') }}</p>
-          </div>
-          
-          <ProductGrid 
-            v-else
-            :products="products" 
-            :loading="false" 
-            :locale="locale"
-            :columns="3"
-          />
-          
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="mt-8 flex justify-center">
-            <UPagination
-              v-model="filters.page"
-              :page-count="totalPages"
-              :total="totalProducts"
-              :ui="{ rounded: 'rounded-lg' }"
-              @update:model-value="handlePageChange"
-            />
+        <!-- Subcategories (if any) -->
+        <div v-if="categoryData?.children && categoryData.children.length > 0" class="mb-8">
+          <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+            {{ t('categories.subcategories') }}
+          </h2>
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <NuxtLink
+              v-for="subcat in categoryData.children"
+              :key="subcat.id"
+              :to="`/categories/${subcat.slug}`"
+              class="flex flex-col items-center rounded-lg border border-gray-200 bg-white p-4 text-center transition-colors hover:border-primary-500 hover:bg-primary-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-primary-500 dark:hover:bg-primary-900/30"
+            >
+              <span class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ subcat.name }}</span>
+            </NuxtLink>
           </div>
         </div>
-      </div>
-    </template>
+        
+        <!-- Mobile Sidebar -->
+        <CategoryMobileSidebar
+          :initial-filters="filters"
+          :category-id="categoryData?.id"
+          @filter-change="handleFilterChange"
+          class="mb-6 lg:hidden"
+        />
+        
+        <div class="flex flex-col gap-8 lg:flex-row">
+          <!-- Desktop Sidebar -->
+          <div class="hidden lg:block lg:w-1/4">
+            <CategorySidebar
+              :initial-filters="filters"
+              :category-id="categoryData?.id"
+              @filter-change="handleFilterChange"
+            />
+          </div>
+          
+          <!-- Products Content -->
+          <div class="lg:w-3/4">
+            <!-- Toolbar -->
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-600 dark:text-gray-400">
+                  {{ t('products.showing') }} {{ totalProducts }} {{ t('products.items') }}
+                </span>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t('products.sortBy') }}:</label>
+                <select
+                  id="sort"
+                  v-model="filters.sortBy"
+                  @change="handleSortChange"
+                  class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Products Grid -->
+            <div v-if="isLoading" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div v-for="i in 6" :key="i" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <div class="aspect-square w-full animate-pulse rounded-md bg-gray-200 dark:bg-gray-700"></div>
+                <div class="mt-4 h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div class="mt-2 h-4 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+            </div>
+            
+            <div v-else-if="products.length === 0" class="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
+              <UIcon name="i-heroicons-shopping-bag" class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">{{ t('products.noProducts') }}</h3>
+              <p class="mt-1 text-gray-500 dark:text-gray-400">{{ t('products.tryDifferentFilters') }}</p>
+            </div>
+            
+            <ProductGrid 
+              v-else
+              :products="products" 
+              :loading="false" 
+              :locale="locale"
+              :columns="3"
+            />
+            
+            <!-- Pagination -->
+            <div v-if="totalPages > 1" class="mt-8 flex justify-center">
+              <UPagination
+                v-model="filters.page"
+                :page-count="totalPages"
+                :total="totalProducts"
+                :ui="{ rounded: 'rounded-lg' }"
+                @update:model-value="handlePageChange"
+              />
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 

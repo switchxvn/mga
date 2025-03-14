@@ -280,7 +280,7 @@ const toggleCategory = (categoryId: number) => {
 };
 
 // Toggle section expansion
-const toggleSection = (section) => {
+const toggleSection = (section: keyof typeof expandedSections.value) => {
   expandedSections.value[section] = !expandedSections.value[section];
 };
 
@@ -309,233 +309,243 @@ onMounted(() => {
 
 <template>
   <div class="product-sidebar">
-    <!-- Search -->
-    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
-      <div class="relative">
-        <div class="custom-input-container">
-          <UInput
-            v-model="search"
-            :placeholder="t('products.searchPlaceholder')"
-            class="w-full search-input"
-            size="md"
-          >
-            <template #leading>
-              <div class="leading-icon-wrapper">
-                <Search class="h-4 w-4 text-gray-500" />
-              </div>
-            </template>
-            <template #trailing v-if="isSearching">
-              <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
-            </template>
-          </UInput>
+    <!-- Single Card Container -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <!-- Search -->
+      <div class="p-4">
+        <div class="relative">
+          <div class="custom-input-container">
+            <UInput
+              v-model="search"
+              :placeholder="t('products.searchPlaceholder')"
+              class="w-full search-input"
+              size="md"
+              :loading="isSearching"
+            >
+              <template #leading>
+                <div class="leading-icon-wrapper">
+                  <Search class="h-4 w-4 text-gray-500" />
+                </div>
+              </template>
+            </UInput>
+          </div>
+          <div v-if="search" class="mt-2 text-xs text-gray-500">
+            {{ t('products.searchingFor') }}: <span class="font-medium">{{ search }}</span>
+          </div>
         </div>
-        <div v-if="search" class="mt-2 text-xs text-gray-500">
-          {{ t('products.searchingFor') }}: <span class="font-medium">{{ search }}</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Price Range -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
-      <div 
-        @click="toggleSection('priceRange')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        <div class="flex items-center gap-2">
-          <DollarSign class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.priceRange') }}</h3>
-        </div>
-        <component 
-          :is="expandedSections.priceRange ? ChevronUp : ChevronDown" 
-          class="h-5 w-5 text-gray-500"
-        />
       </div>
       
-      <div v-if="expandedSections.priceRange" class="px-4 pb-4">
-        <div v-if="isLoadingPriceRange" class="flex justify-center py-4">
-          <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
+      
+      <!-- Price Range -->
+      <div>
+        <div 
+          @click="toggleSection('priceRange')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <DollarSign class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.priceRange') }}</h3>
+          </div>
+          <component 
+            :is="expandedSections.priceRange ? ChevronUp : ChevronDown" 
+            class="h-5 w-5 text-gray-500"
+          />
         </div>
         
-        <div v-else>
-          <!-- Price Range Display -->
-          <div class="mb-2 flex items-center justify-between">
-            <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
-              {{ formatPrice(priceRange[0]) }}
-            </span>
-            <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
-              {{ formatPrice(priceRange[1]) }}
-            </span>
+        <div v-if="expandedSections.priceRange" class="px-4 pb-4">
+          <div v-if="isLoadingPriceRange" class="flex justify-center py-4">
+            <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
           </div>
           
-          <!-- Vueform Slider -->
-          <div class="mb-6 mt-6 px-2">
-            <Slider
-              v-model="priceRange"
-              :options="sliderOptions"
-              class="slider-primary"
-              @update="handlePriceRangeChange"
-            />
-          </div>
-          
-          <!-- Price Inputs -->
-          <div class="mt-4 flex items-center justify-between gap-4">
-            <div class="w-1/2">
-              <div class="custom-input-container">
-                <UInput
-                  v-model="minPriceInput"
-                  class="w-full price-input"
-                  size="md"
-                  @blur="updatePriceRange"
-                  @keyup.enter="updatePriceRange"
-                >
-                  <template #leading>
-                    <div class="leading-icon-wrapper">
-                      <span class="text-xs text-gray-500">₫</span>
-                    </div>
-                  </template>
-                </UInput>
+          <div v-else>
+            <!-- Price Range Display -->
+            <div class="mb-2 flex items-center justify-between">
+              <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
+                {{ formatPrice(priceRange[0]) }}
+              </span>
+              <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
+                {{ formatPrice(priceRange[1]) }}
+              </span>
+            </div>
+            
+            <!-- Vueform Slider -->
+            <div class="mb-6 mt-6 px-2">
+              <Slider
+                v-model="priceRange"
+                :options="sliderOptions"
+                class="slider-primary"
+                @update="handlePriceRangeChange"
+              />
+            </div>
+            
+            <!-- Price Inputs -->
+            <div class="mt-4 flex items-center justify-between gap-4">
+              <div class="w-1/2">
+                <div class="custom-input-container">
+                  <UInput
+                    v-model="minPriceInput"
+                    class="w-full price-input"
+                    size="md"
+                    @blur="updatePriceRange"
+                    @keyup.enter="updatePriceRange"
+                  >
+                    <template #leading>
+                      <div class="leading-icon-wrapper">
+                        <span class="text-xs text-gray-500">₫</span>
+                      </div>
+                    </template>
+                  </UInput>
+                </div>
+              </div>
+              <div class="text-gray-400">-</div>
+              <div class="w-1/2">
+                <div class="custom-input-container">
+                  <UInput
+                    v-model="maxPriceInput"
+                    class="w-full price-input"
+                    size="md"
+                    @blur="updatePriceRange"
+                    @keyup.enter="updatePriceRange"
+                  >
+                    <template #leading>
+                      <div class="leading-icon-wrapper">
+                        <span class="text-xs text-gray-500">₫</span>
+                      </div>
+                    </template>
+                  </UInput>
+                </div>
               </div>
             </div>
-            <div class="text-gray-400">-</div>
-            <div class="w-1/2">
-              <div class="custom-input-container">
-                <UInput
-                  v-model="maxPriceInput"
-                  class="w-full price-input"
-                  size="md"
-                  @blur="updatePriceRange"
-                  @keyup.enter="updatePriceRange"
-                >
-                  <template #leading>
-                    <div class="leading-icon-wrapper">
-                      <span class="text-xs text-gray-500">₫</span>
-                    </div>
-                  </template>
-                </UInput>
-              </div>
+          </div>
+        </div>
+      </div>
+      
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
+      
+      <!-- Categories -->
+      <div>
+        <div 
+          @click="toggleSection('categories')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <LayoutGrid class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.categories') }}</h3>
+          </div>
+          <component 
+            :is="expandedSections.categories ? ChevronUp : ChevronDown" 
+            class="h-5 w-5 text-gray-500"
+          />
+        </div>
+        
+        <div v-if="expandedSections.categories" class="px-4 pb-4">
+          <div v-if="isLoadingCategories" class="flex justify-center py-4">
+            <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+          </div>
+          
+          <div v-else-if="uniqueCategories.length === 0" class="py-2 text-sm text-gray-500 text-center">
+            {{ t('products.noCategories') || 'Không có danh mục nào' }}
+          </div>
+          
+          <div v-else class="space-y-2">
+            <div 
+              v-for="category in uniqueCategories" 
+              :key="category.id"
+              class="flex items-center"
+            >
+              <UCheckbox
+                :model-value="selectedCategories.includes(category.id)"
+                @update:model-value="toggleCategory(category.id)"
+                :name="`category-${category.id}`"
+                color="primary"
+              />
+              <label :for="`category-${category.id}`" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                {{ category.name }} 
+                <span class="text-xs text-gray-500">({{ category.products?.length || 0 }})</span>
+              </label>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- Categories -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
-      <div 
-        @click="toggleSection('categories')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        <div class="flex items-center gap-2">
-          <LayoutGrid class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.categories') }}</h3>
-        </div>
-        <component 
-          :is="expandedSections.categories ? ChevronUp : ChevronDown" 
-          class="h-5 w-5 text-gray-500"
-        />
-      </div>
       
-      <div v-if="expandedSections.categories" class="px-4 pb-4">
-        <div v-if="isLoadingCategories" class="flex justify-center py-4">
-          <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
+      
+      <!-- Product Flags -->
+      <div>
+        <div 
+          @click="toggleSection('productType')"
+          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <div class="flex items-center gap-2.5">
+            <Tag class="h-5 w-5 text-primary-500" />
+            <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.productType') }}</h3>
+          </div>
+          <component 
+            :is="expandedSections.productType ? ChevronUp : ChevronDown" 
+            class="h-5 w-5 text-gray-500"
+          />
         </div>
         
-        <div v-else-if="uniqueCategories.length === 0" class="py-2 text-sm text-gray-500 text-center">
-          {{ t('products.noCategories') || 'Không có danh mục nào' }}
-        </div>
-        
-        <div v-else class="space-y-2">
-          <div 
-            v-for="category in uniqueCategories" 
-            :key="category.id"
-            class="flex items-center"
-          >
-            <UCheckbox
-              :model-value="selectedCategories.includes(category.id)"
-              @update:model-value="toggleCategory(category.id)"
-              :name="`category-${category.id}`"
-              color="primary"
-            />
-            <label :for="`category-${category.id}`" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
-              {{ category.name }} 
-              <span class="text-xs text-gray-500">({{ category.products?.length || 0 }})</span>
-            </label>
+        <div v-if="expandedSections.productType" class="px-4 pb-4">
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <UCheckbox
+                v-model="isFeatured"
+                name="featured"
+                color="primary"
+              />
+              <label for="featured" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <Star class="h-4 w-4 text-amber-500" />
+                {{ t('products.featured') }}
+              </label>
+            </div>
+            
+            <div class="flex items-center">
+              <UCheckbox
+                v-model="isNew"
+                name="new"
+                color="primary"
+              />
+              <label for="new" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <Sparkles class="h-4 w-4 text-blue-500" />
+                {{ t('products.new') }}
+              </label>
+            </div>
+            
+            <div class="flex items-center">
+              <UCheckbox
+                v-model="isSale"
+                name="sale"
+                color="primary"
+              />
+              <label for="sale" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <Flame class="h-4 w-4 text-red-500" />
+                {{ t('products.sale') }}
+              </label>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- Product Flags -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
-      <div 
-        @click="toggleSection('productType')"
-        class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        <div class="flex items-center gap-2">
-          <Tag class="h-5 w-5 text-primary-500" />
-          <h3 class="font-medium text-gray-900 dark:text-white">{{ t('products.productType') }}</h3>
-        </div>
-        <component 
-          :is="expandedSections.productType ? ChevronUp : ChevronDown" 
-          class="h-5 w-5 text-gray-500"
-        />
       </div>
       
-      <div v-if="expandedSections.productType" class="px-4 pb-4">
-        <div class="space-y-2">
-          <div class="flex items-center">
-            <UCheckbox
-              v-model="isFeatured"
-              name="featured"
-              color="primary"
-            />
-            <label for="featured" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-              <Star class="h-4 w-4 text-amber-500" />
-              {{ t('products.featured') }}
-            </label>
-          </div>
-          
-          <div class="flex items-center">
-            <UCheckbox
-              v-model="isNew"
-              name="new"
-              color="primary"
-            />
-            <label for="new" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-              <Sparkles class="h-4 w-4 text-blue-500" />
-              {{ t('products.new') }}
-            </label>
-          </div>
-          
-          <div class="flex items-center">
-            <UCheckbox
-              v-model="isSale"
-              name="sale"
-              color="primary"
-            />
-            <label for="sale" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-              <Flame class="h-4 w-4 text-red-500" />
-              {{ t('products.sale') }}
-            </label>
-          </div>
-        </div>
+      <hr class="border-gray-200 dark:border-gray-700 mx-4">
+      
+      <!-- Reset Filters -->
+      <div class="p-4">
+        <UButton
+          @click="resetFilters"
+          variant="ghost"
+          color="gray"
+          block
+          size="sm"
+          class="mt-0"
+        >
+          <template #leading>
+            <RotateCcw class="h-4 w-4 mr-1.5" />
+          </template>
+          {{ t('products.resetFilters') }}
+        </UButton>
       </div>
-    </div>
-    
-    <!-- Reset Filters -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-      <UButton
-        @click="resetFilters"
-        variant="ghost"
-        color="gray"
-        block
-        size="sm"
-      >
-        <template #leading>
-          <RotateCcw class="h-4 w-4" />
-        </template>
-        {{ t('products.resetFilters') }}
-      </UButton>
     </div>
   </div>
 </template>
@@ -583,7 +593,7 @@ onMounted(() => {
 
 /* Adjust input padding */
 :deep(.search-input), :deep(.price-input) {
-  padding: 0.5rem 0.rem;
+  padding: 0.5rem 0rem;
 }
 
 /* Adjust input field padding */

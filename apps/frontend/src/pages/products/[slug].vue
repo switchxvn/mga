@@ -378,8 +378,8 @@ watch(isPriceRequestModalOpen, (newVal) => {
 </script>
 
 <template>
-  <div class="product-detail min-h-screen bg-gray-100 dark:bg-gray-900 py-8">
-    <div class="container mx-auto px-4">
+  <div class="product-detail min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
       <!-- Breadcrumb -->
       <div class="mb-6">
         <Breadcrumb :items="[

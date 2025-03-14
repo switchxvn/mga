@@ -137,8 +137,8 @@ useHead(() => {
 </script>
 
 <template>
-  <div class="post-detail">
-    <div class="post-detail__container">
+  <div class="post-detail bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
       <!-- Breadcrumb thay thế cho nút quay lại -->
       <Breadcrumb 
         :items="breadcrumbItems" 
