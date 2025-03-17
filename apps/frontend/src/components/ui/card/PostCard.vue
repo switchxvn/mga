@@ -7,9 +7,10 @@ import { usePost } from '../../../composables/usePost';
 import { formatDate } from '../../../utils/date';
 import { truncateContent } from '../../../utils/text';
 import { getAuthorName } from '../../../utils/author';
+import { getLocalizedRoute } from '../../../utils/routes';
 
 const { locale } = useLocalization();
-const { getTranslationByLocale, getPostUrl } = usePost();
+const { getTranslationByLocale } = usePost();
 
 const props = defineProps<{
   post: Post;
@@ -21,6 +22,7 @@ const postTitle = computed(() => currentTranslation.value?.title || '');
 const postContent = computed(() => currentTranslation.value?.content || '');
 const postShortDescription = computed(() => currentTranslation.value?.shortDescription || '');
 const postMetaDescription = computed(() => currentTranslation.value?.metaDescription || '');
+const postSlug = computed(() => currentTranslation.value?.slug || props.post.id.toString());
 
 /**
  * Kiểm tra xem bài viết có hình ảnh không
@@ -36,6 +38,10 @@ const getDescription = computed(() => {
   return postShortDescription.value || postMetaDescription.value || postContent.value || '';
 });
 
+const postUrl = computed(() => {
+  return getLocalizedRoute('POST_DETAIL', locale.value, { slug: postSlug.value });
+});
+
 // Watch for locale changes to trigger re-computation
 watch(locale, () => {
   // The computed properties will automatically re-compute
@@ -45,7 +51,7 @@ watch(locale, () => {
 </script>
 
 <template>
-  <NuxtLink :to="getPostUrl(post)" class="block h-full">
+  <NuxtLink :to="postUrl" class="block h-full">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
       <div class="flex" :class="{ 'flex-col flex-grow': !compact, 'flex-row': compact }">
         <!-- Hình ảnh bài viết - phiên bản lớn khi không compact -->

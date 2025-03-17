@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { publicProcedure, router, protectedProcedure } from '../trpc';
+import { TRPCError } from '@trpc/server';
 
 export const productRouter = router({
   getAll: publicProcedure
@@ -178,7 +179,21 @@ export const productRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const product = await ctx.services.productFrontendService.findBySlug(input.slug, input.locale);
-      if (!product) return null;
+      
+      if (!product) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Product with slug "${input.slug}" not found`,
+        });
+      }
+
+      // Check if product is published
+      if (!product.published) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Product with slug "${input.slug}" is not published`,
+        });
+      }
       
       const translation = ctx.services.productFrontendService.getTranslation(product, input.locale);
       return {

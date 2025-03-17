@@ -15,7 +15,6 @@ const { fetchProductCategories } = useCategory();
 
 definePageMeta({
   layout: "default",
-  alias: ["/san-pham"],
 });
 
 // SEO data

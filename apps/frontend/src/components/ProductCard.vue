@@ -3,6 +3,9 @@ import { computed } from 'vue';
 import { ShoppingCart } from 'lucide-vue-next';
 import LazyImage from './ui/LazyImage.vue';
 import AddToCartButton from './cart/AddToCartButton.vue';
+import { getLocalizedRoute } from '../utils/routes';
+import { useLocalization } from '../composables/useLocalization';
+import { useProduct } from '../composables/useProduct';
 
 interface ProductTranslation {
   title: string;
@@ -10,6 +13,7 @@ interface ProductTranslation {
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
+  slug?: string;
 }
 
 interface Product {
@@ -18,7 +22,6 @@ interface Product {
   price: number | null;
   comparePrice?: number | null;
   thumbnail?: string;
-  slug?: string;
   isFeatured: boolean;
   isNew: boolean;
   isSale: boolean;
@@ -31,45 +34,31 @@ const props = defineProps<{
   locale?: string;
 }>();
 
-const translation = computed(() => {
-  if (!props.product.translations || props.product.translations.length === 0) {
-    return null;
-  }
-  
-  const locale = props.locale || 'vi';
-  const found = props.product.translations.find(t => t.locale === locale);
-  return found || props.product.translations[0];
-});
+const { locale } = useLocalization();
+const { getTranslationByLocale, formatPrice, calculateDiscountPercentage, getProductUrl } = useProduct();
 
+const translation = computed(() => getTranslationByLocale(props.product, props.locale || locale.value));
 const title = computed(() => translation.value?.title || '');
 const shortDescription = computed(() => translation.value?.shortDescription || '');
+const productSlug = computed(() => translation.value?.slug || props.product.id.toString());
 
 const formattedPrice = computed(() => {
   if (props.product.formattedPrice) {
     return props.product.formattedPrice;
   }
-  
-  if (props.product.price === null) {
-    return 'Liên hệ';
-  }
-  
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(props.product.price);
+  return formatPrice(props.product.price);
 });
 
 const formattedComparePrice = computed(() => {
   if (!props.product.comparePrice) return null;
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(props.product.comparePrice);
+  return formatPrice(props.product.comparePrice);
 });
 
-const discountPercentage = computed(() => {
-  if (!props.product.comparePrice || !props.product.price) return null;
-  const discount = ((props.product.comparePrice - props.product.price) / props.product.comparePrice) * 100;
-  return Math.round(discount);
-});
+const discountPercentage = computed(() => 
+  calculateDiscountPercentage(props.product.price, props.product.comparePrice)
+);
 
-const productLink = computed(() => {
-  return props.product.slug ? `/products/${props.product.slug}` : `/products/${props.product.id}`;
-});
+const productLink = computed(() => getProductUrl(props.product));
 </script>
 
 <template>

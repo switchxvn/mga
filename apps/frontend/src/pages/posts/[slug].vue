@@ -15,7 +15,7 @@ import { formatDateTime } from '../../utils/date';
 
 // Định nghĩa alias cho URL tiếng Việt và tiếng Anh
 definePageMeta({
-  alias: ['/bai-viet/:slug']
+  layout: "default"
 });
 
 const route = useRoute();
@@ -84,26 +84,35 @@ const currentURL = computed(() => {
   return baseUrl.value || '';
 });
 
-// Tạo canonical URL từ server
-const canonicalUrl = computed(() => {
-  return getCanonicalUrl(currentTranslation.value, currentURL.value);
-});
-
-// Watch locale changes to update URL and content
+// Watch locale changes to update content
 watch(locale, async (newLocale) => {
   await handleLocaleChange(post.value, newLocale);
 });
 
-// Breadcrumb items
+// Xử lý đường dẫn dựa trên locale
+const getLocalizedPath = () => {
+  return locale.value === 'vi' ? '/bai-viet' : '/posts';
+};
+
+// Breadcrumb items with localized paths
 const breadcrumbItems = computed(() => [
   {
-    label: 'Bài viết',
-    to: '/bai-viet'
+    label: locale.value === 'vi' ? 'Bài viết' : 'Posts',
+    to: getLocalizedPath()
   },
   {
-    label: postTitle.value || 'Chi tiết bài viết'
+    label: postTitle.value || (locale.value === 'vi' ? 'Chi tiết bài viết' : 'Post Detail')
   }
 ]);
+
+// Cập nhật canonical URL
+const canonicalUrl = computed(() => {
+  const translation = currentTranslation.value;
+  if (!translation) return '';
+  
+  const basePath = getLocalizedPath();
+  return `${baseUrl.value}${basePath}/${slug}`;
+});
 
 function goBack() {
   router.back();

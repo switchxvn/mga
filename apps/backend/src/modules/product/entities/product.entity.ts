@@ -45,10 +45,6 @@ export class Product {
   @Column({ name: 'video_review', nullable: true })
   videoReview!: string;
 
-  // SEO fields
-  @Column({ nullable: true })
-  slug!: string;
-
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

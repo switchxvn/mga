@@ -14,7 +14,6 @@ const router = useRouter();
 
 // Định nghĩa alias cho URL tiếng Việt và meta
 definePageMeta({
-  alias: ["/bai-viet"],
   layout: "default",
 });
 

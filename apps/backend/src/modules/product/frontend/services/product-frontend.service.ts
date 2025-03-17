@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, Like, FindOptionsWhere, In } from 'typeorm';
+import { Repository, Between, Like, FindOptionsWhere, In, IsNull, Not } from 'typeorm';
 import { Product } from '../../entities/product.entity';
 import { ProductTranslation } from '../../entities/product-translation.entity';
 
@@ -30,9 +30,9 @@ export interface PaginatedProducts {
 export class ProductFrontendService {
   constructor(
     @InjectRepository(Product)
-    private productRepository: Repository<Product>,
+    private readonly productRepository: Repository<Product>,
     @InjectRepository(ProductTranslation)
-    private productTranslationRepository: Repository<ProductTranslation>,
+    private readonly productTranslationRepository: Repository<ProductTranslation>,
   ) {}
 
   async findAll(locale: string = 'en', options?: ProductFilterOptions): Promise<PaginatedProducts> {
@@ -183,11 +183,26 @@ export class ProductFrontendService {
     });
   }
 
-  async findBySlug(slug: string, locale: string = 'en'): Promise<Product> {
-    return this.productRepository.findOne({
-      where: { slug, published: true },
-      relations: ['translations', 'categories'],
+  /**
+   * Find product by slug in translations
+   */
+  async findBySlug(slug: string, locale: string = 'en'): Promise<Product | null> {
+    const translation = await this.productTranslationRepository.findOne({
+      where: { slug, locale },
+      relations: ['product', 'product.translations'],
     });
+
+    if (!translation) {
+      // Try to find in any locale if not found in specified locale
+      const anyTranslation = await this.productTranslationRepository.findOne({
+        where: { slug },
+        relations: ['product', 'product.translations'],
+      });
+      
+      return anyTranslation?.product || null;
+    }
+
+    return translation.product;
   }
 
   async findById(id: number, locale: string = 'en'): Promise<Product> {
@@ -212,15 +227,21 @@ export class ProductFrontendService {
     };
   }
 
+  /**
+   * Get translation for a product
+   */
   getTranslation(product: Product, locale: string = 'en'): ProductTranslation | null {
-    if (!product || !product.translations || product.translations.length === 0) {
+    if (!product.translations || product.translations.length === 0) {
       return null;
     }
 
     const translation = product.translations.find(t => t.locale === locale);
-    return translation || product.translations[0]; // Fallback to first translation if locale not found
+    return translation || product.translations[0];
   }
 
+  /**
+   * Format price to VND
+   */
   formatPrice(price: number | null): string {
     if (price === null) {
       return 'Liên hệ';

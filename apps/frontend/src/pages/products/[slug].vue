@@ -60,18 +60,7 @@ const slug = computed(() => route.params.slug as string);
 // Định nghĩa alias cho URL tiếng Việt (nếu cần)
 definePageMeta({
   layout: 'default',
-  alias: ['/san-pham/:slug']
 });
-
-// Tạo slug từ tiêu đề (nếu cần)
-function createSlugFromTitle(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Loại bỏ ký tự đặc biệt
-    .replace(/\s+/g, '-') // Thay thế khoảng trắng bằng dấu gạch ngang
-    .replace(/--+/g, '-') // Loại bỏ nhiều dấu gạch ngang liên tiếp
-    .trim();
-}
 
 // Sử dụng useAsyncData thay vì onMounted để hỗ trợ SSR
 const { data: product, pending: isLoading, error, refresh } = useAsyncData<Product | null>(
