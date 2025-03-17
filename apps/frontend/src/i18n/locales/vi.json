@@ -1,7 +1,34 @@
 {
   "welcome": "Chào mừng đến với ứng dụng của chúng tôi",
   "home": "Trang chủ",
-  "about": "Giới thiệu",
+  "about": {
+    "sections": {
+      "our_mission": "Sứ mệnh của chúng tôi",
+      "our_vision": "Tầm nhìn của chúng tôi",
+      "our_values": "Giá trị cốt lõi"
+    },
+    "team": {
+      "title": "Đội ngũ của chúng tôi",
+      "ceo": "Giám đốc điều hành",
+      "cto": "Giám đốc công nghệ",
+      "head_of_design": "Trưởng phòng thiết kế",
+      "view_profile": "Xem hồ sơ",
+      "connect": "Kết nối"
+    },
+    "milestones": {
+      "title": "Cột mốc phát triển",
+      "company_founded": "Thành lập công ty",
+      "first_client": "Khách hàng đầu tiên",
+      "expansion": "Mở rộng quốc tế",
+      "innovation": "Giải thưởng đổi mới",
+      "platform_launch": "Ra mắt nền tảng",
+      "recognition": "Công nhận toàn cầu"
+    },
+    "meta": {
+      "title": "Về chúng tôi - Giải pháp E-commerce hàng đầu",
+      "description": "Tìm hiểu về lịch sử công ty, sứ mệnh, giá trị và gặp gỡ đội ngũ chuyên nghiệp của chúng tôi."
+    }
+  },
   "contact": "Liên hệ",
   "language": "Ngôn ngữ",
   "login": "Đăng nhập",

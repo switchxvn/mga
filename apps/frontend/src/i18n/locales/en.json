@@ -1,7 +1,34 @@
 {
   "welcome": "Welcome to our application",
   "home": "Home",
-  "about": "About",
+  "about": {
+    "sections": {
+      "our_mission": "Our Mission",
+      "our_vision": "Our Vision",
+      "our_values": "Our Values"
+    },
+    "team": {
+      "title": "Our Team",
+      "ceo": "CEO & Founder",
+      "cto": "Chief Technology Officer",
+      "head_of_design": "Head of Design",
+      "view_profile": "View Profile",
+      "connect": "Connect"
+    },
+    "milestones": {
+      "title": "Our Journey",
+      "company_founded": "Company Founded",
+      "first_client": "First Major Client",
+      "expansion": "International Expansion",
+      "innovation": "Innovation Award",
+      "platform_launch": "Platform Launch",
+      "recognition": "Global Recognition"
+    },
+    "meta": {
+      "title": "About Us - Leading E-commerce Solution",
+      "description": "Learn about our company history, mission, values, and meet our dedicated team of professionals."
+    }
+  },
   "contact": "Contact",
   "language": "Language",
   "login": "Login",

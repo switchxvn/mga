@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { AboutPage } from './about-page.entity';
+import { AboutMilestoneTranslation } from './about-milestone-translation.entity';
 
 @Entity('about_milestones')
 export class AboutMilestone {
@@ -24,8 +25,8 @@ export class AboutMilestone {
   @Column({ default: 0 })
   order: number;
 
-  @Column({ default: true })
-  is_active: boolean;
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -36,4 +37,7 @@ export class AboutMilestone {
   @ManyToOne(() => AboutPage, aboutPage => aboutPage.milestones, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'about_page_id' })
   aboutPage: AboutPage;
+
+  @OneToMany(() => AboutMilestoneTranslation, translation => translation.aboutMilestone, { cascade: true })
+  translations: AboutMilestoneTranslation[];
 } 

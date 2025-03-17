@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { AboutPage } from './about-page.entity';
+import { AboutTeamMemberTranslation } from './about-team-member-translation.entity';
 
 @Entity('about_team_members')
 export class AboutTeamMember {
@@ -30,8 +31,8 @@ export class AboutTeamMember {
   @Column({ default: 0 })
   order: number;
 
-  @Column({ default: true })
-  is_active: boolean;
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -42,4 +43,7 @@ export class AboutTeamMember {
   @ManyToOne(() => AboutPage, aboutPage => aboutPage.teamMembers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'about_page_id' })
   aboutPage: AboutPage;
+
+  @OneToMany(() => AboutTeamMemberTranslation, translation => translation.aboutTeamMember, { cascade: true })
+  translations: AboutTeamMemberTranslation[];
 } 

@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { AboutSection } from './about-section.entity';
 import { AboutTeamMember } from './about-team-member.entity';
 import { AboutMilestone } from './about-milestone.entity';
+import { AboutPageTranslation } from './about-page-translation.entity';
 
 @Entity('about_page')
 export class AboutPage {
@@ -14,14 +15,14 @@ export class AboutPage {
   @Column({ nullable: true })
   subtitle: string;
 
-  @Column({ nullable: true })
-  meta_title: string;
+  @Column({ name: 'meta_title', nullable: true })
+  metaTitle: string;
 
-  @Column({ nullable: true })
-  meta_description: string;
+  @Column({ name: 'meta_description', nullable: true })
+  metaDescription: string;
 
-  @Column({ default: true })
-  is_active: boolean;
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -37,4 +38,7 @@ export class AboutPage {
 
   @OneToMany(() => AboutMilestone, milestone => milestone.aboutPage, { cascade: true })
   milestones: AboutMilestone[];
+
+  @OneToMany(() => AboutPageTranslation, translation => translation.aboutPage, { cascade: true })
+  translations: AboutPageTranslation[];
 } 

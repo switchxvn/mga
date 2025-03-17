@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { AboutPage } from './about-page.entity';
+import { AboutSectionTranslation } from './about-section-translation.entity';
 
 @Entity('about_sections')
 export class AboutSection {
@@ -21,14 +22,14 @@ export class AboutSection {
   @Column({ name: 'video_url', nullable: true })
   videoUrl: string;
 
-  @Column({ default: 0 })
-  order: number;
-
   @Column({ name: 'section_type', default: 'text' })
   sectionType: string;
 
-  @Column({ default: true })
-  is_active: boolean;
+  @Column({ default: 0 })
+  order: number;
+
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -39,4 +40,7 @@ export class AboutSection {
   @ManyToOne(() => AboutPage, aboutPage => aboutPage.sections, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'about_page_id' })
   aboutPage: AboutPage;
+
+  @OneToMany(() => AboutSectionTranslation, translation => translation.aboutSection, { cascade: true })
+  translations: AboutSectionTranslation[];
 } 

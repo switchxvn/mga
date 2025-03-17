@@ -204,30 +204,29 @@ export function useLocalization() {
   };
 
   // Translation function
-  const t = (key: string, params?: Record<string, any>, namespace = 'common') => {
+  const t = (key: string, params?: Record<string, any>) => {
     if (!state.locale.value || !state.translations.value[state.locale.value]) {
       return key;
     }
+
+    const translations = state.translations.value[state.locale.value];
     
     // Split key by dots to handle nested translations
     const parts = key.split('.');
-    if (parts.length > 1) {
-      // If key contains dots, first part is namespace
-      namespace = parts[0];
-      key = parts.slice(1).join('.');
+    
+    // Navigate through the nested structure
+    let value: any = translations;
+    for (const part of parts) {
+      if (!value || typeof value !== 'object') {
+        console.warn(`Translation path broken at "${part}" for key "${key}"`);
+        return key;
+      }
+      value = value[part];
     }
-    
-    const translations = state.translations.value[state.locale.value];
-    const ns = translations[namespace];
-    
-    if (!ns) {
-      console.warn(`Namespace "${namespace}" not found for key "${key}"`);
-      return key;
-    }
-    
-    let value = ns[key];
-    if (!value) {
-      console.warn(`Translation not found for key "${key}" in namespace "${namespace}"`);
+
+    // If we didn't find a string value at the end
+    if (typeof value !== 'string') {
+      console.warn(`Translation not found for key "${key}"`);
       return key;
     }
 
