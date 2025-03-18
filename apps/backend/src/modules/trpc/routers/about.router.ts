@@ -4,6 +4,7 @@ import { AboutAdminService } from '../../about/admin/services/about-admin.servic
 import { AboutFrontendService } from '../../about/frontend/services/about-frontend.service';
 import { z } from 'zod';
 import { publicProcedure, adminProcedure, router } from '../trpc';
+import { TRPCError } from '@trpc/server';
 
 @Injectable()
 export class AboutRouter {
@@ -60,18 +61,100 @@ export class AboutRouter {
 
 // Định nghĩa router cho trang giới thiệu
 export const aboutRouter = router({
-  // Frontend routes
   getActivePage: publicProcedure
+    .input(z.string().optional())
+    .query(async ({ ctx, input: languageCode }) => {
+      try {
+        if (languageCode) {
+          return await ctx.services.aboutFrontendService.getActivePageTranslation(languageCode);
+        }
+
+        return await ctx.services.aboutFrontendService.getActivePage({
+          relations: {
+            translations: true,
+            sections: {
+              translations: true,
+            },
+            teamMembers: {
+              translations: true,
+            },
+            milestones: {
+              translations: true,
+            },
+          },
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch active about page',
+          cause: error,
+        });
+      }
+    }),
+
+  getActivePageWithoutTranslations: publicProcedure
     .query(async ({ ctx }) => {
-      return ctx.services.aboutFrontendService.getActivePage();
+      try {
+        return await ctx.services.aboutFrontendService.getActivePage({
+          relations: {
+            sections: true,
+            teamMembers: true,
+            milestones: true
+          }
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch active about page without translations',
+          cause: error,
+        });
+      }
+    }),
+
+  // Admin procedures
+  getAllPages: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const pages = await ctx.services.aboutAdminService.findAllPages();
+        return {
+          ...pages,
+          relations: {
+            translations: true,
+            sections: {
+              translations: true,
+            },
+            teamMembers: {
+              translations: true,
+            },
+            milestones: {
+              translations: true,
+            },
+          },
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch all about pages',
+          cause: error,
+        });
+      }
     }),
 
   getPageById: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.number())
     .query(async ({ ctx, input }) => {
-      return ctx.services.aboutFrontendService.getPageById(input.id);
+      try {
+        return await ctx.services.aboutAdminService.findPageById(input);
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch about page by id',
+          cause: error,
+        });
+      }
     }),
 
+  // Frontend routes
   getActiveSections: publicProcedure
     .query(async ({ ctx }) => {
       return ctx.services.aboutFrontendService.getActiveSections();
