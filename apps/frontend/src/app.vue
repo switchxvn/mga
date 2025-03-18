@@ -14,11 +14,24 @@ useHead({
 
 import { onMounted } from 'vue';
 import { useFeatureFlags } from './composables/useFeatureFlags';
+import { useComponentStyles } from './composables/useComponentStyles';
+import { useTheme } from './composables/useTheme';
 
 // Khởi tạo feature flags khi ứng dụng được tải
 onMounted(async () => {
   const { fetchFeatureFlags } = useFeatureFlags();
   await fetchFeatureFlags();
+});
+
+// Initialize theme and component styles
+const { initializeTheme } = useTheme();
+const { initializeStyles } = useComponentStyles();
+
+onMounted(async () => {
+  // Khởi tạo theme trước
+  await initializeTheme();
+  // Sau đó khởi tạo component styles
+  await initializeStyles();
 });
 </script>
 

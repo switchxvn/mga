@@ -15,27 +15,36 @@ import "swiper/css/pagination";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import FeaturedProducts from "../components/sections/FeaturedProducts.vue";
+import { useTheme } from '../composables/useTheme';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
-interface Post {
+interface PostTranslation {
   id: number;
   title: string;
   content: string;
+  locale: string;
+  slug?: string;
+  postId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Post {
+  id: number;
+  title?: string;
+  content?: string;
   thumbnail?: string | null;
   createdAt: string;
   updatedAt: string;
-  authorId?: number;
-  published?: boolean;
+  authorId: number;
+  published: boolean;
   author?: any;
   ogImage?: string;
   slug?: string;
   metaDescription?: string;
-  translations?: Array<{
-    id: number;
-    title: string;
-    content: string;
-    locale: string;
-  }>;
+  shortDescription?: string;
+  categories?: any[];
+  translations?: PostTranslation[];
   [key: string]: any;
 }
 
@@ -70,19 +79,23 @@ interface ThemeSection {
 }
 
 // Theme interface
+interface ThemeColors {
+  primary: Record<number, string>;
+  secondary: Record<number, string>;
+  success: Record<number, string>;
+  error: Record<number, string>;
+  warning: Record<number, string>;
+  info: Record<number, string>;
+}
+
 interface Theme {
   id: number;
   name: string;
-  colors: {
-    primary: Record<string, string>;
-    secondary: Record<string, string>;
-    success: Record<string, string>;
-    error: Record<string, string>;
-    warning: Record<string, string>;
-    info: Record<string, string>;
-  };
-  sections: ThemeSection[];
   isActive: boolean;
+  sections?: ThemeSection[];
+  colors?: ThemeColors;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Section config interfaces
@@ -238,9 +251,8 @@ const isLoading = ref(false);
 const isLoadingServices = ref(false);
 const error = ref<string | null>(null);
 const serviceError = ref<string | null>(null);
-const activeTheme = ref<Theme | null>(null);
-const isLoadingTheme = ref(false);
-const themeError = ref<string | null>(null);
+const { getActiveTheme } = useTheme();
+const theme = computed(() => getActiveTheme());
 
 // Cấu hình Swiper cho posts dựa trên theme
 const getPostsSwiperOptions = (theme: Theme | null) => {
@@ -267,7 +279,7 @@ const getPostsSwiperOptions = (theme: Theme | null) => {
     },
   };
 
-  if (!theme) return defaultConfig;
+  if (!theme?.sections) return defaultConfig;
 
   const newsSection = theme.sections.find((section) => section.type === "news");
   if (!newsSection) return defaultConfig;
@@ -292,47 +304,27 @@ const getPostsSwiperOptions = (theme: Theme | null) => {
   };
 };
 
-const postsSwiperOptions = computed(() => getPostsSwiperOptions(activeTheme.value));
+const postsSwiperOptions = computed(() => getPostsSwiperOptions(theme.value));
 
 onMounted(async () => {
   try {
-    // Fetch theme, posts and services
-    await Promise.all([fetchActiveTheme(), fetchLatestPosts(), fetchServices()]);
+    // Fetch posts and services only, theme is handled by useTheme
+    await Promise.all([fetchLatestPosts(), fetchServices()]);
+
+    // Apply theme colors
+    if (theme.value?.colors) {
+      const colors = theme.value.colors;
+      document.documentElement.style.setProperty("--primary", colors.primary[500]);
+      document.documentElement.style.setProperty("--secondary", colors.secondary[500]);
+      document.documentElement.style.setProperty("--success", colors.success[500]);
+      document.documentElement.style.setProperty("--error", colors.error[500]);
+      document.documentElement.style.setProperty("--warning", colors.warning[500]);
+      document.documentElement.style.setProperty("--info", colors.info[500]);
+    }
   } catch (err) {
     console.error("Error in page initialization:", err);
   }
 });
-
-async function fetchActiveTheme() {
-  isLoadingTheme.value = true;
-  themeError.value = null;
-  try {
-    const theme = await trpc.theme.getActiveTheme.query();
-    // Sort sections by order field
-    if (theme.sections) {
-      theme.sections.sort((a, b) => a.order - b.order);
-    }
-    activeTheme.value = theme;
-
-    // Apply theme colors
-    if (theme.colors) {
-      document.documentElement.style.setProperty("--primary", theme.colors.primary[500]);
-      document.documentElement.style.setProperty(
-        "--secondary",
-        theme.colors.secondary[500]
-      );
-      document.documentElement.style.setProperty("--success", theme.colors.success[500]);
-      document.documentElement.style.setProperty("--error", theme.colors.error[500]);
-      document.documentElement.style.setProperty("--warning", theme.colors.warning[500]);
-      document.documentElement.style.setProperty("--info", theme.colors.info[500]);
-    }
-  } catch (err: any) {
-    console.error("Failed to fetch active theme:", err);
-    themeError.value = err.message || "Đã xảy ra lỗi khi tải theme";
-  } finally {
-    isLoadingTheme.value = false;
-  }
-}
 
 async function fetchLatestPosts() {
   isLoading.value = true;
@@ -342,23 +334,28 @@ async function fetchLatestPosts() {
     const result = await trpc.post.byLocale.query({ locale: locale.value });
 
     // Chuyển đổi dữ liệu để phù hợp với kiểu Post
-    latestPosts.value = result
-      .map((post: Post) => {
-        // Tìm bản dịch cho locale hiện tại
-        const translation = post.translations?.find(
-          (t: { locale: string }) => t.locale === locale.value
-        );
+    latestPosts.value = result.map((post: any) => {
+      // Tìm bản dịch cho locale hiện tại
+      const translation = post.translations?.find(
+        (t: { locale: string }) => t.locale === locale.value
+      );
 
-        return {
-          ...post,
-          id: Number(post.id),
-          // Sử dụng title và content từ bản dịch nếu có, nếu không sử dụng giá trị mặc định
-          title: translation?.title || post.title,
-          content: translation?.content || post.content,
-          author: post.author || {},
-        };
-      })
-      .slice(0, 20); // Lấy tối đa 20 bài viết
+      // Chuyển đổi translations để phù hợp với PostTranslation
+      const mappedTranslations = post.translations?.map((t: any) => ({
+        ...t,
+        slug: t.slug || undefined
+      }));
+
+      return {
+        ...post,
+        id: Number(post.id),
+        // Sử dụng title và content từ bản dịch nếu có, nếu không sử dụng giá trị mặc định
+        title: translation?.title || post.title,
+        content: translation?.content || post.content,
+        author: post.author || {},
+        translations: mappedTranslations
+      } as Post;
+    }).slice(0, 20); // Lấy tối đa 20 bài viết
   } catch (err: any) {
     console.error("Failed to fetch latest posts:", err);
     error.value = err.message || "Đã xảy ra lỗi khi tải bài viết";
@@ -399,58 +396,45 @@ const getAuthorName = (author: any) => {
 };
 
 const getSectionConfig = (type: string) => {
-  if (!activeTheme.value?.sections) return undefined;
-  const section = activeTheme.value.sections.find((section) => section.type === type);
+  const currentTheme = theme.value;
+  if (!currentTheme?.sections) return undefined;
+  
+  const section = currentTheme.sections.find((section: ThemeSection) => section.type === type);
   if (!section) return undefined;
 
   return {
     ...section.settings,
     title: section.title,
     isActive: section.isActive,
-    themeId: activeTheme.value.id,
+    themeId: currentTheme.id,
   };
 };
 
-const getSliderConfig = computed(() => {
-  const config = getSectionConfig("hero");
-  return config as SliderConfig | undefined;
-});
-
-const getProductsConfig = computed(() => {
-  const config = getSectionConfig("featured_products");
-  return config as ProductsConfig | undefined;
-});
-
-const getServicesConfig = computed(() => {
-  const config = getSectionConfig("services");
-  return config as ServicesConfig | undefined;
-});
-
-const getCategoriesConfig = computed(() => {
-  const config = getSectionConfig("product_categories");
-  return config as CategoriesConfig | undefined;
-});
+const sliderConfig = computed(() => getSectionConfig("hero") as SliderConfig | undefined);
+const productsConfig = computed(() => getSectionConfig("featured_products") as ProductsConfig | undefined);
+const servicesConfig = computed(() => getSectionConfig("services") as ServicesConfig | undefined);
+const categoriesConfig = computed(() => getSectionConfig("product_categories") as CategoriesConfig | undefined);
 </script>
 
 <template>
   <div class="bg-gray-50 dark:bg-gray-900">
-    <template v-if="isLoadingTheme">
+    <template v-if="isLoading">
       <div class="flex justify-center items-center min-h-screen">
         <ULoader size="lg" />
       </div>
     </template>
-    <template v-else-if="themeError">
+    <template v-else-if="error">
       <div class="container mx-auto px-4 py-12 text-center">
-        {{ themeError }}
+        {{ error }}
       </div>
     </template>
     <template v-else>
       <!-- Render sections based on their order -->
-      <template v-for="section in activeTheme?.sections" :key="section.id">
+      <template v-for="section in theme?.sections" :key="section.id">
         <!-- Hero Section -->
         <HeroSection
           v-if="section.type === 'hero' && section.isActive"
-          :config="getSliderConfig"
+          :config="sliderConfig"
         />
 
         <!-- Featured Products Section -->
@@ -462,7 +446,7 @@ const getCategoriesConfig = computed(() => {
             <h2 class="text-3xl font-bold mb-8 text-center">
               {{ section.title || t("products.featured") }}
             </h2>
-            <FeaturedProducts :config="getProductsConfig" />
+            <FeaturedProducts :config="productsConfig" />
           </div>
         </section>
 
@@ -471,9 +455,9 @@ const getCategoriesConfig = computed(() => {
           v-if="
             section.type === 'product_categories' &&
             section.isActive &&
-            getCategoriesConfig
+            categoriesConfig
           "
-          :config="getCategoriesConfig"
+          :config="categoriesConfig"
         />
 
         <!-- Services Section -->
@@ -481,23 +465,23 @@ const getCategoriesConfig = computed(() => {
           v-if="section.type === 'services' && section.isActive"
           class="services-section relative"
           :style="{
-            paddingTop: getServicesConfig?.padding?.top,
-            paddingBottom: getServicesConfig?.padding?.bottom,
+            paddingTop: servicesConfig?.padding?.top,
+            paddingBottom: servicesConfig?.padding?.bottom,
           }"
         >
           <!-- Background gradient overlay -->
           <div
             class="absolute inset-0"
             :style="{
-              backgroundImage: getServicesConfig?.backgroundGradient
-                ? `linear-gradient(${getServicesConfig.backgroundGradient.direction.replace(
+              backgroundImage: servicesConfig?.backgroundGradient
+                ? `linear-gradient(${servicesConfig.backgroundGradient.direction.replace(
                     'to-',
                     'to '
-                  )}, ${getServicesConfig.backgroundGradient.from}, ${
-                    getServicesConfig.backgroundGradient.to
+                  )}, ${servicesConfig.backgroundGradient.from}, ${
+                    servicesConfig.backgroundGradient.to
                   })`
                 : 'none',
-              opacity: getServicesConfig?.overlayOpacity,
+              opacity: servicesConfig?.overlayOpacity,
               pointerEvents: 'none',
             }"
           />
@@ -511,7 +495,7 @@ const getCategoriesConfig = computed(() => {
               :services="services"
               :is-loading="isLoadingServices"
               :error="serviceError"
-              :config="getServicesConfig"
+              :config="servicesConfig"
             />
           </div>
         </section>
