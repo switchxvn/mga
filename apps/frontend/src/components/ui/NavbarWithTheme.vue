@@ -218,9 +218,7 @@ const handleScroll = () => {
 
 // Computed classes for navbar
 const navbarClasses = computed(() => ({
-  "shadow-md": isScrolled.value,
-  "bg-background/95 backdrop-blur-sm": isScrolled.value,
-  "bg-background": !isScrolled.value,
+  "shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),_0_10px_20px_-2px_rgba(0,0,0,0.04)]": isScrolled.value,
   "translate-y-0 opacity-100": isNavbarVisible.value,
   "-translate-y-full opacity-0": !isNavbarVisible.value,
 }));
@@ -244,7 +242,7 @@ watch(locale, () => {
 
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300"
+    class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white dark:bg-background"
     :class="navbarClasses"
   >
     <div class="container mx-auto px-4">
@@ -520,7 +518,7 @@ watch(locale, () => {
 
 /* Đảm bảo mega menu có background đúng trong chế độ dark */
 .dark .mega-menu {
-  @apply bg-gray-800 border-gray-700;
+  @apply bg-gray-800;
 }
 
 /* Đảm bảo không có phần tử nào trong mega menu có background màu trắng trong chế độ dark */

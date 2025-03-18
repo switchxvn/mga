@@ -9,6 +9,24 @@ import {
 import { ThemeSection } from './theme-section.entity';
 import { ComponentStyleConfig } from './component-style-config.entity';
 
+type ColorShades = {
+  '50': string;
+  '100': string;
+  '200': string;
+  '300': string;
+  '400': string;
+  '500': string;
+  '600': string;
+  '700': string;
+  '800': string;
+  '900': string;
+};
+
+type ColorMode = {
+  primary: ColorShades;
+  secondary: ColorShades;
+};
+
 @Entity('themes')
 export class Theme {
   @PrimaryGeneratedColumn()
@@ -19,12 +37,8 @@ export class Theme {
 
   @Column({ type: 'jsonb', nullable: true })
   colors!: {
-    primary: Record<string, string>;
-    secondary: Record<string, string>;
-    success: Record<string, string>;
-    error: Record<string, string>;
-    warning: Record<string, string>;
-    info: Record<string, string>;
+    light: ColorMode;
+    dark: ColorMode;
   };
 
   @Column({ name: 'is_active', type: 'boolean', default: false })

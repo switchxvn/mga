@@ -1,18 +1,19 @@
 @use "sass:map";
 
 :root {
-  /* Base colors */
-  --primary-50: 240 5.9% 10%;
-  --primary-100: 240 3.8% 15.9%;
-  --primary-200: 240 5.2% 33.9%;
-  --primary-300: 240 5.3% 54.9%;
-  --primary-400: 240 5% 64.9%;
-  --primary-500: 240 4.8% 95.9%;
-  --primary-600: 0 0% 100%;
-  --primary-700: 240 5.2% 33.9%;
-  --primary-800: 240 3.8% 15.9%;
-  --primary-900: 240 5.9% 10%;
-  --primary-950: 240 7.3% 8%;
+  /* Base colors - Using Nuxt UI color variables */
+  --primary-50: var(--color-primary-50);
+  --primary-100: var(--color-primary-100);
+  --primary-200: var(--color-primary-200);
+  --primary-300: var(--color-primary-300);
+  --primary-400: var(--color-primary-400);
+  --primary-500: var(--color-primary-500);
+  --primary-600: var(--color-primary-600);
+  --primary-700: var(--color-primary-700);
+  --primary-800: var(--color-primary-800);
+  --primary-900: var(--color-primary-900);
+  --primary-950: var(--color-primary-950);
+  --primary: var(--color-primary-DEFAULT);
 
   /* Gray scale */
   --gray-50: 0 0% 98%;
@@ -47,7 +48,6 @@
   --card-foreground: 240 10% 3.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
   --primary-foreground: 0 0% 98%;
   --secondary: 240 4.8% 95.9%;
   --secondary-foreground: 240 5.9% 10%;
@@ -163,14 +163,16 @@
 }
 
 .dark {
+  /* Dark mode - Using Nuxt UI color variables */
+  --primary: var(--color-primary-DEFAULT);
+  --primary-foreground: var(--color-primary-950);
+  
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
   --card: 240 10% 3.9%;
   --card-foreground: 0 0% 98%;
   --popover: 240 10% 3.9%;
   --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
   --secondary: 240 3.7% 15.9%;
   --secondary-foreground: 0 0% 98%;
   --muted: 240 3.7% 15.9%;
@@ -193,17 +195,16 @@
 // Base Colors
 $colors: (
   'primary': (
-    50: #f0f9ff,
-    100: #e0f2fe,
-    200: #bae6fd,
-    300: #7dd3fc,
-    400: #38bdf8,
-    500: #0ea5e9,  // Main primary color
-    600: #0284c7,
-    700: #0369a1,
-    800: #075985,
-    900: #0c4a6e,
-    950: #082f49
+    50: var(--primary-50),
+    100: var(--primary-100),
+    200: var(--primary-200),
+    300: var(--primary-300),
+    400: var(--primary-400),
+    500: var(--primary-500),
+    600: var(--primary-600),
+    700: var(--primary-700),
+    800: var(--primary-800),
+    900: var(--primary-900)
   ),
   'gray': (
     50: #f8fafc,
@@ -241,61 +242,76 @@ $background-hover: map.get(map.get($colors, 'gray'), 50);
 
 // Semantic Colors
 $semantic-colors: (
-  'success': #10b981,  // Emerald-500
-  'warning': #f59e0b,  // Amber-500
-  'error': #ef4444,    // Red-500
-  'info': #3b82f6      // Blue-500
+  'background': var(--background),
+  'foreground': var(--foreground),
+  'card': var(--card),
+  'card-foreground': var(--card-foreground),
+  'popover': var(--popover),
+  'popover-foreground': var(--popover-foreground),
+  'primary': var(--primary),
+  'primary-foreground': var(--primary-foreground),
+  'secondary': var(--secondary),
+  'secondary-foreground': var(--secondary-foreground),
+  'muted': var(--muted),
+  'muted-foreground': var(--muted-foreground),
+  'accent': var(--accent),
+  'accent-foreground': var(--accent-foreground),
+  'destructive': var(--destructive),
+  'destructive-foreground': var(--destructive-foreground),
+  'border': var(--border),
+  'input': var(--input),
+  'ring': var(--ring)
 );
 
 // Theme Colors
 $theme: (
   // Brand Colors
-  'primary': $primary,
-  'primary-light': map.get(map.get($colors, 'primary'), 400),
-  'primary-dark': map.get(map.get($colors, 'primary'), 600),
+  'primary': var(--primary),
+  'primary-light': var(--primary-hex-light),
+  'primary-dark': var(--primary-hex-dark),
   
   // Text Colors
-  'text': $text-dark,
-  'text-light': $text-light,
-  'text-lighter': map.get(map.get($colors, 'gray'), 400),
-  'text-dark': $text-dark,
+  'text': var(--foreground),
+  'text-light': var(--muted-foreground),
+  'text-lighter': var(--muted-foreground),
+  'text-dark': var(--foreground),
   
   // Background Colors
-  'background': #ffffff,
-  'background-alt': map.get(map.get($colors, 'gray'), 50),
-  'background-hover': $background-hover,
+  'background': var(--background),
+  'background-alt': var(--muted),
+  'background-hover': var(--accent),
   
   // Border Colors
-  'border': map.get(map.get($colors, 'gray'), 200),
-  'border-light': map.get(map.get($colors, 'gray'), 100),
-  'border-dark': map.get(map.get($colors, 'gray'), 300)
+  'border': var(--border),
+  'border-light': var(--border),
+  'border-dark': var(--border)
 );
 
 // Dark Theme Colors
 $theme-dark: (
-  'background': map.get(map.get($colors, 'gray'), 900),
-  'background-alt': map.get(map.get($colors, 'gray'), 800),
-  'text': map.get(map.get($colors, 'gray'), 100),
-  'text-light': map.get(map.get($colors, 'gray'), 300),
-  'border': map.get(map.get($colors, 'gray'), 700)
+  'background': var(--background),
+  'background-alt': var(--muted),
+  'text': var(--foreground),
+  'text-light': var(--muted-foreground),
+  'border': var(--border)
 );
 
 // Navigation
 $navbar: (
-  'background': map.get($theme, 'background'),
-  'text': map.get($theme, 'text'),
-  'link-color': $text-dark,
-  'link-hover': $primary,
-  'active': $primary
+  'background': var(--background),
+  'text': var(--foreground),
+  'link-color': var(--foreground),
+  'link-hover': var(--primary),
+  'active': var(--primary)
 );
 
 // Main Menu
 $main-menu: (
-  'color': map.get(map.get($colors, 'blue'), 900),
-  'hover-color': map.get(map.get($colors, 'blue'), 500),
-  'active-color': map.get(map.get($colors, 'blue'), 600),
-  'dark-color': map.get(map.get($colors, 'gray'), 200),
-  'dark-hover-color': map.get(map.get($colors, 'blue'), 400),
+  'color': var(--foreground),
+  'hover-color': var(--primary),
+  'active-color': var(--primary),
+  'dark-color': var(--foreground),
+  'dark-hover-color': var(--primary),
   'letter-spacing': 0.05em,
   'font-weight': 600
 );
@@ -321,44 +337,44 @@ $spacing: (
 
 // Border Radius
 $radius: (
-  'sm': 0.25rem,  // 4px
-  'md': 0.375rem, // 6px
-  'lg': 0.5rem,   // 8px
-  'xl': 0.75rem,  // 12px
-  'full': 9999px
+  'sm': var(--radius-sm),
+  'md': var(--radius-md),
+  'lg': var(--radius-lg),
+  'xl': var(--radius-xl),
+  'full': var(--radius-full)
 );
 
 // Shadows
 $shadows: (
-  'sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-  'md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-  'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-  'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+  'sm': var(--shadow-sm),
+  'md': var(--shadow-md),
+  'lg': var(--shadow-lg),
+  'xl': var(--shadow-xl)
 );
 
 // Z-index
 $z-index: (
-  'dropdown': 1000,
-  'sticky': 1020,
-  'fixed': 1030,
-  'modal-backdrop': 1040,
-  'modal': 1050,
-  'popover': 1060,
-  'tooltip': 1070
+  'dropdown': var(--z-dropdown),
+  'sticky': var(--z-sticky),
+  'fixed': var(--z-sticky),
+  'modal-backdrop': var(--z-modal),
+  'modal': var(--z-modal),
+  'popover': var(--z-popover),
+  'tooltip': var(--z-tooltip)
 );
 
 // Navbar specific
-$navbar-link-color: $text-dark;
-$navbar-link-hover: $primary;
-$navbar-megamenu-text: $text-dark;
-$navbar-megamenu-hover: $primary;
-$navbar-megamenu-bg-hover: $background-hover;
+$navbar-link-color: var(--foreground);
+$navbar-link-hover: var(--primary);
+$navbar-megamenu-text: var(--foreground);
+$navbar-megamenu-hover: var(--primary);
+$navbar-megamenu-bg-hover: var(--accent);
 
 // Main menu enhancements
-$main-menu-color: #1e3a8a; // Đậm hơn, màu xanh navy
-$main-menu-hover-color: #3b82f6; // Màu xanh dương sáng hơn khi hover
-$main-menu-active-color: #2563eb; // Màu khi active
-$main-menu-letter-spacing: 0.05em; // Khoảng cách chữ cho menu chính
-$main-menu-font-weight: 700; // Độ đậm của font (tăng từ 600 lên 700)
-$main-menu-dark-color: #e5e7eb; // Màu chữ trong dark mode
-$main-menu-dark-hover-color: #60a5fa; // Màu hover trong dark mode 
+$main-menu-color: var(--foreground);
+$main-menu-hover-color: var(--primary);
+$main-menu-active-color: var(--primary);
+$main-menu-letter-spacing: 0.05em;
+$main-menu-font-weight: 600;
+$main-menu-dark-color: var(--foreground);
+$main-menu-dark-hover-color: var(--primary); 
