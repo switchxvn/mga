@@ -18,7 +18,6 @@ import { TrpcModule } from './modules/trpc/trpc.module';
 import { UserModule } from './modules/user/user.module';
 import { ThemeModule } from './modules/theme/theme.module';
 import { NestFactory } from '@nestjs/core';
-
 @Module({
   imports: [
     ConfigModule.forRoot({

@@ -14,7 +14,10 @@
         <div v-for="item in menuItems" :key="item.id" class="p-4 border rounded">
           <div class="flex justify-between items-center">
             <div>
-              <h3 class="font-medium">{{ item.label }}</h3>
+              <h3 class="font-medium">
+                {{ getTranslation(item, 'vi') || item.label }}
+                <span class="text-sm text-gray-500">({{ getTranslation(item, 'en') }})</span>
+              </h3>
               <p class="text-sm text-gray-500">{{ item.href }}</p>
             </div>
             <div class="space-x-2">
@@ -38,9 +41,9 @@
       <!-- Add/Edit Form -->
       <form @submit.prevent="handleSubmit" class="mt-4 space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700">Label</label>
+          <label class="block text-sm font-medium text-gray-700">Nhãn (Tiếng Việt)</label>
           <input
-            v-model="form.label"
+            v-model="form.translations.vi"
             type="text"
             required
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
@@ -48,7 +51,17 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">URL</label>
+          <label class="block text-sm font-medium text-gray-700">Label (English)</label>
+          <input
+            v-model="form.translations.en"
+            type="text"
+            required
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Đường dẫn</label>
           <input
             v-model="form.href"
             type="text"
@@ -58,7 +71,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Order</label>
+          <label class="block text-sm font-medium text-gray-700">Thứ tự</label>
           <input
             v-model.number="form.order"
             type="number"
@@ -72,7 +85,7 @@
             type="checkbox"
             class="rounded border-gray-300 text-blue-600"
           />
-          <label class="ml-2 text-sm text-gray-700">Has Mega Menu</label>
+          <label class="ml-2 text-sm text-gray-700">Có Mega Menu</label>
         </div>
 
         <div class="flex items-center">
@@ -81,7 +94,7 @@
             type="checkbox"
             class="rounded border-gray-300 text-blue-600"
           />
-          <label class="ml-2 text-sm text-gray-700">Is Active</label>
+          <label class="ml-2 text-sm text-gray-700">Đang hoạt động</label>
         </div>
 
         <button
@@ -105,7 +118,10 @@ const { menuItems, isLoading, error, fetchMenuItems, createMenuItem, updateMenuI
 
 const editingId = ref<number | null>(null);
 const form = ref({
-  label: '',
+  translations: {
+    vi: '',
+    en: ''
+  },
   href: '',
   order: 0,
   hasMegaMenu: false,
@@ -117,9 +133,16 @@ onMounted(() => {
   fetchMenuItems();
 });
 
+const getTranslation = (item: MenuItem, locale: string) => {
+  return item.translations?.find(t => t.locale === locale)?.label;
+};
+
 const resetForm = () => {
   form.value = {
-    label: '',
+    translations: {
+      vi: '',
+      en: ''
+    },
     href: '',
     order: 0,
     hasMegaMenu: false,
@@ -132,7 +155,10 @@ const resetForm = () => {
 const handleEdit = (item: MenuItem) => {
   editingId.value = item.id;
   form.value = {
-    label: item.label,
+    translations: {
+      vi: getTranslation(item, 'vi') || '',
+      en: getTranslation(item, 'en') || ''
+    },
     href: item.href,
     order: item.order,
     hasMegaMenu: item.hasMegaMenu,
@@ -143,10 +169,18 @@ const handleEdit = (item: MenuItem) => {
 
 const handleSubmit = async () => {
   try {
+    const menuItemData = {
+      ...form.value,
+      translations: [
+        { locale: 'vi', label: form.value.translations.vi },
+        { locale: 'en', label: form.value.translations.en }
+      ]
+    };
+
     if (editingId.value) {
-      await updateMenuItem(editingId.value, form.value);
+      await updateMenuItem(editingId.value, menuItemData);
     } else {
-      await createMenuItem(form.value);
+      await createMenuItem(menuItemData);
     }
     resetForm();
   } catch (err) {

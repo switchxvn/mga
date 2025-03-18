@@ -9,10 +9,10 @@ import { SettingsAdminService } from './admin/services/settings-admin.service';
 import { SettingsFrontendService } from './frontend/services/settings-frontend.service';
 import { SettingsAdminController } from './admin/controllers/admin.controller';
 import { SettingsFrontendController } from './frontend/controllers/frontend.controller';
-
+import { MenuItemTranslation } from './entities/menu-item-translation.entity';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MenuItem, Logo, Tag, PostTag, Settings]),
+    TypeOrmModule.forFeature([MenuItem, Logo, Tag, PostTag, Settings, MenuItemTranslation]),
   ],
   controllers: [SettingsAdminController, SettingsFrontendController],
   providers: [SettingsAdminService, SettingsFrontendService],

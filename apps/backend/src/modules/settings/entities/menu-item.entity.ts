@@ -1,12 +1,13 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
+import { MenuItemTranslation } from './menu-item-translation.entity';
 
 @Entity('menu_items')
 export class MenuItem {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  label: string;
+  @Column({ name: 'default_locale', length: 2, default: 'en' })
+  defaultLocale: string;
 
   @Column()
   href: string;
@@ -32,6 +33,9 @@ export class MenuItem {
 
   @OneToMany(() => MenuItem, menuItem => menuItem.parent)
   children: MenuItem[];
+
+  @OneToMany(() => MenuItemTranslation, translation => translation.menuItem)
+  translations: MenuItemTranslation[];
 
   @Column({ name: 'mega_menu_columns', type: 'jsonb', nullable: true })
   megaMenuColumns: any;

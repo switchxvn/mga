@@ -24,11 +24,18 @@ import {
   deleteSettingSchema,
 } from '@ew/shared';
 import { z } from 'zod';
+import { adminMenuItemsRouter } from './admin/menu-items.router';
 
 export const settingsRouter = router({
+  admin: router({
+    menuItems: adminMenuItemsRouter,
+  }),
+
   // Menu Items - Public
   getAllMenuItems: publicProcedure
-    .input(getMenuItemsSchema.optional())
+    .input(z.object({
+      locale: z.string().length(2).optional(),
+    }).optional())
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log('Fetching all menu items');
@@ -45,7 +52,7 @@ export const settingsRouter = router({
     }),
 
   getMenuItemById: publicProcedure
-    .input(getMenuItemByIdSchema)
+    .input(z.number())
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Fetching menu item by ID: ${input}`);

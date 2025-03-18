@@ -26,7 +26,7 @@ export class SettingsFrontendService {
         isActive: true,
         ...filters,
       },
-      relations: ['parent', 'children'],
+      relations: ['parent', 'children', 'translations'],
       order: { order: 'ASC' },
     });
   }
@@ -37,7 +37,7 @@ export class SettingsFrontendService {
         id,
         isActive: true 
       },
-      relations: ['parent', 'children'],
+      relations: ['parent', 'children', 'translations'],
     });
     
     if (!menuItem) {
