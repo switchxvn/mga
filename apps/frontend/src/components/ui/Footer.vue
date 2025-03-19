@@ -28,10 +28,52 @@ const footerStyle = computed(() => {
   };
 });
 
-// Fetch footer khi component được mount
+// Thêm type definitions cho Facebook SDK
+declare global {
+  interface Window {
+    fbAsyncInit: () => void;
+    FB: {
+      init: (params: { xfbml: boolean; version: string; appId?: string }) => void;
+      XFBML: {
+        parse: () => void;
+      };
+    };
+  }
+}
+
+// Khởi tạo Facebook SDK
+const initFacebookSDK = () => {
+  return new Promise((resolve) => {
+    // Add fb-root if not exists
+    if (!document.getElementById('fb-root')) {
+      const fbRoot = document.createElement('div');
+      fbRoot.id = 'fb-root';
+      document.body.appendChild(fbRoot);
+    }
+
+    // Load Facebook SDK
+    const script = document.createElement('script');
+    script.src = 'https://connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v22.0&appId=495583615052994';
+    script.async = true;
+    script.defer = true;
+    script.crossOrigin = 'anonymous';
+    document.head.appendChild(script);
+    
+    resolve(true);
+  });
+};
+
+// Khởi tạo lại Facebook plugin
+const reloadFacebookPlugin = () => {
+  if (window.FB) {
+    window.FB.XFBML.parse();
+  }
+};
+
 onMounted(async () => {
   try {
     await fetchActiveFooter();
+    await initFacebookSDK();
     console.log('Active footer:', activeFooter.value);
   } catch (err) {
     console.error('Error in Footer component:', err);
@@ -125,16 +167,21 @@ onMounted(async () => {
             referrerpolicy="no-referrer-when-downgrade">
           </iframe>
         </div>
-        <div v-if="activeFooter.fanpageUrl" class="h-[300px]">
-          <iframe :src="activeFooter.fanpageUrl"
-            width="100%"
-            height="100%"
-            style="border:none;overflow:hidden"
-            scrolling="no"
-            frameborder="0"
-            allowfullscreen
-            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-          </iframe>
+        <div v-if="activeFooter.fanpageUrl" class="h-[300px] overflow-hidden w-full">
+          <div class="fb-page" 
+               :data-href="activeFooter.fanpageUrl"
+               data-tabs="timeline"
+               data-small-header="false"
+               data-adapt-container-width="true"
+               data-hide-cover="false"
+               data-show-facepile="true"
+               data-height="300"
+               data-width="608"
+               style="width: 100%; height: 100%;">
+            <blockquote :cite="activeFooter.fanpageUrl" class="fb-xfbml-parse-ignore">
+              <a :href="activeFooter.fanpageUrl">{{ activeFooter.companyInfo.name }}</a>
+            </blockquote>
+          </div>
         </div>
       </div>
 
