@@ -92,6 +92,7 @@ export class PostFrontendService {
       title: currentTranslation?.title || '',
       content: currentTranslation?.content || '',
       shortDescription: currentTranslation?.shortDescription || '',
+      thumbnail: post.thumbnail,
       published: post.published,
       authorId: post.authorId,
       createdAt: post.createdAt,

@@ -6,6 +6,8 @@ const basePostSchema = z.object({
   content: z.string().min(1).optional(),
   published: z.boolean().optional().default(false),
   authorId: z.number(),
+  thumbnail: z.string().nullable().optional(),
+  shortDescription: z.string().optional(),
 });
 
 // SEO fields schema
