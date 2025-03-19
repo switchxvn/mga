@@ -17,7 +17,7 @@ interface NavbarProps {
 }
 
 const props = withDefaults(defineProps<NavbarProps>(), {
-  hotline: "1900 1234",
+  hotline: "0917 001 254",
 });
 
 // Lấy route hiện tại

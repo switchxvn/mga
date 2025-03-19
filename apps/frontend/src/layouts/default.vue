@@ -114,7 +114,7 @@ async function handleLogout() {
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <NavbarWithTheme logo="/logo.svg" hotline="1900 1234" :user="user" :isLoading="isLoading" @logout="handleLogout" />
+    <NavbarWithTheme logo="/logo.svg" hotline="0917 001 254" :user="user" :isLoading="isLoading" @logout="handleLogout" />
     
     <!-- Main content -->
     <main class="flex-grow">
