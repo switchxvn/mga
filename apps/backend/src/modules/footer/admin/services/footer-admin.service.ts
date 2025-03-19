@@ -29,8 +29,6 @@ export class FooterAdminService {
     const updateData: Partial<Footer> = {};
     
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.type !== undefined) updateData.type = data.type;
-    if (data.content !== undefined) updateData.content = data.content as any;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     
     await this.footerRepository.update(id, updateData);

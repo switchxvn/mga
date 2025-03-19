@@ -23,7 +23,7 @@
   }
 
   &-helper {
-    @include text-style(sm);
+    // @include text-style(sm);
     color: hsl(var(--muted-foreground));
     margin-top: var(--spacing-1);
   }
@@ -50,7 +50,7 @@
     }
 
     label {
-      @include text-style(sm);
+      // @include text-style(sm);
       color: hsl(var(--foreground));
       cursor: pointer;
     }

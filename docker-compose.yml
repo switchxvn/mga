@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # nginx:
+  #   build:
+  #     context: .
+  #     dockerfile: nginx/Dockerfile
+  #   ports:
+  #     - "80:80"
+  #   depends_on:
+  #     - frontend
+  #   networks:
+  #     - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=http://backend:3333
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    expose:
+      - "3333"
+    environment:
+      - NODE_ENV=production
+      # Add other environment variables as needed
+      # - DATABASE_URL=
+      # - JWT_SECRET=
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 
