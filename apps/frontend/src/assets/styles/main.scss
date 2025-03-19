@@ -13,6 +13,7 @@
 @use 'components/button' as *;
 @use 'components/detail-page' as *;
 @use 'components/product-detail' as *;
+@use 'components/form' as *;
 
 // Import Tailwind layers
 @tailwind base;
@@ -29,6 +30,28 @@
   
   html.dark {
     color-scheme: dark;
+  }
+
+  .text-primary-foreground {
+    color: rgb(var(--primary-foreground));
+  }
+  .text-secondary-foreground {
+    color: rgb(var(--secondary-foreground));
+  }
+  .text-destructive-foreground {
+    color: rgb(var(--destructive-foreground));
+  }
+  .text-muted-foreground {
+    color: rgb(var(--muted-foreground));
+  }
+  .text-accent-foreground {
+    color: rgb(var(--accent-foreground));
+  }
+  .text-popover-foreground {
+    color: rgb(var(--popover-foreground));
+  }
+  .text-card-foreground {
+    color: rgb(var(--card-foreground));
   }
 }
 

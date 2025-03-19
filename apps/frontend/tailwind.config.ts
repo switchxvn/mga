@@ -22,6 +22,8 @@ export default {
     extend: {
       colors: {
         primary: {
+          DEFAULT: 'rgb(var(--primary))',
+          foreground: 'rgb(var(--primary-foreground))',
           50: 'rgb(var(--color-primary-50) / <alpha-value>)',
           100: 'rgb(var(--color-primary-100) / <alpha-value>)',
           200: 'rgb(var(--color-primary-200) / <alpha-value>)',
@@ -35,6 +37,8 @@ export default {
           950: 'rgb(var(--color-primary-950) / <alpha-value>)',
         },
         secondary: {
+          DEFAULT: 'rgb(var(--secondary))',
+          foreground: 'rgb(var(--secondary-foreground))',
           50: 'rgb(var(--color-secondary-50) / <alpha-value>)',
           100: 'rgb(var(--color-secondary-100) / <alpha-value>)',
           200: 'rgb(var(--color-secondary-200) / <alpha-value>)',

@@ -47,5 +47,5 @@ const inputClasses = computed(() => [
 </template>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/components/form';
+// Form styles are now imported globally in main.scss
 </style> 
