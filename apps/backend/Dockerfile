@@ -8,7 +8,6 @@ COPY package.json yarn.lock ./
 COPY .yarnrc ./.yarnrc
 COPY .yarn ./.yarn
 RUN yarn install --frozen-lockfile
-COPY .env .env
 # Copy source code
 COPY . .
 

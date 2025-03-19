@@ -16,11 +16,14 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
+    env_file:
+      - apps/frontend/.env
     environment:
       - NODE_ENV=production
-      - BACKEND_URL=http://backend:3333
+      - HOST=0.0.0.0
+    restart: unless-stopped
     depends_on:
       - backend
     networks:
@@ -32,6 +35,8 @@ services:
       dockerfile: apps/backend/Dockerfile
     expose:
       - "3333"
+    env_file:
+      - apps/backend/.env
     environment:
       - NODE_ENV=production
       # Add other environment variables as needed

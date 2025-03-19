@@ -11,7 +11,7 @@ COPY .yarn ./.yarn
 COPY nx.json tsconfig.base.json ./
 # Copy all workspace packages for proper dependency resolution
 COPY apps ./apps
-COPY .env .env
+
 # Install all dependencies including workspace packages
 RUN yarn install --frozen-lockfile
 
