@@ -139,7 +139,7 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
     <div class="product-info p-4 flex flex-col">
       <NuxtLink :to="productLink" class="block">
         <h3
-          class="product-title mb-1 text-lg font-medium text-gray-900 truncate dark:text-gray-100"
+          class="product-title mb-1 text-lg font-medium text-gray-900 dark:text-gray-100"
         >
           {{ title }}
         </h3>
@@ -209,16 +209,20 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
 
 /* Đảm bảo chiều cao cố định cho phần thông tin sản phẩm */
 .product-info {
-  height: 9.5rem;
+  height: 11rem;
   display: grid;
   grid-template-rows: auto 3rem 1fr;
 }
 
 .product-title {
-  height: 1.5rem;
+  height: 3rem;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.5rem;
 }
 
 .product-description-container {

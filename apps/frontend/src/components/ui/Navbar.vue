@@ -10,10 +10,6 @@ interface NavbarProps {
   hotline?: string;
 }
 
-const props = withDefaults(defineProps<NavbarProps>(), {
-  logo: "/logo.svg",
-  hotline: "1900 1234",
-});
 
 // Scroll behavior
 const isScrolled = ref(false);
