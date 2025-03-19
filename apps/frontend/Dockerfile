@@ -15,6 +15,9 @@ COPY apps ./apps
 # Install all dependencies including workspace packages
 RUN yarn install --frozen-lockfile
 
+# Set Node options to increase memory limit
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 # Build the app
 RUN cd apps/frontend && npx nuxt build
 
