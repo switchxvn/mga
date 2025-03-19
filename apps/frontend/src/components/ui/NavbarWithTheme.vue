@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useMenuItems } from "../../composables/useMenuItems";
 import type { MenuItem } from "@ew/shared";
 import Icon from "./Icon.vue";
@@ -237,32 +237,57 @@ const navbarClasses = computed(() => ({
   "-translate-y-full opacity-0": !isNavbarVisible.value,
 }));
 
+const navbarRef = ref<HTMLElement | null>(null);
+const navbarHeight = ref(64); // Default height
+
+// Update navbar height when mounted and on resize
+const updateNavbarHeight = () => {
+  if (navbarRef.value) {
+    navbarHeight.value = navbarRef.value.offsetHeight;
+  }
+};
+
 // Lifecycle hooks
 onMounted(() => {
   window.addEventListener("scroll", handleScroll);
+  window.addEventListener("resize", updateNavbarHeight);
   fetchMenuItems();
   checkCartFeatureFlag();
+  
+  // Update navbar height after the component is mounted
+  nextTick(() => {
+    updateNavbarHeight();
+  });
 });
 
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
+  window.removeEventListener("resize", updateNavbarHeight);
 });
 
 // Watch for locale changes to refetch menu items
 watch(locale, () => {
   fetchMenuItems();
 });
+
+// Watch for logo changes to update navbar height
+watch([logo, isLoadingLogo], () => {
+  nextTick(() => {
+    updateNavbarHeight();
+  });
+});
 </script>
 
 <template>
   <header
+    ref="navbarRef"
     class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800"
     :class="[
       navbarClasses,
       'navbar' // Add navbar class for SCSS styles
     ]"
   >
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto">
       <div class="flex items-center justify-between py-2">
         <!-- Logo -->
         <div class="flex items-center">
@@ -432,5 +457,5 @@ watch(locale, () => {
   </header>
 
   <!-- Spacer to prevent content from being hidden under fixed navbar -->
-  <div class="h-16"></div>
+  <div :style="`height: ${navbarHeight}px`"></div>
 </template>

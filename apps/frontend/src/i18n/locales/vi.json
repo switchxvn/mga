@@ -50,7 +50,8 @@
     "loading": "Đang tải...",
     "error": "Đã xảy ra lỗi",
     "success": "Thành công",
-    "required": "Bắt buộc"
+    "required": "Bắt buộc",
+    "viewDetails": "Xem chi tiết"
   },
   "validation": {
     "required": "Trường này là bắt buộc",
@@ -222,5 +223,15 @@
     "title_desc": "Tiêu đề: Z-A",
     "price_asc": "Giá: Thấp đến cao",
     "price_desc": "Giá: Cao đến thấp"
+  },
+  "services": {
+    "title": "Dịch vụ",
+    "description": "Khám phá các dịch vụ của chúng tôi",
+    "all": "Tất cả dịch vụ",
+    "featured": "Dịch vụ nổi bật",
+    "notFound": "Không tìm thấy dịch vụ",
+    "notFoundDescription": "Dịch vụ bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.",
+    "backToServices": "Xem tất cả dịch vụ",
+    "tryAgain": "Thử lại"
   }
 } 

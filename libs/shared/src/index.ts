@@ -11,4 +11,7 @@ export * from './schemas/settings.schema';
 export * from './transformers/date.transformer';
 
 // Interfaces
-export * from './lib/interfaces'; 
+export * from './lib/interfaces';
+export * from './lib/interfaces/post.interface';
+export * from './lib/interfaces/post-translation.interface';
+export * from './lib/interfaces/service.interface'; 

@@ -16,6 +16,15 @@ export const ROUTE_NAMES = {
   POST_DETAIL: {
     en: 'posts-detail',
     vi: 'bai-viet-chi-tiet'
+  },
+  // Services
+  SERVICES_LIST: {
+    en: 'services',
+    vi: 'dich-vu'
+  },
+  SERVICE_DETAIL: {
+    en: 'services-detail',
+    vi: 'dich-vu-chi-tiet'
   }
 } as const;
 
@@ -37,10 +46,19 @@ export const ROUTE_PATHS = {
   POST_DETAIL: {
     en: '/posts/:slug',
     vi: '/bai-viet/:slug'
+  },
+  // Services
+  SERVICES_LIST: {
+    en: '/services',
+    vi: '/dich-vu'
+  },
+  SERVICE_DETAIL: {
+    en: '/services/:slug',
+    vi: '/dich-vu/:slug'
   }
 } as const;
 
-type LocaleType = 'en' | 'vi';
+export type LocaleType = 'en' | 'vi';
 type RouteType = keyof typeof ROUTE_PATHS;
 
 /**

@@ -50,7 +50,8 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Success",
-    "required": "Required"
+    "required": "Required",
+    "viewDetails": "View Details"
   },
   "validation": {
     "required": "This field is required",
@@ -223,5 +224,15 @@
     "title_desc": "Title: Z-A",
     "price_asc": "Price: Low to High",
     "price_desc": "Price: High to Low"
+  },
+  "services": {
+    "title": "Services",
+    "description": "Explore our services",
+    "all": "All Services",
+    "featured": "Featured Services",
+    "notFound": "Service Not Found",
+    "notFoundDescription": "The service you are looking for does not exist or has been removed.",
+    "backToServices": "View All Services",
+    "tryAgain": "Try Again"
   }
 } 

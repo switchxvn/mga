@@ -2,48 +2,56 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service } from '../../entities/service.entity';
+import { ServiceTranslation } from '../../entities/service-translation.entity';
 
 @Injectable()
 export class ServiceFrontendService {
   constructor(
     @InjectRepository(Service)
     private readonly serviceRepository: Repository<Service>,
+    @InjectRepository(ServiceTranslation)
+    private readonly serviceTranslationRepository: Repository<ServiceTranslation>,
   ) {}
 
   async findAll(locale?: string) {
-    const services = await this.serviceRepository.find({
-      where: { isActive: true },
-      relations: ['translations'],
-      order: { order: 'ASC' },
-    });
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.translations', 'translations')
+      .where('service.isActive = :isActive', { isActive: true })
+      .orderBy('service.order', 'ASC');
 
     if (locale) {
-      return services.map(service => ({
-        ...service,
-        currentTranslation: service.translations?.find(t => t.locale === locale) || service.translations?.[0]
-      }));
+      query.andWhere('translations.locale = :locale', { locale });
     }
 
-    return services;
+    return query.getMany();
   }
 
   async findOne(id: number, locale?: string) {
-    const service = await this.serviceRepository.findOne({
-      where: { id, isActive: true },
-      relations: ['translations'],
-    });
-
-    if (!service) {
-      return null;
-    }
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.translations', 'translations')
+      .where('service.id = :id', { id })
+      .andWhere('service.isActive = :isActive', { isActive: true });
 
     if (locale) {
-      return {
-        ...service,
-        currentTranslation: service.translations?.find(t => t.locale === locale) || service.translations?.[0]
-      };
+      query.andWhere('translations.locale = :locale', { locale });
     }
 
-    return service;
+    return query.getOne();
+  }
+
+  async findBySlug(slug: string, locale?: string) {
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.translations', 'translations')
+      .where('translations.slug = :slug', { slug })
+      .andWhere('service.isActive = :isActive', { isActive: true });
+
+    if (locale) {
+      query.andWhere('translations.locale = :locale', { locale });
+    }
+
+    return query.getOne();
   }
 } 

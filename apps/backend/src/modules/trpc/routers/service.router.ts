@@ -7,6 +7,7 @@ const translationSchema = z.object({
   description: z.string().optional(),
   shortDescription: z.string().optional(),
   locale: z.string().length(2),
+  slug: z.string().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   metaKeywords: z.string().optional(),
@@ -46,6 +47,31 @@ export const serviceRouter = router({
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: `Service with ID ${input.id} not found`,
+          });
+        }
+        return service;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch service',
+          cause: error,
+        });
+      }
+    }),
+
+  bySlug: publicProcedure
+    .input(z.object({
+      slug: z.string(),
+      locale: z.string().length(2).optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const service = await ctx.services.serviceFrontendService.findBySlug(input.slug, input.locale);
+        if (!service) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Service with slug "${input.slug}" not found`,
           });
         }
         return service;

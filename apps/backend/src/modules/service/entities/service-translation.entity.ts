@@ -18,6 +18,9 @@ export class ServiceTranslation {
   @Column({ length: 2 })
   locale: string;
 
+  @Column({ nullable: true })
+  slug: string;
+
   // SEO fields
   @Column({ name: 'meta_title', nullable: true })
   metaTitle: string;

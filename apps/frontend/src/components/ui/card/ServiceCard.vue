@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ArrowRight } from 'lucide-vue-next';
 import * as LucideIcons from 'lucide-vue-next';
+import { useLocalization } from '../../../composables/useLocalization';
+import { getLocalizedRoute } from '../../../utils/routes';
+import type { LocaleType } from '../../../utils/routes';
+import { computed } from 'vue';
 
 interface ServiceTranslation {
   id: number;
@@ -8,6 +12,7 @@ interface ServiceTranslation {
   description?: string;
   shortDescription?: string;
   locale: string;
+  slug?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
@@ -71,6 +76,18 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const { locale, t } = useLocalization();
+
+const currentTranslation = computed(() => {
+  return props.service.translations.find(t => t.locale === locale.value) || props.service.translations[0];
+});
+
+const serviceUrl = computed(() => {
+  const translation = currentTranslation.value;
+  const slug = translation?.slug || props.service.id.toString();
+  return getLocalizedRoute('SERVICE_DETAIL', locale.value, { slug });
+});
+
 // Convert kebab-case to PascalCase for icon names
 const toPascalCase = (str: string) => {
   return str
@@ -117,18 +134,23 @@ const getIconComponent = (iconName: string) => {
     </div>
 
     <div class="flex-1 text-center pt-4 pb-8">
-      <h3
-        v-if="showTitle"
-        class="title text-gray-900 dark:text-white"
-        :style="{
-          fontSize: titleStyle?.size || '1.25rem',
-          fontWeight: titleStyle?.weight || '600',
-          color: titleStyle?.color,
-          margin: titleStyle?.margin || '0 0 1rem 0',
-        }"
+      <NuxtLink 
+        v-if="showTitle" 
+        :to="serviceUrl"
+        class="block"
       >
-        {{ service.currentTranslation?.title || service.translations?.[0]?.title }}
-      </h3>
+        <h3
+          class="title text-gray-900 dark:text-white"
+          :style="{
+            fontSize: titleStyle?.size || '1.25rem',
+            fontWeight: titleStyle?.weight || '600',
+            color: titleStyle?.color,
+            margin: titleStyle?.margin || '0 0 1rem 0',
+          }"
+        >
+          {{ currentTranslation?.title }}
+        </h3>
+      </NuxtLink>
 
       <p
         v-if="showDescription"
@@ -144,13 +166,14 @@ const getIconComponent = (iconName: string) => {
           lineHeight: '1.5',
         }"
       >
-        {{ service.currentTranslation?.shortDescription || service.currentTranslation?.description || service.translations?.[0]?.description }}
+        {{ currentTranslation?.shortDescription || currentTranslation?.description }}
       </p>
     </div>
 
     <div class="relative w-full -mb-[1px]">
-      <button
+      <NuxtLink
         v-if="showButton"
+        :to="serviceUrl"
         :class="[
           'absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 font-medium transition-all duration-200 rounded-full flex items-center justify-center gap-2 text-sm py-2 px-6',
           buttonVariant === 'outline' 
@@ -158,9 +181,9 @@ const getIconComponent = (iconName: string) => {
             : 'bg-primary-500 hover:bg-primary-600 text-white'
         ]"
       >
-        <span>{{ buttonText || 'Xem chi tiết' }}</span>
+        <span>{{ buttonText || t('common.viewDetails') }}</span>
         <ArrowRight class="w-4 h-4" />
-      </button>
+      </NuxtLink>
     </div>
   </div>
 </template>
