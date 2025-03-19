@@ -156,6 +156,11 @@
   dependencies:
     eslint-visitor-keys "^3.4.3"
 
+"@headlessui/tailwindcss@^0.2.2":
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@headlessui/tailwindcss/-/tailwindcss-0.2.2.tgz#8ebde73fabca72d48636ea56ae790209dc5f0d49"
+  integrity sha512-xNe42KjdyA4kfUKLLPGzME9zkH7Q3rOZ5huFihWNWOQFxnItxPB3/67yBI8/qBfY8nwBRx5GHn4VprsoluVMGw==
+
 "@intlify/bundle-utils@^9.0.0":
   version "9.0.0"
   resolved "https://registry.yarnpkg.com/@intlify/bundle-utils/-/bundle-utils-9.0.0.tgz#c0e2b41502a2a7d5e2f47a97f0a42b0bdc9bfc62"
