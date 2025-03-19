@@ -1176,6 +1176,11 @@ jiti@^2.4.1, jiti@^2.4.2:
   resolved "https://registry.yarnpkg.com/jiti/-/jiti-2.4.2.tgz#d19b7732ebb6116b06e2038da74a55366faef560"
   integrity sha512-rg9zJN+G4n2nfJl5MW3BMygZX56zKPNVEYYqq7adpmMh4Jn2QNEwhvQlFy6jPVdcod7txZtKHWnyZiA3a0zP7A==
 
+jquery@^3.3.1:
+  version "3.7.1"
+  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.7.1.tgz#083ef98927c9a6a74d05a6af02806566d16274de"
+  integrity sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==
+
 js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
@@ -1839,6 +1844,13 @@ vue-demi@^0.14.10:
   version "0.14.10"
   resolved "https://registry.yarnpkg.com/vue-demi/-/vue-demi-0.14.10.tgz#afc78de3d6f9e11bf78c55e8510ee12814522f04"
   integrity sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==
+
+vue-facebook-page@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/vue-facebook-page/-/vue-facebook-page-1.0.1.tgz#384abb057720780f700168c6ca64834049424a39"
+  integrity sha512-QSegYTPL0NsDmAlNzuhO7suBb1V5qLCgvW72j/AvVY7S1AODu7AOUbtiob6RGzkQTRqyRC0QVknNU3P9l/eAEQ==
+  dependencies:
+    jquery "^3.3.1"
 
 vue-i18n@^10.0.0, vue-i18n@^10.0.3:
   version "10.0.5"

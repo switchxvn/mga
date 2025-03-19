@@ -40,6 +40,31 @@ export interface SocialIcon {
   url: string;
 }
 
+export interface BranchContact {
+  name?: string;
+  position?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface BranchInfo {
+  title: string;
+  address: string;
+  contacts: BranchContact[];
+}
+
+export interface CopyrightStyle {
+  text: string;
+  light: {
+    backgroundColor: string;
+    textColor: string;
+  };
+  dark: {
+    backgroundColor: string;
+    textColor: string;
+  };
+}
+
 @Entity('footers')
 export class Footer {
     @PrimaryGeneratedColumn()
@@ -69,8 +94,8 @@ export class Footer {
     @Column({ name: 'background_dark_color' })
     backgroundDarkColor: string;
 
-    @Column({ nullable: true })
-    copyright?: string;
+    @Column({ type: 'jsonb', name: 'copyright_style' })
+    copyrightStyle: CopyrightStyle;
 
     @Column({ type: 'jsonb', name: 'social_icons' })
     socialIcons: SocialIcon[];
@@ -80,6 +105,9 @@ export class Footer {
 
     @Column({ name: 'logo_alt' })
     logoAlt: string;
+
+    @Column({ type: 'jsonb', name: 'branch_info', nullable: true })
+    branchInfo?: BranchInfo[];
 
     @Column({ default: false, name: 'is_active' })
     isActive: boolean;

@@ -6,6 +6,9 @@ import { ref, onMounted, watch } from '../composables/useVueComposables';
 // Import components
 import NavbarWithTheme from '../components/ui/NavbarWithTheme.vue';
 import Footer from '../components/ui/Footer.vue';
+import BackToTop from '~/components/ui/BackToTop.vue';
+import FloatingPhoneSupport from '~/components/ui/FloatingPhoneSupport.vue';
+import FloatingZaloSupport from '~/components/ui/FloatingZaloSupport.vue';
 
 const router = useRouter();
 const trpc = useTrpc();
@@ -111,7 +114,7 @@ async function handleLogout() {
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <NavbarWithTheme logo="/logo.svg" hotline="1900 1234" />
+    <NavbarWithTheme logo="/logo.svg" hotline="1900 1234" :user="user" :isLoading="isLoading" @logout="handleLogout" />
     
     <!-- Main content -->
     <main class="flex-grow">
@@ -120,6 +123,9 @@ async function handleLogout() {
     
     <!-- Footer -->
     <Footer appName="E-Commerce" />
+    <BackToTop />
+    <FloatingPhoneSupport />
+    <FloatingZaloSupport />
   </div>
 </template>
 

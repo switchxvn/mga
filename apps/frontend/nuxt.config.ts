@@ -164,4 +164,10 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2025-03-03',
+
+  app: {
+    head: {
+      script: []
+    }
+  },
 });

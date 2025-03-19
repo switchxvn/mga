@@ -26,11 +26,12 @@ export const footerRouter = router({
         quickLinks: footer.quickLinks,
         backgroundLightColor: footer.backgroundLightColor,
         backgroundDarkColor: footer.backgroundDarkColor,
-        copyright: footer.copyright,
+        copyrightStyle: footer.copyrightStyle,
         socialIcons: footer.socialIcons,
         logoUrl: footer.logoUrl,
         logoAlt: footer.logoAlt,
         isActive: footer.isActive,
+        branchInfo: footer.branchInfo,
         createdAt: footer.createdAt,
         updatedAt: footer.updatedAt,
       };
