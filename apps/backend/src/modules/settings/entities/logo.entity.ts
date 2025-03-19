@@ -5,8 +5,11 @@ export class Logo {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  url: string;
+  @Column({ name: 'dark_mode_url', nullable: true })
+  darkModeUrl: string;
+
+  @Column({ name: 'light_mode_url', nullable: true })
+  lightModeUrl: string;
 
   @Column({ name: 'alt_text', nullable: true })
   altText: string;

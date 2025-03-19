@@ -1,126 +1,234 @@
 <script setup lang="ts">
-defineProps<{
-  service: {
-    id: number;
-    title: string;
-    description: string;
-    icon: string;
-    order: number;
-    isActive: boolean;
-    createdAt: string | Date;
-    updatedAt: string | Date;
-  }
-}>();
+import { ArrowRight } from 'lucide-vue-next';
+import * as LucideIcons from 'lucide-vue-next';
+
+interface ServiceTranslation {
+  id: number;
+  title: string;
+  description?: string;
+  shortDescription?: string;
+  locale: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  serviceId: number;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+interface Service {
+  id: number;
+  icon: string;
+  order: number;
+  isActive: boolean;
+  translations: ServiceTranslation[];
+  currentTranslation?: ServiceTranslation;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+interface CardStyle {
+  background?: string;
+  shadow?: string;
+  border?: string;
+  rounded?: string;
+  padding?: string;
+  transition?: string;
+}
+
+interface IconStyle {
+  size?: string;
+  background?: string;
+  color?: string;
+  rounded?: string;
+  padding?: string;
+}
+
+interface TextStyle {
+  size?: string;
+  weight?: string;
+  color?: string;
+  margin?: string;
+}
+
+interface Props {
+  service: Service;
+  showIcon?: boolean;
+  showTitle?: boolean;
+  showDescription?: boolean;
+  showButton?: boolean;
+  buttonText?: string;
+  buttonVariant?: 'solid' | 'outline' | 'soft' | 'ghost' | 'link';
+  cardStyle?: CardStyle;
+  iconStyle?: IconStyle;
+  titleStyle?: TextStyle;
+  descriptionStyle?: TextStyle;
+}
+
+const props = defineProps<Props>();
+
+// Convert kebab-case to PascalCase for icon names
+const toPascalCase = (str: string) => {
+  return str
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('');
+};
+
+// Get icon component dynamically
+const getIconComponent = (iconName: string) => {
+  const pascalCaseName = toPascalCase(iconName);
+  return (LucideIcons as any)[pascalCaseName] || LucideIcons.HelpCircle; // Fallback to HelpCircle if icon not found
+};
 </script>
 
 <template>
-  <div class="service-card">
-    <div class="service-card__icon-wrapper">
-      <div class="service-card__icon">
-        <i :class="service.icon"></i>
-      </div>
+  <div
+    class="service-card bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 transition-all duration-300 hover:shadow-lg flex flex-col items-stretch relative pt-12"
+    :style="{
+      background: cardStyle?.background,
+      boxShadow: cardStyle?.shadow,
+      border: cardStyle?.border,
+      borderRadius: cardStyle?.rounded,
+      padding: cardStyle?.padding || '2rem',
+      transition: cardStyle?.transition,
+    }"
+  >
+    <div
+      v-if="showIcon"
+      class="icon-wrapper absolute left-1/2 -translate-x-1/2 -top-8"
+      :style="{
+        width: iconStyle?.size || '80px',
+        height: iconStyle?.size || '80px',
+        background: iconStyle?.background || 'rgb(var(--color-primary-50))',
+        color: iconStyle?.color || 'rgb(var(--color-primary-500))',
+        borderRadius: iconStyle?.rounded || '9999px',
+        padding: iconStyle?.padding || '1.25rem',
+      }"
+    >
+      <component 
+        :is="getIconComponent(service.icon)"
+        class="service-icon"
+      />
     </div>
-    <h3 class="service-card__title">{{ service.title }}</h3>
-    <p class="service-card__description">{{ service.description }}</p>
-    <div class="service-card__hover-effect"></div>
+
+    <div class="flex-1 text-center pt-4 pb-8">
+      <h3
+        v-if="showTitle"
+        class="title text-gray-900 dark:text-white"
+        :style="{
+          fontSize: titleStyle?.size || '1.25rem',
+          fontWeight: titleStyle?.weight || '600',
+          color: titleStyle?.color,
+          margin: titleStyle?.margin || '0 0 1rem 0',
+        }"
+      >
+        {{ service.currentTranslation?.title || service.translations?.[0]?.title }}
+      </h3>
+
+      <p
+        v-if="showDescription"
+        class="description text-gray-600 dark:text-gray-400 line-clamp-3"
+        :style="{
+          fontSize: descriptionStyle?.size || '1rem',
+          color: descriptionStyle?.color,
+          margin: descriptionStyle?.margin || '0',
+          minHeight: '4.5rem',
+          display: '-webkit-box',
+          '-webkit-box-orient': 'vertical',
+          overflow: 'hidden',
+          lineHeight: '1.5',
+        }"
+      >
+        {{ service.currentTranslation?.shortDescription || service.currentTranslation?.description || service.translations?.[0]?.description }}
+      </p>
+    </div>
+
+    <div class="relative w-full -mb-[1px]">
+      <button
+        v-if="showButton"
+        :class="[
+          'absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 font-medium transition-all duration-200 rounded-full flex items-center justify-center gap-2 text-sm py-2 px-6',
+          buttonVariant === 'outline' 
+            ? 'border-2 border-primary-500 text-primary-500 hover:bg-primary-50 bg-white dark:bg-gray-900'
+            : 'bg-primary-500 hover:bg-primary-600 text-white'
+        ]"
+      >
+        <span>{{ buttonText || 'Xem chi tiết' }}</span>
+        <ArrowRight class="w-4 h-4" />
+      </button>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .service-card {
-  position: relative;
-  background-color: var(--color-card);
-  border-radius: 1rem;
-  padding: 2.5rem 1.5rem;
-  height: 100%;
-  overflow: hidden;
-  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  z-index: 1;
-  
+  background: rgb(var(--color-background));
+  margin-top: 2rem; // Add space for the icon
+
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    
-    .service-card__icon-wrapper {
-      transform: scale(1.05);
+    button {
+      transform: translate(-50%, calc(50% - 2px));
     }
-    
-    .service-card__hover-effect {
-      opacity: 1;
-    }
-  }
-  
-  &__icon-wrapper {
-    background-color: var(--color-primary-light, rgba(var(--color-primary-rgb), 0.1));
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    position: relative;
-    z-index: 2;
-    transition: transform 0.3s ease;
-  }
-  
-  &__icon {
-    color: var(--color-primary);
-    font-size: 2rem;
-    
-    i {
-      font-size: 32px;
-    }
-  }
-  
-  &__title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: var(--color-foreground);
-    position: relative;
-    z-index: 2;
-  }
-  
-  &__description {
-    color: var(--color-muted-foreground);
-    line-height: 1.6;
-    position: relative;
-    z-index: 2;
-  }
-  
-  &__hover-effect {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-      rgba(var(--color-primary-rgb), 0.05) 0%, 
-      rgba(var(--color-primary-rgb), 0.02) 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: 1;
   }
 }
 
-@media (max-width: 768px) {
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: rgb(var(--color-primary-50));
+  color: rgb(var(--color-primary-500));
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  border: 4px solid rgb(var(--color-background));
+  transition: transform 0.2s ease-in-out;
+
+  .service-card:hover & {
+    transform: translateY(-2px) translateX(-50%);
+  }
+
+  .service-icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.title {
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: rgb(var(--color-gray-900));
+}
+
+.description {
+  color: rgb(var(--color-gray-600));
+  line-height: 1.5;
+  -webkit-line-clamp: 3;
+  text-overflow: ellipsis;
+}
+
+.dark {
   .service-card {
-    padding: 2rem 1rem;
-    
-    &__icon-wrapper {
-      width: 70px;
-      height: 70px;
-    }
-    
-    &__title {
-      font-size: 1.1rem;
-    }
+    background: rgb(var(--color-gray-900));
+  }
+
+  .title {
+    color: rgb(var(--color-white));
+  }
+
+  .description {
+    color: rgb(var(--color-gray-400));
   }
 }
 </style> 

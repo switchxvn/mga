@@ -1,15 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { ServiceTranslation } from './service-translation.entity';
 
 @Entity('services')
 export class Service {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column()
-  title: string;
-
-  @Column('text')
-  description: string;
 
   @Column()
   icon: string;
@@ -19,6 +14,12 @@ export class Service {
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
+
+  @OneToMany(() => ServiceTranslation, (translation) => translation.service, {
+    cascade: true,
+    eager: true
+  })
+  translations: ServiceTranslation[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -16,6 +16,7 @@ import { heroRouter } from './hero.router';
 import { themeRouter } from './theme.router';
 import { languageRouter } from './language.router';
 import { componentStyleConfigRouter } from './component-style-config.router';
+import { logoRouter } from './logo.router';
 export const appRouter = (commonRouter) => router({
   auth: authRouter,
   post: postRouter,
@@ -35,6 +36,7 @@ export const appRouter = (commonRouter) => router({
   common: commonRouter.router,
   language: languageRouter,
   componentStyleConfig: componentStyleConfigRouter,
+  logo: logoRouter,
 });
 
 export type AppRouter = ReturnType<typeof appRouter>; 

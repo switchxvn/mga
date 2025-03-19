@@ -18,7 +18,7 @@ import { CommonRouter } from './routers/common.router';
 import { componentStyleConfigRouter } from './routers/component-style-config.router';
 import { languageRouter } from './routers/language.router';
 import { aboutRouter } from './routers/about.router';
-
+import { logoRouter } from './routers/logo.router';
 @Injectable()
 export class TrpcRouter {
   constructor(
@@ -46,6 +46,7 @@ export class TrpcRouter {
       common: this.commonRouter.router,
       language: languageRouter,
       about: aboutRouter,
+      logo: logoRouter,
     });
   }
 }

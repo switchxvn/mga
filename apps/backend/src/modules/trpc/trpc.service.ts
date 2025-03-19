@@ -44,6 +44,8 @@ import { LanguageFrontendService } from '../language/frontend/services/language-
 import { LanguageAdminService } from '../language/admin/services/language-admin.service';
 import { AboutAdminService } from '../about/admin/services/about-admin.service';
 import { AboutFrontendService } from '../about/frontend/services/about-frontend.service';
+import { LogoFrontendService } from '../settings/frontend/services/logo-frontend.service';
+import { LogoAdminService } from '../settings/admin/services/logo-admin.service';
 
 @Injectable()
 export class TrpcService {
@@ -91,6 +93,8 @@ export class TrpcService {
     private readonly languageAdminService: LanguageAdminService,
     private readonly aboutAdminService: AboutAdminService,
     private readonly aboutFrontendService: AboutFrontendService,
+    private readonly logoFrontendService: LogoFrontendService,
+    private readonly logoAdminService: LogoAdminService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -141,6 +145,8 @@ export class TrpcService {
       languageAdminService: this.languageAdminService,
       aboutAdminService: this.aboutAdminService,
       aboutFrontendService: this.aboutFrontendService,
+      logoFrontendService: this.logoFrontendService,
+      logoAdminService: this.logoAdminService,
     };
   }
 

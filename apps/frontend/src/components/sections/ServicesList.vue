@@ -1,15 +1,36 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import ServiceCard from '../ui/card/ServiceCard.vue';
-import Button from '../ui/button/Button.vue';
+import { useLocalization } from '../../composables/useLocalization';
+import { useI18n } from 'vue-i18n';
+
+type ButtonVariant = 'solid' | 'outline' | 'soft' | 'ghost' | 'link';
+
+interface ServiceTranslation {
+  id: number;
+  title: string;
+  description?: string;
+  shortDescription?: string;
+  locale: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  serviceId: number;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
 
 interface Service {
   id: number;
-  title: string;
-  description: string;
   icon: string;
   order: number;
   isActive: boolean;
+  translations: ServiceTranslation[];
+  currentTranslation?: ServiceTranslation;
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -36,7 +57,7 @@ interface ServicesConfig {
     bottom: string;
   };
   buttonText: string;
-  buttonStyle: string;
+  buttonStyle: ButtonVariant;
   cardStyle: {
     background: string;
     shadow: string;
@@ -71,12 +92,16 @@ interface ServicesConfig {
   };
 }
 
-const props = defineProps<{
+interface Props {
   services: Service[];
   isLoading: boolean;
   error: string | null;
   config?: ServicesConfig;
-}>();
+}
+
+const props = defineProps<Props>();
+const { locale } = useLocalization();
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'retry'): void;
@@ -85,6 +110,10 @@ const emit = defineEmits<{
 const handleRetry = () => {
   emit('retry');
 };
+
+const buttonVariant = computed<ButtonVariant>(() => {
+  return props.config?.buttonStyle || 'solid';
+});
 
 // Computed để lấy số cột dựa trên config hoặc responsive default
 const gridColumns = computed(() => {
@@ -105,6 +134,7 @@ const gridStyles = computed(() => ({
   gridTemplateColumns: `repeat(${gridColumns.value}, minmax(0, 1fr))`,
   gap: gridGap.value
 }));
+
 </script>
 
 <template>
@@ -121,7 +151,7 @@ const gridStyles = computed(() => ({
       variant="destructive"
       class="mt-4"
     >
-      Thử lại
+      {{ t('common.retry') }}
     </Button>
   </div>
   
@@ -131,17 +161,26 @@ const gridStyles = computed(() => ({
     class="grid"
     :style="gridStyles"
   >
-    <ServiceCard 
-      v-for="service in services.slice(0, config?.maxItems || services.length)" 
+    <ServiceCard
+      v-for="service in services.slice(0, config?.maxItems || services.length)"
       :key="service.id"
       :service="service"
-      :config="config"
+      :show-icon="config?.showIcon"
+      :show-title="config?.showTitle"
+      :show-description="config?.showDescription"
+      :show-button="config?.showButton"
+      :button-text="config?.buttonText"
+      :button-variant="buttonVariant"
+      :card-style="config?.cardStyle"
+      :icon-style="config?.iconStyle"
+      :title-style="config?.titleStyle"
+      :description-style="config?.descriptionStyle"
     />
   </div>
   
   <!-- Empty state -->
   <div v-else class="text-center text-gray-500 dark:text-gray-400 py-8">
-    <p>Không có dịch vụ nào</p>
+    <p>{{ t('services.no_services') }}</p>
   </div>
 </template>
 
@@ -159,8 +198,8 @@ const gridStyles = computed(() => ({
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid hsl(var(--primary) / 0.2);
-  border-top-color: hsl(var(--primary));
+  border: 4px solid rgba(var(--color-primary-500), 0.2);
+  border-top-color: rgb(var(--color-primary-500));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

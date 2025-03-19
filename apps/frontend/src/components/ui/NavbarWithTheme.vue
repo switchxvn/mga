@@ -9,15 +9,14 @@ import CartIcon from "../cart/CartIcon.vue";
 import { useRoute } from "vue-router";
 import { useFeatureFlags } from "../../composables/useFeatureFlags";
 import { useLocalization } from "../../composables/useLocalization";
+import { useLogo } from "../../composables/useLogo";
 
 // Props cho component
 interface NavbarProps {
-  logo?: string;
   hotline?: string;
 }
 
 const props = withDefaults(defineProps<NavbarProps>(), {
-  logo: "/logo.svg",
   hotline: "1900 1234",
 });
 
@@ -31,6 +30,18 @@ const isLoadingFeatureFlag = ref(true);
 
 // Localization
 const { locale } = useLocalization();
+
+// Logo
+const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
+
+// Debug logs
+watch([currentLogoUrl, logo], () => {
+  console.log('NavbarWithTheme - Logo state:', {
+    currentLogoUrl: currentLogoUrl.value,
+    logo: logo.value,
+    isLoading: isLoadingLogo.value
+  });
+}, { immediate: true });
 
 // Kiểm tra feature flag enable_add_to_cart
 const checkCartFeatureFlag = async () => {
@@ -252,18 +263,25 @@ watch(locale, () => {
     ]"
   >
     <div class="container mx-auto px-4">
-      <div class="flex h-16 items-center justify-between">
+      <div class="flex items-center justify-between py-2">
         <!-- Logo -->
         <div class="flex items-center">
           <NuxtLink to="/" class="flex items-center space-x-2">
-            <img
-              :src="logo"
-              alt="Logo"
-              class="h-8 w-auto transition-transform duration-300 hover:scale-110"
-            />
-            <span class="font-bold text-xl hidden sm:inline-block text-neutral-900 dark:text-neutral-50"
-              >E-Commerce</span
+            <div 
+              class="flex items-center justify-center" 
+              :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
             >
+              <img
+                v-if="currentLogoUrl"
+                :src="currentLogoUrl"
+                :alt="logo?.altText || 'Logo'"
+                :width="logo?.width"
+                :height="logo?.height"
+                class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+              />
+              <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
+            </div>
+            
           </NuxtLink>
         </div>
 

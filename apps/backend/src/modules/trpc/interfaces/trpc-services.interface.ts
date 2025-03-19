@@ -32,6 +32,8 @@ import { LanguageFrontendService } from '../../language/frontend/services/langua
 import { LanguageAdminService } from '../../language/admin/services/language-admin.service';
 import { AboutAdminService } from '../../about/admin/services/about-admin.service';
 import { AboutFrontendService } from '../../about/frontend/services/about-frontend.service';
+import { LogoFrontendService } from '../../settings/frontend/services/logo-frontend.service';
+import { LogoAdminService } from '../../settings/admin/services/logo-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -68,4 +70,6 @@ export interface ITrpcServices {
   languageAdminService: LanguageAdminService;
   aboutAdminService: AboutAdminService;
   aboutFrontendService: AboutFrontendService;
+  logoFrontendService: LogoFrontendService;
+  logoAdminService: LogoAdminService;
 } 

@@ -49,13 +49,30 @@ interface Post {
 }
 
 // Định nghĩa kiểu dữ liệu cho dịch vụ
-interface Service {
+interface ServiceTranslation {
   id: number;
   title: string;
-  description: string;
+  description?: string;
+  shortDescription?: string;
+  locale: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  serviceId: number;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+interface Service {
+  id: number;
   icon: string;
   order: number;
   isActive: boolean;
+  translations: ServiceTranslation[];
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -373,8 +390,8 @@ async function fetchServices() {
   isLoadingServices.value = true;
   serviceError.value = null;
   try {
-    // Gọi tRPC endpoint để lấy danh sách dịch vụ
-    const result = await trpc.service.all.query();
+    // Gọi tRPC endpoint để lấy danh sách dịch vụ với locale hiện tại
+    const result = await trpc.service.all.query({ locale: locale.value });
     services.value = result;
   } catch (err: any) {
     console.error("Failed to fetch services:", err);
@@ -383,6 +400,11 @@ async function fetchServices() {
     isLoadingServices.value = false;
   }
 }
+
+// Thêm watcher để theo dõi thay đổi ngôn ngữ cho services
+watch(locale, () => {
+  fetchServices();
+});
 
 const getAuthorName = (author: any) => {
   if (author?.profile) {

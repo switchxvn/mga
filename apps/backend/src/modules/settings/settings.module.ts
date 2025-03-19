@@ -10,12 +10,15 @@ import { SettingsFrontendService } from './frontend/services/settings-frontend.s
 import { SettingsAdminController } from './admin/controllers/admin.controller';
 import { SettingsFrontendController } from './frontend/controllers/frontend.controller';
 import { MenuItemTranslation } from './entities/menu-item-translation.entity';
+import { LogoAdminService } from './admin/services/logo-admin.service';
+import { LogoFrontendService } from './frontend/services/logo-frontend.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([MenuItem, Logo, Tag, PostTag, Settings, MenuItemTranslation]),
   ],
   controllers: [SettingsAdminController, SettingsFrontendController],
-  providers: [SettingsAdminService, SettingsFrontendService],
-  exports: [SettingsAdminService, SettingsFrontendService],
+  providers: [SettingsAdminService, SettingsFrontendService, LogoAdminService, LogoFrontendService],
+  exports: [SettingsAdminService, SettingsFrontendService, LogoAdminService, LogoFrontendService],
 })
 export class SettingsModule {} 
