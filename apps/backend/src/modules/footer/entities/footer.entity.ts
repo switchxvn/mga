@@ -1,5 +1,45 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
+export interface Address {
+  title?: string;
+  subtitle?: string;
+  location: string;
+  phone?: {
+    label: string;
+    number: string;
+    contact?: string;
+  }[];
+  email?: {
+    label: string;
+    address: string;
+    contact?: string;
+  }[];
+}
+
+export interface CompanyInfo {
+  name: string;
+  registration: string;
+  tax_number?: string;
+  business_license?: string;
+  certifications?: {
+    image: string;
+    alt?: string;
+    text?: string;
+  }[];
+}
+
+export interface QuickLink {
+  label: string;
+  url: string;
+  icon?: string;
+}
+
+export interface SocialIcon {
+  name: string;
+  icon: string;
+  url: string;
+}
+
 @Entity('footers')
 export class Footer {
     @PrimaryGeneratedColumn()
@@ -8,18 +48,45 @@ export class Footer {
     @Column()
     name: string;
 
-    @Column()
-    type: string;
+    @Column({ type: 'jsonb', name: 'addresses' })
+    addresses: Address[];
 
-    @Column({ type: 'jsonb', default: {} })
-    content: Record<string, any>;
+    @Column({ nullable: true, name: 'map_url' })
+    mapUrl?: string;
 
-    @Column({ name: 'is_active', default: false })
+    @Column({ nullable: true, name: 'fanpage_url' })
+    fanpageUrl?: string;
+
+    @Column({ type: 'jsonb', name: 'company_info' })
+    companyInfo: CompanyInfo;
+
+    @Column({ type: 'jsonb', name: 'quick_links' })
+    quickLinks: QuickLink[];
+
+    @Column({ name: 'background_light_color' })
+    backgroundLightColor: string;
+
+    @Column({ name: 'background_dark_color' })
+    backgroundDarkColor: string;
+
+    @Column({ nullable: true })
+    copyright?: string;
+
+    @Column({ type: 'jsonb', name: 'social_icons' })
+    socialIcons: SocialIcon[];
+
+    @Column({ name: 'logo_url' })
+    logoUrl: string;
+
+    @Column({ name: 'logo_alt' })
+    logoAlt: string;
+
+    @Column({ default: false, name: 'is_active' })
     isActive: boolean;
 
     @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+    createdAt: string;
 
     @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
+    updatedAt: string;
 } 

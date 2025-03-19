@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import { useFooter } from '~/composables/useFooter';
+import { useColorMode } from '@vueuse/core';
 
 // Kiểm tra môi trường phát triển
 const isDev = ref(process.env.NODE_ENV === 'development');
-const isDarkMode = ref(false);
 
 // Sử dụng composable useFooter để lấy dữ liệu từ API
 const {
@@ -12,67 +12,27 @@ const {
   isLoading,
   error,
   fetchActiveFooter,
-  copyright,
-  theme,
-  linksSection,
-  socialSection,
-  contactSection,
 } = useFooter();
 
-// Tính toán style dựa trên theme từ API hoặc sử dụng CSS từ file SCSS
-const footerStyle = computed(() => {
-  // Nếu không có theme từ API, trả về object rỗng để sử dụng CSS từ file SCSS
-  if (!theme.value) {
-    // Nếu đang ở dark mode, áp dụng style dark mode
-    if (isDarkMode.value) {
-      return {
-        backgroundColor: '#111827',
-        color: '#f9fafb'
-      };
-    }
-    return {};
-  }
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === 'dark');
 
-  // Nếu có theme từ API, sử dụng nó
+// Tính toán style dựa trên theme từ API
+const footerStyle = computed(() => {
+  if (!activeFooter.value) return {};
+  
   return {
-    backgroundColor: isDarkMode.value ? '#111827' : theme.value.backgroundColor,
-    color: isDarkMode.value ? '#f9fafb' : theme.value.textColor,
+    backgroundColor: isDark.value 
+      ? activeFooter.value.backgroundDarkColor 
+      : activeFooter.value.backgroundLightColor,
   };
 });
 
-// Kiểm tra dark mode
-const checkDarkMode = () => {
-  if (typeof document !== 'undefined') {
-    isDarkMode.value = document.documentElement.classList.contains('dark');
-  }
-};
-
-// Theo dõi thay đổi của dark mode
-watch(isDarkMode, () => {
-  // Cập nhật style khi dark mode thay đổi
-}, { immediate: true });
-
 // Fetch footer khi component được mount
-onMounted(() => {
+onMounted(async () => {
   try {
-    fetchActiveFooter();
-    checkDarkMode();
-    
-    // Theo dõi thay đổi của dark mode
-    if (typeof window !== 'undefined') {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.attributeName === 'class') {
-            checkDarkMode();
-          }
-        });
-      });
-      
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class']
-      });
-    }
+    await fetchActiveFooter();
+    console.log('Active footer:', activeFooter.value);
   } catch (err) {
     console.error('Error in Footer component:', err);
   }
@@ -81,104 +41,135 @@ onMounted(() => {
 
 <template>
   <!-- Footer từ API -->
-  <footer v-if="activeFooter" class="footer" :style="footerStyle" :class="{ 'dark-footer': isDarkMode }">
+  <footer v-if="activeFooter" class="footer" :style="footerStyle">
     <div class="container mx-auto px-4 py-8">
-      <!-- Links Section -->
-      <div v-if="linksSection" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-8">
-        <div v-for="item in linksSection.items || []" :key="item.label" class="footer__column">
-          <h3 v-if="item.label" class="text-xl font-bold mb-4 footer__title">
-            {{ item.label }}
-          </h3>
-          <ul class="space-y-2" v-if="item.url">
-            <li>
-              <NuxtLink :to="item.url" class="footer__link hover:underline">{{ item.label }}</NuxtLink>
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        
+        <!-- Logo and Company Info -->
+        <div class="col-span-1">
+          <img :src="activeFooter.logoUrl" :alt="activeFooter.logoAlt" class="h-12 mb-4" />
+          <div class="company-info">
+            <h3 class="font-bold mb-2">{{ activeFooter.companyInfo.name }}</h3>
+            <p>{{ activeFooter.companyInfo.registration }}</p>
+            <p v-if="activeFooter.companyInfo.tax_number">MST: {{ activeFooter.companyInfo.tax_number }}</p>
+            <p v-if="activeFooter.companyInfo.business_license">{{ activeFooter.companyInfo.business_license }}</p>
+          </div>
+        </div>
+
+        <!-- Addresses -->
+        <div class="col-span-1">
+          <h3 class="font-bold mb-4">Trụ sở chính</h3>
+          <div v-for="(address, index) in activeFooter.addresses" :key="index" class="mb-4">
+            <p v-if="address.title" class="font-semibold">{{ address.title }}</p>
+            <p v-if="address.subtitle" class="text-sm text-gray-600 dark:text-gray-400">{{ address.subtitle }}</p>
+            <p class="mt-1">{{ address.location }}</p>
+            
+            <!-- Phone numbers -->
+            <div v-if="address.phone && address.phone.length > 0" class="mt-2">
+              <div v-for="(phone, phoneIndex) in address.phone" :key="phoneIndex" class="flex items-center space-x-2">
+                <span class="text-sm text-gray-600 dark:text-gray-400">{{ phone.label }}:</span>
+                <a :href="'tel:' + phone.number" class="hover:text-primary">{{ phone.number }}</a>
+                <span v-if="phone.contact" class="text-sm text-gray-500">({{ phone.contact }})</span>
+              </div>
+            </div>
+            
+            <!-- Email addresses -->
+            <div v-if="address.email && address.email.length > 0" class="mt-2">
+              <div v-for="(email, emailIndex) in address.email" :key="emailIndex" class="flex items-center space-x-2">
+                <span class="text-sm text-gray-600 dark:text-gray-400">{{ email.label }}:</span>
+                <a :href="'mailto:' + email.address" class="hover:text-primary">{{ email.address }}</a>
+                <span v-if="email.contact" class="text-sm text-gray-500">({{ email.contact }})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="col-span-1">
+          <h3 class="font-bold mb-4">Liên kết nhanh</h3>
+          <ul class="space-y-2">
+            <li v-for="link in activeFooter.quickLinks" :key="link.url">
+              <a :href="link.url" class="hover:text-primary flex items-center">
+                <Icon v-if="link.icon" :name="link.icon" class="w-5 h-5 mr-2" />
+                {{ link.label }}
+              </a>
             </li>
           </ul>
         </div>
-      </div>
 
-      <!-- Social Media Section -->
-      <div v-if="socialSection" class="footer__social mb-8">
-        <h3 v-if="socialSection.title" class="text-xl font-bold mb-4 footer__title">
-          {{ socialSection.title }}
-        </h3>
-        <div class="flex space-x-4">
-          <a 
-            v-for="item in socialSection.items || []" 
-            :key="item.label"
-            :href="item.url" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="footer__social-link transition-colors duration-300"
-          >
-            {{ item.label }}
-          </a>
-        </div>
-      </div>
-
-      <!-- Contact Section -->
-      <div v-if="contactSection" class="footer__contact mb-8">
-        <h3 v-if="contactSection.title" class="text-xl font-bold mb-4 footer__title">
-          {{ contactSection.title }}
-        </h3>
-        <div class="space-y-2">
-          <div v-for="item in contactSection.items || []" :key="item.label">
-            <a v-if="item.url" :href="item.url" class="footer__link hover:underline">{{ item.label }}</a>
-            <p v-else class="footer__text">{{ item.label }}</p>
+        <!-- Social Links -->
+        <div class="col-span-1">
+          <h3 class="font-bold mb-4">Kết nối với chúng tôi</h3>
+          <div class="flex space-x-4">
+            <a v-for="icon in activeFooter.socialIcons" 
+               :key="icon.name" 
+               :href="icon.url" 
+               target="_blank"
+               rel="noopener noreferrer"
+               class="hover:opacity-80">
+              <Icon :name="icon.icon" class="w-6 h-6" />
+            </a>
           </div>
         </div>
       </div>
 
-      <!-- Copyright -->
-      <div v-if="copyright" class="footer__copyright text-center pt-4">
-        <p>{{ copyright }}</p>
+      <!-- Maps and Fanpage -->
+      <div v-if="activeFooter.mapUrl || activeFooter.fanpageUrl" class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+        <div v-if="activeFooter.mapUrl" class="h-[300px]">
+          <iframe :src="activeFooter.mapUrl" 
+            width="100%" 
+            height="100%" 
+            style="border:0;" 
+            allowfullscreen 
+            loading="lazy" 
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+        </div>
+        <div v-if="activeFooter.fanpageUrl" class="h-[300px]">
+          <iframe :src="activeFooter.fanpageUrl"
+            width="100%"
+            height="100%"
+            style="border:none;overflow:hidden"
+            scrolling="no"
+            frameborder="0"
+            allowfullscreen
+            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+          </iframe>
+        </div>
       </div>
-    </div>
-  </footer>
 
-  <!-- Fallback Footer khi không có dữ liệu từ API -->
-  <footer v-else-if="!isLoading && !error" class="footer" :class="{ 'dark-footer': isDarkMode }">
-    <div class="container mx-auto px-4 py-8">
-      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-8">
-        <div class="footer__column">
-          <h3 class="text-xl font-bold mb-4 footer__title">Về chúng tôi</h3>
-          <ul class="space-y-2">
-            <li><NuxtLink to="/about" class="footer__link hover:underline">Giới thiệu</NuxtLink></li>
-            <li><NuxtLink to="/contact" class="footer__link hover:underline">Liên hệ</NuxtLink></li>
-            <li><NuxtLink to="/careers" class="footer__link hover:underline">Tuyển dụng</NuxtLink></li>
-          </ul>
-        </div>
-        <div class="footer__column">
-          <h3 class="text-xl font-bold mb-4 footer__title">Hỗ trợ</h3>
-          <ul class="space-y-2">
-            <li><NuxtLink to="/faq" class="footer__link hover:underline">FAQ</NuxtLink></li>
-            <li><NuxtLink to="/shipping" class="footer__link hover:underline">Vận chuyển</NuxtLink></li>
-            <li><NuxtLink to="/returns" class="footer__link hover:underline">Đổi trả</NuxtLink></li>
-          </ul>
-        </div>
-        <div class="footer__column">
-          <h3 class="text-xl font-bold mb-4 footer__title">Chính sách</h3>
-          <ul class="space-y-2">
-            <li><NuxtLink to="/privacy" class="footer__link hover:underline">Bảo mật</NuxtLink></li>
-            <li><NuxtLink to="/terms" class="footer__link hover:underline">Điều khoản</NuxtLink></li>
-          </ul>
-        </div>
-        <div class="footer__column">
-          <h3 class="text-xl font-bold mb-4 footer__title">Liên hệ</h3>
-          <ul class="space-y-2">
-            <li><a href="tel:19001234" class="footer__link hover:underline">Hotline: 1900 1234</a></li>
-            <li><a href="mailto:info@example.com" class="footer__link hover:underline">Email: info@example.com</a></li>
-          </ul>
+      <!-- Copyright and Social Icons -->
+      <div class="mt-8 pt-4 border-t flex justify-between items-center">
+        <p v-if="activeFooter.copyright" class="text-sm">
+          {{ activeFooter.copyright }}
+        </p>
+        <div class="flex space-x-4">
+          <a v-for="icon in activeFooter.socialIcons" 
+             :key="icon.name" 
+             :href="icon.url" 
+             target="_blank"
+             rel="noopener noreferrer"
+             class="hover:opacity-80">
+            <Icon :name="icon.icon" class="w-6 h-6" />
+          </a>
         </div>
       </div>
-      <div class="footer__copyright text-center pt-4 border-t">
-        <p>© {{ new Date().getFullYear() }} E-Commerce. Tất cả các quyền được bảo lưu.</p>
+
+      <!-- Certifications -->
+      <div v-if="activeFooter.companyInfo.certifications" class="mt-4 flex items-center space-x-4">
+        <div v-for="cert in activeFooter.companyInfo.certifications" 
+             :key="cert.image" 
+             class="certification">
+          <img :src="cert.image" :alt="cert.alt || ''" class="h-12" />
+          <span v-if="cert.text" class="text-xs mt-1">{{ cert.text }}</span>
+        </div>
       </div>
+
     </div>
   </footer>
 
   <!-- Loading Placeholder -->
-  <div v-if="isLoading" class="footer-placeholder animate-pulse">
+  <div v-else-if="isLoading" class="footer-placeholder animate-pulse">
     <div class="container mx-auto px-4 py-8">
       <div class="h-40 bg-gray-200 rounded dark:bg-gray-700"></div>
     </div>
@@ -192,39 +183,57 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Các style cụ thể cho component này đã được di chuyển sang file SCSS riêng */
-.footer-placeholder {
-  width: 100%;
-  border-top: 1px solid var(--border);
-  background-color: var(--background);
+.footer {
+  @apply border-t;
 }
 
-/* Đảm bảo footer có màu nền đúng trong dark mode */
+.footer__title {
+  @apply text-xl font-bold mb-4;
+}
+
+.footer__link {
+  @apply transition-colors duration-300;
+}
+
+.footer__link:hover {
+  @apply underline;
+}
+
+.footer__item {
+  @apply flex items-start;
+}
+
+.footer-placeholder {
+  @apply w-full border-t;
+}
+
+/* Dark mode styles */
 html.dark .footer,
 .dark-footer {
-  background-color: #111827 !important;
-  color: #f9fafb !important;
-  border-color: #374151 !important;
+  @apply bg-gray-900 text-gray-100 border-gray-700;
 }
 
 .dark-footer .footer__title {
-  color: #f9fafb !important;
+  @apply text-gray-100;
 }
 
 .dark-footer .footer__link {
-  color: #9ca3af !important;
+  @apply text-gray-300;
 }
 
 .dark-footer .footer__link:hover {
-  color: #60a5fa !important;
+  @apply text-blue-400;
 }
 
 .dark-footer .footer__text {
-  color: #9ca3af !important;
+  @apply text-gray-300;
 }
 
 .dark-footer .footer__copyright {
-  border-color: #374151 !important;
-  color: #9ca3af !important;
+  @apply border-gray-700 text-gray-300;
+}
+
+.certification {
+  @apply flex flex-col items-center;
 }
 </style>

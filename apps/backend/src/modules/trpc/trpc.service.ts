@@ -47,13 +47,16 @@ import { AboutFrontendService } from '../about/frontend/services/about-frontend.
 import { LogoFrontendService } from '../settings/frontend/services/logo-frontend.service';
 import { LogoAdminService } from '../settings/admin/services/logo-admin.service';
 
+const t = initTRPC.context<TRPCContext>().create();
+
+// Export the procedures for use in routers
+export const router = t.router;
+export const publicProcedure = t.procedure;
+export const middleware = t.middleware;
+
 @Injectable()
 export class TrpcService {
   private readonly logger = new Logger(TrpcService.name);
-  private readonly t = initTRPC.context<TRPCContext>().create();
-  public readonly router = this.t.router;
-  public readonly publicProcedure = this.t.procedure;
-  public readonly middleware = this.t.middleware;
 
   constructor(
     private readonly userService: UserService,
@@ -98,7 +101,7 @@ export class TrpcService {
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
-    return this.router(procedures);
+    return router(procedures);
   }
 
   async createContext(req: any) {
@@ -162,7 +165,4 @@ export class TrpcService {
       return null;
     }
   }
-}
-
-// Export the procedures for use in routers
-export const { router, procedure: publicProcedure } = initTRPC.context<TRPCContext>().create(); 
+} 

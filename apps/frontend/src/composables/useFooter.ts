@@ -1,27 +1,60 @@
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { trpc } from '../utils/trpc';
 
-export interface FooterContent {
-  sections: Array<{
-    type: string;
-    title?: string;
-    items?: Array<{
-      label: string;
-      url: string;
-    }>;
-  }>;
-  copyright?: string;
-  theme?: {
-    backgroundColor?: string;
-    textColor?: string;
-  };
+export interface Address {
+  title?: string;
+  subtitle?: string;
+  location: string;
+  phone?: {
+    label: string;
+    number: string;
+    contact?: string;
+  }[];
+  email?: {
+    label: string;
+    address: string;
+    contact?: string;
+  }[];
+}
+
+export interface CompanyInfo {
+  name: string;
+  registration: string;
+  tax_number?: string;
+  business_license?: string;
+  certifications?: {
+    image: string;
+    alt?: string;
+    text?: string;
+  }[];
+}
+
+export interface QuickLink {
+  label: string;
+  url: string;
+  icon?: string;
+}
+
+export interface SocialIcon {
+  name: string;
+  icon: string;
+  url: string;
 }
 
 export interface Footer {
   id: number;
   name: string;
-  type: string;
-  content: FooterContent;
+  addresses: Address[];
+  mapUrl?: string;
+  fanpageUrl?: string;
+  companyInfo: CompanyInfo;
+  quickLinks: QuickLink[];
+  backgroundLightColor: string;
+  backgroundDarkColor: string;
+  copyright?: string;
+  socialIcons: SocialIcon[];
+  logoUrl: string;
+  logoAlt: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -38,7 +71,17 @@ export const useFooter = () => {
     error.value = null;
     
     try {
-      activeFooter.value = await trpc.footer.getActiveFooter.query();
+      const response = await trpc.footer.getActiveFooter.query();
+      console.log('API Response:', response);
+      
+      if (response) {
+        activeFooter.value = response;
+        console.log('Processed footer:', activeFooter.value);
+      } else {
+        console.error('Invalid API response:', response);
+        error.value = 'Không thể tải thông tin footer: Dữ liệu không hợp lệ';
+        activeFooter.value = null;
+      }
     } catch (err) {
       console.error('Failed to fetch active footer:', err);
       error.value = err instanceof Error ? err.message : 'Không thể tải thông tin footer';
@@ -48,32 +91,10 @@ export const useFooter = () => {
     }
   };
 
-  // Computed properties để truy cập dễ dàng các phần của footer
-  const footerSections = computed(() => activeFooter.value?.content?.sections || []);
-  const copyright = computed(() => activeFooter.value?.content?.copyright || '');
-  const theme = computed(() => activeFooter.value?.content?.theme || {});
-
-  // Hàm tiện ích để lấy section theo loại
-  const getSectionByType = (type: string) => {
-    return footerSections.value.find(section => section.type === type);
-  };
-
-  // Các section phổ biến
-  const linksSection = computed(() => getSectionByType('links'));
-  const socialSection = computed(() => getSectionByType('social'));
-  const contactSection = computed(() => getSectionByType('contact'));
-
   return {
     activeFooter,
     isLoading,
     error,
-    fetchActiveFooter,
-    footerSections,
-    copyright,
-    theme,
-    getSectionByType,
-    linksSection,
-    socialSection,
-    contactSection
+    fetchActiveFooter
   };
 }; 
