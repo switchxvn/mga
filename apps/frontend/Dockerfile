@@ -13,7 +13,7 @@ RUN yarn install --frozen-lockfile
 COPY . .
 
 # Build the app
-RUN yarn nx build frontend --prod --force
+RUN cd apps/frontend && npx nuxt build
 
 # Production stage
 FROM node:20-alpine
@@ -21,7 +21,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy built assets from builder
-COPY --from=builder /app/dist/apps/frontend/.output ./
+COPY --from=builder /app/apps/frontend/.output ./.output
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -31,4 +31,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "./server/index.mjs"] 
+CMD ["node", "./.output/server/index.mjs"] 
