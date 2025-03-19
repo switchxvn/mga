@@ -86,4 +86,142 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+}
+
+.main-menu-item {
+  color: rgb(var(--secondary-600));
+  letter-spacing: 0.05em;
+  position: relative;
+
+  > span {
+    font-weight: 500;
+    @apply text-primary-600;
+  }
+
+  &:hover {
+    > span {
+      font-weight: 800;
+      @apply text-primary-500;
+    }
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    @apply bg-primary-500;
+    transition: width 0.3s ease;
+  }
+
+  &:hover::after {
+    width: 100%;
+  }
+}
+
+.menu-active {
+  > span {
+    font-weight: 800;
+    @apply text-primary-600;
+  }
+
+  &::after {
+    width: 100%;
+    @apply bg-primary-600;
+  }
+}
+
+.mobile-main-menu-item {
+  @apply text-primary-600;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+
+  &:hover {
+    @apply text-primary-500;
+    font-weight: 800;
+    background-color: rgba(var(--primary-500), 0.05);
+  }
+}
+
+.mobile-menu-active {
+  @apply text-primary-600;
+  font-weight: 800;
+  background-color: rgba(var(--primary-600), 0.1);
+  border-left: 3px solid rgb(var(--primary-600));
+}
+
+.dark {
+  .main-menu-item {
+    > span {
+      @apply text-primary-400;
+    }
+
+    &:hover {
+      > span {
+        font-weight: 800;
+        @apply text-primary-300;
+      }
+    }
+
+    &::after {
+      @apply bg-primary-400;
+    }
+  }
+
+  .menu-active {
+    > span {
+      font-weight: 800;
+      @apply text-primary-400;
+    }
+
+    &::after {
+      @apply bg-primary-400;
+    }
+  }
+
+  .mobile-main-menu-item {
+    @apply text-primary-400;
+
+    &:hover {
+      @apply text-primary-300;
+      font-weight: 800;
+      background-color: rgba(var(--primary-400), 0.1);
+    }
+  }
+
+  .mobile-menu-active {
+    @apply text-primary-400;
+    font-weight: 800;
+    background-color: rgba(var(--primary-400), 0.15);
+    border-left: 3px solid rgb(var(--primary-400));
+  }
+}
+
+.navbar-megamenu-item {
+  @apply hover:bg-gray-100 transition-colors text-gray-700;
+}
+
+.dark .navbar-megamenu-item {
+  @apply hover:bg-gray-700 text-gray-200;
+}
+
+/* Đảm bảo mega menu có background đúng trong chế độ dark */
+.dark .mega-menu {
+  @apply bg-gray-800;
+}
+
+/* Đảm bảo không có phần tử nào trong mega menu có background màu trắng trong chế độ dark */
+.dark .mega-menu * {
+  background-color: transparent;
+}
+
+/* Đảm bảo tất cả text trong mega menu có màu phù hợp trong chế độ dark */
+.dark .mega-menu h3,
+.dark .mega-menu p,
+.dark .mega-menu span,
+.dark .mega-menu div,
+.dark .mega-menu a {
+  color: #e5e7eb !important; /* text-gray-200 */
 } 

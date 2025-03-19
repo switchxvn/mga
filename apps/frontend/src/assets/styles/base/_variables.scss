@@ -147,12 +147,13 @@
   --navbar-active: var(--primary);
 
   /* Main Menu */
-  --main-menu-color: var(--blue-900);
-  --main-menu-hover: var(--blue-500);
-  --main-menu-active: var(--blue-600);
-  --main-menu-dark: var(--gray-200);
-  --main-menu-dark-hover: var(--blue-400);
-  --main-menu-letter-spacing: 0.05em;
+  --main-menu-color: var(--color-gray-700);
+  --main-menu-hover: var(--color-primary-600);
+  --main-menu-active: var(--color-primary-600);
+  --main-menu-dark: var(--color-gray-200);
+  --main-menu-dark-hover: var(--color-primary-400);
+  --main-menu-dark-active: var(--color-primary-400);
+  --main-menu-letter-spacing: 0.5px;
   --main-menu-font-weight: 600;
 
   /* Background opacity */

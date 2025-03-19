@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
-import { useMenuItems } from '../../composables/useMenuItems';
-import type { MenuItem } from '@ew/shared';
-import Icon from './Icon.vue';
-import ThemeToggle from '../ThemeToggle.vue';
-import LanguageSwitcher from '../LanguageSwitcher.vue';
-import CartIcon from '../cart/CartIcon.vue';
-import { useRoute } from 'vue-router';
-import { useFeatureFlags } from '../../composables/useFeatureFlags';
-import { useLocalization } from '../../composables/useLocalization';
+import { useMenuItems } from "../../composables/useMenuItems";
+import type { MenuItem } from "@ew/shared";
+import Icon from "./Icon.vue";
+import ThemeToggle from "../ThemeToggle.vue";
+import LanguageSwitcher from "../LanguageSwitcher.vue";
+import CartIcon from "../cart/CartIcon.vue";
+import { useRoute } from "vue-router";
+import { useFeatureFlags } from "../../composables/useFeatureFlags";
+import { useLocalization } from "../../composables/useLocalization";
 
 // Props cho component
 interface NavbarProps {
@@ -36,10 +36,10 @@ const { locale } = useLocalization();
 const checkCartFeatureFlag = async () => {
   try {
     isLoadingFeatureFlag.value = true;
-    isCartEnabled.value = await isFeatureEnabled('enable_add_to_cart', true);
-    console.log('Cart feature flag in NavbarWithTheme:', isCartEnabled.value);
+    isCartEnabled.value = await isFeatureEnabled("enable_add_to_cart", true);
+    console.log("Cart feature flag in NavbarWithTheme:", isCartEnabled.value);
   } catch (err) {
-    console.error('Error checking cart feature flag:', err);
+    console.error("Error checking cart feature flag:", err);
     isCartEnabled.value = false;
   } finally {
     isLoadingFeatureFlag.value = false;
@@ -106,25 +106,25 @@ interface ProcessedMenuItem extends MenuItemWithTranslations {
 
 const processedMenuItems = computed<ProcessedMenuItem[]>(() => {
   return menuItems.value
-    .filter(item => item.isActive !== false)
+    .filter((item) => item.isActive !== false)
     .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .map(item => {
+    .map((item) => {
       const processedItem: ProcessedMenuItem = {
         ...item,
-        href: item.href || '#',
+        href: item.href || "#",
         hasMegaMenu: Boolean(item.hasMegaMenu),
-        megaMenuColumns: (item.megaMenuColumns || []).map(column => ({
+        megaMenuColumns: (item.megaMenuColumns || []).map((column) => ({
           title: column.title,
           titleTranslations: column.titleTranslations || [],
-          items: column.items.map(subItem => ({
-            href: subItem.href || '#',
+          items: column.items.map((subItem) => ({
+            href: subItem.href || "#",
             label: subItem.label,
             translations: subItem.translations || [],
-            defaultLocale: 'vi' // Since menu items are in Vietnamese by default
-          }))
+            defaultLocale: "vi", // Since menu items are in Vietnamese by default
+          })),
         })),
         translations: item.translations || [],
-        defaultLocale: item.defaultLocale || 'en'
+        defaultLocale: item.defaultLocale || "en",
       };
       return processedItem;
     });
@@ -136,13 +136,15 @@ const getTranslation = (item: TranslatableItem, targetLocale: string) => {
     return item.label;
   }
 
-  const translation = item.translations.find(t => t.locale === targetLocale);
+  const translation = item.translations.find((t) => t.locale === targetLocale);
   if (translation) {
     return translation.label;
   }
 
   // Fallback to default locale if translation not found
-  const defaultTranslation = item.translations.find(t => t.locale === item.defaultLocale);
+  const defaultTranslation = item.translations.find(
+    (t) => t.locale === item.defaultLocale
+  );
   if (defaultTranslation) {
     return defaultTranslation.label;
   }
@@ -156,16 +158,16 @@ const getColumnTitleTranslation = (column: MenuColumn, targetLocale: string) => 
     return column.title;
   }
 
-  const translation = column.titleTranslations.find(t => t.locale === targetLocale);
+  const translation = column.titleTranslations.find((t) => t.locale === targetLocale);
   return translation?.label || column.title;
 };
 
 // Kiểm tra xem menu có active không
 const isMenuActive = (href: string) => {
-  if (href === '/') {
-    return route.path === '/';
+  if (href === "/") {
+    return route.path === "/";
   }
-  return href !== '/' && route.path.startsWith(href);
+  return href !== "/" && route.path.startsWith(href);
 };
 
 // Active mega menu
@@ -218,7 +220,8 @@ const handleScroll = () => {
 
 // Computed classes for navbar
 const navbarClasses = computed(() => ({
-  "shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),_0_10px_20px_-2px_rgba(0,0,0,0.04)]": isScrolled.value,
+  "shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),_0_10px_20px_-2px_rgba(0,0,0,0.04)]":
+    isScrolled.value,
   "translate-y-0 opacity-100": isNavbarVisible.value,
   "-translate-y-full opacity-0": !isNavbarVisible.value,
 }));
@@ -255,7 +258,9 @@ watch(locale, () => {
               alt="Logo"
               class="h-8 w-auto transition-transform duration-300 hover:scale-110"
             />
-            <span class="font-bold text-xl hidden sm:inline-block dark:text-white">E-Commerce</span>
+            <span class="font-bold text-xl hidden sm:inline-block dark:text-white"
+              >E-Commerce</span
+            >
           </NuxtLink>
         </div>
 
@@ -273,7 +278,7 @@ watch(locale, () => {
             >
               <NuxtLink
                 :to="item.href"
-                class="main-menu-item text-sm font-semibold uppercase transition-colors py-5 flex items-center space-x-1"
+                class="main-menu-item text-sm uppercase transition-colors py-5 flex items-center space-x-1"
                 :class="{ 'menu-active': isMenuActive(item.href) }"
               >
                 <span>{{ getTranslation(item, locale) }}</span>
@@ -302,8 +307,8 @@ watch(locale, () => {
                       {{ getColumnTitleTranslation(column, locale) }}
                     </h3>
                     <ul class="space-y-2">
-                      <li 
-                        v-for="(subItem, subItemIndex) in column.items" 
+                      <li
+                        v-for="(subItem, subItemIndex) in column.items"
                         :key="subItemIndex"
                         class="block"
                       >
@@ -327,15 +332,18 @@ watch(locale, () => {
         <div class="hidden md:flex items-center space-x-4">
           <!-- Language Switcher -->
           <LanguageSwitcher />
-          
+
           <!-- Theme Toggle -->
           <ThemeToggle />
-          
+
           <!-- Cart Icon - Chỉ render khi feature flag là true -->
           <CartIcon v-if="isCartEnabled" />
-          
+
           <!-- Hotline -->
-          <a :href="`tel:${hotline}`" class="flex items-center space-x-2 text-sm dark:text-gray-200">
+          <a
+            :href="`tel:${hotline}`"
+            class="flex items-center space-x-2 text-sm dark:text-gray-200"
+          >
             <Icon
               name="Phone"
               class="text-primary h-[18px] w-[18px] dark:text-blue-400"
@@ -348,18 +356,15 @@ watch(locale, () => {
         <div class="md:hidden flex items-center space-x-2">
           <!-- Cart Icon for Mobile - Chỉ render khi feature flag là true -->
           <CartIcon v-if="isCartEnabled" />
-          
+
           <ThemeToggle />
-          
+
           <button
             class="flex items-center dark:text-gray-200"
             @click="toggleMobileMenu"
             aria-label="Toggle Menu"
           >
-            <Icon
-              :name="isMobileMenuOpen ? 'X' : 'Menu'"
-              class="h-6 w-6"
-            />
+            <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="h-6 w-6" />
           </button>
         </div>
       </div>
@@ -371,14 +376,16 @@ watch(locale, () => {
       :class="{ hidden: !isMobileMenuOpen }"
     >
       <div class="px-4 py-3 space-y-1">
-        <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">Đang tải menu...</div>
+        <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">
+          Đang tải menu...
+        </div>
         <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
         <template v-else>
           <NuxtLink
             v-for="item in processedMenuItems"
             :key="item.id"
             :to="item.href"
-            class="mobile-main-menu-item block px-3 py-2 text-base font-semibold uppercase rounded-md"
+            class="mobile-main-menu-item block px-3 py-2 text-base uppercase rounded-md"
             :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
             @click="isMobileMenuOpen = false"
           >
@@ -391,12 +398,12 @@ watch(locale, () => {
         <div class="px-3 py-2 mb-2">
           <LanguageSwitcher />
         </div>
-        
-        <a :href="`tel:${hotline}`" class="flex items-center space-x-2 px-3 py-2 dark:text-gray-200">
-          <Icon
-            name="Phone"
-            class="text-primary h-[18px] w-[18px] dark:text-blue-400"
-          />
+
+        <a
+          :href="`tel:${hotline}`"
+          class="flex items-center space-x-2 px-3 py-2 dark:text-gray-200"
+        >
+          <Icon name="Phone" class="text-primary h-[18px] w-[18px] dark:text-blue-400" />
           <span class="font-medium">{{ hotline }}</span>
         </a>
       </div>
@@ -406,132 +413,3 @@ watch(locale, () => {
   <!-- Spacer to prevent content from being hidden under fixed navbar -->
   <div class="h-16"></div>
 </template>
-
-<style lang="scss" scoped>
-
-.main-menu-item {
-  color: $main-menu-color;
-  font-weight: $main-menu-font-weight;
-  letter-spacing: $main-menu-letter-spacing;
-  position: relative;
-  text-shadow: 0 0 0.5px $main-menu-color;
-  
-  &:hover {
-    color: $main-menu-hover-color;
-    text-shadow: 0 0 0.5px $main-menu-hover-color;
-  }
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background-color: $main-menu-hover-color;
-    transition: width 0.3s ease;
-  }
-  
-  &:hover::after {
-    width: 100%;
-  }
-}
-
-.menu-active {
-  color: $main-menu-active-color !important;
-  text-shadow: 0 0 1px $main-menu-active-color !important;
-  
-  &::after {
-    width: 100%;
-    background-color: $main-menu-active-color;
-  }
-}
-
-.mobile-main-menu-item {
-  color: $main-menu-color;
-  font-weight: $main-menu-font-weight;
-  letter-spacing: $main-menu-letter-spacing;
-  text-shadow: 0 0 0.5px $main-menu-color;
-  
-  &:hover {
-    color: $main-menu-hover-color;
-    background-color: rgba($main-menu-hover-color, 0.05);
-    text-shadow: 0 0 0.5px $main-menu-hover-color;
-  }
-}
-
-.mobile-menu-active {
-  color: $main-menu-active-color !important;
-  background-color: rgba($main-menu-active-color, 0.1);
-  text-shadow: 0 0 1px $main-menu-active-color !important;
-  border-left: 3px solid $main-menu-active-color;
-}
-
-.dark .main-menu-item {
-  color: $main-menu-dark-color;
-  text-shadow: 0 0 0.5px $main-menu-dark-color;
-  
-  &:hover {
-    color: $main-menu-dark-hover-color;
-    text-shadow: 0 0 0.5px $main-menu-dark-hover-color;
-  }
-  
-  &::after {
-    background-color: $main-menu-dark-hover-color;
-  }
-}
-
-.dark .menu-active {
-  color: $main-menu-dark-hover-color !important;
-  text-shadow: 0 0 1px $main-menu-dark-hover-color !important;
-  
-  &::after {
-    background-color: $main-menu-dark-hover-color;
-  }
-}
-
-.dark .mobile-main-menu-item {
-  color: $main-menu-dark-color;
-  text-shadow: 0 0 0.5px $main-menu-dark-color;
-  
-  &:hover {
-    color: $main-menu-dark-hover-color;
-    background-color: rgba($main-menu-dark-hover-color, 0.1);
-    text-shadow: 0 0 0.5px $main-menu-dark-hover-color;
-  }
-}
-
-.dark .mobile-menu-active {
-  color: $main-menu-dark-hover-color !important;
-  background-color: rgba($main-menu-dark-hover-color, 0.15);
-  text-shadow: 0 0 1px $main-menu-dark-hover-color !important;
-  border-left: 3px solid $main-menu-dark-hover-color;
-}
-
-.navbar-megamenu-item {
-  @apply hover:bg-gray-100 transition-colors text-gray-700;
-}
-
-.dark .navbar-megamenu-item {
-  @apply hover:bg-gray-700 text-gray-200;
-}
-
-/* Đảm bảo mega menu có background đúng trong chế độ dark */
-.dark .mega-menu {
-  @apply bg-gray-800;
-}
-
-/* Đảm bảo không có phần tử nào trong mega menu có background màu trắng trong chế độ dark */
-.dark .mega-menu * {
-  background-color: transparent;
-}
-
-/* Đảm bảo tất cả text trong mega menu có màu phù hợp trong chế độ dark */
-.dark .mega-menu h3,
-.dark .mega-menu p,
-.dark .mega-menu span,
-.dark .mega-menu div,
-.dark .mega-menu a {
-  color: #e5e7eb !important; /* text-gray-200 */
-}
-</style> 
