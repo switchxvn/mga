@@ -371,7 +371,7 @@ const components = {
       color: white;
       
       &:hover {
-        color: hsl(var(--primary));
+        color: hsl(var(--color-primary-200));
       }
     }
     
@@ -381,7 +381,7 @@ const components = {
       
       &-active {
         opacity: 1;
-        background: hsl(var(--primary));
+        background: hsl(var(--color-primary-200));
       }
     }
   }

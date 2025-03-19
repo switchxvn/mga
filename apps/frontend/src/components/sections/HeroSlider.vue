@@ -1,7 +1,7 @@
 <template>
   <Swiper v-if="slides.length > 0" 
           v-bind="options" 
-          class="w-full h-full rounded-lg overflow-hidden shadow-md">
+          class="w-full h-full rounded-lg overflow-hidden shadow-md hero-slider">
     <SwiperSlide v-for="slide in slides" :key="slide.order" class="relative">
       <div class="relative w-full h-full">
         <img 
@@ -63,4 +63,28 @@ defineProps({
 });
 
 const { t: localT } = useLocalization();
-</script> 
+</script>
+
+<style scoped>
+.hero-section .hero-slider :deep(.swiper) .swiper-pagination-bullet {
+  background-color: white !important;
+  opacity: 0.5 !important;
+}
+
+.hero-section .hero-slider :deep(.swiper) .swiper-pagination-bullet-active {
+  background-color: hsl(254 185 20) !important;
+  opacity: 1 !important;
+}
+
+.hero-section .hero-slider :deep(.swiper) .swiper-button-prev,
+.hero-section .hero-slider :deep(.swiper) .swiper-button-next {
+  color: hsl(254 185 20) !important;
+  opacity: 0.8 !important;
+}
+
+.hero-section .hero-slider :deep(.swiper) .swiper-button-prev:hover,
+.hero-section .hero-slider :deep(.swiper) .swiper-button-next:hover {
+  opacity: 1 !important;
+  color: hsl(254 185 20) !important;
+}
+</style> 
