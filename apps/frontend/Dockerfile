@@ -9,9 +9,10 @@ COPY .yarnrc ./.yarnrc
 COPY .yarn ./.yarn
 # Copy workspace configs
 COPY nx.json tsconfig.base.json ./
-# Copy frontend app
-COPY apps/frontend ./apps/frontend
+# Copy all workspace packages for proper dependency resolution
+COPY apps ./apps
 
+# Install all dependencies including workspace packages
 RUN yarn install --frozen-lockfile
 
 # Build the app

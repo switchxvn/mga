@@ -67,6 +67,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
+    "@headlessui/tailwindcss": "^0.2.2",
     "@nestjs/schematics": "^10.0.1",
     "@nestjs/testing": "^11.0.7",
     "@nuxt/devtools": "1.0.0",
