@@ -123,8 +123,8 @@ useHead(() => {
 </script>
 
 <template>
-  <div class="service-detail bg-gray-50 dark:bg-gray-900">
-    <div class="container mx-auto px-4 py-8">
+      <div class="service-detail bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
+    <div class="container mx-auto px-4 py-8 flex-grow">
       <!-- Breadcrumb -->
       <Breadcrumb 
         :items="breadcrumbItems" 
@@ -134,12 +134,12 @@ useHead(() => {
       />
       
       <!-- Loading state -->
-      <div v-if="loading" class="service-detail__loading py-20">
+      <div v-if="loading" class="service-detail__loading py-20 flex-grow flex items-center justify-center">
         <div class="service-detail__loading-spinner"></div>
       </div>
       
       <!-- Error state -->
-      <div v-else-if="error" class="service-detail__error py-20">
+      <div v-else-if="error" class="service-detail__error py-20 flex-grow flex flex-col items-center justify-center">
         <p class="service-detail__error-message">{{ error }}</p>
         <button 
           @click="() => refresh()" 
@@ -150,9 +150,9 @@ useHead(() => {
       </div>
       
       <!-- Service content -->
-      <div v-else-if="service" class="service-detail__main mt-8">
+      <div v-else-if="service" class="service-detail__main mt-8 flex-grow">
         <!-- Service article content -->
-        <article class="service-detail__article bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8">
+        <article class="service-detail__article bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 h-full w-full">
           <!-- Service icon -->
           <div v-if="serviceIcon" class="service-detail__icon">
             <component 
@@ -181,7 +181,7 @@ useHead(() => {
       </div>
       
       <!-- Not found state -->
-      <div v-else class="service-detail__not-found py-20">
+      <div v-else class="service-detail__not-found py-20 flex-grow flex flex-col items-center justify-center">
         <div class="service-detail__not-found-emoji">😕</div>
         <h2 class="service-detail__not-found-title">
           {{ t('services.notFound') }}
@@ -201,12 +201,24 @@ useHead(() => {
 </template>
 
 <style scoped>
+.service-detail {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .service-detail__main {
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .service-detail__article {
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .service-detail__icon {
