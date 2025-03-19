@@ -12,30 +12,42 @@ useHead({
   ]
 });
 
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useFeatureFlags } from './composables/useFeatureFlags';
 import { useComponentStyles } from './composables/useComponentStyles';
 import { useTheme } from './composables/useTheme';
+import { useDarkMode } from './composables/useDarkMode';
 
-// Khởi tạo feature flags khi ứng dụng được tải
-onMounted(async () => {
-  const { fetchFeatureFlags } = useFeatureFlags();
-  await fetchFeatureFlags();
-});
+const isLoading = ref(true);
 
 // Initialize theme and component styles
 const { initializeTheme } = useTheme();
 const { initializeStyles } = useComponentStyles();
+const { initializeDarkMode } = useDarkMode();
+
+// Initialize theme and dark mode immediately in setup
+await initializeTheme();
+if (process.client) {
+  initializeDarkMode();
+}
 
 onMounted(async () => {
-  // Khởi tạo theme trước
-  await initializeTheme();
-  // Sau đó khởi tạo component styles
-  await initializeStyles();
+  try {
+    // Initialize component styles after mounting
+    await initializeStyles();
+    
+    // Initialize feature flags
+    const { fetchFeatureFlags } = useFeatureFlags();
+    await fetchFeatureFlags();
+  } finally {
+    // Hide loading screen after everything is initialized
+    isLoading.value = false;
+  }
 });
 </script>
 
 <template>
+  <LoadingScreen :is-loading="isLoading" />
   <!-- NuxtLayout sẽ tự động sử dụng layout default -->
   <NuxtLayout>
     <NuxtPage />

@@ -257,34 +257,39 @@ const handleAddToCart = async (event: MouseEvent) => {
   font-weight: 600;
   font-size: 1rem;
   color: white;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: rgb(var(--color-primary-500));
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -1px rgba(37, 99, 235, 0.1);
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 6px -1px rgb(var(--color-primary-500) / 0.2), 
+              0 2px 4px -1px rgb(var(--color-primary-500) / 0.1);
 }
 
 .dark .add-to-cart-button {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2);
+  background: rgb(var(--color-primary-600));
+  box-shadow: 0 4px 6px -1px rgb(var(--color-primary-500) / 0.3), 
+              0 2px 4px -1px rgb(var(--color-primary-500) / 0.2);
 }
 
 .add-to-cart-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2), 0 4px 6px -2px rgba(37, 99, 235, 0.1);
-  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  box-shadow: 0 10px 15px -3px rgb(var(--color-primary-500) / 0.2), 
+              0 4px 6px -2px rgb(var(--color-primary-500) / 0.1);
+  background: rgb(var(--color-primary-600));
 }
 
 .dark .add-to-cart-button:hover {
-  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.2);
+  background: rgb(var(--color-primary-700));
+  box-shadow: 0 10px 15px -3px rgb(var(--color-primary-500) / 0.3), 
+              0 4px 6px -2px rgb(var(--color-primary-500) / 0.2);
 }
 
 .add-to-cart-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px -1px rgba(37, 99, 235, 0.2), 0 1px 2px -1px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 2px 4px -1px rgb(var(--color-primary-500) / 0.2), 
+              0 1px 2px -1px rgb(var(--color-primary-500) / 0.1);
 }
 
 .add-to-cart-button:disabled {
@@ -323,12 +328,12 @@ const handleAddToCart = async (event: MouseEvent) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(37, 99, 235, 0.9);
+  background-color: rgb(var(--color-primary-500) / 0.9);
   z-index: 2;
 }
 
 .dark .loading-spinner {
-  background-color: rgba(29, 78, 216, 0.9);
+  background-color: rgb(var(--color-primary-600) / 0.9);
 }
 
 .ripple-effect {

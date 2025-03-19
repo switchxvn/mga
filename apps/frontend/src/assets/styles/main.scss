@@ -50,4 +50,19 @@
 /* Fix for vue-toast-notification z-index */
 .v-toast {
   z-index: 9999 !important;
+}
+
+/* Control transitions globally */
+:root.disable-transitions,
+:root.disable-transitions * {
+  transition: none !important;
+}
+
+/* Only allow specific transitions */
+:root.disable-transitions .transition-transform {
+  transition: transform 150ms !important;
+}
+
+:root.disable-transitions .transition-\[background\] {
+  transition: background-color 150ms !important;
 } 

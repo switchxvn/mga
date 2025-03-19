@@ -127,13 +127,13 @@ export function useTheme() {
       // Update primary colors
       Object.entries(currentColors.primary).forEach(([shade, color]) => {
         const rgb = hexToRgb(color);
-        if (rgb) document.documentElement.style.setProperty(`--primary-${shade}`, rgb);
+        if (rgb) document.documentElement.style.setProperty(`--color-primary-${shade}`, rgb);
       });
 
       // Update secondary colors
       Object.entries(currentColors.secondary).forEach(([shade, color]) => {
         const rgb = hexToRgb(color);
-        if (rgb) document.documentElement.style.setProperty(`--secondary-${shade}`, rgb);
+        if (rgb) document.documentElement.style.setProperty(`--color-secondary-${shade}`, rgb);
       });
 
       // Update semantic colors based on theme colors

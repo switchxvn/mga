@@ -245,9 +245,9 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
 
 /* CSS cho nút thêm vào giỏ hàng nhỏ */
 :deep(.cart-button-small) {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
-  transition: all 0.3s ease;
+  background: rgb(var(--color-primary-500));
+  box-shadow: 0 2px 4px rgb(var(--color-primary-500) / 0.3);
+  transition: all 0.15s ease;
   width: 2.5rem;
   height: 2.5rem;
   display: flex;
@@ -263,8 +263,8 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
 }
 
 :deep(.cart-button-small:hover) {
-  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+  background: rgb(var(--color-primary-600));
+  box-shadow: 0 4px 8px rgb(var(--color-primary-500) / 0.4);
 }
 
 :deep(.cart-button-small:active) {
@@ -272,12 +272,12 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
 }
 
 .dark :deep(.cart-button-small) {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.4);
+  background: rgb(var(--color-primary-600));
+  box-shadow: 0 2px 4px rgb(var(--color-primary-500) / 0.4);
 }
 
 .dark :deep(.cart-button-small:hover) {
-  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.5);
+  background: rgb(var(--color-primary-700));
+  box-shadow: 0 4px 8px rgb(var(--color-primary-500) / 0.5);
 }
 </style>

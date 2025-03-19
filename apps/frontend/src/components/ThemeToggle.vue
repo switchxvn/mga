@@ -1,78 +1,67 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref } from 'vue';
+import { useDarkMode } from '../composables/useDarkMode';
+import Icon from './ui/Icon.vue';
+import { onClickOutside } from '@vueuse/core';
 
-const isDarkMode = ref(false);
+const { isDark, currentMode, setMode } = useDarkMode();
+const isOpen = ref(false);
+const menuRef = ref<HTMLElement | null>(null);
 
-// Kiểm tra chế độ dark/light từ localStorage hoặc prefers-color-scheme
-onMounted(() => {
-  // Kiểm tra localStorage trước
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme) {
-    isDarkMode.value = savedTheme === 'dark';
-  } else {
-    // Nếu không có trong localStorage, kiểm tra prefers-color-scheme
-    isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  
-  // Áp dụng chế độ dark/light
-  applyTheme();
+onClickOutside(menuRef, () => {
+  isOpen.value = false;
 });
 
-// Theo dõi thay đổi của isDarkMode để cập nhật theme
-watch(isDarkMode, () => {
-  applyTheme();
-});
+const modes = [
+  { value: 'light', label: 'Sáng', icon: 'Sun' },
+  { value: 'dark', label: 'Tối', icon: 'Moon' },
+  { value: 'auto', label: 'Hệ thống', icon: 'Monitor' }
+] as const;
 
-// Áp dụng chế độ dark/light
-function applyTheme() {
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark');
-    localStorage.setItem('theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
-  }
-}
-
-// Chuyển đổi chế độ dark/light
-function toggleTheme() {
-  isDarkMode.value = !isDarkMode.value;
-}
+const getCurrentIcon = () => {
+  if (currentMode.value === 'auto') return 'Monitor';
+  return isDark.value ? 'Moon' : 'Sun';
+};
 </script>
 
 <template>
-  <button 
-    @click="toggleTheme" 
-    class="theme-toggle"
-    :title="isDarkMode ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'"
-    aria-label="Toggle theme"
-  >
-    <!-- Sun icon (light mode) -->
-    <svg 
-      v-if="!isDarkMode" 
-      xmlns="http://www.w3.org/2000/svg" 
-      class="h-5 w-5" 
-      viewBox="0 0 20 20" 
-      fill="currentColor"
+  <div ref="menuRef" class="relative">
+    <button
+      class="flex items-center justify-center w-8 h-8 rounded-lg text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+      @click="isOpen = !isOpen"
+      aria-label="Chuyển đổi chế độ màu"
     >
-      <path 
-        fill-rule="evenodd" 
-        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" 
-        clip-rule="evenodd" 
+      <Icon
+        :name="getCurrentIcon()"
+        class="h-5 w-5"
       />
-    </svg>
-    
-    <!-- Moon icon (dark mode) -->
-    <svg 
-      v-else 
-      xmlns="http://www.w3.org/2000/svg" 
-      class="h-5 w-5" 
-      viewBox="0 0 20 20" 
-      fill="currentColor"
+    </button>
+
+    <!-- Dropdown Menu -->
+    <div
+      v-if="isOpen"
+      class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5 z-50"
     >
-      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-    </svg>
-  </button>
+      <div class="py-1" role="menu" aria-orientation="vertical">
+        <button
+          v-for="mode in modes"
+          :key="mode.value"
+          class="flex items-center w-full px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
+          :class="{ 'bg-neutral-100 dark:bg-neutral-700': currentMode === mode.value }"
+          @click="() => { setMode(mode.value); isOpen = false; }"
+          role="menuitem"
+        >
+          <Icon :name="mode.icon" class="h-4 w-4 mr-2" />
+          <span>{{ mode.label }}</span>
+          <Icon
+            v-if="currentMode === mode.value"
+            name="Check"
+            class="h-4 w-4 ml-auto"
+          />
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>

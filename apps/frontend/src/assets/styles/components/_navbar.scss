@@ -89,20 +89,17 @@
 }
 
 .main-menu-item {
-  color: rgb(var(--secondary-600));
+  @apply text-neutral-700 dark:text-neutral-300;
   letter-spacing: 0.05em;
   position: relative;
 
   > span {
     font-weight: 500;
-    @apply text-primary-600;
+    @apply text-primary-600 dark:text-primary-400;
   }
 
   &:hover {
-    > span {
-      font-weight: 800;
-      @apply text-primary-500;
-    }
+    @apply text-primary-600 dark:text-primary-400;
   }
 
   &::after {
@@ -112,7 +109,7 @@
     left: 0;
     width: 0;
     height: 2px;
-    @apply bg-primary-500;
+    @apply bg-primary-600 dark:bg-primary-400;
     transition: width 0.3s ease;
   }
 
@@ -122,89 +119,38 @@
 }
 
 .menu-active {
+  @apply text-primary-600 dark:text-primary-400 font-semibold;
+
   > span {
-    font-weight: 800;
-    @apply text-primary-600;
+    @apply font-semibold;
   }
 
   &::after {
     width: 100%;
-    @apply bg-primary-600;
+    @apply bg-primary-600 dark:bg-primary-400;
   }
 }
 
 .mobile-main-menu-item {
-  @apply text-primary-600;
+  @apply text-neutral-700 dark:text-neutral-300;
   letter-spacing: 0.05em;
   font-weight: 600;
 
   &:hover {
-    @apply text-primary-500;
-    font-weight: 800;
-    background-color: rgba(var(--primary-500), 0.05);
+    @apply text-primary-600 dark:text-primary-400 bg-neutral-100 dark:bg-neutral-800;
   }
 }
 
 .mobile-menu-active {
-  @apply text-primary-600;
-  font-weight: 800;
-  background-color: rgba(var(--primary-600), 0.1);
-  border-left: 3px solid rgb(var(--primary-600));
-}
-
-.dark {
-  .main-menu-item {
-    > span {
-      @apply text-primary-400;
-    }
-
-    &:hover {
-      > span {
-        font-weight: 800;
-        @apply text-primary-300;
-      }
-    }
-
-    &::after {
-      @apply bg-primary-400;
-    }
-  }
-
-  .menu-active {
-    > span {
-      font-weight: 800;
-      @apply text-primary-400;
-    }
-
-    &::after {
-      @apply bg-primary-400;
-    }
-  }
-
-  .mobile-main-menu-item {
-    @apply text-primary-400;
-
-    &:hover {
-      @apply text-primary-300;
-      font-weight: 800;
-      background-color: rgba(var(--primary-400), 0.1);
-    }
-  }
-
-  .mobile-menu-active {
-    @apply text-primary-400;
-    font-weight: 800;
-    background-color: rgba(var(--primary-400), 0.15);
-    border-left: 3px solid rgb(var(--primary-400));
-  }
+  @apply text-primary-600 dark:text-primary-400 bg-neutral-100 dark:bg-neutral-800 font-semibold;
 }
 
 .navbar-megamenu-item {
-  @apply hover:bg-gray-100 transition-colors text-gray-700;
-}
+  @apply text-neutral-700 dark:text-neutral-300 transition-colors;
 
-.dark .navbar-megamenu-item {
-  @apply hover:bg-gray-700 text-gray-200;
+  &:hover {
+    @apply text-primary-600 dark:text-primary-400 bg-neutral-100 dark:bg-neutral-800;
+  }
 }
 
 /* Đảm bảo mega menu có background đúng trong chế độ dark */

@@ -245,8 +245,11 @@ watch(locale, () => {
 
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white dark:bg-background"
-    :class="navbarClasses"
+    class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800"
+    :class="[
+      navbarClasses,
+      'navbar' // Add navbar class for SCSS styles
+    ]"
   >
     <div class="container mx-auto px-4">
       <div class="flex h-16 items-center justify-between">
@@ -258,7 +261,7 @@ watch(locale, () => {
               alt="Logo"
               class="h-8 w-auto transition-transform duration-300 hover:scale-110"
             />
-            <span class="font-bold text-xl hidden sm:inline-block dark:text-white"
+            <span class="font-bold text-xl hidden sm:inline-block text-neutral-900 dark:text-neutral-50"
               >E-Commerce</span
             >
           </NuxtLink>
@@ -266,7 +269,7 @@ watch(locale, () => {
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-6">
-          <div v-if="isLoading" class="text-sm text-gray-500">Đang tải menu...</div>
+          <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400">Đang tải menu...</div>
           <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
           <template v-else>
             <div
@@ -292,7 +295,7 @@ watch(locale, () => {
               <!-- Mega Menu -->
               <div
                 v-if="item.hasMegaMenu && activeMegaMenu === item.id"
-                class="mega-menu absolute top-full left-0 w-screen max-w-4xl shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50 bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 dark:shadow-gray-900/50"
+                class="mega-menu absolute top-full left-0 w-screen max-w-4xl shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
                 style="left: 50%; transform: translateX(-50%)"
                 @mouseenter="keepMegaMenu"
                 @mouseleave="hideMegaMenu"
@@ -303,7 +306,7 @@ watch(locale, () => {
                     :key="columnIndex"
                     class="space-y-3"
                   >
-                    <h3 class="font-medium text-sm text-gray-900 dark:text-white">
+                    <h3 class="font-medium text-sm text-neutral-900 dark:text-neutral-100">
                       {{ getColumnTitleTranslation(column, locale) }}
                     </h3>
                     <ul class="space-y-2">
@@ -314,7 +317,7 @@ watch(locale, () => {
                       >
                         <NuxtLink
                           :to="subItem.href"
-                          class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-gray-700 dark:text-gray-200"
+                          class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400"
                           @click="activeMegaMenu = null"
                         >
                           {{ getTranslation(subItem, locale) }}
@@ -336,17 +339,17 @@ watch(locale, () => {
           <!-- Theme Toggle -->
           <ThemeToggle />
 
-          <!-- Cart Icon - Chỉ render khi feature flag là true -->
+          <!-- Cart Icon -->
           <CartIcon v-if="isCartEnabled" />
 
           <!-- Hotline -->
           <a
             :href="`tel:${hotline}`"
-            class="flex items-center space-x-2 text-sm dark:text-gray-200"
+            class="flex items-center space-x-2 text-sm text-neutral-700 dark:text-neutral-300"
           >
             <Icon
               name="Phone"
-              class="text-primary h-[18px] w-[18px] dark:text-blue-400"
+              class="text-primary-600 dark:text-primary-400 h-[18px] w-[18px]"
             />
             <span class="font-medium">{{ hotline }}</span>
           </a>
@@ -354,13 +357,13 @@ watch(locale, () => {
 
         <!-- Mobile Menu Button and Theme Toggle -->
         <div class="md:hidden flex items-center space-x-2">
-          <!-- Cart Icon for Mobile - Chỉ render khi feature flag là true -->
+          <!-- Cart Icon for Mobile -->
           <CartIcon v-if="isCartEnabled" />
 
           <ThemeToggle />
 
           <button
-            class="flex items-center dark:text-gray-200"
+            class="flex items-center text-neutral-700 dark:text-neutral-300"
             @click="toggleMobileMenu"
             aria-label="Toggle Menu"
           >
@@ -372,11 +375,11 @@ watch(locale, () => {
 
     <!-- Mobile Menu -->
     <div
-      class="md:hidden bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700"
+      class="md:hidden bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800"
       :class="{ hidden: !isMobileMenuOpen }"
     >
       <div class="px-4 py-3 space-y-1">
-        <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">
+        <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400 px-3 py-2">
           Đang tải menu...
         </div>
         <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
@@ -393,7 +396,7 @@ watch(locale, () => {
           </NuxtLink>
         </template>
       </div>
-      <div class="px-4 py-3 border-t dark:border-gray-700">
+      <div class="px-4 py-3 border-t border-neutral-200 dark:border-neutral-800">
         <!-- Language Switcher in Mobile Menu -->
         <div class="px-3 py-2 mb-2">
           <LanguageSwitcher />
@@ -401,9 +404,9 @@ watch(locale, () => {
 
         <a
           :href="`tel:${hotline}`"
-          class="flex items-center space-x-2 px-3 py-2 dark:text-gray-200"
+          class="flex items-center space-x-2 px-3 py-2 text-neutral-700 dark:text-neutral-300"
         >
-          <Icon name="Phone" class="text-primary h-[18px] w-[18px] dark:text-blue-400" />
+          <Icon name="Phone" class="text-primary-600 dark:text-primary-400 h-[18px] w-[18px]" />
           <span class="font-medium">{{ hotline }}</span>
         </a>
       </div>
