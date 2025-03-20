@@ -546,7 +546,7 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
     <template v-else>
       <!-- Render sections based on their order -->
       <template v-for="section in theme?.sections" :key="section.id">
-        <!-- Dynamic component based on {section.componentName} -->
+        <!-- Dynamic component based on {{section.componentName}} -->
         <component 
           :is="resolveComponent(section)"
           v-if="section.isActive"
