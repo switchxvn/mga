@@ -525,7 +525,7 @@ const categoriesConfig = computed(() => getSectionConfig("product_categories") a
         <!-- Latest Posts Section -->
         <section
           v-if="section.type === 'news' && section.isActive"
-          class="latest-posts-section py-12 bg-[hsl(var(--muted))]"
+          class="latest-posts-section py-12 bg-gray-50 dark:bg-gray-900"
         >
           <div class="container mx-auto px-4">
             <h2 class="text-3xl font-bold mb-8 text-center">

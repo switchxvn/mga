@@ -1,9 +1,29 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 import { CategoryType } from '../../../../apps/backend/src/modules/category/entities/category.entity';
+import * as bcrypt from 'bcrypt';
 
 export class ResetAndAddBlogPosts1742395990448 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // First, delete all existing data
+    // First, ensure admin user exists
+    let adminUserId: number;
+    const adminResult = await queryRunner.query(`
+      SELECT id FROM users WHERE username = 'admin' LIMIT 1
+    `);
+
+    if (adminResult.length === 0) {
+      // Create admin user if not exists
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      const result = await queryRunner.query(`
+        INSERT INTO users (username, email, password, is_active, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, NOW(), NOW())
+        RETURNING id
+      `, ['admin', 'admin@example.com', hashedPassword, true]);
+      adminUserId = result[0].id;
+    } else {
+      adminUserId = adminResult[0].id;
+    }
+
+    // Delete all existing data
     await queryRunner.query(`DELETE FROM post_tags`);
     await queryRunner.query(`DELETE FROM post_categories`);
     await queryRunner.query(`DELETE FROM posts`);
@@ -187,7 +207,7 @@ Bài viết này sẽ phân tích chi tiết từng yếu tố để giúp bạn
 
       const categoryId = categoryResult[0].id;
 
-      // Insert post
+      // Insert post with admin user id
       const result = await queryRunner.query(`
         INSERT INTO posts (
           title, content, short_description, thumbnail, published, author_id,
@@ -201,7 +221,7 @@ Bài viết này sẽ phân tích chi tiết từng yếu tố để giúp bạn
         post.short_description,
         post.thumbnail,
         true, // published
-        1 // author_id (assuming admin user has id 1)
+        adminUserId // Use the found or created admin user id
       ]);
 
       const postId = result[0].id;

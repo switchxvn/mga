@@ -18,6 +18,7 @@ import { TrpcModule } from './modules/trpc/trpc.module';
 import { UserModule } from './modules/user/user.module';
 import { ThemeModule } from './modules/theme/theme.module';
 import { NestFactory } from '@nestjs/core';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,13 +35,14 @@ import { NestFactory } from '@nestjs/core';
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'ecommerce'),
         autoLoadEntities: true,
+        entities: [__dirname + '/modules/**/*.entity{.ts,.js}'],
         synchronize: false,
-        logging: true,
-        extra: {
+        logging: configService.get('NODE_ENV') === 'development',
+        extra: configService.get('NODE_ENV') === 'production' ? {
           ssl: {
             rejectUnauthorized: false,
           },
-        },
+        } : {},
       }),
     }),
     UserModule,
