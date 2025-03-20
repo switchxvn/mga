@@ -19,6 +19,11 @@ export const dataSourceOptions: DataSourceOptions = {
   ],
   migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
   synchronize: false,
+  extra: {
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  },
 };
 
 const dataSource = new DataSource(dataSourceOptions);

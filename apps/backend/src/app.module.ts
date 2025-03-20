@@ -36,6 +36,11 @@ import { NestFactory } from '@nestjs/core';
         autoLoadEntities: true,
         synchronize: false,
         logging: true,
+        extra: {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        },
       }),
     }),
     UserModule,

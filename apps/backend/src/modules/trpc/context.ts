@@ -31,6 +31,11 @@ async function getDataSource() {
       database: process.env.DB_NAME,
       entities: [User, Post, PostTag, Tag, Theme, ThemeSection, PostTranslation, UserProfile, CountryPhoneCode, Hero, HeroVideo, HeroSlider, Category, MenuItem, MenuItemTranslation],
       synchronize: false,
+      extra: {
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      },
     });
     await dataSource.initialize();
   }

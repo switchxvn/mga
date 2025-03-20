@@ -17,6 +17,11 @@ export const dataSourceOptions: DataSourceOptions = {
   migrationsRun: true,
   synchronize: false,
   logging: process.env['NODE_ENV'] === 'development',
+  extra: {
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  },
 };
 
 const dataSource = new DataSource(dataSourceOptions);
