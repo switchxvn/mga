@@ -99,7 +99,8 @@ async function bootstrap() {
 
   // Start Server
   const port = configService.get('PORT', 3000);
-  await app.listen(port, 'localhost');
+  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+  await app.listen(port, host);
   
   // Tạo URL với hostname là 'localhost' thay vì địa chỉ IP
   const displayUrl = `http://localhost:${port}`;
