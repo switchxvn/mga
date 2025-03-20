@@ -7,10 +7,14 @@ services:
       dockerfile: nginx/Dockerfile
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - frontend
     networks:
       - app-network
+    volumes:
+      - /etc/nginx/ssl:/etc/nginx/ssl:ro
+
 
   frontend:
     build:
