@@ -36,6 +36,7 @@ interface Service {
 }
 
 interface ServicesConfig {
+  title?: string;
   layout: 'grid';
   columns: number;
   maxItems: number;
@@ -103,8 +104,22 @@ const props = withDefaults(defineProps<Props>(), {
   services: () => [],
   isLoading: false,
   error: null,
-  config: undefined
+  config: () => ({
+    layout: 'grid',
+    columns: 3,
+    maxItems: 12,
+    showIcon: true,
+    showTitle: true,
+    showDescription: true,
+    showPrice: false,
+    showButton: true,
+    descriptionLength: 150,
+    gap: '2rem',
+    buttonStyle: 'solid' as ButtonVariant,
+    buttonText: 'Xem chi tiết'
+  })
 });
+
 const { locale } = useLocalization();
 const { t } = useI18n();
 
@@ -139,64 +154,74 @@ const gridStyles = computed(() => ({
   gridTemplateColumns: `repeat(${gridColumns.value}, minmax(0, 1fr))`,
   gap: gridGap.value
 }));
-
 </script>
 
 <template>
-  <!-- Loading state -->
-  <div v-if="isLoading" class="flex justify-center items-center py-12">
-    <div class="spinner"></div>
-  </div>
-  
-  <!-- Error state -->
-  <div v-else-if="error" class="text-center text-red-500 py-8">
-    <p>{{ error }}</p>
-    <Button 
-      @click="handleRetry" 
-      variant="destructive"
-      class="mt-4"
-    >
-      {{ t('common.retry') }}
-    </Button>
-  </div>
-  
-  <!-- Services Grid -->
-  <div 
-    v-else-if="services?.length > 0" 
-    class="grid"
-    :style="gridStyles"
-  >
-    <ServiceCard
-      v-for="service in (services || []).slice(0, config?.maxItems || services?.length)"
-      :key="service.id"
-      :service="service"
-      :show-icon="config?.showIcon"
-      :show-title="config?.showTitle"
-      :show-description="config?.showDescription"
-      :show-button="config?.showButton"
-      :button-text="config?.buttonText"
-      :button-variant="buttonVariant"
-      :card-style="config?.cardStyle"
-      :icon-style="config?.iconStyle"
-      :title-style="config?.titleStyle"
-      :description-style="config?.descriptionStyle"
-    />
-  </div>
-  
-  <!-- Empty state -->
-  <div v-else class="text-center text-gray-500 dark:text-gray-400 py-8">
-    <p>{{ t('services.no_services') }}</p>
-  </div>
+  <section class="services-section py-12 bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4">
+      <!-- Section Title -->
+      <h2 v-if="config?.title" class="text-3xl font-bold text-center mb-8">
+        {{ config.title }}
+      </h2>
+
+      <!-- Loading state -->
+      <div v-if="isLoading" class="flex justify-center items-center py-12">
+        <ULoader size="lg" />
+      </div>
+      
+      <!-- Error state -->
+      <div v-else-if="error" class="text-center text-red-500 py-8">
+        <p>{{ error }}</p>
+        <Button 
+          @click="handleRetry" 
+          variant="destructive"
+          class="mt-4"
+        >
+          {{ t('common.retry') }}
+        </Button>
+      </div>
+      
+      <!-- Services Grid -->
+      <div 
+        v-else-if="services?.length > 0" 
+        class="grid"
+        :style="gridStyles"
+      >
+        <ServiceCard
+          v-for="service in (services || []).slice(0, config?.maxItems || services?.length)"
+          :key="service.id"
+          :service="service"
+          :show-icon="config?.showIcon"
+          :show-title="config?.showTitle"
+          :show-description="config?.showDescription"
+          :show-button="config?.showButton"
+          :button-text="config?.buttonText"
+          :button-variant="buttonVariant"
+          :card-style="config?.cardStyle"
+          :icon-style="config?.iconStyle"
+          :title-style="config?.titleStyle"
+          :description-style="config?.descriptionStyle"
+        />
+      </div>
+      
+      <!-- Empty state -->
+      <div v-else class="text-center text-gray-500 dark:text-gray-400 py-8">
+        <p>{{ t('services.no_services') }}</p>
+      </div>
+    </div>
+  </section>
 </template>
 
 <style lang="scss" scoped>
-.grid {
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr !important;
+.services-section {
+  .grid {
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr !important;
+    }
   }
 }
 

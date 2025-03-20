@@ -4,10 +4,11 @@ import { useTrpc } from '../../composables/useTrpc';
 import { useLocalization } from '../../composables/useLocalization';
 import ProductCard from '../ProductCard.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { Navigation, Pagination, Autoplay, EffectCreative } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import 'swiper/css/effect-creative';
 
 interface ProductTranslation {
   locale: string;
@@ -18,7 +19,7 @@ interface ProductTranslation {
   metaKeywords?: string;
 }
 
-interface ApiProduct {
+interface Product {
   id: number;
   sku?: string;
   price: number | null;
@@ -32,40 +33,81 @@ interface ApiProduct {
   formattedPrice?: string;
 }
 
-interface Props {
-  config?: {
-    limit?: number;
-    slidesPerView?: {
-      desktop: number;
-      tablet: number;
-      mobile: number;
-    };
+interface ProductsConfig {
+  title?: string;
+  layout?: 'grid' | 'slider';
+  columns?: number;
+  maxItems?: number;
+  showPrice?: boolean;
+  showRating?: boolean;
+  showButton?: boolean;
+  buttonText?: string;
+  buttonStyle?: 'solid' | 'outline' | 'soft' | 'ghost' | 'link';
+  gap?: string;
+  slidesPerView?: {
+    desktop: number;
+    tablet: number;
+    mobile: number;
   };
+  autoplay?: boolean;
+  interval?: number;
+  showDots?: boolean;
+  showArrows?: boolean;
+  swipeEffect?: 'slide' | 'creative' | 'fade';
+  cardStyle?: {
+    background?: string;
+    shadow?: string;
+    border?: string;
+    rounded?: string;
+    padding?: string;
+    transition?: string;
+  };
+}
+
+interface Props {
+  config?: ProductsConfig;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   config: () => ({
-    limit: 8,
+    layout: 'slider',
+    maxItems: 8,
+    showPrice: true,
+    showRating: true,
+    showButton: true,
+    buttonText: 'Xem chi tiết',
+    buttonStyle: 'solid',
+    gap: '1rem',
     slidesPerView: {
       desktop: 4,
       tablet: 2,
       mobile: 1
-    }
+    },
+    autoplay: true,
+    interval: 5000,
+    showDots: true,
+    showArrows: true
   })
 });
 
 const trpc = useTrpc();
 const { t } = useLocalization();
-const products = ref<ApiProduct[]>([]);
+const products = ref<Product[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 
 const swiperOptions = computed(() => ({
   modules: [Navigation, Pagination, Autoplay],
   slidesPerView: 1,
-  spaceBetween: 20,
-  navigation: true,
-  pagination: { clickable: true },
+  spaceBetween: 24,
+  navigation: {
+    nextEl: '.swiper-button-next',
+    prevEl: '.swiper-button-prev',
+  },
+  pagination: {
+    el: '.swiper-pagination',
+    clickable: true,
+  },
   breakpoints: {
     640: {
       slidesPerView: props.config?.slidesPerView?.mobile || 1,
@@ -77,6 +119,7 @@ const swiperOptions = computed(() => ({
       slidesPerView: props.config?.slidesPerView?.desktop || 4,
     },
   },
+  
 }));
 
 onMounted(async () => {
@@ -88,7 +131,7 @@ async function fetchFeaturedProducts() {
   error.value = null;
   try {
     const result = await trpc.product.getFeatured.query({
-      limit: props.config?.limit || 8
+      limit: props.config?.maxItems || 8
     });
     products.value = result.map(product => ({
       ...product,
@@ -107,54 +150,163 @@ async function fetchFeaturedProducts() {
 </script>
 
 <template>
-  <div class="featured-products">
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex justify-center items-center py-12">
-      <ULoader size="lg" />
-    </div>
+  <section class="featured-products-section py-12 bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4">
+      <!-- Section Title -->
+      <h2 v-if="config?.title" class="text-3xl font-bold text-center mb-8">
+        {{ config.title }}
+      </h2>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="text-center text-red-500 py-8">
-      {{ error }}
-    </div>
+      <!-- Loading State -->
+      <div v-if="isLoading" class="flex justify-center items-center py-12">
+        <ULoader size="lg" />
+      </div>
 
-    <!-- No Products State -->
-    <div v-else-if="products.length === 0" class="text-center py-8">
-      {{ t('products.no_featured_products') }}
-    </div>
+      <!-- Error State -->
+      <div v-else-if="error" class="text-center text-red-500 py-8">
+        {{ error }}
+      </div>
 
-    <!-- Products Grid -->
-    <div v-else>
-      <Swiper v-bind="swiperOptions" class="w-full">
-        <SwiperSlide v-for="product in products" :key="product.id" class="h-full">
-          <ProductCard :product="product" />
-        </SwiperSlide>
-      </Swiper>
+      <!-- No Products State -->
+      <div v-else-if="products.length === 0" class="text-center py-8">
+        {{ t('products.no_featured_products') }}
+      </div>
+
+      <!-- Products Display -->
+      <template v-else>
+        <!-- Grid Layout -->
+        <div v-if="config?.layout === 'grid'"
+             class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ProductCard v-for="product in products"
+                      :key="product.id"
+                      :product="product" />
+        </div>
+
+        <!-- Slider Layout -->
+        <div v-else class="swiper-outer-container">
+          <div class="swiper-container">
+            <Swiper v-bind="swiperOptions" class="featured-products-swiper">
+              <SwiperSlide v-for="product in products" 
+                          :key="product.id"
+                          class="!h-auto">
+                <ProductCard :product="product" />
+              </SwiperSlide>
+            </Swiper>
+          </div>
+
+          <!-- Navigation -->
+          <div class="swiper-button-prev !z-10"></div>
+          <div class="swiper-button-next !z-10"></div>
+          
+          <!-- Pagination -->
+          <div class="swiper-pagination mt-6"></div>
+        </div>
+      </template>
     </div>
-  </div>
+  </section>
 </template>
 
 <style lang="scss" scoped>
-.featured-products {
-  :deep(.swiper) {
-    padding: 1rem;
-    
-    .swiper-button-next,
-    .swiper-button-prev {
-      color: hsl(var(--primary));
-      
-      &:hover {
-        color: hsl(var(--primary-foreground));
+.featured-products-section {
+  .swiper-outer-container {
+    position: relative;
+    margin: 0 -40px;
+    padding: 0 40px;
+
+    @media (max-width: 640px) {
+      margin: 0 -20px;
+      padding: 0 20px;
+    }
+  }
+
+  .swiper-container {
+    overflow: hidden;
+  }
+
+  :deep() {
+    .featured-products-swiper {
+      .swiper-wrapper {
+        display: flex;
+        align-items: stretch;
+      }
+
+      .swiper-slide {
+        height: auto;
+        display: flex;
       }
     }
-    
-    .swiper-pagination-bullet {
-      background: hsl(var(--muted-foreground));
-      opacity: 0.5;
+
+    .swiper-button-next,
+    .swiper-button-prev {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      margin-top: -20px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
       
-      &-active {
-        opacity: 1;
-        background: hsl(var(--primary));
+      &::after {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--primary);
+      }
+      
+      &:hover {
+        background-color: var(--primary);
+        &::after {
+          color: white;
+        }
+      }
+      
+      &.swiper-button-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        
+        &:hover {
+          background-color: white;
+          &::after {
+            color: var(--primary);
+          }
+        }
+      }
+
+      @media (max-width: 640px) {
+        display: none;
+      }
+    }
+
+    .swiper-button-prev {
+      left: 0;
+    }
+
+    .swiper-button-next {
+      right: 0;
+    }
+
+    .swiper-pagination {
+      position: relative;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      
+      &-bullet {
+        width: 8px;
+        height: 8px;
+        margin: 0;
+        background-color: var(--primary);
+        opacity: 0.3;
+        transition: all 0.3s ease;
+        
+        &-active {
+          opacity: 1;
+          transform: scale(1.2);
+        }
       }
     }
   }

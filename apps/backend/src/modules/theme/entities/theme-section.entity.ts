@@ -21,20 +21,16 @@ export class ThemeSection {
   @Column({ length: 50 })
   type!: string;
 
+  @Column({ name: 'component_name', length: 100, nullable: true })
+  componentName?: string;
+
   @Column()
   title!: string;
 
   @Column({ type: 'int', default: 0 })
   order!: number;
 
-  @Column({ type: 'enum', enum: PageType, name: 'page_type' })
-  pageType!: PageType;
-
-  @Column({
-    type: 'enum',
-    enum: PageType,
-    default: PageType.HOME_PAGE
-  })
+  @Column({ type: 'enum', enum: PageType, name: 'page_type', default: PageType.HOME_PAGE })
   pageType!: PageType;
 
   @Column({ type: 'jsonb', default: {

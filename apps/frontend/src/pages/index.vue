@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
 import HeroSection from "../components/sections/HeroSection.vue";
+import HeroSectionFullWidth from "../components/sections/HeroSectionFullWidth.vue";
 import ProductCategoriesSection from "../components/sections/ProductCategoriesSection.vue";
-import ServicesList from "../components/sections/ServicesList.vue";
+import ServiceSection from "../components/sections/ServiceSection.vue";
 import PostCard from "../components/ui/card/PostCard.vue";
 import { useLocalization } from "../composables/useLocalization";
 import { useTrpc } from "../composables/useTrpc";
@@ -17,6 +18,7 @@ import { Swiper, SwiperSlide } from "swiper/vue";
 import FeaturedProducts from "../components/sections/FeaturedProducts.vue";
 import { useTheme } from '../composables/useTheme';
 import CompanyIntroSection from "../components/sections/CompanyIntroSection.vue";
+import NewsSection from "../components/sections/NewsSection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -94,20 +96,41 @@ interface ThemeSection {
   title: string;
   order: number;
   pageType: PageType;
+  componentName?: string;
   settings: Record<string, any>;
   isActive: boolean;
 }
 
-// Theme interface
-interface ThemeColors {
-  primary: Record<number, string>;
-  secondary: Record<number, string>;
-  success: Record<number, string>;
-  error: Record<number, string>;
-  warning: Record<number, string>;
-  info: Record<number, string>;
+// Theme colors interface
+interface ThemeColorShades {
+  '50': string;
+  '100': string;
+  '200': string;
+  '300': string;
+  '400': string;
+  '500': string;
+  '600': string;
+  '700': string;
+  '800': string;
+  '900': string;
 }
 
+interface ThemeColorMode {
+  primary: ThemeColorShades;
+  secondary: ThemeColorShades;
+  success: ThemeColorShades;
+  error: ThemeColorShades;
+  warning: ThemeColorShades;
+  info: ThemeColorShades;
+  // ... other color types
+}
+
+interface ThemeColors {
+  light: ThemeColorMode;
+  dark: ThemeColorMode;
+}
+
+// Theme interface
 interface Theme {
   id: number;
   name: string;
@@ -289,6 +312,41 @@ const serviceError = ref<string | null>(null);
 const { getActiveTheme } = useTheme();
 const theme = ref<Theme | null>(null);
 
+// Register components
+const components = {
+  HeroSection,
+  FeaturedProducts,
+  ProductCategoriesSection,
+  ServiceSection,
+  NewsSection,
+  CompanyIntroSection
+} as const;
+
+// Function to get component name based on section type and componentName
+const resolveComponent = (section: ThemeSection) => {
+  console.log('Resolving component for section:', section);
+  if (section.componentName && components[section.componentName as keyof typeof components]) {
+    return components[section.componentName as keyof typeof components];
+  }
+  const component = getDefaultComponent(section.type);
+  console.log('Resolved component:', component?.name);
+  return component;
+};
+
+// Function to get default component based on section type
+const getDefaultComponent = (type: string) => {
+  const typeToComponent: Record<string, any> = {
+    'hero': components.HeroSection,
+    'featured_products': components.FeaturedProducts,
+    'product_categories': components.ProductCategoriesSection,
+    'services': components.ServiceSection,
+    'news': components.NewsSection,
+    'company_intro': components.CompanyIntroSection
+  };
+  
+  return typeToComponent[type] || null;
+};
+
 // Fetch theme on mount
 onMounted(async () => {
   theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
@@ -299,12 +357,12 @@ onMounted(async () => {
     // Apply theme colors
     if (theme.value?.colors) {
       const colors = theme.value.colors;
-      document.documentElement.style.setProperty("--primary", colors.primary[500]);
-      document.documentElement.style.setProperty("--secondary", colors.secondary[500]);
-      document.documentElement.style.setProperty("--success", colors.success[500]);
-      document.documentElement.style.setProperty("--error", colors.error[500]);
-      document.documentElement.style.setProperty("--warning", colors.warning[500]);
-      document.documentElement.style.setProperty("--info", colors.info[500]);
+      document.documentElement.style.setProperty("--primary", colors.light.primary['500']);
+      document.documentElement.style.setProperty("--secondary", colors.light.secondary['500']);
+      document.documentElement.style.setProperty("--success", colors.light.success['500']);
+      document.documentElement.style.setProperty("--error", colors.light.error['500']);
+      document.documentElement.style.setProperty("--warning", colors.light.warning['500']);
+      document.documentElement.style.setProperty("--info", colors.light.info['500']);
     }
   } catch (err) {
     console.error("Error in page initialization:", err);
@@ -414,7 +472,11 @@ async function fetchServices() {
   try {
     // Gọi tRPC endpoint để lấy danh sách dịch vụ với locale hiện tại
     const result = await trpc.service.all.query({ locale: locale.value });
-    services.value = result;
+    console.log('Services API response:', result);
+    
+    // Gán trực tiếp kết quả vì response từ tRPC không có cấu trúc .data
+    services.value = result || [];
+    console.log('Services after assignment:', services.value);
   } catch (err: any) {
     console.error("Failed to fetch services:", err);
     serviceError.value = err.message || "Đã xảy ra lỗi khi tải dịch vụ";
@@ -471,111 +533,14 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
     <template v-else>
       <!-- Render sections based on their order -->
       <template v-for="section in theme?.sections" :key="section.id">
-        <!-- Hero Section -->
-        <HeroSection
-          v-if="section.type === 'hero' && section.isActive"
-          :config="sliderConfig"
-        />
-
-        <!-- Featured Products Section -->
-        <section
-          v-if="section.type === 'featured_products' && section.isActive"
-          class="featured-products-section py-12 bg-white dark:bg-gray-900"
-        >
-          <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold mb-8 text-center">
-              {{ section.title || t("products.featured") }}
-            </h2>
-            <FeaturedProducts :config="productsConfig" />
-          </div>
-        </section>
-
-        <!-- Categories Section -->
-        <ProductCategoriesSection
-          v-if="
-            section.type === 'product_categories' &&
-            section.isActive &&
-            categoriesConfig
-          "
-          :config="categoriesConfig"
-        />
-
-        <!-- Services Section -->
-        <section
-          v-if="section.type === 'services' && section.isActive"
-          class="services-section relative"
-          :style="{
-            paddingTop: servicesConfig?.padding?.top,
-            paddingBottom: servicesConfig?.padding?.bottom,
-          }"
-        >
-          <!-- Background gradient overlay -->
-          <div
-            class="absolute inset-0"
-            :style="{
-              backgroundImage: servicesConfig?.backgroundGradient
-                ? `linear-gradient(${servicesConfig.backgroundGradient.direction.replace(
-                    'to-',
-                    'to '
-                  )}, ${servicesConfig.backgroundGradient.from}, ${
-                    servicesConfig.backgroundGradient.to
-                  })`
-                : 'none',
-              opacity: servicesConfig?.overlayOpacity,
-              pointerEvents: 'none',
-            }"
-          />
-
-          <div class="container mx-auto px-4 relative">
-            <h2 class="text-3xl font-bold mb-8 text-center">
-              {{ section.title || t("services.title") }}
-            </h2>
-
-            <ServicesList
-              :services="services"
-              :is-loading="isLoadingServices"
-              :error="serviceError"
-              :config="servicesConfig"
-            />
-          </div>
-        </section>
-
-        <!-- Latest Posts Section -->
-        <section
-          v-if="section.type === 'news' && section.isActive"
-          class="latest-posts-section py-12 bg-gray-50 dark:bg-gray-900"
-        >
-          <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold mb-8 text-center">
-              {{ section.title || t("home.latest_posts") }}
-            </h2>
-
-            <div v-if="isLoading" class="flex justify-center items-center py-12">
-              <ULoader size="lg" />
-            </div>
-
-            <div v-else-if="error" class="text-center text-red-500 py-8">
-              {{ error }}
-            </div>
-
-            <div v-else-if="latestPosts.length === 0" class="text-center py-8">
-              {{ t("home.no_posts") }}
-            </div>
-
-            <div v-else>
-              <Swiper v-bind="postsSwiperOptions" class="w-full">
-                <SwiperSlide v-for="post in latestPosts" :key="post.id" class="h-full">
-                  <PostCard :post="post" :compact="false" />
-                </SwiperSlide>
-              </Swiper>
-            </div>
-          </div>
-        </section>
-
-        <!-- Company Introduction Section -->
-        <CompanyIntroSection
-          v-if="section.type === 'company_intro' && section.isActive"
-          :config="companyIntroConfig"
+        <!-- Dynamic component based on componentName -->
+        <component 
+          :is="resolveComponent(section)"
+          v-if="section.isActive"
+          :config="getSectionConfig(section.type)"
+          :services="section.type === 'services' ? services : undefined"
+          :is-loading="section.type === 'services' ? isLoadingServices : false"
+          :error="section.type === 'services' ? serviceError : null"
         />
       </template>
     </template>
