@@ -27,7 +27,7 @@ export class ThemeSection {
   order!: number;
 
   @Column({ type: 'jsonb', default: {
-    layout: 'split-columns', // 'split-columns' | 'stacked-rows'
+    layout: '', // 'split-columns' | 'stacked-rows'
     height: '600px',
     autoplay: true,
     interval: 5000,
@@ -46,7 +46,19 @@ export class ThemeSection {
       to: 'rgba(0,0,0,0)',
       direction: 'to-t'
     },
-    overlayOpacity: '0.5'
+    overlayOpacity: '0.5',
+    description: '',
+    image: '',
+    stats: [
+      { value: '150+', label: 'Khách hàng' },
+      { value: '10+', label: 'Năm kinh nghiệm' },
+      { value: '1000+', label: 'Dự án' },
+      { value: '24/7', label: 'Hỗ trợ' }
+    ],
+    buttonText: 'Tìm hiểu thêm',
+    buttonLink: '/about',
+    backgroundColor: '',
+    textColor: ''
   } })
   settings!: Record<string, any>;
 

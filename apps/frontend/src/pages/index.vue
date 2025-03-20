@@ -16,6 +16,7 @@ import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import FeaturedProducts from "../components/sections/FeaturedProducts.vue";
 import { useTheme } from '../composables/useTheme';
+import CompanyIntroSection from "../components/sections/CompanyIntroSection.vue";
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface PostTranslation {
@@ -259,6 +260,21 @@ interface CategoriesConfig {
   displayMode: "grid" | "slider";
 }
 
+interface CompanyIntroConfig {
+  layout: 'left-image' | 'right-image';
+  title: string;
+  description: string;
+  image: string;
+  stats?: Array<{
+    value: string;
+    label: string;
+  }>;
+  buttonText?: string;
+  buttonLink?: string;
+  backgroundColor?: string;
+  textColor?: string;
+}
+
 const route = useRoute();
 const trpc = useTrpc();
 const { t, locale } = useLocalization();
@@ -436,6 +452,7 @@ const sliderConfig = computed(() => getSectionConfig("hero") as SliderConfig | u
 const productsConfig = computed(() => getSectionConfig("featured_products") as ProductsConfig | undefined);
 const servicesConfig = computed(() => getSectionConfig("services") as ServicesConfig | undefined);
 const categoriesConfig = computed(() => getSectionConfig("product_categories") as CategoriesConfig | undefined);
+const companyIntroConfig = computed(() => getSectionConfig("company_intro") as CompanyIntroConfig | undefined);
 </script>
 
 <template>
@@ -553,6 +570,12 @@ const categoriesConfig = computed(() => getSectionConfig("product_categories") a
             </div>
           </div>
         </section>
+
+        <!-- Company Introduction Section -->
+        <CompanyIntroSection
+          v-if="section.type === 'company_intro' && section.isActive"
+          :config="companyIntroConfig"
+        />
       </template>
     </template>
   </div>
