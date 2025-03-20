@@ -118,11 +118,10 @@ interface ThemeColorShades {
 interface ThemeColorMode {
   primary: ThemeColorShades;
   secondary: ThemeColorShades;
-  success: ThemeColorShades;
-  error: ThemeColorShades;
-  warning: ThemeColorShades;
-  info: ThemeColorShades;
-  // ... other color types
+  success?: ThemeColorShades;
+  error?: ThemeColorShades;
+  warning?: ThemeColorShades;
+  info?: ThemeColorShades;
 }
 
 interface ThemeColors {
@@ -319,7 +318,8 @@ const components = {
   ProductCategoriesSection,
   ServiceSection,
   NewsSection,
-  CompanyIntroSection
+  CompanyIntroSection,
+  HeroSectionFullWidth
 } as const;
 
 // Function to get component name based on section type and componentName
@@ -341,7 +341,8 @@ const getDefaultComponent = (type: string) => {
     'product_categories': components.ProductCategoriesSection,
     'services': components.ServiceSection,
     'news': components.NewsSection,
-    'company_intro': components.CompanyIntroSection
+    'company_intro': components.CompanyIntroSection,
+    'hero_full_width': components.HeroSectionFullWidth
   };
   
   return typeToComponent[type] || null;
@@ -354,15 +355,27 @@ onMounted(async () => {
     // Fetch posts and services only, theme is handled by useTheme
     await Promise.all([fetchLatestPosts(), fetchServices()]);
 
+    // Debug theme sections
+    console.log('Theme sections:', theme.value?.sections);
+    console.log('Active sections:', theme.value?.sections?.filter(s => s.isActive));
+
     // Apply theme colors
     if (theme.value?.colors) {
       const colors = theme.value.colors;
       document.documentElement.style.setProperty("--primary", colors.light.primary['500']);
       document.documentElement.style.setProperty("--secondary", colors.light.secondary['500']);
-      document.documentElement.style.setProperty("--success", colors.light.success['500']);
-      document.documentElement.style.setProperty("--error", colors.light.error['500']);
-      document.documentElement.style.setProperty("--warning", colors.light.warning['500']);
-      document.documentElement.style.setProperty("--info", colors.light.info['500']);
+      if (colors.light.success) {
+        document.documentElement.style.setProperty("--success", colors.light.success['500']);
+      }
+      if (colors.light.error) {
+        document.documentElement.style.setProperty("--error", colors.light.error['500']);
+      }
+      if (colors.light.warning) {
+        document.documentElement.style.setProperty("--warning", colors.light.warning['500']);
+      }
+      if (colors.light.info) {
+        document.documentElement.style.setProperty("--info", colors.light.info['500']);
+      }
     }
   } catch (err) {
     console.error("Error in page initialization:", err);
@@ -533,7 +546,7 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
     <template v-else>
       <!-- Render sections based on their order -->
       <template v-for="section in theme?.sections" :key="section.id">
-        <!-- Dynamic component based on componentName -->
+        <!-- Dynamic component based on {section.componentName} -->
         <component 
           :is="resolveComponent(section)"
           v-if="section.isActive"
