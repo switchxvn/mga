@@ -14,4 +14,7 @@ export * from './transformers/date.transformer';
 export * from './lib/interfaces';
 export * from './lib/interfaces/post.interface';
 export * from './lib/interfaces/post-translation.interface';
-export * from './lib/interfaces/service.interface'; 
+export * from './lib/interfaces/service.interface';
+
+// Types
+export * from './types/page-type'; 

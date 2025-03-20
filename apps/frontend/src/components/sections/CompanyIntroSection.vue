@@ -65,12 +65,11 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
       <!-- Full Text Layout -->
       <div v-if="config.layout === 'full-text'" 
         :style="{ 
-          maxWidth: config.maxWidth || '800px',
+          maxWidth: config.maxWidth || '100%',
           ...getBorderStyles(config)
         }"
-        class="text-center mx-auto"
+        class="mx-auto"
       >
-        <h2 class="text-3xl md:text-4xl font-bold mb-6">{{ config.title }}</h2>
         <div class="prose dark:prose-invert max-w-none mb-8 mx-auto" v-html="config.description"></div>
 
         <!-- Stats Grid for full-text layout -->
@@ -80,18 +79,19 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
             <div class="text-sm text-gray-600 dark:text-gray-400">{{ stat.label }}</div>
           </div>
         </div>
-
-        <!-- CTA Button for full-text layout -->
-        <UButton
-          v-if="config.buttonText && config.buttonLink"
+        <div class="flex justify-center">
+          <!-- CTA Button for full-text layout -->
+          <UButton
+            v-if="config.buttonText && config.buttonLink"
           :to="config.buttonLink"
           color="primary"
           variant="solid"
-          class="mt-4 inline-block"
+          class="mt-4 inline-block mx-auto"
           :style="getButtonStyles(config)"
         >
-          {{ config.buttonText }}
-        </UButton>
+            {{ config.buttonText }}
+          </UButton>
+        </div>
       </div>
 
       <!-- Image Layouts -->
@@ -149,9 +149,6 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
 </template>
 
 <style scoped>
-.prose {
-  max-width: 65ch;
-}
 
 :deep(.button) {
   display: inline-flex;

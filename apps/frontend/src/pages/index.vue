@@ -17,6 +17,7 @@ import { Swiper, SwiperSlide } from "swiper/vue";
 import FeaturedProducts from "../components/sections/FeaturedProducts.vue";
 import { useTheme } from '../composables/useTheme';
 import CompanyIntroSection from "../components/sections/CompanyIntroSection.vue";
+import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface PostTranslation {
@@ -92,6 +93,7 @@ interface ThemeSection {
   type: string;
   title: string;
   order: number;
+  pageType: PageType;
   settings: Record<string, any>;
   isActive: boolean;
 }
@@ -285,7 +287,36 @@ const isLoadingServices = ref(false);
 const error = ref<string | null>(null);
 const serviceError = ref<string | null>(null);
 const { getActiveTheme } = useTheme();
-const theme = computed(() => getActiveTheme());
+const theme = ref<Theme | null>(null);
+
+// Fetch theme on mount
+onMounted(async () => {
+  theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
+  try {
+    // Fetch posts and services only, theme is handled by useTheme
+    await Promise.all([fetchLatestPosts(), fetchServices()]);
+
+    // Apply theme colors
+    if (theme.value?.colors) {
+      const colors = theme.value.colors;
+      document.documentElement.style.setProperty("--primary", colors.primary[500]);
+      document.documentElement.style.setProperty("--secondary", colors.secondary[500]);
+      document.documentElement.style.setProperty("--success", colors.success[500]);
+      document.documentElement.style.setProperty("--error", colors.error[500]);
+      document.documentElement.style.setProperty("--warning", colors.warning[500]);
+      document.documentElement.style.setProperty("--info", colors.info[500]);
+    }
+  } catch (err) {
+    console.error("Error in page initialization:", err);
+  }
+});
+
+// Watch for locale changes to update theme
+watch(locale, async () => {
+  theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
+  fetchLatestPosts();
+  fetchServices();
+});
 
 // Cấu hình Swiper cho posts dựa trên theme
 const getPostsSwiperOptions = (theme: Theme | null) => {
@@ -339,26 +370,6 @@ const getPostsSwiperOptions = (theme: Theme | null) => {
 
 const postsSwiperOptions = computed(() => getPostsSwiperOptions(theme.value));
 
-onMounted(async () => {
-  try {
-    // Fetch posts and services only, theme is handled by useTheme
-    await Promise.all([fetchLatestPosts(), fetchServices()]);
-
-    // Apply theme colors
-    if (theme.value?.colors) {
-      const colors = theme.value.colors;
-      document.documentElement.style.setProperty("--primary", colors.primary[500]);
-      document.documentElement.style.setProperty("--secondary", colors.secondary[500]);
-      document.documentElement.style.setProperty("--success", colors.success[500]);
-      document.documentElement.style.setProperty("--error", colors.error[500]);
-      document.documentElement.style.setProperty("--warning", colors.warning[500]);
-      document.documentElement.style.setProperty("--info", colors.info[500]);
-    }
-  } catch (err) {
-    console.error("Error in page initialization:", err);
-  }
-});
-
 async function fetchLatestPosts() {
   isLoading.value = true;
   error.value = null;
@@ -397,11 +408,6 @@ async function fetchLatestPosts() {
   }
 }
 
-// Thêm watcher để theo dõi thay đổi ngôn ngữ
-watch(locale, () => {
-  fetchLatestPosts();
-});
-
 async function fetchServices() {
   isLoadingServices.value = true;
   serviceError.value = null;
@@ -416,11 +422,6 @@ async function fetchServices() {
     isLoadingServices.value = false;
   }
 }
-
-// Thêm watcher để theo dõi thay đổi ngôn ngữ cho services
-watch(locale, () => {
-  fetchServices();
-});
 
 const getAuthorName = (author: any) => {
   if (author?.profile) {

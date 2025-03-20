@@ -109,7 +109,7 @@ export const useComponentStyles = () => {
 
     try {
       const { getActiveTheme } = useTheme();
-      const activeTheme = getActiveTheme();
+      const activeTheme = await getActiveTheme();
       
       if (!activeTheme) {
         throw new Error('No active theme found');

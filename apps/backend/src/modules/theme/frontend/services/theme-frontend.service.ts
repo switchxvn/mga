@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Theme } from '../../entities/theme.entity';
-
+import { PageType } from '@ew/shared';
 @Injectable()
 export class ThemeFrontendService {
   constructor(
@@ -26,9 +26,9 @@ export class ThemeFrontendService {
     return theme;
   }
 
-  async getActiveTheme(): Promise<Theme> {
+  async getActiveTheme(pageType: PageType): Promise<Theme> {
     const theme = await this.themeRepository.findOne({
-      where: { isActive: true },
+      where: { isActive: true, sections: { pageType } },
       relations: ['sections'],
       order: {
         sections: {

@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Theme } from './theme.entity';
+import { PageType } from '@ew/shared';
 
 @Entity('theme_sections')
 export class ThemeSection {
@@ -25,6 +26,16 @@ export class ThemeSection {
 
   @Column({ type: 'int', default: 0 })
   order!: number;
+
+  @Column({ type: 'enum', enum: PageType, name: 'page_type' })
+  pageType!: PageType;
+
+  @Column({
+    type: 'enum',
+    enum: PageType,
+    default: PageType.HOME_PAGE
+  })
+  pageType!: PageType;
 
   @Column({ type: 'jsonb', default: {
     layout: '', // 'split-columns' | 'stacked-rows'

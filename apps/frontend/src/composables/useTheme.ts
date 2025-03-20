@@ -1,6 +1,7 @@
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useTrpc } from './useTrpc';
 import { useDark } from '@vueuse/core';
+import { PageType } from '@ecommerce-web/database';
 
 type ColorShades = {
   '50': string;
@@ -103,11 +104,18 @@ const defaultColors: ThemeColors = {
 const activeTheme = ref<Theme | null>(null);
 let initialized = false;
 
-export const useTheme = () => {
+export function useTheme() {
   const trpc = useTrpc();
   const isDark = useDark();
   
-  const getActiveTheme = () => activeTheme.value;
+  const getActiveTheme = async (options?: { pageType?: PageType }) => {
+    try {
+      return await trpc.theme.getActiveTheme.query(options);
+    } catch (error) {
+      console.error('Failed to fetch active theme:', error);
+      return null;
+    }
+  };
 
   const updateCssVariables = (themeColors: ThemeColors) => {
     // Skip updating CSS variables during SSR
@@ -226,4 +234,4 @@ export const useTheme = () => {
     isDark,
     updateCssVariables
   };
-}; 
+} 

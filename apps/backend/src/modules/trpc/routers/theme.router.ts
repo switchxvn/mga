@@ -2,6 +2,8 @@ import { TRPCError } from '@trpc/server';
 import { publicProcedure, adminProcedure, router } from '../trpc';
 import { z } from 'zod';
 import { Theme } from '../../theme/entities/theme.entity';
+import { PageType } from '@ew/shared';
+
 const colorSchema = z.object({
   primary: z.string(),
   secondary: z.string(),
@@ -14,6 +16,7 @@ const sectionSchema = z.object({
   type: z.enum(['featured_products', 'category_products', 'news', 'slider']),
   title: z.string(),
   order: z.number(),
+  pageType: z.nativeEnum(PageType),
   config: z.record(z.any()),
 });
 
@@ -38,25 +41,29 @@ const createThemeSchema = z.object({
 });
 
 export const themeRouter = router({
-  getActiveTheme: publicProcedure.query(async ({ ctx }) => {
-    try {
-      const theme = await ctx.services.themeFrontendService.getActiveTheme();
-      if (!theme) {
+  getActiveTheme: publicProcedure
+    .input(z.object({
+      pageType: z.nativeEnum(PageType).optional()
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      try {
+        const theme = await ctx.services.themeFrontendService.getActiveTheme(input?.pageType);
+        if (!theme) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'No active theme found',
+          });
+        }
+        return theme;
+      } catch (error) {
+        ctx.logger.error('Failed to fetch active theme:', error);
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'No active theme found',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch active theme',
+          cause: error,
         });
       }
-      return theme;
-    } catch (error) {
-      ctx.logger.error('Failed to fetch active theme:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to fetch active theme',
-        cause: error,
-      });
-    }
-  }),
+    }),
 
   adminGetAll: adminProcedure.query(async ({ ctx }) => {
     try {
