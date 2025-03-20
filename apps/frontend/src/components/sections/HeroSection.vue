@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, defineComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { trpc } from '~/utils/trpc';
+import { useTrpc } from '~/composables/useTrpc';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay, EffectFade } from 'swiper/modules';
 import 'swiper/css';
@@ -52,6 +52,8 @@ const { t: localT } = useLocalization();
 const currentSlide = ref(0);
 const isLoading = ref(true);
 const error = ref<Error | null>(null);
+
+const trpc = useTrpc();
 
 // Fetch hero data
 const heroQuery = trpc.hero.getHero.query();
@@ -350,8 +352,8 @@ const components = {
                  'grid-cols-3'
                ]"
                :style="{ gap: config.videoGap }">
-            <div v-for="video in videoThumbnails.slice(0, config.maxVideos)"
-                 :key="video.id"
+            <div v-for="(video, index) in videoThumbnails.slice(0, config.maxVideos)"
+                 :key="index"
                  class="relative cursor-pointer group overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                  @click="openVideo(video.videoUrl)">
               <VideoThumbnailComponent :video="video" />

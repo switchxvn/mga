@@ -1,7 +1,7 @@
 // Auto-imported by Nuxt 3;
 import { useRouter } from 'vue-router';
 import { TRPCClientError } from '@trpc/client';
-import { trpc } from '@/utils/trpc';
+import { useTrpc } from './useTrpc';
 import { ref } from './useVueComposables';
 import type { User } from '../types/User';
 
@@ -16,6 +16,7 @@ export interface RegisterCredentials extends LoginCredentials {
 
 export function useAuth() {
   const router = useRouter();
+  const trpc = useTrpc();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const user = ref<User | null>(null);

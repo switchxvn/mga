@@ -1,9 +1,11 @@
-import { trpc } from '../utils/trpc';
+import { createTrpcClient } from '~/utils/trpc';
+import { useRuntimeConfig } from 'nuxt/app';
 
 /**
- * Composable để truy cập tRPC client
- * Cung cấp một cách nhất quán để truy cập tRPC client trong toàn bộ ứng dụng
+ * Composable for accessing the tRPC client
+ * This ensures runtime config is accessed within the Nuxt lifecycle
  */
-export function useTrpc() {
-  return trpc;
-} 
+export const useTrpc = () => {
+  const config = useRuntimeConfig();
+  return createTrpcClient(config.public.apiBase);
+}; 

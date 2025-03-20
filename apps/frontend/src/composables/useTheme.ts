@@ -1,5 +1,5 @@
 import { ref, watch } from 'vue';
-import { trpc } from '../utils/trpc';
+import { useTrpc } from './useTrpc';
 import { useDark } from '@vueuse/core';
 
 type ColorShades = {
@@ -103,7 +103,8 @@ const defaultColors: ThemeColors = {
 const activeTheme = ref<Theme | null>(null);
 let initialized = false;
 
-export function useTheme() {
+export const useTheme = () => {
+  const trpc = useTrpc();
   const isDark = useDark();
   
   const getActiveTheme = () => activeTheme.value;
@@ -225,4 +226,4 @@ export function useTheme() {
     isDark,
     updateCssVariables
   };
-} 
+}; 

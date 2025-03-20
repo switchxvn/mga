@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
 import { useLocalization } from "../composables/useLocalization";
-import { trpc } from "../utils/trpc";
+import { useTrpc } from '~/composables/useTrpc';
 
 const { t, locale } = useLocalization();
+const trpc = useTrpc();
 
 // Fetch data using tRPC
 const aboutPage = ref<any>(null);

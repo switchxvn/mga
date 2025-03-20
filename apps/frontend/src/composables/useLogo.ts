@@ -1,5 +1,5 @@
 import { ref, onMounted, computed } from 'vue';
-import { trpc } from '../utils/trpc';
+import { useTrpc } from './useTrpc';
 import { useColorMode } from '@vueuse/core';
 
 interface LogoData {
@@ -16,6 +16,7 @@ interface LogoData {
 }
 
 export const useLogo = () => {
+  const trpc = useTrpc();
   const logo = ref<LogoData | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);

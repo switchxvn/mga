@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { trpc } from '../utils/trpc';
+import { useTrpc } from './useTrpc';
 import { Footer, FooterContent } from './useFooter';
 
 export interface CreateFooterInput {
@@ -17,6 +17,7 @@ export interface UpdateFooterInput {
 }
 
 export const useFooterAdmin = () => {
+  const trpc = useTrpc();
   const footers = ref<Footer[]>([]);
   const currentFooter = ref<Footer | null>(null);
   const isLoading = ref(false);

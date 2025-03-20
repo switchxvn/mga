@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { trpc } from '../utils/trpc';
+import { useTrpc } from './useTrpc';
 import { useTheme } from './useTheme';
 
 interface StyleConfig {
@@ -97,7 +97,9 @@ const defaultConfigs: Record<string, ComponentStyleConfig> = {
   }
 };
 
-export function useComponentStyles() {
+export const useComponentStyles = () => {
+  const trpc = useTrpc();
+
   const getStyleConfig = (type: string): ComponentStyleConfig => {
     return styleConfigs.value.get(type) || defaultConfigs[type];
   };
@@ -145,4 +147,4 @@ export function useComponentStyles() {
     getStyleConfig,
     initializeStyles
   };
-} 
+}; 

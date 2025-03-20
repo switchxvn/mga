@@ -11,44 +11,21 @@ interface ApiResponse<T> {
 }
 
 /**
- * Get the base URL for API requests
- * Handles different environments (browser vs server)
+ * Creates a new tRPC client instance
+ * @param baseUrl - The base URL for API requests
  */
-const getBaseUrl = () => {
-  // In development environment, frontend and backend may run on different ports
-  if (typeof window !== 'undefined') {
-    // In browser environment, use relative URL for Vite proxy to work
-    const baseUrl = process.env.API_BASE || 'http://localhost:3000';
-    console.log('tRPC client base URL (browser):', baseUrl);
-    return baseUrl;
-  }
-  // In server environment (SSR), need full URL
-  const baseUrl = process.env.API_BASE || 'http://localhost:3000';
-  console.log('tRPC client base URL (server):', baseUrl);
-  return baseUrl;
-};
-
-/**
- * Create tRPC client with AppRouter type
- * This provides type-safe API calls to the backend
- */
-const trpcClient = createTRPCProxyClient<AppRouter>({
-  links: [
-    httpLink({
-      url: `${getBaseUrl()}/api/trpc`,
-      headers() {
-        // Check if in client environment before accessing localStorage
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        console.log('tRPC client using URL:', `${getBaseUrl()}/api/trpc`);
-        return {
-          Authorization: token ? `Bearer ${token}` : undefined,
-        };
-      },
-    }),
-  ],
-});
-
-/**
- * Export the tRPC client for use throughout the application
- */
-export const trpc = trpcClient; 
+export const createTrpcClient = (baseUrl: string) => {
+  return createTRPCProxyClient<AppRouter>({
+    links: [
+      httpLink({
+        url: `${baseUrl}/api/trpc`,
+        headers() {
+          const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+          return {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          };
+        },
+      }),
+    ],
+  });
+}; 

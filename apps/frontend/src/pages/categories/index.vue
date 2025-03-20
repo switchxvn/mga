@@ -2,12 +2,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { trpc } from '~/utils/trpc'
+import { useTrpc } from '~/composables/useTrpc'
 
 // Sử dụng composables
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
+
+const trpc = useTrpc()
 
 // Định nghĩa alias cho URL tiếng Việt
 definePageMeta({

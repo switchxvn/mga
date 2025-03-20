@@ -1,8 +1,9 @@
 import { ref } from 'vue';
-import { trpc } from '../utils/trpc';
+import { useTrpc } from './useTrpc';
 import type { Footer } from '~/interfaces/footer.interface';
 
 export const useFooter = () => {
+  const trpc = useTrpc();
   const activeFooter = ref<Footer | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
