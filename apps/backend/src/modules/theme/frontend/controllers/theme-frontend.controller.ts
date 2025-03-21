@@ -1,7 +1,8 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ThemeFrontendService } from '../services/theme-frontend.service';
 import { Theme } from '../../entities/theme.entity';
+import { PageType } from '@ew/shared';
 
 @ApiTags('Frontend Themes')
 @Controller('themes')
@@ -25,7 +26,7 @@ export class ThemeFrontendController {
   @Get('active')
   @ApiOperation({ summary: 'Get active theme' })
   @ApiResponse({ status: 200, description: 'Return active theme', type: Theme })
-  getActiveTheme() {
-    return this.themeFrontendService.getActiveTheme();
+  getActiveTheme(@Query('pageType') pageType: PageType) {
+    return this.themeFrontendService.getActiveTheme(pageType);
   }
 } 

@@ -26,9 +26,14 @@ export class ThemeFrontendService {
     return theme;
   }
 
-  async getActiveTheme(pageType: PageType): Promise<Theme> {
+  async getActiveTheme(pageType?: PageType): Promise<Theme> {
+    const whereClause: any = { isActive: true };
+    if (pageType) {
+      whereClause.sections = { pageType };
+    }
+
     const theme = await this.themeRepository.findOne({
-      where: { isActive: true, sections: { pageType } },
+      where: whereClause,
       relations: ['sections'],
       order: {
         sections: {

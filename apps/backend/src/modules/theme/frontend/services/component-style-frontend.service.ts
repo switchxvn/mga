@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ComponentStyleConfig } from '../../entities/component-style-config.entity';
 import { ThemeFrontendService } from './theme-frontend.service';
+import { PageType } from '@ew/shared';
 
 @Injectable()
 export class ComponentStyleFrontendService {
@@ -12,7 +13,7 @@ export class ComponentStyleFrontendService {
     private readonly themeFrontendService: ThemeFrontendService,
   ) {}
 
-  async findByType(type: string, themeId?: number): Promise<ComponentStyleConfig> {
+  async findByType(type: PageType, themeId?: number): Promise<ComponentStyleConfig> {
     let targetThemeId = themeId;
 
     if (!targetThemeId) {
