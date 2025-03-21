@@ -7,9 +7,9 @@
       class="flex h-12 w-12 items-center justify-center rounded-full bg-primary shadow-lg transition-all duration-300 hover:bg-primary/90 hover:shadow-primary/20 hover:shadow-xl active:scale-95 animate-ringing"
       aria-label="Support phones"
     >
-      <Icon
-        name="heroicons:phone"
+      <Phone
         class="h-5 w-5 text-white"
+        :size="20"
       />
     </button>
 
@@ -46,6 +46,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useTrpc } from '~/composables/useTrpc'
+import { Phone } from 'lucide-vue-next'
 
 const isHovered = ref(false)
 const phones = ref<string[]>([])

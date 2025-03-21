@@ -13,8 +13,7 @@
       class="group fixed bottom-8 right-8 flex h-12 w-12 items-center justify-center rounded-full bg-primary shadow-lg transition-all duration-300 hover:bg-primary/90 hover:shadow-primary/20 hover:shadow-xl active:scale-95"
       aria-label="Back to top"
     >
-      <Icon
-        name="heroicons:arrow-up"
+      <ArrowUp
         class="h-5 w-5 text-white transition-transform duration-300 group-hover:-translate-y-0.5"
       />
     </button>
@@ -23,6 +22,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { ArrowUp } from 'lucide-vue-next'
 
 const showButton = ref(false)
 

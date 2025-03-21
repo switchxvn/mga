@@ -101,11 +101,11 @@ const swiperOptions = computed(() => ({
   slidesPerView: 1,
   spaceBetween: 24,
   navigation: {
-    nextEl: '.swiper-button-next',
-    prevEl: '.swiper-button-prev',
+    nextEl: '.featured-swiper-next',
+    prevEl: '.featured-swiper-prev',
   },
   pagination: {
-    el: '.swiper-pagination',
+    el: '.featured-swiper-pagination',
     clickable: true,
   },
   breakpoints: {
@@ -195,11 +195,11 @@ async function fetchFeaturedProducts() {
           </div>
 
           <!-- Navigation -->
-          <div class="swiper-button-prev !z-10"></div>
-          <div class="swiper-button-next !z-10"></div>
+          <div class="featured-swiper-prev swiper-button-prev !z-10"></div>
+          <div class="featured-swiper-next swiper-button-next !z-10"></div>
           
           <!-- Pagination -->
-          <div class="swiper-pagination mt-6"></div>
+          <div class="featured-swiper-pagination mt-6"></div>
         </div>
       </template>
     </div>
@@ -236,8 +236,8 @@ async function fetchFeaturedProducts() {
       }
     }
 
-    .swiper-button-next,
-    .swiper-button-prev {
+    .featured-swiper-next,
+    .featured-swiper-prev {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
@@ -279,15 +279,15 @@ async function fetchFeaturedProducts() {
       }
     }
 
-    .swiper-button-prev {
+    .featured-swiper-prev {
       left: 0;
     }
 
-    .swiper-button-next {
+    .featured-swiper-next {
       right: 0;
     }
 
-    .swiper-pagination {
+    .featured-swiper-pagination {
       position: relative;
       bottom: 0;
       display: flex;
@@ -295,7 +295,7 @@ async function fetchFeaturedProducts() {
       justify-content: center;
       gap: 6px;
       
-      &-bullet {
+      .swiper-pagination-bullet {
         width: 8px;
         height: 8px;
         margin: 0;
