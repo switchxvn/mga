@@ -55,6 +55,19 @@ const props = defineProps<{
     categoryIds?: number[];
     productsPerCategory?: number;
     displayMode: "grid" | "slider";
+    alignment: {
+      container: string;
+      header: string;
+      content: string;
+    };
+    fontSize: {
+      title: string;
+      description: string;
+    };
+    colors: {
+      title: string;
+      description: string;
+    };
   };
 }>();
 
@@ -151,7 +164,7 @@ onMounted(() => {
     <div v-if="!loading && !error && categories.length > 0" class="space-y-0">
       <div
         v-for="(category, index) in categories.slice(0, config.maxItems)"
-        :key="category.id"
+        :key="index"
         class="category-section w-full"
         :class="{
           'bg-gray-50 dark:bg-gray-800/50': index % 2 === 0,
@@ -162,26 +175,39 @@ onMounted(() => {
           <div class="py-12">
             <!-- Category Header -->
             <div class="mb-8">
-              <div class="flex items-center justify-between">
-                <div class="category-header">
-                  <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                    {{ category.name }}
-                  </h2>
-                  <div
-                    class="mt-2 h-1 w-20 bg-primary-600 dark:bg-primary-500 rounded-full"
-                  ></div>
+              <div class="flex items-center justify-between gap-4">
+                <div class="category-header flex-1">
+                  <div class="flex flex-col items-center">
+                    <h2 :class="[
+                      config.fontSize?.title || 'text-2xl sm:text-3xl',
+                      config.colors?.title || 'text-gray-900 dark:text-white',
+                      'font-bold'
+                    ]">
+                      {{ category.name }}
+                    </h2>
+                    <div
+                      class="mt-2 h-1 w-20 bg-primary-600 dark:bg-primary-500 rounded-full"
+                    ></div>
+                  </div>
+                  <p 
+                    v-if="category.description" 
+                    :class="[
+                      'mt-3 text-center',
+                      config.fontSize?.description || 'text-base',
+                      config.colors?.description || 'text-gray-600 dark:text-gray-400'
+                    ]"
+                  >
+                    {{ truncateDescription(category.description) }}
+                  </p>
                 </div>
                 <NuxtLink
                   :to="`/categories/${category.slug}`"
-                  class="inline-flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium transition-colors duration-200"
+                  class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium uppercase tracking-wider text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors duration-200 whitespace-nowrap"
                 >
-                  {{ t("categories.viewAllIn", { category: category.name }) }}
-                  <UIcon name="i-heroicons-arrow-right" class="ml-1 h-5 w-5" />
+                  {{ t("categories.viewAllIn") }}
+                  <UIcon name="i-heroicons-arrow-right" class="ml-2 h-5 w-5" />
                 </NuxtLink>
               </div>
-              <p v-if="category.description" class="mt-3 text-gray-600 dark:text-gray-400">
-                {{ truncateDescription(category.description) }}
-              </p>
             </div>
 
             <!-- Products Display -->
@@ -193,8 +219,8 @@ onMounted(() => {
                 :class="gridClasses"
               >
                 <ProductCard
-                  v-for="product in categoryProducts[category.id]"
-                  :key="product.id"
+                  v-for="(product, productIndex) in categoryProducts[category.id]"
+                  :key="productIndex"
                   :product="product"
                   :locale="locale"
                 />
@@ -272,10 +298,11 @@ onMounted(() => {
       content: "";
       position: absolute;
       bottom: -0.5rem;
-      left: 0;
+      left: 50%;
+      transform: translateX(-50%);
       width: 100%;
       height: 2px;
-      background: linear-gradient(to right, var(--color-primary-600), transparent);
+      background: linear-gradient(90deg, transparent, var(--color-primary-600), transparent);
       border-radius: 1px;
     }
   }

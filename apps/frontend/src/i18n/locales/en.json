@@ -182,7 +182,7 @@
     "loadingCountries": "Loading countries..."
   },
   "categories": {
-    "viewAllIn": "View all in {category}",
+    "viewAllIn": "View all",
     "noProductsInCategory": "No products in {category} yet",
     "no_categories": "No categories found",
     "title": "Product Categories",

@@ -181,7 +181,7 @@
     "loadingCountries": "Đang tải danh sách quốc gia..."
   },
   "categories": {
-    "viewAllIn": "Xem tất cả trong {category}",
+    "viewAllIn": "Xem tất cả",
     "noProductsInCategory": "Chưa có sản phẩm nào trong {category}",
     "no_categories": "Không có danh mục nào",
     "title": "Danh mục sản phẩm",
