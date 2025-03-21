@@ -68,6 +68,7 @@ const props = defineProps<{
       title: string;
       description: string;
     };
+    useUppercase?: boolean;
   };
 }>();
 
@@ -181,7 +182,8 @@ onMounted(() => {
                     <h2 :class="[
                       config.fontSize?.title || 'text-2xl sm:text-3xl',
                       config.colors?.title || 'text-gray-900 dark:text-white',
-                      'font-bold'
+                      'font-bold',
+                      config.useUppercase ? 'uppercase' : ''
                     ]">
                       {{ category.name }}
                     </h2>

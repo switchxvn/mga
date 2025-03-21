@@ -1,3 +1,4 @@
+<!-- Clone from NavbarWithTheme.vue but remove logo section -->
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useMenuItems } from "~/composables/useMenuItems";
@@ -9,15 +10,32 @@ import CartIcon from "~/components/cart/CartIcon.vue";
 import { useRoute } from "vue-router";
 import { useFeatureFlags } from "~/composables/useFeatureFlags";
 import { useLocalization } from "~/composables/useLocalization";
-import { useLogo } from "~/composables/useLogo";
 
 // Props cho component
 interface NavbarProps {
-  hotline?: string;
+  settings?: {
+    backgroundColor?: string;
+    textColor?: string;
+    borderColor?: string;
+    menuAlignment?: string;
+    showLanguageSwitcher?: boolean;
+    showThemeToggle?: boolean;
+    showCart?: boolean;
+    mobileMenuBreakpoint?: string;
+  };
 }
 
 const props = withDefaults(defineProps<NavbarProps>(), {
-  hotline: "0917 001 254",
+  settings: () => ({
+    backgroundColor: "",
+    textColor: "",
+    borderColor: "",
+    menuAlignment: "center",
+    showLanguageSwitcher: true,
+    showThemeToggle: true,
+    showCart: true,
+    mobileMenuBreakpoint: "md"
+  })
 });
 
 // Lấy route hiện tại
@@ -31,15 +49,11 @@ const isLoadingFeatureFlag = ref(true);
 // Localization
 const { locale } = useLocalization();
 
-// Logo
-const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
-
 // Debug logs
-watch([currentLogoUrl, logo], () => {
-  console.log('NavbarWithTheme - Logo state:', {
-    currentLogoUrl: currentLogoUrl.value,
-    logo: logo.value,
-    isLoading: isLoadingLogo.value
+watch([isCartEnabled], () => {
+  console.log('NavbarWithoutLogo - Cart state:', {
+    isCartEnabled: isCartEnabled.value,
+    isLoading: isLoadingFeatureFlag.value
   });
 }, { immediate: true });
 
@@ -48,7 +62,7 @@ const checkCartFeatureFlag = async () => {
   try {
     isLoadingFeatureFlag.value = true;
     isCartEnabled.value = await isFeatureEnabled("enable_add_to_cart", true);
-    console.log("Cart feature flag in NavbarWithTheme:", isCartEnabled.value);
+    console.log("Cart feature flag in NavbarWithoutLogo:", isCartEnabled.value);
   } catch (err) {
     console.error("Error checking cart feature flag:", err);
     isCartEnabled.value = false;
@@ -115,46 +129,39 @@ interface ProcessedMenuItem extends MenuItemWithTranslations {
   hasMegaMenu: boolean;
 }
 
-const processedMenuItems = computed<ProcessedMenuItem[]>(() => {
+// Process menu items with translations
+const processedMenuItems = computed(() => {
   return menuItems.value
     .filter((item) => item.isActive !== false)
     .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .map((item) => {
-      const processedItem: ProcessedMenuItem = {
-        ...item,
-        href: item.href || "#",
-        hasMegaMenu: Boolean(item.hasMegaMenu),
-        megaMenuColumns: (item.megaMenuColumns || []).map((column) => ({
-          title: column.title,
-          titleTranslations: column.titleTranslations || [],
-          items: column.items.map((subItem) => ({
-            href: subItem.href || "#",
-            label: subItem.label,
-            translations: subItem.translations || [],
-            defaultLocale: "vi", // Since menu items are in Vietnamese by default
-          })),
-        })),
-        translations: item.translations || [],
-        defaultLocale: item.defaultLocale || "en",
-      };
-      return processedItem;
-    });
+    .map((item) => ({
+      ...item,
+      href: item.href || "#",
+      hasMegaMenu: Boolean(item.hasMegaMenu),
+      label: getTranslation(item, locale.value),
+      megaMenuColumns: (item.megaMenuColumns || []).map((column) => ({
+        title: getColumnTitleTranslation(column, locale.value),
+        items: column.items.map((subItem) => ({
+          href: subItem.href || "#",
+          label: getTranslation(subItem, locale.value)
+        }))
+      }))
+    }));
 });
 
 // Hàm lấy bản dịch theo ngôn ngữ
-const getTranslation = (item: TranslatableItem, targetLocale: string) => {
+const getTranslation = (item: any, targetLocale: string) => {
   if (!item.translations || item.translations.length === 0) {
     return item.label;
   }
 
-  const translation = item.translations.find((t) => t.locale === targetLocale);
+  const translation = item.translations.find((t: any) => t.locale === targetLocale);
   if (translation) {
     return translation.label;
   }
 
-  // Fallback to default locale if translation not found
   const defaultTranslation = item.translations.find(
-    (t) => t.locale === item.defaultLocale
+    (t: any) => t.locale === item.defaultLocale
   );
   if (defaultTranslation) {
     return defaultTranslation.label;
@@ -164,12 +171,12 @@ const getTranslation = (item: TranslatableItem, targetLocale: string) => {
 };
 
 // Hàm lấy bản dịch cho tiêu đề menu
-const getColumnTitleTranslation = (column: MenuColumn, targetLocale: string) => {
+const getColumnTitleTranslation = (column: any, targetLocale: string) => {
   if (!column.titleTranslations || column.titleTranslations.length === 0) {
     return column.title;
   }
 
-  const translation = column.titleTranslations.find((t) => t.locale === targetLocale);
+  const translation = column.titleTranslations.find((t: any) => t.locale === targetLocale);
   return translation?.label || column.title;
 };
 
@@ -218,23 +225,13 @@ const handleScroll = () => {
   const currentScrollPosition = window.scrollY;
   isScrolled.value = currentScrollPosition > 50;
 
-  if (currentScrollPosition < 0) return;
-
-  if (currentScrollPosition > lastScrollPosition.value + 50) {
-    isNavbarVisible.value = false;
-  } else if (currentScrollPosition < lastScrollPosition.value - 10) {
-    isNavbarVisible.value = true;
-  }
-
-  lastScrollPosition.value = currentScrollPosition;
+  // Always keep navbar visible
+  isNavbarVisible.value = true;
 };
 
 // Computed classes for navbar
 const navbarClasses = computed(() => ({
-  "shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),_0_10px_20px_-2px_rgba(0,0,0,0.04)]":
-    isScrolled.value,
-  "translate-y-0 opacity-100": isNavbarVisible.value,
-  "-translate-y-full opacity-0": !isNavbarVisible.value,
+  "shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),_0_10px_20px_-2px_rgba(0,0,0,0.04)]": isScrolled.value
 }));
 
 const navbarRef = ref<HTMLElement | null>(null);
@@ -246,6 +243,23 @@ const updateNavbarHeight = () => {
     navbarHeight.value = navbarRef.value.offsetHeight;
   }
 };
+
+// Computed styles based on settings
+const navbarStyles = computed(() => {
+  const styles: Record<string, string> = {};
+  
+  if (props.settings?.backgroundColor) {
+    styles.backgroundColor = props.settings.backgroundColor;
+  }
+  if (props.settings?.textColor) {
+    styles.color = props.settings.textColor;
+  }
+  if (props.settings?.borderColor) {
+    styles.borderColor = props.settings.borderColor;
+  }
+  
+  return styles;
+});
 
 // Lifecycle hooks
 onMounted(() => {
@@ -269,49 +283,23 @@ onUnmounted(() => {
 watch(locale, () => {
   fetchMenuItems();
 });
-
-// Watch for logo changes to update navbar height
-watch([logo, isLoadingLogo], () => {
-  nextTick(() => {
-    updateNavbarHeight();
-  });
-});
 </script>
 
 <template>
   <header
     ref="navbarRef"
-    class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800"
+    class="w-full transition-all duration-300 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800"
     :class="[
       navbarClasses,
-      'navbar' // Add navbar class for SCSS styles
+      'navbar',
+      `text-${props.settings?.menuAlignment || 'center'}`
     ]"
+    :style="navbarStyles"
   >
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between py-2">
-        <!-- Logo -->
-        <div class="flex items-center">
-          <NuxtLink to="/" class="flex items-center space-x-2">
-            <div 
-              class="flex items-center justify-center" 
-              :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
-            >
-              <img
-                v-if="currentLogoUrl"
-                :src="currentLogoUrl"
-                :alt="logo?.altText || 'Logo'"
-                :width="logo?.width"
-                :height="logo?.height"
-                class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
-              />
-              <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
-            </div>
-            
-          </NuxtLink>
-        </div>
-
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center space-x-6">
+        <nav class="hidden md:flex items-center space-x-6 flex-grow justify-center">
           <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400">Đang tải menu...</div>
           <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
           <template v-else>
@@ -327,7 +315,7 @@ watch([logo, isLoadingLogo], () => {
                 class="main-menu-item text-sm uppercase transition-colors py-5 flex items-center space-x-1"
                 :class="{ 'menu-active': isMenuActive(item.href) }"
               >
-                <span>{{ getTranslation(item, locale) }}</span>
+                <span>{{ item.label }}</span>
                 <Icon
                   v-if="item.hasMegaMenu"
                   name="ChevronDown"
@@ -350,7 +338,7 @@ watch([logo, isLoadingLogo], () => {
                     class="space-y-3"
                   >
                     <h3 class="font-medium text-sm text-neutral-900 dark:text-neutral-100">
-                      {{ getColumnTitleTranslation(column, locale) }}
+                      {{ column.title }}
                     </h3>
                     <ul class="space-y-2">
                       <li
@@ -363,7 +351,7 @@ watch([logo, isLoadingLogo], () => {
                           class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400"
                           @click="activeMegaMenu = null"
                         >
-                          {{ getTranslation(subItem, locale) }}
+                          {{ subItem.label }}
                         </NuxtLink>
                       </li>
                     </ul>
@@ -377,33 +365,21 @@ watch([logo, isLoadingLogo], () => {
         <!-- Right side actions -->
         <div class="hidden md:flex items-center space-x-4">
           <!-- Language Switcher -->
-          <LanguageSwitcher />
+          <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
 
           <!-- Theme Toggle -->
-          <ThemeToggle />
+          <ThemeToggle v-if="props.settings?.showThemeToggle" />
 
           <!-- Cart Icon -->
-          <CartIcon v-if="isCartEnabled" />
-
-          <!-- Hotline -->
-          <a
-            :href="`tel:${hotline}`"
-            class="flex items-center space-x-2 text-sm text-neutral-700 dark:text-neutral-300"
-          >
-            <Icon
-              name="Phone"
-              class="text-primary-600 dark:text-primary-400 h-[18px] w-[18px]"
-            />
-            <span class="font-medium">{{ hotline }}</span>
-          </a>
+          <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
         </div>
 
         <!-- Mobile Menu Button and Theme Toggle -->
         <div class="md:hidden flex items-center space-x-2">
           <!-- Cart Icon for Mobile -->
-          <CartIcon v-if="isCartEnabled" />
+          <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
 
-          <ThemeToggle />
+          <ThemeToggle v-if="props.settings?.showThemeToggle" />
 
           <button
             class="flex items-center text-neutral-700 dark:text-neutral-300"
@@ -435,27 +411,43 @@ watch([logo, isLoadingLogo], () => {
             :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
             @click="isMobileMenuOpen = false"
           >
-            {{ getTranslation(item, locale) }}
+            {{ item.label }}
           </NuxtLink>
         </template>
       </div>
       <div class="px-4 py-3 border-t border-neutral-200 dark:border-neutral-800">
         <!-- Language Switcher in Mobile Menu -->
-        <div class="px-3 py-2 mb-2">
+        <div v-if="props.settings?.showLanguageSwitcher" class="px-3 py-2 mb-2">
           <LanguageSwitcher />
         </div>
-
-        <a
-          :href="`tel:${hotline}`"
-          class="flex items-center space-x-2 px-3 py-2 text-neutral-700 dark:text-neutral-300"
-        >
-          <Icon name="Phone" class="text-primary-600 dark:text-primary-400 h-[18px] w-[18px]" />
-          <span class="font-medium">{{ hotline }}</span>
-        </a>
       </div>
     </div>
   </header>
-
-  <!-- Spacer to prevent content from being hidden under fixed navbar -->
-  <div :style="`height: ${navbarHeight}px`"></div>
 </template>
+
+<style scoped>
+.navbar {
+  /* Add any additional navbar styles here */
+  background-color: white;
+}
+
+:deep(.dark) .navbar {
+  background-color: #111827;
+}
+
+.main-menu-item {
+  @apply text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400;
+}
+
+.menu-active {
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+.mobile-main-menu-item {
+  @apply text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800;
+}
+
+.mobile-menu-active {
+  @apply bg-neutral-100 dark:bg-neutral-800 text-primary-600 dark:text-primary-400;
+}
+</style> 

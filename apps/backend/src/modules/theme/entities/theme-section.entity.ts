@@ -65,7 +65,15 @@ export class ThemeSection {
     buttonText: 'Tìm hiểu thêm',
     buttonLink: '/about',
     backgroundColor: '',
-    textColor: ''
+    textColor: '',
+    // Navbar settings
+    menuAlignment: 'center',
+    showLanguageSwitcher: true,
+    showThemeToggle: true,
+    showCart: true,
+    showHotline: false,
+    mobileMenuBreakpoint: 'md',
+    borderColor: ''
   } })
   settings!: Record<string, any>;
 

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTrpc } from '../composables/useTrpc';
-import { ref, onMounted, watch } from '../composables/useVueComposables';
+import { useTheme } from '../composables/useTheme';
+import { PageType } from '@ew/shared';
 // Import components
-import NavbarWithTheme from '../components/ui/NavbarWithTheme.vue';
+import CombinedNavbar from '../components/ui/CombinedNavbar.vue';
 import Footer from '../components/ui/Footer.vue';
 import BackToTop from '~/components/ui/BackToTop.vue';
 import FloatingPhoneSupport from '~/components/ui/FloatingPhoneSupport.vue';
@@ -12,10 +14,25 @@ import FloatingZaloSupport from '~/components/ui/FloatingZaloSupport.vue';
 
 const router = useRouter();
 const trpc = useTrpc();
+const { getActiveTheme } = useTheme();
 
 const user = ref<any>(null);
 const isLoading = ref(true);
 const isDarkMode = ref(false);
+const theme = ref<any>(null);
+
+// Register components
+const components = {
+  CombinedNavbar
+} as const;
+
+// Function to get component name based on section type and componentName
+const resolveComponent = (section: any) => {
+  if (section.componentName && components[section.componentName as keyof typeof components]) {
+    return components[section.componentName as keyof typeof components];
+  }
+  return components.CombinedNavbar;
+};
 
 // Kiểm tra dark mode
 const checkDarkMode = () => {
@@ -38,21 +55,18 @@ onMounted(async () => {
     const token = localStorage.getItem('token');
     
     if (storedUser && token) {
-      // Nếu có thông tin người dùng trong localStorage, sử dụng nó
       user.value = JSON.parse(storedUser);
-      
-      // Kiểm tra token với server
       try {
-        // Token đã được lưu trong localStorage và sẽ được tự động gửi trong header
-        // bởi trpc client trong file trpc.ts
         const currentUser = await trpc.auth.me.query();
         user.value = currentUser;
       } catch (error) {
         console.error('Failed to validate token:', error);
-        // Nếu token không hợp lệ, đăng xuất
         handleLogout();
       }
     }
+    
+    // Lấy theme và navbar section
+    theme.value = await getActiveTheme({ pageType: PageType.COMMON });
     
     // Kiểm tra dark mode
     checkDarkMode();
@@ -114,7 +128,25 @@ async function handleLogout() {
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <NavbarWithTheme logo="/logo.svg" hotline="0917 001 254" :user="user" :isLoading="isLoading" @logout="handleLogout" />
+    <template v-if="theme?.sections">
+      <component 
+        v-for="section in theme.sections" 
+        :key="section.id"
+        v-show="section.isActive"
+        :is="resolveComponent(section)"
+        :settings="section.settings"
+        :user="user"
+        :isLoading="isLoading"
+        @logout="handleLogout"
+      />
+    </template>
+    <template v-else>
+      <CombinedNavbar 
+        :user="user" 
+        :isLoading="isLoading" 
+        @logout="handleLogout" 
+      />
+    </template>
     
     <!-- Main content -->
     <main class="flex-grow">
@@ -161,5 +193,45 @@ body.dark-mode .footer__text {
 body.dark-mode .footer__copyright {
   border-color: #374151 !important;
   color: #9ca3af !important;
+}
+</style>
+
+<style scoped>
+.header-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.navbar-section {
+  width: 100%;
+  background-color: white;
+}
+
+.navbar-with-logo-hotline {
+  position: relative;
+  z-index: 10;
+}
+
+.navbar-without-logo {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: white;
+}
+
+:deep(.dark) .navbar-section {
+  background-color: #111827;
+}
+
+/* Remove any spacer divs */
+:deep(.navbar-section > div[style*="height"]) {
+  display: none !important;
+}
+
+/* Add shadow when navbar is stuck */
+.navbar-without-logo {
+  box-shadow: 0 2px 15px -3px rgba(0,0,0,0.07), 0 10px 20px -2px rgba(0,0,0,0.04);
 }
 </style> 

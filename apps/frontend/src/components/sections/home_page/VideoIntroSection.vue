@@ -51,9 +51,28 @@
                   <!-- Title -->
                   <h3
                     v-if="props.config?.showTitle"
-                    class="font-roboto text-base font-medium line-clamp-2 mb-1 text-gray-900 dark:text-gray-100"
+                    class="font-roboto mb-1"
+                    :style="{
+                      fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
+                      fontWeight: props.config?.titleStyle?.fontWeight || '600',
+                    }"
                   >
-                    {{ video.title }}
+                    <a
+                      v-if="props.config?.linkEnabled"
+                      :href="video.videoUrl"
+                      :target="props.config?.linkTarget || '_blank'"
+                      rel="noopener noreferrer"
+                      class="hover-title transition-colors duration-300"
+                      :style="{
+                        color: isDark 
+                          ? props.config?.darkMode?.titleColor || '#ffffff'
+                          : props.config?.titleStyle?.color || '#1a1a1a',
+                        textDecoration: props.config?.titleStyle?.textDecoration || 'none',
+                      }"
+                    >
+                      {{ video.title }}
+                    </a>
+                    <span v-else>{{ video.title }}</span>
                   </h3>
                   
                 
@@ -183,6 +202,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { PlayCircle } from "lucide-vue-next";
+import { useColorMode } from '@vueuse/core'
 
 interface VideoIntro {
   id: number;
@@ -209,6 +229,20 @@ interface Props {
       arrows?: boolean;
       dots?: boolean;
     };
+    titleStyle?: {
+      fontSize?: string;
+      fontWeight?: string;
+      color?: string;
+      hoverColor?: string;
+      textDecoration?: string;
+      hoverTextDecoration?: string;
+    };
+    darkMode?: {
+      titleColor?: string;
+      titleHoverColor?: string;
+    };
+    linkTarget?: string;
+    linkEnabled?: boolean;
   };
 }
 
@@ -226,6 +260,9 @@ const videoData = ref<VideoIntro[]>([]);
 const isLoading = ref(true);
 const error = ref<Error | null>(null);
 const trpc = useTrpc();
+
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
 
 // Computed property to check layout
 const currentLayout = computed(() => {
@@ -378,5 +415,10 @@ const getEmbedUrl = (url: string): string => {
 /* Channel name hover effect */
 .channel-name:hover {
   @apply text-gray-900 dark:text-gray-200;
+}
+
+.hover-title:hover {
+  color: v-bind('isDark ? props.config?.darkMode?.titleHoverColor || "#60a5fa" : props.config?.titleStyle?.hoverColor || "#2563eb"');
+  text-decoration: v-bind('props.config?.titleStyle?.hoverTextDecoration || "underline"');
 }
 </style>
