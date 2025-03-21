@@ -8,12 +8,12 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
-import { useLocalization } from '../../composables/useLocalization';
+import { useLocalization } from '~/composables/useLocalization';
 import { Icon } from '@iconify/vue';
 import { NuxtLink } from '#components';
 import type { PropType } from 'vue';
-import VideoThumbnailComponent from './VideoThumbnail.vue';
-import HeroSliderComponent from './HeroSlider.vue';
+import VideoThumbnailComponent from '~/components/media/VideoThumbnail.vue';
+import HeroSliderComponent from '~/components/sliders/HeroSlider.vue';
 import type { Hero, HeroSlider, VideoThumbnail, Slide, HeroConfig } from '~/types/hero';
 
 interface Props {

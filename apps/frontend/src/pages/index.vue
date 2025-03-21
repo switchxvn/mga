@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
-import HeroSection from "../components/sections/HeroSection.vue";
-import HeroSectionFullWidth from "../components/sections/HeroSectionFullWidth.vue";
-import ProductCategoriesSection from "../components/sections/ProductCategoriesSection.vue";
-import ServiceSection from "../components/sections/ServiceSection.vue";
+import HeroSection from "../components/sections/home_page/HeroSection.vue";
+import HeroSectionFullWidth from "../components/sections/home_page/HeroSectionFullWidth.vue";
+import ProductCategoriesSection from "../components/sections/home_page/ProductCategoriesSection.vue";
+import ServiceSection from "../components/sections/home_page/ServiceSection.vue";
 import PostCard from "../components/ui/card/PostCard.vue";
 import { useLocalization } from "../composables/useLocalization";
 import { useTrpc } from "../composables/useTrpc";
@@ -15,10 +15,10 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/vue";
-import FeaturedProducts from "../components/sections/FeaturedProducts.vue";
+import FeaturedProductsSection from "../components/sections/home_page/FeaturedProductsSection.vue";
 import { useTheme } from '../composables/useTheme';
-import CompanyIntroSection from "../components/sections/CompanyIntroSection.vue";
-import NewsSection from "../components/sections/NewsSection.vue";
+import CompanyIntroSection from "../components/sections/home_page/CompanyIntroSection.vue";
+import NewsSection from "../components/sections/home_page/NewsSection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -314,7 +314,7 @@ const theme = ref<Theme | null>(null);
 // Register components
 const components = {
   HeroSection,
-  FeaturedProducts,
+  FeaturedProductsSection,
   ProductCategoriesSection,
   ServiceSection,
   NewsSection,
@@ -337,7 +337,7 @@ const resolveComponent = (section: ThemeSection) => {
 const getDefaultComponent = (type: string) => {
   const typeToComponent: Record<string, any> = {
     'hero': components.HeroSection,
-    'featured_products': components.FeaturedProducts,
+    'featured_products': components.FeaturedProductsSection,
     'product_categories': components.ProductCategoriesSection,
     'services': components.ServiceSection,
     'news': components.NewsSection,
@@ -546,7 +546,6 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
     <template v-else>
       <!-- Render sections based on their order -->
       <template v-for="section in theme?.sections" :key="section.id">
-        <!-- Dynamic component based on {{section.componentName}} -->
         <component 
           :is="resolveComponent(section)"
           v-if="section.isActive"

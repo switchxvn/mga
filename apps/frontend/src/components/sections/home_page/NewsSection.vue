@@ -9,7 +9,7 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import PostCard from '../ui/card/PostCard.vue';
+import PostCard from '~/components/ui/card/PostCard.vue';
 
 interface PostTranslation {
   id: number;
