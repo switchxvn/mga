@@ -11,6 +11,7 @@ import { useRoute } from "vue-router";
 import { useFeatureFlags } from "~/composables/useFeatureFlags";
 import { useLocalization } from "~/composables/useLocalization";
 import { useLogo } from "~/composables/useLogo";
+import { useDarkMode } from "~/composables/useDarkMode";
 
 // Props cho component
 interface NavbarProps {
@@ -45,6 +46,14 @@ interface NavbarProps {
     showThemeToggle?: boolean;
     showCart?: boolean;
     mobileMenuBreakpoint?: string;
+
+    // Dark mode settings
+    darkMode?: {
+      headerBackgroundColor?: string;
+      menuBackgroundColor?: string;
+      textColor?: string;
+      borderColor?: string;
+    };
   };
 }
 
@@ -112,6 +121,9 @@ const megaMenuTimeout = ref<number | null>(null);
 // Logo
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
 
+// Dark mode
+const { isDark } = useDarkMode();
+
 // Process menu items with translations
 const processedMenuItems = computed(() => {
   return menuItems.value
@@ -163,38 +175,27 @@ const getColumnTitleTranslation = (column: any, targetLocale: string) => {
   return translation?.label || column.title;
 };
 
-// Update computed styles
-const headerStyles = computed(() => {
-  const styles: Record<string, string> = {};
-  
-  if (props.settings?.headerBackgroundColor) {
-    styles.backgroundColor = props.settings.headerBackgroundColor;
-  }
-  if (props.settings?.textColor) {
-    styles.color = props.settings.textColor;
-  }
-  if (props.settings?.borderColor) {
-    styles.borderColor = props.settings.borderColor;
-  }
-  
-  return styles;
-});
+const updateNavbarVariables = () => {
+  if (typeof document === 'undefined' || !props.settings) return;
 
-const menuStyles = computed(() => {
-  const styles: Record<string, string> = {};
-  
-  if (props.settings?.menuBackgroundColor) {
-    styles.backgroundColor = props.settings.menuBackgroundColor;
+  const root = document.documentElement;
+  if (isDark.value && props.settings.darkMode) {
+    root.style.setProperty('--navbar-header-bg', props.settings.darkMode.headerBackgroundColor || '#171717');
+    root.style.setProperty('--navbar-menu-bg', props.settings.darkMode.menuBackgroundColor || '#171717');
+    root.style.setProperty('--navbar-text', props.settings.darkMode.textColor || '#ffffff');
+    root.style.setProperty('--navbar-border', props.settings.darkMode.borderColor || '#404040');
+  } else {
+    root.style.setProperty('--navbar-header-bg', props.settings.headerBackgroundColor || '#ffffff');
+    root.style.setProperty('--navbar-menu-bg', props.settings.menuBackgroundColor || '#ffffff');
+    root.style.setProperty('--navbar-text', props.settings.textColor || '#000000');
+    root.style.setProperty('--navbar-border', props.settings.borderColor || '#e5e7eb');
   }
-  if (props.settings?.textColor) {
-    styles.color = props.settings.textColor;
-  }
-  if (props.settings?.borderColor) {
-    styles.borderColor = props.settings.borderColor;
-  }
-  
-  return styles;
-});
+};
+
+// Watch for dark mode changes
+watch([isDark, () => props.settings], () => {
+  updateNavbarVariables();
+}, { immediate: true });
 
 // Methods
 const toggleMobileMenu = () => {
@@ -274,6 +275,7 @@ onMounted(() => {
   window.addEventListener('scroll', handleScroll);
   fetchMenuItems();
   checkCartFeatureFlag();
+  updateNavbarVariables();
   
   // Initial scroll check
   handleScroll();
@@ -293,7 +295,7 @@ watch(locale, () => {
 <template>
   <div class="navbar-container">
     <!-- Logo + Hotline Section -->
-    <div class="logo-section w-full border-b bg-white dark:bg-neutral-900" :style="headerStyles">
+    <div class="logo-section w-full border-b">
       <div class="container mx-auto px-4">
         <div class="flex items-center justify-between py-4">
           <!-- Logo -->
@@ -373,11 +375,10 @@ watch(locale, () => {
       :class="{ 'nav-sticky': isScrolled }"
     >
       <nav
-        class="navigation-section w-full bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800"
+        class="navigation-section w-full border-b"
         :class="[
           `text-${props.settings?.menuAlignment || 'center'}`
         ]"
-        :style="menuStyles"
       >
         <div class="container mx-auto px-4">
           <div class="flex items-center justify-between py-2">
@@ -510,7 +511,21 @@ watch(locale, () => {
   </div>
 </template>
 
-<style scoped>
+<style>
+:root {
+  --navbar-header-bg: #ffffff;
+  --navbar-menu-bg: #ffffff;
+  --navbar-text: #000000;
+  --navbar-border: #e5e7eb;
+}
+
+:root.dark {
+  --navbar-header-bg: #171717;
+  --navbar-menu-bg: #171717;
+  --navbar-text: #ffffff;
+  --navbar-border: #404040;
+}
+
 .navbar-container {
   position: relative;
   width: 100%;
@@ -520,6 +535,9 @@ watch(locale, () => {
   position: relative;
   width: 100%;
   z-index: 40;
+  background-color: var(--navbar-header-bg) !important;
+  border-color: var(--navbar-border) !important;
+  color: var(--navbar-text) !important;
 }
 
 .nav-wrapper {
@@ -534,11 +552,12 @@ watch(locale, () => {
   left: 0;
   right: 0;
   z-index: 50;
-  background-color: white;
 }
 
-.dark .nav-wrapper.nav-sticky {
-  background-color: #171717;
+.navigation-section {
+  background-color: var(--navbar-menu-bg) !important;
+  border-color: var(--navbar-border) !important;
+  color: var(--navbar-text) !important;
 }
 
 .nav-wrapper.nav-sticky .navigation-section {
@@ -559,7 +578,7 @@ watch(locale, () => {
 }
 
 .main-menu-item {
-  @apply text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400;
+  color: var(--navbar-text);
 }
 
 .menu-active {
@@ -567,13 +586,45 @@ watch(locale, () => {
 }
 
 .mobile-main-menu-item {
-  @apply text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800;
+  color: var(--navbar-text);
 }
 
 .mobile-menu-active {
   @apply bg-neutral-100 dark:bg-neutral-800 text-primary-600 dark:text-primary-400;
 }
 
+/* Dark mode styles */
+:root.dark .hotline-button {
+  background-color: var(--navbar-menu-bg) !important;
+  border-color: var(--navbar-border) !important;
+  color: var(--navbar-text) !important;
+}
+
+:root.dark .hotline-button:hover {
+  @apply border-primary-400;
+}
+
+:root.dark .hotline-button .text-neutral-600 {
+  color: var(--navbar-text) !important;
+}
+
+.hotline-button {
+  transition: all 0.3s ease;
+  min-width: 220px;
+  background-color: var(--navbar-header-bg);
+  border-color: var(--navbar-border);
+  color: var(--navbar-text);
+}
+
+.hotline-button:hover .animate-ring {
+  animation: ring 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.hotline-button:hover .animate-wiggle {
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+/* Keep existing animations */
 @keyframes ring {
   0% {
     transform: scale(0.8);
@@ -600,39 +651,5 @@ watch(locale, () => {
 
 .animate-wiggle {
   animation: wiggle 1s ease-in-out infinite;
-}
-
-.hotline-button {
-  transition: all 0.3s ease;
-  min-width: 220px;
-}
-
-.hotline-button:hover .animate-ring {
-  animation: ring 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.hotline-button:hover .animate-wiggle {
-  animation: wiggle 0.5s ease-in-out infinite;
-}
-
-/* Dark mode styles */
-.dark .hotline-button {
-  @apply bg-neutral-800 border-neutral-700;
-}
-
-.dark .hotline-button:hover {
-  @apply border-primary-400;
-}
-
-.dark .hotline-button .text-neutral-600 {
-  @apply text-neutral-400;
-}
-
-.dark .hotline-button:hover .text-neutral-600 {
-  @apply text-primary-400;
-}
-
-.dark .hotline-button .bg-primary-50 {
-  @apply bg-primary-900/20;
 }
 </style> 
