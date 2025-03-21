@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useTrpc } from '../composables/useTrpc';
-import { useLocalization } from '../composables/useLocalization';
+import { useTrpc } from '~/composables/useTrpc';
+import { useLocalization } from '~/composables/useLocalization';
 
 const props = defineProps<{
   productId: number;

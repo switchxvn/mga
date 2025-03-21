@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { useLocalization } from '../composables/useLocalization';
-import { useTrpc } from '../composables/useTrpc';
+import { useLocalization } from '~/composables/useLocalization';
+import { useTrpc } from '~/composables/useTrpc';
 import { X, Check, Send } from 'lucide-vue-next';
-import PhoneInput from './form/PhoneInput.vue';
+import PhoneInput from '~/components/form/PhoneInput.vue';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email, helpers } from '@vuelidate/validators';
 

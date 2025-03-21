@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { useLocalization } from '../../composables/useLocalization';
-import { useTrpc } from '../../composables/useTrpc';
-import { useCategory } from '../../composables/useCategory';
+import { useLocalization } from '~/composables/useLocalization';
+import { useTrpc } from '~/composables/useTrpc';
+import { useCategory } from '~/composables/useCategory';
 import { 
   Search, 
   DollarSign, 

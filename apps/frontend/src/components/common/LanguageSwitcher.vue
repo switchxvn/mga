@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useLocalization } from '../composables/useLocalization';
+import { useLocalization } from '~/composables/useLocalization';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useAsyncData } from '#imports';
-import { useLanguageInitializer } from '../composables/useLanguageInitializer';
-import { useTransitionControl } from '../composables/useTransitionControl';
+import { useLanguageInitializer } from '~/composables/useLanguageInitializer';
+import { useTransitionControl } from '~/composables/useTransitionControl';
 
 const { t, locale, locales, switchLanguage } = useLocalization();
 const { initializeOnce, isInitializing, hasInitialized } = useLanguageInitializer();

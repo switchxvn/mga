@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { useLocalization } from '../composables/useLocalization';
-import { useTrpc } from '../composables/useTrpc';
-import ProductCard from './ProductCard.vue';
+import { useLocalization } from '~/composables/useLocalization';
+import { useTrpc } from '~/composables/useTrpc';
+import ProductCard from '~/components/cards/ProductCard.vue';
 
 const props = defineProps<{
   productId: number;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onBeforeUnmount, nextTick } from "vue";
-import { useLocalization } from "../composables/useLocalization";
+import { useLocalization } from "~/composables/useLocalization";
 
 const props = defineProps<{
   contentSelector: string; // CSS selector cho phần nội dung chứa các thẻ h2

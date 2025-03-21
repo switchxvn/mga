@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import { useLocalization } from '~/composables/useLocalization';
-import ProductCard from '~/components/ProductCard.vue';
+import ProductCard from '~/components/cards/ProductCard.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay, EffectCreative } from 'swiper/modules';
 import 'swiper/css';

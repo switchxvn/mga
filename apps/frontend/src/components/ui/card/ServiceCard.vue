@@ -2,8 +2,8 @@
 import * as LucideIcons from 'lucide-vue-next';
 import { ArrowRight } from 'lucide-vue-next';
 import { computed } from 'vue';
-import { useLocalization } from '../../../composables/useLocalization';
-import { getLocalizedRoute } from '../../../utils/routes';
+import { useLocalization } from '~/composables/useLocalization';
+import { getLocalizedRoute } from '~/utils/routes';
 
 interface ServiceTranslation {
   id: number;

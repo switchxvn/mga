@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useTrpc } from '../composables/useTrpc';
-import PostCard from './ui/card/PostCard.vue';
-import Icon from './ui/Icon.vue';
+import { useTrpc } from '~/composables/useTrpc';
+import PostCard from '~/components/ui/card/PostCard.vue';
+import Icon from '~/components/ui/Icon.vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{

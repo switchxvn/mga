@@ -13,6 +13,67 @@ export default defineNuxtConfig({
     port: process.env.NUXT_PORT ? parseInt(process.env.NUXT_PORT) : 4200,
   },
 
+  components: {
+    dirs: [
+      {
+        path: '~/components',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/common',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/cards',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/product',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/category',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/layout',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/sections',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/media',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/sliders',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/ui',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/cart',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/sidebar',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/settings',
+        pathPrefix: false,
+      },
+      {
+        path: '~/components/form',
+        pathPrefix: false,
+      }
+    ],
+  },
+
   hooks: {
     'pages:extend'(routes) {
       const postsListRoute = routes.find(r => r.path === ROUTE_PATHS.POSTS_LIST.en);
@@ -91,7 +152,11 @@ export default defineNuxtConfig({
   },
 
   imports: {
-    dirs: ['composables/**', 'utils/**'],
+    dirs: [
+      'composables',
+      'composables/*/index.{ts,js,mjs,mts}',
+      'composables/**'
+    ],
     presets: [
       {
         from: 'vue',

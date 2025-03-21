@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useLocalization } from '../../composables/useLocalization';
+import { useLocalization } from '~/composables/useLocalization';
 import ProductSidebar from './ProductSidebar.vue';
 import { SlidersHorizontal, X } from 'lucide-vue-next';
 

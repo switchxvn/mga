@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useCategory } from '../composables/useCategory';
+import { useCategory } from '~/composables/useCategory';
 
 // Props
 const props = defineProps({

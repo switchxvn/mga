@@ -1,17 +1,17 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
 import { useRoute, useRouter } from 'vue-router';
-import { useTrpc } from '../../composables/useTrpc';
+import { useTrpc } from '~/composables/useTrpc';
 import { computed, ref, watch, onMounted, onBeforeMount } from 'vue';
-import RelatedPosts from '../../components/RelatedPosts.vue';
-import PostDetailSidebar from '../../components/sidebar/PostDetailSidebar.vue';
-import Breadcrumb from '../../components/Breadcrumb.vue';
-import LazyImage from '../../components/ui/LazyImage.vue';
-import Icon from '../../components/ui/Icon.vue';
+import RelatedPosts from '~/components/common/RelatedPosts.vue';
+import PostDetailSidebar from '~/components/sidebar/PostDetailSidebar.vue';
+import Breadcrumb from '~/components/common/Breadcrumb.vue';
+import LazyImage from '~/components/ui/LazyImage.vue';
+import Icon from '~/components/ui/Icon.vue';
 import { useI18n } from 'vue-i18n';
 import type { Post, Profile, Author, Tag } from '@ew/shared';
-import { usePost } from '../../composables/usePost';
-import { formatDateTime } from '../../utils/date';
+import { usePost } from '~/composables/usePost';
+import { formatDateTime } from '~/utils/date';
 
 // Định nghĩa alias cho URL tiếng Việt và tiếng Anh
 definePageMeta({

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import LazyImage from '../LazyImage.vue';
+import LazyImage from '~/components/ui/LazyImage.vue';
 import type { Post } from '@ew/shared';
-import { useLocalization } from '../../../composables/useLocalization';
-import { usePost } from '../../../composables/usePost';
-import { formatDate } from '../../../utils/date';
-import { truncateContent } from '../../../utils/text';
-import { getAuthorName } from '../../../utils/author';
-import { getLocalizedRoute } from '../../../utils/routes';
+import { useLocalization } from '~/composables/useLocalization';
+import { usePost } from '~/composables/usePost';
+import { formatDate } from '~/utils/date';
+import { truncateContent } from '~/utils/text';
+import { getAuthorName } from '~/utils/author';
+import { getLocalizedRoute } from '~/utils/routes';
 
 const { locale } = useLocalization();
 const { getTranslationByLocale } = usePost();

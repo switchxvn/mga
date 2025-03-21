@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
-import { useMenuItems } from "../../composables/useMenuItems";
+import { useMenuItems } from "~/composables/useMenuItems";
 import type { MenuItem } from "@ew/shared";
 import Icon from "./Icon.vue";
-import ThemeToggle from "../ThemeToggle.vue";
-import LanguageSwitcher from "../LanguageSwitcher.vue";
-import CartIcon from "../cart/CartIcon.vue";
+import ThemeToggle from "~/components/common/ThemeToggle.vue";
+import LanguageSwitcher from "~/components/common/LanguageSwitcher.vue";
+import CartIcon from "~/components/cart/CartIcon.vue";
 import { useRoute } from "vue-router";
-import { useFeatureFlags } from "../../composables/useFeatureFlags";
-import { useLocalization } from "../../composables/useLocalization";
-import { useLogo } from "../../composables/useLogo";
+import { useFeatureFlags } from "~/composables/useFeatureFlags";
+import { useLocalization } from "~/composables/useLocalization";
+import { useLogo } from "~/composables/useLogo";
 
 // Props cho component
 interface NavbarProps {

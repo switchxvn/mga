@@ -1,14 +1,14 @@
 # Tạo file mới cho trang chi tiết dịch vụ
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { useTrpc } from '../../composables/useTrpc';
+import { useTrpc } from '~/composables/useTrpc';
 import { computed, ref, watch } from 'vue';
-import Breadcrumb from '../../components/Breadcrumb.vue';
-import LazyImage from '../../components/ui/LazyImage.vue';
-import Icon from '../../components/ui/Icon.vue';
+import Breadcrumb from '~/components/common/Breadcrumb.vue';
+import LazyImage from '~/components/ui/LazyImage.vue';
+import Icon from '~/components/ui/Icon.vue';
 import { useI18n } from 'vue-i18n';
 import type { Service } from '@ew/shared';
-import { useLocalization } from '../../composables/useLocalization';
+import { useLocalization } from '~/composables/useLocalization';
 import { getLocalizedRoute } from '../../utils/routes';
 import * as LucideIcons from 'lucide-vue-next';
 

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref, watch, reactive, computed } from 'vue';
-import { useTrpc } from '../../composables/useTrpc';
-import { useCategory, type Category } from '../../composables/useCategory';
+import { useTrpc } from '~/composables/useTrpc';
+import { useCategory, type Category } from '~/composables/useCategory';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import type { Post } from '@ew/shared';
-import { usePopularPosts } from '../../composables/usePopularPosts';
-import { usePost } from '../../composables/usePost';
-import { formatDate } from '../../utils/date';
+import { usePopularPosts } from '~/composables/usePopularPosts';
+import { usePost } from '~/composables/usePost';
+import { formatDate } from '~/utils/date';
 import {
   TrendingUp,
   Star,

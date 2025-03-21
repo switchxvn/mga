@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ShoppingCart } from 'lucide-vue-next';
-import LazyImage from './ui/LazyImage.vue';
-import AddToCartButton from './cart/AddToCartButton.vue';
-import { getLocalizedRoute } from '../utils/routes';
-import { useLocalization } from '../composables/useLocalization';
-import { useProduct } from '../composables/useProduct';
-import { useComponentStyles } from '../composables/useComponentStyles';
+import LazyImage from '~/components/ui/LazyImage.vue';
+import AddToCartButton from '~/components/cart/AddToCartButton.vue';
+import { getLocalizedRoute } from '~/utils/routes';
+import { useLocalization } from '~/composables/useLocalization';
+import { useProduct } from '~/composables/useProduct';
+import { useComponentStyles } from '~/composables/useComponentStyles';
 
 interface ProductTranslation {
   title: string;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { useCategory } from '../composables/useCategory';
+import { useCategory } from '~/composables/useCategory';
 
 // Sử dụng composable
 const { 

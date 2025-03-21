@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue';
-import { useLocalization } from '../../composables/useLocalization';
-import { useTrpc } from '../../composables/useTrpc';
+import { useLocalization } from '~/composables/useLocalization';
+import { useTrpc } from '~/composables/useTrpc';
 import { ChevronDown, Search } from 'lucide-vue-next';
 import { parsePhoneNumberFromString, AsYouType, getCountryCallingCode, isValidPhoneNumber } from 'libphonenumber-js';
 import { useVuelidate } from '@vuelidate/core';

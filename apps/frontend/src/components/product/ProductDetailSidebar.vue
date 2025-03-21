@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useLocalization } from "../composables/useLocalization";
+import { useLocalization } from "~/composables/useLocalization";
 import ProductCombo from "./ProductCombo.vue";
 
 const props = defineProps({

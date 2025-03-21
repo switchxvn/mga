@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useTrpc } from '../composables/useTrpc';
-import { useLocalization } from '../composables/useLocalization';
-import LazyImage from './ui/LazyImage.vue';
-import AddToCartButton from './cart/AddToCartButton.vue';
+import { useTrpc } from '~/composables/useTrpc';
+import { useLocalization } from '~/composables/useLocalization';
+import LazyImage from '~/components/ui/LazyImage.vue';
+import AddToCartButton from '~/components/cart/AddToCartButton.vue';
 
 const props = defineProps({
   productId: {

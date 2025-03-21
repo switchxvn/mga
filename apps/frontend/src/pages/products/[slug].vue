@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, h, nextTick, watch } from 'vue';
-import { useLocalization } from '../../composables/useLocalization';
-import { useTrpc } from '../../composables/useTrpc';
+import { useLocalization } from '~/composables/useLocalization';
+import { useTrpc } from '~/composables/useTrpc';
 import { useRoute, useRouter } from 'vue-router';
-import LazyImage from '../../components/ui/LazyImage.vue';
-import CrossSellProducts from '../../components/CrossSellProducts.vue';
-import TableOfContents from '../../components/TableOfContents.vue';
-import ProductSpecifications from '../../components/ProductSpecifications.vue';
-import { formatFullProductContent } from '../../utils/contentFormatter';
-import ProductDetailSidebar from '../../components/ProductDetailSidebar.vue';
+import LazyImage from '~/components/ui/LazyImage.vue';
+import CrossSellProducts from '~/components/product/CrossSellProducts.vue';
+import TableOfContents from '~/components/common/TableOfContents.vue';
+import ProductSpecifications from '~/components/product/ProductSpecifications.vue';
+import { formatFullProductContent } from '~/utils/contentFormatter';
+import ProductDetailSidebar from '~/components/product/ProductDetailSidebar.vue';
 import { useHead } from 'unhead';
-import PriceRequestModal from '../../components/PriceRequestModal.vue';
-import { useNotification } from '../../composables/useNotification';
+import PriceRequestModal from '~/components/product/PriceRequestModal.vue';
+import { useNotification } from '~/composables/useNotification';
 import AddToCartButton from '~/components/cart/AddToCartButton.vue';
-import Breadcrumb from '../../components/Breadcrumb.vue';
+import Breadcrumb from '~/components/common/Breadcrumb.vue';
 
 // Định nghĩa interface cho Product
 interface Product {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useDarkMode } from '../composables/useDarkMode';
-import Icon from './ui/Icon.vue';
+import { useDarkMode } from '~/composables/useDarkMode';
+import Icon from '~/components/ui/Icon.vue';
 import { onClickOutside } from '@vueuse/core';
 
 const { isDark, currentMode, setMode } = useDarkMode();

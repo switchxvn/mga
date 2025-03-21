@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import { useLocalization } from "~/composables/useLocalization";
 import { useCategory } from "~/composables/useCategory";
 import { useTrpc } from "~/composables/useTrpc";
-import ProductCard from "~/components/ProductCard.vue";
+import ProductCard from "~/components/cards/ProductCard.vue";
 
 const props = defineProps<{
   config: {
