@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import ServiceCard from '~/components/ui/card/ServiceCard.vue';
 import { useLocalization } from '~/composables/useLocalization';
 import { useI18n } from 'vue-i18n';
+import { useTrpc } from '~/composables/useTrpc';
 
 type ButtonVariant = 'solid' | 'outline' | 'soft' | 'ghost' | 'link';
 
@@ -94,58 +95,142 @@ interface ServicesConfig {
 }
 
 interface Props {
-  services: Service[];
-  isLoading: boolean;
-  error: string | null;
-  config?: ServicesConfig;
+  config?: Partial<ServicesConfig>;
 }
 
+const defaultConfig: ServicesConfig = {
+  layout: 'grid',
+  columns: 3,
+  maxItems: 12,
+  showIcon: true,
+  showTitle: true,
+  showDescription: true,
+  showPrice: false,
+  showButton: true,
+  descriptionLength: 150,
+  gap: '2rem',
+  backgroundGradient: {
+    from: 'transparent',
+    to: 'transparent',
+    direction: 'to-b'
+  },
+  overlayOpacity: '0',
+  padding: {
+    top: '3rem',
+    bottom: '3rem'
+  },
+  buttonText: 'Xem chi tiết',
+  buttonStyle: 'solid',
+  cardStyle: {
+    background: 'white',
+    shadow: 'sm',
+    border: 'none',
+    rounded: 'lg',
+    padding: '1.5rem',
+    transition: 'all 0.3s ease'
+  },
+  iconStyle: {
+    size: '2rem',
+    background: 'primary',
+    color: 'white',
+    rounded: 'full',
+    padding: '0.5rem'
+  },
+  titleStyle: {
+    size: 'xl',
+    weight: 'bold',
+    color: 'gray-900',
+    margin: '1rem 0'
+  },
+  descriptionStyle: {
+    size: 'base',
+    color: 'gray-600',
+    margin: '0.5rem 0'
+  },
+  priceStyle: {
+    size: 'lg',
+    weight: 'bold',
+    color: 'primary',
+    margin: '1rem 0'
+  }
+};
+
 const props = withDefaults(defineProps<Props>(), {
-  services: () => [],
-  isLoading: false,
-  error: null,
-  config: () => ({
-    layout: 'grid',
-    columns: 3,
-    maxItems: 12,
-    showIcon: true,
-    showTitle: true,
-    showDescription: true,
-    showPrice: false,
-    showButton: true,
-    descriptionLength: 150,
-    gap: '2rem',
-    buttonStyle: 'solid' as ButtonVariant,
-    buttonText: 'Xem chi tiết'
-  })
+  config: () => ({})
 });
 
 const { locale } = useLocalization();
-const { t } = useI18n();
+const { t: localT } = useI18n();
+const trpc = useTrpc();
 
-const emit = defineEmits<{
-  (e: 'retry'): void;
-}>();
+// State management
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+const services = ref<Service[]>([]);
+
+// Merge default config with provided config
+const mergedConfig = computed(() => ({
+  ...defaultConfig,
+  ...props.config
+}));
+
+// Fetch services data
+async function fetchServices() {
+  isLoading.value = true;
+  error.value = null;
+  try {
+    const result = await trpc.service.all.query({ locale: locale.value });
+    services.value = result
+      .filter(service => service.isActive)
+      .map((service: any) => {
+        const translation = service.translations?.find(
+          (t: { locale: string }) => t.locale === locale.value
+        );
+
+        return {
+          ...service,
+          id: Number(service.id),
+          currentTranslation: translation
+        } as Service;
+      })
+      .slice(0, mergedConfig.value.maxItems);
+  } catch (err: any) {
+    console.error("Failed to fetch services:", err);
+    error.value = err.message || localT('errors.failed_to_load_services');
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// Watch for locale changes
+watch(locale, () => {
+  fetchServices();
+}, { immediate: false });
+
+// Initialize data on component mount
+onMounted(() => {
+  fetchServices();
+});
 
 const handleRetry = () => {
-  emit('retry');
+  fetchServices();
 };
 
 const buttonVariant = computed<ButtonVariant>(() => {
-  return props.config?.buttonStyle || 'solid';
+  return mergedConfig.value.buttonStyle || 'solid';
 });
 
 // Computed để lấy số cột dựa trên config hoặc responsive default
 const gridColumns = computed(() => {
-  if (props.config?.columns) {
-    return props.config.columns;
+  if (mergedConfig.value.columns) {
+    return mergedConfig.value.columns;
   }
   return 3; // default columns
 });
 
 // Computed để lấy gap từ config hoặc default
 const gridGap = computed(() => {
-  return props.config?.gap || '2rem';
+  return mergedConfig.value.gap || '2rem';
 });
 
 // Computed để tạo grid styles
@@ -157,11 +242,18 @@ const gridStyles = computed(() => ({
 </script>
 
 <template>
-  <section class="services-section py-12 bg-gray-50 dark:bg-gray-900">
+  <section 
+    class="services-section"
+    :style="{
+      background: `linear-gradient(${mergedConfig.backgroundGradient.direction}, ${mergedConfig.backgroundGradient.from}, ${mergedConfig.backgroundGradient.to})`,
+      paddingTop: mergedConfig.padding.top,
+      paddingBottom: mergedConfig.padding.bottom
+    }"
+  >
     <div class="container mx-auto px-4">
       <!-- Section Title -->
-      <h2 v-if="config?.title" class="text-3xl font-bold text-center mb-8">
-        {{ config.title }}
+      <h2 v-if="mergedConfig.title" class="text-3xl font-bold text-center mb-8">
+        {{ mergedConfig.title }}
       </h2>
 
       <!-- Loading state -->
@@ -177,7 +269,7 @@ const gridStyles = computed(() => ({
           variant="destructive"
           class="mt-4"
         >
-          {{ t('common.retry') }}
+          {{ localT('common.retry') }}
         </Button>
       </div>
       
@@ -188,25 +280,25 @@ const gridStyles = computed(() => ({
         :style="gridStyles"
       >
         <ServiceCard
-          v-for="service in (services || []).slice(0, config?.maxItems || services?.length)"
-          :key="service.id"
+          v-for="(service, index) in (services || []).slice(0, mergedConfig.maxItems || services?.length)"
+          :key="`${service.id}-${index}`"
           :service="service"
-          :show-icon="config?.showIcon"
-          :show-title="config?.showTitle"
-          :show-description="config?.showDescription"
-          :show-button="config?.showButton"
-          :button-text="config?.buttonText"
+          :show-icon="mergedConfig.showIcon"
+          :show-title="mergedConfig.showTitle"
+          :show-description="mergedConfig.showDescription"
+          :show-button="mergedConfig.showButton"
+          :button-text="mergedConfig.buttonText"
           :button-variant="buttonVariant"
-          :card-style="config?.cardStyle"
-          :icon-style="config?.iconStyle"
-          :title-style="config?.titleStyle"
-          :description-style="config?.descriptionStyle"
+          :card-style="mergedConfig.cardStyle"
+          :icon-style="mergedConfig.iconStyle"
+          :title-style="mergedConfig.titleStyle"
+          :description-style="mergedConfig.descriptionStyle"
         />
       </div>
       
       <!-- Empty state -->
       <div v-else class="text-center text-gray-500 dark:text-gray-400 py-8">
-        <p>{{ t('services.no_services') }}</p>
+        <p>{{ localT('services.no_services') }}</p>
       </div>
     </div>
   </section>

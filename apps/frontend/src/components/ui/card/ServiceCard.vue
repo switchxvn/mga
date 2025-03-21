@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ArrowRight } from 'lucide-vue-next';
 import * as LucideIcons from 'lucide-vue-next';
+import { ArrowRight } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { useLocalization } from '../../../composables/useLocalization';
 import { getLocalizedRoute } from '../../../utils/routes';
-import type { LocaleType } from '../../../utils/routes';
-import { computed } from 'vue';
 
 interface ServiceTranslation {
   id: number;

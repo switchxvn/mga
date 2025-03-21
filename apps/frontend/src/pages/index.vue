@@ -304,11 +304,8 @@ const route = useRoute();
 const trpc = useTrpc();
 const { t, locale } = useLocalization();
 const latestPosts = ref<Post[]>([]);
-const services = ref<Service[]>([]);
 const isLoading = ref(false);
-const isLoadingServices = ref(false);
 const error = ref<string | null>(null);
-const serviceError = ref<string | null>(null);
 const { getActiveTheme } = useTheme();
 const theme = ref<Theme | null>(null);
 
@@ -355,8 +352,8 @@ const getDefaultComponent = (type: string) => {
 onMounted(async () => {
   theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
   try {
-    // Fetch posts and services only, theme is handled by useTheme
-    await Promise.all([fetchLatestPosts(), fetchServices()]);
+    // Fetch posts only, theme is handled by useTheme
+    await fetchLatestPosts();
 
     // Debug theme sections
     console.log('Theme sections:', theme.value?.sections);
@@ -385,11 +382,10 @@ onMounted(async () => {
   }
 });
 
-// Watch for locale changes to update theme
+// Watch for locale changes to update theme and posts
 watch(locale, async () => {
   theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
   fetchLatestPosts();
-  fetchServices();
 });
 
 // Cấu hình Swiper cho posts dựa trên theme
@@ -482,25 +478,6 @@ async function fetchLatestPosts() {
   }
 }
 
-async function fetchServices() {
-  isLoadingServices.value = true;
-  serviceError.value = null;
-  try {
-    // Gọi tRPC endpoint để lấy danh sách dịch vụ với locale hiện tại
-    const result = await trpc.service.all.query({ locale: locale.value });
-    console.log('Services API response:', result);
-    
-    // Gán trực tiếp kết quả vì response từ tRPC không có cấu trúc .data
-    services.value = result || [];
-    console.log('Services after assignment:', services.value);
-  } catch (err: any) {
-    console.error("Failed to fetch services:", err);
-    serviceError.value = err.message || "Đã xảy ra lỗi khi tải dịch vụ";
-  } finally {
-    isLoadingServices.value = false;
-  }
-}
-
 const getAuthorName = (author: any) => {
   if (author?.profile) {
     const firstName = author.profile.firstName || "";
@@ -553,9 +530,6 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
           :is="resolveComponent(section)"
           v-if="section.isActive"
           :config="getSectionConfig(section.type)"
-          :services="section.type === 'services' ? services : undefined"
-          :is-loading="section.type === 'services' ? isLoadingServices : false"
-          :error="section.type === 'services' ? serviceError : null"
         />
       </template>
     </template>
