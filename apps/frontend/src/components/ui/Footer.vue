@@ -93,7 +93,7 @@ onMounted(async () => {
           <div class="col-span-1">
             <img :src="activeFooter.logoUrl" :alt="activeFooter.logoAlt" class="h-26 mb-4" />
             <div class="company-info mb-4">
-              <h3 class="font-bold mb-2 text-lg uppercase">{{ activeFooter.companyInfo.name }}</h3>
+              <h3 class="font-bold mb-2 text-lg uppercase" style="color: #FF0000">{{ activeFooter.companyInfo.name }}</h3>
               <p>{{ activeFooter.companyInfo.registration }}</p>
               <p v-if="activeFooter.companyInfo.tax_number">MST: {{ activeFooter.companyInfo.tax_number }}</p>
               <p v-if="activeFooter.companyInfo.business_license">{{ activeFooter.companyInfo.business_license }}</p>
@@ -114,7 +114,7 @@ onMounted(async () => {
           <div class="col-span-1">
             <!-- Addresses -->
             <div v-for="(address, index) in activeFooter.addresses" :key="index" class="mb-4">
-              <p v-if="address.title" class="font-semibold text-lg uppercase">{{ address.title }}</p>
+              <p v-if="address.title" class="font-semibold text-lg uppercase" style="color: #FF0000">{{ address.title }}</p>
               <p v-if="address.subtitle" class="text-base font-semibold" style="color: #FF0000">{{ address.subtitle }}</p>
               <p class="mt-1">{{ address.location }}</p>
               
@@ -176,7 +176,7 @@ onMounted(async () => {
           <div class="col-span-1">
             <div v-if="activeFooter.branchInfo" class="space-y-6">
               <div v-for="(branch, index) in activeFooter.branchInfo" :key="index" class="branch-info">
-                <h4 class="font-bold text-lg mb-2">{{ branch.title }}</h4>
+                <h4 class="font-bold text-lg mb-2" style="color: #FF0000">{{ branch.title }}</h4>
                 <p v-if="branch.address" class="text-md mb-2">{{ branch.address }}</p>
                 
                 <div v-for="(contact, contactIndex) in branch.contacts" :key="contactIndex" class="contact-info text-base space-y-1">

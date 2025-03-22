@@ -268,12 +268,12 @@ const mobileMenuTop = computed(() => {
 const handleScroll = () => {
   if (!navWrapperRef.value) return;
   
-  const currentScrollPosition = window.scrollY;
+  const currentScrollPosition = Math.round(window.scrollY);
   const navRect = navWrapperRef.value.getBoundingClientRect();
   const logoSection = document.querySelector('.logo-section');
   
   if (logoSection) {
-    const logoHeight = logoSection.getBoundingClientRect().height;
+    const logoHeight = Math.round(logoSection.getBoundingClientRect().height);
     const shouldBeSticky = currentScrollPosition > logoHeight && navRect.top <= 0;
     
     // Only update if the state actually changes
@@ -284,7 +284,7 @@ const handleScroll = () => {
       nextTick(() => {
         const nav = document.querySelector('.navigation-section') as HTMLElement;
         if (nav) {
-          const navHeight = nav.offsetHeight;
+          const navHeight = Math.round(nav.offsetHeight);
           document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
           // Update mobile menu top position
           document.documentElement.style.setProperty('--mobile-menu-top', mobileMenuTop.value);
@@ -311,16 +311,25 @@ watch(isMobileMenuOpen, (newVal) => {
   }
 });
 
-// Throttle scroll handler for better performance
+// Improve throttle function
 const throttledHandleScroll = (() => {
   let frame: number | undefined;
+  let lastTime = 0;
+  const throttleMs = 16; // Approximately 60fps
+
   return () => {
-    if (frame) {
-      cancelAnimationFrame(frame);
+    const now = Date.now();
+    
+    if (now - lastTime >= throttleMs) {
+      if (frame) {
+        cancelAnimationFrame(frame);
+      }
+      
+      frame = requestAnimationFrame(() => {
+        handleScroll();
+        lastTime = now;
+      });
     }
-    frame = requestAnimationFrame(() => {
-      handleScroll();
-    });
   };
 })();
 
@@ -718,9 +727,15 @@ watch(locale, () => {
 .nav-wrapper {
   position: relative;
   width: 100%;
-  transition: transform 0.3s ease;
+  transition: none; /* Remove transition to prevent jank */
   will-change: transform;
-  z-index: 110; /* Ensure nav is above overlay */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-perspective: 1000;
+  z-index: 110;
 }
 
 .nav-wrapper.nav-sticky {
@@ -729,8 +744,10 @@ watch(locale, () => {
   left: 0;
   right: 0;
   z-index: 100;
-  backface-visibility: hidden;
   transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   background-color: var(--navbar-menu-bg);
 }
 
@@ -739,18 +756,23 @@ watch(locale, () => {
   border-color: var(--navbar-border) !important;
   color: var(--navbar-text) !important;
   transform: translateZ(0);
+  -webkit-transform: translateZ(0);
   backface-visibility: hidden;
-  height: 64px; /* Fixed height for navigation */
+  -webkit-backface-visibility: hidden;
+  height: 64px;
   display: flex;
   align-items: center;
+  will-change: transform;
 }
 
 /* Mobile logo styles */
 .navigation-section .mobile-logo {
-  height: 40px; /* Fixed height for mobile logo */
+  height: 40px;
   width: auto;
   display: flex;
   align-items: center;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .navigation-section .mobile-logo img {

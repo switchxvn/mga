@@ -185,7 +185,7 @@ onMounted(() => {
                   <div class="w-32 flex justify-end">
                     <NuxtLink
                       :to="`/categories/${getCategoryTranslation(category).slug}`"
-                      class="inline-flex items-center justify-center px-4 py-2 text-sm font-bold uppercase tracking-wider text-white hover:text-primary-100 transition-colors duration-200 whitespace-nowrap"
+                      class="inline-flex items-center justify-center px-4 py-2 text-lg font-bold uppercase tracking-wider text-white hover:text-primary-100 transition-colors duration-200 whitespace-nowrap"
                     >
                       {{ t("categories.viewAllIn") }}
                       <ArrowRight class="ml-2 h-5 w-5" aria-hidden="true" />
