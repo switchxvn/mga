@@ -535,7 +535,6 @@ watch(locale, () => {
   position: relative;
   width: 100%;
   z-index: 40;
-  background-color: var(--navbar-header-bg) !important;
   border-color: var(--navbar-border) !important;
   color: var(--navbar-text) !important;
 }

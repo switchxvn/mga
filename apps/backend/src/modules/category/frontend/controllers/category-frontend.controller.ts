@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { CategoryFrontendService } from '../services/category-frontend.service';
-import { CategoryType } from '../../entities/category.entity';
+import { CategoryType } from '@ew/shared';
 
 @Controller('categories')
 export class CategoryFrontendController {

@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
-import { CategoryType } from '../../../../apps/backend/src/modules/category/entities/category.entity';
+import { CategoryType } from '../../../../libs/shared/src/types/category.type';
 export class ResetAndAddForkliftCategories1710841659280 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // First, delete all existing products and their relations

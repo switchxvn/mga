@@ -4,6 +4,7 @@ import { useLocalization } from "~/composables/useLocalization";
 import { useCategory } from "~/composables/useCategory";
 import { useTrpc } from "~/composables/useTrpc";
 import ProductCard from "~/components/cards/ProductCard.vue";
+import type { Category, CategoryTranslation } from "@ew/shared";
 
 const props = defineProps<{
   config: {
@@ -77,7 +78,7 @@ const { loading, error } = useCategory();
 const trpc = useTrpc();
 
 // State
-const categories = ref<any[]>([]);
+const categories = ref<Category[]>([]);
 const categoryProducts = ref<Record<number, any[]>>({});
 
 // Composables
@@ -116,7 +117,13 @@ const fetchCategories = async () => {
 };
 
 // Computed
-const truncateDescription = (description: string) => {
+const getCategoryTranslation = (category: Category): CategoryTranslation => {
+  return category.translations?.find((t: CategoryTranslation) => t.locale === locale.value) || {} as CategoryTranslation;
+};
+
+const truncateDescription = (category: Category): string => {
+  const translation = getCategoryTranslation(category);
+  const description = translation.description || '';
   if (!description) return "";
   return description.length > props.config.descriptionLength
     ? `${description.slice(0, props.config.descriptionLength)}...`
@@ -185,25 +192,25 @@ onMounted(() => {
                       'font-bold',
                       config.useUppercase ? 'uppercase' : ''
                     ]">
-                      {{ category.name }}
+                      {{ getCategoryTranslation(category).name }}
                     </h2>
                     <div
                       class="mt-2 h-1 w-20 bg-primary-600 dark:bg-primary-500 rounded-full"
                     ></div>
                   </div>
                   <p 
-                    v-if="category.description" 
+                    v-if="getCategoryTranslation(category).description" 
                     :class="[
                       'mt-3 text-center',
                       config.fontSize?.description || 'text-base',
                       config.colors?.description || 'text-gray-600 dark:text-gray-400'
                     ]"
                   >
-                    {{ truncateDescription(category.description) }}
+                    {{ truncateDescription(category) }}
                   </p>
                 </div>
                 <NuxtLink
-                  :to="`/categories/${category.slug}`"
+                  :to="`/categories/${getCategoryTranslation(category).slug}`"
                   class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium uppercase tracking-wider text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors duration-200 whitespace-nowrap"
                 >
                   {{ t("categories.viewAllIn") }}
@@ -252,7 +259,7 @@ onMounted(() => {
 
             <!-- No Products Message -->
             <div v-else class="text-center py-8 text-gray-500 dark:text-gray-400">
-              {{ t("categories.noProductsInCategory", { category: category.name }) }}
+              {{ t("categories.noProductsInCategory", { category: getCategoryTranslation(category).name }) }}
             </div>
           </div>
         </div>

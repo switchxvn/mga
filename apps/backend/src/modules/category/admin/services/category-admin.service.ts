@@ -11,40 +11,59 @@ export class CategoryAdminService {
   ) {}
 
   async findAll(): Promise<Category[]> {
-    return this.categoryRepository.find({
-      relations: ['parent', 'children', 'posts'],
-      order: { name: 'ASC' }
-    });
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.parent', 'parent')
+      .leftJoinAndSelect('parent.translations', 'parentTranslations')
+      .leftJoinAndSelect('category.children', 'children')
+      .leftJoinAndSelect('children.translations', 'childrenTranslations')
+      .leftJoinAndSelect('category.posts', 'posts')
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
   async findOne(id: number): Promise<Category> {
-    return this.categoryRepository.findOneOrFail({
-      where: { id },
-      relations: ['parent', 'children', 'posts']
-    });
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.parent', 'parent')
+      .leftJoinAndSelect('parent.translations', 'parentTranslations')
+      .leftJoinAndSelect('category.children', 'children')
+      .leftJoinAndSelect('children.translations', 'childrenTranslations')
+      .leftJoinAndSelect('category.posts', 'posts')
+      .where('category.id = :id', { id })
+      .getOneOrFail();
   }
 
   async findFeatured(): Promise<Category[]> {
-    return this.categoryRepository.find({
-      where: { isFeatured: true },
-      relations: ['posts'],
-      order: { name: 'ASC' }
-    });
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.posts', 'posts')
+      .where('category.isFeatured = :isFeatured', { isFeatured: true })
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
   async findRootCategories(): Promise<Category[]> {
-    return this.categoryRepository.find({
-      where: { parentId: null },
-      relations: ['children'],
-      order: { name: 'ASC' }
-    });
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.children', 'children')
+      .leftJoinAndSelect('children.translations', 'childrenTranslations')
+      .where('category.parentId IS NULL')
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
   async findChildCategories(parentId: number): Promise<Category[]> {
-    return this.categoryRepository.find({
-      where: { parentId },
-      order: { name: 'ASC' }
-    });
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.translations', 'translations')
+      .where('category.parentId = :parentId', { parentId })
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
   async create(categoryData: Partial<Category>): Promise<Category> {

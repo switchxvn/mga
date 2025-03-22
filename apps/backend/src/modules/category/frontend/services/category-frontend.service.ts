@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Category, CategoryType } from '../../entities/category.entity';
+import { Category } from '../../entities/category.entity';
+import { CategoryType } from '@ew/shared';
 
 @Injectable()
 export class CategoryFrontendService {
@@ -10,79 +11,194 @@ export class CategoryFrontendService {
     private categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll(): Promise<Category[]> {
-    return this.categoryRepository.find({
-      where: { active: true },
-      relations: ['posts'],
-      order: { name: 'ASC' }
-    });
+  async findAll(locale: string = 'vi'): Promise<Category[]> {
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .select([
+        'category.id',
+        'category.active',
+        'category.isFeatured',
+        'category.type',
+        'category.parentId',
+        'category.createdAt',
+        'category.updatedAt'
+      ])
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.posts', 'posts')
+      .where('category.active = :active', { active: true })
+      .andWhere('translations.locale = :locale', { locale })
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
-  async findByType(type: CategoryType): Promise<Category[]> {
-    return this.categoryRepository.find({
-      where: [
-        { active: true, type: type },
-        { active: true, type: CategoryType.BOTH }
-      ],
-      relations: ['posts', 'products'],
-      order: { name: 'ASC' }
-    });
+  async findByType(type: CategoryType, locale: string = 'vi'): Promise<Category[]> {
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .select([
+        'category.id',
+        'category.active',
+        'category.isFeatured',
+        'category.type',
+        'category.parentId',
+        'category.createdAt',
+        'category.updatedAt'
+      ])
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.posts', 'posts')
+      .leftJoinAndSelect('category.products', 'products')
+      .where('category.active = :active', { active: true })
+      .andWhere('(category.type = :type OR category.type = :bothType)', { 
+        type, 
+        bothType: CategoryType.BOTH 
+      })
+      .andWhere('translations.locale = :locale', { locale })
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
-  async findOne(id: number): Promise<Category> {
-    return this.categoryRepository.findOneOrFail({
-      where: { id, active: true },
-      relations: ['posts', 'parent', 'children'],
-    });
+  async findOne(id: number, locale: string = 'vi'): Promise<Category> {
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .select([
+        'category.id',
+        'category.active',
+        'category.isFeatured',
+        'category.type',
+        'category.parentId',
+        'category.createdAt',
+        'category.updatedAt'
+      ])
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.posts', 'posts')
+      .leftJoinAndSelect('category.parent', 'parent')
+      .leftJoinAndSelect('parent.translations', 'parentTranslations')
+      .leftJoinAndSelect('category.children', 'children')
+      .leftJoinAndSelect('children.translations', 'childrenTranslations')
+      .where('category.id = :id', { id })
+      .andWhere('category.active = :active', { active: true })
+      .andWhere('translations.locale = :locale', { locale })
+      .andWhere('(parentTranslations.locale = :locale OR parentTranslations.locale IS NULL)', { locale })
+      .andWhere('(childrenTranslations.locale = :locale OR childrenTranslations.locale IS NULL)', { locale })
+      .getOneOrFail();
   }
 
-  async findBySlug(slug: string): Promise<Category> {
-    return this.categoryRepository.findOneOrFail({
-      where: { slug, active: true },
-      relations: ['posts', 'parent', 'children'],
-    });
+  async findBySlug(slug: string, locale: string = 'vi'): Promise<Category> {
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .select([
+        'category.id',
+        'category.active',
+        'category.isFeatured',
+        'category.type',
+        'category.parentId',
+        'category.createdAt',
+        'category.updatedAt'
+      ])
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.posts', 'posts')
+      .leftJoinAndSelect('category.parent', 'parent')
+      .leftJoinAndSelect('parent.translations', 'parentTranslations')
+      .leftJoinAndSelect('category.children', 'children')
+      .leftJoinAndSelect('children.translations', 'childrenTranslations')
+      .where('category.active = :active', { active: true })
+      .andWhere('translations.slug = :slug', { slug })
+      .andWhere('translations.locale = :locale', { locale })
+      .andWhere('(parentTranslations.locale = :locale OR parentTranslations.locale IS NULL)', { locale })
+      .andWhere('(childrenTranslations.locale = :locale OR childrenTranslations.locale IS NULL)', { locale })
+      .getOneOrFail();
   }
 
-  async findFeatured(): Promise<Category[]> {
-    return this.categoryRepository.find({
-      where: { active: true, isFeatured: true },
-      relations: ['posts'],
-      order: { name: 'ASC' }
-    });
+  async findFeatured(locale: string = 'vi'): Promise<Category[]> {
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .select([
+        'category.id',
+        'category.active',
+        'category.isFeatured',
+        'category.type',
+        'category.parentId',
+        'category.createdAt',
+        'category.updatedAt'
+      ])
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.posts', 'posts')
+      .where('category.active = :active', { active: true })
+      .andWhere('category.isFeatured = :isFeatured', { isFeatured: true })
+      .andWhere('translations.locale = :locale', { locale })
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
-  async findRootCategories(): Promise<Category[]> {
-    return this.categoryRepository.find({
-      where: { active: true, parentId: null },
-      relations: ['children'],
-      order: { name: 'ASC' }
-    });
+  async findRootCategories(locale: string = 'vi'): Promise<Category[]> {
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .select([
+        'category.id',
+        'category.active',
+        'category.isFeatured',
+        'category.type',
+        'category.parentId',
+        'category.createdAt',
+        'category.updatedAt'
+      ])
+      .leftJoinAndSelect('category.translations', 'translations')
+      .leftJoinAndSelect('category.children', 'children')
+      .leftJoinAndSelect('children.translations', 'childrenTranslations')
+      .where('category.active = :active', { active: true })
+      .andWhere('category.parentId IS NULL')
+      .andWhere('translations.locale = :locale', { locale })
+      .andWhere('(childrenTranslations.locale = :locale OR childrenTranslations.locale IS NULL)', { locale })
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
-  async findChildCategories(parentId: number): Promise<Category[]> {
-    return this.categoryRepository.find({
-      where: { active: true, parentId },
-      order: { name: 'ASC' }
-    });
+  async findChildCategories(parentId: number, locale: string = 'vi'): Promise<Category[]> {
+    return this.categoryRepository
+      .createQueryBuilder('category')
+      .select([
+        'category.id',
+        'category.active',
+        'category.isFeatured',
+        'category.type',
+        'category.parentId',
+        'category.createdAt',
+        'category.updatedAt'
+      ])
+      .leftJoinAndSelect('category.translations', 'translations')
+      .where('category.active = :active', { active: true })
+      .andWhere('category.parentId = :parentId', { parentId })
+      .andWhere('translations.locale = :locale', { locale })
+      .orderBy('translations.name', 'ASC')
+      .getMany();
   }
 
-  async getCategoryTree(): Promise<Category[]> {
-    const rootCategories = await this.findRootCategories();
+  async getCategoryTree(locale: string = 'vi'): Promise<Category[]> {
+    const rootCategories = await this.findRootCategories(locale);
     
     // Recursively load children for each root category
     for (const rootCategory of rootCategories) {
-      await this.loadChildrenRecursively(rootCategory);
+      await this.loadChildrenRecursively(rootCategory, locale);
     }
     
     return rootCategories;
   }
 
-  private async loadChildrenRecursively(category: Category): Promise<void> {
-    const children = await this.findChildCategories(category.id);
+  private async loadChildrenRecursively(category: Category, locale: string): Promise<void> {
+    const children = await this.findChildCategories(category.id, locale);
     category.children = children;
     
     for (const child of children) {
-      await this.loadChildrenRecursively(child);
+      await this.loadChildrenRecursively(child, locale);
     }
+  }
+
+  // Helper method to get translation for a specific locale
+  getTranslation(category: Category, locale: string = 'vi') {
+    return category.translations?.find(t => t.locale === locale);
+  }
+
+  // Helper method to get slug for a specific locale
+  getSlug(category: Category, locale: string = 'vi'): string | undefined {
+    return this.getTranslation(category, locale)?.slug;
   }
 } 

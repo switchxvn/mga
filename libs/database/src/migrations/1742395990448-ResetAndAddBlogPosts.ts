@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
-import { CategoryType } from '../../../../apps/backend/src/modules/category/entities/category.entity';
+import { CategoryType } from '../../../../libs/shared/src/types/category.type';
 import * as bcrypt from 'bcrypt';
 
 export class ResetAndAddBlogPosts1742395990448 implements MigrationInterface {

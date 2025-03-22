@@ -481,7 +481,7 @@ onMounted(() => {
           
           <div v-else class="space-y-4">
             <div v-for="attribute in categoryAttributes" :key="attribute.id" class="border-b border-gray-100 pb-3 dark:border-gray-800 last:border-0 last:pb-0">
-              <h4 class="mb-2 font-medium text-sm text-gray-800 dark:text-gray-200">{{ attribute.name }}</h4>
+              <h4 class="mb-2 font-medium text-sm text-gray-800 dark:text-gray-200">{{ attribute.translations?.find(t => t.locale === locale)?.name || attribute.name }}</h4>
               <div class="space-y-1">
                 <div 
                   v-for="value in attribute.values" 

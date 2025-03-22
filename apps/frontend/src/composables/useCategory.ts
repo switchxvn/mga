@@ -1,5 +1,7 @@
 import { useTrpc } from './useTrpc';
 import { ref, computed } from 'vue';
+import { useLocalization } from './useLocalization';
+import type { Category as BackendCategory, CategoryTranslation } from '@ew/shared';
 
 // Định nghĩa enum CategoryType
 export enum CategoryType {
@@ -9,26 +11,7 @@ export enum CategoryType {
 }
 
 // Định nghĩa kiểu dữ liệu Category
-export interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
-  ogTitle?: string;
-  ogDescription?: string;
-  ogImage?: string;
-  canonicalUrl?: string;
-  parentId?: number | null;
-  isFeatured?: boolean;
-  active?: boolean;
-  type?: CategoryType;
-  children?: Category[];
-  posts?: any[];
-  products?: any[];
-}
+export type Category = BackendCategory;
 
 /**
  * Composable để quản lý và truy xuất dữ liệu danh mục
@@ -36,6 +19,7 @@ export interface Category {
  */
 export function useCategory() {
   const trpc = useTrpc();
+  const { locale } = useLocalization();
   
   // State
   const categories = ref<Category[]>([]);
@@ -55,7 +39,8 @@ export function useCategory() {
     error.value = null;
     
     try {
-      categories.value = await trpc.category.all.query();
+      const result = await trpc.category.all.query({ locale: locale.value });
+      categories.value = result as Category[];
     } catch (err: any) {
       console.error('Error fetching categories:', err);
       error.value = err.message || 'Có lỗi xảy ra khi tải danh mục';
@@ -73,7 +58,8 @@ export function useCategory() {
     error.value = null;
     
     try {
-      return await trpc.category.byId.query(id);
+      const result = await trpc.category.byId.query({ id, locale: locale.value });
+      return result as Category;
     } catch (err: any) {
       console.error(`Error fetching category by ID ${id}:`, err);
       error.value = err.message || 'Có lỗi xảy ra khi tải chi tiết danh mục';
@@ -92,7 +78,8 @@ export function useCategory() {
     error.value = null;
     
     try {
-      return await trpc.category.bySlug.query(slug);
+      const result = await trpc.category.bySlug.query({ slug, locale: locale.value });
+      return result as Category;
     } catch (err: any) {
       console.error(`Error fetching category by slug ${slug}:`, err);
       error.value = err.message || 'Có lỗi xảy ra khi tải chi tiết danh mục';
@@ -103,14 +90,15 @@ export function useCategory() {
   };
   
   /**
-   * Lấy danh mục nổi bật (featured)
+   * Lấy danh mục nổi bật
    */
   const fetchFeaturedCategories = async () => {
     loading.value = true;
     error.value = null;
     
     try {
-      featuredCategories.value = await trpc.category.featured.query();
+      const result = await trpc.category.featured.query({ locale: locale.value });
+      featuredCategories.value = result as Category[];
     } catch (err: any) {
       console.error('Error fetching featured categories:', err);
       error.value = err.message || 'Có lỗi xảy ra khi tải danh mục nổi bật';
@@ -120,15 +108,15 @@ export function useCategory() {
   };
   
   /**
-   * Lấy danh mục phổ biến (popular)
-   * @param limit Số lượng danh mục cần lấy
+   * Lấy danh mục phổ biến
    */
-  const fetchPopularCategories = async (limit = 5) => {
+  const fetchPopularCategories = async () => {
     loading.value = true;
     error.value = null;
     
     try {
-      popularCategories.value = await trpc.category.popular.query({ limit });
+      const result = await trpc.category.popular.query({ locale: locale.value });
+      popularCategories.value = result as Category[];
     } catch (err: any) {
       console.error('Error fetching popular categories:', err);
       error.value = err.message || 'Có lỗi xảy ra khi tải danh mục phổ biến';
@@ -138,15 +126,15 @@ export function useCategory() {
   };
   
   /**
-   * Lấy danh mục hot (có bài viết mới nhất)
-   * @param limit Số lượng danh mục cần lấy
+   * Lấy danh mục hot
    */
-  const fetchHotCategories = async (limit = 5) => {
+  const fetchHotCategories = async () => {
     loading.value = true;
     error.value = null;
     
     try {
-      hotCategories.value = await trpc.category.hot.query({ limit });
+      const result = await trpc.category.hot.query({ locale: locale.value });
+      hotCategories.value = result as Category[];
     } catch (err: any) {
       console.error('Error fetching hot categories:', err);
       error.value = err.message || 'Có lỗi xảy ra khi tải danh mục hot';
@@ -163,7 +151,8 @@ export function useCategory() {
     error.value = null;
     
     try {
-      categoryTree.value = await trpc.category.tree.query();
+      const result = await trpc.category.tree.query({ locale: locale.value });
+      categoryTree.value = result as Category[];
     } catch (err: any) {
       console.error('Error fetching category tree:', err);
       error.value = err.message || 'Có lỗi xảy ra khi tải cây danh mục';
@@ -196,13 +185,13 @@ export function useCategory() {
     error.value = null;
     
     try {
-      const result = await trpc.category.byType.query(type);
+      const result = await trpc.category.byType.query({ type, locale: locale.value });
       
       if (type === CategoryType.PRODUCT) {
-        productCategories.value = result;
+        productCategories.value = result as Category[];
       }
       
-      return result;
+      return result as Category[];
     } catch (err: any) {
       console.error(`Error fetching categories by type ${type}:`, err);
       error.value = err.message || 'Có lỗi xảy ra khi tải danh mục theo loại';

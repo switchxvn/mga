@@ -1,27 +1,13 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Post } from '../../post/entities/post.entity';
 import { Product } from '../../product/entities/product.entity';
-
-// Enum để phân biệt loại category
-export enum CategoryType {
-  NEWS = 'news',
-  PRODUCT = 'product',
-  BOTH = 'both' // Trường hợp category có thể dùng cho cả news và product
-}
+import { CategoryTranslation } from './category-translation.entity';
+import { CategoryType } from '@ew/shared';
 
 @Entity('categories')
 export class Category {
   @PrimaryGeneratedColumn()
   id!: number;
-
-  @Column()
-  name!: string;
-
-  @Column({ nullable: true })
-  slug!: string;
-
-  @Column({ type: 'text', nullable: true })
-  description!: string;
 
   @Column({ default: true })
   active!: boolean;
@@ -38,28 +24,6 @@ export class Category {
   })
   type!: CategoryType;
 
-  // SEO fields
-  @Column({ name: 'meta_title', nullable: true })
-  metaTitle!: string;
-
-  @Column({ name: 'meta_description', type: 'text', nullable: true })
-  metaDescription!: string;
-
-  @Column({ name: 'meta_keywords', nullable: true })
-  metaKeywords!: string;
-
-  @Column({ name: 'og_title', nullable: true })
-  ogTitle!: string;
-
-  @Column({ name: 'og_description', type: 'text', nullable: true })
-  ogDescription!: string;
-
-  @Column({ name: 'og_image', nullable: true })
-  ogImage!: string;
-
-  @Column({ name: 'canonical_url', nullable: true })
-  canonicalUrl!: string;
-
   // Parent-child relationship
   @Column({ name: 'parent_id', nullable: true })
   parentId!: number | null;
@@ -70,6 +34,9 @@ export class Category {
 
   @OneToMany(() => Category, category => category.parent)
   children!: Category[];
+
+  @OneToMany(() => CategoryTranslation, translation => translation.category)
+  translations!: CategoryTranslation[];
 
   @ManyToMany(() => Post, (post) => post.categories)
   @JoinTable({

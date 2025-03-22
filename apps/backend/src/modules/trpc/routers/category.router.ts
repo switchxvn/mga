@@ -2,35 +2,42 @@ import { TRPCError } from '@trpc/server';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { CategoryType } from '../../category/entities/category.entity';
+import { CategoryType } from '@ew/shared';
 
 export const categoryRouter = router({
-  all: publicProcedure.query(async ({ ctx }) => {
-    try {
-      ctx.logger.log('Fetching all categories');
-      // Sử dụng service từ context
-      const categories = await ctx.services.categoryFrontendService.findAll();
-      return categories;
-    } catch (error) {
-      ctx.logger.error(`Error fetching all categories: ${error instanceof Error ? error.message : String(error)}`);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to retrieve categories',
-        cause: error,
-      });
-    }
-  }),
+  all: publicProcedure
+    .input(z.object({
+      locale: z.string().default('vi')
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      try {
+        ctx.logger.log('Fetching all categories');
+        const locale = input?.locale || 'vi';
+        const categories = await ctx.services.categoryFrontendService.findAll(locale);
+        return categories;
+      } catch (error) {
+        ctx.logger.error(`Error fetching all categories: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve categories',
+          cause: error,
+        });
+      }
+    }),
 
   // Thêm phương thức mới để lấy danh mục theo loại
   byType: publicProcedure
-    .input(z.enum(['news', 'product', 'both']))
+    .input(z.object({
+      type: z.enum(['news', 'product', 'both']),
+      locale: z.string().default('vi')
+    }))
     .query(async ({ input, ctx }) => {
       try {
-        ctx.logger.log(`Fetching categories by type: ${input}`);
-        const categories = await ctx.services.categoryFrontendService.findByType(input as CategoryType);
+        ctx.logger.log(`Fetching categories by type: ${input.type}`);
+        const categories = await ctx.services.categoryFrontendService.findByType(input.type as CategoryType, input.locale);
         return categories;
       } catch (error) {
-        ctx.logger.error(`Error fetching categories by type ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        ctx.logger.error(`Error fetching categories by type ${input.type}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve categories by type',
@@ -40,26 +47,29 @@ export const categoryRouter = router({
     }),
 
   byId: publicProcedure
-    .input(z.number())
+    .input(z.object({
+      id: z.number(),
+      locale: z.string().default('vi')
+    }))
     .query(async ({ input, ctx }) => {
       try {
-        ctx.logger.log(`Fetching category by ID: ${input}`);
+        ctx.logger.log(`Fetching category by ID: ${input.id}`);
         
         try {
-          const category = await ctx.services.categoryFrontendService.findOne(input);
-          ctx.logger.debug(`Successfully retrieved category ID: ${input}`);
+          const category = await ctx.services.categoryFrontendService.findOne(input.id, input.locale);
+          ctx.logger.debug(`Successfully retrieved category ID: ${input.id}`);
           return category;
         } catch (err) {
-          ctx.logger.warn(`Category not found for ID: ${input}`);
+          ctx.logger.warn(`Category not found for ID: ${input.id}`);
           throw new TRPCError({
             code: 'NOT_FOUND',
-            message: `Category with ID ${input} not found`,
+            message: `Category with ID ${input.id} not found`,
           });
         }
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error fetching category by ID ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        ctx.logger.error(`Error fetching category by ID ${input.id}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve category',
@@ -69,26 +79,29 @@ export const categoryRouter = router({
     }),
 
   bySlug: publicProcedure
-    .input(z.string())
+    .input(z.object({
+      slug: z.string(),
+      locale: z.string().default('vi')
+    }))
     .query(async ({ input, ctx }) => {
       try {
-        ctx.logger.log(`Fetching category by slug: ${input}`);
+        ctx.logger.log(`Fetching category by slug: ${input.slug}`);
         
         try {
-          const category = await ctx.services.categoryFrontendService.findBySlug(input);
-          ctx.logger.debug(`Successfully retrieved category with slug: ${input}`);
+          const category = await ctx.services.categoryFrontendService.findBySlug(input.slug, input.locale);
+          ctx.logger.debug(`Successfully retrieved category with slug: ${input.slug}`);
           return category;
         } catch (err) {
-          ctx.logger.warn(`Category not found for slug: ${input}`);
+          ctx.logger.warn(`Category not found for slug: ${input.slug}`);
           throw new TRPCError({
             code: 'NOT_FOUND',
-            message: `Category with slug "${input}" not found`,
+            message: `Category with slug "${input.slug}" not found`,
           });
         }
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         
-        ctx.logger.error(`Error fetching category by slug ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        ctx.logger.error(`Error fetching category by slug ${input.slug}: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve category',
@@ -98,32 +111,39 @@ export const categoryRouter = router({
     }),
 
   // API mới: Lấy danh mục nổi bật (featured)
-  featured: publicProcedure.query(async ({ ctx }) => {
-    try {
-      ctx.logger.log('Fetching featured categories');
-      const featuredCategories = await ctx.services.categoryFrontendService.findFeatured();
-      return featuredCategories;
-    } catch (error) {
-      ctx.logger.error(`Error fetching featured categories: ${error instanceof Error ? error.message : String(error)}`);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to retrieve featured categories',
-        cause: error,
-      });
-    }
-  }),
+  featured: publicProcedure
+    .input(z.object({
+      locale: z.string().default('vi')
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      try {
+        ctx.logger.log('Fetching featured categories');
+        const locale = input?.locale || 'vi';
+        const featuredCategories = await ctx.services.categoryFrontendService.findFeatured(locale);
+        return featuredCategories;
+      } catch (error) {
+        ctx.logger.error(`Error fetching featured categories: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve featured categories',
+          cause: error,
+        });
+      }
+    }),
 
   // API mới: Lấy danh mục phổ biến (popular) - Giả định là danh mục có nhiều bài viết nhất
   popular: publicProcedure
     .input(z.object({
-      limit: z.number().min(1).max(20).default(5)
+      limit: z.number().min(1).max(20).default(5),
+      locale: z.string().default('vi')
     }).optional())
     .query(async ({ input, ctx }) => {
       try {
         const limit = input?.limit || 5;
+        const locale = input?.locale || 'vi';
         ctx.logger.log(`Fetching popular categories with limit: ${limit}`);
         
-        const allCategories = await ctx.services.categoryFrontendService.findAll();
+        const allCategories = await ctx.services.categoryFrontendService.findAll(locale);
         
         // Sắp xếp theo số lượng bài viết (từ cao đến thấp)
         const popularCategories = allCategories
@@ -144,14 +164,16 @@ export const categoryRouter = router({
   // API mới: Lấy danh mục hot (có thể là danh mục có bài viết mới nhất)
   hot: publicProcedure
     .input(z.object({
-      limit: z.number().min(1).max(20).default(5)
+      limit: z.number().min(1).max(20).default(5),
+      locale: z.string().default('vi')
     }).optional())
     .query(async ({ input, ctx }) => {
       try {
         const limit = input?.limit || 5;
+        const locale = input?.locale || 'vi';
         ctx.logger.log(`Fetching hot categories with limit: ${limit}`);
         
-        const allCategories = await ctx.services.categoryFrontendService.findAll();
+        const allCategories = await ctx.services.categoryFrontendService.findAll(locale);
         
         // Lọc các danh mục có bài viết
         const categoriesWithPosts = allCategories.filter(cat => cat.posts && cat.posts.length > 0);
@@ -174,7 +196,7 @@ export const categoryRouter = router({
         const hotCategories = categoriesWithLatestPost
           .sort((a, b) => b.latestPostDate.getTime() - a.latestPostDate.getTime())
           .slice(0, limit)
-          .map(({ latestPostDate, ...category }) => category); // Loại bỏ trường tạm thời
+          .map(({ latestPostDate, ...category }) => category);
         
         return hotCategories;
       } catch (error) {
@@ -188,20 +210,25 @@ export const categoryRouter = router({
     }),
 
   // API mới: Lấy cây danh mục (category tree)
-  tree: publicProcedure.query(async ({ ctx }) => {
-    try {
-      ctx.logger.log('Fetching category tree');
-      const categoryTree = await ctx.services.categoryFrontendService.getCategoryTree();
-      return categoryTree;
-    } catch (error) {
-      ctx.logger.error(`Error fetching category tree: ${error instanceof Error ? error.message : String(error)}`);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to retrieve category tree',
-        cause: error,
-      });
-    }
-  }),
+  tree: publicProcedure
+    .input(z.object({
+      locale: z.string().default('vi')
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      try {
+        ctx.logger.log('Fetching category tree');
+        const locale = input?.locale || 'vi';
+        const categoryTree = await ctx.services.categoryFrontendService.getCategoryTree(locale);
+        return categoryTree;
+      } catch (error) {
+        ctx.logger.error(`Error fetching category tree: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve category tree',
+          cause: error,
+        });
+      }
+    }),
 
   // API mới: Lấy sản phẩm theo danh mục
   getProductsByCategory: publicProcedure
@@ -223,9 +250,9 @@ export const categoryRouter = router({
         // Lấy thông tin danh mục
         let category;
         if (input.categoryId) {
-          category = await ctx.services.categoryFrontendService.findOne(input.categoryId);
+          category = await ctx.services.categoryFrontendService.findOne(input.categoryId, input.locale);
         } else if (input.categorySlug) {
-          category = await ctx.services.categoryFrontendService.findBySlug(input.categorySlug);
+          category = await ctx.services.categoryFrontendService.findBySlug(input.categorySlug, input.locale);
         } else {
           throw new TRPCError({
             code: 'BAD_REQUEST',
@@ -289,7 +316,7 @@ export const categoryRouter = router({
         ctx.logger.log(`Fetching category by slug: ${input.slug}`);
         
         try {
-          const category = await ctx.services.categoryFrontendService.findBySlug(input.slug);
+          const category = await ctx.services.categoryFrontendService.findBySlug(input.slug, input.locale);
           
           // Nếu có children, đảm bảo chỉ lấy các danh mục con đang active
           if (category.children) {
