@@ -7,13 +7,15 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 COPY .yarnrc ./.yarnrc
 COPY .yarn ./.yarn
-# Copy workspace configs
-COPY nx.json tsconfig.base.json ./
+
+# Copy all config files
+COPY nx.json tsconfig.base.json eslint.config.mjs ./
+COPY .prettierrc .prettierignore ./
 
 # Install dependencies first (better layer caching)
 RUN yarn install --frozen-lockfile
 
-# Copy source code
+# Copy source code and config files
 COPY apps ./apps
 COPY libs ./libs
 
