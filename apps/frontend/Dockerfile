@@ -9,16 +9,21 @@ COPY .yarnrc ./.yarnrc
 COPY .yarn ./.yarn
 # Copy workspace configs
 COPY nx.json tsconfig.base.json ./
-# Copy all workspace packages for proper dependency resolution
-COPY apps ./apps
 
-# Install all dependencies including workspace packages
+# Install dependencies first (better layer caching)
 RUN yarn install --frozen-lockfile
+
+# Copy source code
+COPY apps ./apps
+COPY libs ./libs
 
 # Set Node options to increase memory limit
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Build the app
+# Build shared library first
+RUN yarn nx build shared
+
+# Build the frontend app
 RUN cd apps/frontend && npx nuxt build
 
 # Production stage
