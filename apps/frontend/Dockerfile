@@ -11,19 +11,17 @@ COPY .yarn ./.yarn
 # Copy all config files
 COPY nx.json tsconfig.base.json eslint.config.mjs ./
 COPY .prettierrc .prettierignore ./
+COPY tsconfig.json ./
 
 # Install dependencies first (better layer caching)
 RUN yarn install --frozen-lockfile
 
-# Copy source code and config files
+# Copy source code
 COPY apps ./apps
 COPY libs ./libs
 
 # Set Node options to increase memory limit
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-
-# Build shared library first (skip nx cache and eslint)
-RUN yarn nx build shared --skip-nx-cache --skip-lint
 
 # Build the frontend app
 RUN cd apps/frontend && npx nuxt build
