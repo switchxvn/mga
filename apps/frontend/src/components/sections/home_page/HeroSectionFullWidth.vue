@@ -169,17 +169,6 @@ const sortedSlides = computed(() => {
 
 <template>
   <section class="hero-section-full relative" :style="{ height: config?.height || '600px' }">
-    <!-- Background gradient overlay -->
-    <div class="absolute inset-0" 
-         :style="{ 
-           background: config?.backgroundGradient ? 
-             `linear-gradient(${config.backgroundGradient.direction.replace('to-', 'to ')}, ${config.backgroundGradient.from}, ${config.backgroundGradient.to})` : 
-             'none',
-           opacity: config?.overlayOpacity || '0.5',
-           pointerEvents: 'none'
-         }">
-    </div>
-
     <div v-if="isLoading" class="flex items-center justify-center w-full h-full">
       <ULoader size="lg" />
     </div>
@@ -194,28 +183,23 @@ const sortedSlides = computed(() => {
               class="w-full h-full hero-swiper">
         <SwiperSlide v-for="slide in sortedSlides" :key="slide.order" class="relative">
           <div class="relative w-full h-full">
+            <!-- Image layer (z-index: 1) -->
             <img 
               :src="slide.image_url" 
               :alt="slide.title"
-              class="absolute inset-0 w-full h-full object-cover"
+              class="absolute inset-0 w-full h-full object-cover z-[1]"
             />
             
-            <!-- Gradient overlay -->
-            <div class="absolute inset-0" 
-                 :class="[config.backgroundGradient?.direction || 'bg-gradient-to-t']"
-                 :style="{
-                   background: config.backgroundGradient ? 
-                     `linear-gradient(${config.backgroundGradient.direction.replace('to-', 'to ')}, ${config.backgroundGradient.from}, ${config.backgroundGradient.to})` : 
-                     'linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0))',
-                   opacity: config.overlayOpacity || '0.5'
-                 }"></div>
+            <!-- Dark overlay layer (z-index: 2) -->
+            <div class="absolute inset-0 bg-black/50 z-[2]"></div>
             
-            <div class="absolute inset-0 flex items-center justify-center">
+            <!-- Content layer (z-index: 3) -->
+            <div class="absolute inset-0 flex items-center justify-center z-[3]">
               <div class="container mx-auto px-4 text-center text-white">
-                <h1 class="text-4xl md:text-6xl font-bold mb-4">
+                <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
                   {{ slide.title }}
                 </h1>
-                <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">
+                <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow">
                   {{ slide.description }}
                 </p>
                 <NuxtLink 

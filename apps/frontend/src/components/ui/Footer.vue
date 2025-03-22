@@ -113,27 +113,26 @@ onMounted(async () => {
           <!-- Middle Column: Addresses, Map and Facebook -->
           <div class="col-span-1">
             <!-- Addresses -->
-            <h3 class="font-bold mb-4">Trụ sở chính</h3>
             <div v-for="(address, index) in activeFooter.addresses" :key="index" class="mb-4">
               <p v-if="address.title" class="font-semibold">{{ address.title }}</p>
-              <p v-if="address.subtitle" class="text-sm text-gray-600 dark:text-gray-400">{{ address.subtitle }}</p>
+              <p v-if="address.subtitle" class="text-base font-semibold text-red-900 dark:text-red-800">{{ address.subtitle }}</p>
               <p class="mt-1">{{ address.location }}</p>
               
               <!-- Phone numbers -->
               <div v-if="address.phone && address.phone.length > 0" class="mt-2">
                 <div v-for="(phone, phoneIndex) in address.phone" :key="phoneIndex" class="flex items-center space-x-2">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ phone.label }}:</span>
+                  <span class="text-base font-semibold text-red-900 dark:text-red-800">{{ phone.label }}:</span>
                   <a :href="'tel:' + phone.number" class="hover:text-primary">{{ phone.number }}</a>
-                  <span v-if="phone.contact" class="text-sm text-gray-500">({{ phone.contact }})</span>
+                  <span v-if="phone.contact" class="text-base font-semibold text-red-900 dark:text-red-800">({{ phone.contact }})</span>
                 </div>
               </div>
               
               <!-- Email addresses -->
               <div v-if="address.email && address.email.length > 0" class="mt-2">
                 <div v-for="(email, emailIndex) in address.email" :key="emailIndex" class="flex items-center space-x-2">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">{{ email.label }}:</span>
+                  <span class="text-base font-semibold text-red-900 dark:text-red-800">{{ email.label }}:</span>
                   <a :href="'mailto:' + email.address" class="hover:text-primary">{{ email.address }}</a>
-                  <span v-if="email.contact" class="text-sm text-gray-500">({{ email.contact }})</span>
+                  <span v-if="email.contact" class="text-base font-semibold text-red-900 dark:text-red-800">({{ email.contact }})</span>
                 </div>
               </div>
             </div>
@@ -180,10 +179,10 @@ onMounted(async () => {
                 <h4 class="font-bold text-sm mb-2">{{ branch.title }}</h4>
                 <p v-if="branch.address" class="text-sm mb-2">{{ branch.address }}</p>
                 
-                <div v-for="(contact, contactIndex) in branch.contacts" :key="contactIndex" class="contact-info text-sm space-y-1">
+                <div v-for="(contact, contactIndex) in branch.contacts" :key="contactIndex" class="contact-info text-base space-y-1">
                   <div v-if="contact.name || contact.position" class="font-medium">
                     {{ contact.name }}
-                    <span v-if="contact.position" class="text-gray-600 dark:text-gray-400">({{ contact.position }})</span>
+                    <span v-if="contact.position" class="text-base font-semibold text-red-900 dark:text-red-800">({{ contact.position }})</span>
                   </div>
                   <div v-if="contact.phone" class="flex items-center space-x-2">
                     <Icon name="ph:phone" class="w-4 h-4" />

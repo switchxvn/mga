@@ -305,26 +305,28 @@ watch(locale, () => {
 
 <template>
   <div class="navbar-container">
-    <!-- Logo + Hotline Section -->
-    <div class="logo-section w-full border-b">
+    <!-- Logo + Hotline Section - Hidden on Mobile -->
+    <div class="logo-section w-full border-b hidden md:block">
       <div class="container mx-auto px-4">
         <div class="flex items-center justify-between py-4">
           <!-- Logo -->
           <div class="flex-shrink-0">
-            <div 
-              class="flex items-center justify-center" 
-              :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
-            >
-              <img
-                v-if="currentLogoUrl"
-                :src="currentLogoUrl"
-                :alt="logo?.altText || 'Logo'"
-                :width="logo?.width"
-                :height="logo?.height"
-                class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
-              />
-              <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
-            </div>
+            <NuxtLink to="/" class="block">
+              <div 
+                class="flex items-center justify-center" 
+                :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
+              >
+                <img
+                  v-if="currentLogoUrl"
+                  :src="currentLogoUrl"
+                  :alt="logo?.altText || 'Logo'"
+                  :width="logo?.width"
+                  :height="logo?.height"
+                  class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+                />
+                <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
+              </div>
+            </NuxtLink>
           </div>
 
           <!-- Slogan -->
@@ -393,6 +395,26 @@ watch(locale, () => {
       >
         <div class="container mx-auto px-4">
           <div class="flex items-center justify-between py-2">
+            <!-- Mobile Logo -->
+            <div class="flex-shrink-0 md:hidden">
+              <NuxtLink to="/" class="block">
+                <div 
+                  class="flex items-center justify-center" 
+                  :style="logo ? `width: ${logo.width * 0.6}px; height: ${logo.height * 0.6}px` : ''"
+                >
+                  <img
+                    v-if="currentLogoUrl"
+                    :src="currentLogoUrl"
+                    :alt="logo?.altText || 'Logo'"
+                    :width="logo?.width"
+                    :height="logo?.height"
+                    class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+                  />
+                  <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
+                </div>
+              </NuxtLink>
+            </div>
+
             <!-- Desktop Navigation -->
             <nav class="hidden md:flex items-center space-x-6 flex-grow justify-center">
               <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400">Đang tải menu...</div>
@@ -500,6 +522,33 @@ watch(locale, () => {
         </div>
         <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
         <template v-else>
+          <!-- Hotlines for Mobile -->
+          <div class="space-y-2 mb-4">
+            <a
+              v-if="props.settings?.hotlines?.sales"
+              :href="`tel:${props.settings.hotlines.sales.number}`"
+              class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            >
+              <Icon name="Phone" class="h-5 w-5" />
+              <div class="flex flex-col">
+                <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.sales.text }}</span>
+                <span class="font-bold">{{ props.settings.hotlines.sales.number }}</span>
+              </div>
+            </a>
+            
+            <a
+              v-if="props.settings?.hotlines?.support"
+              :href="`tel:${props.settings.hotlines.support.number}`"
+              class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            >
+              <Icon name="Phone" class="h-5 w-5" />
+              <div class="flex flex-col">
+                <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.support.text }}</span>
+                <span class="font-bold">{{ props.settings.hotlines.support.number }}</span>
+              </div>
+            </a>
+          </div>
+
           <NuxtLink
             v-for="item in processedMenuItems"
             :key="item.id"
@@ -541,15 +590,6 @@ watch(locale, () => {
 .navbar-container {
   position: relative;
   width: 100%;
-}
-
-.logo-section {
-  position: relative;
-  width: 100%;
-  z-index: 40;
-  border-color: var(--navbar-border) !important;
-  color: var(--navbar-text) !important;
-  background-color: #FEB914;
 }
 
 .nav-wrapper {
@@ -605,35 +645,45 @@ watch(locale, () => {
   @apply bg-neutral-100 dark:bg-neutral-800 text-primary-600 dark:text-primary-400;
 }
 
-/* Dark mode styles */
-:root.dark .hotline-button {
-  background-color: var(--navbar-header-bg) !important;
-  border-color: var(--navbar-border) !important;
-  color: var(--navbar-text) !important;
-}
-
-:root.dark .hotline-button:hover {
-  @apply border-primary-400;
-}
-
-:root.dark .hotline-button .text-neutral-600 {
-  color: var(--navbar-text) !important;
-}
-
-.hotline-button {
+/* Simplified hotline button */
+.hotline-button-simple {
   transition: all 0.3s ease;
-  min-width: 220px;
   background-color: var(--navbar-header-bg);
   border-color: var(--navbar-border);
   color: var(--navbar-text);
 }
 
-.hotline-button:hover .animate-ring {
-  animation: ring 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.hotline-button-simple:hover {
+  @apply shadow-sm;
 }
 
-.hotline-button:hover .animate-wiggle {
-  animation: wiggle 0.5s ease-in-out infinite;
+/* Dark mode styles */
+:root.dark .hotline-button-simple {
+  background-color: var(--navbar-header-bg) !important;
+  border-color: var(--navbar-border) !important;
+  color: var(--navbar-text) !important;
+}
+
+:root.dark .hotline-button-simple:hover {
+  @apply border-primary-400;
+}
+
+/* Mobile hotline styles */
+.mobile-hotline {
+  @apply rounded-md transition-colors duration-300;
+}
+
+.mobile-hotline:hover {
+  @apply bg-neutral-100 dark:bg-neutral-800;
+}
+
+.logo-section {
+  position: relative;
+  width: 100%;
+  z-index: 40;
+  border-color: var(--navbar-border) !important;
+  color: var(--navbar-text) !important;
+  background-color: #FEB914;
 }
 
 /* Keep existing animations */
@@ -663,5 +713,36 @@ watch(locale, () => {
 
 .animate-wiggle {
   animation: wiggle 1s ease-in-out infinite;
+}
+
+.hotline-button {
+  transition: all 0.3s ease;
+  min-width: 220px;
+  background-color: var(--navbar-header-bg);
+  border-color: var(--navbar-border);
+  color: var(--navbar-text);
+}
+
+.hotline-button:hover .animate-ring {
+  animation: ring 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.hotline-button:hover .animate-wiggle {
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+/* Dark mode styles */
+:root.dark .hotline-button {
+  background-color: var(--navbar-header-bg) !important;
+  border-color: var(--navbar-border) !important;
+  color: var(--navbar-text) !important;
+}
+
+:root.dark .hotline-button:hover {
+  @apply border-primary-400;
+}
+
+:root.dark .hotline-button .text-neutral-600 {
+  color: var(--navbar-text) !important;
 }
 </style> 
