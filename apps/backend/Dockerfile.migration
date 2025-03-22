@@ -1,0 +1,16 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package.json yarn.lock ./
+COPY .yarnrc ./.yarnrc
+COPY .yarn ./.yarn
+RUN yarn install --frozen-lockfile
+
+# Copy TypeScript configs and source code
+COPY tsconfig.json tsconfig.base.json ./
+COPY libs ./libs
+COPY apps ./apps
+
+CMD ["yarn", "typeorm", "migration:run", "-d", "libs/database/src/config/typeorm.config.ts"] 
