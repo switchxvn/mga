@@ -109,6 +109,25 @@ const props = withDefaults(defineProps<NavbarProps>(), {
 // Route
 const route = useRoute();
 
+// Watch route changes to reset sticky state
+watch(
+  () => route.path,
+  () => {
+    isScrolled.value = false;
+    lastScrollPosition.value = 0;
+    window.scrollTo(0, 0);
+    
+    // Reset nav height
+    nextTick(() => {
+      const nav = document.querySelector('.navigation-section') as HTMLElement;
+      if (nav) {
+        const navHeight = nav.offsetHeight;
+        document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
+      }
+    });
+  }
+);
+
 // Feature flags
 const { isFeatureEnabled } = useFeatureFlags();
 const isCartEnabled = ref<boolean | null>(null);
@@ -127,6 +146,7 @@ const isMobileMenuOpen = ref(false);
 const isScrolled = ref(false);
 const lastScrollPosition = ref(0);
 const navWrapperRef = ref<HTMLElement | null>(null);
+const logoSectionRef = ref<HTMLElement | null>(null);
 
 // Mega menu state
 const activeMegaMenu = ref<number | null>(null);
@@ -264,29 +284,30 @@ const mobileMenuTop = computed(() => {
   return `${navRect.bottom}px`;
 });
 
-// Update handleScroll to also update mobile menu position
+// Handle scroll event
 const handleScroll = () => {
   if (!navWrapperRef.value) return;
   
   const currentScrollPosition = Math.round(window.scrollY);
-  const navRect = navWrapperRef.value.getBoundingClientRect();
   const logoSection = document.querySelector('.logo-section');
   
   if (logoSection) {
     const logoHeight = Math.round(logoSection.getBoundingClientRect().height);
-    const shouldBeSticky = currentScrollPosition > logoHeight && navRect.top <= 0;
     
-    // Only update if the state actually changes
-    if (shouldBeSticky !== isScrolled.value) {
-      isScrolled.value = shouldBeSticky;
-      
-      // Update nav height CSS variable when sticky state changes
+    // Update sticky state based on scroll position
+    if (currentScrollPosition <= 0) {
+      isScrolled.value = false;
+    } else {
+      isScrolled.value = currentScrollPosition > logoHeight;
+    }
+    
+    // Update nav height when becoming sticky
+    if (isScrolled.value) {
       nextTick(() => {
         const nav = document.querySelector('.navigation-section') as HTMLElement;
         if (nav) {
           const navHeight = Math.round(nav.offsetHeight);
           document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
-          // Update mobile menu top position
           document.documentElement.style.setProperty('--mobile-menu-top', mobileMenuTop.value);
         }
       });
@@ -295,6 +316,26 @@ const handleScroll = () => {
   
   lastScrollPosition.value = currentScrollPosition;
 };
+
+// Watch route changes
+watch(
+  () => route.path,
+  () => {
+    // Reset scroll position and sticky state
+    window.scrollTo(0, 0);
+    isScrolled.value = false;
+    lastScrollPosition.value = 0;
+    
+    // Reset nav height
+    nextTick(() => {
+      const nav = document.querySelector('.navigation-section') as HTMLElement;
+      if (nav) {
+        const navHeight = nav.offsetHeight;
+        document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
+      }
+    });
+  }
+);
 
 // Watch for mobile menu state changes
 watch(isMobileMenuOpen, (newVal) => {
@@ -357,7 +398,7 @@ watch([logo, isLoadingLogo], () => {
   });
 });
 
-// Lifecycle hooks
+// Update onMounted
 onMounted(() => {
   console.log('CombinedNavbar mounted with settings:', props.settings);
   window.addEventListener('scroll', throttledHandleScroll, { passive: true });
@@ -376,16 +417,17 @@ onMounted(() => {
   });
 });
 
+// Watch for locale changes
+watch(locale, () => {
+  fetchMenuItems();
+});
+
+// Update onUnmounted
 onUnmounted(() => {
   document.body.style.overflow = '';
   window.removeEventListener('scroll', throttledHandleScroll);
   document.documentElement.style.removeProperty('--nav-height');
   document.documentElement.style.removeProperty('--mobile-menu-top');
-});
-
-// Watch for locale changes
-watch(locale, () => {
-  fetchMenuItems();
 });
 </script>
 
