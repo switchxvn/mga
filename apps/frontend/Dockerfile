@@ -22,8 +22,8 @@ COPY libs ./libs
 # Set Node options to increase memory limit
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Build shared library first
-RUN yarn nx build shared
+# Build shared library first (skip nx cache and eslint)
+RUN yarn nx build shared --skip-nx-cache --skip-lint
 
 # Build the frontend app
 RUN cd apps/frontend && npx nuxt build
