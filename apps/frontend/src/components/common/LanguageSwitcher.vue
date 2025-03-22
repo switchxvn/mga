@@ -186,7 +186,7 @@ onBeforeUnmount(() => {
     <!-- Dropdown menu -->
     <div 
       v-if="isOpen" 
-      class="absolute z-50 mt-1 w-40 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 focus:outline-none !transition-none"
+      class="absolute z-[120] mt-1 w-40 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 focus:outline-none !transition-none"
     >
       <div v-if="isLoadingLanguages" class="py-4 px-4 text-center text-sm text-gray-900 dark:text-gray-100 !transition-none">
         <span>Loading...</span>

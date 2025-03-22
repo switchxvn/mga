@@ -257,7 +257,14 @@ const keepMegaMenu = () => {
   }
 };
 
-// Handle scroll
+// Add new computed property for mobile menu position
+const mobileMenuTop = computed(() => {
+  if (!navWrapperRef.value) return '0px';
+  const navRect = navWrapperRef.value.getBoundingClientRect();
+  return `${navRect.bottom}px`;
+});
+
+// Update handleScroll to also update mobile menu position
 const handleScroll = () => {
   if (!navWrapperRef.value) return;
   
@@ -267,11 +274,55 @@ const handleScroll = () => {
   
   if (logoSection) {
     const logoHeight = logoSection.getBoundingClientRect().height;
-    isScrolled.value = currentScrollPosition > logoHeight && navRect.top <= 0;
+    const shouldBeSticky = currentScrollPosition > logoHeight && navRect.top <= 0;
+    
+    // Only update if the state actually changes
+    if (shouldBeSticky !== isScrolled.value) {
+      isScrolled.value = shouldBeSticky;
+      
+      // Update nav height CSS variable when sticky state changes
+      nextTick(() => {
+        const nav = document.querySelector('.navigation-section') as HTMLElement;
+        if (nav) {
+          const navHeight = nav.offsetHeight;
+          document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
+          // Update mobile menu top position
+          document.documentElement.style.setProperty('--mobile-menu-top', mobileMenuTop.value);
+        }
+      });
+    }
   }
   
   lastScrollPosition.value = currentScrollPosition;
 };
+
+// Watch for mobile menu state changes
+watch(isMobileMenuOpen, (newVal) => {
+  if (newVal) {
+    // When menu opens, update its position
+    nextTick(() => {
+      document.documentElement.style.setProperty('--mobile-menu-top', mobileMenuTop.value);
+    });
+    // Prevent body scroll when menu is open
+    document.body.style.overflow = 'hidden';
+  } else {
+    // Re-enable body scroll when menu closes
+    document.body.style.overflow = '';
+  }
+});
+
+// Throttle scroll handler for better performance
+const throttledHandleScroll = (() => {
+  let frame: number | undefined;
+  return () => {
+    if (frame) {
+      cancelAnimationFrame(frame);
+    }
+    frame = requestAnimationFrame(() => {
+      handleScroll();
+    });
+  };
+})();
 
 // Check cart feature flag
 const checkCartFeatureFlag = async () => {
@@ -300,18 +351,27 @@ watch([logo, isLoadingLogo], () => {
 // Lifecycle hooks
 onMounted(() => {
   console.log('CombinedNavbar mounted with settings:', props.settings);
-  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('scroll', throttledHandleScroll, { passive: true });
   fetchMenuItems();
   checkCartFeatureFlag();
   updateNavbarVariables();
   
-  // Initial scroll check
-  handleScroll();
+  // Initial scroll check and height calculation
+  nextTick(() => {
+    handleScroll();
+    const nav = document.querySelector('.navigation-section') as HTMLElement;
+    if (nav) {
+      const navHeight = nav.offsetHeight;
+      document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
+    }
+  });
 });
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
+  document.body.style.overflow = '';
+  window.removeEventListener('scroll', throttledHandleScroll);
   document.documentElement.style.removeProperty('--nav-height');
+  document.documentElement.style.removeProperty('--mobile-menu-top');
 });
 
 // Watch for locale changes
@@ -426,7 +486,7 @@ watch(locale, () => {
     <!-- Navigation Section -->
     <div 
       ref="navWrapperRef"
-      class="nav-wrapper w-full"
+      class="nav-wrapper w-full z-50"
       :class="{ 'nav-sticky': isScrolled }"
     >
       <nav
@@ -440,17 +500,12 @@ watch(locale, () => {
             <!-- Mobile Logo -->
             <div class="flex-shrink-0 md:hidden">
               <NuxtLink to="/" class="block">
-                <div 
-                  class="flex items-center justify-center" 
-                  :style="logo ? `width: ${logo.width * 0.6}px; height: ${logo.height * 0.6}px` : ''"
-                >
+                <div class="mobile-logo">
                   <img
                     v-if="currentLogoUrl"
                     :src="currentLogoUrl"
                     :alt="logo?.altText || 'Logo'"
-                    :width="logo?.width"
-                    :height="logo?.height"
-                    class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+                    class="transition-transform duration-300 hover:scale-110"
                   />
                   <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
                 </div>
@@ -533,23 +588,25 @@ watch(locale, () => {
             </nav>
 
             <!-- Right side actions -->
-            <div class="hidden md:flex items-center space-x-4">
-              <!-- Language Switcher -->
-              <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
+            <div class="flex items-center space-x-4">
+              <div class="hidden md:block">
+                <!-- Language Switcher -->
+                <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
+              </div>
 
-              <!-- Theme Toggle -->
-              <ThemeToggle v-if="props.settings?.showThemeToggle" />
+              <div class="hidden md:block">
+                <!-- Theme Toggle -->
+                <ThemeToggle v-if="props.settings?.showThemeToggle" />
+              </div>
 
               <!-- Cart Icon -->
-              <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
+              <CartIcon v-if="props.settings?.showCart && isCartEnabled" class="hidden md:block" />
             </div>
 
             <!-- Mobile Menu Button -->
             <div class="md:hidden flex items-center space-x-2">
               <!-- Cart Icon for Mobile -->
               <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
-
-              <ThemeToggle v-if="props.settings?.showThemeToggle" />
 
               <button
                 class="flex items-center text-neutral-700 dark:text-neutral-300"
@@ -565,62 +622,74 @@ watch(locale, () => {
     </div>
 
     <!-- Mobile Menu -->
-    <div
-      class="md:hidden bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800"
-      :class="{ hidden: !isMobileMenuOpen }"
-    >
-      <div class="px-4 py-3 space-y-1">
-        <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400 px-3 py-2">
-          Đang tải menu...
-        </div>
-        <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
-        <template v-else>
-          <!-- Hotlines for Mobile -->
-          <div class="space-y-2 mb-4">
-            <a
-              v-if="props.settings?.hotlines?.sales"
-              :href="`tel:${props.settings.hotlines.sales.number}`"
-              class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            >
-              <Icon name="Phone" class="h-5 w-5" />
-              <div class="flex flex-col">
-                <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.sales.text }}</span>
-                <span class="font-bold">{{ props.settings.hotlines.sales.number }}</span>
+    <Transition name="slide-fade">
+      <div
+        v-if="isMobileMenuOpen"
+        class="mobile-menu-overlay"
+        @click="isMobileMenuOpen = false"
+      >
+        <div 
+          class="mobile-menu-content bg-white dark:bg-neutral-900"
+          @click.stop
+        >
+          <div class="px-4 py-3 space-y-1">
+            <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400 px-3 py-2">
+              Đang tải menu...
+            </div>
+            <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
+            <template v-else>
+              <!-- Language Switcher and Theme Toggle in Mobile Menu -->
+              <div class="flex items-center justify-between gap-4 px-3 py-2 mb-4">
+                <div v-if="props.settings?.showLanguageSwitcher">
+                  <LanguageSwitcher />
+                </div>
+                <div v-if="props.settings?.showThemeToggle">
+                  <ThemeToggle />
+                </div>
               </div>
-            </a>
-            
-            <a
-              v-if="props.settings?.hotlines?.support"
-              :href="`tel:${props.settings.hotlines.support.number}`"
-              class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            >
-              <Icon name="Phone" class="h-5 w-5" />
-              <div class="flex flex-col">
-                <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.support.text }}</span>
-                <span class="font-bold">{{ props.settings.hotlines.support.number }}</span>
-              </div>
-            </a>
-          </div>
 
-          <NuxtLink
-            v-for="item in processedMenuItems"
-            :key="item.id"
-            :to="item.href"
-            class="mobile-main-menu-item block px-3 py-2 text-lg font-extrabold uppercase rounded-md"
-            :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
-            @click="isMobileMenuOpen = false"
-          >
-            {{ item.label }}
-          </NuxtLink>
-        </template>
-      </div>
-      <div class="px-4 py-3 border-t border-neutral-200 dark:border-neutral-800">
-        <!-- Language Switcher in Mobile Menu -->
-        <div v-if="props.settings?.showLanguageSwitcher" class="px-3 py-2 mb-2">
-          <LanguageSwitcher />
+              <!-- Hotlines for Mobile -->
+              <div class="space-y-2 mb-4">
+                <a
+                  v-if="props.settings?.hotlines?.sales"
+                  :href="`tel:${props.settings.hotlines.sales.number}`"
+                  class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                >
+                  <Icon name="Phone" class="h-5 w-5" />
+                  <div class="flex flex-col">
+                    <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.sales.text }}</span>
+                    <span class="font-bold">{{ props.settings.hotlines.sales.number }}</span>
+                  </div>
+                </a>
+                
+                <a
+                  v-if="props.settings?.hotlines?.support"
+                  :href="`tel:${props.settings.hotlines.support.number}`"
+                  class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                >
+                  <Icon name="Phone" class="h-5 w-5" />
+                  <div class="flex flex-col">
+                    <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.support.text }}</span>
+                    <span class="font-bold">{{ props.settings.hotlines.support.number }}</span>
+                  </div>
+                </a>
+              </div>
+
+              <NuxtLink
+                v-for="item in processedMenuItems"
+                :key="item.id"
+                :to="item.href"
+                class="mobile-main-menu-item block px-3 py-2 text-lg font-extrabold uppercase rounded-md"
+                :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
+                @click="isMobileMenuOpen = false"
+              >
+                {{ item.label }}
+              </NuxtLink>
+            </template>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -631,6 +700,7 @@ watch(locale, () => {
   --navbar-menu-bg: #ffffff;
   --navbar-text: #000000;
   --navbar-border: #e5e7eb;
+  --nav-height: 0px; /* Default height */
 }
 
 :root.dark {
@@ -649,6 +719,7 @@ watch(locale, () => {
   position: relative;
   width: 100%;
   transition: transform 0.3s ease;
+  will-change: transform;
 }
 
 .nav-wrapper.nav-sticky {
@@ -656,13 +727,35 @@ watch(locale, () => {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 50;
+  z-index: 100;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  background-color: var(--navbar-menu-bg);
 }
 
 .navigation-section {
   background-color: var(--navbar-menu-bg) !important;
   border-color: var(--navbar-border) !important;
   color: var(--navbar-text) !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  height: 64px; /* Fixed height for navigation */
+  display: flex;
+  align-items: center;
+}
+
+/* Mobile logo styles */
+.navigation-section .mobile-logo {
+  height: 40px; /* Fixed height for mobile logo */
+  width: auto;
+  display: flex;
+  align-items: center;
+}
+
+.navigation-section .mobile-logo img {
+  max-height: 100%;
+  width: auto;
+  object-fit: contain;
 }
 
 .nav-wrapper.nav-sticky .navigation-section {
@@ -675,11 +768,8 @@ watch(locale, () => {
 }
 
 /* Add a placeholder when nav is sticky to prevent content jump */
-.nav-wrapper.nav-sticky::before {
-  content: '';
-  display: block;
-  height: var(--nav-height, 0px);
-  width: 100%;
+.nav-wrapper.nav-sticky + * {
+  margin-top: var(--nav-height);
 }
 
 .navigation-section .main-menu-item {
@@ -744,7 +834,7 @@ watch(locale, () => {
 .logo-section {
   position: relative;
   width: 100%;
-  z-index: 40;
+  z-index: 95;
   border-color: var(--navbar-border) !important;
   color: var(--navbar-text) !important;
   background-color: #FEB914;
@@ -807,5 +897,48 @@ watch(locale, () => {
 
 :root.dark .hotline-button .text-neutral-600 {
   color: var(--navbar-text) !important;
+}
+
+/* Mobile menu styles */
+.mobile-menu-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 z-[90] md:hidden;
+}
+
+.mobile-menu-content {
+  position: fixed;
+  top: 64px; /* Fixed top position based on navigation height */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--navbar-menu-bg);
+  border-top: 1px solid var(--navbar-border);
+  overflow-y: auto;
+  z-index: 100;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Transition for mobile menu */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-from .mobile-menu-content {
+  transform: translateY(-10px);
+}
+
+.slide-fade-leave-to .mobile-menu-content {
+  transform: translateY(-10px);
+}
+
+/* Mega menu styles */
+.mega-menu {
+  z-index: 110 !important;
 }
 </style> 

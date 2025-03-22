@@ -55,7 +55,7 @@ const getCurrentLabel = () => {
     <!-- Dropdown Menu -->
     <div
       v-if="isOpen"
-      class="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 z-50"
+      class="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 z-[120]"
     >
       <div class="py-1">
         <button
