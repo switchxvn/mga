@@ -25,6 +25,7 @@ type ColorShades = {
 type ColorMode = {
   primary: ColorShades;
   secondary: ColorShades;
+  tertiary: ColorShades;
 };
 
 @Entity('themes')

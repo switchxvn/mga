@@ -12,6 +12,7 @@ import { useFeatureFlags } from "~/composables/useFeatureFlags";
 import { useLocalization } from "~/composables/useLocalization";
 import { useLogo } from "~/composables/useLogo";
 import { useDarkMode } from "~/composables/useDarkMode";
+import { useCssColorValue } from "~/composables/useColorUtils";
 
 // Props cho component
 interface NavbarProps {
@@ -28,10 +29,14 @@ interface NavbarProps {
       sales: {
         text: string;
         number: string;
+        textColor?: string;
+        backgroundColor?: string;
       };
       support: {
         text: string;
         number: string;
+        textColor?: string;
+        backgroundColor?: string;
       };
     };
     
@@ -53,6 +58,13 @@ interface NavbarProps {
       menuBackgroundColor?: string;
       textColor?: string;
       borderColor?: string;
+    };
+
+    // Navigation settings
+    navigation?: {
+      textColor?: string;
+      fontWeight?: string;
+      activeTextColor?: string;
     };
   };
 }
@@ -123,6 +135,9 @@ const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
 
 // Dark mode
 const { isDark } = useDarkMode();
+
+// Color utils
+const { processColorValue } = useCssColorValue();
 
 // Process menu items with translations
 const processedMenuItems = computed(() => {
@@ -346,16 +361,27 @@ watch(locale, () => {
               v-if="props.settings?.hotlines?.sales"
               :href="`tel:${props.settings.hotlines.sales.number}`"
               class="hotline-button group flex items-center gap-3 px-4 py-2.5 rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
+              :style="{
+                backgroundColor: processColorValue(props.settings.hotlines.sales.backgroundColor || '#0EA5E9'),
+                color: props.settings.hotlines.sales.textColor || '#ffffff'
+              }"
             >
               <div class="relative">
-                <div class="animate-ring absolute -inset-1 rounded-full border-2 border-primary-500 opacity-75"></div>
-                <div class="relative flex items-center justify-center rounded-full bg-primary-50 p-2">
-                  <Icon name="Phone" class="h-5 w-5 text-primary-600 animate-wiggle" />
+                <div 
+                  class="animate-ring absolute -inset-1 rounded-full border-2 opacity-75"
+                  :style="{ borderColor: processColorValue('var(--tertiary-900)') }"
+                ></div>
+                <div class="relative flex items-center justify-center rounded-full bg-white/20 p-2">
+                  <Icon name="Phone" class="h-5 w-5" :style="{ color: props.settings.hotlines.sales.textColor || '#ffffff' }" />
                 </div>
               </div>
               <div class="flex flex-col">
-                <span class="text-sm text-neutral-600 group-hover:text-primary-600 transition-colors">{{ props.settings.hotlines.sales.text }}</span>
-                <span class="text-lg font-bold text-primary-600">{{ props.settings.hotlines.sales.number }}</span>
+                <span class="text-sm" :style="{ color: props.settings.hotlines.sales.textColor || '#ffffff' }">
+                  {{ props.settings.hotlines.sales.text }}
+                </span>
+                <span class="text-lg font-bold" :style="{ color: props.settings.hotlines.sales.textColor || '#ffffff' }">
+                  {{ props.settings.hotlines.sales.number }}
+                </span>
               </div>
             </a>
 
@@ -364,16 +390,27 @@ watch(locale, () => {
               v-if="props.settings?.hotlines?.support"
               :href="`tel:${props.settings.hotlines.support.number}`"
               class="hotline-button group flex items-center gap-3 px-4 py-2.5 rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
+              :style="{
+                backgroundColor: processColorValue(props.settings.hotlines.support.backgroundColor || '#0EA5E9'),
+                color: props.settings.hotlines.support.textColor || '#ffffff'
+              }"
             >
               <div class="relative">
-                <div class="animate-ring absolute -inset-1 rounded-full border-2 border-primary-500 opacity-75"></div>
-                <div class="relative flex items-center justify-center rounded-full bg-primary-50 p-2">
-                  <Icon name="Phone" class="h-5 w-5 text-primary-600 animate-wiggle" />
+                <div 
+                  class="animate-ring absolute -inset-1 rounded-full border-2 opacity-75"
+                  :style="{ borderColor: processColorValue('var(--tertiary-900)') }"
+                ></div>
+                <div class="relative flex items-center justify-center rounded-full bg-white/20 p-2">
+                  <Icon name="Phone" class="h-5 w-5" :style="{ color: props.settings.hotlines.support.textColor || '#ffffff' }" />
                 </div>
               </div>
               <div class="flex flex-col">
-                <span class="text-sm text-neutral-600 group-hover:text-primary-600 transition-colors">{{ props.settings.hotlines.support.text }}</span>
-                <span class="text-lg font-bold text-primary-600">{{ props.settings.hotlines.support.number }}</span>
+                <span class="text-sm" :style="{ color: props.settings.hotlines.support.textColor || '#ffffff' }">
+                  {{ props.settings.hotlines.support.text }}
+                </span>
+                <span class="text-lg font-bold" :style="{ color: props.settings.hotlines.support.textColor || '#ffffff' }">
+                  {{ props.settings.hotlines.support.number }}
+                </span>
               </div>
             </a>
           </div>
@@ -432,7 +469,18 @@ watch(locale, () => {
                     class="main-menu-item text-base uppercase transition-colors py-5 flex items-center space-x-1"
                     :class="{ 'menu-active': isMenuActive(item.href) }"
                   >
-                    <span class="text-base font-extrabold">{{ item.label }}</span>
+                    <span 
+                      class="text-base transition-colors duration-300" 
+                      :style="{ 
+                        color: isMenuActive(item.href) 
+                          ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
+                          : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)'),
+                        '--hover-color': processColorValue('var(--primary-400)'),
+                        fontWeight: props.settings?.navigation?.fontWeight || 'extrabold'
+                      }"
+                    >
+                      {{ item.label }}
+                    </span>
                     <Icon
                       v-if="item.hasMegaMenu"
                       name="ChevronDown"
@@ -629,20 +677,31 @@ watch(locale, () => {
   width: 100%;
 }
 
-.main-menu-item {
-  color: var(--navbar-text);
+.navigation-section .main-menu-item {
+  transition: all 0.3s ease;
 }
 
-.menu-active {
-  @apply text-primary-600 dark:text-primary-400;
+.navigation-section .main-menu-item:hover > span {
+  color: var(--hover-color) !important;
 }
 
-.mobile-main-menu-item {
-  color: var(--navbar-text);
+/* Remove static color styles since we're handling colors dynamically */
+.navigation-section .menu-active > span {
+  /* color is now handled by :style binding */
 }
 
-.mobile-menu-active {
-  @apply bg-neutral-100 dark:bg-neutral-800 text-primary-600 dark:text-primary-400;
+/* Dark mode override is also handled by processColorValue */
+:root.dark .navigation-section .menu-active > span {
+  /* color is now handled by :style binding */
+}
+
+/* Mobile menu styles */
+.mobile-main-menu-item.menu-active {
+  color: var(--primary-500) !important;
+}
+
+:root.dark .mobile-main-menu-item.menu-active {
+  color: var(--primary-400) !important;
 }
 
 /* Simplified hotline button */
@@ -693,7 +752,7 @@ watch(locale, () => {
     opacity: 0.5;
   }
   100% {
-    transform: scale(1.3);
+    transform: scale(1.8);
     opacity: 0;
   }
 }
@@ -718,9 +777,10 @@ watch(locale, () => {
 .hotline-button {
   transition: all 0.3s ease;
   min-width: 220px;
-  background-color: var(--navbar-header-bg);
-  border-color: var(--navbar-border);
-  color: var(--navbar-text);
+}
+
+.hotline-button:hover {
+  opacity: 0.9;
 }
 
 .hotline-button:hover .animate-ring {
@@ -733,13 +793,11 @@ watch(locale, () => {
 
 /* Dark mode styles */
 :root.dark .hotline-button {
-  background-color: var(--navbar-header-bg) !important;
-  border-color: var(--navbar-border) !important;
-  color: var(--navbar-text) !important;
+  opacity: 0.95;
 }
 
 :root.dark .hotline-button:hover {
-  @apply border-primary-400;
+  opacity: 1;
 }
 
 :root.dark .hotline-button .text-neutral-600 {

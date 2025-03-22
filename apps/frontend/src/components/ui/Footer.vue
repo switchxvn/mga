@@ -85,7 +85,7 @@ onMounted(async () => {
 <template>
   <!-- Footer từ API -->
   <div>
-    <footer v-if="activeFooter" class="footer" :style="footerStyle">
+    <footer v-if="activeFooter" class="footer text-md" :style="footerStyle">
       <div class="container mx-auto px-4 py-8">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           
@@ -93,7 +93,7 @@ onMounted(async () => {
           <div class="col-span-1">
             <img :src="activeFooter.logoUrl" :alt="activeFooter.logoAlt" class="h-26 mb-4" />
             <div class="company-info mb-4">
-              <h3 class="font-bold mb-2">{{ activeFooter.companyInfo.name }}</h3>
+              <h3 class="font-bold mb-2 text-lg uppercase">{{ activeFooter.companyInfo.name }}</h3>
               <p>{{ activeFooter.companyInfo.registration }}</p>
               <p v-if="activeFooter.companyInfo.tax_number">MST: {{ activeFooter.companyInfo.tax_number }}</p>
               <p v-if="activeFooter.companyInfo.business_license">{{ activeFooter.companyInfo.business_license }}</p>
@@ -114,25 +114,25 @@ onMounted(async () => {
           <div class="col-span-1">
             <!-- Addresses -->
             <div v-for="(address, index) in activeFooter.addresses" :key="index" class="mb-4">
-              <p v-if="address.title" class="font-semibold">{{ address.title }}</p>
-              <p v-if="address.subtitle" class="text-base font-semibold text-red-900 dark:text-red-800">{{ address.subtitle }}</p>
+              <p v-if="address.title" class="font-semibold text-lg uppercase">{{ address.title }}</p>
+              <p v-if="address.subtitle" class="text-base font-semibold" style="color: #FF0000">{{ address.subtitle }}</p>
               <p class="mt-1">{{ address.location }}</p>
               
               <!-- Phone numbers -->
               <div v-if="address.phone && address.phone.length > 0" class="mt-2">
                 <div v-for="(phone, phoneIndex) in address.phone" :key="phoneIndex" class="flex items-center space-x-2">
-                  <span class="text-base font-semibold text-red-900 dark:text-red-800">{{ phone.label }}:</span>
+                  <span class="text-base font-semibold" style="color: #FF0000">{{ phone.label }}:</span>
                   <a :href="'tel:' + phone.number" class="hover:text-primary">{{ phone.number }}</a>
-                  <span v-if="phone.contact" class="text-base font-semibold text-red-900 dark:text-red-800">({{ phone.contact }})</span>
+                  <span v-if="phone.contact" class="text-base font-semibold" style="color: #FF0000">({{ phone.contact }})</span>
                 </div>
               </div>
               
               <!-- Email addresses -->
               <div v-if="address.email && address.email.length > 0" class="mt-2">
                 <div v-for="(email, emailIndex) in address.email" :key="emailIndex" class="flex items-center space-x-2">
-                  <span class="text-base font-semibold text-red-900 dark:text-red-800">{{ email.label }}:</span>
+                  <span class="text-base font-semibold" style="color: #FF0000">{{ email.label }}:</span>
                   <a :href="'mailto:' + email.address" class="hover:text-primary">{{ email.address }}</a>
-                  <span v-if="email.contact" class="text-base font-semibold text-red-900 dark:text-red-800">({{ email.contact }})</span>
+                  <span v-if="email.contact" class="text-base font-semibold" style="color: #FF0000">({{ email.contact }})</span>
                 </div>
               </div>
             </div>
@@ -176,13 +176,13 @@ onMounted(async () => {
           <div class="col-span-1">
             <div v-if="activeFooter.branchInfo" class="space-y-6">
               <div v-for="(branch, index) in activeFooter.branchInfo" :key="index" class="branch-info">
-                <h4 class="font-bold text-sm mb-2">{{ branch.title }}</h4>
-                <p v-if="branch.address" class="text-sm mb-2">{{ branch.address }}</p>
+                <h4 class="font-bold text-lg mb-2">{{ branch.title }}</h4>
+                <p v-if="branch.address" class="text-md mb-2">{{ branch.address }}</p>
                 
                 <div v-for="(contact, contactIndex) in branch.contacts" :key="contactIndex" class="contact-info text-base space-y-1">
-                  <div v-if="contact.name || contact.position" class="font-medium">
+                  <div v-if="contact.name || contact.position" class="font-bold" style="color: #FF0000">
                     {{ contact.name }}
-                    <span v-if="contact.position" class="text-base font-semibold text-red-900 dark:text-red-800">({{ contact.position }})</span>
+                    <span v-if="contact.position" class="text-base font-semibold" style="color: #FF0000">({{ contact.position }})</span>
                   </div>
                   <div v-if="contact.phone" class="flex items-center space-x-2">
                     <Icon name="ph:phone" class="w-4 h-4" />
@@ -210,7 +210,7 @@ onMounted(async () => {
         : activeFooter.copyrightStyle?.light?.textColor || '#374151'
     }">
       <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <p v-if="activeFooter.copyrightStyle?.text" class="text-sm">
+        <p v-if="activeFooter.copyrightStyle?.text" class="text-md">
           {{ activeFooter.copyrightStyle.text }}
         </p>
         <div class="flex space-x-4">

@@ -1,7 +1,7 @@
 import { ref, watch, computed } from 'vue';
 import { useTrpc } from './useTrpc';
 import { useDark } from '@vueuse/core';
-import { PageType } from '@ecommerce-web/database';
+import { PageType } from '@ew/shared';
 
 type ColorShades = {
   '50': string;
@@ -19,6 +19,7 @@ type ColorShades = {
 type ColorMode = {
   primary: ColorShades;
   secondary: ColorShades;
+  tertiary: ColorShades;
 };
 
 interface ThemeColors {
@@ -71,6 +72,18 @@ const defaultColors: ThemeColors = {
       '700': '#334155',
       '800': '#1e293b',
       '900': '#0f172a'
+    },
+    tertiary: {
+      '50': '#f8fafc',
+      '100': '#f1f5f9',
+      '200': '#e2e8f0',
+      '300': '#cbd5e1',
+      '400': '#94a3b8',
+      '500': '#64748b',
+      '600': '#475569',
+      '700': '#334155',
+      '800': '#1e293b',
+      '900': '#0f172a'
     }
   },
   dark: {
@@ -87,6 +100,18 @@ const defaultColors: ThemeColors = {
       '900': '#664c06'
     },
     secondary: {
+      '50': '#f8fafc',
+      '100': '#f1f5f9',
+      '200': '#e2e8f0',
+      '300': '#cbd5e1',
+      '400': '#94a3b8',
+      '500': '#64748b',
+      '600': '#475569',
+      '700': '#334155',
+      '800': '#1e293b',
+      '900': '#0f172a'
+    },
+    tertiary: {
       '50': '#f8fafc',
       '100': '#f1f5f9',
       '200': '#e2e8f0',
@@ -143,6 +168,12 @@ export function useTheme() {
       Object.entries(currentColors.secondary).forEach(([shade, color]) => {
         const rgb = hexToRgb(color);
         if (rgb) document.documentElement.style.setProperty(`--color-secondary-${shade}`, rgb);
+      });
+
+      // Update tertiary colors
+      Object.entries(currentColors.tertiary).forEach(([shade, color]) => {
+        const rgb = hexToRgb(color);
+        if (rgb) document.documentElement.style.setProperty(`--color-tertiary-${shade}`, rgb);
       });
 
       // Update semantic colors based on theme colors
