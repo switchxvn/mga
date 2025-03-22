@@ -94,7 +94,7 @@
   position: relative;
 
   > span {
-    font-weight: 500;
+    font-weight: 600;
     @apply text-primary-600 dark:text-primary-400;
   }
 
@@ -119,10 +119,10 @@
 }
 
 .menu-active {
-  @apply text-primary-600 dark:text-primary-400 font-semibold;
+  @apply text-primary-600 dark:text-primary-400 font-extrabold;
 
   > span {
-    @apply font-semibold;
+    @apply font-extrabold;
   }
 
   &::after {

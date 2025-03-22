@@ -42,27 +42,21 @@ const props = defineProps<{
 const colorMode = useColorMode();
 const isDark = computed(() => colorMode.value === 'dark');
 
-const updateCssVariables = () => {
-  if (typeof document === 'undefined' || !props.config) return;
-
-  const root = document.documentElement;
-  if (isDark.value && props.config.darkMode) {
-    root.style.setProperty('--company-intro-bg', props.config.darkMode.backgroundColor || 'var(--background)');
-    root.style.setProperty('--company-intro-text', props.config.darkMode.textColor || 'var(--text)');
-    root.style.setProperty('--company-intro-accent', props.config.darkMode.accentColor || '#ff9800');
+const sectionClasses = computed(() => {
+  const baseClasses = ['company-intro', 'py-16', 'transition-colors', 'duration-300'];
+  
+  if (props.config) {
+    if (isDark.value && props.config.darkMode?.backgroundColor) {
+      baseClasses.push('dark:bg-opacity-100');
+      baseClasses.push(`dark:${props.config.darkMode.backgroundColor}`);
+    } else {
+      baseClasses.push(props.config.backgroundColor || 'bg-white dark:bg-gray-900');
+    }
   } else {
-    root.style.setProperty('--company-intro-bg', props.config.backgroundColor || 'var(--background)');
-    root.style.setProperty('--company-intro-text', props.config.textColor || 'var(--text)');
-    root.style.setProperty('--company-intro-accent', '#ff9800');
+    baseClasses.push('bg-white dark:bg-gray-900');
   }
-};
-
-watch([isDark, () => props.config], () => {
-  updateCssVariables();
-}, { immediate: true });
-
-onMounted(() => {
-  updateCssVariables();
+  
+  return baseClasses.join(' ');
 });
 
 const processedDescription = computed(() => {
@@ -103,7 +97,7 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
 <template>
   <section
     v-if="config"
-    class="company-intro py-16 transition-colors duration-300"
+    :class="sectionClasses"
   >
     <div class="container mx-auto px-4">
       <!-- Full Text Layout -->
@@ -206,26 +200,15 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
 </template>
 
 <style>
-:root {
-  --company-intro-bg: var(--background);
-  --company-intro-text: var(--text);
-  --company-intro-accent: #ff9800;
-}
-
-.company-intro {
-  background-color: var(--company-intro-bg);
-  color: var(--company-intro-text);
-}
-
 .company-intro :deep(.prose) {
-  --tw-prose-body: var(--company-intro-text);
-  --tw-prose-headings: var(--company-intro-text);
-  --tw-prose-links: var(--company-intro-accent);
+  --tw-prose-body: var(--text);
+  --tw-prose-headings: var(--text);
+  --tw-prose-links: var(--primary);
 }
 
 .dark .company-intro :deep(.prose) {
-  --tw-prose-body: var(--company-intro-text);
-  --tw-prose-headings: var(--company-intro-text);
-  --tw-prose-links: var(--company-intro-accent);
+  --tw-prose-body: var(--text);
+  --tw-prose-headings: var(--text);
+  --tw-prose-links: var(--primary);
 }
 </style>

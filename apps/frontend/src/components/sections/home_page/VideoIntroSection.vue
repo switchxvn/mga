@@ -1,6 +1,9 @@
 <!-- VideoIntroSection.vue -->
 <template>
-  <section class="video-intro-section py-8">
+  <section 
+    ref="sectionRef"
+    class="video-intro-section py-8"
+  >
     <div class="container mx-auto px-4">
       <div v-if="isLoading" class="flex justify-center items-center py-12">
         <ULoader size="lg" />
@@ -51,10 +54,10 @@
                   <!-- Title -->
                   <h3
                     v-if="props.config?.showTitle"
-                    class="font-roboto mb-1"
+                    :class="titleClasses"
                     :style="{
                       fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
-                      fontWeight: props.config?.titleStyle?.fontWeight || '600',
+                      fontWeight: props.config?.titleStyle?.fontWeight || '600'
                     }"
                   >
                     <a
@@ -62,24 +65,21 @@
                       :href="video.videoUrl"
                       :target="props.config?.linkTarget || '_blank'"
                       rel="noopener noreferrer"
-                      class="hover-title transition-colors duration-300"
+                      :class="linkClasses"
                       :style="{
-                        color: isDark 
-                          ? props.config?.darkMode?.titleColor || '#ffffff'
-                          : props.config?.titleStyle?.color || '#1a1a1a',
-                        textDecoration: props.config?.titleStyle?.textDecoration || 'none',
+                        textDecoration: props.config?.titleStyle?.textDecoration || 'none'
                       }"
                     >
                       {{ video.title }}
                     </a>
-                    <span v-else>{{ video.title }}</span>
+                    <span v-else :class="titleClasses">{{ video.title }}</span>
                   </h3>
                   
                 
                   <!-- Description -->
                   <p
                     v-if="props.config?.showDescription"
-                    class="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2"
+                    :class="descriptionClasses"
                   >
                     {{ video.description }}
                   </p>
@@ -198,11 +198,11 @@ import {
   Navigation as SwiperNavigation,
 } from "swiper/modules";
 import { useTrpc } from "~/composables/useTrpc";
+import { useDarkMode } from "~/composables/useDarkMode";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { PlayCircle } from "lucide-vue-next";
-import { useColorMode } from '@vueuse/core'
 
 interface VideoIntro {
   id: number;
@@ -261,23 +261,57 @@ const isLoading = ref(true);
 const error = ref<Error | null>(null);
 const trpc = useTrpc();
 
-const colorMode = useColorMode()
-const isDark = computed(() => colorMode.value === 'dark')
+const { isDark } = useDarkMode();
+const sectionRef = ref<HTMLElement | null>(null);
+
+const titleClasses = computed(() => {
+  const baseClasses = ['font-roboto', 'mb-1', 'transition-colors', 'duration-300'];
+  baseClasses.push('text-gray-900', 'dark:text-gray-100');
+  return baseClasses.join(' ');
+});
+
+const linkClasses = computed(() => {
+  const baseClasses = ['transition-colors', 'duration-300'];
+  baseClasses.push('text-gray-900', 'dark:text-gray-100', 'hover:text-primary-600', 'dark:hover:text-primary-400');
+  return baseClasses.join(' ');
+});
+
+const descriptionClasses = computed(() => {
+  return ['mt-2', 'text-sm', 'text-gray-600', 'dark:text-gray-400', 'transition-colors', 'duration-300'].join(' ');
+});
+
+// Update CSS variables when theme changes
+const updateThemeColors = () => {
+  if (!sectionRef.value) return;
+  
+  const section = sectionRef.value;
+  
+  section.style.setProperty('--title-color', isDark.value ? '#ffffff' : '#1a1a1a');
+  section.style.setProperty('--title-hover-color', isDark.value 
+    ? (props.config?.darkMode?.titleHoverColor || '#60a5fa')
+    : (props.config?.titleStyle?.hoverColor || '#2563eb'));
+  section.style.setProperty('--description-color', isDark.value ? '#9ca3af' : '#4b5563');
+};
+
+// Watch for theme changes
+watch(() => isDark.value, () => {
+  updateThemeColors();
+}, { immediate: true });
+
+// Watch for config changes
+watch(() => props.config, () => {
+  updateThemeColors();
+}, { deep: true });
+
+// Update on mount
+onMounted(() => {
+  updateThemeColors();
+});
 
 // Computed property to check layout
 const currentLayout = computed(() => {
   return props.config?.layout || 'grid';
 });
-
-// Watch for changes in config props
-watch(
-  () => props.config,
-  (newConfig) => {
-    console.log("Config changed:", newConfig);
-    console.log("Layout:", newConfig?.layout);
-  },
-  { deep: true }
-);
 
 // Fetch videos using tRPC
 const videoQuery = trpc.hero.getHeroVideos.query({
@@ -359,6 +393,12 @@ const getEmbedUrl = (url: string): string => {
 </script>
 
 <style scoped>
+.video-intro-section {
+  --title-color: #1a1a1a;
+  --title-hover-color: #2563eb;
+  --description-color: #4b5563;
+}
+
 .video-intro-section :deep(.swiper-pagination-bullet) {
   @apply bg-white bg-opacity-70;
 }
@@ -417,8 +457,24 @@ const getEmbedUrl = (url: string): string => {
   @apply text-gray-900 dark:text-gray-200;
 }
 
+/* Update hover title styles */
+.hover-title {
+  color: var(--title-color);
+  transition: color 0.3s ease;
+}
+
 .hover-title:hover {
-  color: v-bind('isDark ? props.config?.darkMode?.titleHoverColor || "#60a5fa" : props.config?.titleStyle?.hoverColor || "#2563eb"');
+  color: var(--title-hover-color);
   text-decoration: v-bind('props.config?.titleStyle?.hoverTextDecoration || "underline"');
+}
+
+.title-text {
+  color: var(--title-color);
+  transition: color 0.3s ease;
+}
+
+.description-text {
+  color: var(--description-color);
+  transition: color 0.3s ease;
 }
 </style>

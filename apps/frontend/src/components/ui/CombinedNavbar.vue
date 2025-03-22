@@ -178,13 +178,16 @@ const getColumnTitleTranslation = (column: any, targetLocale: string) => {
 const updateNavbarVariables = () => {
   if (typeof document === 'undefined' || !props.settings) return;
 
+  console.log('Updating navbar variables with settings:', props.settings);
   const root = document.documentElement;
   if (isDark.value && props.settings.darkMode) {
+    console.log('Applying dark mode settings');
     root.style.setProperty('--navbar-header-bg', props.settings.darkMode.headerBackgroundColor || '#171717');
     root.style.setProperty('--navbar-menu-bg', props.settings.darkMode.menuBackgroundColor || '#171717');
     root.style.setProperty('--navbar-text', props.settings.darkMode.textColor || '#ffffff');
     root.style.setProperty('--navbar-border', props.settings.darkMode.borderColor || '#404040');
   } else {
+    console.log('Applying light mode settings');
     root.style.setProperty('--navbar-header-bg', props.settings.headerBackgroundColor || '#ffffff');
     root.style.setProperty('--navbar-menu-bg', props.settings.menuBackgroundColor || '#ffffff');
     root.style.setProperty('--navbar-text', props.settings.textColor || '#000000');
@@ -192,10 +195,17 @@ const updateNavbarVariables = () => {
   }
 };
 
-// Watch for dark mode changes
-watch([isDark, () => props.settings], () => {
+// Watch for settings changes
+watch(() => props.settings, (newSettings) => {
+  console.log('Settings changed:', newSettings);
   updateNavbarVariables();
-}, { immediate: true });
+}, { deep: true });
+
+// Watch for dark mode changes
+watch(isDark, () => {
+  console.log('Dark mode changed:', isDark.value);
+  updateNavbarVariables();
+});
 
 // Methods
 const toggleMobileMenu = () => {
@@ -272,6 +282,7 @@ watch([logo, isLoadingLogo], () => {
 
 // Lifecycle hooks
 onMounted(() => {
+  console.log('CombinedNavbar mounted with settings:', props.settings);
   window.addEventListener('scroll', handleScroll);
   fetchMenuItems();
   checkCartFeatureFlag();
@@ -332,7 +343,7 @@ watch(locale, () => {
             <a
               v-if="props.settings?.hotlines?.sales"
               :href="`tel:${props.settings.hotlines.sales.number}`"
-              class="hotline-button group flex items-center gap-3 px-4 py-2.5 bg-white rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
+              class="hotline-button group flex items-center gap-3 px-4 py-2.5 rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
             >
               <div class="relative">
                 <div class="animate-ring absolute -inset-1 rounded-full border-2 border-primary-500 opacity-75"></div>
@@ -350,7 +361,7 @@ watch(locale, () => {
             <a
               v-if="props.settings?.hotlines?.support"
               :href="`tel:${props.settings.hotlines.support.number}`"
-              class="hotline-button group flex items-center gap-3 px-4 py-2.5 bg-white rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
+              class="hotline-button group flex items-center gap-3 px-4 py-2.5 rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
             >
               <div class="relative">
                 <div class="animate-ring absolute -inset-1 rounded-full border-2 border-primary-500 opacity-75"></div>
@@ -396,10 +407,10 @@ watch(locale, () => {
                 >
                   <NuxtLink
                     :to="item.href"
-                    class="main-menu-item text-sm uppercase transition-colors py-5 flex items-center space-x-1"
+                    class="main-menu-item text-base uppercase transition-colors py-5 flex items-center space-x-1"
                     :class="{ 'menu-active': isMenuActive(item.href) }"
                   >
-                    <span>{{ item.label }}</span>
+                    <span class="text-base font-extrabold">{{ item.label }}</span>
                     <Icon
                       v-if="item.hasMegaMenu"
                       name="ChevronDown"
@@ -493,7 +504,7 @@ watch(locale, () => {
             v-for="item in processedMenuItems"
             :key="item.id"
             :to="item.href"
-            class="mobile-main-menu-item block px-3 py-2 text-base uppercase rounded-md"
+            class="mobile-main-menu-item block px-3 py-2 text-lg font-extrabold uppercase rounded-md"
             :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
             @click="isMobileMenuOpen = false"
           >
@@ -512,6 +523,7 @@ watch(locale, () => {
 </template>
 
 <style>
+/* Remove hardcoded values since they will be set dynamically */
 :root {
   --navbar-header-bg: #ffffff;
   --navbar-menu-bg: #ffffff;
@@ -537,6 +549,7 @@ watch(locale, () => {
   z-index: 40;
   border-color: var(--navbar-border) !important;
   color: var(--navbar-text) !important;
+  background-color: #FEB914;
 }
 
 .nav-wrapper {
@@ -594,7 +607,7 @@ watch(locale, () => {
 
 /* Dark mode styles */
 :root.dark .hotline-button {
-  background-color: var(--navbar-menu-bg) !important;
+  background-color: var(--navbar-header-bg) !important;
   border-color: var(--navbar-border) !important;
   color: var(--navbar-text) !important;
 }
