@@ -79,6 +79,7 @@
     "featured": "Featured",
     "new": "New Arrivals",
     "sale": "On Sale",
+    "viewAll": "View All",
     "addToCart": "Add to Cart",
     "contact": "Contact Us",
     "description": "PRODUCT DESCRIPTION",
@@ -234,5 +235,11 @@
     "notFoundDescription": "The service you are looking for does not exist or has been removed.",
     "backToServices": "View All Services",
     "tryAgain": "Try Again"
+  },
+  "theme": {
+    "title": "Theme",
+    "light": "Light Theme",
+    "dark": "Dark Theme",
+    "system": "System Theme"
   }
 } 

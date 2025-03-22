@@ -156,7 +156,7 @@ onBeforeUnmount(() => {
   <div class="language-switcher relative">
     <button 
       @click.stop="toggleDropdown"
-      class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 dark:bg-muted/30 dark:hover:bg-muted/50 transition-[background] duration-150"
+      class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-[background] duration-150 text-gray-900 dark:text-gray-100"
       type="button"
       :title="t('language')"
       :disabled="isLoadingLanguages"
@@ -186,9 +186,9 @@ onBeforeUnmount(() => {
     <!-- Dropdown menu -->
     <div 
       v-if="isOpen" 
-      class="absolute z-50 mt-1 w-40 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none !transition-none"
+      class="absolute z-50 mt-1 w-40 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 focus:outline-none !transition-none"
     >
-      <div v-if="isLoadingLanguages" class="py-4 px-4 text-center text-sm text-gray-500 !transition-none">
+      <div v-if="isLoadingLanguages" class="py-4 px-4 text-center text-sm text-gray-900 dark:text-gray-100 !transition-none">
         <span>Loading...</span>
       </div>
       <div v-else class="py-1">
@@ -196,7 +196,7 @@ onBeforeUnmount(() => {
           v-for="loc in availableLocales"
           :key="loc.code"
           @click="handleSelectLanguage(loc.code)"
-          class="flex items-center w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-[background] duration-150"
+          class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-[background] duration-150"
           :class="{ 'bg-gray-100 dark:bg-gray-700': locale === loc.code }"
         >
           <div class="w-4 h-4 flex items-center justify-center mr-2">

@@ -21,6 +21,7 @@ import CompanyIntroSection from "../components/sections/home_page/CompanyIntroSe
 import NewsSection from "../components/sections/home_page/NewsSection.vue";
 import VideoIntroSection from "../components/sections/home_page/VideoIntroSection.vue";
 import StyledProductCategoriesSection from "../components/sections/home_page/StyledProductCategoriesSection.vue";
+import StyledFeaturedProductsSection from "../components/sections/home_page/StyledFeaturedProductsSection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -320,7 +321,8 @@ const components = {
   CompanyIntroSection,
   HeroSectionFullWidth,
   VideoIntroSection,
-  StyledProductCategoriesSection
+  StyledProductCategoriesSection,
+  StyledFeaturedProductsSection
 } as const;
 
 // Function to get component name based on section type and componentName
@@ -345,7 +347,8 @@ const getDefaultComponent = (type: string) => {
     'company_intro': components.CompanyIntroSection,
     'hero_full_width': components.HeroSectionFullWidth,
     'video_intro': components.VideoIntroSection,
-    'styled_product_categories': components.StyledProductCategoriesSection
+    'styled_product_categories': components.StyledProductCategoriesSection,
+    'styled_featured_products': components.StyledFeaturedProductsSection
   };
   
   return typeToComponent[type] || null;

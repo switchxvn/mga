@@ -22,6 +22,7 @@ interface NavbarProps {
     slogan?: {
       text: string;
       subText: string;
+      additionalText: string;
       fontSize: string;
       fontWeight: string;
     };
@@ -76,6 +77,7 @@ const props = withDefaults(defineProps<NavbarProps>(), {
     slogan: {
       text: "XE NÂNG MGA FORKLIFT LẮP RÁP SKD TẠI VIỆT NAM",
       subText: "ĐỘNG CƠ ISUZU NHẬP KHẨU NỘI ĐỊA TỪ NHẬT BẢN",
+      additionalText: "BÁN VÀ CHO THUÊ GIÁ TỐT NHẤT",
       fontSize: "lg",
       fontWeight: "bold"
     },
@@ -349,8 +351,11 @@ watch(locale, () => {
             <h1 v-if="props.settings?.slogan" class="text-xl font-bold text-red-600">
               {{ props.settings.slogan.text }}
             </h1>
-            <p v-if="props.settings?.slogan" class="text-lg font-bold text-red-600">
+            <h4 v-if="props.settings?.slogan" class="text-md font-semibold text-black-600">
               {{ props.settings.slogan.subText }}
+            </h4>
+            <p v-if="props.settings?.slogan?.additionalText" class="text-2xl font-bold text-red-600">
+              {{ props.settings.slogan.additionalText }}
             </p>
           </div>
 

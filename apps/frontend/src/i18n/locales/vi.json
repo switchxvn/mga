@@ -78,6 +78,7 @@
     "featured": "Nổi bật",
     "new": "Hàng mới về",
     "sale": "Khuyến mãi",
+    "viewAll": "Xem tất cả",
     "addToCart": "Thêm vào giỏ hàng",
     "contact": "Liên hệ",
     "description": "MÔ TẢ SẢN PHẨM",
@@ -233,5 +234,11 @@
     "notFoundDescription": "Dịch vụ bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.",
     "backToServices": "Xem tất cả dịch vụ",
     "tryAgain": "Thử lại"
+  },
+  "theme": {
+    "title": "Giao diện",
+    "light": "Giao diện sáng",
+    "dark": "Giao diện tối",
+    "system": "Giao diện hệ thống"
   }
 } 
