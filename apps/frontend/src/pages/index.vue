@@ -20,6 +20,7 @@ import { useTheme } from '../composables/useTheme';
 import CompanyIntroSection from "../components/sections/home_page/CompanyIntroSection.vue";
 import NewsSection from "../components/sections/home_page/NewsSection.vue";
 import VideoIntroSection from "../components/sections/home_page/VideoIntroSection.vue";
+import StyledProductCategoriesSection from "../components/sections/home_page/StyledProductCategoriesSection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -318,7 +319,8 @@ const components = {
   NewsSection,
   CompanyIntroSection,
   HeroSectionFullWidth,
-  VideoIntroSection
+  VideoIntroSection,
+  StyledProductCategoriesSection
 } as const;
 
 // Function to get component name based on section type and componentName
@@ -342,7 +344,8 @@ const getDefaultComponent = (type: string) => {
     'news': components.NewsSection,
     'company_intro': components.CompanyIntroSection,
     'hero_full_width': components.HeroSectionFullWidth,
-    'video_intro': components.VideoIntroSection
+    'video_intro': components.VideoIntroSection,
+    'styled_product_categories': components.StyledProductCategoriesSection
   };
   
   return typeToComponent[type] || null;

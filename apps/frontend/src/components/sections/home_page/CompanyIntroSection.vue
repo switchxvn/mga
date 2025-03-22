@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useColorMode } from '@vueuse/core';
+import { useCssColorValue } from '~/composables/useColorUtils';
 
 interface CompanyIntroConfig {
   layout: "left-image" | "right-image" | "full-text";
@@ -27,11 +28,17 @@ interface CompanyIntroConfig {
     padding: string;
     fontSize: string;
     fontWeight: string;
+    backgroundColor?: string;
+    textColor?: string;
   };
   darkMode?: {
     backgroundColor?: string;
     textColor?: string;
     accentColor?: string;
+    buttonStyle?: {
+      backgroundColor?: string;
+      textColor?: string;
+    };
   };
 }
 
@@ -41,6 +48,7 @@ const props = defineProps<{
 
 const colorMode = useColorMode();
 const isDark = computed(() => colorMode.value === 'dark');
+const { processColorValue } = useCssColorValue();
 
 const sectionClasses = computed(() => {
   const baseClasses = ['company-intro', 'py-16', 'transition-colors', 'duration-300'];
@@ -64,7 +72,7 @@ const processedDescription = computed(() => {
 
   let desc = props.config.description;
   if (isDark.value && props.config.darkMode?.accentColor) {
-    desc = desc.replace(/#ff9800/g, props.config.darkMode.accentColor);
+    desc = desc.replace(/#ff9800/g, processColorValue(props.config.darkMode.accentColor));
   }
   return desc;
 });
@@ -73,8 +81,8 @@ const currentBorderStyles = computed(() => {
   if (!props.config?.border) return {};
 
   const borderColor = isDark.value && props.config.darkMode?.accentColor
-    ? props.config.darkMode.accentColor
-    : props.config.border.color;
+    ? processColorValue(props.config.darkMode.accentColor)
+    : processColorValue(props.config.border.color);
 
   return {
     border: `${props.config.border.width} ${props.config.border.style} ${borderColor}`,
@@ -86,11 +94,36 @@ const currentBorderStyles = computed(() => {
 const getButtonStyles = (config: CompanyIntroConfig) => {
   if (!config.buttonStyle) return {};
 
-  return {
+  interface ButtonStyles {
+    padding: string;
+    fontSize: string;
+    fontWeight: string;
+    backgroundColor?: string;
+    color?: string;
+  }
+
+  const buttonStyles: ButtonStyles = {
     padding: config.buttonStyle.padding,
     fontSize: config.buttonStyle.fontSize,
     fontWeight: config.buttonStyle.fontWeight,
   };
+
+  if (isDark.value && config.darkMode?.buttonStyle) {
+    return {
+      ...buttonStyles,
+      backgroundColor: processColorValue(config.darkMode.buttonStyle.backgroundColor || ''),
+      color: processColorValue(config.darkMode.buttonStyle.textColor || ''),
+    };
+  }
+
+  if (config.buttonStyle.backgroundColor) {
+    buttonStyles.backgroundColor = processColorValue(config.buttonStyle.backgroundColor);
+  }
+  if (config.buttonStyle.textColor) {
+    buttonStyles.color = processColorValue(config.buttonStyle.textColor);
+  }
+
+  return buttonStyles;
 };
 </script>
 

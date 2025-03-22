@@ -22,34 +22,28 @@
             class="video-card group relative h-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
           >
             <div class="relative h-[240px] overflow-hidden">
+              <!-- YouTube iframe -->
+              <iframe
+                v-if="getVideoId(video.videoUrl)"
+                :src="getEmbedUrl(video.videoUrl)"
+                class="w-full h-full"
+                :title="video.title"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+              ></iframe>
+              <!-- Fallback for non-YouTube videos or invalid URLs -->
               <img
+                v-else
                 :src="video.thumbnailUrl"
                 :alt="video.title"
-                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                class="w-full h-full object-cover"
                 @error="handleImageError"
               />
-              <!-- Dark overlay with play button -->
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-80"
-              >
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <button
-                    @click="playVideo(video)"
-                    class="p-3 rounded-full bg-white/90 hover:bg-white transform transition-all duration-300 scale-90 group-hover:scale-100 hover:scale-105 shadow-lg"
-                  >
-                    <PlayCircle
-                      class="w-8 h-8 text-primary-600"
-                      :size="32"
-                      :stroke-width="2.5"
-                    />
-                  </button>
-                </div>
-              </div>
             </div>
             <!-- Video Info Section -->
             <div class="p-4">
               <div class="flex gap-3">
-              
                 <div class="flex-1 min-w-0">
                   <!-- Title -->
                   <h3
@@ -75,7 +69,6 @@
                     <span v-else :class="titleClasses">{{ video.title }}</span>
                   </h3>
                   
-                
                   <!-- Description -->
                   <p
                     v-if="props.config?.showDescription"
@@ -112,49 +105,40 @@
           >
             <SwiperSlide v-for="video in videoData" :key="video.id" class="group">
               <div class="relative aspect-video">
+                <!-- YouTube iframe for slider -->
+                <iframe
+                  v-if="getVideoId(video.videoUrl)"
+                  :src="getEmbedUrl(video.videoUrl)"
+                  class="w-full h-full"
+                  :title="video.title"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+                <!-- Fallback for non-YouTube videos -->
                 <img
+                  v-else
                   :src="video.thumbnailUrl"
                   :alt="video.title"
                   class="w-full h-full object-cover"
                   @error="handleImageError"
                 />
+                
                 <div
-                  class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"
+                  v-if="props.config?.showTitle"
+                  class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent"
                 >
-                  <div class="absolute inset-0 flex items-center justify-center">
-                    <button
-                      @click="playVideo(video)"
-                      class="p-4 rounded-full bg-white/80 hover:bg-white transition-all transform scale-90 group-hover:scale-100"
-                    >
-                      <PlayCircle
-                        class="w-8 h-8 text-primary-600"
-                        :size="32"
-                        :stroke-width="2.5"
-                      />
-                    </button>
-                  </div>
-                  <div
-                    v-if="props.config?.showTitle"
-                    class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent"
-                  >
-                    <div class="flex gap-4 items-start">
-                   
-
-                      <div class="flex-1">
-                        <!-- Title -->
-                        <h3 class="text-xl font-roboto font-medium text-white mb-2">
-                          {{ video.title }}
-                        </h3>
-
-
-                        <!-- Description -->
-                        <p
-                          v-if="props.config?.showDescription"
-                          class="text-gray-200 text-sm line-clamp-2 max-w-3xl"
-                        >
-                          {{ video.description }}
-                        </p>
-                      </div>
+                  <div class="flex gap-4 items-start">
+                    <div class="flex-1">
+                      <h3 class="text-xl font-roboto font-medium text-white mb-2">
+                        {{ video.title }}
+                      </h3>
+                      <p
+                        v-if="props.config?.showDescription"
+                        class="text-gray-200 text-sm line-clamp-2 max-w-3xl"
+                      >
+                        {{ video.description }}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -164,28 +148,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Video Modal -->
-    <UModal
-      v-model="showVideoModal"
-      :ui="{
-        overlay: { background: 'bg-gray-900/90' },
-        container: 'flex items-center justify-center min-h-screen p-4',
-        base: 'relative w-full max-w-5xl mx-auto',
-        wrapper: 'w-full',
-      }"
-    >
-      <div class="relative w-full h-0 pb-[56.25%] bg-black rounded-xl overflow-hidden">
-        <iframe
-          v-if="selectedVideo?.videoUrl"
-          :src="getEmbedUrl(selectedVideo.videoUrl)"
-          class="absolute top-0 left-0 w-full h-full"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-        ></iframe>
-      </div>
-    </UModal>
   </section>
 </template>
 
@@ -347,48 +309,46 @@ const gridColumns = computed(() => {
   };
 });
 
-// Video modal handling
-const showVideoModal = ref(false);
-const selectedVideo = ref<VideoIntro | null>(null);
-
-const playVideo = (video: VideoIntro) => {
-  console.log("Playing video:", video);
-  selectedVideo.value = video;
-  showVideoModal.value = true;
-  console.log("Modal state:", showVideoModal.value);
-  console.log("Selected video URL:", getEmbedUrl(video.videoUrl));
+// Helper function to get YouTube video ID
+const getVideoId = (url: string): string | null => {
+  if (!url) return null;
+  
+  try {
+    let videoId: string | null = null;
+    
+    if (url.includes('youtube.com')) {
+      videoId = url.split('v=')[1]?.split('&')[0] || null;
+    } else if (url.includes('youtu.be')) {
+      videoId = url.split('/').pop() || null;
+    }
+    
+    return videoId;
+  } catch (error) {
+    console.error('Error extracting video ID:', error);
+    return null;
+  }
 };
 
-// Handle image error
+// Updated getEmbedUrl function
+const getEmbedUrl = (url: string): string => {
+  const videoId = getVideoId(url);
+  if (!videoId) return '';
+  
+  // Add parameters for better performance and user experience
+  const params = new URLSearchParams({
+    autoplay: '0',
+    rel: '0', // Don't show related videos
+    modestbranding: '1', // Minimal YouTube branding
+    enablejsapi: '1'
+  });
+  
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+};
+
+// Remove unused modal-related code and variables
 const handleImageError = (event: Event) => {
   const imgElement = event.target as HTMLImageElement;
-  imgElement.src =
-    "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400&auto=format&fit=crop";
-};
-
-// Helper function to convert video URL to embed URL
-const getEmbedUrl = (url: string): string => {
-  console.log("Converting URL:", url);
-  if (!url) return "";
-
-  try {
-    if (url.includes("youtube.com") || url.includes("youtu.be")) {
-      const videoId = url.includes("v=")
-        ? url.split("v=")[1]?.split("&")[0]
-        : url.split("/").pop();
-      console.log("YouTube video ID:", videoId);
-      return `https://www.youtube.com/embed/${videoId}`;
-    }
-    if (url.includes("vimeo.com")) {
-      const videoId = url.split("/").pop();
-      console.log("Vimeo video ID:", videoId);
-      return `https://player.vimeo.com/video/${videoId}`;
-    }
-    return url;
-  } catch (error) {
-    console.error("Error converting URL:", error);
-    return "";
-  }
+  imgElement.src = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400&auto=format&fit=crop";
 };
 </script>
 
@@ -476,5 +436,20 @@ const getEmbedUrl = (url: string): string => {
 .description-text {
   color: var(--description-color);
   transition: color 0.3s ease;
+}
+
+/* Add styles for iframe container */
+.video-card iframe {
+  aspect-ratio: 16/9;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.5rem;
+}
+
+/* Ensure proper aspect ratio in slider */
+.swiper-slide iframe {
+  aspect-ratio: 16/9;
+  width: 100%;
+  height: 100%;
 }
 </style>
