@@ -720,6 +720,7 @@ watch(locale, () => {
   width: 100%;
   transition: transform 0.3s ease;
   will-change: transform;
+  z-index: 110; /* Ensure nav is above overlay */
 }
 
 .nav-wrapper.nav-sticky {
@@ -906,10 +907,11 @@ watch(locale, () => {
 
 .mobile-menu-content {
   position: fixed;
-  top: 64px; /* Fixed top position based on navigation height */
+  top: var(--nav-height); /* Use dynamic nav height */
   left: 0;
   right: 0;
   bottom: 0;
+  padding-top: 64px; /* Add padding to prevent overlap */
   background-color: var(--navbar-menu-bg);
   border-top: 1px solid var(--navbar-border);
   overflow-y: auto;
