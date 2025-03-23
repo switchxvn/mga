@@ -53,7 +53,7 @@ const getCurrentLabel = computed(() => {
 <template>
   <div ref="menuRef" class="relative">
     <button 
-      class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-[background] duration-150 text-gray-900 dark:text-gray-100"
+      class="w-full md:w-auto flex items-center justify-between space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-[background] duration-150 text-gray-900 dark:text-gray-100"
       @click="isOpen = !isOpen"
       :title="t('theme.title')"
     >

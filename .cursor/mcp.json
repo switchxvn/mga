@@ -1,7 +1,12 @@
 {
   "mcpServers": {
-    "nx-mcp": {
-      "url": "http://localhost:9179/sse"
+    "postgres" : {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://localhost/ew"
+      ]
     }
   }
 }

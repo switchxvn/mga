@@ -153,10 +153,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="language-switcher relative">
+  <div class="language-switcher w-full">
     <button 
       @click.stop="toggleDropdown"
-      class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-[background] duration-150 text-gray-900 dark:text-gray-100"
+      class="w-full flex items-center justify-between space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-[background] duration-150 text-gray-900 dark:text-gray-100"
       type="button"
       :title="t('language')"
       :disabled="isLoadingLanguages"

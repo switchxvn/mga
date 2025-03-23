@@ -690,11 +690,11 @@ onUnmounted(() => {
             <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
             <template v-else>
               <!-- Language Switcher and Theme Toggle in Mobile Menu -->
-              <div class="flex items-center justify-between gap-4 px-3 py-2 mb-4">
-                <div v-if="props.settings?.showLanguageSwitcher">
+              <div class="flex flex-col space-y-2 px-3 py-2 mb-4">
+                <div v-if="props.settings?.showLanguageSwitcher" class="w-full">
                   <LanguageSwitcher />
                 </div>
-                <div v-if="props.settings?.showThemeToggle">
+                <div v-if="props.settings?.showThemeToggle" class="w-full">
                   <ThemeToggle />
                 </div>
               </div>
