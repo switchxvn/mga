@@ -2,13 +2,8 @@ import { useTrpc } from './useTrpc';
 import { ref, computed } from 'vue';
 import { useLocalization } from './useLocalization';
 import type { Category as BackendCategory, CategoryTranslation } from '@ew/shared';
+import { CategoryType } from '@ew/shared';
 
-// Định nghĩa enum CategoryType
-export enum CategoryType {
-  NEWS = 'news',
-  PRODUCT = 'product',
-  BOTH = 'both'
-}
 
 // Định nghĩa kiểu dữ liệu Category
 export type Category = BackendCategory;
@@ -201,11 +196,72 @@ export function useCategory() {
     }
   };
 
+  // Helper function to get category translation
+  const getCategoryTranslation = (category: Category): CategoryTranslation | null => {
+    if (!category.translations || category.translations.length === 0) {
+      return null;
+    }
+    return category.translations.find(t => t.locale === locale.value) || category.translations[0];
+  };
+
+  // Computed để lọc và gộp các danh mục trùng tên
+  const uniqueCategories = computed(() => {
+    if (!productCategories.value || productCategories.value.length === 0) {
+      return [];
+    }
+    
+    // Tạo map để gộp các danh mục theo slug
+    const categoryMap = new Map<string, Category>();
+    
+    productCategories.value.forEach(category => {
+      const translation = getCategoryTranslation(category);
+      if (!translation) return;
+      
+      const existingCategory = categoryMap.get(translation.slug);
+      
+      if (existingCategory) {
+        // Nếu danh mục đã tồn tại, gộp số lượng sản phẩm
+        const combinedProducts = [...(existingCategory.products || []), ...(category.products || [])];
+        categoryMap.set(translation.slug, {
+          ...category,
+          products: combinedProducts
+        });
+      } else {
+        categoryMap.set(translation.slug, category);
+      }
+    });
+    
+    // Chuyển map thành mảng và sắp xếp theo tên
+    return Array.from(categoryMap.values())
+      .sort((a, b) => {
+        const aTranslation = getCategoryTranslation(a);
+        const bTranslation = getCategoryTranslation(b);
+        return (aTranslation?.name || '').localeCompare(bTranslation?.name || '');
+      });
+  });
+
   /**
    * Lấy tất cả danh mục sản phẩm
    */
   const fetchProductCategories = async () => {
-    return fetchCategoriesByType(CategoryType.PRODUCT);
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const result = await trpc.category.byType.query({ 
+        type: CategoryType.PRODUCT, 
+        locale: locale.value 
+      });
+      
+      productCategories.value = result as unknown as Category[];
+      return result as unknown as Category[];
+    } catch (err: any) {
+      console.error('Error fetching product categories:', err);
+      error.value = err.message || 'Có lỗi xảy ra khi tải danh mục sản phẩm';
+      return [];
+    } finally {
+      loading.value = false;
+    }
   };
   
   return {
@@ -221,6 +277,7 @@ export function useCategory() {
     
     // Computed
     rootCategories,
+    uniqueCategories,
     
     // Methods
     fetchAllCategories,
@@ -232,6 +289,7 @@ export function useCategory() {
     fetchCategoryTree,
     fetchCategoriesByType,
     fetchProductCategories,
-    getChildCategories
+    getChildCategories,
+    getCategoryTranslation
   };
 } 

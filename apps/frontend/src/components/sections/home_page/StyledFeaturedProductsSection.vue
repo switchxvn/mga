@@ -238,7 +238,9 @@ async function fetchFeaturedProducts() {
 
 <style lang="scss" scoped>
 .featured-products-section {
-  overflow-x: hidden;
+  @media (max-width: 640px) {
+    overflow-x: hidden;
+  }
 
   .category-header {
     @media (max-width: 640px) {
@@ -267,11 +269,17 @@ async function fetchFeaturedProducts() {
 
   .swiper-outer-container {
     position: relative;
-    margin: 0 auto;
+    width: 100vw;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
     padding: 0;
-    width: 100%;
 
     @media (min-width: 641px) {
+      width: auto;
+      left: auto;
+      right: auto;
       margin: 0 -40px;
       padding: 0 40px;
     }
@@ -281,6 +289,11 @@ async function fetchFeaturedProducts() {
     overflow: hidden;
     position: relative;
     width: 100%;
+    padding: 0 16px;
+
+    @media (min-width: 641px) {
+      padding: 0;
+    }
   }
 
   :deep() {
@@ -293,6 +306,7 @@ async function fetchFeaturedProducts() {
       .swiper-slide {
         height: auto;
         display: flex;
+        width: 100%;
       }
     }
 
@@ -311,9 +325,7 @@ async function fetchFeaturedProducts() {
       z-index: 10;
       
       @media (max-width: 640px) {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
+        display: none;
       }
       
       &::after {
@@ -357,6 +369,7 @@ async function fetchFeaturedProducts() {
       align-items: center;
       justify-content: center;
       gap: 6px;
+      margin-top: 1rem;
       
       .swiper-pagination-bullet {
         width: 8px;

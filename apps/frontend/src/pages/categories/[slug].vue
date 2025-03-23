@@ -6,13 +6,18 @@ import { useCategory } from '../../composables/useCategory'
 import { useRoute, useRouter } from 'vue-router'
 import CategorySidebar from '../../components/sidebar/CategorySidebar.vue'
 import CategoryMobileSidebar from '../../components/sidebar/CategoryMobileSidebar.vue'
+import { useProduct, type ProductFilter, type ProductSortBy } from '../../composables/useProduct'
 
 // Sử dụng composables
 const { t, locale } = useLocalization()
 const trpc = useTrpc()
 const route = useRoute()
 const router = useRouter()
-const { fetchProductCategories } = useCategory()
+const { 
+  fetchProductCategories,
+  fetchCategoryBySlug,
+  getCategoryTranslation
+} = useCategory()
 const slug = computed(() => route.params.slug as string)
 
 // Định nghĩa alias cho URL tiếng Việt
@@ -20,7 +25,7 @@ definePageMeta({
   layout: 'default',
 })
 
-// Thông tin danh mục
+// Định nghĩa interface Category đầy đủ
 interface Category {
   id: number;
   name: string;
@@ -35,34 +40,53 @@ interface Category {
   canonicalUrl?: string;
   parent?: Category | null;
   children?: Category[];
+  translations?: Array<{
+    locale: string;
+    name: string;
+    description?: string;
+  }>;
+  type?: string;
+  active?: boolean;
+  isFeatured?: boolean;
+  attributes?: Array<{
+    id: number;
+    name: string;
+    values: string[];
+    translations?: Array<{
+      locale: string;
+      name: string;
+    }>;
+  }>;
 }
 
 // Sử dụng useAsyncData để tải dữ liệu category trước khi trang được render (SSR)
 const { data: category, error: categoryError, refresh: refreshCategory } = useAsyncData<Category | null>(
   `category-${slug.value}-${locale.value}`,
-  async () => {
+  async (ctx) => {
     try {
-      const result = await trpc.category.getBySlug.query({
-        slug: slug.value,
-        locale: locale.value
-      })
-      
-      return result as Category
+      const result = await fetchCategoryBySlug(slug.value);
+      return result ? result as unknown as Category : null;
     } catch (err) {
-      console.error('Error fetching category:', err)
-      return null
+      console.error('Error fetching category:', err);
+      return null;
     }
   },
   {
-    // Đảm bảo dữ liệu được tải ngay lập tức
-    immediate: true
+    immediate: true,
+    watch: [slug, locale]
   }
-)
+);
 
 // Computed properties để truy cập dữ liệu category an toàn
-const categoryData = computed(() => category.value || {} as Category)
-const categoryName = computed(() => categoryData.value.name || '')
-const categoryDescription = computed(() => categoryData.value.description || '')
+const categoryData = computed<Category>(() => category.value || {} as Category);
+const categoryName = computed(() => {
+  const translation = categoryData.value.translations?.find(t => t.locale === locale.value);
+  return translation?.name || categoryData.value.name || '';
+});
+const categoryDescription = computed(() => {
+  const translation = categoryData.value.translations?.find(t => t.locale === locale.value);
+  return translation?.description || categoryData.value.description || '';
+});
 const error = computed(() => categoryError.value ? (categoryError.value as Error).message : null)
 
 // Lấy URL hiện tại từ server
@@ -150,7 +174,7 @@ const filters = reactive<FilterState>({
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
   includeNullPrice: route.query.includeNullPrice === 'true',
-  categories: [], // Khởi tạo là mảng rỗng thay vì [category.value?.id]
+  categories: [], // Will be updated when category data is loaded
   isFeatured: route.query.isFeatured === 'true',
   isNew: route.query.isNew === 'true',
   isSale: route.query.isSale === 'true',
@@ -182,11 +206,31 @@ interface Product {
   // Thêm các thuộc tính khác của sản phẩm nếu cần
 }
 
-const isLoading = ref(false)
-const products = ref<any[]>([]) // Sử dụng any[] để tránh lỗi TypeScript
-const totalProducts = ref(0)
-const totalPages = ref(1)
+// Initialize product filters with route query params
+const initialFilters: ProductFilter = {
+  search: route.query.search as string || '',
+  minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
+  maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
+  includeNullPrice: route.query.includeNullPrice === 'true',
+  categories: [], // Will be updated when category data is loaded
+  isFeatured: route.query.isFeatured === 'true',
+  isNew: route.query.isNew === 'true',
+  isSale: route.query.isSale === 'true',
+  sortBy: (route.query.sortBy as ProductSortBy) || 'newest',
+  page: Number(route.query.page) || 1,
+  limit: Number(route.query.limit) || 12,
+  locale: locale.value
+};
 
+// Initialize product composable
+const {
+  filters: productFilters,
+  products,
+  totalProducts,
+  totalPages,
+  isLoadingProducts: isLoading,
+  fetchProducts
+} = useProduct(initialFilters);
 
 // Sort options as computed property to ensure translations are updated
 const sortOptions = computed(() => [
@@ -196,80 +240,82 @@ const sortOptions = computed(() => [
   { value: "price_desc", label: t("sort.price_desc") },
 ]);
 
-// Fetch products with filters
-const fetchProducts = async () => {
-  isLoading.value = true
-  try {
-    const result = await trpc.product.getAll.query({
-      locale: locale.value,
-      ...filters,
-      categorySlug: slug.value // Đảm bảo luôn lọc theo slug của danh mục
-    })
-    
-    // Chuyển đổi kết quả sang kiểu Product[]
-    products.value = result.items as unknown as Product[]
-    totalProducts.value = result.total
-    totalPages.value = result.totalPages
-  } catch (error) {
-    console.error('Error fetching products:', error)
-  } finally {
-    isLoading.value = false
+// Watch for category changes to update filters and fetch products
+watch(() => categoryData.value?.id, (newId) => {
+  if (newId && !isLoading.value) {
+    productFilters.value = {
+      ...productFilters.value,
+      categories: [newId]
+    };
+    updateQueryParams();
   }
-}
+}, { immediate: true });
+
+// Watch for locale changes
+watch(locale, () => {
+  refreshCategory();
+  if (!isLoading.value) {
+    fetchProducts();
+  }
+});
 
 // Handle filter changes
-const handleFilterChange = (newFilters: Partial<FilterState>) => {
-  // Update filters
-  Object.assign(filters, newFilters)
+const handleFilterChange = (newFilters: ProductFilter) => {
+  // Update filters but preserve category
+  productFilters.value = {
+    ...newFilters,
+    categories: categoryData.value?.id ? [categoryData.value.id] : []
+  };
   
   // Reset to page 1 when filters change
-  filters.page = 1
+  productFilters.value.page = 1;
   
-  // Update URL query params
-  updateQueryParams()
-}
+  // Update URL query params and fetch products
+  updateQueryParams();
+};
 
 // Handle sort change
 const handleSortChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement
-  filters.sortBy = target.value as SortByType
-  filters.page = 1
-  updateQueryParams()
-}
+  const target = event.target as HTMLSelectElement;
+  productFilters.value.sortBy = target.value as ProductSortBy;
+  productFilters.value.page = 1;
+  updateQueryParams();
+};
 
 // Handle page change
 const handlePageChange = (page: number) => {
-  filters.page = page
-  updateQueryParams()
+  productFilters.value.page = page;
+  updateQueryParams();
   
   // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
-// Update URL query params
+// Update URL query params and fetch products
 const updateQueryParams = () => {
   // Build query params object
-  const query: Record<string, string | number> = {}
+  const query: Record<string, string | number | undefined> = {};
   
-  if (filters.search) query.search = filters.search
-  if (filters.minPrice !== undefined) query.minPrice = filters.minPrice
-  if (filters.maxPrice !== undefined) query.maxPrice = filters.maxPrice
-  if (filters.includeNullPrice) query.includeNullPrice = 'true'
-  if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',')
-  // Chỉ thêm vào URL khi giá trị là true
-  if (filters.isFeatured === true) query.isFeatured = 'true'
-  if (filters.isNew === true) query.isNew = 'true'
-  if (filters.isSale === true) query.isSale = 'true'
-  if (filters.sortBy && filters.sortBy !== 'newest') query.sortBy = filters.sortBy
-  if (filters.page > 1) query.page = filters.page
-  if (filters.limit !== 12) query.limit = filters.limit
+  if (productFilters.value.search) query.search = productFilters.value.search;
+  if (productFilters.value.minPrice !== undefined) query.minPrice = productFilters.value.minPrice;
+  if (productFilters.value.maxPrice !== undefined) query.maxPrice = productFilters.value.maxPrice;
+  if (productFilters.value.includeNullPrice) query.includeNullPrice = 'true';
+  if (productFilters.value.categories?.length) query.categories = productFilters.value.categories.join(',');
+  if (productFilters.value.isFeatured) query.isFeatured = 'true';
+  if (productFilters.value.isNew) query.isNew = 'true';
+  if (productFilters.value.isSale) query.isSale = 'true';
+  if (productFilters.value.sortBy && productFilters.value.sortBy !== 'newest') query.sortBy = productFilters.value.sortBy;
+  if (productFilters.value.page > 1) query.page = productFilters.value.page;
+  if (productFilters.value.limit !== 12) query.limit = productFilters.value.limit;
   
   // Update route
-  router.replace({ query })
+  router.replace({ query });
   
-  // Fetch products with new filters
-  fetchProducts()
-}
+  // Fetch products with current filters
+  if (!isLoading.value) {
+    fetchProducts();
+  }
+};
 
 // Breadcrumb data
 interface BreadcrumbItem {
@@ -282,42 +328,23 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   const items: BreadcrumbItem[] = [
     { label: t('common.home'), to: '/' },
     { label: t('common.categories'), to: '/categories' }
-  ]
+  ];
   
   if (categoryData.value?.parent) {
     items.push({
       label: categoryData.value.parent.name,
       to: `/categories/${categoryData.value.parent.slug}`
-    })
+    });
   }
   
   items.push({
     label: categoryName.value || slug.value,
     to: `/categories/${slug.value}`,
     active: true
-  })
+  });
   
-  return items
-})
-
-// Initial fetch
-onMounted(() => {
-  fetchProducts()
-  fetchProductCategories()
-})
-
-// Watch for locale or slug changes
-watch([locale, slug], () => {
-  refreshCategory()
-  fetchProducts()
-})
-
-// Watch for category changes to update filters
-watch(() => categoryData.value?.id, (newId) => {
-  if (newId) {
-    filters.categories = [newId]
-  }
-})
+  return items;
+});
 </script>
 
 <template>

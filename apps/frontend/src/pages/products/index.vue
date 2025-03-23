@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, reactive, computed } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { useLocalization } from "../../composables/useLocalization";
 import { useTrpc } from "../../composables/useTrpc";
-import { useCategory, CategoryType } from "../../composables/useCategory";
 import { useRoute, useRouter } from "vue-router";
 import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
+import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
 const route = useRoute();
 const router = useRouter();
-const { fetchProductCategories } = useCategory();
 
 definePageMeta({
   layout: "default",
@@ -65,8 +64,8 @@ const fetchSeoData = async () => {
   }
 };
 
-// Filter state
-const filters = reactive({
+// Initialize filters from route query
+const initialFilters: ProductFilter = {
   search: (route.query.search as string) || "",
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
@@ -74,19 +73,24 @@ const filters = reactive({
   categories: route.query.categories
     ? String(route.query.categories).split(",").map(Number)
     : undefined,
-  isFeatured: route.query.isFeatured === "true",
-  isNew: route.query.isNew === "true",
-  isSale: route.query.isSale === "true",
-  sortBy: (route.query.sortBy as string) || "newest",
+  isFeatured: route.query.isFeatured === "true" ? true : undefined,
+  isNew: route.query.isNew === "true" ? true : undefined,
+  isSale: route.query.isSale === "true" ? true : undefined,
+  sortBy: (route.query.sortBy as ProductSortBy) || "newest",
   page: Number(route.query.page) || 1,
   limit: Number(route.query.limit) || 12,
-});
+};
 
-// Products data
-const isLoading = ref(true);
-const products = ref([]);
-const totalProducts = ref(0);
-const totalPages = ref(1);
+// Use product composable
+const {
+  filters,
+  products,
+  totalProducts,
+  totalPages,
+  isLoadingProducts: isLoading,
+  fetchPriceRange,
+  fetchProducts
+} = useProduct(initialFilters);
 
 // Sort options as computed property to ensure translations are updated
 const sortOptions = computed(() => [
@@ -96,47 +100,29 @@ const sortOptions = computed(() => [
   { value: "price_desc", label: t("sort.price_desc") },
 ]);
 
-// Fetch products with filters
-const fetchProducts = async () => {
-  isLoading.value = true;
-  try {
-    const result = await trpc.product.getAll.query({
-      locale: locale.value,
-      ...filters,
-    });
-
-    products.value = result.items;
-    totalProducts.value = result.total;
-    totalPages.value = result.totalPages;
-  } catch (error) {
-    console.error("Error fetching products:", error);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 // Handle filter changes
-const handleFilterChange = (newFilters) => {
+const handleFilterChange = (newFilters: ProductFilter) => {
   // Update filters
-  Object.assign(filters, newFilters);
+  Object.assign(filters.value, newFilters);
 
   // Reset to page 1 when filters change
-  filters.page = 1;
+  filters.value.page = 1;
 
   // Update URL query params
   updateQueryParams();
 };
 
 // Handle sort change
-const handleSortChange = (event) => {
-  filters.sortBy = event.target.value;
-  filters.page = 1;
+const handleSortChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  filters.value.sortBy = target.value as ProductSortBy;
+  filters.value.page = 1;
   updateQueryParams();
 };
 
 // Handle page change
-const handlePageChange = (page) => {
-  filters.page = page;
+const handlePageChange = (page: number) => {
+  filters.value.page = page;
   updateQueryParams();
 
   // Scroll to top
@@ -146,20 +132,20 @@ const handlePageChange = (page) => {
 // Update URL query params
 const updateQueryParams = () => {
   // Build query params object
-  const query = {};
+  const query: Record<string, string> = {};
 
-  if (filters.search) query.search = filters.search;
-  if (filters.minPrice !== undefined) query.minPrice = filters.minPrice;
-  if (filters.maxPrice !== undefined) query.maxPrice = filters.maxPrice;
-  if (filters.includeNullPrice) query.includeNullPrice = "true";
-  if (filters.categories && filters.categories.length > 0)
-    query.categories = filters.categories.join(",");
-  if (filters.isFeatured) query.isFeatured = "true";
-  if (filters.isNew) query.isNew = "true";
-  if (filters.isSale) query.isSale = "true";
-  if (filters.sortBy && filters.sortBy !== "newest") query.sortBy = filters.sortBy;
-  if (filters.page > 1) query.page = filters.page;
-  if (filters.limit !== 12) query.limit = filters.limit;
+  if (filters.value.search) query.search = filters.value.search;
+  if (filters.value.minPrice !== undefined) query.minPrice = String(filters.value.minPrice);
+  if (filters.value.maxPrice !== undefined) query.maxPrice = String(filters.value.maxPrice);
+  if (filters.value.includeNullPrice) query.includeNullPrice = "true";
+  if (filters.value.categories && filters.value.categories.length > 0)
+    query.categories = filters.value.categories.join(",");
+  if (filters.value.isFeatured) query.isFeatured = "true";
+  if (filters.value.isNew) query.isNew = "true";
+  if (filters.value.isSale) query.isSale = "true";
+  if (filters.value.sortBy && filters.value.sortBy !== "newest") query.sortBy = filters.value.sortBy;
+  if (filters.value.page && filters.value.page > 1) query.page = String(filters.value.page);
+  if (filters.value.limit !== 12) query.limit = String(filters.value.limit);
 
   // Update route
   router.replace({ query });
@@ -171,8 +157,8 @@ const updateQueryParams = () => {
 // Initial fetch
 onMounted(() => {
   fetchSeoData();
+  fetchPriceRange();
   fetchProducts();
-  fetchProductCategories();
 });
 
 // Watch for locale changes

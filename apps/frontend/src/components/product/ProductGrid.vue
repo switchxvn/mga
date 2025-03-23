@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import type { Product } from '@ew/shared';
 
 interface ProductTranslation {
   title: string;
@@ -7,20 +8,6 @@ interface ProductTranslation {
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
-}
-
-interface Product {
-  id: number;
-  sku?: string;
-  price: number | null;
-  comparePrice?: number | null;
-  thumbnail?: string;
-  slug?: string;
-  isFeatured: boolean;
-  isNew: boolean;
-  isSale: boolean;
-  translations: ProductTranslation[];
-  formattedPrice?: string;
 }
 
 const props = defineProps<{

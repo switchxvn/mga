@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { useLocalization } from '~/composables/useLocalization';
 import { useTrpc } from '~/composables/useTrpc';
 import { useCategory } from '~/composables/useCategory';
+import { useProduct, type ProductFilter, type ProductSortBy } from '~/composables/useProduct';
 import { 
   Search, 
   DollarSign, 
@@ -19,37 +20,42 @@ import '@vueform/slider/themes/default.css';
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
+const { 
+  productCategories,
+  loading: categoriesLoading,
+  uniqueCategories,
+  getCategoryTranslation,
+  fetchProductCategories
+} = useCategory();
 
 const props = defineProps<{
-  initialFilters?: {
-    search?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    includeNullPrice?: boolean;
-    isFeatured?: boolean;
-    isNew?: boolean;
-    isSale?: boolean;
-    sortBy?: string;
-    page?: number;
-    limit?: number;
-    categorySlug?: string;
-  };
+  initialFilters: ProductFilter;
   categoryId?: number;
 }>();
 
 const emit = defineEmits<{
-  (e: 'filter-change', filters: any): void;
+  (e: 'filter-change', filters: ProductFilter): void;
 }>();
 
-// Filter state
-const search = ref(props.initialFilters?.search || '');
-const priceRange = ref<[number, number]>([
-  props.initialFilters?.minPrice || 0,
-  props.initialFilters?.maxPrice || 1000000,
-]);
-const isFeatured = ref(props.initialFilters?.isFeatured || false);
-const isNew = ref(props.initialFilters?.isNew || false);
-const isSale = ref(props.initialFilters?.isSale || false);
+// Initialize product composable
+const {
+  filters,
+  priceRange,
+  isLoadingPriceRange,
+  isSearching,
+  formatPrice,
+  formatPriceSimple,
+  parsePriceInput,
+  fetchPriceRange,
+  updatePriceRange,
+  handleSearch,
+  toggleCategory,
+  resetFilters
+} = useProduct(props.initialFilters);
+
+// Custom price range inputs
+const minPriceInput = ref(formatPriceSimple(filters.value.minPrice ?? 0));
+const maxPriceInput = ref(formatPriceSimple(filters.value.maxPrice ?? 0));
 
 // UI state
 const expandedSections = ref({
@@ -60,81 +66,96 @@ const expandedSections = ref({
 
 // Price range data
 const minMaxPrice = ref<{ min: number; max: number }>({ min: 0, max: 1000000 });
-const isLoadingPriceRange = ref(true);
-
-// Custom price range inputs
-const minPriceInput = ref('');
-const maxPriceInput = ref('');
 
 // Search state
-const isSearching = ref(false);
 const searchTimeout = ref<NodeJS.Timeout | null>(null);
 
 // Attributes data
-const categoryAttributes = ref<any[]>([]);
+interface CategoryAttribute {
+  id: string;
+  name: string;
+  values: string[];
+  translations?: Array<{
+    locale: string;
+    name: string;
+  }>;
+}
+
+interface CategoryAttributeResponse {
+  id: number;
+  attributes: Array<{
+    id: number;
+    name: string;
+    values: string[];
+    translations?: Array<{
+      locale: string;
+      name: string;
+    }>;
+  }>;
+}
+
+interface ProductFilterWithAttributes extends ProductFilter {
+  attributes?: Array<{
+    id: number;
+    values: string[];
+  }>;
+}
+
+const attributes = ref<CategoryAttribute[]>([]);
 const isLoadingAttributes = ref(false);
 const selectedAttributes = ref<Record<string, string[]>>({});
 
 // Computed percentage values for slider positioning
 const minPercentage = computed(() => {
-  return ((priceRange.value[0] - minMaxPrice.value.min) / (minMaxPrice.value.max - minMaxPrice.value.min)) * 100;
+  const min = priceRange.value?.min ?? 0;
+  const rangeMin = minMaxPrice.value.min;
+  const rangeMax = minMaxPrice.value.max;
+  return ((min - rangeMin) / (rangeMax - rangeMin)) * 100;
 });
 
 const maxPercentage = computed(() => {
-  return ((priceRange.value[1] - minMaxPrice.value.min) / (minMaxPrice.value.max - minMaxPrice.value.min)) * 100;
+  const max = priceRange.value?.max ?? 0;
+  const rangeMin = minMaxPrice.value.min;
+  const rangeMax = minMaxPrice.value.max;
+  return ((max - rangeMin) / (rangeMax - rangeMin)) * 100;
 });
 
 // Slider options
-const sliderOptions = computed(() => ({
-  connect: true,
-  range: {
-    'min': minMaxPrice.value.min,
-    'max': minMaxPrice.value.max
-  },
-  step: 10000,
-  tooltips: false,
-  pips: false
-}));
+const sliderOptions = computed(() => {
+  const min = minMaxPrice.value.min;
+  const max = minMaxPrice.value.max;
+  return {
+    connect: true,
+    range: { min, max },
+    step: 10000,
+    tooltips: false,
+    pips: false
+  };
+});
 
-// Handle price range change from slider
-const handlePriceRangeChange = (values: number[]) => {
-  if (Array.isArray(values) && values.length === 2) {
-    priceRange.value = [values[0], values[1]];
-    updatePriceInputs();
-  }
+// Watch for changes and emit filter updates
+watch(filters, (newFilters) => {
+  emit('filter-change', newFilters);
+}, { deep: true });
+
+// Update range when inputs change
+const updatePriceInputs = () => {
+  emit('filter-change', {
+    ...props.initialFilters,
+    minPrice: minPriceInput.value !== '' ? Number(minPriceInput.value) : undefined,
+    maxPrice: maxPriceInput.value !== '' ? Number(maxPriceInput.value) : undefined
+  });
 };
 
-// Fetch price range for products in this category
-const fetchPriceRange = async () => {
-  isLoadingPriceRange.value = true;
-  try {
-    // Lấy giá min/max cho sản phẩm trong danh mục này
-    const result = await trpc.product.getMinMaxPrice.query({
-      categorySlug: props.initialFilters?.categorySlug
-    });
-    
-    minMaxPrice.value = result;
-    
-    // Only update price range if not already set by user
-    if (!props.initialFilters?.minPrice && !props.initialFilters?.maxPrice) {
-      priceRange.value = [result.min, result.max];
-      updatePriceInputs();
-    } else {
-      priceRange.value = [
-        props.initialFilters?.minPrice || result.min,
-        props.initialFilters?.maxPrice || result.max
-      ];
-      updatePriceInputs();
-    }
-  } catch (error) {
-    console.error('Error fetching price range:', error);
-    // Fallback to default values
-    minMaxPrice.value = { min: 0, max: 10000000 };
-    priceRange.value = [0, 10000000];
-    updatePriceInputs();
-  } finally {
-    isLoadingPriceRange.value = false;
-  }
+// Handle price range change from slider
+const handlePriceRangeChange = (values: [number, number]) => {
+  minPriceInput.value = values[0].toString();
+  maxPriceInput.value = values[1].toString();
+  emit('filter-change', {
+    ...props.initialFilters,
+    minPrice: values[0],
+    maxPrice: values[1]
+  });
 };
 
 // Fetch category attributes
@@ -143,73 +164,24 @@ const fetchCategoryAttributes = async () => {
   
   isLoadingAttributes.value = true;
   try {
-    const result = await trpc.category.getAttributesByCategoryId.query({
-      categoryId: props.categoryId,
-      locale: locale.value
+    const result = await trpc.category.getAttributes.query({ 
+      id: props.categoryId,
+      locale: locale.value 
     });
     
-    categoryAttributes.value = result || [];
+    if (result?.attributes) {
+      attributes.value = result.attributes.map(attr => ({
+        id: String(attr.id),
+        name: attr.translations?.find(t => t.locale === locale.value)?.name || attr.name,
+        values: attr.values || [],
+        translations: attr.translations
+      }));
+    }
   } catch (error) {
     console.error('Error fetching category attributes:', error);
-    categoryAttributes.value = [];
   } finally {
     isLoadingAttributes.value = false;
   }
-};
-
-// Update price inputs when range changes
-const updatePriceInputs = () => {
-  minPriceInput.value = formatPriceSimple(priceRange.value[0]);
-  maxPriceInput.value = formatPriceSimple(priceRange.value[1]);
-};
-
-// Update range when inputs change
-const updatePriceRange = () => {
-  const min = parsePriceInput(minPriceInput.value);
-  const max = parsePriceInput(maxPriceInput.value);
-  
-  if (min !== null && max !== null) {
-    // Ensure min <= max
-    if (min <= max) {
-      priceRange.value = [min, max];
-    } else {
-      // If min > max, swap values
-      priceRange.value = [max, min];
-      updatePriceInputs();
-    }
-  }
-};
-
-// Handle search input
-const handleSearchInput = () => {
-  isSearching.value = true;
-  
-  // Clear previous timeout
-  if (searchTimeout.value) {
-    clearTimeout(searchTimeout.value);
-  }
-  
-  // Set new timeout to apply search after typing stops
-  searchTimeout.value = setTimeout(() => {
-    applyFilters();
-    isSearching.value = false;
-  }, 500);
-};
-
-// Parse price input (remove currency formatting)
-const parsePriceInput = (value: string): number | null => {
-  const numericValue = value.replace(/[^\d]/g, '');
-  return numericValue ? Number(numericValue) : null;
-};
-
-// Format price for display
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-};
-
-// Format price without currency symbol for input
-const formatPriceSimple = (price: number) => {
-  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(price);
 };
 
 // Toggle attribute value selection
@@ -225,62 +197,48 @@ const toggleAttributeValue = (attributeId: string, value: string) => {
     selectedAttributes.value[attributeId].splice(index, 1);
   }
   
-  applyFilters();
-};
-
-// Apply filters
-const applyFilters = () => {
   emit('filter-change', {
-    search: search.value,
-    minPrice: priceRange.value[0],
-    maxPrice: priceRange.value[1],
-    includeNullPrice: true,
-    isFeatured: isFeatured.value ? true : undefined,
-    isNew: isNew.value ? true : undefined,
-    isSale: isSale.value ? true : undefined,
-    attributes: Object.keys(selectedAttributes.value).length > 0 ? selectedAttributes.value : undefined,
+    ...props.initialFilters,
+    attributes: Object.entries(selectedAttributes.value).map(([id, values]) => ({
+      id: Number(id),
+      values
+    }))
   });
 };
 
-// Reset filters
-const resetFilters = () => {
-  search.value = '';
-  priceRange.value = [minMaxPrice.value.min, minMaxPrice.value.max];
-  updatePriceInputs();
-  isFeatured.value = false;
-  isNew.value = false;
-  isSale.value = false;
-  selectedAttributes.value = {};
-  
-  applyFilters();
-};
-
 // Toggle section expansion
-const toggleSection = (section: string) => {
+const toggleSection = (section: keyof typeof expandedSections.value) => {
   expandedSections.value[section] = !expandedSections.value[section];
 };
-
-// Watch for changes and apply filters
-watch([isFeatured, isNew, isSale, selectedAttributes], () => {
-  applyFilters();
-}, { deep: true });
-
-// Watch price range changes
-watch(priceRange, () => {
-  updatePriceInputs();
-  applyFilters();
-}, { deep: true });
-
-// Watch for search changes
-watch(search, () => {
-  handleSearchInput();
-});
 
 // Initialize
 onMounted(() => {
   fetchPriceRange();
+  fetchProductCategories();
   fetchCategoryAttributes();
 });
+
+// Reset filters with emit
+const handleResetFilters = () => {
+  selectedAttributes.value = {};
+  minPriceInput.value = '';
+  maxPriceInput.value = '';
+  emit('filter-change', {
+    ...props.initialFilters,
+    minPrice: undefined,
+    maxPrice: undefined,
+    attributes: []
+  });
+};
+
+// Watch for categoryId changes to fetch attributes
+watch(() => props.categoryId, (newId) => {
+  if (newId) {
+    fetchCategoryAttributes();
+  } else {
+    attributes.value = [];
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -292,7 +250,7 @@ onMounted(() => {
         <div class="relative">
           <div class="custom-input-container">
             <UInput
-              v-model="search"
+              v-model="filters.search"
               :placeholder="t('products.searchPlaceholder')"
               class="w-full search-input"
               size="md"
@@ -305,8 +263,8 @@ onMounted(() => {
               </template>
             </UInput>
           </div>
-          <div v-if="search" class="mt-2 text-xs text-gray-500">
-            {{ t('products.searchingFor') }}: <span class="font-medium">{{ search }}</span>
+          <div v-if="filters.search" class="mt-2 text-xs text-gray-500">
+            {{ t('products.searchingFor') }}: <span class="font-medium">{{ filters.search }}</span>
           </div>
         </div>
       </div>
@@ -338,10 +296,10 @@ onMounted(() => {
             <!-- Price Range Display -->
             <div class="mb-2 flex items-center justify-between">
               <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
-                {{ formatPrice(priceRange[0]) }}
+                {{ formatPrice(priceRange.min) }}
               </span>
               <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
-                {{ formatPrice(priceRange[1]) }}
+                {{ formatPrice(priceRange.max) }}
               </span>
             </div>
             
@@ -363,8 +321,8 @@ onMounted(() => {
                     v-model="minPriceInput"
                     class="w-full price-input"
                     size="md"
-                    @blur="updatePriceRange"
-                    @keyup.enter="updatePriceRange"
+                    @blur="updatePriceInputs"
+                    @keyup.enter="updatePriceInputs"
                   >
                     <template #leading>
                       <div class="leading-icon-wrapper">
@@ -381,8 +339,8 @@ onMounted(() => {
                     v-model="maxPriceInput"
                     class="w-full price-input"
                     size="md"
-                    @blur="updatePriceRange"
-                    @keyup.enter="updatePriceRange"
+                    @blur="updatePriceInputs"
+                    @keyup.enter="updatePriceInputs"
                   >
                     <template #leading>
                       <div class="leading-icon-wrapper">
@@ -419,7 +377,7 @@ onMounted(() => {
           <div class="space-y-2">
             <div class="flex items-center">
               <UCheckbox
-                v-model="isFeatured"
+                v-model="filters.isFeatured"
                 name="featured"
                 color="primary"
               />
@@ -431,7 +389,7 @@ onMounted(() => {
             
             <div class="flex items-center">
               <UCheckbox
-                v-model="isNew"
+                v-model="filters.isNew"
                 name="new"
                 color="primary"
               />
@@ -443,7 +401,7 @@ onMounted(() => {
             
             <div class="flex items-center">
               <UCheckbox
-                v-model="isSale"
+                v-model="filters.isSale"
                 name="sale"
                 color="primary"
               />
@@ -459,7 +417,7 @@ onMounted(() => {
       <hr class="border-gray-200 dark:border-gray-700 mx-4">
       
       <!-- Category Attributes -->
-      <div v-if="categoryAttributes.length > 0">
+      <div v-if="attributes.length > 0">
         <div 
           @click="toggleSection('attributes')"
           class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -480,8 +438,10 @@ onMounted(() => {
           </div>
           
           <div v-else class="space-y-4">
-            <div v-for="attribute in categoryAttributes" :key="attribute.id" class="border-b border-gray-100 pb-3 dark:border-gray-800 last:border-0 last:pb-0">
-              <h4 class="mb-2 font-medium text-sm text-gray-800 dark:text-gray-200">{{ attribute.translations?.find(t => t.locale === locale)?.name || attribute.name }}</h4>
+            <div v-for="attribute in attributes" :key="attribute.id" class="border-b border-gray-100 pb-3 dark:border-gray-800 last:border-0 last:pb-0">
+              <h4 class="mb-2 font-medium text-sm text-gray-800 dark:text-gray-200">
+                {{ attribute.translations?.find(t => t.locale === locale)?.name || attribute.name }}
+              </h4>
               <div class="space-y-1">
                 <div 
                   v-for="value in attribute.values" 
@@ -509,7 +469,7 @@ onMounted(() => {
       <!-- Reset Filters -->
       <div class="p-4">
         <UButton
-          @click="resetFilters"
+          @click="handleResetFilters"
           variant="ghost"
           color="gray"
           block
