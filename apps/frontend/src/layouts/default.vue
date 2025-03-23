@@ -19,31 +19,43 @@ const { getActiveTheme } = useTheme();
 const user = ref<any>(null);
 const isLoading = ref(true);
 const isDarkMode = ref(false);
-const theme = ref<any>(null);
+const theme = ref<any>({ sections: [] }); // Initialize with empty sections
 
-// Register components
+// Register available components
 const components = {
   CombinedNavbar
 } as const;
 
 // Function to get component name based on section type and componentName
 const resolveComponent = (section: any) => {
+  console.log('Resolving component for section:', section);
   if (section.componentName && components[section.componentName as keyof typeof components]) {
     return components[section.componentName as keyof typeof components];
   }
-  return components.CombinedNavbar;
+  const component = getDefaultComponent(section.type);
+  console.log('Resolved component:', component?.name);
+  return component;
 };
 
-// Kiểm tra dark mode
+// Function to get default component based on section type
+const getDefaultComponent = (type: string) => {
+  const typeToComponent: Record<string, any> = {
+    'navbar': components.CombinedNavbar
+  };
+  
+  return typeToComponent[type] || components.CombinedNavbar;
+};
+
+// Kiểm tra dark mode với defensive programming
 const checkDarkMode = () => {
-  if (typeof document !== 'undefined') {
-    isDarkMode.value = document.documentElement.classList.contains('dark');
+  if (process.client) {
+    isDarkMode.value = document?.documentElement?.classList?.contains('dark') ?? false;
     
     // Thêm class vào body để đảm bảo dark mode được áp dụng đúng cách
     if (isDarkMode.value) {
-      document.body.classList.add('dark-mode');
+      document?.body?.classList?.add('dark-mode');
     } else {
-      document.body.classList.remove('dark-mode');
+      document?.body?.classList?.remove('dark-mode');
     }
   }
 };
@@ -55,8 +67,8 @@ onMounted(async () => {
     const token = localStorage.getItem('token');
     
     if (storedUser && token) {
-      user.value = JSON.parse(storedUser);
       try {
+        user.value = JSON.parse(storedUser);
         const currentUser = await trpc.auth.me.query();
         user.value = currentUser;
       } catch (error) {
@@ -65,14 +77,21 @@ onMounted(async () => {
       }
     }
     
-    // Lấy theme và navbar section
-    theme.value = await getActiveTheme({ pageType: PageType.COMMON });
+    // Lấy theme và navbar section với error handling
+    try {
+      const activeTheme = await getActiveTheme({ pageType: PageType.COMMON });
+      if (activeTheme) {
+        theme.value = activeTheme;
+      }
+    } catch (error) {
+      console.error('Failed to load theme:', error);
+    }
     
     // Kiểm tra dark mode
     checkDarkMode();
     
     // Theo dõi thay đổi của dark mode
-    if (typeof window !== 'undefined') {
+    if (process.client) {
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.attributeName === 'class') {
@@ -87,7 +106,7 @@ onMounted(async () => {
       });
     }
   } catch (error) {
-    console.error('Error checking authentication:', error);
+    console.error('Error in layout setup:', error);
   } finally {
     isLoading.value = false;
   }

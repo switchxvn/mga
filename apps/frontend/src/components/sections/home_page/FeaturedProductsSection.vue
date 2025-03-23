@@ -208,19 +208,24 @@ async function fetchFeaturedProducts() {
 
 <style lang="scss" scoped>
 .featured-products-section {
+  overflow-x: hidden;
+
   .swiper-outer-container {
     position: relative;
-    margin: 0 -40px;
-    padding: 0 40px;
+    margin: 0 auto;
+    padding: 0;
+    width: 100%;
 
-    @media (max-width: 640px) {
-      margin: 0 -20px;
-      padding: 0 20px;
+    @media (min-width: 641px) {
+      margin: 0 -40px;
+      padding: 0 40px;
     }
   }
 
   .swiper-container {
     overflow: hidden;
+    position: relative;
+    width: 100%;
   }
 
   :deep() {
@@ -248,6 +253,13 @@ async function fetchFeaturedProducts() {
       border-radius: 50%;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       cursor: pointer;
+      z-index: 10;
+      
+      @media (max-width: 640px) {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
       
       &::after {
         font-size: 1.2rem;
@@ -272,10 +284,6 @@ async function fetchFeaturedProducts() {
             color: var(--primary);
           }
         }
-      }
-
-      @media (max-width: 640px) {
-        display: none;
       }
     }
 

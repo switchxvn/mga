@@ -213,6 +213,7 @@ export default defineNuxtConfig({
           rewrite: (path) => path,
         },
       },
+      allowedHosts: process.env.ALLOWED_HOSTS ? process.env.ALLOWED_HOSTS.split(',') : [],
     },
     resolve: {
       alias: {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useDarkMode } from '~/composables/useDarkMode';
 import Icon from '~/components/ui/Icon.vue';
 import { onClickOutside } from '@vueuse/core';
@@ -14,21 +14,40 @@ onClickOutside(menuRef, () => {
   isOpen.value = false;
 });
 
-const modes = [
-  { value: 'light', label: t('theme.light'), icon: 'Sun' },
-  { value: 'dark', label: t('theme.dark'), icon: 'Moon' },
-  { value: 'auto', label: t('theme.system'), icon: 'Monitor' }
-] as const;
+type ThemeMode = 'light' | 'dark' | 'auto';
+type IconName = 'Sun' | 'Moon' | 'Monitor' | 'ChevronDown' | 'Check';
 
-const getCurrentIcon = () => {
-  if (currentMode.value === 'auto') return 'Monitor';
-  return isDark.value ? 'Moon' : 'Sun';
+interface ThemeModeOption {
+  value: ThemeMode;
+  label: string;
+  icon: IconName;
+}
+
+// Define mode configurations
+const modeConfigs: { [key in ThemeMode]: { icon: IconName, labelKey: string } } = {
+  light: { icon: 'Sun', labelKey: 'theme.light' },
+  dark: { icon: 'Moon', labelKey: 'theme.dark' },
+  auto: { icon: 'Monitor', labelKey: 'theme.system' }
 };
 
-const getCurrentLabel = () => {
-  const mode = modes.find(m => m.value === currentMode.value);
+// Make modes reactive using computed
+const modes = computed<ThemeModeOption[]>(() => 
+  Object.entries(modeConfigs).map(([value, config]) => ({
+    value: value as ThemeMode,
+    label: t(config.labelKey),
+    icon: config.icon
+  }))
+);
+
+const getCurrentIcon = computed(() => {
+  if (currentMode.value === 'auto') return modeConfigs.auto.icon;
+  return isDark.value ? modeConfigs.dark.icon : modeConfigs.light.icon;
+});
+
+const getCurrentLabel = computed(() => {
+  const mode = modes.value.find(m => m.value === currentMode.value);
   return mode ? mode.label : t('theme.title');
-};
+});
 </script>
 
 <template>
@@ -40,11 +59,11 @@ const getCurrentLabel = () => {
     >
       <div class="w-4 h-4 flex items-center justify-center">
         <Icon
-          :name="getCurrentIcon()"
+          :name="getCurrentIcon"
           class="h-4 w-4"
         />
       </div>
-      <span class="text-sm font-medium">{{ getCurrentLabel() }}</span>
+      <span class="text-sm font-medium">{{ getCurrentLabel }}</span>
       <Icon 
         name="ChevronDown"
         class="h-4 w-4 transition-transform !transition-none"

@@ -160,10 +160,10 @@ async function fetchFeaturedProducts() {
       <div class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
         <div class="container mx-auto px-4">
           <div class="flex items-center justify-between gap-4 py-3">
-            <div class="w-32"><!-- Spacer to help with centering --></div>
+            <div class="w-32 hidden sm:block"><!-- Spacer to help with centering --></div>
             <div class="category-header flex-1 text-center">
               <h2 
-                class="inline-flex items-center px-4 py-2"
+                class="inline-flex items-center px-4 py-2 mobile-title"
                 :class="[
                   config.fontSize?.title || 'text-2xl sm:text-3xl',
                   'font-bold',
@@ -177,10 +177,10 @@ async function fetchFeaturedProducts() {
             <div class="w-32 flex justify-end">
               <NuxtLink
                 to="/products"
-                class="inline-flex items-center justify-center px-4 py-2 text-lg font-bold uppercase tracking-wider text-white hover:text-primary-100 transition-colors duration-200 whitespace-nowrap"
+                class="mobile-view-all inline-flex items-center justify-center px-4 py-2 text-xs sm:text-lg font-semibold uppercase tracking-wider text-white hover:text-primary-100 transition-colors duration-200 whitespace-nowrap"
               >
                 {{ t("products.viewAll") }}
-                <ArrowRight class="ml-2 h-5 w-5" aria-hidden="true" />
+                <ArrowRight class="ml-1 h-3 w-3 sm:h-5 sm:w-5" aria-hidden="true" />
               </NuxtLink>
             </div>
           </div>
@@ -238,19 +238,49 @@ async function fetchFeaturedProducts() {
 
 <style lang="scss" scoped>
 .featured-products-section {
+  overflow-x: hidden;
+
+  .category-header {
+    @media (max-width: 640px) {
+      text-align: left !important;
+      
+      h2.mobile-title {
+        font-size: 0.875rem !important; /* text-sm */
+        line-height: 1.25rem !important;
+        padding: 0.375rem 0 !important;
+        justify-content: flex-start !important;
+        letter-spacing: 0.025em !important;
+        font-weight: 600 !important;
+      }
+    }
+  }
+
+  .mobile-view-all {
+    @media (max-width: 640px) {
+      font-size: 0.75rem !important; /* text-xs */
+      line-height: 1rem !important;
+      padding: 0.25rem 0.75rem !important;
+      font-weight: 500 !important;
+      letter-spacing: 0.025em !important;
+    }
+  }
+
   .swiper-outer-container {
     position: relative;
-    margin: 0 -40px;
-    padding: 0 40px;
+    margin: 0 auto;
+    padding: 0;
+    width: 100%;
 
-    @media (max-width: 640px) {
-      margin: 0 -20px;
-      padding: 0 20px;
+    @media (min-width: 641px) {
+      margin: 0 -40px;
+      padding: 0 40px;
     }
   }
 
   .swiper-container {
     overflow: hidden;
+    position: relative;
+    width: 100%;
   }
 
   :deep() {
@@ -278,6 +308,13 @@ async function fetchFeaturedProducts() {
       border-radius: 50%;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       cursor: pointer;
+      z-index: 10;
+      
+      @media (max-width: 640px) {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
       
       &::after {
         font-size: 1.2rem;
@@ -302,10 +339,6 @@ async function fetchFeaturedProducts() {
             color: var(--primary);
           }
         }
-      }
-
-      @media (max-width: 640px) {
-        display: none;
       }
     }
 
