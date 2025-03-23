@@ -34,6 +34,8 @@ import { AboutAdminService } from '../../about/admin/services/about-admin.servic
 import { AboutFrontendService } from '../../about/frontend/services/about-frontend.service';
 import { LogoFrontendService } from '../../settings/frontend/services/logo-frontend.service';
 import { LogoAdminService } from '../../settings/admin/services/logo-admin.service';
+import { CustomerLogoFrontendService } from '../../customer-logo/frontend/services/customer-logo-frontend.service';
+import { CustomerLogoAdminService } from '../../customer-logo/admin/services/customer-logo-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -72,4 +74,6 @@ export interface ITrpcServices {
   aboutFrontendService: AboutFrontendService;
   logoFrontendService: LogoFrontendService;
   logoAdminService: LogoAdminService;
+  customerLogoFrontendService: CustomerLogoFrontendService;
+  customerLogoAdminService: CustomerLogoAdminService;
 } 

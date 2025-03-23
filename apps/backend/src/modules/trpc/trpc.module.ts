@@ -22,6 +22,7 @@ import { TrpcRouter } from './trpc.router';
 import { ThemeModule } from '../theme/theme.module';
 import { LanguageModule } from '../language/language.module';
 import { AboutModule } from '../about/about.module';
+import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
 
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
@@ -38,6 +39,7 @@ import { AboutModule } from '../about/about.module';
  * - Feature flags for conditional functionality
  * - Language and translation management
  * - About page management
+ * - Customer logos management
  */
 @Module({
   controllers: [TrpcController],
@@ -58,6 +60,7 @@ import { AboutModule } from '../about/about.module';
     ThemeModule,
     LanguageModule,
     AboutModule,
+    CustomerLogoModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency
@@ -77,7 +80,11 @@ import { AboutModule } from '../about/about.module';
       isGlobal: true,
     }),
   ],
-  providers: [TrpcService, CommonRouter, TrpcRouter],
+  providers: [
+    TrpcService,
+    CommonRouter,
+    TrpcRouter,
+  ],
   exports: [TrpcService, TrpcRouter],
 })
 export class TrpcModule {} 

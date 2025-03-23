@@ -19,6 +19,8 @@ import { componentStyleConfigRouter } from './routers/component-style-config.rou
 import { languageRouter } from './routers/language.router';
 import { aboutRouter } from './routers/about.router';
 import { logoRouter } from './routers/logo.router';
+import { customerLogoRouter } from './routers/customer-logo.router';
+
 @Injectable()
 export class TrpcRouter {
   constructor(
@@ -47,8 +49,11 @@ export class TrpcRouter {
       language: languageRouter,
       about: aboutRouter,
       logo: logoRouter,
+      customerLogo: customerLogoRouter,
     });
   }
+
+  public router = this.getRouter();
 }
 
 export type AppRouter = ReturnType<TrpcRouter['getRouter']>; 
