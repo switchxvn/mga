@@ -67,6 +67,35 @@ const expandedSections = ref({
 // Price range data
 const minMaxPrice = ref<{ min: number; max: number }>({ min: 0, max: 1000000 });
 
+// Price range state
+const currentRange = ref([0, 1000000]);
+
+// Update minMaxPrice when priceRange changes
+watch(priceRange, (newRange) => {
+  if (newRange) {
+    minMaxPrice.value = {
+      min: newRange.min,
+      max: newRange.max
+    };
+    currentRange.value = [
+      filters.value.minPrice || newRange.min,
+      filters.value.maxPrice || newRange.max
+    ];
+  }
+}, { immediate: true });
+
+// Slider options
+const sliderOptions = computed(() => ({
+  connect: true,
+  range: {
+    'min': minMaxPrice.value.min,
+    'max': minMaxPrice.value.max
+  },
+  step: 10000,
+  tooltips: false,
+  pips: false
+}));
+
 // Search state
 const searchTimeout = ref<NodeJS.Timeout | null>(null);
 
@@ -120,42 +149,41 @@ const maxPercentage = computed(() => {
   return ((max - rangeMin) / (rangeMax - rangeMin)) * 100;
 });
 
-// Slider options
-const sliderOptions = computed(() => {
-  const min = minMaxPrice.value.min;
-  const max = minMaxPrice.value.max;
-  return {
-    connect: true,
-    range: { min, max },
-    step: 10000,
-    tooltips: false,
-    pips: false
-  };
-});
-
 // Watch for changes and emit filter updates
 watch(filters, (newFilters) => {
   emit('filter-change', newFilters);
 }, { deep: true });
 
-// Update range when inputs change
-const updatePriceInputs = () => {
-  emit('filter-change', {
-    ...props.initialFilters,
-    minPrice: minPriceInput.value !== '' ? Number(minPriceInput.value) : undefined,
-    maxPrice: maxPriceInput.value !== '' ? Number(maxPriceInput.value) : undefined
-  });
+// Handle price range change from slider
+const handlePriceRangeChange = (values: number[]) => {
+  if (Array.isArray(values) && values.length === 2) {
+    const [min, max] = values;
+    currentRange.value = [min, max];
+    filters.value.minPrice = min;
+    filters.value.maxPrice = max;
+    minPriceInput.value = formatPriceSimple(min);
+    maxPriceInput.value = formatPriceSimple(max);
+  }
 };
 
-// Handle price range change from slider
-const handlePriceRangeChange = (values: [number, number]) => {
-  minPriceInput.value = values[0].toString();
-  maxPriceInput.value = values[1].toString();
-  emit('filter-change', {
-    ...props.initialFilters,
-    minPrice: values[0],
-    maxPrice: values[1]
-  });
+// Update range when inputs change
+const updatePriceInputs = () => {
+  const min = parsePriceInput(minPriceInput.value);
+  const max = parsePriceInput(maxPriceInput.value);
+
+  if (min !== null && max !== null) {
+    // Ensure min <= max
+    if (min <= max) {
+      filters.value.minPrice = min;
+      filters.value.maxPrice = max;
+    } else {
+      // If min > max, swap values
+      filters.value.minPrice = max;
+      filters.value.maxPrice = min;
+      minPriceInput.value = formatPriceSimple(max);
+      maxPriceInput.value = formatPriceSimple(min);
+    }
+  }
 };
 
 // Fetch category attributes
@@ -296,17 +324,17 @@ watch(() => props.categoryId, (newId) => {
             <!-- Price Range Display -->
             <div class="mb-2 flex items-center justify-between">
               <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
-                {{ formatPrice(priceRange.min) }}
+                {{ formatPrice(currentRange[0]) }}
               </span>
               <span class="text-sm font-medium text-sky-500 dark:text-sky-400">
-                {{ formatPrice(priceRange.max) }}
+                {{ formatPrice(currentRange[1]) }}
               </span>
             </div>
             
             <!-- Vueform Slider -->
             <div class="mb-6 mt-6 px-2">
               <Slider
-                v-model="priceRange"
+                v-model="currentRange"
                 :options="sliderOptions"
                 class="slider-primary"
                 @update="handlePriceRangeChange"
