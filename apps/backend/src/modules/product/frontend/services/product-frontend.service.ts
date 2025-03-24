@@ -147,13 +147,26 @@ export class ProductFrontendService {
 
     // Execute query
     const [items, total] = await queryBuilder.getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
+    
+    // Add logging for debugging
+    console.log('Pagination debug:', {
+      total,
+      limit,
+      page,
+      calculatedTotalPages: Math.ceil(total / limit)
+    });
+    
+    // Ensure limit is a positive number
+    const validLimit = Math.max(1, limit);
+    
+    // Calculate total pages, ensuring at least 1 page if there are items
+    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / validLimit)) : 0;
 
     return {
       items,
       total,
       page,
-      limit,
+      limit: validLimit,
       totalPages,
     };
   }

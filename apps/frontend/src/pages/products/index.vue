@@ -235,12 +235,12 @@ watch(locale, () => {
           />
 
           <!-- Pagination -->
-          <div v-if="totalPages > 1" class="mt-8 flex justify-center">
-            <UPagination
+          <div class="mt-8">
+            <Pagination
               v-model="filters.page"
-              :page-count="totalPages"
               :total="totalProducts"
-              :ui="{ rounded: 'rounded-lg' }"
+              :items-per-page="filters.limit"
+              :max-visible-buttons="5"
               @update:model-value="handlePageChange"
             />
           </div>
