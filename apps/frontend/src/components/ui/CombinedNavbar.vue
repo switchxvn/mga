@@ -163,22 +163,51 @@ const { processColorValue } = useCssColorValue();
 
 // Process menu items with translations
 const processedMenuItems = computed(() => {
-  return menuItems.value
-    .filter((item) => item.isActive !== false)
-    .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .map((item) => ({
+  // Get parent menu items first
+  const parentMenuItems = menuItems.value
+    .filter(item => !item.parentId && item.isActive !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Process each parent menu item
+  return parentMenuItems.map(item => {
+    // Get child menu items
+    const childItems = menuItems.value
+      .filter(child => child.parentId === item.id && child.isActive !== false)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    // Check if this menu item has children (mega menu)
+    const hasMegaMenu = childItems.length > 0;
+
+    // Get translation for current item
+    const currentTranslation = item.translations?.find(t => t.locale === locale.value) || 
+      item.translations?.[0];
+
+    // Group child items into columns (3 items per column)
+    const itemsPerColumn = 3;
+    const megaMenuColumns = hasMegaMenu ? Array.from({ length: Math.ceil(childItems.length / itemsPerColumn) }, (_, columnIndex) => {
+      const startIndex = columnIndex * itemsPerColumn;
+      const columnItems = childItems.slice(startIndex, startIndex + itemsPerColumn);
+      return {
+        title: getTranslation(item, locale.value), // Use parent item's label as column title
+        items: columnItems.map(child => {
+          const childTranslation = child.translations?.find(t => t.locale === locale.value) || 
+            child.translations?.[0];
+          return {
+            href: childTranslation?.href || "#",
+            label: getTranslation(child, locale.value)
+          };
+        })
+      };
+    }) : [];
+
+    return {
       ...item,
-      href: item.href || "#",
-      hasMegaMenu: Boolean(item.hasMegaMenu),
+      href: currentTranslation?.href || "#",
+      hasMegaMenu,
       label: getTranslation(item, locale.value),
-      megaMenuColumns: (item.megaMenuColumns || []).map((column) => ({
-        title: getColumnTitleTranslation(column, locale.value),
-        items: column.items.map((subItem) => ({
-          href: subItem.href || "#",
-          label: getTranslation(subItem, locale.value)
-        }))
-      }))
-    }));
+      megaMenuColumns
+    };
+  });
 });
 
 // Hàm lấy bản dịch theo ngôn ngữ
@@ -439,7 +468,7 @@ onUnmounted(() => {
         <div class="flex items-center justify-between py-4">
           <!-- Logo -->
           <div class="flex-shrink-0">
-            <NuxtLink to="/" class="block">
+            <a href="/" class="block">
               <div 
                 class="flex items-center justify-center" 
                 :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
@@ -454,7 +483,7 @@ onUnmounted(() => {
                 />
                 <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
               </div>
-            </NuxtLink>
+            </a>
           </div>
 
           <!-- Slogan -->
@@ -564,7 +593,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Desktop Navigation -->
-            <nav class="hidden md:flex items-center space-x-6 flex-grow justify-center">
+            <nav class="hidden md:flex items-center space-x-6 flex-grow justify-start">
               <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400">Đang tải menu...</div>
               <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
               <template v-else>
@@ -575,8 +604,8 @@ onUnmounted(() => {
                   @mouseenter="item.hasMegaMenu ? showMegaMenu(item.id) : null"
                   @mouseleave="item.hasMegaMenu ? hideMegaMenu() : null"
                 >
-                  <NuxtLink
-                    :to="item.href"
+                  <a
+                    :href="item.href"
                     class="main-menu-item text-base uppercase transition-colors py-5 flex items-center space-x-1"
                     :class="{ 'menu-active': isMenuActive(item.href) }"
                   >
@@ -597,7 +626,7 @@ onUnmounted(() => {
                       name="ChevronDown"
                       class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
                     />
-                  </NuxtLink>
+                  </a>
 
                   <!-- Mega Menu -->
                   <div
@@ -622,13 +651,13 @@ onUnmounted(() => {
                             :key="subItemIndex"
                             class="block"
                           >
-                            <NuxtLink
-                              :to="subItem.href"
+                            <a
+                              :href="subItem.href"
                               class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400"
                               @click="activeMegaMenu = null"
                             >
                               {{ subItem.label }}
-                            </NuxtLink>
+                            </a>
                           </li>
                         </ul>
                       </div>
@@ -726,16 +755,16 @@ onUnmounted(() => {
                 </a>
               </div>
 
-              <NuxtLink
+              <a
                 v-for="item in processedMenuItems"
                 :key="item.id"
-                :to="item.href"
+                :href="item.href"
                 class="mobile-main-menu-item block px-3 py-2 text-lg font-extrabold uppercase rounded-md"
                 :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 @click="isMobileMenuOpen = false"
               >
                 {{ item.label }}
-              </NuxtLink>
+              </a>
             </template>
           </div>
         </div>
@@ -844,17 +873,6 @@ onUnmounted(() => {
 .navigation-section .main-menu-item:hover > span {
   color: var(--hover-color) !important;
 }
-
-/* Remove static color styles since we're handling colors dynamically */
-.navigation-section .menu-active > span {
-  /* color is now handled by :style binding */
-}
-
-/* Dark mode override is also handled by processColorValue */
-:root.dark .navigation-section .menu-active > span {
-  /* color is now handled by :style binding */
-}
-
 /* Mobile menu styles */
 .mobile-main-menu-item.menu-active {
   color: var(--primary-500) !important;

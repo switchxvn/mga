@@ -9,12 +9,6 @@ export class MenuItem {
   @Column({ name: 'default_locale', length: 2, default: 'en' })
   defaultLocale: string;
 
-  @Column()
-  href: string;
-
-  @Column({ name: 'has_mega_menu', default: false })
-  hasMegaMenu: boolean;
-
   @Column({ nullable: true })
   icon: string;
 
@@ -29,16 +23,13 @@ export class MenuItem {
 
   @ManyToOne(() => MenuItem, menuItem => menuItem.children, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'parent_id' })
-  parent: MenuItem;
+  parent: MenuItem | null;
 
-  @OneToMany(() => MenuItem, menuItem => menuItem.parent)
+  @OneToMany(() => MenuItem, (menuItem) => menuItem.parent)
   children: MenuItem[];
 
-  @OneToMany(() => MenuItemTranslation, translation => translation.menuItem)
+  @OneToMany(() => MenuItemTranslation, (translation) => translation.menuItem)
   translations: MenuItemTranslation[];
-
-  @Column({ name: 'mega_menu_columns', type: 'jsonb', nullable: true })
-  megaMenuColumns: any;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -82,6 +82,8 @@ export default defineNuxtConfig({
       const productDetailRoute = routes.find(r => r.path.startsWith(ROUTE_PATHS.PRODUCTS_LIST.en + '/'));
       const serviceListRoute = routes.find(r => r.path === ROUTE_PATHS.SERVICES_LIST.en);
       const serviceDetailRoute = routes.find(r => r.path.startsWith(ROUTE_PATHS.SERVICES_LIST.en + '/'));
+      const categoriesListRoute = routes.find(r => r.path === ROUTE_PATHS.CATEGORIES_LIST.en);
+      const categoryDetailRoute = routes.find(r => r.path.startsWith(ROUTE_PATHS.CATEGORIES_LIST.en + '/'));
 
       if (postsListRoute) {
         routes.push({
@@ -131,6 +133,23 @@ export default defineNuxtConfig({
           path: ROUTE_PATHS.SERVICE_DETAIL.vi,
           file: serviceDetailRoute.file,
           meta: serviceDetailRoute.meta
+        });
+      }
+
+      if (categoriesListRoute) {
+        routes.push({
+          name: ROUTE_NAMES.CATEGORIES_LIST.vi,
+          path: ROUTE_PATHS.CATEGORIES_LIST.vi,
+          file: categoriesListRoute.file
+        });
+      }
+
+      if (categoryDetailRoute) {
+        routes.push({
+          name: ROUTE_NAMES.CATEGORY_DETAIL.vi,
+          path: ROUTE_PATHS.CATEGORY_DETAIL.vi,
+          file: categoryDetailRoute.file,
+          meta: categoryDetailRoute.meta
         });
       }
     }

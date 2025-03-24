@@ -9,6 +9,11 @@ export class MenuItemTranslationDto {
 
   @ApiProperty()
   @IsString()
+  @IsNotEmpty()
+  href: string;
+
+  @ApiProperty()
+  @IsString()
   @Length(2, 2)
   locale: string;
 }

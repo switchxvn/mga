@@ -6,30 +6,16 @@ import { TRPCError } from '@trpc/server';
 const menuItemTranslationSchema = z.object({
   id: z.number().optional(),
   label: z.string().min(1),
+  href: z.string().min(1),
   locale: z.string().length(2)
-});
-
-const megaMenuItemSchema = z.object({
-  href: z.string(),
-  label: z.string(),
-  translations: z.array(menuItemTranslationSchema).optional()
-});
-
-const megaMenuColumnSchema = z.object({
-  title: z.string(),
-  titleTranslations: z.array(menuItemTranslationSchema).optional(),
-  items: z.array(megaMenuItemSchema)
 });
 
 const baseMenuItemSchema = z.object({
   defaultLocale: z.string().length(2).default('en'),
-  href: z.string().min(1),
-  hasMegaMenu: z.boolean().default(false),
   icon: z.string().optional().nullable(),
   order: z.number().default(0),
   isActive: z.boolean().default(true),
   parentId: z.number().nullable().optional(),
-  megaMenuColumns: z.array(megaMenuColumnSchema).optional().nullable()
 });
 
 // Input/Output schemas
@@ -37,11 +23,14 @@ const createMenuItemSchema = baseMenuItemSchema.extend({
   translations: z.array(menuItemTranslationSchema).min(1)
 });
 
-const updateMenuItemSchema = baseMenuItemSchema
-  .extend({
-    translations: z.array(menuItemTranslationSchema).min(1)
-  })
-  .partial();
+const updateMenuItemSchema = z.object({
+  id: z.number(),
+  data: baseMenuItemSchema
+    .extend({
+      translations: z.array(menuItemTranslationSchema).min(1)
+    })
+    .partial(),
+});
 
 const menuItemSchema = baseMenuItemSchema.extend({
   id: z.number(),
@@ -150,10 +139,7 @@ export const adminMenuItemsRouter = router({
     }),
 
   update: adminProcedure
-    .input(z.object({
-      id: z.number(),
-      data: updateMenuItemSchema,
-    }))
+    .input(updateMenuItemSchema)
     .output(menuItemSchema)
     .mutation(async ({ ctx, input }) => {
       try {

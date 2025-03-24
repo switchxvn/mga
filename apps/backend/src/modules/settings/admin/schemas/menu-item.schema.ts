@@ -3,19 +3,17 @@ import { z } from 'zod';
 export const menuItemTranslationSchema = z.object({
   id: z.number().optional(), // Optional for creation
   label: z.string().min(1),
+  href: z.string().min(1),
   locale: z.string().length(2)
 });
 
 // Base schema for common fields
 const baseMenuItemSchema = z.object({
   defaultLocale: z.string().length(2).default('en'),
-  href: z.string().min(1),
-  hasMegaMenu: z.boolean().default(false),
   icon: z.string().optional().nullable(),
   order: z.number().default(0),
   isActive: z.boolean().default(true),
   parentId: z.number().nullable().optional(),
-  megaMenuColumns: z.any().optional().nullable()
 });
 
 // Schema for creating a new menu item

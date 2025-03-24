@@ -21,11 +21,6 @@ export class CreateMenuItemDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsBoolean()
-  hasMegaMenu?: boolean;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
   @IsString()
   icon?: string;
 
@@ -43,8 +38,4 @@ export class CreateMenuItemDto {
   @IsOptional()
   @IsNumber()
   parentId?: number;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  megaMenuColumns?: any;
 } 

@@ -9,6 +9,9 @@ export class MenuItemTranslation {
   @Column()
   label: string;
 
+  @Column()
+  href: string;
+
   @Column({ length: 2 })
   locale: string;
 

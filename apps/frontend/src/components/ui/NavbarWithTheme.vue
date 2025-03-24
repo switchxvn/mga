@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useMenuItems } from "~/composables/useMenuItems";
-import type { MenuItem } from "@ew/shared";
+import type { MenuItem as BaseMenuItem } from "@ew/shared";
 import Icon from "./Icon.vue";
 import ThemeToggle from "~/components/common/ThemeToggle.vue";
 import LanguageSwitcher from "~/components/common/LanguageSwitcher.vue";
@@ -65,86 +65,90 @@ const isNavbarVisible = ref(true);
 // Menu items from composable
 const { menuItems, isLoading, error, fetchMenuItems } = useMenuItems();
 
-// Định nghĩa interface cho translations
+// Update interfaces
 interface Translation {
-  id: number;
+  id?: number;
   locale: string;
   label: string;
-  menuItemId: number;
-  createdAt: string;
-  updatedAt: string;
+  href: string;
+  menuItemId?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-// Định nghĩa interface cho translatable item
-interface TranslatableItem {
-  label: string;
-  defaultLocale: string;
-  translations?: Translation[];
+interface MenuItem extends BaseMenuItem {
+  translations: Translation[];
+  defaultLocale?: string;
 }
 
-// Định nghĩa interface cho menu column với translations
 interface MenuColumn {
   title: string;
-  titleTranslations?: Translation[];
-  items: MenuColumnItem[];
-}
-
-// Định nghĩa interface cho menu column item
-interface MenuColumnItem extends TranslatableItem {
-  href: string;
-}
-
-// Định nghĩa interface cho menu item với translations
-interface MenuItemWithTranslations extends MenuItem, TranslatableItem {
-  id: number;
-  megaMenuColumns?: {
-    title: string;
-    titleTranslations?: Translation[];
-    items: {
-      href: string;
-      label: string;
-      translations?: Translation[];
-    }[];
+  items: {
+    href: string;
+    label: string;
   }[];
 }
 
-// Định nghĩa interface cho menu item đã được xử lý
-interface ProcessedMenuItem extends MenuItemWithTranslations {
+interface ProcessedMenuItem extends MenuItem {
   megaMenuColumns: MenuColumn[];
   href: string;
   hasMegaMenu: boolean;
+  label: string;
 }
 
 const processedMenuItems = computed<ProcessedMenuItem[]>(() => {
-  return menuItems.value
-    .filter((item) => item.isActive !== false)
-    .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .map((item) => {
-      const processedItem: ProcessedMenuItem = {
-        ...item,
-        href: item.href || "#",
-        hasMegaMenu: Boolean(item.hasMegaMenu),
-        megaMenuColumns: (item.megaMenuColumns || []).map((column) => ({
-          title: column.title,
-          titleTranslations: column.titleTranslations || [],
-          items: column.items.map((subItem) => ({
-            href: subItem.href || "#",
-            label: subItem.label,
-            translations: subItem.translations || [],
-            defaultLocale: "vi", // Since menu items are in Vietnamese by default
-          })),
-        })),
-        translations: item.translations || [],
-        defaultLocale: item.defaultLocale || "en",
+  // Get parent menu items first
+  const parentMenuItems = menuItems.value
+    .filter(item => !item.parentId && item.isActive !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Process each parent menu item
+  return parentMenuItems.map(item => {
+    const menuItem = item as MenuItem;
+    // Get child menu items
+    const childItems = menuItems.value
+      .filter(child => child.parentId === item.id && child.isActive !== false)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    // Check if this menu item has children (mega menu)
+    const hasMegaMenu = childItems.length > 0;
+
+    // Get translation for current item
+    const currentTranslation = menuItem.translations?.find(t => t.locale === locale.value) || 
+      menuItem.translations?.[0];
+
+    // Group child items into columns (3 items per column)
+    const itemsPerColumn = 3;
+    const megaMenuColumns = hasMegaMenu ? Array.from({ length: Math.ceil(childItems.length / itemsPerColumn) }, (_, columnIndex) => {
+      const startIndex = columnIndex * itemsPerColumn;
+      const columnItems = childItems.slice(startIndex, startIndex + itemsPerColumn);
+      return {
+        title: getTranslation(menuItem, locale.value), // Use parent item's label as column title
+        items: columnItems.map(child => {
+          const childTranslation = child.translations?.find(t => t.locale === locale.value) || 
+            child.translations?.[0];
+          return {
+            href: childTranslation?.href || "#",
+            label: getTranslation(child, locale.value)
+          };
+        })
       };
-      return processedItem;
-    });
+    }) : [];
+
+    return {
+      ...menuItem,
+      href: currentTranslation?.href || "#",
+      hasMegaMenu,
+      megaMenuColumns,
+      label: getTranslation(menuItem, locale.value)
+    } as ProcessedMenuItem;
+  });
 });
 
-// Hàm lấy bản dịch theo ngôn ngữ
-const getTranslation = (item: TranslatableItem, targetLocale: string) => {
+// Update getTranslation function
+const getTranslation = (item: { translations: Translation[]; defaultLocale?: string }, targetLocale: string): string => {
   if (!item.translations || item.translations.length === 0) {
-    return item.label;
+    return '';
   }
 
   const translation = item.translations.find((t) => t.locale === targetLocale);
@@ -154,23 +158,13 @@ const getTranslation = (item: TranslatableItem, targetLocale: string) => {
 
   // Fallback to default locale if translation not found
   const defaultTranslation = item.translations.find(
-    (t) => t.locale === item.defaultLocale
+    (t) => t.locale === (item.defaultLocale || 'vi')
   );
   if (defaultTranslation) {
     return defaultTranslation.label;
   }
 
-  return item.label;
-};
-
-// Hàm lấy bản dịch cho tiêu đề menu
-const getColumnTitleTranslation = (column: MenuColumn, targetLocale: string) => {
-  if (!column.titleTranslations || column.titleTranslations.length === 0) {
-    return column.title;
-  }
-
-  const translation = column.titleTranslations.find((t) => t.locale === targetLocale);
-  return translation?.label || column.title;
+  return item.translations[0]?.label || '';
 };
 
 // Kiểm tra xem menu có active không
@@ -322,8 +316,8 @@ watch([logo, isLoadingLogo], () => {
               @mouseenter="item.hasMegaMenu ? showMegaMenu(item.id) : null"
               @mouseleave="item.hasMegaMenu ? hideMegaMenu() : null"
             >
-              <NuxtLink
-                :to="item.href"
+              <a
+                :href="item.href"
                 class="main-menu-item text-sm uppercase transition-colors py-5 flex items-center space-x-1"
                 :class="{ 'menu-active': isMenuActive(item.href) }"
               >
@@ -333,7 +327,7 @@ watch([logo, isLoadingLogo], () => {
                   name="ChevronDown"
                   class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
                 />
-              </NuxtLink>
+              </a>
 
               <!-- Mega Menu -->
               <div
@@ -350,7 +344,7 @@ watch([logo, isLoadingLogo], () => {
                     class="space-y-3"
                   >
                     <h3 class="font-medium text-sm text-neutral-900 dark:text-neutral-100">
-                      {{ getColumnTitleTranslation(column, locale) }}
+                      {{ column.title }}
                     </h3>
                     <ul class="space-y-2">
                       <li
@@ -358,13 +352,13 @@ watch([logo, isLoadingLogo], () => {
                         :key="subItemIndex"
                         class="block"
                       >
-                        <NuxtLink
-                          :to="subItem.href"
+                        <a
+                          :href="subItem.href"
                           class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400"
                           @click="activeMegaMenu = null"
                         >
-                          {{ getTranslation(subItem, locale) }}
-                        </NuxtLink>
+                          {{ subItem.label }}
+                        </a>
                       </li>
                     </ul>
                   </div>
@@ -427,16 +421,16 @@ watch([logo, isLoadingLogo], () => {
         </div>
         <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
         <template v-else>
-          <NuxtLink
+          <a
             v-for="item in processedMenuItems"
             :key="item.id"
-            :to="item.href"
+            :href="item.href"
             class="mobile-main-menu-item block px-3 py-2 text-base uppercase rounded-md"
             :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
             @click="isMobileMenuOpen = false"
           >
             {{ getTranslation(item, locale) }}
-          </NuxtLink>
+          </a>
         </template>
       </div>
       <div class="px-4 py-3 border-t border-neutral-200 dark:border-neutral-800">

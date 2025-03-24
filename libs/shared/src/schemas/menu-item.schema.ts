@@ -4,22 +4,10 @@ import { z } from 'zod';
 const menuItemBaseSchema = z.object({
   label: z.string().min(1, 'Label is required'),
   href: z.string().min(1, 'Href is required'),
-  hasMegaMenu: z.boolean().default(false),
   icon: z.string().optional().nullable(),
   order: z.number().default(0),
   isActive: z.boolean().default(true),
   parentId: z.number().nullable().optional(),
-  megaMenuColumns: z.array(
-    z.object({
-      title: z.string().optional(),
-      items: z.array(
-        z.object({
-          label: z.string(),
-          href: z.string(),
-        })
-      ).optional(),
-    })
-  ).optional().nullable(),
 });
 
 // Schema for creating a new menu item

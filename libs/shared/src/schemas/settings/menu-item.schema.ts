@@ -1,25 +1,20 @@
 import { z } from 'zod';
 import { dateTransformer } from '../../transformers/date.transformer';
 
-// Mega menu schemas
-export const menuItemLinkSchema = z.object({
+// Menu item translation schema
+export const menuItemTranslationSchema = z.object({
+  id: z.number().optional(),
   label: z.string(),
   href: z.string(),
-});
-
-export const menuColumnSchema = z.object({
-  title: z.string(),
-  items: z.array(menuItemLinkSchema),
+  locale: z.string().length(2),
+  menuItemId: z.number().optional(),
 });
 
 const baseMenuItemSchema = {
-  label: z.string(),
-  href: z.string(),
   parentId: z.number().nullable().optional(),
   order: z.number().optional(),
-  hasMegaMenu: z.boolean().optional(),
   isActive: z.boolean().optional(),
-  megaMenuColumns: z.array(menuColumnSchema).optional(),
+  translations: z.array(menuItemTranslationSchema).optional(),
 } as const;
 
 export const menuItemSchema = z.object({
@@ -27,15 +22,15 @@ export const menuItemSchema = z.object({
   ...baseMenuItemSchema,
   parentId: z.number().nullable(),
   order: z.number(),
-  hasMegaMenu: z.boolean(),
   isActive: z.boolean(),
-  megaMenuColumns: z.array(menuColumnSchema).optional(),
+  translations: z.array(menuItemTranslationSchema),
   createdAt: z.date().transform(dateTransformer.serialize),
   updatedAt: z.date().transform(dateTransformer.serialize),
 });
 
 export const createMenuItemSchema = z.object({
   ...baseMenuItemSchema,
+  translations: z.array(menuItemTranslationSchema),
 }).required();
 
 export const updateMenuItemSchema = z.object({
@@ -55,8 +50,7 @@ export const deleteMenuItemSchema = z.number();
 
 // Type inference
 export type MenuItem = z.infer<typeof menuItemSchema>;
-export type MenuItemLink = z.infer<typeof menuItemLinkSchema>;
-export type MenuColumn = z.infer<typeof menuColumnSchema>;
+export type MenuItemTranslation = z.infer<typeof menuItemTranslationSchema>;
 export type CreateMenuItemInput = z.infer<typeof createMenuItemSchema>;
 export type UpdateMenuItemInput = z.infer<typeof updateMenuItemSchema>;
 export type GetMenuItemsInput = z.infer<typeof getMenuItemsSchema>; 

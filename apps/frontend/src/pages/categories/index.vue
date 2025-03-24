@@ -14,7 +14,6 @@ const trpc = useTrpc()
 // Định nghĩa alias cho URL tiếng Việt
 definePageMeta({
   layout: 'default',
-  alias: ['/danh-muc-san-pham']
 })
 
 // Trạng thái

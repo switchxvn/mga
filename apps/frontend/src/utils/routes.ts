@@ -25,6 +25,15 @@ export const ROUTE_NAMES = {
   SERVICE_DETAIL: {
     en: 'services-detail',
     vi: 'dich-vu-chi-tiet'
+  },
+  // Categories
+  CATEGORIES_LIST: {
+    en: 'categories',
+    vi: 'danh-muc-san-pham'
+  },
+  CATEGORY_DETAIL: {
+    en: 'categories-detail',
+    vi: 'danh-muc-san-pham-chi-tiet'
   }
 } as const;
 
@@ -55,6 +64,15 @@ export const ROUTE_PATHS = {
   SERVICE_DETAIL: {
     en: '/services/:slug',
     vi: '/dich-vu/:slug'
+  },
+  // Categories
+  CATEGORIES_LIST: {
+    en: '/categories',
+    vi: '/danh-muc-san-pham'
+  },
+  CATEGORY_DETAIL: {
+    en: '/categories/:slug',
+    vi: '/danh-muc-san-pham/:slug'
   }
 } as const;
 
