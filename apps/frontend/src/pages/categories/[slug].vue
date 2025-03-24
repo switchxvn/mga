@@ -206,19 +206,19 @@ interface Product {
   // Thêm các thuộc tính khác của sản phẩm nếu cần
 }
 
-// Initialize product filters with route query params
+// Initialize product composable with empty initial filters
 const initialFilters: ProductFilter = {
-  search: route.query.search as string || '',
-  minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
-  maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
-  includeNullPrice: route.query.includeNullPrice === 'true',
-  categories: [], // Will be updated when category data is loaded
-  isFeatured: route.query.isFeatured === 'true',
-  isNew: route.query.isNew === 'true',
-  isSale: route.query.isSale === 'true',
-  sortBy: (route.query.sortBy as ProductSortBy) || 'newest',
-  page: Number(route.query.page) || 1,
-  limit: Number(route.query.limit) || 12,
+  search: '',
+  minPrice: undefined,
+  maxPrice: undefined,
+  includeNullPrice: false,
+  categories: [],
+  isFeatured: false,
+  isNew: false,
+  isSale: false,
+  sortBy: 'newest',
+  page: 1,
+  limit: 12,
   locale: locale.value
 };
 
@@ -241,30 +241,47 @@ const sortOptions = computed(() => [
 ]);
 
 // Watch for category changes to update filters and fetch products
-watch(() => categoryData.value?.id, (newId) => {
-  if (newId && !isLoading.value) {
+watch([() => slug.value, () => categoryData.value?.id], async ([newSlug, newId]) => {
+  if (newId) {
+    // Update filters with current route query params and category ID
     productFilters.value = {
-      ...productFilters.value,
-      categories: [newId]
+      search: route.query.search as string || '',
+      minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
+      maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
+      includeNullPrice: route.query.includeNullPrice === 'true',
+      categories: [newId],
+      isFeatured: route.query.isFeatured === 'true',
+      isNew: route.query.isNew === 'true',
+      isSale: route.query.isSale === 'true',
+      sortBy: (route.query.sortBy as ProductSortBy) || 'newest',
+      page: Number(route.query.page) || 1,
+      limit: Number(route.query.limit) || 12,
+      locale: locale.value
     };
-    updateQueryParams();
+    
+    if (!isLoading.value) {
+      fetchProducts();
+    }
   }
 }, { immediate: true });
 
 // Watch for locale changes
 watch(locale, () => {
   refreshCategory();
-  if (!isLoading.value) {
+  // Only fetch products if we have a category ID
+  if (!isLoading.value && categoryData.value?.id) {
     fetchProducts();
   }
 });
 
 // Handle filter changes
 const handleFilterChange = (newFilters: ProductFilter) => {
+  if (!categoryData.value?.id) return;
+  
   // Update filters but preserve category
   productFilters.value = {
     ...newFilters,
-    categories: categoryData.value?.id ? [categoryData.value.id] : []
+    categories: [categoryData.value.id]
   };
   
   // Reset to page 1 when filters change
@@ -293,6 +310,8 @@ const handlePageChange = (page: number) => {
 
 // Update URL query params and fetch products
 const updateQueryParams = () => {
+  if (!categoryData.value?.id) return;
+  
   // Build query params object
   const query: Record<string, string | number | undefined> = {};
   
@@ -300,7 +319,6 @@ const updateQueryParams = () => {
   if (productFilters.value.minPrice !== undefined) query.minPrice = productFilters.value.minPrice;
   if (productFilters.value.maxPrice !== undefined) query.maxPrice = productFilters.value.maxPrice;
   if (productFilters.value.includeNullPrice) query.includeNullPrice = 'true';
-  if (productFilters.value.categories?.length) query.categories = productFilters.value.categories.join(',');
   if (productFilters.value.isFeatured) query.isFeatured = 'true';
   if (productFilters.value.isNew) query.isNew = 'true';
   if (productFilters.value.isSale) query.isSale = 'true';
@@ -308,7 +326,7 @@ const updateQueryParams = () => {
   if (productFilters.value.page > 1) query.page = productFilters.value.page;
   if (productFilters.value.limit !== 12) query.limit = productFilters.value.limit;
   
-  // Update route
+  // Update route without category in query
   router.replace({ query });
   
   // Fetch products with current filters
