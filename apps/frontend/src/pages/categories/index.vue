@@ -29,7 +29,7 @@ const fetchCategories = async () => {
     isLoading.value = true
     
     // Lấy tất cả danh mục
-    const allCategories = await trpc.category.byType.query('product')
+    const allCategories = await trpc.category.byType.query({ type: 'product' })
     categories.value = allCategories
     
     // Lấy danh mục nổi bật

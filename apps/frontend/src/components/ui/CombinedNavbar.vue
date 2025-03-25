@@ -468,7 +468,7 @@ onUnmounted(() => {
         <div class="flex items-center justify-between py-4">
           <!-- Logo -->
           <div class="flex-shrink-0">
-            <a href="/" class="block">
+            <NuxtLink to="/" class="block">
               <div 
                 class="flex items-center justify-center" 
                 :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
@@ -483,7 +483,7 @@ onUnmounted(() => {
                 />
                 <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
               </div>
-            </a>
+            </NuxtLink>
           </div>
 
           <!-- Slogan -->
@@ -502,9 +502,9 @@ onUnmounted(() => {
           <!-- Hotlines -->
           <div class="flex items-center gap-3">
             <!-- Mua hàng -->
-            <a
+            <NuxtLink
               v-if="props.settings?.hotlines?.sales"
-              :href="`tel:${props.settings.hotlines.sales.number}`"
+              :to="`tel:${props.settings.hotlines.sales.number}`"
               class="hotline-button group flex items-center gap-3 px-4 py-2.5 rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
               :style="{
                 backgroundColor: processColorValue(props.settings.hotlines.sales.backgroundColor || '#0EA5E9'),
@@ -528,12 +528,12 @@ onUnmounted(() => {
                   {{ props.settings.hotlines.sales.number }}
                 </span>
               </div>
-            </a>
+            </NuxtLink>
 
             <!-- Hỗ trợ kỹ thuật -->
-            <a
+            <NuxtLink
               v-if="props.settings?.hotlines?.support"
-              :href="`tel:${props.settings.hotlines.support.number}`"
+              :to="`tel:${props.settings.hotlines.support.number}`"
               class="hotline-button group flex items-center gap-3 px-4 py-2.5 rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
               :style="{
                 backgroundColor: processColorValue(props.settings.hotlines.support.backgroundColor || '#0EA5E9'),
@@ -557,7 +557,7 @@ onUnmounted(() => {
                   {{ props.settings.hotlines.support.number }}
                 </span>
               </div>
-            </a>
+            </NuxtLink>
           </div>
         </div>
       </div>
@@ -604,8 +604,8 @@ onUnmounted(() => {
                   @mouseenter="item.hasMegaMenu ? showMegaMenu(item.id) : null"
                   @mouseleave="item.hasMegaMenu ? hideMegaMenu() : null"
                 >
-                  <a
-                    :href="item.href"
+                  <NuxtLink
+                    :to="item.href"
                     class="main-menu-item text-base uppercase transition-colors py-5 flex items-center space-x-1"
                     :class="{ 'menu-active': isMenuActive(item.href) }"
                   >
@@ -626,7 +626,7 @@ onUnmounted(() => {
                       name="ChevronDown"
                       class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
                     />
-                  </a>
+                  </NuxtLink>
 
                   <!-- Mega Menu -->
                   <div
@@ -651,13 +651,13 @@ onUnmounted(() => {
                             :key="subItemIndex"
                             class="block"
                           >
-                            <a
-                              :href="subItem.href"
+                            <NuxtLink
+                              :to="subItem.href"
                               class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400"
                               @click="activeMegaMenu = null"
                             >
                               {{ subItem.label }}
-                            </a>
+                            </NuxtLink>
                           </li>
                         </ul>
                       </div>
@@ -730,9 +730,9 @@ onUnmounted(() => {
 
               <!-- Hotlines for Mobile -->
               <div class="space-y-2 mb-4">
-                <a
+                <NuxtLink
                   v-if="props.settings?.hotlines?.sales"
-                  :href="`tel:${props.settings.hotlines.sales.number}`"
+                  :to="`tel:${props.settings.hotlines.sales.number}`"
                   class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 >
                   <Icon name="Phone" class="h-5 w-5" />
@@ -740,11 +740,11 @@ onUnmounted(() => {
                     <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.sales.text }}</span>
                     <span class="font-bold">{{ props.settings.hotlines.sales.number }}</span>
                   </div>
-                </a>
+                </NuxtLink>
                 
-                <a
+                <NuxtLink
                   v-if="props.settings?.hotlines?.support"
-                  :href="`tel:${props.settings.hotlines.support.number}`"
+                  :to="`tel:${props.settings.hotlines.support.number}`"
                   class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 >
                   <Icon name="Phone" class="h-5 w-5" />
@@ -752,19 +752,19 @@ onUnmounted(() => {
                     <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.support.text }}</span>
                     <span class="font-bold">{{ props.settings.hotlines.support.number }}</span>
                   </div>
-                </a>
+                </NuxtLink>
               </div>
 
-              <a
+              <NuxtLink
                 v-for="item in processedMenuItems"
                 :key="item.id"
-                :href="item.href"
+                :to="item.href"
                 class="mobile-main-menu-item block px-3 py-2 text-lg font-extrabold uppercase rounded-md"
                 :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 @click="isMobileMenuOpen = false"
               >
                 {{ item.label }}
-              </a>
+              </NuxtLink>
             </template>
           </div>
         </div>

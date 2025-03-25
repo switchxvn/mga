@@ -169,7 +169,7 @@ interface FilterState {
   categorySlug: string;
 }
 
-const filters = reactive<FilterState>({
+const filters = ref<FilterState>({
   search: route.query.search as string || '',
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
@@ -181,7 +181,7 @@ const filters = reactive<FilterState>({
   sortBy: (route.query.sortBy as SortByType) || 'newest',
   page: Number(route.query.page) || 1,
   limit: Number(route.query.limit) || 12,
-  categorySlug: slug.value // Thêm categorySlug để lọc theo danh mục
+  categorySlug: slug.value
 })
 
 // Products data
@@ -274,34 +274,13 @@ watch(locale, () => {
   }
 });
 
-// Handle filter changes
-const handleFilterChange = (newFilters: ProductFilter) => {
-  if (!categoryData.value?.id) return;
-  
-  // Update filters but preserve category
-  productFilters.value = {
-    ...newFilters,
-    categories: [categoryData.value.id]
-  };
-  
-  // Reset to page 1 when filters change
-  productFilters.value.page = 1;
-  
-  // Update URL query params and fetch products
-  updateQueryParams();
-};
-
-// Handle sort change
-const handleSortChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement;
-  productFilters.value.sortBy = target.value as ProductSortBy;
-  productFilters.value.page = 1;
-  updateQueryParams();
-};
-
 // Handle page change
 const handlePageChange = (page: number) => {
+  // Update both filter states
+  filters.value.page = page;
   productFilters.value.page = page;
+  
+  // Update URL query params
   updateQueryParams();
   
   // Scroll to top
@@ -315,16 +294,16 @@ const updateQueryParams = () => {
   // Build query params object
   const query: Record<string, string | number | undefined> = {};
   
-  if (productFilters.value.search) query.search = productFilters.value.search;
-  if (productFilters.value.minPrice !== undefined) query.minPrice = productFilters.value.minPrice;
-  if (productFilters.value.maxPrice !== undefined) query.maxPrice = productFilters.value.maxPrice;
-  if (productFilters.value.includeNullPrice) query.includeNullPrice = 'true';
-  if (productFilters.value.isFeatured) query.isFeatured = 'true';
-  if (productFilters.value.isNew) query.isNew = 'true';
-  if (productFilters.value.isSale) query.isSale = 'true';
-  if (productFilters.value.sortBy && productFilters.value.sortBy !== 'newest') query.sortBy = productFilters.value.sortBy;
-  if (productFilters.value.page > 1) query.page = productFilters.value.page;
-  if (productFilters.value.limit !== 12) query.limit = productFilters.value.limit;
+  if (filters.value.search) query.search = filters.value.search;
+  if (filters.value.minPrice !== undefined) query.minPrice = filters.value.minPrice;
+  if (filters.value.maxPrice !== undefined) query.maxPrice = filters.value.maxPrice;
+  if (filters.value.includeNullPrice) query.includeNullPrice = 'true';
+  if (filters.value.isFeatured) query.isFeatured = 'true';
+  if (filters.value.isNew) query.isNew = 'true';
+  if (filters.value.isSale) query.isSale = 'true';
+  if (filters.value.sortBy && filters.value.sortBy !== 'newest') query.sortBy = filters.value.sortBy;
+  if (filters.value.page > 1) query.page = filters.value.page;
+  if (filters.value.limit !== 12) query.limit = filters.value.limit;
   
   // Update route without category in query
   router.replace({ query });
@@ -333,6 +312,46 @@ const updateQueryParams = () => {
   if (!isLoading.value) {
     fetchProducts();
   }
+};
+
+// Handle filter changes
+const handleFilterChange = (newFilters: ProductFilter) => {
+  if (!categoryData.value?.id) return;
+  
+  // Update both filter states
+  filters.value = {
+    ...newFilters,
+    categories: [categoryData.value.id],
+    categorySlug: slug.value,
+    search: newFilters.search || '', // Ensure search is always a string
+    limit: newFilters.limit || 12, // Ensure limit is always a number
+    page: 1 // Reset to page 1 when filters change
+  };
+  
+  productFilters.value = {
+    ...newFilters,
+    categories: [categoryData.value.id],
+    locale: locale.value,
+    page: 1 // Reset to page 1 when filters change
+  };
+  
+  // Update URL query params and fetch products
+  updateQueryParams();
+};
+
+// Handle sort change
+const handleSortChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  const newSortBy = target.value as ProductSortBy;
+  
+  // Update both filter states
+  filters.value.sortBy = newSortBy;
+  filters.value.page = 1;
+  
+  productFilters.value.sortBy = newSortBy;
+  productFilters.value.page = 1;
+  
+  updateQueryParams();
 };
 
 // Breadcrumb data
@@ -457,11 +476,11 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
             
             <!-- Pagination -->
             <div v-if="totalPages > 1" class="mt-8 flex justify-center">
-              <UPagination
+              <Pagination
                 v-model="filters.page"
-                :page-count="totalPages"
                 :total="totalProducts"
-                :ui="{ rounded: 'rounded-lg' }"
+                :items-per-page="filters.limit"
+                :max-visible-buttons="5"
                 @update:model-value="handlePageChange"
               />
             </div>
