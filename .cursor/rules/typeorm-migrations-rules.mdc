@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# TypeORM Migrations Rules
+
+## Migration Commands
+
+### Creating a New Migration
+To create a new migration:
+```bash
+yarn migration:create <migration-name>
+```
+The migration file will be created in `libs/database/src/migrations`.
+
+### Generating Migration from Changes
+To generate a migration from entity changes:
+```bash
+yarn migration:generate <migration-name>
+```
+This will compare your current entities with the database schema and generate necessary migrations.
+
+### Running Migrations
+To run all pending migrations:
+```bash
+yarn migration:run
+```
+
+### Reverting Migrations
+To revert the most recent migration:
+```bash
+yarn migration:revert
+```
+
+### Viewing Migration Status
+To see the status of all migrations:
+```bash
+yarn migration:show
+```
+
+## Migration File Structure
+```typescript
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class MigrationName1234567890123 implements MigrationInterface {
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        // Changes to apply when migrating up
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        // Changes to revert when migrating down
+    }
+}
+```
+
+## Best Practices
+1. Always provide descriptive names for migrations (e.g., `CreateUserTable`, `AddEmailColumnToUsers`)
+2. Test both `up()` and `down()` methods to ensure they work correctly
+3. Keep migrations atomic - one migration should handle one change
+4. Add comments to explain complex migration logic
+5. Always backup database before running migrations in production
+6. Store migrations in version control 

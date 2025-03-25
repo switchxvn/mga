@@ -1,6 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, ManyToMany, JoinTable } from 'typeorm';
 import { Post } from '../../post/entities/post.entity';
 import { UserProfile } from '../../profile/entities/user-profile.entity';
+import { Role } from './role.entity';
+import { Permission } from './permission.entity';
 
 @Entity('users')
 export class User {
@@ -30,6 +32,34 @@ export class User {
 
   @OneToOne(() => UserProfile, profile => profile.user, { lazy: true })
   profile!: Promise<UserProfile>;
+
+  @ManyToMany(() => Role, role => role.users)
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: {
+      name: 'user_id',
+      referencedColumnName: 'id'
+    },
+    inverseJoinColumn: {
+      name: 'role_id',
+      referencedColumnName: 'id'
+    }
+  })
+  roles!: Role[];
+
+  @ManyToMany(() => Permission, permission => permission.users)
+  @JoinTable({
+    name: 'user_permissions',
+    joinColumn: {
+      name: 'user_id',
+      referencedColumnName: 'id'
+    },
+    inverseJoinColumn: {
+      name: 'permission_id',
+      referencedColumnName: 'id'
+    }
+  })
+  permissions!: Permission[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
