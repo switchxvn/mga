@@ -296,7 +296,7 @@ watch(locale, () => {
     ]"
     :style="navbarStyles"
   >
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 relative">
       <div class="flex items-center justify-between py-2">
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-6 flex-grow justify-center">
@@ -326,8 +326,8 @@ watch(locale, () => {
               <!-- Mega Menu -->
               <div
                 v-if="item.hasMegaMenu && activeMegaMenu === item.id"
-                class="mega-menu absolute top-full left-0 w-screen max-w-4xl shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
-                style="left: 50%; transform: translateX(-50%)"
+                class="mega-menu absolute top-full left-1/2 w-screen max-w-4xl shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                style="transform: translateX(-50%)"
                 @mouseenter="keepMegaMenu"
                 @mouseleave="hideMegaMenu"
               >

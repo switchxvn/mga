@@ -9,7 +9,7 @@ interface Props {
   /**
    * Số items trên mỗi trang
    */
-  itemsPerPage: number;
+  itemsPerPage: number | undefined;
   /**
    * Trang hiện tại (1-based)
    */
@@ -28,7 +28,8 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   maxVisibleButtons: 5,
-  showTotal: true
+  showTotal: true,
+  itemsPerPage: 12 // Default value if undefined
 });
 
 const emit = defineEmits<{
@@ -36,18 +37,24 @@ const emit = defineEmits<{
 }>();
 
 // Tính toán tổng số trang
-const totalPages = computed(() => Math.ceil(props.total / props.itemsPerPage));
+const totalPages = computed(() => {
+  if (!props.total || props.total <= 0) return 0;
+  return Math.ceil(props.total / (props.itemsPerPage || 12));
+});
 
 // Tính toán vị trí bắt đầu và kết thúc của items hiện tại
 const currentRange = computed(() => {
-  const start = (props.modelValue - 1) * props.itemsPerPage + 1;
-  const end = Math.min(start + props.itemsPerPage - 1, props.total);
+  if (!props.total || props.total <= 0) return '0-0';
+  const start = (props.modelValue - 1) * (props.itemsPerPage || 12) + 1;
+  const end = Math.min(start + (props.itemsPerPage || 12) - 1, props.total);
   return `${start}-${end}`;
 });
 
 // Tính toán danh sách các trang cần hiển thị
 const pages = computed(() => {
   const total = totalPages.value;
+  if (total <= 0) return [];
+  
   const current = props.modelValue;
   const maxButtons = props.maxVisibleButtons;
 

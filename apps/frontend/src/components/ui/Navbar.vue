@@ -109,7 +109,7 @@ onUnmounted(() => {
     class="navbar fixed top-0 left-0 right-0 z-50 transition-all duration-300"
     :class="navbarClasses"
   >
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 relative">
       <div class="flex h-16 items-center justify-between">
         <!-- Logo -->
         <div class="flex items-center">
@@ -151,8 +151,8 @@ onUnmounted(() => {
               <!-- Mega Menu -->
               <div
                 v-if="item.hasMegaMenu && activeMegaMenu === index"
-                class="navbar__megamenu absolute top-full left-0 w-screen max-w-4xl shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50"
-                style="left: 50%; transform: translateX(-50%)"
+                class="navbar__megamenu absolute top-full left-1/2 w-screen max-w-4xl shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50"
+                style="transform: translateX(-50%)"
                 @mouseenter="keepMegaMenu"
                 @mouseleave="hideMegaMenu"
               >

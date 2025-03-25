@@ -570,13 +570,13 @@ onUnmounted(() => {
       :class="{ 'nav-sticky': isScrolled }"
     >
       <nav
-        class="navigation-section w-full border-b"
+        class="navigation-section w-full border-b relative"
         :class="[
           `text-${props.settings?.menuAlignment || 'center'}`
         ]"
       >
         <div class="container mx-auto px-4">
-          <div class="flex items-center justify-between py-2">
+          <div class="flex items-center justify-between py-2 relative">
             <!-- Mobile Logo -->
             <div class="flex-shrink-0 md:hidden">
               <NuxtLink to="/" class="block">
@@ -631,21 +631,17 @@ onUnmounted(() => {
                   <!-- Mega Menu -->
                   <div
                     v-if="item.hasMegaMenu && activeMegaMenu === item.id"
-                    class="mega-menu absolute top-full left-0 w-screen max-w-4xl shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
-                    style="left: 50%; transform: translateX(-50%)"
+                    class="mega-menu absolute top-full left-0 w-[1024px] shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
                     @mouseenter="keepMegaMenu"
                     @mouseleave="hideMegaMenu"
                   >
-                    <div class="grid grid-cols-3 gap-6 p-6">
+                    <div class="grid grid-cols-2 gap-8 p-6">
                       <div
                         v-for="(column, columnIndex) in item.megaMenuColumns"
                         :key="columnIndex"
-                        class="space-y-3"
+                        class="space-y-6"
                       >
-                        <h3 class="font-medium text-sm text-neutral-900 dark:text-neutral-100">
-                          {{ column.title }}
-                        </h3>
-                        <ul class="space-y-2">
+                        <ul class="space-y-3 max-w-xs">
                           <li
                             v-for="(subItem, subItemIndex) in column.items"
                             :key="subItemIndex"
@@ -653,7 +649,7 @@ onUnmounted(() => {
                           >
                             <NuxtLink
                               :to="subItem.href"
-                              class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400"
+                              class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400 truncate"
                               @click="activeMegaMenu = null"
                             >
                               {{ subItem.label }}
@@ -834,6 +830,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   will-change: transform;
+  position: relative;
 }
 
 /* Mobile logo styles */
@@ -1023,6 +1020,35 @@ onUnmounted(() => {
 
 /* Mega menu styles */
 .mega-menu {
-  z-index: 110 !important;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 1024px;
+  background-color: var(--navbar-menu-bg);
+  border-color: var(--navbar-border);
+  z-index: 55;
+}
+
+/* Container styles */
+.container {
+  width: 100%;
+  max-width: var(--container-max-width, 1280px);
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  position: relative;
+}
+
+/* Menu item container */
+.main-menu-item {
+  position: relative;
+  z-index: 60;
+}
+
+@media (max-width: 1280px) {
+  .mega-menu {
+    width: calc(100vw - 2rem);
+    max-width: 1024px;
+  }
 }
 </style> 

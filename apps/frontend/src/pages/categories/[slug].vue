@@ -266,8 +266,52 @@ watch([() => slug.value, () => categoryData.value?.id], async ([newSlug, newId])
 }, { immediate: true });
 
 // Watch for locale changes
-watch(locale, () => {
-  refreshCategory();
+watch(locale, async () => {
+  // Reset all states first
+  products.value = [];
+  totalProducts.value = 0;
+  totalPages.value = 0;
+  
+  // Reset filters
+  filters.value = {
+    search: '',
+    minPrice: undefined,
+    maxPrice: undefined,
+    includeNullPrice: false,
+    categories: categoryData.value?.id ? [categoryData.value.id] : [],
+    isFeatured: false,
+    isNew: false,
+    isSale: false,
+    sortBy: 'newest',
+    page: 1,
+    limit: 12,
+    categorySlug: slug.value
+  };
+  
+  productFilters.value = {
+    ...filters.value,
+    locale: locale.value
+  };
+
+  // Clear URL query params except category
+  router.replace({ 
+    query: { 
+      ...route.query,
+      page: undefined,
+      sortBy: undefined,
+      search: undefined,
+      minPrice: undefined,
+      maxPrice: undefined,
+      includeNullPrice: undefined,
+      isFeatured: undefined,
+      isNew: undefined,
+      isSale: undefined
+    }
+  });
+
+  // Then refresh data
+  await refreshCategory();
+  
   // Only fetch products if we have a category ID
   if (!isLoading.value && categoryData.value?.id) {
     fetchProducts();
@@ -467,23 +511,53 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
             </div>
             
             <!-- Products Grid -->
-            <ProductGrid
-              :products="products"
-              :loading="isLoading"
-              :locale="locale"
-              :columns="3"
-            />
-            
-            <!-- Pagination -->
-            <div v-if="totalPages > 1" class="mt-8 flex justify-center">
-              <Pagination
-                v-model="filters.page"
-                :total="totalProducts"
-                :items-per-page="filters.limit"
-                :max-visible-buttons="5"
-                @update:model-value="handlePageChange"
-              />
-            </div>
+            <template v-if="!error">
+              <div v-if="isLoading" class="flex items-center justify-center py-12">
+                <div class="text-center">
+                  <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent align-[-0.125em]" role="status">
+                    <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                      {{ t('common.loading') }}...
+                    </span>
+                  </div>
+                  <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                    {{ t('common.loading') }}...
+                  </div>
+                </div>
+              </div>
+
+              <template v-else>
+                <ProductGrid
+                  :products="products"
+                  :loading="false"
+                  :locale="locale"
+                  :columns="3"
+                />
+                
+                <!-- Pagination -->
+                <div v-if="totalProducts > 0" class="mt-8 flex justify-center">
+                  <Pagination
+                    v-model="filters.page"
+                    :total="totalProducts"
+                    :items-per-page="filters.limit"
+                    :max-visible-buttons="5"
+                    @update:model-value="handlePageChange"
+                  />
+                </div>
+                
+                <!-- No Results Message -->
+                <div v-else class="mt-8 text-center">
+                  <div class="inline-flex items-center justify-center rounded-full bg-gray-100 p-6 dark:bg-gray-800">
+                    <i class="i-heroicons-inbox-20-solid h-12 w-12 text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+                    {{ t('products.noResults') }}
+                  </h3>
+                  <p class="mt-2 text-gray-600 dark:text-gray-400">
+                    {{ t('products.tryAdjustingFilters') }}
+                  </p>
+                </div>
+              </template>
+            </template>
           </div>
         </div>
       </template>

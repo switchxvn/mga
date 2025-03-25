@@ -162,8 +162,34 @@ onMounted(() => {
 });
 
 // Watch for locale changes
-watch(locale, () => {
-  fetchSeoData();
+watch(locale, async () => {
+  // Reset all states first
+  products.value = [];
+  totalProducts.value = 0;
+  totalPages.value = 0;
+  
+  // Reset filters to initial state
+  filters.value = {
+    search: '',
+    minPrice: undefined,
+    maxPrice: undefined,
+    includeNullPrice: false,
+    categories: undefined,
+    isFeatured: false,
+    isNew: false,
+    isSale: false,
+    sortBy: 'newest',
+    page: 1,
+    limit: 12,
+    locale: locale.value
+  };
+
+  // Clear URL query params
+  router.replace({ query: {} });
+
+  // Then refresh data
+  await fetchSeoData();
+  await fetchPriceRange();
   fetchProducts();
 });
 </script>
@@ -198,7 +224,7 @@ watch(locale, () => {
         <!-- Products Content -->
         <div class="lg:w-3/4">
           <!-- Toolbar -->
-          <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div v-if="!isLoading || totalProducts > 0" class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600 dark:text-gray-400">
                 {{ t("products.showing") }} {{ totalProducts }} {{ t("products.items") }}
@@ -206,44 +232,67 @@ watch(locale, () => {
             </div>
 
             <div class="flex items-center gap-2">
-              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400"
-                >{{ t("posts.sortBy") }}:</label
-              >
+              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t("posts.sortBy") }}:</label>
               <select
                 id="sort"
                 v-model="filters.sortBy"
                 @change="handleSortChange"
                 class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
               >
-                <option
-                  v-for="option in sortOptions"
-                  :key="option.value"
-                  :value="option.value"
-                >
+                <option v-for="option in sortOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
                 </option>
               </select>
             </div>
           </div>
 
-          <!-- Products Grid -->
-          <ProductGrid
-            :products="products"
-            :loading="isLoading"
-            :locale="locale"
-            :columns="3"
-          />
-
-          <!-- Pagination -->
-          <div class="mt-8">
-            <Pagination
-              v-model="filters.page"
-              :total="totalProducts"
-              :items-per-page="filters.limit"
-              :max-visible-buttons="5"
-              @update:model-value="handlePageChange"
-            />
+          <!-- Loading State -->
+          <div v-if="isLoading" class="flex items-center justify-center py-12">
+            <div class="text-center">
+              <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent align-[-0.125em]" role="status">
+                <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                  {{ t('common.loading') }}...
+                </span>
+              </div>
+              <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                {{ t('common.loading') }}...
+              </div>
+            </div>
           </div>
+
+          <template v-else>
+            <!-- Products Grid -->
+            <ProductGrid
+              :products="products"
+              :loading="false"
+              :locale="locale"
+              :columns="3"
+            />
+
+            <!-- Pagination -->
+            <div v-if="totalProducts > 0" class="mt-8">
+              <Pagination
+                v-model="filters.page"
+                :total="totalProducts"
+                :items-per-page="filters.limit"
+                :max-visible-buttons="5"
+                @update:model-value="handlePageChange"
+              />
+            </div>
+            
+            <!-- No Results Message -->
+            <div v-else class="mt-8 text-center">
+              <div class="inline-flex items-center justify-center rounded-full bg-gray-100 p-6 dark:bg-gray-800">
+                <i class="i-heroicons-inbox-20-solid h-12 w-12 text-gray-400 dark:text-gray-500" />
+              </div>
+              <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+                {{ t('products.noResults') }}
+              </h3>
+              <p class="mt-2 text-gray-600 dark:text-gray-400">
+                {{ t('products.tryAdjustingFilters') }}
+              </p>
+            </div>
+          </template>
         </div>
       </div>
     </div>
