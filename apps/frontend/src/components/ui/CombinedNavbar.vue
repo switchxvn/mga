@@ -113,6 +113,8 @@ const route = useRoute();
 watch(
   () => route.path,
   () => {
+    isMobileMenuOpen.value = false;
+    activeMobileMegaMenu.value = null;
     isScrolled.value = false;
     lastScrollPosition.value = 0;
     window.scrollTo(0, 0);
@@ -160,6 +162,9 @@ const { isDark } = useDarkMode();
 
 // Color utils
 const { processColorValue } = useCssColorValue();
+
+// Add new ref for mobile mega menu
+const activeMobileMegaMenu = ref<number | null>(null);
 
 // Process menu items with translations
 const processedMenuItems = computed(() => {
@@ -458,6 +463,11 @@ onUnmounted(() => {
   document.documentElement.style.removeProperty('--nav-height');
   document.documentElement.style.removeProperty('--mobile-menu-top');
 });
+
+// Add new method for mobile mega menu
+const toggleMobileMegaMenu = (itemId: number) => {
+  activeMobileMegaMenu.value = activeMobileMegaMenu.value === itemId ? null : itemId;
+};
 </script>
 
 <template>
@@ -579,7 +589,7 @@ onUnmounted(() => {
           <div class="flex items-center justify-between py-2 relative">
             <!-- Mobile Logo -->
             <div class="flex-shrink-0 md:hidden">
-              <NuxtLink to="/" class="block">
+              <NuxtLink to="/" class="block" @click="isMobileMenuOpen = false">
                 <div class="mobile-logo">
                   <img
                     v-if="currentLogoUrl"
@@ -751,16 +761,78 @@ onUnmounted(() => {
                 </NuxtLink>
               </div>
 
-              <NuxtLink
-                v-for="item in processedMenuItems"
-                :key="item.id"
-                :to="item.href"
-                class="mobile-main-menu-item block px-3 py-2 text-lg font-extrabold uppercase rounded-md"
-                :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
-                @click="isMobileMenuOpen = false"
-              >
-                {{ item.label }}
-              </NuxtLink>
+              <!-- Mobile Menu Items with Mega Menu -->
+              <div class="space-y-1">
+                <div
+                  v-for="item in processedMenuItems"
+                  :key="item.id"
+                  class="mobile-menu-item"
+                >
+                  <!-- Menu Item with Mega Menu -->
+                  <div
+                    v-if="item.hasMegaMenu"
+                    class="mobile-main-menu-item flex items-center justify-between px-3 py-2 text-lg font-extrabold uppercase rounded-md"
+                    :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
+                  >
+                    <NuxtLink
+                      :to="item.href"
+                      class="flex-1 block"
+                      @click="isMobileMenuOpen = false"
+                    >
+                      {{ item.label }}
+                    </NuxtLink>
+                    <button
+                      class="p-2 -m-2"
+                      @click.stop="toggleMobileMegaMenu(item.id)"
+                    >
+                      <Icon
+                        name="ChevronRight"
+                        class="h-5 w-5 transition-transform duration-300"
+                        :class="{ 'rotate-90': activeMobileMegaMenu === item.id }"
+                      />
+                    </button>
+                  </div>
+
+                  <!-- Regular Menu Item -->
+                  <NuxtLink
+                    v-else
+                    :to="item.href"
+                    class="mobile-main-menu-item block px-3 py-2 text-lg font-extrabold uppercase rounded-md"
+                    :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
+                    @click="isMobileMenuOpen = false"
+                  >
+                    {{ item.label }}
+                  </NuxtLink>
+
+                  <!-- Mobile Mega Menu Content -->
+                  <Transition name="slide-fade">
+                    <div
+                      v-if="item.hasMegaMenu && activeMobileMegaMenu === item.id"
+                      class="mobile-mega-menu pl-6 pr-3 py-2 space-y-2"
+                    >
+                      <div
+                        v-for="(column, columnIndex) in item.megaMenuColumns"
+                        :key="columnIndex"
+                        class="space-y-2"
+                      >
+                        <div
+                          v-for="(subItem, subItemIndex) in column.items"
+                          :key="subItemIndex"
+                          class="mobile-submenu-item"
+                        >
+                          <NuxtLink
+                            :to="subItem.href"
+                            class="block py-2 text-base text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400"
+                            @click="isMobileMenuOpen = false"
+                          >
+                            {{ subItem.label }}
+                          </NuxtLink>
+                        </div>
+                      </div>
+                    </div>
+                  </Transition>
+                </div>
+              </div>
             </template>
           </div>
         </div>
@@ -1050,5 +1122,38 @@ onUnmounted(() => {
     width: calc(100vw - 2rem);
     max-width: 1024px;
   }
+}
+
+/* Add new mobile mega menu styles */
+.mobile-mega-menu {
+  background-color: var(--navbar-menu-bg);
+  border-left: 2px solid var(--navbar-border);
+  margin-left: 1rem;
+}
+
+.mobile-submenu-item {
+  transition: all 0.3s ease;
+}
+
+.mobile-submenu-item:hover {
+  transform: translateX(4px);
+}
+
+/* Update mobile menu transitions */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.slide-fade-enter-to,
+.slide-fade-leave-from {
+  opacity: 1;
+  transform: translateY(0);
 }
 </style> 

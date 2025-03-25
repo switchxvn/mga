@@ -274,8 +274,8 @@ onMounted(() => {
     <UButton
       @click="openDrawer"
       variant="soft"
-      color="gray"
-      class="w-full"
+      color="primary"
+      class="mb-4 w-full"
     >
       <template #leading>
         <SlidersHorizontal class="h-4 w-4" />
@@ -291,7 +291,7 @@ onMounted(() => {
     <!-- Drawer -->
     <Teleport to="body">
       <Transition name="drawer">
-        <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900">
+        <div v-if="isOpen" class="fixed inset-0 z-[120] flex flex-col bg-white dark:bg-gray-900">
           <!-- Drawer Header -->
           <div class="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
             <h2 class="text-lg font-medium text-gray-900 dark:text-white">

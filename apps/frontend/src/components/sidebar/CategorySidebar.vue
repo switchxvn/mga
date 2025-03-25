@@ -517,7 +517,7 @@ watch(() => props.categoryId, (newId) => {
 <style scoped>
 /* Custom styles for @vueform/slider */
 .slider-primary {
-  --slider-connect-bg: #0ea5e9; /* Màu xanh dương - primary color */
+  --slider-connect-bg: #0ea5e9;
   --slider-handle-ring-color: #0ea5e9;
   --slider-handle-bg: white;
   --slider-handle-border-color: #0ea5e9;
@@ -526,19 +526,19 @@ watch(() => props.categoryId, (newId) => {
   --slider-handle-height: 18px;
   --slider-bg: #e5e7eb;
   --slider-height: 8px;
-  --slider-touch-area-bg: rgba(14, 165, 233, 0.15); /* Màu xanh dương nhạt cho vùng touch */
+  --slider-touch-area-bg: rgba(14, 165, 233, 0.15);
   --slider-touch-area-width: 40px;
   --slider-touch-area-height: 40px;
 }
 
 /* Dark mode adjustments */
 :deep(.dark) .slider-primary {
-  --slider-connect-bg: #38bdf8; /* Màu xanh dương sáng hơn cho dark mode */
+  --slider-connect-bg: #38bdf8;
   --slider-handle-ring-color: #38bdf8;
   --slider-handle-bg: #1f2937;
   --slider-handle-border-color: #38bdf8;
   --slider-bg: #374151;
-  --slider-touch-area-bg: rgba(56, 189, 248, 0.2); /* Màu xanh dương nhạt cho vùng touch trong dark mode */
+  --slider-touch-area-bg: rgba(56, 189, 248, 0.2);
 }
 
 /* Custom input container */
@@ -556,12 +556,14 @@ watch(() => props.categoryId, (newId) => {
 }
 
 /* Adjust input padding */
-:deep(.search-input), :deep(.price-input) {
+:deep(.search-input),
+:deep(.price-input) {
   padding: 0.5rem 0rem;
 }
 
 /* Adjust input field padding */
-:deep(.search-input input), :deep(.price-input input) {
+:deep(.search-input input),
+:deep(.price-input input) {
   padding-left: 36px !important;
 }
 
@@ -583,5 +585,6 @@ watch(() => props.categoryId, (newId) => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  z-index: 110;
 }
 </style> 
