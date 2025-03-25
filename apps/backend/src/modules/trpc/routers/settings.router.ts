@@ -85,7 +85,9 @@ export const settingsRouter = router({
     .input(createMenuItemSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        ctx.logger.log(`Creating new menu item: ${input.label}`);
+        // Get the label from the first translation if available
+        const label = input.translations?.[0]?.label || 'Untitled Menu Item';
+        ctx.logger.log(`Creating new menu item: ${label}`);
         // Sử dụng admin service cho các endpoint protected
         const newMenuItem = await ctx.services.settingsAdminService.createMenuItem(input);
         ctx.logger.log(`Successfully created menu item ID: ${newMenuItem.id}`);
