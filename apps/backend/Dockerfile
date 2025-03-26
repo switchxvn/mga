@@ -22,7 +22,11 @@ COPY --chown=node:node nx.json tsconfig.base.json ./
 # Install dependencies
 RUN yarn install --frozen-lockfile
 
-# Copy source code
+# Copy TypeScript configs and source code for migrations
+COPY --chown=node:node tsconfig.json tsconfig.base.json ./
+COPY --chown=node:node libs ./libs
+
+# Copy remaining source code
 COPY --chown=node:node . .
 
 # Build argument for environment file
@@ -54,6 +58,10 @@ ENV YARN_CACHE_FOLDER=/app/.yarn-cache
 # Copy package files
 COPY --chown=node:node package.json yarn.lock ./
 
+# Copy TypeScript configs and libs for migrations
+COPY --chown=node:node tsconfig.json tsconfig.base.json ./
+COPY --chown=node:node libs ./libs
+
 # Install production dependencies only
 RUN yarn install --production --frozen-lockfile
 
@@ -63,11 +71,26 @@ COPY --chown=node:node --from=builder /app/dist/apps/backend/ ./dist/
 # Copy environment file
 COPY --chown=node:node --from=builder /app/apps/backend/.env .env
 
+# Create entrypoint script
+RUN echo '#!/bin/sh\n\
+set -e\n\
+\n\
+# Run migrations if RUN_MIGRATIONS is set to true\n\
+if [ "$RUN_MIGRATIONS" = "true" ]; then\n\
+    echo "Running database migrations..."\n\
+    yarn typeorm migration:run -d libs/database/src/config/typeorm.config.ts || exit 1\n\
+fi\n\
+\n\
+# Start the application\n\
+exec "$@"' > /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
+
 # Expose the port the app runs on
 EXPOSE 3333
 
 # Set production environment
 ENV NODE_ENV=production
 
-# Start the application
+# Use the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "dist/main.js"] 

@@ -1,14 +1,11 @@
 import { Logger } from '@nestjs/common';
 import { initTRPC, TRPCError } from '@trpc/server';
-import superjson from "superjson";
 import { ITrpcServices } from './interfaces/trpc-services.interface';
+import { IUser } from './interfaces/user.interface';
 
 // Define context type
 export interface Context {
-  user?: {
-    id: number;
-    email: string;
-  };
+  user?: IUser;
   services: ITrpcServices;
   logger: Logger;
 }
@@ -20,19 +17,7 @@ const createContext = (): Context => ({
 });
 
 // Initialize tRPC
-const t = initTRPC.context<Context>().create({
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        httpStatus: shape.data.httpStatus,
-        stack: error.stack,
-        cause: error.cause instanceof Error ? error.cause.message : error.cause,
-      },
-    };
-  },
-});
+const t = initTRPC.context<Context>().create();
 
 // Create middleware for protected routes
 const isAuthed = t.middleware(({ ctx, next }) => {
@@ -61,8 +46,12 @@ const isAdmin = t.middleware(({ ctx, next }) => {
     });
   }
   
-  // Kiểm tra quyền admin ở đây (có thể cần thêm logic)
-  // Ví dụ: if (ctx.user.role !== 'ADMIN') throw new TRPCError({...})
+  if (!ctx.user.isAdmin) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'You must be an admin to access this resource',
+    });
+  }
   
   ctx.logger.log(`Admin user accessing protected route: ${ctx.user.email}`);
   
@@ -75,6 +64,8 @@ const isAdmin = t.middleware(({ ctx, next }) => {
 
 // Export reusable router and procedures
 export const router = t.router;
+export const procedure = t.procedure;
+export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(isAuthed);
 export const adminProcedure = t.procedure.use(isAdmin);
