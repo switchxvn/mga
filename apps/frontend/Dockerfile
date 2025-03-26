@@ -14,17 +14,16 @@ USER node
 # Set yarn cache directory
 ENV YARN_CACHE_FOLDER=/app/.yarn-cache
 
-# Copy package files
+# Copy only necessary package files
 COPY --chown=node:node package.json yarn.lock ./
-
-# Copy the nx workspace files
 COPY --chown=node:node nx.json tsconfig.base.json ./
 
 # Install dependencies
 RUN yarn install --frozen-lockfile
 
-# Copy source code
-COPY --chown=node:node . .
+# Copy only frontend related files
+COPY --chown=node:node apps/frontend ./apps/frontend
+COPY --chown=node:node libs ./libs
 
 # Build argument for environment file
 ARG ENV_FILE=.env
@@ -33,7 +32,7 @@ ENV ENV_FILE=${ENV_FILE}
 # Copy environment file
 COPY --chown=node:node apps/frontend/${ENV_FILE} apps/frontend/.env
 
-# Build the application and verify output
+# Build only frontend application
 RUN cd apps/frontend && \
     npx nuxt build && \
     ls -la .output/server || exit 1

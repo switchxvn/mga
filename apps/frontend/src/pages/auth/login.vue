@@ -1,55 +1,172 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
-import FormInput from '@/components/ui/form/FormInput.vue';
-import { useAuth, type LoginCredentials } from '@/composables/useAuth';
+import { useAuth } from '@/composables/useAuth';
+import { useVuelidate } from '@vuelidate/core';
+import { required, email } from '@vuelidate/validators';
 
 definePageMeta({
   layout: 'auth',
+  middleware: ['guest']
 });
 
 const { login, isLoading, error } = useAuth();
 
-const credentials = ref<LoginCredentials>({
+const form = ref({
   email: '',
   password: '',
+  rememberMe: false
 });
 
+const rules = {
+  email: { 
+    required,
+    email
+  },
+  password: { 
+    required
+  }
+};
+
+const v$ = useVuelidate(rules, form);
+
 const handleSubmit = async () => {
-  await login(credentials.value);
+  const isValid = await v$.value.$validate();
+  if (!isValid) return;
+  
+  await login({
+    email: form.value.email,
+    password: form.value.password,
+  });
+};
+
+// Handle enter key press
+const handleKeyPress = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    handleSubmit();
+  }
 };
 </script>
 
 <template>
-  <form @submit.prevent="handleSubmit" class="space-y-4">
-    <FormInput
-      v-model="credentials.email"
-      label="Email"
-      type="email"
-      placeholder="Enter your email"
-      required
-    />
-    <FormInput
-      v-model="credentials.password"
-      label="Password"
-      type="password"
-      placeholder="Enter your password"
-      required
-    />
-    <div v-if="error" class="text-sm text-destructive">
-      {{ error }}
+  <div class="space-y-8">
+    <!-- Mobile Header -->
+    <div class="lg:hidden text-center">
+      <h1 class="text-2xl font-bold tracking-tight">
+        Đăng nhập
+      </h1>
+      <p class="mt-2 text-sm text-muted-foreground">
+        Nhập thông tin đăng nhập của bạn để tiếp tục
+      </p>
     </div>
-    <button
-      type="submit"
-      class="form-button primary w-full h-10"
-      :disabled="isLoading"
-    >
-      {{ isLoading ? 'Signing in...' : 'Sign in' }}
-    </button>
-    <div class="text-center text-sm">
-      <span class="text-muted-foreground">Don't have an account?</span>
-      <a href="/register" class="ml-1 text-primary hover:underline">
-        Sign up
-      </a>
-    </div>
-  </form>
+
+    <!-- Form -->
+    <form @submit.prevent="handleSubmit" class="space-y-6">
+      <UFormGroup
+        label="Email"
+        :error="v$.email.$error ? String(v$.email.$errors[0].$message) : undefined"
+        required
+      >
+        <UInput
+          v-model="form.email"
+          type="email"
+          placeholder="example@email.com"
+          :error="v$.email.$error"
+          @blur="v$.email.$touch"
+          @keypress="handleKeyPress"
+        />
+      </UFormGroup>
+
+      <UFormGroup
+        label="Mật khẩu"
+        :error="v$.password.$error ? String(v$.password.$errors[0].$message) : undefined"
+        required
+      >
+        <UInput
+          v-model="form.password"
+          type="password"
+          placeholder="••••••••"
+          :error="v$.password.$error"
+          @blur="v$.password.$touch"
+          @keypress="handleKeyPress"
+        />
+      </UFormGroup>
+
+      <div class="flex items-center justify-between">
+        <UCheckbox
+          v-model="form.rememberMe"
+          label="Ghi nhớ đăng nhập"
+        />
+        <NuxtLink
+          to="/auth/forgot-password"
+          class="text-sm text-primary hover:underline"
+        >
+          Quên mật khẩu?
+        </NuxtLink>
+      </div>
+
+      <div v-if="error" class="rounded-md bg-destructive/10 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <UIcon name="i-heroicons-exclamation-circle" class="h-5 w-5 text-destructive" />
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-destructive">
+              {{ error }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <UButton
+        type="submit"
+        color="primary"
+        block
+        :loading="isLoading"
+        :disabled="isLoading"
+        size="lg"
+      >
+        {{ isLoading ? 'Đang xử lý...' : 'Đăng nhập' }}
+      </UButton>
+
+      <div class="relative">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-border"></div>
+        </div>
+        <div class="relative flex justify-center text-xs uppercase">
+          <span class="bg-background px-2 text-muted-foreground">
+            Hoặc
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <UButton
+          color="gray"
+          variant="outline"
+          block
+          icon="i-simple-icons-google"
+        >
+          Google
+        </UButton>
+        <UButton
+          color="gray"
+          variant="outline"
+          block
+          icon="i-simple-icons-facebook"
+        >
+          Facebook
+        </UButton>
+      </div>
+
+      <div class="text-center text-sm">
+        <span class="text-muted-foreground">Chưa có tài khoản?</span>
+        <NuxtLink
+          to="/auth/register"
+          class="ml-1 text-primary hover:underline"
+        >
+          Đăng ký ngay
+        </NuxtLink>
+      </div>
+    </form>
+  </div>
 </template> 
