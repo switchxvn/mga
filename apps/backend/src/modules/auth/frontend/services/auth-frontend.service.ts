@@ -32,7 +32,10 @@ export class AuthFrontendService {
       throw new UnauthorizedException('User is inactive');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Handle both $2y$ (PHP) and $2b$ (Node.js) hashes
+    const hashedPassword = user.password.replace('$2y$', '$2b$');
+    const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
