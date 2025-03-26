@@ -38,11 +38,32 @@ stop_container() {
     fi
 }
 
-# Create network if it doesn't exist
-if ! docker network inspect app-network >/dev/null 2>&1; then
-    echo "Creating docker network: app-network"
-    docker network create app-network
-fi
+# Function to wait for container to be healthy
+wait_for_container() {
+    local container_name=$1
+    local max_attempts=30
+    local attempt=1
+
+    echo "Waiting for $container_name to be ready..."
+    while [ $attempt -le $max_attempts ]; do
+        if docker ps | grep $container_name | grep -q "Up"; then
+            echo "$container_name is ready!"
+            return 0
+        fi
+        echo "Attempt $attempt/$max_attempts: $container_name is not ready yet..."
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+
+    echo "Error: $container_name failed to start properly"
+    docker logs $container_name
+    return 1
+}
+
+# Remove existing network if exists and create new one
+echo "Setting up docker network..."
+docker network rm app-network 2>/dev/null || true
+docker network create app-network
 
 # Pull latest images
 echo "Pulling latest images..."
@@ -60,23 +81,31 @@ echo "Starting backend..."
 docker run -d \
     --name ew-backend \
     --network app-network \
+    --network-alias backend \
     -p 3333:3333 \
     --env-file apps/backend/.env.production \
     -e NODE_ENV=production \
     --restart unless-stopped \
     $REGISTRY/$GITHUB_USERNAME/ew-backend:latest
 
+# Wait for backend to be ready
+wait_for_container "ew-backend"
+
 # Start frontend
 echo "Starting frontend..."
 docker run -d \
     --name ew-frontend \
     --network app-network \
+    --network-alias frontend \
     -p 3000:3000 \
     --env-file apps/frontend/.env.production \
     -e NODE_ENV=production \
     -e HOST=0.0.0.0 \
     --restart unless-stopped \
     $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest
+
+# Wait for frontend to be ready
+wait_for_container "ew-frontend"
 
 # Start nginx
 echo "Starting nginx..."
@@ -89,12 +118,18 @@ docker run -d \
     --restart unless-stopped \
     $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest
 
+# Wait for nginx to be ready
+wait_for_container "ew-nginx"
+
 echo "Deployment completed successfully!"
 echo "Services:"
 echo "- Frontend: http://localhost:3000"
 echo "- Backend: http://localhost:3333"
 echo "- Nginx: http://localhost (80) and https://localhost (443)"
 
-# Show running containers
+# Show running containers and their networks
 echo -e "\nRunning containers:"
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+echo -e "\nNetwork information:"
+docker network inspect app-network 
