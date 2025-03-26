@@ -171,8 +171,8 @@ export class AddGeneratorMenuItems1742917167140 implements MigrationInterface {
     for (const item of menuItems) {
       // Insert menu item
       const result = await queryRunner.query(
-        `INSERT INTO menu_items (parent_id, "order", is_active, created_at, updated_at)
-         VALUES ($1, $2, true, NOW(), NOW())
+        `INSERT INTO menu_items (id, parent_id, "order", is_active, created_at, updated_at)
+         VALUES (nextval('menu_items_id_seq'), $1, $2, true, NOW(), NOW())
          RETURNING id`,
         [parentMenuItemId, item.order]
       );
