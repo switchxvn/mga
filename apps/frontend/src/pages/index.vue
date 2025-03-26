@@ -23,6 +23,8 @@ import VideoIntroSection from "../components/sections/home_page/VideoIntroSectio
 import StyledProductCategoriesSection from "../components/sections/home_page/StyledProductCategoriesSection.vue";
 import StyledFeaturedProductsSection from "../components/sections/home_page/StyledFeaturedProductsSection.vue";
 import CustomerLogosSection from "../components/sections/home_page/CustomerLogosSection.vue";
+import FeatureServicesSection from "../components/sections/home_page/FeatureServicesSection.vue";
+import WhyChooseUsSection from "../components/sections/home_page/WhyChooseUsSection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -324,7 +326,9 @@ const components = {
   VideoIntroSection,
   StyledProductCategoriesSection,
   StyledFeaturedProductsSection,
-  CustomerLogosSection
+  CustomerLogosSection,
+  FeatureServicesSection,
+  WhyChooseUsSection
 } as const;
 
 // Function to get component name based on section type and componentName
@@ -351,7 +355,8 @@ const getDefaultComponent = (type: string) => {
     'video_intro': components.VideoIntroSection,
     'styled_product_categories': components.StyledProductCategoriesSection,
     'styled_featured_products': components.StyledFeaturedProductsSection,
-    'customer_logos': components.CustomerLogosSection
+    'customer_logos': components.CustomerLogosSection,
+    'feature_services': components.FeatureServicesSection
   };
   
   return typeToComponent[type] || null;
