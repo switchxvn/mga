@@ -1,18 +1,18 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../user/entities/user.entity';
-import { AuthService } from './services/auth.service';
-import { AuthController } from './auth.controller';
+import { UserProfile } from '../profile/entities/user-profile.entity';
+import { AuthAdminService } from './admin/services/auth-admin.service';
+import { AuthFrontendService } from './frontend/services/auth-frontend.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { TrpcModule } from '../trpc/trpc.module';
 import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, UserProfile]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -25,16 +25,8 @@ import { UserModule } from '../user/user.module';
       }),
     }),
     UserModule,
-    forwardRef(() => TrpcModule),
   ],
-  controllers: [AuthController],
-  providers: [
-    {
-      provide: AuthService,
-      useClass: AuthService,
-    },
-    JwtStrategy
-  ],
-  exports: [AuthService, JwtModule],
+  providers: [AuthAdminService, AuthFrontendService, JwtStrategy],
+  exports: [AuthAdminService, AuthFrontendService, JwtModule],
 })
 export class AuthModule {} 

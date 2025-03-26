@@ -14,8 +14,6 @@ import { PostAdminService } from '../post/admin/services/post-admin.service';
 import { ProfileService } from '../profile/services/profile.service';
 import { SettingsAdminService } from '../settings/admin/services/settings-admin.service';
 import { SettingsFrontendService } from '../settings/frontend/services/settings-frontend.service';
-import { AuthService } from '../auth/services/auth.service';
-import { IAuthService } from '../auth/interfaces/auth.interface';
 import { SeoAdminService } from '../seo/admin/services/seo-admin.service';
 import { SeoFrontendService } from '../seo/frontend/services/seo-frontend.service';
 import { FooterAdminService } from '../footer/admin/services/footer-admin.service';
@@ -48,6 +46,8 @@ import { LogoFrontendService } from '../settings/frontend/services/logo-frontend
 import { LogoAdminService } from '../settings/admin/services/logo-admin.service';
 import { CustomerLogoFrontendService } from '../customer-logo/frontend/services/customer-logo-frontend.service';
 import { CustomerLogoAdminService } from '../customer-logo/admin/services/customer-logo-admin.service';
+import { AuthFrontendService } from '../auth/frontend/services/auth-frontend.service';
+import { AuthAdminService } from '../auth/admin/services/auth-admin.service';
 
 const t = initTRPC.context<TRPCContext>().create();
 
@@ -67,8 +67,8 @@ export class TrpcService {
     private readonly profileService: ProfileService,
     private readonly settingsAdminService: SettingsAdminService,
     private readonly settingsFrontendService: SettingsFrontendService,
-    @Inject(forwardRef(() => AuthService))
-    private readonly authService: IAuthService,
+    private readonly authAdminService: AuthAdminService,
+    private readonly authFrontendService: AuthFrontendService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly seoAdminService: SeoAdminService,
@@ -122,7 +122,8 @@ export class TrpcService {
       postService: this.postFrontendService,
       postAdminService: this.postAdminService,
       profileService: this.profileService,
-      authService: this.authService,
+      authAdminService: this.authAdminService,
+      authFrontendService: this.authFrontendService,
       settingsAdminService: this.settingsAdminService,
       settingsFrontendService: this.settingsFrontendService,
       seoAdminService: this.seoAdminService,
@@ -157,18 +158,5 @@ export class TrpcService {
       customerLogoFrontendService: this.customerLogoFrontendService,
       customerLogoAdminService: this.customerLogoAdminService,
     };
-  }
-
-  private async verifyToken(token: string) {
-    try {
-      const decoded = this.jwtService.verify(token, {
-        secret: this.configService.get('JWT_SECRET'),
-      });
-
-      return decoded;
-    } catch (error: unknown) {
-      this.logger.warn(`JWT verification failed: ${error instanceof Error ? error.message : String(error)}`);
-      return null;
-    }
   }
 } 

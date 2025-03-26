@@ -2,7 +2,6 @@ import { UserService } from '../../user/services/user.service';
 import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../../post/admin/services/post-admin.service';
 import { ProfileService } from '../../profile/services/profile.service';
-import { IAuthService } from '../../auth/interfaces/auth.interface';
 import { SettingsAdminService } from '../../settings/admin/services/settings-admin.service';
 import { SettingsFrontendService } from '../../settings/frontend/services/settings-frontend.service';
 import { SeoAdminService } from '../../seo/admin/services/seo-admin.service';
@@ -36,13 +35,14 @@ import { LogoFrontendService } from '../../settings/frontend/services/logo-front
 import { LogoAdminService } from '../../settings/admin/services/logo-admin.service';
 import { CustomerLogoFrontendService } from '../../customer-logo/frontend/services/customer-logo-frontend.service';
 import { CustomerLogoAdminService } from '../../customer-logo/admin/services/customer-logo-admin.service';
+import { AuthFrontendService } from '../../auth/frontend/services/auth-frontend.service';
+import { AuthAdminService } from '../../auth/admin/services/auth-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
   postService: PostFrontendService;
   postAdminService: PostAdminService;
   profileService: ProfileService;
-  authService: IAuthService;
   settingsAdminService: SettingsAdminService;
   settingsFrontendService: SettingsFrontendService;
   seoAdminService: SeoAdminService;
@@ -76,4 +76,6 @@ export interface ITrpcServices {
   logoAdminService: LogoAdminService;
   customerLogoFrontendService: CustomerLogoFrontendService;
   customerLogoAdminService: CustomerLogoAdminService;
+  authFrontendService: AuthFrontendService;
+  authAdminService: AuthAdminService;
 } 
