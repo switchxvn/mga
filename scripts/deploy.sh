@@ -60,10 +60,23 @@ wait_for_container() {
     return 1
 }
 
-# Remove existing network if exists and create new one
+# Setup docker network
 echo "Setting up docker network..."
-docker network rm app-network 2>/dev/null || true
-docker network create app-network
+NETWORK_NAME="app-network"
+
+# Check if network exists
+if docker network ls | grep -q $NETWORK_NAME; then
+    echo "Network $NETWORK_NAME exists, removing it..."
+    # Check if any containers are using the network
+    if [ -n "$(docker network inspect $NETWORK_NAME -f '{{range .Containers}}{{.Name}} {{end}}')" ]; then
+        echo "Disconnecting containers from network..."
+        docker network disconnect $NETWORK_NAME $(docker network inspect $NETWORK_NAME -f '{{range .Containers}}{{.Name}} {{end}}') 2>/dev/null || true
+    fi
+    docker network rm $NETWORK_NAME
+fi
+
+echo "Creating network $NETWORK_NAME..."
+docker network create $NETWORK_NAME
 
 # Pull latest images
 echo "Pulling latest images..."
