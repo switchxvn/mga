@@ -12,9 +12,21 @@ else
 fi
 
 # Validate required environment variables
-if [ -z "$GITHUB_USERNAME" ] || [ -z "$REGISTRY" ]; then
-    echo "Error: GITHUB_USERNAME and REGISTRY must be set in .env file"
+if [ -z "$GITHUB_USERNAME" ] || [ -z "$REGISTRY" ] || [ -z "$GITHUB_TOKEN" ]; then
+    echo "Error: GITHUB_USERNAME, REGISTRY, and GITHUB_TOKEN must be set in .env file"
     exit 1
+fi
+
+# Check and login to GitHub Container Registry
+echo "Checking GitHub Container Registry authentication..."
+if ! docker info | grep -q "ghcr.io"; then
+    echo "Logging in to GitHub Container Registry..."
+    echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+    
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to login to GitHub Container Registry"
+        exit 1
+    fi
 fi
 
 # Function to stop and remove container if exists
