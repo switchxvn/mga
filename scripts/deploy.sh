@@ -60,19 +60,28 @@ wait_for_container() {
     return 1
 }
 
-# Setup docker network
-echo "Setting up docker network..."
+# Setup variables
 NETWORK_NAME="app-network"
 
-# Check if network exists
+# Stop and remove existing containers first
+echo "Cleaning up existing containers..."
+stop_container "ew-frontend"
+stop_container "ew-backend"
+stop_container "ew-nginx"
+
+# Clean up network after containers are stopped
+echo "Setting up docker network..."
 if docker network ls | grep -q $NETWORK_NAME; then
-    echo "Network $NETWORK_NAME exists, removing it..."
-    # Check if any containers are using the network
-    if [ -n "$(docker network inspect $NETWORK_NAME -f '{{range .Containers}}{{.Name}} {{end}}')" ]; then
-        echo "Disconnecting containers from network..."
-        docker network disconnect $NETWORK_NAME $(docker network inspect $NETWORK_NAME -f '{{range .Containers}}{{.Name}} {{end}}') 2>/dev/null || true
-    fi
-    docker network rm $NETWORK_NAME
+    echo "Removing existing network $NETWORK_NAME..."
+    docker network rm $NETWORK_NAME || {
+        echo "Failed to remove network. Forcing cleanup..."
+        # Force disconnect any remaining containers
+        for container in $(docker network inspect $NETWORK_NAME -f '{{range .Containers}}{{.Name}} {{end}}'); do
+            echo "Force disconnecting $container from network..."
+            docker network disconnect -f $NETWORK_NAME $container || true
+        done
+        docker network rm $NETWORK_NAME
+    }
 fi
 
 echo "Creating network $NETWORK_NAME..."
@@ -83,11 +92,6 @@ echo "Pulling latest images..."
 docker pull $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest
 docker pull $REGISTRY/$GITHUB_USERNAME/ew-backend:latest
 docker pull $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest
-
-# Stop and remove existing containers
-stop_container "ew-frontend"
-stop_container "ew-backend"
-stop_container "ew-nginx"
 
 # Start backend
 echo "Starting backend..."
