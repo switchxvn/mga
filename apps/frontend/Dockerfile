@@ -1,45 +1,78 @@
 # Build stage
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
+# Set working directory
 WORKDIR /app
 
+# Create cache directory and set permissions
+RUN mkdir -p /app/.yarn-cache && \
+    chown -R node:node /app
+
+# Switch to non-root user
+USER node
+
+# Set yarn cache directory
+ENV YARN_CACHE_FOLDER=/app/.yarn-cache
+
+# Copy package files
+COPY --chown=node:node package.json yarn.lock ./
+
+# Copy the nx workspace files
+COPY --chown=node:node nx.json tsconfig.base.json ./
+
 # Install dependencies
-COPY package.json yarn.lock ./
-COPY .yarnrc ./.yarnrc
-COPY .yarn ./.yarn
-
-# Copy all config files
-COPY nx.json tsconfig.base.json eslint.config.mjs ./
-COPY .prettierrc .prettierignore ./
-COPY tsconfig.json ./
-
-# Install dependencies first (better layer caching)
 RUN yarn install --frozen-lockfile
 
 # Copy source code
-COPY apps ./apps
-COPY libs ./libs
+COPY --chown=node:node . .
 
-# Set Node options to increase memory limit
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Build argument for environment file
+ARG ENV_FILE=.env
+ENV ENV_FILE=${ENV_FILE}
 
-# Build the frontend app
-RUN cd apps/frontend && npx nuxt build
+# Copy environment file
+COPY --chown=node:node apps/frontend/${ENV_FILE} apps/frontend/.env
+
+# Build the application and verify output
+RUN cd apps/frontend && \
+    npx nuxt build && \
+    ls -la .output/server || exit 1
 
 # Production stage
-FROM node:20-alpine
+FROM node:20-alpine AS runner
 
+# Set working directory
 WORKDIR /app
 
-# Copy built assets from builder
-COPY --from=builder /app/apps/frontend/.output ./.output
+# Create cache directory and set permissions
+RUN mkdir -p /app/.yarn-cache && \
+    chown -R node:node /app
 
-# Set environment variables
+# Switch to non-root user
+USER node
+
+# Set yarn cache directory
+ENV YARN_CACHE_FOLDER=/app/.yarn-cache
+
+# Copy package files
+COPY --chown=node:node package.json yarn.lock ./
+
+# Install production dependencies only
+RUN yarn install --production --frozen-lockfile
+
+# Copy built application
+COPY --chown=node:node --from=builder /app/apps/frontend/.output ./.output
+
+# Copy environment file
+COPY --chown=node:node --from=builder /app/apps/frontend/.env .env
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Set production environment
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
-EXPOSE 3000
-
 # Start the application
-CMD ["node", "./.output/server/index.mjs"] 
+CMD ["node", ".output/server/index.mjs"] 

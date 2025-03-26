@@ -52,3 +52,23 @@ vitest.config.*.timestamp*
 
 .env
 sql_mgavietnam_c_20250303_102858.sql
+
+/apps/backend/.env.production
+/apps/backend/.env.development
+/apps/backend/.env.staging
+/apps/backend/.env.test
+/apps/backend/.env.local
+
+/apps/frontend/.env.production
+/apps/frontend/.env.development
+/apps/frontend/.env.staging
+/apps/frontend/.env.test
+/apps/frontend/.env.local
+
+/apps/admin/.env.production
+/apps/admin/.env.development
+/apps/admin/.env.staging
+/apps/admin/.env.test
+/apps/admin/.env.local
+
+
