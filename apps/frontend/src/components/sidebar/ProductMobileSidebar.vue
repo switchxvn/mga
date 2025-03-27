@@ -71,7 +71,7 @@ onUnmounted(() => {
     <Transition name="fade">
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-40 bg-black bg-opacity-50"
+        class="fixed inset-0 z-[1998] bg-black bg-opacity-50"
         aria-hidden="true"
       ></div>
     </Transition>
@@ -81,7 +81,7 @@ onUnmounted(() => {
       <div
         v-if="isOpen"
         id="mobile-sidebar"
-        class="fixed bottom-0 left-0 right-0 top-0 h-full w-full overflow-y-auto bg-white p-0 dark:bg-gray-900 sm:max-w-sm"
+        class="fixed bottom-0 left-0 right-0 top-0 h-full w-full overflow-y-auto bg-white p-0 dark:bg-gray-900 sm:max-w-sm z-[1999]"
         @click.stop
       >
         <div class="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
@@ -124,7 +124,7 @@ onUnmounted(() => {
 
 <style scoped>
 #mobile-sidebar {
-  z-index: 110;
+  z-index: 1000;
 }
 .fade-enter-active,
 .fade-leave-active {

@@ -291,7 +291,7 @@ onMounted(() => {
     <!-- Drawer -->
     <Teleport to="body">
       <Transition name="drawer">
-        <div v-if="isOpen" class="fixed inset-0 z-[120] flex flex-col bg-white dark:bg-gray-900">
+        <div v-if="isOpen" class="fixed inset-0 z-[1999] flex flex-col bg-white dark:bg-gray-900">
           <!-- Drawer Header -->
           <div class="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
             <h2 class="text-lg font-medium text-gray-900 dark:text-white">
@@ -533,7 +533,7 @@ onMounted(() => {
       
       <!-- Backdrop -->
       <Transition name="fade">
-        <div v-if="isOpen" class="fixed inset-0 z-40 bg-black bg-opacity-50" @click="closeDrawer"></div>
+        <div v-if="isOpen" class="fixed inset-0 z-[1998] bg-black bg-opacity-50" @click="closeDrawer"></div>
       </Transition>
     </Teleport>
   </div>
