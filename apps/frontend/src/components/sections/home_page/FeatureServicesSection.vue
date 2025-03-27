@@ -314,7 +314,14 @@ const gridStyles = computed(() => ({
 
 <style lang="scss" scoped>
 .feature-services-section {
+  font-family: var(--font-family-base, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
   background-color: v-bind('mergedConfig.background.light');
+
+  // Add consistent font sizing
+  --text-lg: 1.125rem;
+  --text-base: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.75rem;
 
   :deep(.dark) & {
     background-color: v-bind('mergedConfig.background.dark');
@@ -338,7 +345,7 @@ const gridStyles = computed(() => ({
       text-align: left !important;
       
       h2.mobile-title {
-        font-size: 0.875rem !important; /* text-sm */
+        font-size: var(--text-sm) !important;
         line-height: 1.25rem !important;
         padding: 0.375rem 0 !important;
         justify-content: flex-start !important;
@@ -350,7 +357,7 @@ const gridStyles = computed(() => ({
 
   .mobile-view-all {
     @media (max-width: 640px) {
-      font-size: 0.75rem !important; /* text-xs */
+      font-size: var(--text-xs) !important;
       line-height: 1rem !important;
       padding: 0.25rem 0.75rem !important;
       font-weight: 500 !important;
@@ -375,6 +382,7 @@ const gridStyles = computed(() => ({
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  font-family: inherit;
 
   &:hover {
     transform: translateY(-4px);
@@ -385,11 +393,17 @@ const gridStyles = computed(() => ({
     align-items: center;
     justify-content: center;
   }
+
+  .service-title {
+    font-family: inherit;
+    line-height: 1.5;
+  }
 }
 
 .description-box {
   text-align: justify;
   line-height: 1.6;
+  font-family: inherit;
 
   :deep(p) {
     margin-bottom: 1rem;
