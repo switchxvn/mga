@@ -98,6 +98,11 @@ const getCurrentLabel = computed(() => {
 </template>
 
 <style scoped>
+/* Dropdown menu */
+.absolute {
+  z-index: 1200 !important;
+}
+
 /* Disable all transitions when switching between light/dark modes */
 :root[class*='dark'] * {
   transition: none !important;

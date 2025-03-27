@@ -941,7 +941,7 @@ watch([logo, isLoadingLogo], () => {
 .nav-wrapper {
   position: relative;
   width: 100%;
-  z-index: 51;
+  z-index: 900;
   transition: all 0.3s ease;
   will-change: transform, position;
   transform: translateZ(0);
@@ -972,7 +972,7 @@ watch([logo, isLoadingLogo], () => {
   display: flex;
   align-items: stretch;
   position: relative;
-  z-index: 51;
+  z-index: 900;
   width: 100%;
   overflow-x: clip;
 }
@@ -1090,7 +1090,7 @@ watch([logo, isLoadingLogo], () => {
 .logo-section {
   position: relative;
   width: 100%;
-  z-index: 95;
+  z-index: 950;
   border-color: var(--navbar-border) !important;
   color: var(--navbar-text) !important;
   background-color: #FEB914;
@@ -1157,7 +1157,7 @@ watch([logo, isLoadingLogo], () => {
 
 /* Mobile menu styles */
 .mobile-menu-overlay {
-  @apply fixed inset-0 bg-black bg-opacity-50 z-[90] md:hidden;
+  @apply fixed inset-0 bg-black bg-opacity-50 z-[1100] md:hidden;
 }
 
 .mobile-menu-content {
@@ -1335,13 +1335,14 @@ watch([logo, isLoadingLogo], () => {
 .top-menu {
   position: relative;
   width: 100%;
-  z-index: 52; /* Increased z-index to be above sticky nav */
+  z-index: 1000;
   border-color: var(--navbar-border);
   color: var(--navbar-text);
   background-color: var(--navbar-header-bg);
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   min-height: 48px;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .top-menu-bg-layer {
@@ -1354,7 +1355,55 @@ watch([logo, isLoadingLogo], () => {
   width: 100vw;
   height: 100%;
   background-color: var(--navbar-header-bg);
+  transition: background-color 0.3s ease;
   z-index: -1;
+}
+
+/* Dark mode specific styles for top menu */
+:root.dark .top-menu {
+  background-color: rgb(17 24 39 / 1); /* Darker background for dark mode */
+  border-color: rgb(55 65 81 / 1);
+}
+
+:root.dark .top-menu-bg-layer {
+  background-color: rgb(17 24 39 / 1);
+}
+
+/* Update text colors for dark mode */
+.top-menu .text-color-base {
+  color: rgb(75 85 99); /* text-neutral-600 */
+  transition: color 0.3s ease;
+}
+
+:root.dark .top-menu .text-color-base {
+  color: rgb(209 213 219); /* dark:text-neutral-300 */
+}
+
+.top-menu .text-color-secondary {
+  color: rgb(107 114 128); /* text-neutral-500 */
+  transition: color 0.3s ease;
+}
+
+:root.dark .top-menu .text-color-secondary {
+  color: rgb(156 163 175); /* dark:text-neutral-400 */
+}
+
+/* Update icon colors for dark mode */
+.top-menu .icon {
+  color: rgb(107 114 128); /* text-neutral-500 */
+  transition: color 0.3s ease;
+}
+
+:root.dark .top-menu .icon {
+  color: rgb(156 163 175); /* dark:text-neutral-400 */
+}
+
+.top-menu .icon:hover {
+  color: rgb(55 65 81); /* text-neutral-700 */
+}
+
+:root.dark .top-menu .icon:hover {
+  color: rgb(209 213 219); /* dark:text-neutral-300 */
 }
 
 /* Add padding to body when nav is sticky to prevent content jump */
@@ -1401,4 +1450,10 @@ body.has-sticky-nav {
 }
 
 /* ... rest of existing styles ... */
+
+/* Add styles for dropdown menus */
+:deep(.language-switcher .dropdown-menu),
+:deep(.theme-toggle .dropdown-menu) {
+  z-index: 1200 !important;
+}
 </style> 
