@@ -11,6 +11,8 @@ interface MenuItemTranslation {
   menuItemId?: number;
 }
 
+const ITEMS_PER_COLUMN = 16;
+
 interface MenuItem {
   id: number;
   defaultLocale: string;
@@ -23,6 +25,15 @@ interface MenuItem {
   children?: MenuItem[];
   createdAt: string;
   updatedAt: string;
+}
+
+interface MenuItemWithTranslation extends MenuItem {
+  translation: MenuItemTranslation;
+}
+
+interface MenuSection {
+  subtitle: MenuItemWithTranslation | null;
+  itemColumns: MenuItemWithTranslation[][];
 }
 
 interface Props {
@@ -67,7 +78,7 @@ const menuStructure = computed(() => {
   }
 
   // Get level 1 items
-  const level1Items = props.item.children
+  const level1Items: MenuSection[] = props.item.children
     .filter(child => child.level === 1 && child.isActive !== false)
     .sort((a, b) => (a.order || 0) - (b.order || 0))
     .map(subtitle => {
@@ -80,14 +91,18 @@ const menuStructure = computed(() => {
           translation: getTranslation(item)
         })) || [];
 
-      console.log('Level 2 items for subtitle', subtitle.id, ':', level2Items);
+      // Split items into chunks of ITEMS_PER_COLUMN
+      const itemColumns = [];
+      for (let i = 0; i < level2Items.length; i += ITEMS_PER_COLUMN) {
+        itemColumns.push(level2Items.slice(i, i + ITEMS_PER_COLUMN));
+      }
 
       return {
         subtitle: {
           ...subtitle,
           translation: getTranslation(subtitle)
         },
-        items: level2Items
+        itemColumns
       };
     });
 
@@ -100,13 +115,16 @@ const menuStructure = computed(() => {
       translation: getTranslation(item)
     }));
 
-  console.log('Direct level 2 items:', directLevel2Items);
-
-  // If we have direct level 2 items, add them as a section without subtitle
+  // Split direct items into chunks if they exist
   if (directLevel2Items.length > 0) {
+    const directItemColumns = [];
+    for (let i = 0; i < directLevel2Items.length; i += ITEMS_PER_COLUMN) {
+      directItemColumns.push(directLevel2Items.slice(i, i + ITEMS_PER_COLUMN));
+    }
+    
     level1Items.push({
       subtitle: null,
-      items: directLevel2Items
+      itemColumns: directItemColumns
     });
   }
 
@@ -138,36 +156,55 @@ const handleLinkClick = () => {
     
     <!-- Content -->
     <div class="relative mt-2 rounded-lg bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black ring-opacity-5">
-      <div class="relative p-2 min-w-[200px]">
+      <div class="relative p-4">
         <div 
-          v-for="(section, index) in menuStructure" 
-          :key="section?.subtitle?.id || index"
-          class="mb-4 last:mb-0"
+          class="grid gap-6"
+          :class="{
+            'grid-cols-2': menuStructure.length > 1,
+            'grid-cols-1': menuStructure.length === 1,
+            'w-[300px]': menuStructure.length === 1 && menuStructure[0]?.itemColumns?.length === 1,
+            'w-[600px]': menuStructure.length === 1 && menuStructure[0]?.itemColumns?.length > 1
+          }"
         >
-          <!-- Subtitle (Level 1) -->
           <div 
-            v-if="section?.subtitle"
-            class="px-4 py-2 font-bold text-sm text-neutral-900 dark:text-neutral-100 uppercase"
+            v-for="(section, index) in menuStructure" 
+            :key="section?.subtitle?.id || index"
           >
-            {{ section.subtitle.translation.label }}
-          </div>
-
-          <!-- Menu Items (Level 2) -->
-          <ul v-if="section.items.length > 0" class="divide-y divide-neutral-200 dark:divide-neutral-700">
-            <li
-              v-for="item in section.items"
-              :key="item.id"
-              class="[&:last-child]:border-none"
+            <!-- Subtitle (Level 1) -->
+            <div 
+              v-if="section?.subtitle"
+              class="px-4 py-2 font-bold text-sm text-neutral-900 dark:text-neutral-100 uppercase border-b border-neutral-200 dark:border-neutral-700 mb-2"
             >
-              <NuxtLink
-                :to="item.translation.href"
-                class="group flex items-center justify-between px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800 transition duration-150 ease-in-out"
-                @click="handleLinkClick"
-              >
-                <span>{{ item.translation.label }}</span>
-              </NuxtLink>
-            </li>
-          </ul>
+              {{ section.subtitle.translation.label }}
+            </div>
+
+            <!-- Item Columns -->
+            <div 
+              class="grid gap-6"
+              :class="{
+                'grid-cols-2': section.itemColumns.length > 1,
+                'grid-cols-1': section.itemColumns.length === 1
+              }"
+            >
+              <div v-for="(column, columnIndex) in section.itemColumns" :key="columnIndex">
+                <ul>
+                  <li
+                    v-for="(item, itemIndex) in column"
+                    :key="item.id"
+                    class="border-b last:border-b-0 border-neutral-200 dark:border-neutral-700"
+                  >
+                    <NuxtLink
+                      :to="item.translation.href"
+                      class="group flex items-center justify-between px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800 transition duration-150 ease-in-out whitespace-nowrap"
+                      @click="handleLinkClick"
+                    >
+                      <span>{{ item.translation.label }}</span>
+                    </NuxtLink>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

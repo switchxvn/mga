@@ -15,6 +15,7 @@ import { useDarkMode } from "~/composables/useDarkMode";
 import { useCssColorValue } from "~/composables/useColorUtils";
 import MegaMenu from "~/components/menu/MegaMenu.vue";
 import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
+import { useNow, useDateFormat } from '@vueuse/core';
 
 // Add MenuItem interface at the top of the script section
 interface MenuItemTranslation {
@@ -318,123 +319,56 @@ const mobileMenuTop = computed(() => {
   return `${navRect.bottom}px`;
 });
 
-// Handle scroll event
+// Add these refs at the top of your script
+const initialNavPosition = ref<number>(0);
+const isInitialized = ref(false);
+
+// Update the handleScroll function
 const handleScroll = () => {
-  if (!navWrapperRef.value) return;
+  if (!navWrapperRef.value || !isInitialized.value) return;
   
   const currentScrollPosition = Math.round(window.scrollY);
-  const logoSection = document.querySelector('.logo-section');
   
-  if (logoSection) {
-    const logoHeight = Math.round(logoSection.getBoundingClientRect().height);
-    
-    // Update sticky state based on scroll position
-    if (currentScrollPosition <= 0) {
-      isScrolled.value = false;
-    } else {
-      isScrolled.value = currentScrollPosition > logoHeight;
-    }
-    
-    // Update nav height when becoming sticky
-    if (isScrolled.value) {
+  // Check if we've scrolled past the original navbar position
+  if (currentScrollPosition >= initialNavPosition.value) {
+    if (!isScrolled.value) {
+      isScrolled.value = true;
       nextTick(() => {
         const nav = document.querySelector('.navigation-section') as HTMLElement;
         if (nav) {
           const navHeight = Math.round(nav.offsetHeight);
           document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
-          document.documentElement.style.setProperty('--mobile-menu-top', mobileMenuTop.value);
         }
       });
+    }
+  } else {
+    if (isScrolled.value) {
+      isScrolled.value = false;
+      // Remove padding when navbar is not sticky
+      document.documentElement.style.setProperty('--nav-height', '0px');
     }
   }
   
   lastScrollPosition.value = currentScrollPosition;
 };
 
-// Watch route changes
-watch(
-  () => route.path,
-  () => {
-    // Reset scroll position and sticky state
-    window.scrollTo(0, 0);
-    isScrolled.value = false;
-    lastScrollPosition.value = 0;
-    
-    // Reset nav height
-    nextTick(() => {
-      const nav = document.querySelector('.navigation-section') as HTMLElement;
-      if (nav) {
-        const navHeight = nav.offsetHeight;
-        document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
-      }
-    });
-  }
-);
-
-// Watch for mobile menu state changes
-watch(isMobileMenuOpen, (newVal) => {
-  if (newVal) {
-    // When menu opens, update its position
-    nextTick(() => {
-      document.documentElement.style.setProperty('--mobile-menu-top', mobileMenuTop.value);
-    });
-    // Prevent body scroll when menu is open
-    document.body.style.overflow = 'hidden';
-  } else {
-    // Re-enable body scroll when menu closes
-    document.body.style.overflow = '';
-  }
-});
-
-// Improve throttle function
-const throttledHandleScroll = (() => {
-  let frame: number | undefined;
-  let lastTime = 0;
-  const throttleMs = 16; // Approximately 60fps
-
-  return () => {
-    const now = Date.now();
-    
-    if (now - lastTime >= throttleMs) {
-      if (frame) {
-        cancelAnimationFrame(frame);
-      }
-      
-      frame = requestAnimationFrame(() => {
-        handleScroll();
-        lastTime = now;
-      });
-    }
-  };
-})();
-
-// Check cart feature flag
-const checkCartFeatureFlag = async () => {
-  try {
-    isLoadingFeatureFlag.value = true;
-    isCartEnabled.value = await isFeatureEnabled("enable_add_to_cart", true);
-  } catch (err) {
-    console.error("Error checking cart feature flag:", err);
-    isCartEnabled.value = false;
-  } finally {
-    isLoadingFeatureFlag.value = false;
-  }
-};
-
-// Watch for logo changes to update navbar height
-watch([logo, isLoadingLogo], () => {
-  nextTick(() => {
-    const nav = document.querySelector('.navigation-section') as HTMLElement;
-    if (nav) {
-      const navHeight = nav.offsetHeight;
-      document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
-    }
-  });
-});
-
-// Update onMounted
+// Update onMounted to initialize position
 onMounted(() => {
   console.log('CombinedNavbar mounted with settings:', props.settings);
+  
+  // Initialize navbar position after everything is loaded
+  nextTick(() => {
+    if (navWrapperRef.value) {
+      // Get the top offset of the navbar relative to the document
+      const navRect = navWrapperRef.value.getBoundingClientRect();
+      initialNavPosition.value = navRect.top + window.scrollY;
+      isInitialized.value = true;
+
+      // Initial scroll check
+      handleScroll();
+    }
+  });
+  
   window.addEventListener('scroll', throttledHandleScroll, { passive: true });
   console.log('Fetching menu items...');
   fetchMenuItems().then(() => {
@@ -454,6 +388,18 @@ onMounted(() => {
       document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
     }
   });
+  updateBodyPadding();
+
+  // Add resize handler to update initial position
+  const handleResize = () => {
+    if (navWrapperRef.value) {
+      const navRect = navWrapperRef.value.getBoundingClientRect();
+      initialNavPosition.value = navRect.top + window.scrollY;
+    }
+  };
+
+  // Update onMounted to add resize listener
+  window.addEventListener('resize', handleResize, { passive: true });
 });
 
 // Watch for locale changes
@@ -467,6 +413,12 @@ onUnmounted(() => {
   window.removeEventListener('scroll', throttledHandleScroll);
   document.documentElement.style.removeProperty('--nav-height');
   document.documentElement.style.removeProperty('--mobile-menu-top');
+  if (typeof document !== 'undefined') {
+    document.body.classList.remove('has-sticky-nav');
+  }
+
+  // Update onUnmounted to remove resize listener
+  window.removeEventListener('resize', handleResize);
 });
 
 // Add new method for mobile mega menu
@@ -508,10 +460,98 @@ const getParentMenuLeftOffset = (menuId: string) => {
   
   return offset;
 };
+
+// Add these near the top of the script
+const now = useNow();
+const formattedTime = computed(() => {
+  return useDateFormat(now, 'HH:mm:ss - DD/MM/YYYY').value;
+});
+
+// Add this to your script setup
+const updateBodyPadding = () => {
+  if (typeof document !== 'undefined') {
+    document.body.classList.toggle('has-sticky-nav', isScrolled.value);
+  }
+};
+
+// Update your watch for isScrolled
+watch(isScrolled, (newValue) => {
+  nextTick(() => {
+    updateBodyPadding();
+  });
+});
+
+// Update the throttled scroll handler to be more precise
+const throttledHandleScroll = (() => {
+  let frame: number | undefined;
+  
+  return () => {
+    if (frame) {
+      cancelAnimationFrame(frame);
+    }
+    
+    frame = requestAnimationFrame(() => {
+      handleScroll();
+    });
+  };
+})();
+
+// Check cart feature flag
+const checkCartFeatureFlag = async () => {
+  try {
+    isLoadingFeatureFlag.value = true;
+    isCartEnabled.value = await isFeatureEnabled("enable_add_to_cart", true);
+  } catch (err) {
+    console.error("Error checking cart feature flag:", err);
+    isCartEnabled.value = false;
+  } finally {
+    isLoadingFeatureFlag.value = false;
+  }
+};
+
+// Watch for logo changes to update navbar height
+watch([logo, isLoadingLogo], () => {
+  nextTick(() => {
+    const nav = document.querySelector('.navigation-section') as HTMLElement;
+    if (nav) {
+      const navHeight = nav.offsetHeight;
+      document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
+    }
+  });
+});
 </script>
 
 <template>
   <div class="navbar-container">
+    <!-- Top Menu - New Section -->
+    <div class="top-menu w-full border-b relative">
+      <div class="top-menu-bg-layer"></div>
+      <div class="container mx-auto">
+        <div class="flex items-center justify-between h-12 px-4">
+          <!-- Current Time -->
+          <div class="flex items-center gap-2">
+            <Icon 
+              name="Clock" 
+              class="h-4 w-4 text-neutral-500 dark:text-neutral-400" 
+            />
+            <span class="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+              {{ formattedTime }}
+            </span>
+          </div>
+          
+          <!-- Right Actions -->
+          <div class="hidden md:flex items-center gap-3">
+            <div class="min-w-[140px]">
+              <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
+            </div>
+            <div class="min-w-[140px]">
+              <ThemeToggle v-if="props.settings?.showThemeToggle" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Logo + Hotline Section - Hidden on Mobile -->
     <div class="logo-section w-full border-b hidden md:block">
       <div class="container mx-auto px-4">
@@ -697,16 +737,6 @@ const getParentMenuLeftOffset = (menuId: string) => {
 
             <!-- Right side actions -->
             <div class="flex items-center space-x-2">
-              <!-- Language Switcher - Desktop -->
-              <div class="hidden md:block">
-                <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
-              </div>
-
-              <!-- Theme Toggle - Desktop -->
-              <div class="hidden md:block">
-                <ThemeToggle v-if="props.settings?.showThemeToggle" />
-              </div>
-
               <!-- Cart Icon - Desktop Only -->
               <div class="hidden md:block">
                 <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
@@ -911,9 +941,9 @@ const getParentMenuLeftOffset = (menuId: string) => {
 .nav-wrapper {
   position: relative;
   width: 100%;
-  z-index: 50;
-  transition: transform 0.3s ease;
-  will-change: transform;
+  z-index: 51;
+  transition: all 0.3s ease;
+  will-change: transform, position;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
 }
@@ -923,7 +953,15 @@ const getParentMenuLeftOffset = (menuId: string) => {
   top: 0;
   left: 0;
   right: 0;
-  box-shadow: 0 2px 15px -3px rgba(0,0,0,0.07), 0 10px 20px -2px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Add this to ensure smooth transition when unsticking */
+.nav-wrapper:not(.nav-sticky) {
+  transform: none;
+  position: relative;
+  top: auto;
+  box-shadow: none;
 }
 
 .navigation-section {
@@ -987,7 +1025,7 @@ const getParentMenuLeftOffset = (menuId: string) => {
 }
 
 .nav-wrapper.nav-sticky .navigation-section {
-  box-shadow: 0 2px 15px -3px rgba(0,0,0,0.07), 0 10px 20px -2px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 /* Remove the body padding since we're handling position differently now */
@@ -1124,14 +1162,14 @@ const getParentMenuLeftOffset = (menuId: string) => {
 
 .mobile-menu-content {
   position: fixed;
-  top: 0; /* Change from var(--nav-height) to 0 */
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background-color: var(--navbar-menu-bg);
   border-top: 1px solid var(--navbar-border);
   overflow-y: auto;
-  z-index: 100;
+  z-index: 50;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
@@ -1292,4 +1330,75 @@ const getParentMenuLeftOffset = (menuId: string) => {
   width: auto;
   object-fit: contain;
 }
+
+/* Add these styles to your existing styles */
+.top-menu {
+  position: relative;
+  width: 100%;
+  z-index: 52; /* Increased z-index to be above sticky nav */
+  border-color: var(--navbar-border);
+  color: var(--navbar-text);
+  background-color: var(--navbar-header-bg);
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  min-height: 48px;
+}
+
+.top-menu-bg-layer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  height: 100%;
+  background-color: var(--navbar-header-bg);
+  z-index: -1;
+}
+
+/* Add padding to body when nav is sticky to prevent content jump */
+body.has-sticky-nav {
+  padding-top: var(--nav-height, 64px);
+}
+
+/* Update mobile menu position */
+.mobile-menu-content {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+}
+
+/* Add transition for clock icon */
+.top-menu .icon {
+  transition: color 0.3s ease;
+}
+
+/* Update existing styles */
+.navbar-container {
+  position: relative;
+  width: 100%;
+  overflow-x: clip;
+}
+
+/* Add responsive styles for top menu */
+@media (max-width: 768px) {
+  .nav-wrapper.nav-sticky {
+    top: 0;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  
+  .mobile-menu-content {
+    top: 0;
+  }
+  
+  .top-menu {
+    display: none;
+  }
+}
+
+/* ... rest of existing styles ... */
 </style> 
