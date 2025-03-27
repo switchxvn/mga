@@ -676,13 +676,16 @@ const getParentMenuLeftOffset = (menuId: string) => {
                   <Transition name="fade">
                     <div
                       v-if="item.hasMegaMenu && activeMegaMenu === item.id"
-                      class="absolute left-1/2 z-50 mt-3 w-screen max-w-max -translate-x-1/2"
+                      class="absolute left-1/2 z-50 mt-4 w-screen max-w-max -translate-x-1/2"
                       @mouseenter="keepMegaMenu"
                       @mouseleave="hideMegaMenu"
                     >
                       <!-- Arrow -->
-                      <div class="absolute -top-[10px] left-1/2 h-[20px] w-[20px] -translate-x-1/2">
-                        <div class="absolute rotate-45 transform h-full w-full bg-white dark:bg-neutral-900 border-t border-l border-neutral-200 dark:border-neutral-700"></div>
+                      <div class="absolute -top-[12px] left-1/2 h-[24px] w-[24px] -translate-x-1/2">
+                        <div 
+                          class="absolute h-full w-full bg-white dark:bg-neutral-900"
+                          style="clip-path: polygon(50% 0, 0 100%, 100% 100%); border-left: 1px solid var(--navbar-border); border-right: 1px solid var(--navbar-border); border-bottom: 1px solid var(--navbar-border);"
+                        ></div>
                       </div>
                       
                       <!-- Content -->
