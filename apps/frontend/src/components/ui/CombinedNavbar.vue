@@ -13,6 +13,8 @@ import { useLocalization } from "~/composables/useLocalization";
 import { useLogo } from "~/composables/useLogo";
 import { useDarkMode } from "~/composables/useDarkMode";
 import { useCssColorValue } from "~/composables/useColorUtils";
+import MegaMenu from "~/components/menu/MegaMenu.vue";
+import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
 
 // Props cho component
 interface NavbarProps {
@@ -620,15 +622,18 @@ const getParentMenuLeftOffset = (menuId: string) => {
         <div class="nav-bg-layer"></div>
         <div class="container mx-auto px-4">
           <div class="flex items-center justify-between h-full relative">
-            <!-- Mobile Logo -->
+            <!-- Mobile Logo - Left -->
             <div class="flex-shrink-0 md:hidden">
-              <NuxtLink to="/" class="block" @click="isMobileMenuOpen = false">
-                <div class="mobile-logo">
+              <NuxtLink to="/" class="block py-3">
+                <div 
+                  class="mobile-logo flex items-center justify-center" 
+                  :style="logo ? `width: ${logo.width * 0.5}px; height: ${logo.height * 0.5}px` : ''"
+                >
                   <img
                     v-if="currentLogoUrl"
                     :src="currentLogoUrl"
                     :alt="logo?.altText || 'Logo'"
-                    class="transition-transform duration-300 hover:scale-110"
+                    class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
                   />
                   <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
                 </div>
@@ -674,86 +679,55 @@ const getParentMenuLeftOffset = (menuId: string) => {
 
                   <!-- Mega Menu -->
                   <Transition name="fade">
-                    <div
+                    <MegaMenu
                       v-if="item.hasMegaMenu && activeMegaMenu === item.id"
-                      class="absolute left-1/2 z-50 mt-4 w-screen max-w-max -translate-x-1/2"
+                      :item="item"
+                      :is-active="isMenuActive(item.href)"
+                      :on-close="() => activeMegaMenu = null"
                       @mouseenter="keepMegaMenu"
                       @mouseleave="hideMegaMenu"
-                    >
-                      <!-- Arrow -->
-                      <div class="absolute -top-[12px] left-1/2 h-[24px] w-[24px] -translate-x-1/2">
-                        <div 
-                          class="absolute h-full w-full bg-white dark:bg-neutral-900"
-                          style="clip-path: polygon(50% 0, 0 100%, 100% 100%); border-left: 1px solid var(--navbar-border); border-right: 1px solid var(--navbar-border); border-bottom: 1px solid var(--navbar-border);"
-                        ></div>
-                      </div>
-                      
-                      <!-- Content -->
-                      <div class="relative rounded-lg bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black ring-opacity-5">
-                        <div class="relative grid grid-cols-2 gap-8 p-7">
-                          <div
-                            v-for="(column, columnIndex) in item.megaMenuColumns"
-                            :key="column.title || columnIndex"
-                            class="space-y-6"
-                          >
-                            <ul class="space-y-4">
-                              <li
-                                v-for="(subItem, subItemIndex) in column.items"
-                                :key="subItem.href || subItemIndex"
-                                class="block"
-                              >
-                                <NuxtLink
-                                  :to="subItem.href"
-                                  class="group flex items-center space-x-3 rounded-lg p-3 text-base font-medium text-neutral-900 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800 transition duration-150 ease-in-out"
-                                  @click="activeMegaMenu = null"
-                                >
-                                  <div class="flex-auto">
-                                    <p class="text-sm">{{ subItem.label }}</p>
-                                  </div>
-                                  <Icon 
-                                    name="ChevronRight"
-                                    class="h-5 w-5 flex-none text-neutral-400 group-hover:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300"
-                                  />
-                                </NuxtLink>
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    />
                   </Transition>
                 </div>
               </template>
             </nav>
 
             <!-- Right side actions -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+              <!-- Language Switcher - Desktop -->
               <div class="hidden md:block">
-                <!-- Language Switcher -->
                 <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
               </div>
 
+              <!-- Theme Toggle - Desktop -->
               <div class="hidden md:block">
-                <!-- Theme Toggle -->
                 <ThemeToggle v-if="props.settings?.showThemeToggle" />
               </div>
 
-              <!-- Cart Icon -->
-              <CartIcon v-if="props.settings?.showCart && isCartEnabled" class="hidden md:block" />
-            </div>
+              <!-- Cart Icon - Desktop Only -->
+              <div class="hidden md:block">
+                <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
+              </div>
 
-            <!-- Mobile Menu Button -->
-            <div class="md:hidden flex items-center space-x-2">
-              <!-- Cart Icon for Mobile -->
-              <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
+              <!-- Mobile Actions -->
+              <div class="md:hidden flex items-center gap-2 py-3">
+                <!-- User Icon -->
+                <NuxtLink 
+                  to="/auth/login" 
+                  class="flex items-center justify-center w-10 h-10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                >
+                  <Icon name="User" class="h-6 w-6" />
+                </NuxtLink>
 
-              <button
-                class="flex items-center text-neutral-700 dark:text-neutral-300"
-                @click="toggleMobileMenu"
-                aria-label="Toggle Menu"
-              >
-                <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="h-6 w-6" />
-              </button>
+                <!-- Hamburger Menu Button -->
+                <button
+                  class="flex items-center justify-center w-10 h-10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                  @click="toggleMobileMenu"
+                  aria-label="Toggle Menu"
+                >
+                  <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="h-6 w-6" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -771,122 +745,136 @@ const getParentMenuLeftOffset = (menuId: string) => {
           class="mobile-menu-content bg-white dark:bg-neutral-900"
           @click.stop
         >
+          <!-- Mobile Menu Header -->
+          <div class="mobile-menu-header flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+            <NuxtLink to="/" class="block" @click="isMobileMenuOpen = false">
+              <div 
+                class="flex items-center justify-center" 
+                :style="logo ? `width: ${logo.width * 0.6}px; height: ${logo.height * 0.6}px` : ''"
+              >
+                <img
+                  v-if="currentLogoUrl"
+                  :src="currentLogoUrl"
+                  :alt="logo?.altText || 'Logo'"
+                  class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[40px]"
+                />
+                <span v-else-if="isLoadingLogo" class="h-6 w-6 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
+              </div>
+            </NuxtLink>
+            
+            <button
+              class="p-2 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400"
+              @click="isMobileMenuOpen = false"
+              aria-label="Close Menu"
+            >
+              <Icon name="X" class="h-6 w-6" />
+            </button>
+          </div>
+
           <div class="px-4 py-3 space-y-1">
-            <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400 px-3 py-2">
-              Đang tải menu...
+            <!-- Cart Icon for Mobile -->
+            <div v-if="props.settings?.showCart && isCartEnabled" class="mb-4">
+              <NuxtLink 
+                to="/cart" 
+                class="flex items-center gap-3 px-3 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
+                @click="isMobileMenuOpen = false"
+              >
+                <Icon name="ShoppingCart" class="h-6 w-6" />
+                <span class="text-base font-medium">Giỏ hàng</span>
+              </NuxtLink>
             </div>
-            <div v-else-if="error" class="text-sm text-red-500 px-3 py-2">{{ error }}</div>
-            <template v-else>
-              <!-- Language Switcher and Theme Toggle in Mobile Menu -->
-              <div class="flex flex-col space-y-2 px-3 py-2 mb-4">
-                <div v-if="props.settings?.showLanguageSwitcher" class="w-full">
-                  <LanguageSwitcher />
-                </div>
-                <div v-if="props.settings?.showThemeToggle" class="w-full">
-                  <ThemeToggle />
-                </div>
-              </div>
 
-              <!-- Hotlines for Mobile -->
-              <div class="space-y-2 mb-4">
-                <NuxtLink
-                  v-if="props.settings?.hotlines?.sales"
-                  :to="`tel:${props.settings.hotlines.sales.number}`"
-                  class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
-                  <Icon name="Phone" class="h-5 w-5" />
-                  <div class="flex flex-col">
-                    <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.sales.text }}</span>
-                    <span class="font-bold">{{ props.settings.hotlines.sales.number }}</span>
-                  </div>
-                </NuxtLink>
-                
-                <NuxtLink
-                  v-if="props.settings?.hotlines?.support"
-                  :to="`tel:${props.settings.hotlines.support.number}`"
-                  class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
-                  <Icon name="Phone" class="h-5 w-5" />
-                  <div class="flex flex-col">
-                    <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.support.text }}</span>
-                    <span class="font-bold">{{ props.settings.hotlines.support.number }}</span>
-                  </div>
-                </NuxtLink>
+            <!-- Language Switcher and Theme Toggle in Mobile Menu -->
+            <div class="flex flex-col space-y-2 px-3 py-2 mb-4">
+              <div v-if="props.settings?.showLanguageSwitcher" class="w-full">
+                <LanguageSwitcher />
               </div>
+              <div v-if="props.settings?.showThemeToggle" class="w-full">
+                <ThemeToggle />
+              </div>
+            </div>
 
-              <!-- Mobile Menu Items with Mega Menu -->
-              <div class="space-y-1">
+            <!-- Hotlines for Mobile -->
+            <div class="space-y-2 mb-4">
+              <NuxtLink
+                v-if="props.settings?.hotlines?.sales"
+                :to="`tel:${props.settings.hotlines.sales.number}`"
+                class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              >
+                <Icon name="Phone" class="h-5 w-5" />
+                <div class="flex flex-col">
+                  <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.sales.text }}</span>
+                  <span class="font-bold">{{ props.settings.hotlines.sales.number }}</span>
+                </div>
+              </NuxtLink>
+              
+              <NuxtLink
+                v-if="props.settings?.hotlines?.support"
+                :to="`tel:${props.settings.hotlines.support.number}`"
+                class="mobile-hotline flex items-center gap-2 px-3 py-2 text-primary-600 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              >
+                <Icon name="Phone" class="h-5 w-5" />
+                <div class="flex flex-col">
+                  <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.support.text }}</span>
+                  <span class="font-bold">{{ props.settings.hotlines.support.number }}</span>
+                </div>
+              </NuxtLink>
+            </div>
+
+            <!-- Mobile Menu Items with Mega Menu -->
+            <div class="space-y-1">
+              <div
+                v-for="item in processedMenuItems"
+                :key="item.id"
+                class="mobile-menu-item"
+              >
+                <!-- Menu Item with Mega Menu -->
                 <div
-                  v-for="item in processedMenuItems"
-                  :key="item.id"
-                  class="mobile-menu-item"
+                  v-if="item.hasMegaMenu"
+                  class="mobile-main-menu-item flex items-center justify-between px-3 py-2 text-lg font-extrabold uppercase rounded-md"
+                  :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 >
-                  <!-- Menu Item with Mega Menu -->
-                  <div
-                    v-if="item.hasMegaMenu"
-                    class="mobile-main-menu-item flex items-center justify-between px-3 py-2 text-lg font-extrabold uppercase rounded-md"
-                    :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
-                  >
-                    <NuxtLink
-                      :to="item.href"
-                      class="flex-1 block"
-                      @click="isMobileMenuOpen = false"
-                    >
-                      {{ item.label }}
-                    </NuxtLink>
-                    <button
-                      class="p-2 -m-2"
-                      @click.stop="toggleMobileMegaMenu(item.id)"
-                    >
-                      <Icon
-                        name="ChevronRight"
-                        class="h-5 w-5 transition-transform duration-300"
-                        :class="{ 'rotate-90': activeMobileMegaMenu === item.id }"
-                      />
-                    </button>
-                  </div>
-
-                  <!-- Regular Menu Item -->
                   <NuxtLink
-                    v-else
                     :to="item.href"
-                    class="mobile-main-menu-item block px-3 py-2 text-lg font-extrabold uppercase rounded-md"
-                    :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
+                    class="flex-1 block"
                     @click="isMobileMenuOpen = false"
                   >
                     {{ item.label }}
                   </NuxtLink>
-
-                  <!-- Mobile Mega Menu Content -->
-                  <Transition name="slide-fade">
-                    <div
-                      v-if="item.hasMegaMenu && activeMobileMegaMenu === item.id"
-                      class="mobile-mega-menu pl-6 pr-3 py-2 space-y-2"
-                    >
-                      <div
-                        v-for="(column, index) in item.megaMenuColumns"
-                        :key="index"
-                        class="space-y-2"
-                      >
-                        <div
-                          v-for="(subItem, index) in column.items"
-                          :key="index"
-                          class="mobile-submenu-item"
-                        >
-                          <NuxtLink
-                            :to="subItem.href"
-                            class="block py-2 text-base text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
-                            @click="isMobileMenuOpen = false"
-                          >
-                            {{ subItem.label }}
-                          </NuxtLink>
-                        </div>
-                      </div>
-                    </div>
-                  </Transition>
+                  <button
+                    class="p-2 -m-2"
+                    @click.stop="toggleMobileMegaMenu(item.id)"
+                  >
+                    <Icon
+                      name="ChevronRight"
+                      class="h-5 w-5 transition-transform duration-300"
+                      :class="{ 'rotate-90': activeMobileMegaMenu === item.id }"
+                    />
+                  </button>
                 </div>
+
+                <!-- Regular Menu Item -->
+                <NuxtLink
+                  v-else
+                  :to="item.href"
+                  class="mobile-main-menu-item block px-3 py-2 text-lg font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-md transition-colors duration-300"
+                  :class="{ 'text-primary-600 dark:text-primary-400': isMenuActive(item.href) }"
+                  @click="isMobileMenuOpen = false"
+                >
+                  {{ item.label }}
+                </NuxtLink>
+
+                <!-- Mobile Mega Menu Content -->
+                <Transition name="slide-fade">
+                  <MobileMegaMenu
+                    v-if="item.hasMegaMenu && activeMobileMegaMenu === item.id"
+                    :item="item"
+                    :is-active="isMenuActive(item.href)"
+                    :on-close="() => { isMobileMenuOpen = false; activeMobileMegaMenu = null; }"
+                  />
+                </Transition>
               </div>
-            </template>
+            </div>
           </div>
         </div>
       </div>
@@ -1133,11 +1121,10 @@ const getParentMenuLeftOffset = (menuId: string) => {
 
 .mobile-menu-content {
   position: fixed;
-  top: var(--nav-height); /* Use dynamic nav height */
+  top: 0; /* Change from var(--nav-height) to 0 */
   left: 0;
   right: 0;
   bottom: 0;
-  padding-top: 64px; /* Add padding to prevent overlap */
   background-color: var(--navbar-menu-bg);
   border-top: 1px solid var(--navbar-border);
   overflow-y: auto;
@@ -1263,5 +1250,43 @@ const getParentMenuLeftOffset = (menuId: string) => {
 
 .navbar-megamenu-item:last-child {
   border-bottom: none;
+}
+
+/* Add these styles to the <style> section */
+.mobile-main-menu-item {
+  @apply text-neutral-700 dark:text-neutral-300;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+}
+
+.mobile-main-menu-item:hover {
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+.mobile-main-menu-item.mobile-menu-active {
+  @apply text-primary-600 dark:text-primary-400 font-semibold;
+}
+
+/* Add these styles to the <style> section */
+.mobile-menu-header {
+  position: sticky;
+  top: 0;
+  background-color: var(--navbar-menu-bg);
+  z-index: 60;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.mobile-logo {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.mobile-logo img {
+  max-height: 32px;
+  width: auto;
+  object-fit: contain;
 }
 </style> 
