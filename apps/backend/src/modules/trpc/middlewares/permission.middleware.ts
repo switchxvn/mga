@@ -4,6 +4,7 @@ import { Permissions } from '../../auth/constants/permissions.constant';
 
 export const permissionMiddleware = (requiredPermissions: Permissions[]) =>
   middleware(async ({ ctx, next }) => {
+    console.log('ctx.user', ctx.user);
     if (!ctx.user) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',

@@ -15,6 +15,9 @@ export class MenuItem {
   @Column({ default: 0 })
   order: number;
 
+  @Column({ default: 0 })
+  level: number;
+
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
