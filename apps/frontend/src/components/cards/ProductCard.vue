@@ -85,7 +85,7 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
 
 <template>
   <div
-    class="product-card group relative overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+    class="product-card group relative overflow-hidden rounded-lg border-2 border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
   >
     <!-- Badge: New, Sale, Featured -->
     <div class="absolute left-2 top-2 z-10 flex flex-col gap-1">
