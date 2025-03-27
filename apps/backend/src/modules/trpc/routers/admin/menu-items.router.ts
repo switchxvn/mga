@@ -5,6 +5,30 @@ import { adminProcedure } from '../../procedures/admin.procedure';
 import { permissionMiddleware } from '../../middlewares/permission.middleware';
 import { Permissions } from '../../../auth/constants/permissions.constant';
 
+interface MenuItemTranslation {
+  id?: number;
+  label: string;
+  href: string;
+  locale: string;
+}
+
+interface MenuItem {
+  id: number;
+  defaultLocale: string;
+  icon?: string | null;
+  order: number;
+  level: number;
+  isActive: boolean;
+  parentId?: number | null;
+  translations: MenuItemTranslation[];
+  children?: MenuItem[];
+  createdAt: Date;
+  updatedAt: Date;
+  megaMenuColumns?: Array<{
+    items: MenuItem[];
+  }>;
+}
+
 // Base schemas
 const menuItemTranslationSchema = z.object({
   id: z.number().optional(),
@@ -17,6 +41,7 @@ const baseMenuItemSchema = z.object({
   defaultLocale: z.string().length(2).default('en'),
   icon: z.string().optional().nullable(),
   order: z.number().default(0),
+  level: z.number().default(0),
   isActive: z.boolean().default(true),
   parentId: z.number().nullable().optional(),
 });
@@ -35,13 +60,20 @@ const updateMenuItemSchema = z.object({
     .partial(),
 });
 
-const menuItemSchema = baseMenuItemSchema.extend({
-  id: z.number(),
-  translations: z.array(menuItemTranslationSchema),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  children: z.lazy(() => z.array(menuItemSchema)).optional()
-});
+// Recursive menu item schema
+const menuItemSchema: z.ZodType<any> = z.lazy(() => 
+  baseMenuItemSchema.extend({
+    id: z.number(),
+    translations: z.array(menuItemTranslationSchema),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+    children: z.array(menuItemSchema).optional(),
+    level: z.number(),
+    megaMenuColumns: z.array(z.object({
+      items: z.array(menuItemSchema)
+    })).optional()
+  })
+);
 
 const menuItemsQuerySchema = z.object({
   page: z.number().min(1).default(1),
@@ -49,7 +81,8 @@ const menuItemsQuerySchema = z.object({
   search: z.string().optional(),
   orderBy: z.enum(['id', 'createdAt', 'updatedAt', 'order']).optional(),
   orderDirection: z.enum(['ASC', 'DESC']).optional(),
-  parentId: z.number().nullable().optional()
+  parentId: z.number().nullable().optional(),
+  level: z.number().optional()
 });
 
 const menuItemsListSchema = z.object({
@@ -66,7 +99,7 @@ export const adminMenuItemsRouter = router({
     .output(menuItemsListSchema)
     .query(async ({ ctx, input }) => {
       try {
-        const { page, pageSize, search, orderBy, orderDirection, parentId } = input;
+        const { page, pageSize, search, orderBy, orderDirection, parentId, level } = input;
 
         const items = await ctx.services.settingsAdminService.findAllMenuItems({
           page,
@@ -75,13 +108,52 @@ export const adminMenuItemsRouter = router({
           orderBy,
           orderDirection,
           parentId,
+          level,
           withChildren: true
         });
 
-        const total = items.length;
+        // Transform items into recursive structure
+        const transformItems = (items: MenuItem[]): MenuItem[] => {
+          // Get all level 0 items (main menu items)
+          const level0Items = items.filter(item => item.level === 0);
+
+          return level0Items.map(item => {
+            const transformedItem = { ...item } as MenuItem;
+            
+            // Get level 1 items (subtitles) that belong to this level 0 item
+            const level1Children = items.filter(child => 
+              child.level === 1 && child.parentId === item.id
+            );
+
+            // For each level 1 item, get its level 2 children
+            transformedItem.children = level1Children.map(l1Item => ({
+              ...l1Item,
+              children: items.filter(child =>
+                child.level === 2 && child.parentId === l1Item.id
+              )
+            }));
+
+            // Also include direct level 2 children if any
+            const directLevel2Children = items.filter(child =>
+              child.level === 2 && child.parentId === item.id
+            );
+
+            if (directLevel2Children.length > 0) {
+              transformedItem.children = [
+                ...(transformedItem.children || []),
+                ...directLevel2Children
+              ];
+            }
+
+            return transformedItem;
+          });
+        };
+
+        const transformedItems = transformItems(items);
+        const total = transformedItems.length;
 
         return {
-          items,
+          items: transformedItems,
           total,
           page,
           pageSize,
@@ -215,4 +287,4 @@ export const adminMenuItemsRouter = router({
         });
       }
     }),
-}); 
+});

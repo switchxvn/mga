@@ -16,6 +16,29 @@ import { useCssColorValue } from "~/composables/useColorUtils";
 import MegaMenu from "~/components/menu/MegaMenu.vue";
 import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
 
+// Add MenuItem interface at the top of the script section
+interface MenuItemTranslation {
+  id?: number;
+  label: string;
+  href: string;
+  locale: string;
+  menuItemId?: number;
+}
+
+interface MenuItem {
+  id: number;
+  defaultLocale: string;
+  icon?: string | null;
+  order: number;
+  level: number;
+  isActive: boolean;
+  parentId: number | null;
+  translations: MenuItemTranslation[];
+  children?: MenuItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Props cho component
 interface NavbarProps {
   settings?: {
@@ -170,51 +193,26 @@ const activeMobileMegaMenu = ref<number | null>(null);
 
 // Process menu items with translations
 const processedMenuItems = computed(() => {
-  // Get parent menu items first
-  const parentMenuItems = menuItems.value
-    .filter(item => !item.parentId && item.isActive !== false)
+  if (!menuItems.value || menuItems.value.length === 0) {
+    console.log('No menu items available');
+    return [];
+  }
+
+  console.log('Processing menu items:', menuItems.value);
+
+  // Get level 0 items (parent menu items)
+  const parentItems = (menuItems.value as MenuItem[])
+    .filter(item => item.level === 0 && item.isActive !== false)
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  // Process each parent menu item
-  return parentMenuItems.map(item => {
-    // Get child menu items
-    const childItems = menuItems.value
-      .filter(child => child.parentId === item.id && child.isActive !== false)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  console.log('Parent items:', parentItems);
 
-    // Check if this menu item has children (mega menu)
-    const hasMegaMenu = childItems.length > 0;
-
-    // Get translation for current item
-    const currentTranslation = item.translations?.find(t => t.locale === locale.value) || 
-      item.translations?.[0];
-
-    // Group child items into columns (3 items per column)
-    const itemsPerColumn = 3;
-    const megaMenuColumns = hasMegaMenu ? Array.from({ length: Math.ceil(childItems.length / itemsPerColumn) }, (_, columnIndex) => {
-      const startIndex = columnIndex * itemsPerColumn;
-      const columnItems = childItems.slice(startIndex, startIndex + itemsPerColumn);
-      return {
-        title: getTranslation(item, locale.value), // Use parent item's label as column title
-        items: columnItems.map(child => {
-          const childTranslation = child.translations?.find(t => t.locale === locale.value) || 
-            child.translations?.[0];
-          return {
-            href: childTranslation?.href || "#",
-            label: getTranslation(child, locale.value)
-          };
-        })
-      };
-    }) : [];
-
-    return {
-      ...item,
-      href: currentTranslation?.href || "#",
-      hasMegaMenu,
-      label: getTranslation(item, locale.value),
-      megaMenuColumns
-    };
-  });
+  return parentItems.map(item => ({
+    ...item,
+    href: item.translations?.find(t => t.locale === locale.value)?.href || 
+          item.translations?.[0]?.href || "#",
+    label: getTranslation(item, locale.value)
+  }));
 });
 
 // Hàm lấy bản dịch theo ngôn ngữ
@@ -438,7 +436,12 @@ watch([logo, isLoadingLogo], () => {
 onMounted(() => {
   console.log('CombinedNavbar mounted with settings:', props.settings);
   window.addEventListener('scroll', throttledHandleScroll, { passive: true });
-  fetchMenuItems();
+  console.log('Fetching menu items...');
+  fetchMenuItems().then(() => {
+    console.log('Menu items fetched:', menuItems.value);
+  }).catch(err => {
+    console.error('Error fetching menu items:', err);
+  });
   checkCartFeatureFlag();
   updateNavbarVariables();
   
@@ -650,8 +653,8 @@ const getParentMenuLeftOffset = (menuId: string) => {
                   :key="itemIndex"
                   class="relative group"
                   :data-menu-id="item.id"
-                  @mouseenter="(e) => { if (item.hasMegaMenu) { showMegaMenu(item.id); } }"
-                  @mouseleave="item.hasMegaMenu ? hideMegaMenu() : null"
+                  @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
+                  @mouseleave="item.children?.length ? hideMegaMenu() : null"
                 >
                   <NuxtLink
                     :to="item.href"
@@ -671,7 +674,7 @@ const getParentMenuLeftOffset = (menuId: string) => {
                       {{ item.label }}
                     </span>
                     <Icon
-                      v-if="item.hasMegaMenu"
+                      v-if="item.children?.length"
                       name="ChevronDown"
                       class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
                     />
@@ -680,9 +683,9 @@ const getParentMenuLeftOffset = (menuId: string) => {
                   <!-- Mega Menu -->
                   <Transition name="fade">
                     <MegaMenu
-                      v-if="item.hasMegaMenu && activeMegaMenu === item.id"
+                      v-if="item.children?.length && activeMegaMenu === item.id"
                       :item="item"
-                      :is-active="isMenuActive(item.href)"
+                      :is-active="true"
                       :on-close="() => activeMegaMenu = null"
                       @mouseenter="keepMegaMenu"
                       @mouseleave="hideMegaMenu"
@@ -830,7 +833,7 @@ const getParentMenuLeftOffset = (menuId: string) => {
               >
                 <!-- Menu Item with Mega Menu -->
                 <div
-                  v-if="item.hasMegaMenu"
+                  v-if="item.children?.length > 0"
                   class="mobile-main-menu-item flex items-center justify-between px-3 py-2 text-lg font-extrabold uppercase rounded-md"
                   :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 >
@@ -867,7 +870,7 @@ const getParentMenuLeftOffset = (menuId: string) => {
                 <!-- Mobile Mega Menu Content -->
                 <Transition name="slide-fade">
                   <MobileMegaMenu
-                    v-if="item.hasMegaMenu && activeMobileMegaMenu === item.id"
+                    v-if="item.children?.length > 0 && activeMobileMegaMenu === item.id"
                     :item="item"
                     :is-active="isMenuActive(item.href)"
                     :on-close="() => { isMobileMenuOpen = false; activeMobileMegaMenu = null; }"

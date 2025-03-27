@@ -26,6 +26,28 @@ import {
 import { z } from 'zod';
 import { adminMenuItemsRouter } from './admin/menu-items.router';
 
+interface MenuItemTranslation {
+  id?: number;
+  label: string;
+  href: string;
+  locale: string;
+  menuItemId?: number;
+}
+
+interface MenuItem {
+  id: number;
+  defaultLocale: string;
+  icon?: string | null;
+  order: number;
+  level: number;
+  isActive: boolean;
+  parentId?: number | null;
+  translations: MenuItemTranslation[];
+  children?: MenuItem[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export const settingsRouter = router({
   admin: router({
     menuItems: adminMenuItemsRouter,
@@ -39,8 +61,53 @@ export const settingsRouter = router({
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log('Fetching all menu items');
-        // Sử dụng frontend service cho các endpoint public
-        return ctx.services.settingsFrontendService.findActiveMenuItems(input);
+        const items = await ctx.services.settingsFrontendService.findActiveMenuItems(input);
+
+        // Transform items into recursive structure
+        const buildMenuTree = (items: MenuItem[]): MenuItem[] => {
+          // Create a map of id to item for quick lookup
+          const itemMap = new Map<number, MenuItem>();
+          items.forEach(item => {
+            itemMap.set(item.id, { ...item, children: [] });
+          });
+
+          // Build the tree structure
+          const rootItems: MenuItem[] = [];
+          
+          itemMap.forEach(item => {
+            if (!item.parentId) {
+              // This is a root level item
+              rootItems.push(item);
+            } else {
+              // This item has a parent
+              const parent = itemMap.get(item.parentId);
+              if (parent) {
+                if (!parent.children) {
+                  parent.children = [];
+                }
+                parent.children.push(item);
+              }
+            }
+          });
+
+          // Sort children by order
+          const sortByOrder = (items: MenuItem[]) => {
+            items.sort((a, b) => a.order - b.order);
+            items.forEach(item => {
+              if (item.children && item.children.length > 0) {
+                sortByOrder(item.children);
+              }
+            });
+          };
+
+          sortByOrder(rootItems);
+          return rootItems;
+        };
+
+        // Get root level items (parentId is null)
+        const menuTree = buildMenuTree(items);
+        return menuTree;
+
       } catch (error) {
         ctx.logger.error(`Error fetching menu items: ${error instanceof Error ? error.message : String(error)}`);
         throw new TRPCError({
