@@ -468,6 +468,41 @@ onUnmounted(() => {
 const toggleMobileMegaMenu = (itemId: number) => {
   activeMobileMegaMenu.value = activeMobileMegaMenu.value === itemId ? null : itemId;
 };
+
+// Add new computed property for mega menu position
+const getMegaMenuPosition = (event: MouseEvent) => {
+  const target = event.currentTarget as HTMLElement;
+  if (!target) return { left: '0px' };
+  
+  const rect = target.getBoundingClientRect();
+  return {
+    left: `${rect.left + rect.width / 2}px`
+  };
+};
+
+// Add new computed property for generating unique keys
+const getUniqueKey = (prefix: string, item: any, index: number) => {
+  return `${prefix}-${item.id || index}`;
+};
+
+// Add new method to calculate parent menu item position
+const getParentMenuLeftOffset = (menuId: string) => {
+  const menuElement = document.querySelector(`[data-menu-id="${menuId}"]`);
+  const container = document.querySelector('.navigation-section .container');
+  
+  if (!menuElement || !container) return 0;
+  
+  const menuRect = menuElement.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  
+  // Calculate center position of the menu item
+  const menuCenterX = menuRect.left + (menuRect.width / 2);
+  
+  // Calculate the offset from the container's left edge
+  const offset = menuCenterX - containerRect.left;
+  
+  return offset;
+};
 </script>
 
 <template>
@@ -576,17 +611,15 @@ const toggleMobileMegaMenu = (itemId: number) => {
     <!-- Navigation Section -->
     <div 
       ref="navWrapperRef"
-      class="nav-wrapper w-full z-50"
+      class="nav-wrapper w-full"
       :class="{ 'nav-sticky': isScrolled }"
     >
       <nav
         class="navigation-section w-full border-b relative"
-        :class="[
-          `text-${props.settings?.menuAlignment || 'center'}`
-        ]"
       >
+        <div class="nav-bg-layer"></div>
         <div class="container mx-auto px-4">
-          <div class="flex items-center justify-between py-2 relative">
+          <div class="flex items-center justify-between h-full relative">
             <!-- Mobile Logo -->
             <div class="flex-shrink-0 md:hidden">
               <NuxtLink to="/" class="block" @click="isMobileMenuOpen = false">
@@ -608,10 +641,11 @@ const toggleMobileMegaMenu = (itemId: number) => {
               <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
               <template v-else>
                 <div
-                  v-for="item in processedMenuItems"
-                  :key="item.id"
+                  v-for="(item, itemIndex) in processedMenuItems"
+                  :key="itemIndex"
                   class="relative group"
-                  @mouseenter="item.hasMegaMenu ? showMegaMenu(item.id) : null"
+                  :data-menu-id="item.id"
+                  @mouseenter="(e) => { if (item.hasMegaMenu) { showMegaMenu(item.id); } }"
                   @mouseleave="item.hasMegaMenu ? hideMegaMenu() : null"
                 >
                   <NuxtLink
@@ -639,36 +673,52 @@ const toggleMobileMegaMenu = (itemId: number) => {
                   </NuxtLink>
 
                   <!-- Mega Menu -->
-                  <div
-                    v-if="item.hasMegaMenu && activeMegaMenu === item.id"
-                    class="mega-menu absolute top-full left-0 w-[1024px] shadow-lg rounded-b-lg border-t transition-all duration-300 transform origin-top z-50 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
-                    @mouseenter="keepMegaMenu"
-                    @mouseleave="hideMegaMenu"
-                  >
-                    <div class="grid grid-cols-2 gap-8 p-6">
-                      <div
-                        v-for="(column, columnIndex) in item.megaMenuColumns"
-                        :key="columnIndex"
-                        class="space-y-6"
-                      >
-                        <ul class="space-y-3 max-w-xs">
-                          <li
-                            v-for="(subItem, subItemIndex) in column.items"
-                            :key="subItemIndex"
-                            class="block"
+                  <Transition name="fade">
+                    <div
+                      v-if="item.hasMegaMenu && activeMegaMenu === item.id"
+                      class="absolute left-1/2 z-50 mt-3 w-screen max-w-max -translate-x-1/2"
+                      @mouseenter="keepMegaMenu"
+                      @mouseleave="hideMegaMenu"
+                    >
+                      <!-- Arrow -->
+                      <div class="absolute -top-[10px] left-1/2 h-[20px] w-[20px] -translate-x-1/2">
+                        <div class="absolute rotate-45 transform h-full w-full bg-white dark:bg-neutral-900 border-t border-l border-neutral-200 dark:border-neutral-700"></div>
+                      </div>
+                      
+                      <!-- Content -->
+                      <div class="relative rounded-lg bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black ring-opacity-5">
+                        <div class="relative grid grid-cols-2 gap-8 p-7">
+                          <div
+                            v-for="(column, columnIndex) in item.megaMenuColumns"
+                            :key="column.title || columnIndex"
+                            class="space-y-6"
                           >
-                            <NuxtLink
-                              :to="subItem.href"
-                              class="navbar-megamenu-item block py-1.5 px-2 rounded-md text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400 truncate"
-                              @click="activeMegaMenu = null"
-                            >
-                              {{ subItem.label }}
-                            </NuxtLink>
-                          </li>
-                        </ul>
+                            <ul class="space-y-4">
+                              <li
+                                v-for="(subItem, subItemIndex) in column.items"
+                                :key="subItem.href || subItemIndex"
+                                class="block"
+                              >
+                                <NuxtLink
+                                  :to="subItem.href"
+                                  class="group flex items-center space-x-3 rounded-lg p-3 text-base font-medium text-neutral-900 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800 transition duration-150 ease-in-out"
+                                  @click="activeMegaMenu = null"
+                                >
+                                  <div class="flex-auto">
+                                    <p class="text-sm">{{ subItem.label }}</p>
+                                  </div>
+                                  <Icon 
+                                    name="ChevronRight"
+                                    class="h-5 w-5 flex-none text-neutral-400 group-hover:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300"
+                                  />
+                                </NuxtLink>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Transition>
                 </div>
               </template>
             </nav>
@@ -811,18 +861,18 @@ const toggleMobileMegaMenu = (itemId: number) => {
                       class="mobile-mega-menu pl-6 pr-3 py-2 space-y-2"
                     >
                       <div
-                        v-for="(column, columnIndex) in item.megaMenuColumns"
-                        :key="columnIndex"
+                        v-for="(column, index) in item.megaMenuColumns"
+                        :key="index"
                         class="space-y-2"
                       >
                         <div
-                          v-for="(subItem, subItemIndex) in column.items"
-                          :key="subItemIndex"
+                          v-for="(subItem, index) in column.items"
+                          :key="index"
                           class="mobile-submenu-item"
                         >
                           <NuxtLink
                             :to="subItem.href"
-                            class="block py-2 text-base text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400"
+                            class="block py-2 text-base text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                             @click="isMobileMenuOpen = false"
                           >
                             {{ subItem.label }}
@@ -861,20 +911,17 @@ const toggleMobileMegaMenu = (itemId: number) => {
 .navbar-container {
   position: relative;
   width: 100%;
+  overflow-x: clip;
 }
 
 .nav-wrapper {
   position: relative;
   width: 100%;
-  transition: none; /* Remove transition to prevent jank */
+  z-index: 50;
+  transition: transform 0.3s ease;
   will-change: transform;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  perspective: 1000;
-  -webkit-perspective: 1000;
-  z-index: 110;
 }
 
 .nav-wrapper.nav-sticky {
@@ -882,27 +929,51 @@ const toggleMobileMegaMenu = (itemId: number) => {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  background-color: var(--navbar-menu-bg);
+  box-shadow: 0 2px 15px -3px rgba(0,0,0,0.07), 0 10px 20px -2px rgba(0,0,0,0.04);
 }
 
 .navigation-section {
-  background-color: var(--navbar-menu-bg) !important;
-  border-color: var(--navbar-border) !important;
-  color: var(--navbar-text) !important;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  height: 64px;
+  border-color: var(--navbar-border);
+  color: var(--navbar-text);
+  min-height: var(--nav-height, 64px);
+  height: auto;
   display: flex;
-  align-items: center;
-  will-change: transform;
+  align-items: stretch;
   position: relative;
+  z-index: 51;
+  width: 100%;
+  overflow-x: clip;
+}
+
+.nav-bg-layer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  height: 100%;
+  background-color: rgb(255 255 255 / 1);
+  z-index: -1;
+}
+
+:root.dark .nav-bg-layer {
+  background-color: rgb(23 23 23 / 1);
+}
+
+.navigation-section > .container {
+  height: 100%;
+}
+
+.navigation-section > .container > div {
+  min-height: var(--nav-height, 64px);
+  height: 100%;
+}
+
+/* Dark mode overrides */
+:root.dark .navigation-section::before {
+  background-color: var(--navbar-menu-bg);
 }
 
 /* Mobile logo styles */
@@ -933,6 +1004,7 @@ const toggleMobileMegaMenu = (itemId: number) => {
 /* Add a placeholder when nav is sticky to prevent content jump */
 .nav-wrapper.nav-sticky + * {
   margin-top: var(--nav-height);
+  padding-top: 1px; /* Fix gap issue in some browsers */
 }
 
 .navigation-section .main-menu-item {
@@ -1090,31 +1162,50 @@ const toggleMobileMegaMenu = (itemId: number) => {
   transform: translateY(-10px);
 }
 
-/* Mega menu styles */
-.mega-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 1024px;
-  background-color: var(--navbar-menu-bg);
-  border-color: var(--navbar-border);
-  z-index: 55;
+/* Updated flyout menu styles */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.15s ease-out;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) translateX(-50%);
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+  transform: translateY(0) translateX(-50%);
+}
+
+/* Remove old mega menu styles that might conflict */
+.mega-menu-wrapper,
+.mega-menu-arrow,
+.mega-menu-content,
+.mega-menu-bg {
+  display: none;
+}
+
+/* Update navbar item styles */
+.main-menu-item {
+  position: relative;
+  z-index: 50;
+}
+
+.main-menu-item:hover {
+  z-index: 51;
 }
 
 /* Container styles */
 .container {
   width: 100%;
-  max-width: var(--container-max-width, 1280px);
+  max-width: 1280px;
   margin: 0 auto;
   padding-left: 1rem;
   padding-right: 1rem;
   position: relative;
-}
-
-/* Menu item container */
-.main-menu-item {
-  position: relative;
-  z-index: 60;
 }
 
 @media (max-width: 1280px) {
@@ -1132,7 +1223,12 @@ const toggleMobileMegaMenu = (itemId: number) => {
 }
 
 .mobile-submenu-item {
+  @apply border-b border-neutral-200 dark:border-neutral-700;
   transition: all 0.3s ease;
+}
+
+.mobile-submenu-item:last-child {
+  border-bottom: none;
 }
 
 .mobile-submenu-item:hover {
@@ -1155,5 +1251,14 @@ const toggleMobileMegaMenu = (itemId: number) => {
 .slide-fade-leave-from {
   opacity: 1;
   transform: translateY(0);
+}
+
+.navbar-megamenu-item {
+  @apply border-b border-neutral-200 dark:border-neutral-700;
+  transition: all 0.3s ease;
+}
+
+.navbar-megamenu-item:last-child {
+  border-bottom: none;
 }
 </style> 
