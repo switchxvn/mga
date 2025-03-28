@@ -87,15 +87,16 @@ fi
 echo "Creating network $NETWORK_NAME..."
 docker network create $NETWORK_NAME
 
-# Pull latest images
+# Pull latest images with platform specification
 echo "Pulling latest images..."
-docker pull $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest
-docker pull $REGISTRY/$GITHUB_USERNAME/ew-backend:latest
-docker pull $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/ew-backend:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest
 
 # Start backend
 echo "Starting backend..."
 docker run -d \
+    --platform linux/amd64 \
     --name ew-backend \
     --network app-network \
     --network-alias backend \
@@ -111,6 +112,7 @@ wait_for_container "ew-backend"
 # Start frontend
 echo "Starting frontend..."
 docker run -d \
+    --platform linux/amd64 \
     --name ew-frontend \
     --network app-network \
     --network-alias frontend \
@@ -127,6 +129,7 @@ wait_for_container "ew-frontend"
 # Start nginx
 echo "Starting nginx..."
 docker run -d \
+    --platform linux/amd64 \
     --name ew-nginx \
     --network app-network \
     -p 80:80 \
