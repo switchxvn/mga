@@ -52,7 +52,8 @@ fi
 
 # Build and push frontend
 echo "Building frontend image..."
-docker build -t $REGISTRY/$GITHUB_USERNAME/ew-frontend:$VERSION \
+docker build --platform linux/amd64 \
+    -t $REGISTRY/$GITHUB_USERNAME/ew-frontend:$VERSION \
     -t $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest \
     --build-arg ENV_FILE=.env.production \
     -f apps/frontend/Dockerfile .
@@ -63,7 +64,8 @@ docker push $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest
 
 # Build and push backend
 echo "Building backend image..."
-docker build -t $REGISTRY/$GITHUB_USERNAME/ew-backend:$VERSION \
+docker build --platform linux/amd64 \
+    -t $REGISTRY/$GITHUB_USERNAME/ew-backend:$VERSION \
     -t $REGISTRY/$GITHUB_USERNAME/ew-backend:latest \
     --build-arg ENV_FILE=.env.production \
     -f apps/backend/Dockerfile .
@@ -74,7 +76,8 @@ docker push $REGISTRY/$GITHUB_USERNAME/ew-backend:latest
 
 # Build and push nginx
 echo "Building nginx image..."
-docker build -t $REGISTRY/$GITHUB_USERNAME/ew-nginx:$VERSION \
+docker build --platform linux/amd64 \
+    -t $REGISTRY/$GITHUB_USERNAME/ew-nginx:$VERSION \
     -t $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest \
     -f nginx/Dockerfile .
 
