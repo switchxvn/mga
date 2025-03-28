@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Autoplay } from 'swiper/modules';
+import { useColorMode } from '@vueuse/core';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -121,8 +122,8 @@ const props = withDefaults(defineProps<Props>(), {
   })
 });
 const trpc = useTrpc();
-const colorMode = useColorMode();
-const isDark = computed(() => colorMode.value === 'dark');
+const { value: colorMode } = useColorMode();
+const isDark = computed(() => colorMode === 'dark');
 const customerLogos = ref<CustomerLogo[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);

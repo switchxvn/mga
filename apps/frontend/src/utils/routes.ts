@@ -34,6 +34,18 @@ export const ROUTE_NAMES = {
   CATEGORY_DETAIL: {
     en: 'categories-detail',
     vi: 'danh-muc-san-pham-chi-tiet'
+  },
+  HOME: {
+    en: 'home',
+    vi: 'trang-chu'
+  },
+  ABOUT: {
+    en: 'about',
+    vi: 'gioi-thieu'
+  },
+  CONTACT: {
+    en: 'contact',
+    vi: 'lien-he'
   }
 } as const;
 
@@ -73,6 +85,18 @@ export const ROUTE_PATHS = {
   CATEGORY_DETAIL: {
     en: '/categories/:slug',
     vi: '/danh-muc-san-pham/:slug'
+  },
+  HOME: {
+    en: '/',
+    vi: '/'
+  },
+  ABOUT: {
+    en: '/about',
+    vi: '/gioi-thieu'
+  },
+  CONTACT: {
+    en: '/contact',
+    vi: '/lien-he'
   }
 } as const;
 
