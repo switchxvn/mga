@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Form, FormError, FormSubmitEvent } from '@nuxt/ui/dist/runtime/types';
 import { useToast } from '~/composables/useToast';
 import { useTrpc } from '~/composables/useTrpc';
+import { useI18n } from 'vue-i18n';
 
 interface ContactForm {
   name: string;
@@ -14,6 +15,7 @@ interface ContactForm {
 
 const toast = useToast();
 const trpc = useTrpc();
+const { t } = useI18n();
 
 // Form state and ref
 const form = ref<Form<ContactForm>>();
@@ -31,10 +33,10 @@ const phoneErrorMessage = ref('');
 
 // Form validation schema
 const schema = z.object({
-  name: z.string().min(1, 'Vui lòng nhập họ tên'),
-  email: z.string().email('Email không hợp lệ'),
-  phone: z.string().min(1, 'Vui lòng nhập số điện thoại'),
-  message: z.string().min(1, 'Vui lòng nhập nội dung')
+  name: z.string().min(1, t('validation.required')),
+  email: z.string().email(t('validation.email')),
+  phone: z.string().min(1, t('validation.required')),
+  message: z.string().min(1, t('validation.required'))
 });
 
 const isLoading = ref(false);
@@ -46,8 +48,8 @@ const handlePhoneValidation = ({ valid, message }: { valid: boolean; message?: s
   
   if (!valid && form.value) {
     form.value.setErrors([{
-      name: 'phone',
-      message: message || 'Số điện thoại không hợp lệ'
+      path: 'phone',
+      message: message || t('validation.phoneInvalid')
     }]);
   }
 };
@@ -69,8 +71,8 @@ const handleSubmit = async (event: FormSubmitEvent<ContactForm>) => {
   if (!phoneValid.value) {
     if (form.value) {
       form.value.setErrors([{
-        name: 'phone',
-        message: phoneErrorMessage.value || 'Số điện thoại không hợp lệ'
+        path: 'phone',
+        message: phoneErrorMessage.value || t('validation.phoneInvalid')
       }]);
     }
     return;
@@ -92,20 +94,20 @@ const handleSubmit = async (event: FormSubmitEvent<ContactForm>) => {
     }
   } catch (error) {
     console.error('Contact form error:', error);
-    toast.error('Có lỗi xảy ra, vui lòng thử lại!');
+    toast.error(t('common.error'));
   } finally {
     isLoading.value = false;
   }
 };
 
 const handleError = (error: FormError[]) => {
-  toast.error('Vui lòng kiểm tra lại thông tin!');
+  toast.error(t('validation.required'));
 };
 </script>
 
 <template>
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-8">Liên hệ</h1>
+    <h1 class="text-3xl font-bold mb-8 text-center">{{ t('contact') }}</h1>
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <!-- Contact Form -->
@@ -119,14 +121,14 @@ const handleError = (error: FormError[]) => {
           @error="handleError"
         >
           <UFormGroup
-            label="Họ tên"
+            :label="t('priceRequest.fullName')"
             name="name"
             required
           >
             <UInput
               v-model="state.name"
               type="text"
-              placeholder="Nhập họ tên"
+              :placeholder="t('priceRequest.fullNamePlaceholder')"
               color="gray"
               variant="outline"
               size="lg"
@@ -138,14 +140,14 @@ const handleError = (error: FormError[]) => {
           </UFormGroup>
 
           <UFormGroup
-            label="Email"
+            :label="t('auth.email')"
             name="email"
             required
           >
             <UInput
               v-model="state.email"
               type="email"
-              placeholder="Nhập email"
+              :placeholder="t('priceRequest.emailPlaceholder')"
               color="gray"
               variant="outline"
               size="lg"
@@ -157,7 +159,7 @@ const handleError = (error: FormError[]) => {
           </UFormGroup>
 
           <UFormGroup
-            label="Số điện thoại"
+            :label="t('priceRequest.phone')"
             name="phone"
             required
             :error="!phoneValid ? phoneErrorMessage : undefined"
@@ -166,7 +168,7 @@ const handleError = (error: FormError[]) => {
               <PhoneInput
                 v-model="state.phone"
                 v-model:phoneCode="phoneCode"
-                placeholder="Nhập số điện thoại"
+                :placeholder="t('priceRequest.phonePlaceholder')"
                 :error="!phoneValid"
                 :showErrorMessage="true"
                 @validation="handlePhoneValidation"
@@ -175,13 +177,13 @@ const handleError = (error: FormError[]) => {
           </UFormGroup>
 
           <UFormGroup
-            label="Nội dung"
+            :label="t('priceRequest.message')"
             name="message"
             required
           >
             <UTextarea
               v-model="state.message"
-              placeholder="Nhập nội dung"
+              :placeholder="t('priceRequest.messagePlaceholder')"
               :rows="4"
               color="gray"
               variant="outline"
@@ -193,46 +195,41 @@ const handleError = (error: FormError[]) => {
             />
           </UFormGroup>
 
-          <UButton
-            type="submit"
-            color="primary"
-            :loading="isLoading"
-            class="w-full h-[42px] text-base font-medium"
-            variant="solid"
-          >
-            {{ isLoading ? 'Đang gửi...' : 'Gửi liên hệ' }}
-          </UButton>
+          <div class="flex justify-center">
+            <UButton
+              type="submit"
+              color="primary"
+              :loading="isLoading"
+              class="w-full md:w-auto h-[42px] text-base font-medium px-8"
+              variant="solid"
+            >
+              {{ isLoading ? t('common.loading') : t('common.submit') }}
+            </UButton>
+          </div>
         </UForm>
       </div>
 
       <!-- Contact Information -->
       <div class="space-y-6">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 class="text-xl font-semibold mb-4">Thông tin liên hệ</h2>
+          <h2 class="text-xl font-semibold mb-4">{{ t('products.customerSupport') }}</h2>
           <div class="space-y-4">
             <div class="flex items-center space-x-3">
               <UIcon name="i-heroicons-map-pin" class="text-primary w-5 h-5" />
-              <span>123 Đường ABC, Quận 1, TP.HCM</span>
+              <span>37/6 Khu Phố Tây, Phường Vĩnh Phú, Thị Xã Thuận An, Tỉnh Bình Dương</span>
             </div>
             <div class="flex items-center space-x-3">
               <UIcon name="i-heroicons-phone" class="text-primary w-5 h-5" />
-              <span>+84 123 456 789</span>
+              <span>{{ t('products.hotline') }}</span>
             </div>
             <div class="flex items-center space-x-3">
               <UIcon name="i-heroicons-envelope" class="text-primary w-5 h-5" />
-              <span>contact@example.com</span>
+              <span>admin@mgavietnam.com</span>
             </div>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 class="text-xl font-semibold mb-4">Giờ làm việc</h2>
-          <div class="space-y-2">
-            <p>Thứ 2 - Thứ 6: 8:00 - 17:00</p>
-            <p>Thứ 7: 8:00 - 12:00</p>
-            <p>Chủ nhật: Nghỉ</p>
-          </div>
-        </div>
+       
       </div>
     </div>
   </div>

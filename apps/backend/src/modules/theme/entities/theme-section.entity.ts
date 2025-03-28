@@ -73,7 +73,27 @@ export class ThemeSection {
     showCart: true,
     showHotline: false,
     mobileMenuBreakpoint: 'md',
-    borderColor: ''
+    borderColor: '',
+    // Product categories section settings
+    colors: {
+      title: 'text-gray-900 dark:text-white',
+      description: 'text-gray-600 dark:text-gray-400'
+    },
+    columns: 8,
+    fontSize: {
+      title: 'text-2xl',
+      description: 'text-base'
+    },
+    maxItems: 8,
+    alignment: {
+      header: 'justify-between',
+      content: 'text-left',
+      container: 'items-start'
+    },
+    categoryIds: [],
+    displayMode: 'grid',
+    useUppercase: true,
+    showDescription: true
   } })
   settings!: Record<string, any>;
 

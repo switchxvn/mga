@@ -56,18 +56,27 @@ interface Props {
     displayMode: 'grid' | 'slider';
     fontSize: {
       title: string;
+      description?: string;
     };
     useUppercase: boolean;
     colors: {
       title: string;
+      description?: string;
     };
+    alignment?: {
+      header: string;
+      content: string;
+      container: string;
+    };
+    columns?: number;
+    showDescription?: boolean;
   };
 }
 
 const props = withDefaults(defineProps<Props>(), {
   config: () => ({
     title: 'Sản phẩm nổi bật',
-    layout: 'slider',
+    layout: 'grid',
     maxItems: 8,
     showPrice: true,
     showRating: true,
@@ -84,19 +93,28 @@ const props = withDefaults(defineProps<Props>(), {
     interval: 5000,
     showDots: true,
     showArrows: true,
-    displayMode: 'slider',
+    displayMode: 'grid',
     fontSize: {
-      title: 'text-2xl sm:text-3xl'
+      title: 'text-2xl',
+      description: 'text-base'
     },
     useUppercase: true,
     colors: {
-      title: 'text-white'
-    }
+      title: 'text-gray-900 dark:text-white',
+      description: 'text-gray-600 dark:text-gray-400'
+    },
+    alignment: {
+      header: 'justify-between',
+      content: 'text-left',
+      container: 'items-start'
+    },
+    columns: 8,
+    showDescription: true
   })
 });
 
 const trpc = useTrpc();
-const { t } = useLocalization();
+const { t, locale } = useLocalization();
 const products = ref<Product[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
@@ -134,10 +152,12 @@ async function fetchFeaturedProducts() {
   isLoading.value = true;
   error.value = null;
   try {
-    const result = await trpc.product.getFeatured.query({
-      limit: props.config?.maxItems || 8
+    const result = await trpc.product.getAll.query({
+      limit: props.config?.maxItems || 8,
+      isFeatured: true,
+      locale: locale.value
     });
-    products.value = result.map(product => ({
+    products.value = result.items.map(product => ({
       ...product,
       isFeatured: true,
       isNew: product.isNew || false,
@@ -159,9 +179,9 @@ async function fetchFeaturedProducts() {
       <!-- Section Header -->
       <div class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
         <div class="container mx-auto px-4">
-          <div class="flex items-center justify-between gap-4 py-3">
+          <div class="flex items-center gap-4 py-3" :class="config.alignment?.header || 'justify-between'">
             <div class="w-32 hidden sm:block"><!-- Spacer to help with centering --></div>
-            <div class="category-header flex-1 text-center">
+            <div class="category-header flex-1" :class="config.alignment?.content || 'text-center'">
               <h2 
                 class="inline-flex items-center px-4 py-2 mobile-title"
                 :class="[
@@ -206,10 +226,13 @@ async function fetchFeaturedProducts() {
       <template v-else>
         <!-- Grid Layout -->
         <div v-if="config?.displayMode === 'grid'"
-             class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <ProductCard v-for="product in products"
-                      :key="product.id"
-                      :product="product" />
+             class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+             :class="[`gap-${config.gap || '6'}`]">
+          <template v-for="(product, index) in products" :key="product.id">
+            <ProductCard v-if="index < (config.maxItems || 8)"
+                      :product="product"
+                      class="w-full" />
+          </template>
         </div>
 
         <!-- Slider Layout -->
@@ -247,7 +270,7 @@ async function fetchFeaturedProducts() {
       text-align: left !important;
       
       h2.mobile-title {
-        font-size: 0.875rem !important; /* text-sm */
+        font-size: 0.875rem !important;
         line-height: 1.25rem !important;
         padding: 0.375rem 0 !important;
         justify-content: flex-start !important;
@@ -259,7 +282,7 @@ async function fetchFeaturedProducts() {
 
   .mobile-view-all {
     @media (max-width: 640px) {
-      font-size: 0.75rem !important; /* text-xs */
+      font-size: 0.75rem !important;
       line-height: 1rem !important;
       padding: 0.25rem 0.75rem !important;
       font-weight: 500 !important;

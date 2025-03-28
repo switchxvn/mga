@@ -94,7 +94,7 @@ const fetchCategories = async () => {
         try {
           const result = await trpc.product.getAll.query({
             categories: [category.id],
-            limit: props.config.productsPerCategory || 4,
+            limit: props.config.maxItems || 8,
             locale: locale.value,
           });
           categoryProducts.value[category.id] = result.items;
@@ -133,10 +133,6 @@ onMounted(() => {
 <template>
   <section
     class="categories-section relative"
-    :style="{
-      paddingTop: config.padding?.top || '2rem',
-      paddingBottom: config.padding?.bottom || '2rem',
-    }"
   >
     <!-- Background gradient overlay -->
     <div
@@ -204,7 +200,7 @@ onMounted(() => {
                 :class="gridClasses"
               >
                 <ProductCard
-                  v-for="(product, productIndex) in categoryProducts[category.id]"
+                  v-for="(product, productIndex) in categoryProducts[category.id].slice(0, config.maxItems)"
                   :key="productIndex"
                   :product="product"
                   :locale="locale"
@@ -214,7 +210,7 @@ onMounted(() => {
               <!-- Slider Layout -->
               <UCarousel
                 v-else
-                :items="categoryProducts[category.id]"
+                :items="categoryProducts[category.id].slice(0, config.maxItems)"
                 :options="{
                   itemsToShow: 1.2,
                   snapAlign: 'start',

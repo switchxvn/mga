@@ -149,10 +149,6 @@ onMounted(() => {
 <template>
   <section
     class="categories-section relative"
-    :style="{
-      paddingTop: config.padding?.top || '2rem',
-      paddingBottom: config.padding?.bottom || '2rem',
-    }"
   >
     <!-- Background gradient overlay -->
     <div

@@ -227,299 +227,249 @@ watch(() => props.isOpen, (newValue) => {
 </script>
 
 <template>
-  <UModal 
-    :model-value="isOpen" 
-    @close="closeModal"
-    :prevent-close="isSubmitting"
-    :overlay="true"
-    :close-on-escape="!isSubmitting"
-    :transition="false"
-    class="price-request-modal"
-    :ui="{
-      overlay: {
-        background: 'bg-gray-900/75 backdrop-blur-sm dark:bg-gray-900/90',
-        position: 'fixed inset-0 z-[9998]'
-      },
-      container: {
-        position: 'fixed inset-0 z-[9999] overflow-auto p-4',
-        display: 'flex items-center justify-center'
-      },
-      dialog: {
-        position: 'relative z-[10000] w-[390px] mx-auto',
-        background: 'bg-white dark:bg-gray-800',
-        rounded: 'rounded-lg',
-        shadow: 'shadow-xl',
-        width: 'w-[390px]',
-        height: 'max-h-[90vh] overflow-auto'
-      }
-    }"
-  >
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-5 max-h-[90vh] overflow-auto w-[390px]">
-      <div class="flex items-center justify-between mb-5 border-b pb-4">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-          {{ modalTitle }}
-        </h3>
-        <button 
-          @click="closeModal" 
-          class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
-        >
-          <X size="20" />
-        </button>
-      </div>
+  <div class="price-request-modal">
+    <div class="modal-header">
+      <h2 class="text-xl font-semibold">{{ t('priceRequest.title') }}</h2>
+      <button @click="$emit('close')" class="close-button">
+        <X class="w-5 h-5" />
+      </button>
+    </div>
 
-      <div v-if="submitSuccess" class="text-center py-5">
-        <Check class="h-16 w-16 text-green-500 mx-auto mb-4" />
-        <p class="text-lg font-medium text-gray-900 dark:text-white mb-3">
-          {{ t('priceRequest.successMessage') || 'Yêu cầu báo giá đã được gửi thành công!' }}
-        </p>
-        <p class="text-base text-gray-600 dark:text-gray-400">
-          {{ t('priceRequest.successDescription') || 'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.' }}
-        </p>
-      </div>
-
-      <form v-else @submit.prevent="submitForm" class="space-y-4">
-        <p class="text-base text-gray-600 dark:text-gray-400 mb-4">
-          {{ t('priceRequest.description') || 'Vui lòng điền thông tin để nhận báo giá cho sản phẩm:' }}
-          <span class="font-medium text-primary-600 dark:text-primary-400">{{ productName }}</span>
-        </p>
-
-        <UFormGroup :label="t('priceRequest.fullName') || 'Họ tên'" required :error="errors.fullName" class="mb-3" size="md">
-          <UInput
+    <div class="modal-body">
+      <form @submit.prevent="submitForm" class="space-y-4">
+        <!-- Form fields -->
+        <div class="form-group">
+          <label for="fullName" class="form-label">{{ t('priceRequest.fullName') }}</label>
+          <input
+            id="fullName"
             v-model="fullName"
-            :placeholder="t('priceRequest.fullNamePlaceholder') || 'Nhập họ tên của bạn'"
-            :error="!!errors.fullName"
-            size="md"
-            @blur="validateFullNameField"
+            type="text"
+            class="form-input"
+            :class="{ 'error': errors.fullName }"
+            :placeholder="t('priceRequest.fullNamePlaceholder')"
           />
-        </UFormGroup>
+          <span v-if="errors.fullName" class="error-message">{{ errors.fullName }}</span>
+        </div>
 
-        <UFormGroup :label="t('priceRequest.email') || 'Email'" required :error="errors.email" class="mb-3" size="md">
-          <UInput
+        <div class="form-group">
+          <label for="email" class="form-label">{{ t('priceRequest.email') }}</label>
+          <input
+            id="email"
             v-model="emailValue"
             type="email"
-            :placeholder="t('priceRequest.emailPlaceholder') || 'Nhập email của bạn'"
-            :error="!!errors.email"
-            size="md"
-            @blur="validateEmailField"
+            class="form-input"
+            :class="{ 'error': errors.email }"
+            :placeholder="t('priceRequest.emailPlaceholder')"
           />
-        </UFormGroup>
+          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+        </div>
 
-        <UFormGroup :label="t('priceRequest.phone') || 'Số điện thoại'" required :error="errors.phoneNumber" class="mb-3" size="md">
+        <div class="form-group">
+          <label for="phone" class="form-label">{{ t('priceRequest.phone') }}</label>
           <PhoneInput
             ref="phoneInputRef"
-            v-model="phoneNumber"
-            v-model:phoneCode="selectedPhoneCode"
-            :error="!!errors.phoneNumber"
-            size="md"
-            required
-            :validateOnInput="false"
-            :showErrorMessage="false"
+            v-model:phone="phoneNumber"
+            v-model:code="selectedPhoneCode"
             @validation="handlePhoneValidation"
-            @blur="validatePhoneField"
+            :class="{ 'error': errors.phoneNumber }"
           />
-          
-        </UFormGroup>
+          <span v-if="errors.phoneNumber" class="error-message">{{ errors.phoneNumber }}</span>
+        </div>
 
-        <UFormGroup :label="t('priceRequest.message') || 'Lời nhắn'" class="mb-3" size="md">
-          <UTextarea
+        <div class="form-group">
+          <label for="message" class="form-label">{{ t('priceRequest.message') }}</label>
+          <textarea
+            id="message"
             v-model="message"
-            :placeholder="t('priceRequest.messagePlaceholder') || 'Nhập lời nhắn của bạn (không bắt buộc)'"
+            class="form-textarea"
+            :placeholder="t('priceRequest.messagePlaceholder')"
             rows="4"
-            size="md"
-          />
-        </UFormGroup>
-      </form>
+          ></textarea>
+        </div>
 
-      <div class="flex justify-end gap-3 mt-5 pt-4 border-t">
-        <button
-          v-if="!submitSuccess"
-          @click="closeModal"
-          class="button-cancel flex items-center gap-2"
-          type="button"
-        >
-          <X size="18" />
-          {{ t('priceRequest.cancel') || 'Hủy' }}
-        </button>
-        <button
-          v-if="!submitSuccess"
-          @click="submitForm"
-          class="button-submit flex items-center gap-2"
-          :disabled="isSubmitting"
-          type="button"
-        >
-          <Send size="18" />
-          {{ t('priceRequest.submit') || 'Gửi yêu cầu' }}
-        </button>
-        <button
-          v-else
-          @click="closeModal"
-          class="button-close flex items-center gap-2"
-          type="button"
-        >
-          <Check size="18" />
-          {{ t('priceRequest.close') || 'Đóng' }}
-        </button>
-      </div>
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="submit-button"
+            :disabled="isSubmitting"
+          >
+            <span v-if="!submitSuccess">
+              <Send v-if="!isSubmitting" class="w-5 h-5 mr-2" />
+              <span v-else class="loading-spinner"></span>
+              {{ t('priceRequest.submit') }}
+            </span>
+            <span v-else class="success-message">
+              <Check class="w-5 h-5 mr-2" />
+              {{ t('priceRequest.success') }}
+            </span>
+          </button>
+        </div>
+      </form>
     </div>
-  </UModal>
+  </div>
 </template>
 
-<style>
-/* Thêm CSS toàn cục cho modal */
-.price-request-modal [id^="headlessui-dialog-panel"],
-.price-request-modal [class*="headlessui-dialog-panel"] {
-  width: 390px !important;
-  max-width: 390px !important;
-  margin: 0 auto !important;
+<style scoped>
+.price-request-modal {
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
 }
 
-.u-modal {
-  z-index: 9999 !important;
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.u-modal-overlay {
-  z-index: 9998 !important;
-  position: fixed !important;
-  inset: 0 !important;
-  background-color: rgba(0, 0, 0, 0.75) !important;
-  backdrop-filter: blur(2px) !important;
+.close-button {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
 }
 
-.u-modal-container {
-  z-index: 9999 !important;
-  position: fixed !important;
-  inset: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow-y: auto !important;
-  min-height: 100vh !important;
+.close-button:hover {
+  background-color: #f3f4f6;
 }
 
-.u-modal-content {
-  z-index: 10000 !important;
-  position: relative !important;
-  max-height: 90vh !important;
-  overflow-y: auto !important;
-  background-color: white !important;
-  border-radius: 0.5rem !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  width: 390px !important;
-  max-width: 390px !important;
-  margin: 0 auto !important;
+.modal-body {
+  padding: 1.5rem;
 }
 
-/* Điều chỉnh trực tiếp cho headlessui-dialog-panel */
-:deep([id^="headlessui-dialog-panel"]) {
-  width: 390px !important;
-  max-width: 390px !important;
-  margin: 0 auto !important;
+.form-group {
+  margin-bottom: 1rem;
 }
 
-/* Điều chỉnh cho tất cả các phần tử có thể là dialog panel */
-:deep(.headlessui-dialog-panel),
-:deep([class*="headlessui-dialog-panel"]) {
-  width: 390px !important;
-  max-width: 390px !important;
-  margin: 0 auto !important;
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
-body.u-modal-open {
-  overflow: auto !important;
-  padding-right: 0 !important;
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  transition: border-color 0.2s;
 }
 
-/* Thêm style cho các button trong modal */
-.button-cancel {
-  background-color: #6B7280 !important;
-  color: white !important;
-  font-weight: 500 !important;
-  padding: 0.625rem 1rem !important;
-  font-size: 1rem !important;
-  border-radius: 0.375rem !important;
-  min-width: 90px !important;
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  ring: 2px solid #3b82f6;
+}
+
+.form-input.error,
+.form-textarea.error {
+  border-color: #ef4444;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  margin-top: 1.5rem;
+}
+
+.submit-button {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: all 0.2s ease-in-out !important;
-}
-
-.button-submit {
-  background-color: #2563EB !important; /* Màu primary-600 cụ thể */
+  width: 100% !important;
+  padding: 0.75rem 1rem !important;
+  background-color: #3b82f6 !important;
   color: white !important;
-  font-weight: 500 !important;
-  padding: 0.625rem 1rem !important;
-  font-size: 1rem !important;
   border-radius: 0.375rem !important;
-  min-width: 130px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: all 0.2s ease-in-out !important;
-}
-
-.button-close {
-  background-color: #2563EB !important; /* Màu primary-600 cụ thể */
-  color: white !important;
   font-weight: 500 !important;
-  padding: 0.625rem 1rem !important;
-  font-size: 1rem !important;
-  border-radius: 0.375rem !important;
-  min-width: 90px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: all 0.2s ease-in-out !important;
+  transition: background-color 0.2s !important;
+  gap: 0.5rem !important;
 }
 
-.dark .button-cancel {
-  background-color: #4B5563 !important;
+.submit-button:hover {
+  background-color: #2563eb !important;
 }
 
-.dark .button-submit,
-.dark .button-close {
-  background-color: #3B82F6 !important; /* Màu primary-500 cụ thể */
-}
-
-/* Hover effects */
-.button-cancel:hover {
-  background-color: #4B5563 !important;
-  transform: translateY(-1px) !important;
-}
-
-.button-submit:hover,
-.button-close:hover {
-  background-color: #1D4ED8 !important; /* Màu primary-700 cụ thể */
-  transform: translateY(-1px) !important;
-}
-
-.dark .button-cancel:hover {
-  background-color: #374151 !important;
-}
-
-.dark .button-submit:hover,
-.dark .button-close:hover {
-  background-color: #1E40AF !important; /* Màu primary-800 cụ thể */
-}
-
-/* Disabled state */
-.button-submit:disabled {
+.submit-button:disabled {
   opacity: 0.7 !important;
   cursor: not-allowed !important;
-  transform: none !important;
 }
 
-/* Thêm style cho thông báo lỗi */
-.text-red-500 {
-  color: #ef4444 !important;
+.loading-spinner {
+  display: inline-flex !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  border: 2px solid currentColor !important;
+  border-right-color: transparent !important;
+  border-radius: 50% !important;
+  animation: spin 0.75s linear infinite !important;
+  margin-right: 0.5rem !important;
+  vertical-align: middle !important;
 }
 
-.text-sm {
-  font-size: 0.875rem !important;
-  line-height: 1.25rem !important;
+.success-message {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  gap: 0.5rem !important;
+  color: #10b981 !important;
 }
 
-.mt-1 {
-  margin-top: 0.25rem !important;
+/* Thêm style cho icon */
+.submit-button svg,
+.success-message svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* Đảm bảo text luôn căn giữa với icon */
+.submit-button > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark mode support */
+:root.dark .price-request-modal {
+  background: #1f2937;
+}
+
+:root.dark .modal-header {
+  border-bottom-color: #374151;
+}
+
+:root.dark .close-button:hover {
+  background-color: #374151;
+}
+
+:root.dark .form-input,
+:root.dark .form-textarea {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: white;
+}
+
+:root.dark .form-input:focus,
+:root.dark .form-textarea:focus {
+  border-color: #3b82f6;
 }
 </style> 

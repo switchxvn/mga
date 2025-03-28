@@ -14,6 +14,7 @@ import PriceRequestModal from '~/components/product/PriceRequestModal.vue';
 import { useNotification } from '~/composables/useNotification';
 import AddToCartButton from '~/components/cart/AddToCartButton.vue';
 import Breadcrumb from '~/components/common/Breadcrumb.vue';
+import GlobalModal from '~/components/ui/GlobalModal.vue';
 
 // Định nghĩa interface cho Product
 interface Product {
@@ -682,14 +683,17 @@ watch(isPriceRequestModalOpen, (newVal) => {
           />
         </div>
         
-        <!-- Modal yêu cầu báo giá -->
-        <PriceRequestModal
-          :is-open="isPriceRequestModalOpen"
-          :product-id="productData.id"
-          :product-name="productTitle"
-          @close="closePriceRequestModal"
-          @success="handlePriceRequestSuccess"
-        />
+        <!-- Modal -->
+        <GlobalModal :show="isPriceRequestModalOpen" @close="closePriceRequestModal">
+          <div class="modal-content">
+            <PriceRequestModal
+              :product-id="productData.id"
+              :product-name="productTitle"
+              @close="closePriceRequestModal"
+              @success="handlePriceRequestSuccess"
+            />
+          </div>
+        </GlobalModal>
       </div>
       
       <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
@@ -996,48 +1000,21 @@ watch(isPriceRequestModalOpen, (newVal) => {
 }
 
 /* CSS cho modal overlay */
+:deep(.u-modal-overlay),
+:deep(.u-modal-container),
+:deep(.u-modal) {
+  position: fixed !important;
+  z-index: 999999 !important;
+}
+
 :deep(.u-modal-overlay) {
-  background-color: rgba(0, 0, 0, 0.75) !important;
-  backdrop-filter: blur(2px) !important;
-  z-index: 9998 !important;
   position: fixed !important;
   inset: 0 !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(2px) !important;
 }
 
 :deep(.u-modal-container) {
-  max-height: 90vh !important;
-  overflow-y: auto !important;
-  z-index: 9999 !important;
-  position: fixed !important;
-  inset: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-:deep(.u-modal) {
-  max-width: 90vw !important;
-  max-height: 90vh !important;
-  overflow-y: auto !important;
-  z-index: 10000 !important;
-  position: relative !important;
-}
-
-/* Ghi đè CSS cho modal để đảm bảo nó hiển thị đúng */
-.u-modal {
-  z-index: 9999 !important;
-}
-
-.u-modal-overlay {
-  z-index: 9998 !important;
-  position: fixed !important;
-  inset: 0 !important;
-  background-color: rgba(0, 0, 0, 0.75) !important;
-  backdrop-filter: blur(2px) !important;
-}
-
-.u-modal-container {
-  z-index: 9999 !important;
   position: fixed !important;
   inset: 0 !important;
   display: flex !important;
@@ -1046,19 +1023,37 @@ watch(isPriceRequestModalOpen, (newVal) => {
   overflow-y: auto !important;
 }
 
-.u-modal-content {
-  z-index: 10000 !important;
+:deep(.u-modal-content) {
   position: relative !important;
-  max-height: 90vh !important;
-  overflow-y: auto !important;
-  background-color: white !important;
+  width: 90vw !important;
+  max-width: 600px !important;
+  margin: auto !important;
+  background: white !important;
   border-radius: 0.5rem !important;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
 }
 
-body.u-modal-open {
-  overflow: auto !important;
-  padding-right: 0 !important;
+/* Đảm bảo modal luôn ở trên cùng */
+:root {
+  --modal-z-index: 999999;
+}
+
+/* Ghi đè style của Nuxt UI nếu cần */
+:deep(.modal-overlay),
+:deep(.modal-container),
+:deep(.modal-content) {
+  z-index: var(--modal-z-index) !important;
+}
+
+/* Vô hiệu hóa pointer-events trên các phần tử khác khi modal mở */
+:deep(body.modal-open) > *:not(.modal-overlay):not(.modal-container) {
+  pointer-events: none !important;
+}
+
+/* Đảm bảo modal container có highest stacking context */
+:deep(.modal-container) {
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
 }
 
 /* CSS cho table of contents */
@@ -1069,5 +1064,13 @@ body.u-modal-open {
 
 .dark :deep(.table-of-contents) {
   background-color: var(--color-gray-800);
+}
+
+.modal-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style> 

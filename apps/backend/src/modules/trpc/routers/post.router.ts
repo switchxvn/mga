@@ -9,18 +9,32 @@ export const postRouter = router({
       filters: z.object({
         categoryId: z.number().optional(),
         categories: z.string().optional(),
-        locale: z.string().optional()
+        locale: z.string().optional(),
+        category: z.string().optional(),
       }).optional()
     }))
     .query(async ({ input, ctx }) => {
       try {
         const { filters } = input || {};
-        const { locale, categories, categoryId } = filters || {};
+        const { locale, categories, categoryId, category } = filters || {};
 
         // Xử lý danh sách categories nếu có
         let categoryIds: number[] = [];
         
-        if (categories) {
+        // Nếu có category slug, ưu tiên tìm category theo slug
+        if (category) {
+          const allCategories = await ctx.services.categoryFrontendService.findAll();
+          const foundCategory = allCategories.find(cat => 
+            cat.translations?.some(trans => trans.slug === category)
+          );
+          
+          if (foundCategory) {
+            categoryIds = [foundCategory.id];
+          } else {
+            // Nếu không tìm thấy category theo slug, trả về mảng rỗng
+            return [];
+          }
+        } else if (categories) {
           // Chuyển đổi chuỗi categories thành mảng số
           categoryIds = categories.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
         } else if (categoryId) {
@@ -28,6 +42,7 @@ export const postRouter = router({
           categoryIds = [categoryId];
         }
 
+        // Tìm posts theo locale và/hoặc categories
         if (locale) {
           if (categoryIds.length > 0) {
             return ctx.services.postService.findByLocaleAndCategories(locale, categoryIds);

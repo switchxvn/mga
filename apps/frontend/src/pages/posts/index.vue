@@ -50,6 +50,7 @@ const filters = reactive({
   search: route.query.search as string || '',
   categories: route.query.categories ? (route.query.categories as string).split(',').map(Number) : [],
   sort: (route.query.sort as string) || 'newest',
+  category: route.query['danh-muc'] as string || undefined,
 });
 
 // Sort options as computed property to ensure translations are updated
@@ -81,6 +82,7 @@ const fetchPosts = async () => {
       filters: {
         categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
         locale: locale.value,
+        category: filters.category,
       },
     });
     posts.value = Array.isArray(result) ? result.map(transformPost) : [];
@@ -97,6 +99,7 @@ const handleFilterChange = (newFilters: any) => {
   // Update filters
   if (newFilters.search !== undefined) filters.search = newFilters.search;
   if (newFilters.categories !== undefined) filters.categories = newFilters.categories || [];
+  if (newFilters.category !== undefined) filters.category = newFilters.category;
   
   // Update URL query params
   updateQueryParams();
@@ -113,6 +116,7 @@ const updateQueryParams = () => {
   if (filters.search) query.search = filters.search;
   if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
   if (filters.sort && filters.sort !== 'newest') query.sort = filters.sort;
+  if (filters.category) query['danh-muc'] = filters.category;
   
   // Update route
   router.replace({ query });
@@ -122,6 +126,14 @@ const updateQueryParams = () => {
 watch(locale, () => {
   fetchSeoData();
   fetchPosts();
+});
+
+// Watch for route query changes
+watch(() => route.query['danh-muc'], (newCategory) => {
+  if (newCategory !== filters.category) {
+    filters.category = newCategory as string || undefined;
+    fetchPosts();
+  }
 });
 
 // Sort posts

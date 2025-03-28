@@ -11,7 +11,7 @@ interface MenuItemTranslation {
   menuItemId?: number;
 }
 
-const ITEMS_PER_COLUMN = 16;
+const ITEMS_PER_COLUMN = 12;
 
 interface MenuItem {
   id: number;
@@ -155,7 +155,7 @@ const handleLinkClick = () => {
     </div>
     
     <!-- Content -->
-    <div class="relative mt-2 rounded-lg bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black ring-opacity-5">
+    <div class="relative mt-2 rounded-lg bg-neutral-50/95 dark:bg-neutral-800/95 shadow-lg ring-1 ring-black ring-opacity-5">
       <div class="relative p-4">
         <div 
           class="grid gap-6"
@@ -211,7 +211,7 @@ const handleLinkClick = () => {
   </div>
   <div v-else>
     <div class="absolute left-1/2 z-50 mt-4 w-screen max-w-max -translate-x-1/2">
-      <div class="relative mt-2 rounded-lg bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black ring-opacity-5">
+      <div class="relative mt-2 rounded-lg bg-neutral-50/95 dark:bg-neutral-800/95 shadow-lg ring-1 ring-black ring-opacity-5">
         <div class="px-4 py-2 text-sm text-neutral-500">
           No menu items available
         </div>
