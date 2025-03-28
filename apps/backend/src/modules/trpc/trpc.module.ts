@@ -23,6 +23,7 @@ import { ThemeModule } from '../theme/theme.module';
 import { LanguageModule } from '../language/language.module';
 import { AboutModule } from '../about/about.module';
 import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
+import { ContactModule } from '../contact/contact.module';
 
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
@@ -61,6 +62,7 @@ import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
     LanguageModule,
     AboutModule,
     CustomerLogoModule,
+    ContactModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

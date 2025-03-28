@@ -15,4 +15,5 @@ export * from './lib/interfaces';
 
 // Types
 export * from './types/page-type';
-export * from './types/category.type'; 
+export * from './types/category.type';
+export * from './types/contact'; 

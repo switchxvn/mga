@@ -19,6 +19,7 @@ import { UserModule } from './modules/user/user.module';
 import { ThemeModule } from './modules/theme/theme.module';
 import { NestFactory } from '@nestjs/core';
 import { CustomerLogoModule } from './modules/customer-logo/customer-logo.module';
+import { ContactModule } from './modules/contact/contact.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { CustomerLogoModule } from './modules/customer-logo/customer-logo.module
     FeatureFlagsModule,
     ThemeModule,
     CustomerLogoModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],

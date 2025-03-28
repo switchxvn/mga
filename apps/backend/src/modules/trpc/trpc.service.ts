@@ -48,6 +48,8 @@ import { CustomerLogoFrontendService } from '../customer-logo/frontend/services/
 import { CustomerLogoAdminService } from '../customer-logo/admin/services/customer-logo-admin.service';
 import { AuthFrontendService } from '../auth/frontend/services/auth-frontend.service';
 import { AuthAdminService } from '../auth/admin/services/auth-admin.service';
+import { ContactAdminService } from '../contact/admin/services/contact-admin.service';
+import { ContactFrontendService } from '../contact/frontend/services/contact-frontend.service';
 
 const t = initTRPC.context<TRPCContext>().create();
 
@@ -102,6 +104,8 @@ export class TrpcService {
     private readonly logoAdminService: LogoAdminService,
     private readonly customerLogoFrontendService: CustomerLogoFrontendService,
     private readonly customerLogoAdminService: CustomerLogoAdminService,
+    private readonly contactAdminService: ContactAdminService,
+    private readonly contactFrontendService: ContactFrontendService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -157,6 +161,8 @@ export class TrpcService {
       logoAdminService: this.logoAdminService,
       customerLogoFrontendService: this.customerLogoFrontendService,
       customerLogoAdminService: this.customerLogoAdminService,
+      contactAdminService: this.contactAdminService,
+      contactFrontendService: this.contactFrontendService,
     };
   }
 } 

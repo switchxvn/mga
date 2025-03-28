@@ -20,6 +20,7 @@ import { languageRouter } from './routers/language.router';
 import { aboutRouter } from './routers/about.router';
 import { logoRouter } from './routers/logo.router';
 import { customerLogoRouter } from './routers/customer-logo.router';
+import { contactRouter } from './routers/contact.router';
 //Admin
 import { adminMenuItemsRouter } from './routers/admin/menu-items.router';
 
@@ -52,7 +53,7 @@ export class TrpcRouter {
       about: aboutRouter,
       logo: logoRouter,
       customerLogo: customerLogoRouter,
-      //Admin namespace
+      contact: contactRouter,
       admin: this.trpc.createRouter({
         menuItems: adminMenuItemsRouter,
       }),
