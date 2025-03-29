@@ -19,6 +19,46 @@ const translationSchema = z.object({
 
 export const serviceRouter = router({
   // Public procedures
+  list: publicProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      categories: z.array(z.number()).optional(),
+      isFeatured: z.boolean().optional(),
+      isNew: z.boolean().optional(),
+      sortBy: z.enum(['newest', 'oldest', 'name_asc', 'name_desc']).optional(),
+      page: z.number().min(1).default(1),
+      limit: z.number().min(1).max(100).default(12),
+      locale: z.string().length(2).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const [items, total] = await ctx.services.serviceFrontendService.findAndCount({
+          search: input.search,
+          categories: input.categories,
+          isFeatured: input.isFeatured,
+          isNew: input.isNew,
+          sortBy: input.sortBy,
+          page: input.page,
+          limit: input.limit,
+          locale: input.locale,
+        });
+
+        return {
+          items,
+          total,
+          page: input.page,
+          limit: input.limit,
+          totalPages: Math.ceil(total / input.limit),
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch services',
+          cause: error,
+        });
+      }
+    }),
+
   all: publicProcedure
     .input(z.object({
       locale: z.string().length(2).optional()

@@ -233,7 +233,18 @@
     "notFound": "Không tìm thấy dịch vụ",
     "notFoundDescription": "Dịch vụ bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.",
     "backToServices": "Xem tất cả dịch vụ",
-    "tryAgain": "Thử lại"
+    "tryAgain": "Thử lại",
+    "search": "Tìm kiếm dịch vụ",
+    "searchPlaceholder": "Nhập từ khóa tìm kiếm...",
+    "categories": "Danh mục dịch vụ",
+    "showing": "Đang hiển thị",
+    "items": "dịch vụ",
+    "sortBy": "Sắp xếp theo",
+    "learnMore": "Tìm hiểu thêm",
+    "newBadge": "Mới",
+    "featuredBadge": "Nổi bật",
+    "noResults": "Không tìm thấy dịch vụ nào",
+    "tryAdjustingFilters": "Vui lòng thử điều chỉnh bộ lọc của bạn"
   },
   "theme": {
     "title": "Giao diện",

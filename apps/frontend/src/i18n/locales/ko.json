@@ -234,7 +234,18 @@
     "notFound": "서비스를 찾을 수 없습니다",
     "notFoundDescription": "찾으시는 서비스가 존재하지 않거나 삭제되었습니다.",
     "backToServices": "전체 서비스 보기",
-    "tryAgain": "다시 시도"
+    "tryAgain": "다시 시도",
+    "search": "서비스 검색",
+    "searchPlaceholder": "검색어를 입력하세요...",
+    "categories": "서비스 카테고리",
+    "showing": "표시 중",
+    "items": "서비스",
+    "sortBy": "정렬 기준",
+    "learnMore": "자세히 보기",
+    "newBadge": "신규",
+    "featuredBadge": "추천",
+    "noResults": "서비스를 찾을 수 없습니다",
+    "tryAdjustingFilters": "필터 조건을 조정해 보세요"
   },
   "theme": {
     "title": "테마",

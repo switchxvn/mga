@@ -173,9 +173,7 @@ useHead(() => {
           
           <!-- Service content -->
           <div class="service-detail__body">
-            <div class="service-prose">
-              <p class="whitespace-pre-line">{{ serviceContent }}</p>
-            </div>
+            <div class="service-prose" v-html="serviceContent"></div>
           </div>
         </article>
       </div>
@@ -212,6 +210,7 @@ useHead(() => {
   display: flex;
   flex-direction: column;
   flex: 1;
+  width: 100%;
 }
 
 .service-detail__article {
@@ -219,6 +218,7 @@ useHead(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
 }
 
 .service-detail__icon {
@@ -236,6 +236,31 @@ useHead(() => {
 .service-prose {
   @apply prose prose-lg dark:prose-invert max-w-none;
   margin-top: 2rem;
+}
+
+/* Add new styles for images and tables */
+:deep(.service-prose img) {
+  max-width: 150px;
+  height: auto;
+  object-fit: contain;
+}
+
+:deep(.service-prose table) {
+  @apply w-full;
+}
+
+:deep(.service-prose table td) {
+  @apply flex items-center justify-center p-2;
+}
+
+:deep(.service-prose table tr) {
+  @apply flex flex-wrap md:flex-nowrap gap-4 justify-between items-center;
+}
+
+:deep(.service-prose table img) {
+  max-width: 150px;
+  height: auto;
+  object-fit: contain;
 }
 
 .service-detail__loading {
@@ -279,32 +304,52 @@ useHead(() => {
 }
 
 /* Styling for rich text content */
-.service-prose h2 {
+:deep(.service-content) {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+:deep(.service-content h2) {
   @apply text-2xl font-bold mt-8 mb-4 text-gray-900 dark:text-white;
 }
 
-.service-prose h3 {
+:deep(.service-content h3) {
   @apply text-xl font-bold mt-6 mb-3 text-gray-900 dark:text-white;
 }
 
-.service-prose p {
+:deep(.service-content p) {
   @apply mb-4 text-gray-700 dark:text-gray-300;
 }
 
-.service-prose ul, .service-prose ol {
-  @apply my-4 pl-6;
+:deep(.service-content ul), :deep(.service-content ol) {
+  @apply my-4 pl-6 list-disc;
 }
 
-.service-prose li {
+:deep(.service-content li) {
   @apply mb-2 text-gray-700 dark:text-gray-300;
 }
 
-.service-prose a {
+:deep(.service-content a) {
   @apply text-primary-600 dark:text-primary-400 hover:underline;
 }
 
-.service-prose blockquote {
+:deep(.service-content blockquote) {
   @apply pl-4 border-l-4 border-gray-300 italic my-4 text-gray-600 dark:text-gray-400;
+}
+
+:deep(.service-steps) {
+  @apply space-y-8 my-8;
+}
+
+:deep(.service-steps .step) {
+  @apply bg-gray-50 dark:bg-gray-800 p-6 rounded-lg;
+}
+
+:deep(.service-commitments), :deep(.warranty-maintenance) {
+  @apply bg-gray-50 dark:bg-gray-800 p-6 rounded-lg my-6;
+}
+
+:deep(.contact-cta) {
+  @apply mt-8 text-center text-lg font-semibold text-primary-600 dark:text-primary-400;
 }
 
 @media (max-width: 768px) {
@@ -321,6 +366,22 @@ useHead(() => {
   }
   
   .service-detail__article {
+    @apply p-4;
+  }
+  
+  :deep(.service-content h2) {
+    @apply text-xl;
+  }
+  
+  :deep(.service-content h3) {
+    @apply text-lg;
+  }
+  
+  :deep(.service-steps .step) {
+    @apply p-4;
+  }
+  
+  :deep(.service-commitments), :deep(.warranty-maintenance) {
     @apply p-4;
   }
 }

@@ -698,7 +698,7 @@ watch([logo, isLoadingLogo], () => {
             </div>
 
             <!-- Desktop Navigation -->
-            <nav class="hidden md:flex items-center space-x-6 flex-grow justify-start">
+            <nav class="hidden md:flex items-center space-x-5 flex-grow justify-start">
               <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400">Đang tải menu...</div>
               <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
               <template v-else>
@@ -722,9 +722,7 @@ watch([logo, isLoadingLogo], () => {
                         color: isMenuActive(item.href) 
                           ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
                           : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)'),
-                        '--hover-color': processColorValue('var(--primary-400)'),
-                        fontWeight: props.settings?.navigation?.fontWeight || 'extrabold',
-                        fontSize: '1.05rem'
+                        '--hover-color': processColorValue('var(--primary-400)')
                       }"
                     >
                       {{ item.label }}
@@ -885,7 +883,7 @@ watch([logo, isLoadingLogo], () => {
                 <!-- Menu Item with Mega Menu -->
                 <div
                   v-if="item.children?.length > 0"
-                  class="mobile-main-menu-item flex items-center justify-between px-3 py-2 text-lg font-extrabold uppercase rounded-md"
+                  class="mobile-main-menu-item flex items-center justify-between px-3 py-2 text-base font-semibold uppercase rounded-md"
                   :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 >
                   <NuxtLink
@@ -911,7 +909,7 @@ watch([logo, isLoadingLogo], () => {
                 <NuxtLink
                   v-else
                   :to="item.href"
-                  class="mobile-main-menu-item block px-3 py-2 text-lg font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-md transition-colors duration-300"
+                  class="mobile-main-menu-item block px-3 py-2 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-md transition-colors duration-300"
                   :class="{ 'text-primary-600 dark:text-primary-400': isMenuActive(item.href) }"
                   @click="isMobileMenuOpen = false"
                 >
@@ -1549,5 +1547,15 @@ body.has-sticky-nav {
 :deep(.language-switcher .dropdown-menu),
 :deep(.theme-toggle .dropdown-menu) {
   z-index: 1200 !important;
+}
+
+/* Remove all hardcoded font styles */
+.main-menu-item,
+.mobile-main-menu-item,
+.hotline-button,
+.mobile-hotline,
+.mobile-submenu-item {
+  font-size: inherit;
+  font-weight: inherit;
 }
 </style> 
