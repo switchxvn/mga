@@ -89,6 +89,11 @@
               :slides-per-view="props.config?.sliderSettings?.slidesPerView || 3"
               :space-between="24"
               :loop="true"
+              :loop-prevents-sliding="false"
+              :loop-add-blank-slides="true"
+              :speed="800"
+              :allow-touch-move="true"
+              :watch-overflow="true"
               :breakpoints="{
                 320: {
                   slidesPerView: 1,
@@ -103,16 +108,24 @@
                   spaceBetween: 24
                 }
               }"
-              :autoplay="{
+              :autoplay="props.config?.sliderSettings?.autoplay ? {
                 delay: props.config?.sliderSettings?.autoplaySpeed || 5000,
                 disableOnInteraction: false,
-                pauseOnMouseEnter: props.config?.sliderSettings?.pauseOnHover || true
-              }"
+                pauseOnMouseEnter: props.config?.sliderSettings?.pauseOnHover || true,
+                stopOnLastSlide: false,
+                waitForTransition: false
+              } : false"
               :pagination="{
+                el: '.video-swiper-pagination',
                 clickable: true,
-                dynamicBullets: true
+                dynamicBullets: true,
+                enabled: true
               }"
-              :navigation="true"
+              :navigation="{
+                nextEl: '.video-swiper-next',
+                prevEl: '.video-swiper-prev',
+                enabled: true
+              }"
               class="!overflow-visible pb-12"
             >
               <SwiperSlide v-for="video in videoData" :key="video.id" class="group h-[480px]">
@@ -178,6 +191,13 @@
                 </div>
               </SwiperSlide>
             </Swiper>
+
+            <!-- Navigation Arrows -->
+            <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-prev swiper-button-prev !z-10"></div>
+            <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-next swiper-button-next !z-10"></div>
+            
+            <!-- Pagination -->
+            <div v-if="props.config?.sliderSettings?.dots" class="video-swiper-pagination !z-10"></div>
           </div>
         </div>
       </div>
@@ -422,19 +442,24 @@ const handleImageError = (event: Event) => {
 
 .video-intro-section :deep(.swiper-button-next),
 .video-intro-section :deep(.swiper-button-prev) {
-  width: 40px;
-  height: 40px;
-  margin-top: -20px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
   background: white;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
+  z-index: 20;
   
   @media (max-width: 640px) {
     display: none;
   }
   
   &::after {
+    font-family: swiper-icons;
     font-size: 1.2rem;
     font-weight: bold;
     color: var(--primary);
@@ -461,21 +486,33 @@ const handleImageError = (event: Event) => {
 }
 
 .video-intro-section :deep(.swiper-button-prev) {
-  left: 0;
+  left: 20px;
+  &::after {
+    content: 'prev';
+  }
 }
 
 .video-intro-section :deep(.swiper-button-next) {
-  right: 0;
+  right: 20px;
+  &::after {
+    content: 'next';
+  }
 }
 
 .video-intro-section :deep(.swiper-pagination) {
-  position: relative;
-  bottom: 0;
-  display: flex;
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 1rem;
+  z-index: 10;
+  padding: 0;
+  margin: 0;
+  width: auto;
+  min-width: max-content;
 }
 
 .video-intro-section :deep(.swiper-pagination-bullet) {

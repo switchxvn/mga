@@ -11,6 +11,7 @@ import Footer from '../components/ui/Footer.vue';
 import BackToTop from '~/components/ui/BackToTop.vue';
 import FloatingPhoneSupport from '~/components/ui/FloatingPhoneSupport.vue';
 import FloatingZaloSupport from '~/components/ui/FloatingZaloSupport.vue';
+import FloatingMessengerSupport from '~/components/ui/FloatingMessengerSupport.vue';
 
 const router = useRouter();
 const trpc = useTrpc();
@@ -177,6 +178,7 @@ async function handleLogout() {
     <BackToTop />
     <FloatingPhoneSupport />
     <FloatingZaloSupport />
+    <FloatingMessengerSupport />
   </div>
 </template>
 

@@ -660,9 +660,16 @@ watch([logo, isLoadingLogo], () => {
       :class="{ 'nav-sticky': isScrolled }"
     >
       <nav
-        class="navigation-section w-full border-b relative"
+        class="navigation-section w-full relative"
       >
-        <div class="nav-bg-layer"></div>
+        <div 
+          class="nav-bg-layer"
+          :style="{
+            backgroundColor: isDark 
+              ? processColorValue(props.settings?.darkMode?.menuBackgroundColor || '#171717')
+              : processColorValue(props.settings?.menuBackgroundColor || '#ffffff')
+          }"
+        ></div>
         <div class="container mx-auto px-4">
           <div class="flex items-center justify-between h-full relative">
             <!-- Mobile Logo - Left -->
@@ -749,14 +756,14 @@ watch([logo, isLoadingLogo], () => {
                 <!-- User Icon -->
                 <NuxtLink 
                   to="/auth/login" 
-                  class="flex items-center justify-center w-10 h-10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                  class="flex items-center justify-center w-10 h-10 text-white hover:bg-primary-400 rounded-full transition-colors"
                 >
                   <Icon name="User" class="h-6 w-6" />
                 </NuxtLink>
 
                 <!-- Hamburger Menu Button -->
                 <button
-                  class="flex items-center justify-center w-10 h-10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                  class="flex items-center justify-center w-10 h-10 text-white hover:bg-primary-400 rounded-full transition-colors"
                   @click="toggleMobileMenu"
                   aria-label="Toggle Menu"
                 >
@@ -806,7 +813,7 @@ watch([logo, isLoadingLogo], () => {
             </button>
           </div>
 
-          <div class="px-4 py-3 space-y-1">
+          <div class="px-4 py-3 space-y-1 bg-white dark:bg-neutral-900">
             <!-- Cart Icon for Mobile -->
             <div v-if="props.settings?.showCart && isCartEnabled" class="mb-4">
               <NuxtLink 
@@ -967,7 +974,6 @@ watch([logo, isLoadingLogo], () => {
 }
 
 .navigation-section {
-  border-color: var(--navbar-border);
   color: var(--navbar-text);
   min-height: var(--nav-height, 64px);
   height: auto;
@@ -988,12 +994,23 @@ watch([logo, isLoadingLogo], () => {
   margin-right: -50vw;
   width: 100vw;
   height: 100%;
-  background-color: rgb(255 255 255 / 1);
   z-index: -1;
 }
 
+@media (max-width: 768px) {
+  .nav-bg-layer {
+    background-color: rgb(var(--primary-500)) !important;
+  }
+}
+
 :root.dark .nav-bg-layer {
-  background-color: rgb(23 23 23 / 1);
+  background-color: var(--navbar-menu-bg);
+}
+
+@media (max-width: 768px) {
+  :root.dark .nav-bg-layer {
+    background-color: rgb(var(--primary-500)) !important;
+  }
 }
 
 .navigation-section > .container {
@@ -1083,10 +1100,12 @@ watch([logo, isLoadingLogo], () => {
 /* Mobile hotline styles */
 .mobile-hotline {
   @apply rounded-md transition-colors duration-300;
+  background-color: var(--primary-500);
 }
 
 .mobile-hotline:hover {
   @apply bg-neutral-100 dark:bg-neutral-800;
+  background-color: rgb(var(--primary-900));
 }
 
 .logo-section {
@@ -1168,12 +1187,73 @@ watch([logo, isLoadingLogo], () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--navbar-menu-bg);
-  border-top: 1px solid var(--navbar-border);
+  border-top: 1px solid var(--primary-400);
   overflow-y: auto;
   z-index: 50;
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+/* Mobile menu header styles */
+.mobile-menu-header {
+  position: sticky;
+  top: 0;
+  background-color: var(--primary-500);
+  z-index: 60;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: var(--primary-400) !important;
+}
+
+/* Update mobile menu item colors */
+.mobile-main-menu-item {
+  @apply text-white;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+}
+
+.mobile-main-menu-item:hover {
+  @apply bg-primary-400 text-white;
+}
+
+.mobile-main-menu-item.mobile-menu-active {
+  @apply bg-primary-400 text-white font-semibold;
+}
+
+/* Update mobile hotline styles */
+.mobile-hotline {
+  @apply text-white rounded-md transition-colors duration-300;
+  background-color: rgb(var(--primary-500));
+}
+
+.mobile-hotline:hover {
+  @apply bg-primary-400;
+}
+
+.mobile-hotline .text-neutral-600 {
+  @apply text-white/80;
+}
+
+/* Update mobile mega menu styles */
+.mobile-mega-menu {
+  border-left: 2px solid var(--primary-400);
+  margin-left: 1rem;
+}
+
+.mobile-submenu-item {
+  @apply border-primary-400 text-white;
+  transition: all 0.3s ease;
+}
+
+.mobile-submenu-item:hover {
+  @apply bg-primary-400;
+  transform: translateX(4px);
+}
+
+/* Update close button color */
+.mobile-menu-header button {
+  @apply text-gray-900 hover:text-white/80;
 }
 
 /* Transition for mobile menu */
@@ -1304,11 +1384,11 @@ watch([logo, isLoadingLogo], () => {
 }
 
 .mobile-main-menu-item:hover {
-  @apply text-primary-600 dark:text-primary-400;
+  @apply text-white dark:text-primary-400;
 }
 
 .mobile-main-menu-item.mobile-menu-active {
-  @apply text-primary-600 dark:text-primary-400 font-semibold;
+  @apply text-white dark:text-primary-400 font-semibold;
 }
 
 /* Add these styles to the <style> section */
