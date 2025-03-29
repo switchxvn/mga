@@ -523,6 +523,7 @@ watch([logo, isLoadingLogo], () => {
 
 <template>
   <div class="navbar-container">
+
     <!-- Top Menu - New Section -->
     <div class="top-menu w-full border-b relative">
       <div class="top-menu-bg-layer"></div>
@@ -541,6 +542,12 @@ watch([logo, isLoadingLogo], () => {
           
           <!-- Right Actions -->
           <div class="hidden md:flex items-center gap-3">
+            <NuxtLink 
+              to="/bai-viet?danh-muc=du-an-mga"
+              class="text-[rgb(var(--tertiary-500))] hover:text-primary-500 transition-colors duration-300 font-bold uppercase"
+            >
+              {{ $t('mga_projects') }}
+            </NuxtLink>
             <div class="min-w-[140px]">
               <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
             </div>
@@ -726,6 +733,11 @@ watch([logo, isLoadingLogo], () => {
                       v-if="item.children?.length"
                       name="ChevronDown"
                       class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
+                      :style="{ 
+                        color: isMenuActive(item.href) 
+                          ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
+                          : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)')
+                      }"
                     />
                   </NuxtLink>
 

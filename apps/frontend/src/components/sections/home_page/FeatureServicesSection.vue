@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-vue-next';
 interface FeatureService {
   icon: string;
   title: string;
+  link: string;
 }
 
 interface FeatureServicesConfig {
@@ -264,16 +265,17 @@ const gridStyles = computed(() => ({
           }"
         >
           <!-- Icon -->
-          <div class="icon-wrapper">
-            <img 
-              :src="service.icon" 
+          <NuxtLink :to="service.link">
+            <div class="icon-wrapper">
+              <img 
+                :src="service.icon" 
               :alt="service.title"
               :style="{
                 height: mergedConfig.iconStyle.height,
                 margin: mergedConfig.iconStyle.margin
               }"
-            />
-          </div>
+              />
+            </div>
 
           <!-- Title -->
           <h3 
@@ -285,9 +287,10 @@ const gridStyles = computed(() => ({
               margin: mergedConfig.titleStyle.margin,
               textTransform: mergedConfig.titleStyle.textTransform as any
             }"
-          >
-            {{ service.title }}
-          </h3>
+            >
+              {{ service.title }}
+            </h3>
+          </NuxtLink>
         </div>
       </div>
 
