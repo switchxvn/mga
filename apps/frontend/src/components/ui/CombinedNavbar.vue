@@ -698,17 +698,19 @@ watch([logo, isLoadingLogo], () => {
                 >
                   <NuxtLink
                     :to="item.href"
-                    class="main-menu-item text-base uppercase transition-colors py-5 flex items-center space-x-1"
+                    class="main-menu-item text-[1.05rem] uppercase transition-colors py-5 flex items-center space-x-1"
+                    :style="{ fontSize: '1.05rem' }"
                     :class="{ 'menu-active': isMenuActive(item.href) }"
                   >
                     <span 
-                      class="text-base transition-colors duration-300" 
+                      class="text-[1.05rem] transition-colors duration-300" 
                       :style="{ 
                         color: isMenuActive(item.href) 
                           ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
                           : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)'),
                         '--hover-color': processColorValue('var(--primary-400)'),
-                        fontWeight: props.settings?.navigation?.fontWeight || 'extrabold'
+                        fontWeight: props.settings?.navigation?.fontWeight || 'extrabold',
+                        fontSize: '1.05rem'
                       }"
                     >
                       {{ item.label }}

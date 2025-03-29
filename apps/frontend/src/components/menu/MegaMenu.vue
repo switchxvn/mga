@@ -173,7 +173,8 @@ const handleLinkClick = () => {
             <!-- Subtitle (Level 1) -->
             <div 
               v-if="section?.subtitle"
-              class="px-4 py-2 font-bold text-sm text-neutral-900 dark:text-neutral-100 uppercase border-b border-neutral-200 dark:border-neutral-700 mb-2"
+              class="px-4 py-2 font-bold text-[1.05rem] text-neutral-900 dark:text-neutral-100 uppercase border-b border-neutral-200 dark:border-neutral-700 mb-2"
+              :style="{ fontSize: '1.05rem' }"
             >
               {{ section.subtitle.translation.label }}
             </div>
@@ -195,7 +196,8 @@ const handleLinkClick = () => {
                   >
                     <NuxtLink
                       :to="item.translation.href"
-                      class="group flex items-center justify-between px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800 transition duration-150 ease-in-out whitespace-nowrap"
+                      class="group flex items-center justify-between px-4 py-2 text-[1.05rem] font-medium text-neutral-900 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800 transition duration-150 ease-in-out whitespace-nowrap"
+                      :style="{ fontSize: '1.05rem' }"
                       @click="handleLinkClick"
                     >
                       <span>{{ item.translation.label }}</span>

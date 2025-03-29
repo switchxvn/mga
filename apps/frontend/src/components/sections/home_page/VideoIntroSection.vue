@@ -15,18 +15,18 @@
 
       <div v-else>
         <!-- Grid Layout -->
-        <div v-if="currentLayout === 'grid'" class="grid gap-6" :class="gridColumns">
+        <div v-if="currentLayout === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div
             v-for="video in videoData"
             :key="video.id"
-            class="video-card group relative h-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+            class="video-card group relative h-[480px] bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
           >
-            <div class="relative h-[240px] overflow-hidden">
+            <div class="relative h-[280px] overflow-hidden">
               <!-- YouTube iframe -->
               <iframe
                 v-if="getVideoId(video.videoUrl)"
                 :src="getEmbedUrl(video.videoUrl)"
-                class="w-full h-full"
+                class="w-full h-full object-cover"
                 :title="video.title"
                 frameborder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -42,109 +42,143 @@
               />
             </div>
             <!-- Video Info Section -->
-            <div class="p-4">
-              <div class="flex gap-3">
-                <div class="flex-1 min-w-0">
-                  <!-- Title -->
-                  <h3
-                    v-if="props.config?.showTitle"
-                    :class="titleClasses"
+            <div class="p-6 flex flex-col h-[200px]">
+              <div class="flex-1">
+                <!-- Title -->
+                <h3
+                  v-if="props.config?.showTitle"
+                  :class="titleClasses"
+                  class="line-clamp-2 mb-3"
+                  :style="{
+                    fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
+                    fontWeight: props.config?.titleStyle?.fontWeight || '600'
+                  }"
+                >
+                  <a
+                    v-if="props.config?.linkEnabled"
+                    :href="video.videoUrl"
+                    :target="props.config?.linkTarget || '_blank'"
+                    rel="noopener noreferrer"
+                    :class="linkClasses"
                     :style="{
-                      fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
-                      fontWeight: props.config?.titleStyle?.fontWeight || '600'
+                      textDecoration: props.config?.titleStyle?.textDecoration || 'none'
                     }"
                   >
-                    <a
-                      v-if="props.config?.linkEnabled"
-                      :href="video.videoUrl"
-                      :target="props.config?.linkTarget || '_blank'"
-                      rel="noopener noreferrer"
-                      :class="linkClasses"
-                      :style="{
-                        textDecoration: props.config?.titleStyle?.textDecoration || 'none'
-                      }"
-                    >
-                      {{ video.title }}
-                    </a>
-                    <span v-else :class="titleClasses">{{ video.title }}</span>
-                  </h3>
-                  
-                  <!-- Description -->
-                  <p
-                    v-if="props.config?.showDescription"
-                    :class="descriptionClasses"
-                  >
-                    {{ video.description }}
-                  </p>
-                </div>
+                    {{ video.title }}
+                  </a>
+                  <span v-else :class="titleClasses">{{ video.title }}</span>
+                </h3>
+                
+                <!-- Description -->
+                <p
+                  v-if="props.config?.showDescription"
+                  :class="[descriptionClasses, 'line-clamp-3']"
+                >
+                  {{ video.description }}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Slider Layout -->
-        <div v-else class="max-w-5xl mx-auto">
-          <Swiper
-            :modules="[SwiperAutoplay, SwiperPagination, SwiperNavigation]"
-            :slides-per-view="1"
-            :space-between="30"
-            :autoplay="
-              props.config?.sliderSettings?.autoplay
-                ? {
-                    delay: props.config.sliderSettings.autoplaySpeed || 5000,
-                    disableOnInteraction: false,
-                    pauseOnMouseEnter: props.config.sliderSettings.pauseOnHover,
-                  }
-                : false
-            "
-            :pagination="
-              props.config?.sliderSettings?.dots ? { clickable: true } : false
-            "
-            :navigation="props.config?.sliderSettings?.arrows"
-            class="w-full rounded-lg overflow-hidden"
-          >
-            <SwiperSlide v-for="video in videoData" :key="video.id" class="group">
-              <div class="relative aspect-video">
-                <!-- YouTube iframe for slider -->
-                <iframe
-                  v-if="getVideoId(video.videoUrl)"
-                  :src="getEmbedUrl(video.videoUrl)"
-                  class="w-full h-full"
-                  :title="video.title"
-                  frameborder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                ></iframe>
-                <!-- Fallback for non-YouTube videos -->
-                <img
-                  v-else
-                  :src="video.thumbnailUrl"
-                  :alt="video.title"
-                  class="w-full h-full object-cover"
-                  @error="handleImageError"
-                />
-                
-                <div
-                  v-if="props.config?.showTitle"
-                  class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent"
-                >
-                  <div class="flex gap-4 items-start">
+        <div v-else class="w-full">
+          <div class="swiper-container">
+            <Swiper
+              :modules="[Autoplay, SwiperPagination, SwiperNavigation]"
+              :slides-per-view="props.config?.sliderSettings?.slidesPerView || 3"
+              :space-between="24"
+              :loop="true"
+              :breakpoints="{
+                320: {
+                  slidesPerView: 1,
+                  spaceBetween: 24
+                },
+                640: {
+                  slidesPerView: 2,
+                  spaceBetween: 24
+                },
+                1024: {
+                  slidesPerView: 3,
+                  spaceBetween: 24
+                }
+              }"
+              :autoplay="{
+                delay: props.config?.sliderSettings?.autoplaySpeed || 5000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: props.config?.sliderSettings?.pauseOnHover || true
+              }"
+              :pagination="{
+                clickable: true,
+                dynamicBullets: true
+              }"
+              :navigation="true"
+              class="!overflow-visible pb-12"
+            >
+              <SwiperSlide v-for="video in videoData" :key="video.id" class="group h-[480px]">
+                <div class="video-card group relative h-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div class="relative h-[280px] overflow-hidden">
+                    <!-- YouTube iframe -->
+                    <iframe
+                      v-if="getVideoId(video.videoUrl)"
+                      :src="getEmbedUrl(video.videoUrl)"
+                      class="w-full h-full object-cover"
+                      :title="video.title"
+                      frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                    ></iframe>
+                    <!-- Fallback for non-YouTube videos -->
+                    <img
+                      v-else
+                      :src="video.thumbnailUrl"
+                      :alt="video.title"
+                      class="w-full h-full object-cover"
+                      @error="handleImageError"
+                    />
+                  </div>
+                  
+                  <!-- Video Info Section -->
+                  <div class="p-6 flex flex-col h-[170px]">
                     <div class="flex-1">
-                      <h3 class="text-xl font-roboto font-medium text-white mb-2">
-                        {{ video.title }}
+                      <!-- Title -->
+                      <h3
+                        v-if="props.config?.showTitle"
+                        :class="titleClasses"
+                        class="line-clamp-2 mb-3"
+                        :style="{
+                          fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
+                          fontWeight: props.config?.titleStyle?.fontWeight || '600'
+                        }"
+                      >
+                        <a
+                          v-if="props.config?.linkEnabled"
+                          :href="video.videoUrl"
+                          :target="props.config?.linkTarget || '_blank'"
+                          rel="noopener noreferrer"
+                          :class="linkClasses"
+                          :style="{
+                            textDecoration: props.config?.titleStyle?.textDecoration || 'none'
+                          }"
+                        >
+                          {{ video.title }}
+                        </a>
+                        <span v-else :class="titleClasses">{{ video.title }}</span>
                       </h3>
+                      
+                      <!-- Description -->
                       <p
                         v-if="props.config?.showDescription"
-                        class="text-gray-200 text-sm line-clamp-2 max-w-3xl"
+                        :class="[descriptionClasses, 'line-clamp-3']"
                       >
                         {{ video.description }}
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
-            </SwiperSlide>
-          </Swiper>
+              </SwiperSlide>
+            </Swiper>
+          </div>
         </div>
       </div>
     </div>
@@ -155,7 +189,7 @@
 import { computed, ref, onMounted, watch } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import {
-  Autoplay as SwiperAutoplay,
+  Autoplay,
   Pagination as SwiperPagination,
   Navigation as SwiperNavigation,
 } from "swiper/modules";
@@ -164,6 +198,7 @@ import { useDarkMode } from "~/composables/useDarkMode";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
+import "swiper/css/autoplay";
 import { PlayCircle } from "lucide-vue-next";
 
 interface VideoIntro {
@@ -190,6 +225,7 @@ interface Props {
       pauseOnHover?: boolean;
       arrows?: boolean;
       dots?: boolean;
+      slidesPerView?: number;
     };
     titleStyle?: {
       fontSize?: string;
@@ -287,10 +323,7 @@ onMounted(async () => {
 
   try {
     const result = await videoQuery;
-    videoData.value = (result as VideoIntro[]).slice(
-      0,
-      props.config?.maxItems || 3
-    );
+    videoData.value = result as VideoIntro[];
     console.log("Fetched videos:", videoData.value);
   } catch (err) {
     console.error("Error fetching videos:", err);
@@ -357,19 +390,106 @@ const handleImageError = (event: Event) => {
   --title-color: #1a1a1a;
   --title-hover-color: #2563eb;
   --description-color: #4b5563;
+  position: relative;
+  overflow: hidden;
 }
 
-.video-intro-section :deep(.swiper-pagination-bullet) {
-  @apply bg-white bg-opacity-70;
+.swiper-container {
+  overflow: hidden;
+  margin: 0 40px;
+  
+  @media (max-width: 640px) {
+    margin: 0;
+  }
 }
 
-.video-intro-section :deep(.swiper-pagination-bullet-active) {
-  @apply bg-primary-600;
+.video-intro-section :deep(.swiper) {
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+}
+
+.video-intro-section :deep(.swiper-wrapper) {
+  display: flex;
+  align-items: stretch;
+}
+
+.video-intro-section :deep(.swiper-slide) {
+  height: auto;
+  display: flex;
+  flex-shrink: 0;
 }
 
 .video-intro-section :deep(.swiper-button-next),
 .video-intro-section :deep(.swiper-button-prev) {
-  @apply text-white;
+  width: 40px;
+  height: 40px;
+  margin-top: -20px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  
+  @media (max-width: 640px) {
+    display: none;
+  }
+  
+  &::after {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary);
+  }
+  
+  &:hover {
+    background-color: var(--primary);
+    &::after {
+      color: white;
+    }
+  }
+  
+  &.swiper-button-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    
+    &:hover {
+      background-color: white;
+      &::after {
+        color: var(--primary);
+      }
+    }
+  }
+}
+
+.video-intro-section :deep(.swiper-button-prev) {
+  left: 0;
+}
+
+.video-intro-section :deep(.swiper-button-next) {
+  right: 0;
+}
+
+.video-intro-section :deep(.swiper-pagination) {
+  position: relative;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 1rem;
+}
+
+.video-intro-section :deep(.swiper-pagination-bullet) {
+  width: 8px;
+  height: 8px;
+  margin: 0;
+  background-color: var(--primary);
+  opacity: 0.3;
+  transition: all 0.3s ease;
+  
+  &-active {
+    opacity: 1;
+    transform: scale(1.2);
+  }
 }
 
 /* Video card styling */

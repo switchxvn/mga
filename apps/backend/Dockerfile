@@ -71,19 +71,16 @@ COPY --chown=node:node --from=builder /app/dist/apps/backend/ ./dist/
 # Copy environment file
 COPY --chown=node:node --from=builder /app/apps/backend/.env .env
 
+# Switch back to root for entrypoint creation
+USER root
+
 # Create entrypoint script
-RUN echo '#!/bin/sh\n\
-set -e\n\
-\n\
-# Run migrations if RUN_MIGRATIONS is set to true\n\
-if [ "$RUN_MIGRATIONS" = "true" ]; then\n\
-    echo "Running database migrations..."\n\
-    yarn typeorm migration:run -d libs/database/src/config/typeorm.config.ts || exit 1\n\
-fi\n\
-\n\
-# Start the application\n\
-exec "$@"' > /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh
+COPY --chown=root:root scripts/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh && \
+    chown node:node /app/entrypoint.sh
+
+# Switch back to non-root user
+USER node
 
 # Expose the port the app runs on
 EXPOSE 3333
