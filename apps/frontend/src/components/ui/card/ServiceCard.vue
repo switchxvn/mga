@@ -29,6 +29,9 @@ interface Service {
   icon: string;
   order: number;
   isActive: boolean;
+  isNew?: boolean;
+  isFeatured?: boolean;
+  thumbnail?: string;
   translations: ServiceTranslation[];
   currentTranslation?: ServiceTranslation;
   createdAt: string | Date;
@@ -114,6 +117,8 @@ const getIconComponent = (iconName: string) => {
       transition: cardStyle?.transition,
     }"
   >
+   
+
     <div
       v-if="showIcon"
       class="icon-wrapper absolute left-1/2 -translate-x-1/2 -top-8"
@@ -126,6 +131,7 @@ const getIconComponent = (iconName: string) => {
         padding: iconStyle?.padding || '1.25rem',
       }"
     >
+   
       <component 
         :is="getIconComponent(service.icon)"
         class="service-icon"
@@ -223,6 +229,12 @@ const getIconComponent = (iconName: string) => {
   .service-icon {
     width: 32px;
     height: 32px;
+    
+    &.object-cover {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+    }
   }
 }
 

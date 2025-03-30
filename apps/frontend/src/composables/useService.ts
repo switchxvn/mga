@@ -1,61 +1,43 @@
 import { ref } from 'vue';
+import type { Service, ServiceFilter, ServiceResponse } from '../types/service';
 import { useTrpc } from './useTrpc';
 
-export type ServiceSortBy = 'newest' | 'oldest' | 'name_asc' | 'name_desc';
-
-export interface ServiceFilter {
-  search?: string;
-  categories?: number[];
-  isFeatured?: boolean;
-  isNew?: boolean;
-  sortBy?: ServiceSortBy;
-  page?: number;
-  limit?: number;
-  locale?: string;
-}
-
-export function useService(initialFilters: ServiceFilter = {}) {
+export function useService() {
   const trpc = useTrpc();
-
-  // State
-  const filters = ref<ServiceFilter>(initialFilters);
-  const services = ref<any[]>([]);
+  
+  const services = ref<Service[]>([]);
   const totalServices = ref(0);
-  const totalPages = ref(0);
-  const isLoadingServices = ref(false);
+  const isLoading = ref(false);
+  const error = ref<Error | null>(null);
 
-  // Fetch services
-  const fetchServices = async () => {
+  const fetchServices = async (page: number, limit: number, filters?: ServiceFilter) => {
+    isLoading.value = true;
+    error.value = null;
+
     try {
-      isLoadingServices.value = true;
-      const result = await trpc.service.list.query({
-        ...filters.value,
-        page: filters.value.page || 1,
-        limit: filters.value.limit || 12,
+      const response = await trpc.service.list.query({
+        page,
+        limit,
+        ...filters,
       });
 
-      services.value = result.items;
-      totalServices.value = result.total;
-      totalPages.value = Math.ceil(result.total / (filters.value.limit || 12));
-    } catch (error) {
-      console.error('Error fetching services:', error);
-      services.value = [];
-      totalServices.value = 0;
-      totalPages.value = 0;
+      services.value = response.items;
+      totalServices.value = response.total;
+    } catch (err) {
+      error.value = err as Error;
+      console.error('Error fetching services:', err);
     } finally {
-      isLoadingServices.value = false;
+      isLoading.value = false;
     }
   };
 
   return {
-    // State
-    filters,
     services,
     totalServices,
-    totalPages,
-    isLoadingServices,
-
-    // Actions
+    isLoading,
+    error,
     fetchServices,
   };
-} 
+}
+
+export type { ServiceFilter } from '../types/service'; 

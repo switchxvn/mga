@@ -10,6 +10,9 @@ export class Service {
   @Column()
   icon: string;
 
+  @Column({ nullable: true })
+  thumbnail: string;
+
   @Column({ default: 0 })
   order: number;
 
@@ -28,19 +31,6 @@ export class Service {
   })
   translations: ServiceTranslation[];
 
-  @ManyToMany(() => Category, (category) => category.services)
-  @JoinTable({
-    name: 'service_categories',
-    joinColumn: {
-      name: 'service_id',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'category_id',
-      referencedColumnName: 'id',
-    },
-  })
-  categories: Category[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

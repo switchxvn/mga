@@ -3,10 +3,8 @@ import { ref, onMounted, watch, computed } from "vue";
 import { useLocalization } from "../../composables/useLocalization";
 import { useTrpc } from "../../composables/useTrpc";
 import { useRoute, useRouter } from "vue-router";
-import ServiceSidebar from "../../components/sidebar/ServiceSidebar.vue";
-import ServiceMobileSidebar from "../../components/sidebar/ServiceMobileSidebar.vue";
-import ServiceGrid from "../../components/ServiceGrid.vue";
-import { useService, type ServiceFilter, type ServiceSortBy } from "../../composables/useService";
+import ServiceCardWithThumbnail from "../../components/ui/card/ServiceCardWithThumbnail.vue";
+import { useService, type ServiceFilter } from "../../composables/useService";
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -65,118 +63,104 @@ const fetchSeoData = async () => {
   }
 };
 
+// State
+const currentPage = ref(Number(route.query.page) || 1);
+const itemsPerPage = ref(12);
+const currentSort = ref<'newest' | 'oldest' | 'name_asc' | 'name_desc'>('newest');
+
 // Initialize filters from route query
-const initialFilters: ServiceFilter = {
-  search: (route.query.search as string) || "",
-  categories: route.query.categories
-    ? String(route.query.categories).split(",").map(Number)
-    : undefined,
+const filters = computed<ServiceFilter>(() => ({
+  search: (route.query.search as string) || undefined,
   isFeatured: route.query.isFeatured === "true" ? true : undefined,
   isNew: route.query.isNew === "true" ? true : undefined,
-  sortBy: (route.query.sortBy as ServiceSortBy) || "newest",
-  page: Number(route.query.page) || 1,
-  limit: Number(route.query.limit) || 12,
-};
+  sortBy: currentSort.value,
+  page: currentPage.value,
+  limit: itemsPerPage.value,
+  locale: locale.value,
+}));
+
+// Sort options
+const sortOptions = [
+  { value: 'newest', label: t('sort.newest') },
+  { value: 'oldest', label: t('sort.oldest') },
+  { value: 'name_asc', label: t('sort.name_asc') },
+  { value: 'name_desc', label: t('sort.name_desc') },
+] as const;
 
 // Use service composable
-const {
-  filters,
-  services,
-  totalServices,
-  totalPages,
-  isLoadingServices: isLoading,
-  fetchServices
-} = useService(initialFilters);
-
-// Sort options as computed property to ensure translations are updated
-const sortOptions = computed(() => [
-  { value: "newest", label: t("sort.newest") },
-  { value: "oldest", label: t("sort.oldest") },
-  { value: "name_asc", label: t("sort.name_asc") },
-  { value: "name_desc", label: t("sort.name_desc") },
-]);
+const { services, totalServices, isLoading, error, fetchServices } = useService();
 
 // Handle filter changes
 const handleFilterChange = (newFilters: ServiceFilter) => {
-  // Update filters
-  Object.assign(filters.value, newFilters);
-
-  // Reset to page 1 when filters change
-  filters.value.page = 1;
-
   // Update URL query params
-  updateQueryParams();
+  const query: Record<string, string> = {};
+  
+  if (newFilters.search) query.search = newFilters.search;
+  if (newFilters.isFeatured) query.isFeatured = "true";
+  if (newFilters.isNew) query.isNew = "true";
+  
+  // Reset to page 1
+  currentPage.value = 1;
+  query.page = "1";
+
+  // Update route
+  router.replace({ query });
+
+  // Fetch services
+  fetchServices(currentPage.value, itemsPerPage.value, {
+    ...newFilters,
+    locale: locale.value,
+    sortBy: currentSort.value,
+  });
 };
 
 // Handle sort change
 const handleSortChange = (event: Event) => {
   const target = event.target as HTMLSelectElement;
-  filters.value.sortBy = target.value as ServiceSortBy;
-  filters.value.page = 1;
-  updateQueryParams();
+  currentSort.value = target.value as typeof currentSort.value;
+  
+  // Reset to page 1
+  currentPage.value = 1;
+
+  // Fetch services with new sort
+  fetchServices(currentPage.value, itemsPerPage.value, {
+    ...filters.value,
+    sortBy: currentSort.value,
+  });
 };
 
 // Handle page change
 const handlePageChange = (page: number) => {
-  filters.value.page = page;
-  updateQueryParams();
+  currentPage.value = page;
+  
+  // Update URL query params
+  router.replace({
+    query: {
+      ...route.query,
+      page: String(page),
+    },
+  });
+
+  // Fetch services
+  fetchServices(page, itemsPerPage.value, filters.value);
 
   // Scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
-// Update URL query params
-const updateQueryParams = () => {
-  // Build query params object
-  const query: Record<string, string> = {};
-
-  if (filters.value.search) query.search = filters.value.search;
-  if (filters.value.categories && filters.value.categories.length > 0)
-    query.categories = filters.value.categories.join(",");
-  if (filters.value.isFeatured) query.isFeatured = "true";
-  if (filters.value.isNew) query.isNew = "true";
-  if (filters.value.sortBy && filters.value.sortBy !== "newest") query.sortBy = filters.value.sortBy;
-  if (filters.value.page && filters.value.page > 1) query.page = String(filters.value.page);
-  if (filters.value.limit !== 12) query.limit = String(filters.value.limit);
-
-  // Update route
-  router.replace({ query });
-
-  // Fetch services with new filters
-  fetchServices();
-};
-
 // Initial fetch
-onMounted(() => {
-  fetchSeoData();
-  fetchServices();
+onMounted(async () => {
+  await fetchSeoData();
+  fetchServices(currentPage.value, itemsPerPage.value, filters.value);
 });
 
 // Watch for locale changes
 watch(locale, async () => {
-  // Reset all states first
-  services.value = [];
-  totalServices.value = 0;
-  totalPages.value = 0;
-  
-  // Reset filters to initial state
-  filters.value = {
-    search: '',
-    categories: undefined,
-    isFeatured: false,
-    isNew: false,
-    sortBy: 'newest',
-    page: 1,
-    limit: 12,
-    locale: locale.value
-  };
-
-  // Clear URL query params
-  router.replace({ query: {} });
-
-  // Then refresh data
   await fetchSeoData();
-  fetchServices();
+  fetchServices(1, itemsPerPage.value, {
+    ...filters.value,
+    locale: locale.value,
+  });
 });
 </script>
 
@@ -192,82 +176,68 @@ watch(locale, async () => {
         </p>
       </div>
 
-      <!-- Mobile Sidebar -->
-      <ServiceMobileSidebar
-        :initial-filters="filters"
-        @filter-change="handleFilterChange"
-      />
+      <!-- Services Content -->
+      <div class="w-full">
+        <!-- Toolbar -->
+        <div v-if="!isLoading && totalServices > 0" class="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-600 dark:text-gray-400">
+              {{ t("services.showing") }} {{ totalServices }} {{ t("services.items") }}
+            </span>
+          </div>
 
-      <div class="flex flex-col gap-8 lg:flex-row">
-        <!-- Desktop Sidebar -->
-        <div class="hidden lg:block lg:w-1/4">
-          <ServiceSidebar
-            :initial-filters="filters"
-            @filter-change="handleFilterChange"
-          />
+          <div class="flex items-center gap-2">
+            <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t("services.sortBy") }}:</label>
+            <select
+              id="sort"
+              :value="currentSort"
+              @change="handleSortChange"
+              class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+            >
+              <option
+                v-for="option in sortOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
         </div>
 
-        <!-- Services Content -->
-        <div class="lg:w-3/4">
-          <!-- Toolbar -->
-          <div v-if="!isLoading || totalServices > 0" class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ t("services.showing") }} {{ totalServices }} {{ t("services.items") }}
-              </span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t("services.sortBy") }}:</label>
-              <select
-                id="sort"
-                v-model="filters.sortBy"
-                @change="handleSortChange"
-                class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
-              >
-                <option v-for="option in sortOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Loading State -->
-          <div v-if="isLoading" class="flex items-center justify-center py-12">
-            <div class="text-center">
-              <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent align-[-0.125em]" role="status">
-                <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+        <!-- Main Content Area -->
+        <div class="min-h-[400px]">
+          <template v-if="isLoading">
+            <!-- Loading State -->
+            <div class="flex items-center justify-center py-12">
+              <div class="text-center">
+                <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent align-[-0.125em]" role="status">
+                  <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                    {{ t('common.loading') }}...
+                  </span>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
                   {{ t('common.loading') }}...
-                </span>
-              </div>
-              <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ t('common.loading') }}...
+                </div>
               </div>
             </div>
-          </div>
+          </template>
 
-          <template v-else>
+          <template v-else-if="services && services.length > 0">
             <!-- Services Grid -->
-            <ServiceGrid
-              :services="services"
-              :loading="false"
-              :locale="locale"
-              :columns="3"
-            />
-
-            <!-- Pagination -->
-            <div v-if="totalServices > 0" class="mt-8">
-              <Pagination
-                v-model="filters.page"
-                :total="totalServices"
-                :items-per-page="filters.limit"
-                :max-visible-buttons="5"
-                @update:model-value="handlePageChange"
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <ServiceCardWithThumbnail
+                v-for="service in services"
+                :key="service.id"
+                :service="service"
+                :locale="locale"
               />
             </div>
-            
+          </template>
+
+          <template v-else>
             <!-- No Results Message -->
-            <div v-else class="mt-8 text-center">
+            <div class="mt-8 text-center">
               <div class="inline-flex items-center justify-center rounded-full bg-gray-100 p-6 dark:bg-gray-800">
                 <i class="i-heroicons-inbox-20-solid h-12 w-12 text-gray-400 dark:text-gray-500" />
               </div>
@@ -280,7 +250,22 @@ watch(locale, async () => {
             </div>
           </template>
         </div>
+
+        <!-- Pagination -->
+        <div v-if="!isLoading && totalServices > itemsPerPage" class="mt-8">
+          <Pagination
+            v-model="currentPage"
+            :total="totalServices"
+            :items-per-page="itemsPerPage"
+            :max-visible-buttons="5"
+            @update:model-value="handlePageChange"
+          />
+        </div>
       </div>
     </div>
   </div>
-</template> 
+</template>
+
+<style scoped>
+/* Add your styles here */
+</style> 

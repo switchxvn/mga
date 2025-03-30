@@ -33,6 +33,7 @@
     "@nestjs/platform-fastify": "^11.0.10",
     "@nestjs/swagger": "^11.0.5",
     "@nestjs/typeorm": "^11.0.0",
+    "@nuxt/image": "^1.10.0",
     "@nuxt/ui": "^2.21.0",
     "@nuxtjs/i18n": "^9.2.1",
     "@tanstack/vue-query": "^4.36.1",

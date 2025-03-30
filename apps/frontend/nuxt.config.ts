@@ -218,6 +218,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/i18n',
     '@nuxt/ui',
+    '@nuxt/image',
   ],
 
   // @ts-ignore - i18n module types
@@ -264,5 +265,18 @@ export default defineNuxtConfig({
     head: {
       script: []
     }
+  },
+
+  image: {
+    provider: 'ipx',
+    dir: 'public',
+    screens: {
+      xs: 320,
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+      xxl: 1536,
+    },
   },
 });

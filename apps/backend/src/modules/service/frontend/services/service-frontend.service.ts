@@ -33,8 +33,6 @@ export class ServiceFrontendService {
       const query = this.serviceRepository
         .createQueryBuilder('service')
         .leftJoinAndSelect('service.translations', 'translations')
-        .leftJoinAndSelect('service.categories', 'categories')
-        .leftJoinAndSelect('categories.translations', 'categoryTranslations')
         .where('service.isActive = :isActive', { isActive: true });
 
       // Apply search filter
@@ -68,7 +66,6 @@ export class ServiceFrontendService {
       // Apply locale filter
       if (options.locale) {
         query.andWhere('translations.locale = :locale', { locale: options.locale });
-        query.andWhere('categoryTranslations.locale = :locale', { locale: options.locale });
       }
 
       // Apply sorting
@@ -122,7 +119,6 @@ export class ServiceFrontendService {
 
       if (locale) {
         query.andWhere('translations.locale = :locale', { locale });
-        query.andWhere('categoryTranslations.locale = :locale', { locale });
       }
 
       return query.getMany();
