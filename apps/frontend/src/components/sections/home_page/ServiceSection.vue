@@ -101,7 +101,7 @@ interface Props {
 const defaultConfig: ServicesConfig = {
   layout: 'grid',
   columns: 3,
-  maxItems: 12,
+  maxItems: 3,
   showIcon: true,
   showTitle: true,
   showDescription: true,

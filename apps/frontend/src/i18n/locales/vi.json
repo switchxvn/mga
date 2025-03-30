@@ -29,7 +29,7 @@
       "description": "Tìm hiểu về lịch sử công ty, sứ mệnh, giá trị và gặp gỡ đội ngũ chuyên nghiệp của chúng tôi."
     }
   },
-  "contact": "Liên hệ",
+  "contact": "Yêu cầu tư vấn",
   "language": "Ngôn ngữ",
   "login": "Đăng nhập",
   "register": "Đăng ký",
@@ -51,7 +51,10 @@
     "error": "Đã xảy ra lỗi",
     "success": "Thành công",
     "required": "Bắt buộc",
-    "viewDetails": "Xem chi tiết"
+    "viewDetails": "Xem chi tiết",
+    "learnMore": "Tìm hiểu thêm",
+    "new": "Mới",
+    "featured": "Nổi bật"
   },
   "validation": {
     "required": "Trường này là bắt buộc",

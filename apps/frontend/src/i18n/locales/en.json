@@ -51,7 +51,10 @@
     "error": "An error occurred",
     "success": "Success",
     "required": "Required",
-    "viewDetails": "View Details"
+    "viewDetails": "View Details",
+    "learnMore": "Learn More",
+    "new": "New",
+    "featured": "Featured"
   },
   "validation": {
     "required": "This field is required",

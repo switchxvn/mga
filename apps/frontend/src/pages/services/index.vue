@@ -83,8 +83,8 @@ const filters = computed<ServiceFilter>(() => ({
 const sortOptions = [
   { value: 'newest', label: t('sort.newest') },
   { value: 'oldest', label: t('sort.oldest') },
-  { value: 'name_asc', label: t('sort.name_asc') },
-  { value: 'name_desc', label: t('sort.name_desc') },
+  { value: 'name_asc', label: t('sort.title_asc') },
+  { value: 'name_desc', label: t('sort.title_desc') },
 ] as const;
 
 // Use service composable

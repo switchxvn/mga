@@ -145,12 +145,17 @@ const getIconComponent = (iconName: string) => {
         class="block"
       >
         <h3
-          class="title text-gray-900 dark:text-white"
+          class="title text-gray-900 dark:text-white line-clamp-2"
           :style="{
             fontSize: titleStyle?.size || '1.25rem',
             fontWeight: titleStyle?.weight || '600',
             color: titleStyle?.color,
             margin: titleStyle?.margin || '0 0 1rem 0',
+            minHeight: '3rem',
+            display: '-webkit-box',
+            '-webkit-box-orient': 'vertical',
+            overflow: 'hidden',
+            lineHeight: '1.5',
           }"
         >
           {{ currentTranslation?.title }}

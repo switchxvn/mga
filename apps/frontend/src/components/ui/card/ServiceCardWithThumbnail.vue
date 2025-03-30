@@ -12,9 +12,16 @@ const translation = computed(() => {
 });
 
 const thumbnailUrl = computed(() => {
-  if (!props.service.thumbnail) return '/images/placeholder.jpg';
+  if (!props.service.thumbnail) return null;
   return props.service.thumbnail;
 });
+
+const handleImageError = (payload: string | Event) => {
+  const imgElement = payload instanceof Event ? (payload.target as HTMLImageElement) : null;
+  if (imgElement) {
+    imgElement.src = '@/default-image.jpg';
+  }
+};
 </script>
 
 <template>
@@ -24,8 +31,11 @@ const thumbnailUrl = computed(() => {
   >
     <!-- Thumbnail -->
     <div class="relative aspect-[4/3] w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+      <div v-if="!thumbnailUrl" class="flex h-full items-center justify-center">
+        <div :class="`i-lucide-${service.icon}`" class="h-16 w-16 text-gray-400 dark:text-gray-600" />
+      </div>
       <NuxtImg
-        v-if="service.thumbnail"
+        v-else
         :src="thumbnailUrl"
         :alt="translation.title"
         class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
@@ -33,10 +43,8 @@ const thumbnailUrl = computed(() => {
         format="webp"
         quality="80"
         fit="cover"
+        placeholder
       />
-      <div v-else class="flex h-full items-center justify-center">
-        <div :class="`i-lucide-${service.icon}`" class="h-16 w-16 text-gray-400 dark:text-gray-600" />
-      </div>
     </div>
 
     <!-- Badges -->

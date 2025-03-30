@@ -5,7 +5,7 @@ import type { Form, FormError, FormSubmitEvent } from '@nuxt/ui/dist/runtime/typ
 import { useToast } from '~/composables/useToast';
 import { useTrpc } from '~/composables/useTrpc';
 import { useI18n } from 'vue-i18n';
-
+import BranchContactSection from '~/components/sections/common/BranchContactSection.vue';
 interface ContactForm {
   name: string;
   email: string;
@@ -106,132 +106,128 @@ const handleError = (error: FormError[]) => {
 </script>
 
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-8 text-center">{{ t('contact') }}</h1>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <!-- Contact Form -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <UForm
-          ref="form"
-          :schema="schema"
-          :state="state"
-          class="space-y-8"
-          @submit="handleSubmit"
-          @error="handleError"
-        >
-          <UFormGroup
-            :label="t('priceRequest.fullName')"
-            name="name"
-            required
-          >
-            <UInput
-              v-model="state.name"
-              type="text"
-              :placeholder="t('priceRequest.fullNamePlaceholder')"
-              color="gray"
-              variant="outline"
-              size="lg"
-              :ui="{
-                base: 'h-[42px] text-base',
-                input: 'h-[42px] text-base'
-              }"
-            />
-          </UFormGroup>
-
-          <UFormGroup
-            :label="t('auth.email')"
-            name="email"
-            required
-          >
-            <UInput
-              v-model="state.email"
-              type="email"
-              :placeholder="t('priceRequest.emailPlaceholder')"
-              color="gray"
-              variant="outline"
-              size="lg"
-              :ui="{
-                base: 'h-[42px] text-base',
-                input: 'h-[42px] text-base'
-              }"
-            />
-          </UFormGroup>
-
-          <UFormGroup
-            :label="t('priceRequest.phone')"
-            name="phone"
-            required
-            :error="!phoneValid ? phoneErrorMessage : undefined"
-          >
-            <div class="phone-input-wrapper">
-              <PhoneInput
-                v-model="state.phone"
-                v-model:phoneCode="phoneCode"
-                :placeholder="t('priceRequest.phonePlaceholder')"
-                :error="!phoneValid"
-                :showErrorMessage="true"
-                @validation="handlePhoneValidation"
-              />
-            </div>
-          </UFormGroup>
-
-          <UFormGroup
-            :label="t('priceRequest.message')"
-            name="message"
-            required
-          >
-            <UTextarea
-              v-model="state.message"
-              :placeholder="t('priceRequest.messagePlaceholder')"
-              :rows="4"
-              color="gray"
-              variant="outline"
-              size="lg"
-              :ui="{
-                base: 'text-base',
-                input: 'text-base resize-none'
-              }"
-            />
-          </UFormGroup>
-
-          <div class="flex justify-center">
-            <UButton
-              type="submit"
-              color="primary"
-              :loading="isLoading"
-              class="w-full md:w-auto h-[42px] text-base font-medium px-8"
-              variant="solid"
-            >
-              {{ isLoading ? t('common.loading') : t('common.submit') }}
-            </UButton>
-          </div>
-        </UForm>
-      </div>
-
-      <!-- Contact Information -->
-      <div class="space-y-6">
+  <div class="relative overflow-x-hidden">
+    <div class="container mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold mb-8 text-center">{{ t('contact') }}</h1>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Contact Form -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 class="text-xl font-semibold mb-4">{{ t('products.customerSupport') }}</h2>
-          <div class="space-y-4">
-            <div class="flex items-center space-x-3">
-              <UIcon name="i-heroicons-map-pin" class="text-primary w-5 h-5" />
-              <span>37/6 Khu Phố Tây, Phường Vĩnh Phú, Thị Xã Thuận An, Tỉnh Bình Dương</span>
+          <UForm
+            ref="form"
+            :schema="schema"
+            :state="state"
+            class="space-y-8"
+            @submit="handleSubmit"
+            @error="handleError"
+          >
+            <UFormGroup
+              :label="t('priceRequest.fullName')"
+              name="name"
+              required
+            >
+              <UInput
+                v-model="state.name"
+                type="text"
+                :placeholder="t('priceRequest.fullNamePlaceholder')"
+                color="gray"
+                variant="outline"
+                size="lg"
+                :ui="{
+                  base: 'h-[42px] text-base',
+                  input: 'h-[42px] text-base'
+                }"
+              />
+            </UFormGroup>
+
+            <UFormGroup
+              :label="t('auth.email')"
+              name="email"
+              required
+            >
+              <UInput
+                v-model="state.email"
+                type="email"
+                :placeholder="t('priceRequest.emailPlaceholder')"
+                color="gray"
+                variant="outline"
+                size="lg"
+                :ui="{
+                  base: 'h-[42px] text-base',
+                  input: 'h-[42px] text-base'
+                }"
+              />
+            </UFormGroup>
+
+            <UFormGroup
+              :label="t('priceRequest.phone')"
+              name="phone"
+              required
+              :error="!phoneValid ? phoneErrorMessage : undefined"
+            >
+              <div class="phone-input-wrapper">
+                <PhoneInput
+                  v-model="state.phone"
+                  v-model:phoneCode="phoneCode"
+                  :placeholder="t('priceRequest.phonePlaceholder')"
+                  :error="!phoneValid"
+                  :showErrorMessage="true"
+                  @validation="handlePhoneValidation"
+                />
+              </div>
+            </UFormGroup>
+
+            <UFormGroup
+              :label="t('priceRequest.message')"
+              name="message"
+              required
+            >
+              <UTextarea
+                v-model="state.message"
+                :placeholder="t('priceRequest.messagePlaceholder')"
+                :rows="4"
+                color="gray"
+                variant="outline"
+                size="lg"
+                :ui="{
+                  base: 'text-base',
+                  input: 'text-base resize-none'
+                }"
+              />
+            </UFormGroup>
+
+            <div class="flex justify-center">
+              <UButton
+                type="submit"
+                color="primary"
+                :loading="isLoading"
+                class="w-full md:w-auto h-[42px] text-base font-medium px-8"
+                variant="solid"
+              >
+                {{ isLoading ? t('common.loading') : t('common.submit') }}
+              </UButton>
             </div>
-            <div class="flex items-center space-x-3">
-              <UIcon name="i-heroicons-phone" class="text-primary w-5 h-5" />
-              <span>{{ t('products.hotline') }}</span>
-            </div>
-            <div class="flex items-center space-x-3">
-              <UIcon name="i-heroicons-envelope" class="text-primary w-5 h-5" />
-              <span>admin@mgavietnam.com</span>
-            </div>
-          </div>
+          </UForm>
         </div>
 
-       
+        <!-- Contact Information -->
+        <div class="space-y-6 w-full">
+          <div class="relative w-full h-[450px]">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d62690.194726882335!2d106.699738!3d10.87717!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752643a6346cdb%3A0xcae53b6254821669!2sXE%20N%C3%82NG%20MGA!5e0!3m2!1sen!2sus!4v1743313705151!5m2!1sen!2sus" 
+              class="absolute inset-0 w-full h-full"
+              :style="{ border: 0 }"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              :allowfullscreen="true"
+            />
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Branch Contact Section -->
+    <BranchContactSection />
   </div>
 </template>
 

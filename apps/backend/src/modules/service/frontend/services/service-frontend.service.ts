@@ -108,12 +108,12 @@ export class ServiceFrontendService {
   }
 
   async findAll(locale?: string) {
+    this.logger.debug(`Finding all services with locale: ${locale}`);
+    
     try {
       const query = this.serviceRepository
         .createQueryBuilder('service')
         .leftJoinAndSelect('service.translations', 'translations')
-        .leftJoinAndSelect('service.categories', 'categories')
-        .leftJoinAndSelect('categories.translations', 'categoryTranslations')
         .where('service.isActive = :isActive', { isActive: true })
         .orderBy('service.order', 'ASC');
 
@@ -121,7 +121,9 @@ export class ServiceFrontendService {
         query.andWhere('translations.locale = :locale', { locale });
       }
 
-      return query.getMany();
+      const services = await query.getMany();
+      this.logger.debug(`Found ${services.length} services`);
+      return services;
     } catch (error) {
       this.logger.error('Error in findAll:', error);
       throw error;
@@ -155,8 +157,6 @@ export class ServiceFrontendService {
       const query = this.serviceRepository
         .createQueryBuilder('service')
         .leftJoinAndSelect('service.translations', 'translations')
-        .leftJoinAndSelect('service.categories', 'categories')
-        .leftJoinAndSelect('categories.translations', 'categoryTranslations')
         .where('translations.slug = :slug', { slug })
         .andWhere('service.isActive = :isActive', { isActive: true });
 
