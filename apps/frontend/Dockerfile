@@ -35,7 +35,7 @@ COPY --chown=node:node apps/frontend/${ENV_FILE} apps/frontend/.env
 # Build only frontend application
 RUN cd apps/frontend && \
     npx nuxt build && \
-    ls -la .output/server || exit 1
+    ls -la .nuxt/dist || exit 1
 
 # Production stage
 FROM node:20-alpine AS runner
@@ -60,7 +60,7 @@ COPY --chown=node:node package.json yarn.lock ./
 RUN yarn install --production --frozen-lockfile
 
 # Copy built application
-COPY --chown=node:node --from=builder /app/apps/frontend/.output ./.output
+COPY --chown=node:node --from=builder /app/apps/frontend/.nuxt ./.nuxt
 
 # Copy environment file
 COPY --chown=node:node --from=builder /app/apps/frontend/.env .env
@@ -74,4 +74,4 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 
 # Start the application
-CMD ["node", ".output/server/index.mjs"] 
+CMD ["node", ".nuxt/server/index.mjs"] 
