@@ -41,8 +41,8 @@ export function useDarkMode() {
         updateDarkMode(storedMode === 'dark');
       }
     } else {
-      // Nếu không có giá trị hoặc giá trị không hợp lệ, set về auto
-      saveMode('auto');
+      // Nếu không có giá trị hoặc giá trị không hợp lệ, set về light
+      saveMode('light');
       updateDarkMode(prefersDark.value);
     }
     
