@@ -58,6 +58,20 @@ const route = useRoute();
 const router = useRouter();
 const slug = computed(() => route.params.slug as string);
 
+// Xác định locale từ URL path
+const currentLocale = computed(() => {
+  // Nếu URL bắt đầu bằng /san-pham/ thì là tiếng Việt
+  if (route.path.startsWith('/san-pham/')) {
+    return 'vi';
+  }
+  // Nếu URL bắt đầu bằng /products/ thì là tiếng Anh
+  if (route.path.startsWith('/products/')) {
+    return 'en';
+  }
+  // Mặc định lấy từ useLocalization
+  return locale.value;
+});
+
 // Định nghĩa alias cho URL tiếng Việt (nếu cần)
 definePageMeta({
   layout: 'default',
@@ -72,21 +86,44 @@ const { data: product, pending: isLoading, error, refresh } = useAsyncData<Produ
       if (!isNaN(Number(slug.value))) {
         const result = await trpc.product.getById.query({ 
           id: Number(slug.value),
-          locale: locale.value 
+          locale: currentLocale.value 
         });
         
         // Nếu sản phẩm có slug, chuyển hướng đến URL có slug
-        if (result.slug && process.client) {
-          const productSlug = `/san-pham/${result.slug}`;
+        if (result?.slug && process.client) {
+          const productSlug = currentLocale.value === 'vi' 
+            ? `/san-pham/${result.slug}`
+            : `/products/${result.slug}`;
           router.replace({ path: productSlug, query: route.query });
         }
         
         return result;
       } else {
-        return await trpc.product.getBySlug.query({ 
+        const result = await trpc.product.getBySlug.query({ 
           slug: slug.value,
-          locale: locale.value 
+          locale: currentLocale.value 
         });
+
+        // Lấy translation dựa vào locale hiện tại
+        if (result?.translations && result.translations.length > 0) {
+          const currentTranslation = result.translations.find(t => t.locale === currentLocale.value);
+          if (currentTranslation) {
+            return {
+              ...result,
+              title: currentTranslation.title,
+              content: currentTranslation.content,
+              shortDescription: currentTranslation.shortDescription,
+              metaTitle: currentTranslation.metaTitle,
+              metaDescription: currentTranslation.metaDescription,
+              metaKeywords: currentTranslation.metaKeywords,
+              ogTitle: currentTranslation.ogTitle,
+              ogDescription: currentTranslation.ogDescription,
+              videoTitle: currentTranslation.videoTitle
+            };
+          }
+        }
+
+        return result;
       }
     } catch (err: any) {
       console.error('Error fetching product:', err);
@@ -111,7 +148,7 @@ onMounted(() => {
 });
 
 // Theo dõi thay đổi của slug hoặc locale
-watch([slug, locale], () => {
+watch([slug, currentLocale], () => {
   refresh();
 });
 
@@ -629,7 +666,7 @@ watch(isPriceRequestModalOpen, (newVal) => {
                     <ProductSpecifications 
                       v-if="productData.id" 
                       :productId="productData.id" 
-                      :locale="locale"
+                      :locale="currentLocale"
                     />
                   </div>
                   
