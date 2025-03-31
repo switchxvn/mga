@@ -8,7 +8,7 @@ export function useDarkMode() {
   const isDark = ref(false);
   const prefersDark = usePreferredDark();
   const isInitialized = ref(false);
-  const mode = ref<ColorMode>('auto');
+  const mode = ref<ColorMode>('light');
 
   const currentMode = computed(() => mode.value);
 
