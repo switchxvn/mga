@@ -543,6 +543,13 @@ watch([logo, isLoadingLogo], () => {
           <!-- Right Actions -->
           <div class="hidden md:flex items-center gap-3">
             <NuxtLink 
+              to="/danh-muc-san-pham/phu-tung-xe-nang"
+              class="text-[rgb(var(--tertiary-500))] hover:text-primary-500 transition-colors duration-300 font-bold uppercase"
+            >
+            PHỤ TÙNG XE NÂNG
+            </NuxtLink>
+            <span class="text-neutral-500 dark:text-neutral-400">|</span>
+            <NuxtLink 
               to="/bai-viet?danh-muc=du-an-mga"
               class="text-[rgb(var(--tertiary-500))] hover:text-primary-500 transition-colors duration-300 font-bold uppercase"
             >
