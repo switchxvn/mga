@@ -15,16 +15,24 @@ import HeroSliderComponent from '~/components/sliders/HeroSlider.vue';
 import type { Swiper as SwiperType } from 'swiper/types';
 
 interface HeroConfig {
-  height?: string;
+  layout?: 'split-columns' | 'full-width';
   autoplay?: boolean;
   interval?: number;
   showDots?: boolean;
   showArrows?: boolean;
-  themeId?: number;
-  backgroundGradient?: {
-    from: string;
-    to: string;
-    direction: string;
+  videoWidth?: string;
+  sliderWidth?: string;
+  videoPosition?: 'left' | 'right';
+  sliderPosition?: 'left' | 'right';
+  overlay?: {
+    enabled: boolean;
+    color?: string;
+    opacity?: number;
+    gradient?: {
+      from: string;
+      to: string;
+      direction: string;
+    };
   };
   overlayOpacity?: string;
 }
@@ -37,17 +45,21 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   slides: () => [],
   config: () => ({
-    height: '600px',
+    layout: 'full-width',
     autoplay: true,
     interval: 5000,
     showDots: true,
     showArrows: true,
-    backgroundGradient: {
-      from: 'rgba(0,0,0,0.7)',
-      to: 'rgba(0,0,0,0)',
-      direction: 'to-t'
-    },
-    overlayOpacity: '0.5'
+    overlay: {
+      enabled: true,
+      color: 'black',
+      opacity: 0.5,
+      gradient: {
+        from: 'rgba(0,0,0,0.7)',
+        to: 'rgba(0,0,0,0)',
+        direction: 'to-t'
+      }
+    }
   })
 });
 
@@ -165,63 +177,102 @@ const sortedSlides = computed(() => {
   }
   return [...props.slides].sort((a, b) => a.order - b.order);
 });
+
+// Thêm computed property để xử lý config
+const processedConfig = computed(() => {
+  if (!props.config) return props.config;
+  
+  const config = {
+    ...props.config,
+    overlay: {
+      enabled: props.config.overlay?.enabled ?? true,
+      opacity: props.config.overlayOpacity 
+        ? parseFloat(props.config.overlayOpacity)
+        : props.config.overlay?.opacity ?? 0.5,
+      gradient: props.config.overlay?.gradient ?? {
+        from: 'rgba(0,0,0,0.7)',
+        to: 'rgba(0,0,0,0)',
+        direction: 'to-t'
+      }
+    }
+  };
+
+  console.log('Processed Config:', config);
+  return config;
+});
 </script>
 
 <template>
-  <section class="hero-section-full relative" :style="{ height: config?.height || '600px' }">
-    <div v-if="isLoading" class="flex items-center justify-center w-full h-full">
-      <ULoader size="lg" />
-    </div>
-    
-    <div v-else-if="error" class="flex items-center justify-center w-full h-full">
-      <p class="text-red-500">{{ error.message }}</p>
-    </div>
-    
-    <div v-else class="w-full h-full relative">
-      <Swiper v-if="sortedSlides.length > 0"
-              v-bind="swiperOptions"
-              class="w-full h-full hero-swiper">
-        <SwiperSlide v-for="slide in sortedSlides" :key="slide.order" class="relative">
-          <div class="relative w-full h-full">
-            <!-- Image layer (z-index: 1) -->
-            <img 
-              :src="slide.image_url" 
-              :alt="slide.title"
-              class="absolute inset-0 w-full h-full object-cover z-[1]"
-            />
-            
-            <!-- Dark overlay layer (z-index: 2) -->
-            <div class="absolute inset-0 bg-black/50 z-[2]"></div>
-            
-            <!-- Content layer (z-index: 3) -->
-            <div class="absolute inset-0 flex items-center justify-center z-[3]">
-              <div class="container mx-auto px-4 text-center text-white">
-                <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
-                  {{ slide.title }}
-                </h1>
-                <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow">
-                  {{ slide.description }}
-                </p>
-                <NuxtLink 
-                  v-if="slide.link"
-                  :to="slide.link"
-                  class="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
-                >
-                  {{ slide.buttonText || localT('common.learn_more') }}
-                </NuxtLink>
+  <section class="hero-section-full relative w-full">
+    <div class="aspect-[1780/600] w-full">
+      <div v-if="isLoading" class="flex items-center justify-center w-full h-full">
+        <ULoader size="lg" />
+      </div>
+      
+      <div v-else-if="error" class="flex items-center justify-center w-full h-full">
+        <p class="text-red-500">{{ error.message }}</p>
+      </div>
+      
+      <div v-else class="w-full h-full relative">
+        <Swiper v-if="sortedSlides.length > 0"
+                v-bind="swiperOptions"
+                class="w-full h-full hero-swiper">
+          <SwiperSlide v-for="slide in sortedSlides" :key="slide.order" class="relative">
+            <div class="relative w-full h-full">
+              <!-- Image layer (z-index: 1) -->
+              <img 
+                :src="slide.image_url" 
+                :alt="slide.title"
+                class="absolute inset-0 w-full h-full object-cover z-[1]"
+              />
+              
+              <!-- Dark overlay layer (z-index: 2) -->
+              <div v-if="processedConfig.overlay?.enabled" 
+                   class="absolute inset-0 z-[2]"
+                   :class="{
+                     'bg-gradient-to-t from-black/70 to-transparent': processedConfig.overlay.gradient?.direction === 'to-t',
+                     'bg-gradient-to-b from-black/70 to-transparent': processedConfig.overlay.gradient?.direction === 'to-b',
+                     'bg-gradient-to-l from-black/70 to-transparent': processedConfig.overlay.gradient?.direction === 'to-l',
+                     'bg-gradient-to-r from-black/70 to-transparent': processedConfig.overlay.gradient?.direction === 'to-r'
+                   }"
+                   :style="{
+                     '--tw-gradient-from': processedConfig.overlay.gradient?.from || 'rgb(0 0 0 / 0.7)',
+                     '--tw-gradient-to': processedConfig.overlay.gradient?.to || 'rgb(0 0 0 / 0)',
+                     '--tw-gradient-stops': processedConfig.overlay.gradient 
+                       ? `${processedConfig.overlay.gradient.from}, ${processedConfig.overlay.gradient.to}`
+                       : undefined
+                   }">
+              </div>
+              <!-- Content layer (z-index: 3) -->
+              <div class="absolute inset-0 flex items-center justify-center z-[3]" v-if=" processedConfig?.overlay?.enabled">
+                <div class="container mx-auto px-4 text-center text-white">
+                  <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+                    {{ slide.title }}
+                  </h1>
+                  <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow">
+                    {{ slide.description }}
+                  </p>
+                  <NuxtLink 
+                    v-if="slide.link"
+                    :to="slide.link"
+                    class="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+                  >
+                    {{ slide.buttonText || localT('common.learn_more') }}
+                  </NuxtLink>
+                </div>
               </div>
             </div>
-          </div>
-        </SwiperSlide>
-      </Swiper>
-      <div v-else class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800">
-        <p class="text-gray-500 dark:text-gray-400">{{ localT('common.no_slides') }}</p>
-      </div>
+          </SwiperSlide>
+        </Swiper>
+        <div v-else class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800">
+          <p class="text-gray-500 dark:text-gray-400">{{ localT('common.no_slides') }}</p>
+        </div>
 
-      <!-- Move navigation elements inside the relative container -->
-      <div v-if="config.showArrows" class="hero-swiper-prev swiper-button-prev !z-10"></div>
-      <div v-if="config.showArrows" class="hero-swiper-next swiper-button-next !z-10"></div>
-      <div v-if="config.showDots" class="hero-swiper-pagination !absolute !bottom-8 !left-1/2 !-translate-x-1/2 !z-10 !w-auto"></div>
+        <!-- Move navigation elements inside the relative container -->
+        <div v-if="processedConfig.showArrows" class="hero-swiper-prev swiper-button-prev !z-10"></div>
+        <div v-if="processedConfig.showArrows" class="hero-swiper-next swiper-button-next !z-10"></div>
+        <div v-if="processedConfig.showDots" class="hero-swiper-pagination !absolute !bottom-8 !left-1/2 !-translate-x-1/2 !z-10 !w-auto"></div>
+      </div>
     </div>
   </section>
 </template>

@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, h, nextTick, watch } from 'vue';
-import { useLocalization } from '~/composables/useLocalization';
-import { useTrpc } from '~/composables/useTrpc';
-import { useRoute, useRouter } from 'vue-router';
-import LazyImage from '~/components/ui/LazyImage.vue';
-import CrossSellProducts from '~/components/product/CrossSellProducts.vue';
-import TableOfContents from '~/components/common/TableOfContents.vue';
-import ProductSpecifications from '~/components/product/ProductSpecifications.vue';
-import { formatFullProductContent } from '~/utils/contentFormatter';
-import ProductDetailSidebar from '~/components/product/ProductDetailSidebar.vue';
-import { useHead } from 'unhead';
-import PriceRequestModal from '~/components/product/PriceRequestModal.vue';
-import { useNotification } from '~/composables/useNotification';
-import AddToCartButton from '~/components/cart/AddToCartButton.vue';
-import Breadcrumb from '~/components/common/Breadcrumb.vue';
-import GlobalModal from '~/components/ui/GlobalModal.vue';
+import { computed, ref, h, nextTick, watch } from "vue";
+import { useLocalization } from "~/composables/useLocalization";
+import { useTrpc } from "~/composables/useTrpc";
+import { useRoute, useRouter } from "vue-router";
+import LazyImage from "~/components/ui/LazyImage.vue";
+import CrossSellProducts from "~/components/product/CrossSellProducts.vue";
+import TableOfContents from "~/components/common/TableOfContents.vue";
+import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
+import { formatFullProductContent } from "~/utils/contentFormatter";
+import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
+import { useHead } from "unhead";
+import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
+import { useNotification } from "~/composables/useNotification";
+import AddToCartButton from "~/components/cart/AddToCartButton.vue";
+import Breadcrumb from "~/components/common/Breadcrumb.vue";
+import GlobalModal from "~/components/ui/GlobalModal.vue";
 
 // Định nghĩa interface cho Product
 interface Product {
@@ -61,12 +61,12 @@ const slug = computed(() => route.params.slug as string);
 // Xác định locale từ URL path
 const currentLocale = computed(() => {
   // Nếu URL bắt đầu bằng /san-pham/ thì là tiếng Việt
-  if (route.path.startsWith('/san-pham/')) {
-    return 'vi';
+  if (route.path.startsWith("/san-pham/")) {
+    return "vi";
   }
   // Nếu URL bắt đầu bằng /products/ thì là tiếng Anh
-  if (route.path.startsWith('/products/')) {
-    return 'en';
+  if (route.path.startsWith("/products/")) {
+    return "en";
   }
   // Mặc định lấy từ useLocalization
   return locale.value;
@@ -74,39 +74,47 @@ const currentLocale = computed(() => {
 
 // Định nghĩa alias cho URL tiếng Việt (nếu cần)
 definePageMeta({
-  layout: 'default',
+  layout: "default",
 });
 
 // Sử dụng useAsyncData thay vì onMounted để hỗ trợ SSR
-const { data: product, pending: isLoading, error, refresh } = useAsyncData<Product | null>(
+const {
+  data: product,
+  pending: isLoading,
+  error,
+  refresh,
+} = useAsyncData<Product | null>(
   `product-${slug.value}`,
   async () => {
     try {
       // Kiểm tra xem slug có phải là số không
       if (!isNaN(Number(slug.value))) {
-        const result = await trpc.product.getById.query({ 
+        const result = await trpc.product.getById.query({
           id: Number(slug.value),
-          locale: currentLocale.value 
+          locale: currentLocale.value,
         });
-        
+
         // Nếu sản phẩm có slug, chuyển hướng đến URL có slug
         if (result?.slug && process.client) {
-          const productSlug = currentLocale.value === 'vi' 
-            ? `/san-pham/${result.slug}`
-            : `/products/${result.slug}`;
+          const productSlug =
+            currentLocale.value === "vi"
+              ? `/san-pham/${result.slug}`
+              : `/products/${result.slug}`;
           router.replace({ path: productSlug, query: route.query });
         }
-        
+
         return result;
       } else {
-        const result = await trpc.product.getBySlug.query({ 
+        const result = await trpc.product.getBySlug.query({
           slug: slug.value,
-          locale: currentLocale.value 
+          locale: currentLocale.value,
         });
 
         // Lấy translation dựa vào locale hiện tại
         if (result?.translations && result.translations.length > 0) {
-          const currentTranslation = result.translations.find(t => t.locale === currentLocale.value);
+          const currentTranslation = result.translations.find(
+            (t) => t.locale === currentLocale.value
+          );
           if (currentTranslation) {
             return {
               ...result,
@@ -118,7 +126,7 @@ const { data: product, pending: isLoading, error, refresh } = useAsyncData<Produ
               metaKeywords: currentTranslation.metaKeywords,
               ogTitle: currentTranslation.ogTitle,
               ogDescription: currentTranslation.ogDescription,
-              videoTitle: currentTranslation.videoTitle
+              videoTitle: currentTranslation.videoTitle,
             };
           }
         }
@@ -126,13 +134,13 @@ const { data: product, pending: isLoading, error, refresh } = useAsyncData<Produ
         return result;
       }
     } catch (err: any) {
-      console.error('Error fetching product:', err);
-      throw new Error(err.message || 'Có lỗi xảy ra khi tải chi tiết sản phẩm');
+      console.error("Error fetching product:", err);
+      throw new Error(err.message || "Có lỗi xảy ra khi tải chi tiết sản phẩm");
     }
   },
   {
     // Đảm bảo dữ liệu được tải ngay lập tức
-    immediate: true
+    immediate: true,
   }
 );
 
@@ -141,10 +149,10 @@ onMounted(() => {
   if (!product.value) {
     refresh();
   }
-  
+
   // Kiểm tra dữ liệu danh mục
-  console.log('Product data:', product.value);
-  console.log('Categories:', product.value?.categories);
+  console.log("Product data:", product.value);
+  console.log("Categories:", product.value?.categories);
 });
 
 // Theo dõi thay đổi của slug hoặc locale
@@ -153,24 +161,28 @@ watch([slug, currentLocale], () => {
 });
 
 // Tạo các computed properties để truy cập dữ liệu sản phẩm an toàn
-const productData = computed(() => product.value || {} as Product);
-const productTitle = computed(() => productData.value.title || '');
-const productContent = computed(() => productData.value.content || '');
-const productShortDescription = computed(() => productData.value.shortDescription || '');
+const productData = computed(() => product.value || ({} as Product));
+const productTitle = computed(() => productData.value.title || "");
+const productContent = computed(() => productData.value.content || "");
+const productShortDescription = computed(() => productData.value.shortDescription || "");
 
 // Lấy URL hiện tại từ server
-let serverUrl = '';
+let serverUrl = "";
 if (process.server) {
   try {
     const config = useRuntimeConfig();
-    if (config.public && config.public.siteUrl && typeof config.public.siteUrl === 'string') {
+    if (
+      config.public &&
+      config.public.siteUrl &&
+      typeof config.public.siteUrl === "string"
+    ) {
       serverUrl = config.public.siteUrl;
     } else {
       const reqURL = useRequestURL();
       serverUrl = `${reqURL.protocol}//${reqURL.host}`;
     }
   } catch (e) {
-    console.error('Error in server URL setup:', e);
+    console.error("Error in server URL setup:", e);
   }
 }
 
@@ -186,23 +198,27 @@ onMounted(() => {
 
 // Sử dụng giá trị đã lưu trong ref
 const currentURL = computed(() => {
-  return baseUrl.value || '';
+  return baseUrl.value || "";
 });
 
 // Tạo canonical URL (không chứa UTM parameters)
 const canonicalUrl = computed(() => {
-  if (!productData.value || !productData.value.slug) return '';
+  if (!productData.value || !productData.value.slug) return "";
   return `${currentURL.value}/san-pham/${productData.value.slug}`;
 });
 
 // URL với UTM parameters cho chia sẻ
-const getShareUrlWithUtm = (source: string, medium: string, campaign: string = 'product_share') => {
-  if (!canonicalUrl.value) return '';
+const getShareUrlWithUtm = (
+  source: string,
+  medium: string,
+  campaign: string = "product_share"
+) => {
+  if (!canonicalUrl.value) return "";
   const utmParams = new URLSearchParams({
     utm_source: source,
     utm_medium: medium,
     utm_campaign: campaign,
-    utm_content: productData.value.slug || ''
+    utm_content: productData.value.slug || "",
   });
   return `${canonicalUrl.value}?${utmParams.toString()}`;
 };
@@ -210,66 +226,103 @@ const getShareUrlWithUtm = (source: string, medium: string, campaign: string = '
 // Thiết lập meta tags
 useHead(() => {
   return {
-    title: productData.value.metaTitle || productTitle.value || 'Chi tiết sản phẩm',
+    title: productData.value.metaTitle || productTitle.value || "Chi tiết sản phẩm",
     meta: [
-      { name: 'description', content: productData.value.metaDescription || productShortDescription.value || '' },
-      { name: 'keywords', content: productData.value.metaKeywords || '' },
+      {
+        name: "description",
+        content: productData.value.metaDescription || productShortDescription.value || "",
+      },
+      { name: "keywords", content: productData.value.metaKeywords || "" },
       // Open Graph
-      { property: 'og:title', content: productData.value.ogTitle || productTitle.value || '' },
-      { property: 'og:description', content: productData.value.ogDescription || productData.value.metaDescription || productShortDescription.value || '' },
-      { property: 'og:image', content: productData.value.ogImage || productData.value.thumbnail || '' },
-      { property: 'og:url', content: canonicalUrl.value },
-      { property: 'og:type', content: 'product' },
+      {
+        property: "og:title",
+        content: productData.value.ogTitle || productTitle.value || "",
+      },
+      {
+        property: "og:description",
+        content:
+          productData.value.ogDescription ||
+          productData.value.metaDescription ||
+          productShortDescription.value ||
+          "",
+      },
+      {
+        property: "og:image",
+        content: productData.value.ogImage || productData.value.thumbnail || "",
+      },
+      { property: "og:url", content: canonicalUrl.value },
+      { property: "og:type", content: "product" },
       // Twitter Card
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: productData.value.ogTitle || productTitle.value || '' },
-      { name: 'twitter:description', content: productData.value.ogDescription || productShortDescription.value || '' },
-      { name: 'twitter:image', content: productData.value.ogImage || productData.value.thumbnail || '' }
+      { name: "twitter:card", content: "summary_large_image" },
+      {
+        name: "twitter:title",
+        content: productData.value.ogTitle || productTitle.value || "",
+      },
+      {
+        name: "twitter:description",
+        content: productData.value.ogDescription || productShortDescription.value || "",
+      },
+      {
+        name: "twitter:image",
+        content: productData.value.ogImage || productData.value.thumbnail || "",
+      },
     ],
-    link: [
-      { rel: 'canonical', href: canonicalUrl.value }
-    ]
+    link: [{ rel: "canonical", href: canonicalUrl.value }],
   };
 });
 
 // Thêm hàm để xử lý chia sẻ mạng xã hội
 const shareUrl = computed(() => canonicalUrl.value);
-const shareTitle = computed(() => productData.value.metaTitle || productTitle.value || '');
-const shareDescription = computed(() => productData.value.metaDescription || productShortDescription.value || '');
-const shareImage = computed(() => productData.value.ogImage || productData.value.thumbnail || '');
+const shareTitle = computed(
+  () => productData.value.metaTitle || productTitle.value || ""
+);
+const shareDescription = computed(
+  () => productData.value.metaDescription || productShortDescription.value || ""
+);
+const shareImage = computed(
+  () => productData.value.ogImage || productData.value.thumbnail || ""
+);
 
 // Hàm chia sẻ lên Facebook
 const shareToFacebook = () => {
   if (process.client) {
-    const shareUrlWithUtm = getShareUrlWithUtm('facebook', 'social');
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrlWithUtm)}`;
-    window.open(url, '_blank', 'width=600,height=400');
+    const shareUrlWithUtm = getShareUrlWithUtm("facebook", "social");
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      shareUrlWithUtm
+    )}`;
+    window.open(url, "_blank", "width=600,height=400");
   }
 };
 
 // Hàm chia sẻ lên Twitter
 const shareToTwitter = () => {
   if (process.client) {
-    const shareUrlWithUtm = getShareUrlWithUtm('twitter', 'social');
-    const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrlWithUtm)}&text=${encodeURIComponent(shareTitle.value)}`;
-    window.open(url, '_blank', 'width=600,height=400');
+    const shareUrlWithUtm = getShareUrlWithUtm("twitter", "social");
+    const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
+      shareUrlWithUtm
+    )}&text=${encodeURIComponent(shareTitle.value)}`;
+    window.open(url, "_blank", "width=600,height=400");
   }
 };
 
 // Hàm chia sẻ lên LinkedIn
 const shareToLinkedIn = () => {
   if (process.client) {
-    const shareUrlWithUtm = getShareUrlWithUtm('linkedin', 'social');
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrlWithUtm)}`;
-    window.open(url, '_blank', 'width=600,height=400');
+    const shareUrlWithUtm = getShareUrlWithUtm("linkedin", "social");
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+      shareUrlWithUtm
+    )}`;
+    window.open(url, "_blank", "width=600,height=400");
   }
 };
 
 // Hàm chia sẻ qua Email
 const shareViaEmail = () => {
   if (process.client) {
-    const shareUrlWithUtm = getShareUrlWithUtm('email', 'referral');
-    const url = `mailto:?subject=${encodeURIComponent(shareTitle.value)}&body=${encodeURIComponent(`${shareDescription.value}\n\n${shareUrlWithUtm}`)}`;
+    const shareUrlWithUtm = getShareUrlWithUtm("email", "referral");
+    const url = `mailto:?subject=${encodeURIComponent(
+      shareTitle.value
+    )}&body=${encodeURIComponent(`${shareDescription.value}\n\n${shareUrlWithUtm}`)}`;
     window.location.href = url;
   }
 };
@@ -279,30 +332,36 @@ const copyProductLink = async () => {
   if (process.client && navigator.clipboard) {
     try {
       // Sử dụng UTM cho link copy
-      const shareUrlWithUtm = getShareUrlWithUtm('copy', 'direct');
+      const shareUrlWithUtm = getShareUrlWithUtm("copy", "direct");
       await navigator.clipboard.writeText(shareUrlWithUtm);
       // Hiển thị thông báo thành công với notification
       useNotification().success({
-        title: t('products.linkCopied') || 'Đã sao chép liên kết sản phẩm',
-        description: t('products.linkCopiedDescription') || 'Liên kết đã được sao chép vào clipboard',
-        icon: 'i-heroicons-check-circle',
-        timeout: 3000
+        title: t("products.linkCopied") || "Đã sao chép liên kết sản phẩm",
+        description:
+          t("products.linkCopiedDescription") ||
+          "Liên kết đã được sao chép vào clipboard",
+        icon: "i-heroicons-check-circle",
+        timeout: 3000,
       });
     } catch (err) {
-      console.error('Failed to copy link:', err);
+      console.error("Failed to copy link:", err);
       // Hiển thị thông báo lỗi
       useNotification().error({
-        title: t('products.linkCopyFailed') || 'Không thể sao chép liên kết',
-        description: t('products.linkCopyFailedDescription') || 'Đã xảy ra lỗi khi sao chép liên kết',
-        icon: 'i-heroicons-exclamation-circle',
-        timeout: 3000
+        title: t("products.linkCopyFailed") || "Không thể sao chép liên kết",
+        description:
+          t("products.linkCopyFailedDescription") ||
+          "Đã xảy ra lỗi khi sao chép liên kết",
+        icon: "i-heroicons-exclamation-circle",
+        timeout: 3000,
       });
     }
   }
 };
 
 // Tạo ID cho phần nội dung sản phẩm để sử dụng với TableOfContents
-const productContentId = computed(() => `product-content-${productData.value.id || 'detail'}`);
+const productContentId = computed(
+  () => `product-content-${productData.value.id || "detail"}`
+);
 
 // Định dạng nội dung sản phẩm với các thẻ h2 và ID
 const formattedProductContent = computed(() => {
@@ -310,36 +369,36 @@ const formattedProductContent = computed(() => {
 });
 
 // Tab cho mô tả sản phẩm và video review
-const activeTab = ref('description');
+const activeTab = ref("description");
 
 // Kiểm tra xem sản phẩm có video review không
 const hasVideoReview = computed(() => !!productData.value.videoReview);
 
 // Theo dõi thay đổi của activeTab để cập nhật lại TableOfContents
 watch(activeTab, (newTab, oldTab) => {
-  if (newTab === 'description') {
+  if (newTab === "description") {
     // Đợi DOM cập nhật xong
     nextTick(() => {
       // Đợi thêm một chút để đảm bảo transition đã hoàn thành
       setTimeout(() => {
         // Kích hoạt lại TableOfContents
-        const event = new Event('tab-changed');
+        const event = new Event("tab-changed");
         window.dispatchEvent(event);
-        
+
         // Đảm bảo nội dung đã được render
         const contentElement = document.querySelector(`#${productContentId.value}`);
         if (contentElement) {
           // Kích hoạt MutationObserver
           const observer = new MutationObserver(() => {
-            window.dispatchEvent(new Event('tab-changed'));
+            window.dispatchEvent(new Event("tab-changed"));
           });
-          
+
           observer.observe(contentElement, {
             childList: true,
             subtree: true,
-            characterData: true
+            characterData: true,
           });
-          
+
           // Cleanup sau 1 giây
           setTimeout(() => {
             observer.disconnect();
@@ -352,22 +411,24 @@ watch(activeTab, (newTab, oldTab) => {
 
 // Định nghĩa tabs
 const tabs = computed(() => [
-  { 
-    id: 'description', 
-    label: t('products.description') || 'MÔ TẢ SẢN PHẨM', 
-    icon: 'i-heroicons-document-text'
+  {
+    id: "description",
+    label: t("products.description") || "MÔ TẢ SẢN PHẨM",
+    icon: "i-heroicons-document-text",
   },
-  { 
-    id: 'specifications', 
-    label: t('products.specifications') || 'THÔNG SỐ KỸ THUẬT', 
-    icon: 'i-heroicons-adjustments-horizontal'
+  {
+    id: "specifications",
+    label: t("products.specifications") || "THÔNG SỐ KỸ THUẬT",
+    icon: "i-heroicons-adjustments-horizontal",
   },
-  { 
-    id: 'video', 
-    label: t('products.videoReview') || 'VIDEO REVIEW', 
-    icon: 'i-heroicons-video-camera',
-    badge: hasVideoReview.value ? { label: t('products.new') || 'Mới', color: 'blue' } : undefined
-  }
+  {
+    id: "video",
+    label: t("products.videoReview") || "VIDEO REVIEW",
+    icon: "i-heroicons-video-camera",
+    badge: hasVideoReview.value
+      ? { label: t("products.new") || "Mới", color: "blue" }
+      : undefined,
+  },
 ]);
 
 // Ref cho modal yêu cầu báo giá
@@ -375,32 +436,34 @@ const isPriceRequestModalOpen = ref(false);
 
 // Hàm mở modal yêu cầu báo giá
 const openPriceRequestModal = () => {
-  console.log('Opening modal...');
+  console.log("Opening modal...");
   isPriceRequestModalOpen.value = true;
-  console.log('Modal state after open:', isPriceRequestModalOpen.value);
+  console.log("Modal state after open:", isPriceRequestModalOpen.value);
 };
 
 // Hàm đóng modal yêu cầu báo giá
 const closePriceRequestModal = () => {
-  console.log('Closing modal...');
+  console.log("Closing modal...");
   isPriceRequestModalOpen.value = false;
-  console.log('Modal state after close:', isPriceRequestModalOpen.value);
+  console.log("Modal state after close:", isPriceRequestModalOpen.value);
 };
 
 // Hàm xử lý khi gửi yêu cầu báo giá thành công
 const handlePriceRequestSuccess = () => {
   const notification = useNotification();
   notification.success({
-    title: t('priceRequest.successToast') || 'Yêu cầu báo giá đã được gửi',
-    description: t('priceRequest.successToastDescription') || 'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất',
-    icon: 'i-heroicons-check-circle',
-    timeout: 5000
+    title: t("priceRequest.successToast") || "Yêu cầu báo giá đã được gửi",
+    description:
+      t("priceRequest.successToastDescription") ||
+      "Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất",
+    icon: "i-heroicons-check-circle",
+    timeout: 5000,
   });
 };
 
 // Theo dõi trạng thái modal
 watch(isPriceRequestModalOpen, (newVal) => {
-  console.log('Modal state changed:', newVal);
+  console.log("Modal state changed:", newVal);
 });
 </script>
 
@@ -409,11 +472,13 @@ watch(isPriceRequestModalOpen, (newVal) => {
     <div class="container mx-auto px-4 py-8">
       <!-- Breadcrumb -->
       <div class="mb-6">
-        <Breadcrumb :items="[
-          { label: t('home'), to: '/' },
-          { label: t('products.title'), to: '/products' },
-          { label: productTitle }
-        ]" />
+        <Breadcrumb
+          :items="[
+            { label: t('home'), to: '/' },
+            { label: t('products.title'), to: '/products' },
+            { label: productTitle },
+          ]"
+        />
       </div>
 
       <div v-if="isLoading" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
@@ -428,63 +493,98 @@ watch(isPriceRequestModalOpen, (newVal) => {
           </div>
         </div>
       </div>
-      
-      <div v-else-if="error" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
-        <UIcon name="i-heroicons-exclamation-circle" class="mx-auto mb-4 h-16 w-16 text-red-500" />
-        <h2 class="mb-2 text-2xl font-bold">{{ t('products.error') || 'Lỗi' }}</h2>
-        <p class="mb-6 text-gray-600 dark:text-gray-400">{{ error.message || t('products.errorDescription') || 'Có lỗi xảy ra khi tải thông tin sản phẩm' }}</p>
+
+      <div
+        v-else-if="error"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center"
+      >
+        <UIcon
+          name="i-heroicons-exclamation-circle"
+          class="mx-auto mb-4 h-16 w-16 text-red-500"
+        />
+        <h2 class="mb-2 text-2xl font-bold">{{ t("products.error") || "Lỗi" }}</h2>
+        <p class="mb-6 text-gray-600 dark:text-gray-400">
+          {{
+            error.message ||
+            t("products.errorDescription") ||
+            "Có lỗi xảy ra khi tải thông tin sản phẩm"
+          }}
+        </p>
         <UButton @click="refresh" color="primary" class="mr-2">
-          {{ t('products.tryAgain') || 'Thử lại' }}
+          {{ t("products.tryAgain") || "Thử lại" }}
         </UButton>
         <UButton to="/products" color="gray">
-          {{ t('products.backToProducts') || 'Quay lại danh sách sản phẩm' }}
+          {{ t("products.backToProducts") || "Quay lại danh sách sản phẩm" }}
         </UButton>
       </div>
-      
+
       <div v-else-if="product" class="product-content space-y-8">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <!-- Phần thông tin sản phẩm -->
           <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             <!-- Product Images -->
             <div class="product-images bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-              <LazyImage 
-                :src="productData.thumbnail || ''" 
+              <LazyImage
+                :src="productData.thumbnail || ''"
                 :alt="productTitle"
                 fallbackSrc="/images/default-image.jpg"
                 customClass="h-auto w-full rounded-lg"
               />
-              
-              <div v-if="productData.gallery && productData.gallery.length > 0" class="mt-4 grid grid-cols-4 gap-2">
-                <LazyImage 
-                  v-for="(image, index) in productData.gallery" 
-                  :key="index" 
-                  :src="image" 
+
+              <div
+                v-if="productData.gallery && productData.gallery.length > 0"
+                class="mt-4 grid grid-cols-4 gap-2"
+              >
+                <LazyImage
+                  v-for="(image, index) in productData.gallery"
+                  :key="index"
+                  :src="image"
                   :alt="`${productTitle} - ${index + 1}`"
                   fallbackSrc="/images/default-image.jpg"
                   customClass="h-20 w-full cursor-pointer rounded-md"
                 />
               </div>
             </div>
-            
+
             <!-- Product Info -->
             <div class="product-info bg-white dark:bg-gray-800 rounded-lg p-6">
-              <div v-if="productData.isNew || productData.isSale || productData.isFeatured" class="mb-4 flex flex-wrap gap-2">
+              <div
+                v-if="productData.isNew || productData.isSale || productData.isFeatured"
+                class="mb-4 flex flex-wrap gap-2"
+              >
                 <UBadge v-if="productData.isNew" color="blue" variant="solid">Mới</UBadge>
-                <UBadge v-if="productData.isSale" color="red" variant="solid">Giảm giá</UBadge>
-                <UBadge v-if="productData.isFeatured" color="amber" variant="solid">Nổi bật</UBadge>
+                <UBadge v-if="productData.isSale" color="red" variant="solid"
+                  >Giảm giá</UBadge
+                >
+                <UBadge v-if="productData.isFeatured" color="amber" variant="solid"
+                  >Nổi bật</UBadge
+                >
               </div>
-              
-              <h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">{{ productTitle }}</h1>
-              
-              <div v-if="productData.sku" class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+
+              <h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+                {{ productTitle }}
+              </h1>
+
+              <div
+                v-if="productData.sku"
+                class="mb-4 text-sm text-gray-600 dark:text-gray-400"
+              >
                 SKU: {{ productData.sku }}
               </div>
-              
+
               <!-- Hiển thị danh mục sản phẩm -->
-              <div v-if="productData.categories && productData.categories.length > 0" class="mb-5">
-                <div class="category-title text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <UIcon name="i-heroicons-rectangle-stack" class="inline-block mr-1 h-5 w-5 text-primary-500" />
-                  {{ t('products.categories') || 'Danh mục:' }}
+              <div
+                v-if="productData.categories && productData.categories.length > 0"
+                class="mb-5"
+              >
+                <div
+                  class="category-title text-base font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  <UIcon
+                    name="i-heroicons-rectangle-stack"
+                    class="inline-block mr-1 h-5 w-5 text-primary-500"
+                  />
+                  {{ t("products.categories") || "Danh mục:" }}
                 </div>
                 <div class="flex flex-wrap gap-2">
                   <UBadge
@@ -505,23 +605,36 @@ watch(isPriceRequestModalOpen, (newVal) => {
                   </UBadge>
                 </div>
               </div>
-              
+
               <div class="mb-6 flex items-center gap-3">
                 <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
                   {{ productData.formattedPrice }}
                 </span>
-                <span v-if="productData.comparePrice" class="text-lg text-gray-500 line-through dark:text-gray-400">
-                  {{ new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(productData.comparePrice) }}
+                <span
+                  v-if="productData.comparePrice"
+                  class="text-lg text-gray-500 line-through dark:text-gray-400"
+                >
+                  {{
+                    new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(productData.comparePrice)
+                  }}
                 </span>
               </div>
-              
-              <div v-if="productShortDescription" class="mb-6 text-gray-700 dark:text-gray-300">
+
+              <div
+                v-if="productShortDescription"
+                class="mb-6 text-gray-700 dark:text-gray-300"
+              >
                 {{ productShortDescription }}
               </div>
-              
+
               <!-- Nút chia sẻ mạng xã hội -->
               <div class="mb-6">
-                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ t('products.shareProduct') || 'Chia sẻ sản phẩm:' }}</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {{ t("products.shareProduct") || "Chia sẻ sản phẩm:" }}
+                </div>
                 <div class="share-buttons flex flex-wrap gap-2">
                   <div class="tooltip">
                     <UButton
@@ -532,9 +645,11 @@ watch(isPriceRequestModalOpen, (newVal) => {
                       @click="shareToFacebook"
                       class="share-button"
                     />
-                    <span class="tooltip-text">{{ t('products.shareOnFacebook') || 'Chia sẻ lên Facebook' }}</span>
+                    <span class="tooltip-text">{{
+                      t("products.shareOnFacebook") || "Chia sẻ lên Facebook"
+                    }}</span>
                   </div>
-                  
+
                   <div class="tooltip">
                     <UButton
                       color="sky"
@@ -544,9 +659,11 @@ watch(isPriceRequestModalOpen, (newVal) => {
                       @click="shareToTwitter"
                       class="share-button"
                     />
-                    <span class="tooltip-text">{{ t('products.shareOnTwitter') || 'Chia sẻ lên Twitter' }}</span>
+                    <span class="tooltip-text">{{
+                      t("products.shareOnTwitter") || "Chia sẻ lên Twitter"
+                    }}</span>
                   </div>
-                  
+
                   <div class="tooltip">
                     <UButton
                       color="blue"
@@ -556,9 +673,11 @@ watch(isPriceRequestModalOpen, (newVal) => {
                       @click="shareToLinkedIn"
                       class="share-button"
                     />
-                    <span class="tooltip-text">{{ t('products.shareOnLinkedIn') || 'Chia sẻ lên LinkedIn' }}</span>
+                    <span class="tooltip-text">{{
+                      t("products.shareOnLinkedIn") || "Chia sẻ lên LinkedIn"
+                    }}</span>
                   </div>
-                  
+
                   <div class="tooltip">
                     <UButton
                       color="emerald"
@@ -568,9 +687,11 @@ watch(isPriceRequestModalOpen, (newVal) => {
                       @click="shareViaEmail"
                       class="share-button"
                     />
-                    <span class="tooltip-text">{{ t('products.shareViaEmail') || 'Chia sẻ qua Email' }}</span>
+                    <span class="tooltip-text">{{
+                      t("products.shareViaEmail") || "Chia sẻ qua Email"
+                    }}</span>
                   </div>
-                  
+
                   <div class="tooltip">
                     <UButton
                       color="gray"
@@ -580,41 +701,43 @@ watch(isPriceRequestModalOpen, (newVal) => {
                       @click="copyProductLink"
                       class="share-button"
                     />
-                    <span class="tooltip-text">{{ t('products.copyLink') || 'Sao chép liên kết' }}</span>
+                    <span class="tooltip-text">{{
+                      t("products.copyLink") || "Sao chép liên kết"
+                    }}</span>
                   </div>
                 </div>
               </div>
-              
-              <AddToCartButton 
+
+              <AddToCartButton
                 v-if="productData.price !== null"
-                :product="productData" 
+                :product="productData"
                 :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
                 :showQuantity="true"
                 buttonClass="flex-1"
               />
-              
-              <UButton 
+
+              <UButton
                 v-else
-                color="primary" 
-                size="lg" 
+                color="primary"
+                size="lg"
                 block
                 icon="i-heroicons-currency-dollar"
                 class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
                 @click="openPriceRequestModal"
               >
-                {{ t('products.requestPrice') || 'Yêu cầu báo giá' }}
+                {{ t("products.requestPrice") || "Yêu cầu báo giá" }}
               </UButton>
             </div>
           </div>
         </div>
-        
+
         <!-- Phần mô tả sản phẩm và sidebar -->
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <!-- Phần mô tả sản phẩm và tabs -->
           <div class="lg:col-span-2">
             <!-- Table of Contents -->
             <Transition name="fade" mode="out-in">
-              <TableOfContents 
+              <TableOfContents
                 v-if="activeTab === 'description'"
                 :contentSelector="`#${productContentId}`"
                 :offset="100"
@@ -624,20 +747,23 @@ watch(isPriceRequestModalOpen, (newVal) => {
                 class="mb-6"
               />
             </Transition>
-            
+
             <!-- Product Description and Video Review Tabs -->
-            <div v-if="productContent || productData.videoReview || productData.id" class="product-tabs bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+            <div
+              v-if="productContent || productData.videoReview || productData.id"
+              class="product-tabs bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden"
+            >
               <div class="border-b border-gray-200 dark:border-gray-700 px-6">
                 <div class="flex flex-wrap space-x-4 md:space-x-8">
-                  <button 
-                    v-for="tab in tabs" 
+                  <button
+                    v-for="tab in tabs"
                     :key="tab.id"
                     @click="activeTab = tab.id"
                     class="inline-flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm md:text-base uppercase tracking-wide"
                     :class="[
-                      activeTab === tab.id 
-                        ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                      activeTab === tab.id
+                        ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
                     ]"
                   >
                     <UIcon :name="tab.icon" class="h-5 w-5" />
@@ -648,36 +774,55 @@ watch(isPriceRequestModalOpen, (newVal) => {
                   </button>
                 </div>
               </div>
-              
+
               <!-- Tab Content -->
-              <div class="tab-content p-6 bg-white dark:bg-gray-800 rounded-b-lg shadow-sm border-x border-b border-gray-200 dark:border-gray-700">
+              <div
+                class="tab-content p-6 bg-white dark:bg-gray-800 rounded-b-lg shadow-sm border-x border-b border-gray-200 dark:border-gray-700"
+              >
                 <transition name="tab-fade" mode="out-in">
                   <!-- Description Tab Content -->
-                  <div v-if="activeTab === 'description'" :key="'description'" class="tab-content-inner">
-                    <div 
-                      :id="productContentId" 
-                      class="prose prose-lg max-w-none dark:prose-invert product-content-wrapper" 
+                  <div
+                    v-if="activeTab === 'description'"
+                    :key="'description'"
+                    class="tab-content-inner"
+                  >
+                    <div
+                      :id="productContentId"
+                      class="prose prose-lg max-w-none dark:prose-invert product-content-wrapper"
                       v-html="formattedProductContent"
                     ></div>
                   </div>
-                  
+
                   <!-- Specifications Tab Content -->
-                  <div v-else-if="activeTab === 'specifications'" :key="'specifications'" class="tab-content-inner">
-                    <ProductSpecifications 
-                      v-if="productData.id" 
-                      :productId="productData.id" 
+                  <div
+                    v-else-if="activeTab === 'specifications'"
+                    :key="'specifications'"
+                    class="tab-content-inner"
+                  >
+                    <ProductSpecifications
+                      v-if="productData.id"
+                      :productId="productData.id"
                       :locale="currentLocale"
                     />
                   </div>
-                  
+
                   <!-- Video Review Tab Content -->
-                  <div v-else-if="activeTab === 'video'" :key="'video'" class="tab-content-inner">
+                  <div
+                    v-else-if="activeTab === 'video'"
+                    :key="'video'"
+                    class="tab-content-inner"
+                  >
                     <div v-if="productData.videoReview" class="video-review-container">
-                      <h2 v-if="productData.videoTitle" class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
+                      <h2
+                        v-if="productData.videoTitle"
+                        class="mb-4 text-2xl font-bold text-gray-900 dark:text-white"
+                      >
                         {{ productData.videoTitle }}
                       </h2>
-                      <div class="aspect-w-16 aspect-h-9 mb-6 overflow-hidden rounded-lg shadow-md">
-                        <iframe 
+                      <div
+                        class="aspect-w-16 aspect-h-9 mb-6 overflow-hidden rounded-lg shadow-md"
+                      >
+                        <iframe
                           class="h-full w-full"
                           :src="productData.videoReview"
                           frameborder="0"
@@ -688,9 +833,15 @@ watch(isPriceRequestModalOpen, (newVal) => {
                     </div>
                     <div v-else class="empty-state flex h-64 items-center justify-center">
                       <div class="text-center">
-                        <UIcon name="i-heroicons-video-camera" class="mx-auto mb-4 h-16 w-16 text-gray-400" />
+                        <UIcon
+                          name="i-heroicons-video-camera"
+                          class="mx-auto mb-4 h-16 w-16 text-gray-400"
+                        />
                         <p class="text-gray-600 dark:text-gray-400">
-                          {{ t('products.noVideoAvailable') || 'Chưa có video review cho sản phẩm này' }}
+                          {{
+                            t("products.noVideoAvailable") ||
+                            "Chưa có video review cho sản phẩm này"
+                          }}
                         </p>
                       </div>
                     </div>
@@ -699,7 +850,7 @@ watch(isPriceRequestModalOpen, (newVal) => {
               </div>
             </div>
           </div>
-          
+
           <!-- Sidebar -->
           <div class="lg:col-span-1">
             <div class="sticky top-24">
@@ -707,19 +858,19 @@ watch(isPriceRequestModalOpen, (newVal) => {
             </div>
           </div>
         </div>
-        
+
         <!-- Cross-Sell Products -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-            {{ t('products.relatedProducts') || 'Sản phẩm bạn có thể thích' }}
+            {{ t("products.relatedProducts") || "Sản phẩm bạn có thể thích" }}
           </h2>
-          <CrossSellProducts 
-            v-if="productData.id" 
-            :productId="productData.id" 
+          <CrossSellProducts
+            v-if="productData.id"
+            :productId="productData.id"
             :limit="4"
           />
         </div>
-        
+
         <!-- Modal -->
         <GlobalModal :show="isPriceRequestModalOpen" @close="closePriceRequestModal">
           <div class="modal-content">
@@ -732,13 +883,18 @@ watch(isPriceRequestModalOpen, (newVal) => {
           </div>
         </GlobalModal>
       </div>
-      
+
       <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
-        <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto mb-4 h-16 w-16 text-amber-500" />
-        <h2 class="mb-2 text-2xl font-bold">{{ t('products.notFound') }}</h2>
-        <p class="mb-6 text-gray-600 dark:text-gray-400">{{ t('products.notFoundDescription') }}</p>
+        <UIcon
+          name="i-heroicons-exclamation-triangle"
+          class="mx-auto mb-4 h-16 w-16 text-amber-500"
+        />
+        <h2 class="mb-2 text-2xl font-bold">{{ t("products.notFound") }}</h2>
+        <p class="mb-6 text-gray-600 dark:text-gray-400">
+          {{ t("products.notFoundDescription") }}
+        </p>
         <UButton to="/products" color="primary">
-          {{ t('products.backToProducts') }}
+          {{ t("products.backToProducts") }}
         </UButton>
       </div>
     </div>
@@ -933,7 +1089,7 @@ watch(isPriceRequestModalOpen, (newVal) => {
 }
 
 .category-badge::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -956,11 +1112,13 @@ watch(isPriceRequestModalOpen, (newVal) => {
 }
 
 .dark .category-badge:hover {
-  box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.1), 0 2px 4px -1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.1),
+    0 2px 4px -1px rgba(255, 255, 255, 0.06);
 }
 
 .dark .category-badge:active {
-  box-shadow: 0 2px 4px -1px rgba(255, 255, 255, 0.1), 0 1px 2px -1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 4px -1px rgba(255, 255, 255, 0.1),
+    0 1px 2px -1px rgba(255, 255, 255, 0.06);
 }
 
 .dark .category-badge::after {
@@ -1110,4 +1268,4 @@ watch(isPriceRequestModalOpen, (newVal) => {
   align-items: center;
   justify-content: center;
 }
-</style> 
+</style>
