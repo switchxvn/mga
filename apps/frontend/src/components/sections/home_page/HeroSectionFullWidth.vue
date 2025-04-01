@@ -203,8 +203,8 @@ const processedConfig = computed(() => {
 </script>
 
 <template>
-  <section class="hero-section-full relative w-full">
-    <div class="aspect-[1780/600] w-full">
+  <section class="hero-section-full relative w-full pt-[64px] md:pt-0">
+    <div class="aspect-[4/3] md:aspect-[1780/600] w-full">
       <div v-if="isLoading" class="flex items-center justify-center w-full h-full">
         <ULoader size="lg" />
       </div>
@@ -223,7 +223,7 @@ const processedConfig = computed(() => {
               <img 
                 :src="slide.image_url" 
                 :alt="slide.title"
-                class="absolute inset-0 w-full h-full object-cover z-[1]"
+                class="absolute inset-0 w-full h-full object-cover object-center z-[1]"
               />
               
               <!-- Dark overlay layer (z-index: 2) -->
@@ -243,19 +243,20 @@ const processedConfig = computed(() => {
                        : undefined
                    }">
               </div>
+              
               <!-- Content layer (z-index: 3) -->
-              <div class="absolute inset-0 flex items-center justify-center z-[3]" v-if=" processedConfig?.overlay?.enabled">
+              <div class="absolute inset-0 flex items-center justify-center z-[3]" v-if="processedConfig?.overlay?.enabled">
                 <div class="container mx-auto px-4 text-center text-white">
-                  <h1 class="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+                  <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-2 md:mb-4 drop-shadow-lg">
                     {{ slide.title }}
                   </h1>
-                  <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow">
+                  <p class="text-base sm:text-lg md:text-xl mb-4 md:mb-8 max-w-2xl mx-auto drop-shadow line-clamp-3 md:line-clamp-none">
                     {{ slide.description }}
                   </p>
                   <NuxtLink 
                     v-if="slide.link"
                     :to="slide.link"
-                    class="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+                    class="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-2 md:py-3 px-6 md:px-8 rounded-lg transition-colors text-sm md:text-base"
                   >
                     {{ slide.buttonText || localT('common.learn_more') }}
                   </NuxtLink>
@@ -268,10 +269,10 @@ const processedConfig = computed(() => {
           <p class="text-gray-500 dark:text-gray-400">{{ localT('common.no_slides') }}</p>
         </div>
 
-        <!-- Move navigation elements inside the relative container -->
-        <div v-if="processedConfig.showArrows" class="hero-swiper-prev swiper-button-prev !z-10"></div>
-        <div v-if="processedConfig.showArrows" class="hero-swiper-next swiper-button-next !z-10"></div>
-        <div v-if="processedConfig.showDots" class="hero-swiper-pagination !absolute !bottom-8 !left-1/2 !-translate-x-1/2 !z-10 !w-auto"></div>
+        <!-- Điều chỉnh vị trí và kích thước navigation cho mobile -->
+        <div v-if="processedConfig.showArrows" class="hero-swiper-prev swiper-button-prev !z-10 !hidden md:!flex"></div>
+        <div v-if="processedConfig.showArrows" class="hero-swiper-next swiper-button-next !z-10 !hidden md:!flex"></div>
+        <div v-if="processedConfig.showDots" class="hero-swiper-pagination !absolute !bottom-4 md:!bottom-8 !left-1/2 !-translate-x-1/2 !z-10 !w-auto"></div>
       </div>
     </div>
   </section>
@@ -284,104 +285,20 @@ const processedConfig = computed(() => {
   :deep(.hero-swiper) {
     height: 100%;
   }
-}
-
-/* Move these styles outside of scoped to override Swiper's default styles */
-:deep(.swiper-button-next),
-:deep(.swiper-button-prev) {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  margin-top: -22px;
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 20;
-}
-
-:deep(.swiper-button-next)::after,
-:deep(.swiper-button-prev)::after {
-  font-family: swiper-icons;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: white;
-  text-transform: none !important;
-  letter-spacing: 0;
-  font-variant: initial;
-  line-height: 1;
-}
-
-:deep(.swiper-button-prev)::after {
-  content: 'prev';
-}
-
-:deep(.swiper-button-next)::after {
-  content: 'next';
-}
-
-:deep(.swiper-button-next:hover),
-:deep(.swiper-button-prev:hover) {
-  &::after {
-    color: rgb(var(--color-primary-DEFAULT) / var(--tw-bg-opacity));
-  }
-}
-
-:deep(.swiper-button-next.swiper-button-disabled),
-:deep(.swiper-button-prev.swiper-button-disabled) {
-  opacity: 0.5;
-  cursor: not-allowed;
   
-  &:hover {
-    &::after {
-      color: white;
-    }
-  }
-}
-
-:deep(.swiper-button-prev) {
-  left: 20px;
-}
-
-:deep(.swiper-button-next) {
-  right: 20px;
-}
-
-@media (max-width: 640px) {
+  // Điều chỉnh kích thước navigation buttons cho mobile
   :deep(.swiper-button-next),
   :deep(.swiper-button-prev) {
-    display: none;
+    @apply w-8 h-8 md:w-12 md:h-12;
+    
+    &::after {
+      @apply text-base md:text-xl;
+    }
   }
-}
-
-:deep(.hero-swiper-pagination) {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  z-index: 10;
-  padding: 0;
-  margin: 0;
-  width: auto;
-  min-width: max-content;
-}
-
-:deep(.swiper-pagination-bullet) {
-  width: 8px;
-  height: 8px;
-  margin: 0;
-  background-color: white;
-  opacity: 0.5;
-  transition: all 0.3s ease;
-}
-
-:deep(.swiper-pagination-bullet-active) {
-  opacity: 1;
-  background-color: rgb(var(--color-primary-DEFAULT) / var(--tw-bg-opacity));
-  transform: scale(1.2);
+  
+  // Điều chỉnh kích thước dots cho mobile
+  :deep(.swiper-pagination-bullet) {
+    @apply w-2 h-2 md:w-3 md:h-3;
+  }
 }
 </style> 
