@@ -29,7 +29,15 @@ export class ProfileService {
         });
       }
 
-      return profile;
+      // Convert Promise<CountryPhoneCode> to CountryPhoneCode
+      const countryPhoneCode = await profile.countryPhoneCode;
+      const result = {
+        ...profile,
+        countryPhoneCode,
+      };
+
+      console.log('Profile from database:', JSON.stringify(result, null, 2));
+      return result;
     } catch (error) {
       if (error instanceof TRPCError) throw error;
       throw new TRPCError({

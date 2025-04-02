@@ -1,4 +1,4 @@
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useTrpc } from './useTrpc';
 import { TRPCClientError } from '@trpc/client';
 
@@ -6,6 +6,39 @@ import { TRPCClientError } from '@trpc/client';
 const globalSettings = reactive<Record<string, any>>({});
 const isInitialized = ref(false);
 const isGlobalLoading = ref(false);
+
+export interface Settings {
+  showLanguageSwitcher: boolean;
+  showThemeToggle: boolean;
+  showCart: boolean;
+  slogan?: {
+    text: string;
+    subText: string;
+    additionalText?: string;
+  };
+  hotlines?: {
+    sales?: {
+      text: string;
+      number: string;
+      backgroundColor?: string;
+      textColor?: string;
+    };
+    support?: {
+      text: string;
+      number: string;
+      backgroundColor?: string;
+      textColor?: string;
+    };
+  };
+  navigation?: {
+    textColor?: string;
+    activeTextColor?: string;
+  };
+  darkMode?: {
+    menuBackgroundColor?: string;
+  };
+  menuBackgroundColor?: string;
+}
 
 /**
  * Composable để quản lý và truy cập các cài đặt hệ thống
@@ -15,7 +48,38 @@ export function useSettings() {
   const trpc = useTrpc();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const settings = ref<any[]>([]);
+  const settings = ref<Settings>({
+    showLanguageSwitcher: true,
+    showThemeToggle: true,
+    showCart: true,
+    slogan: {
+      text: 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ MGA',
+      subText: 'ĐẠI LÝ PHÂN PHỐI XE NÂNG CHÍNH HÃNG',
+      additionalText: 'HÀNG ĐẦU VIỆT NAM',
+    },
+    hotlines: {
+      sales: {
+        text: 'Mua hàng',
+        number: '0909090909',
+        backgroundColor: '#0EA5E9',
+        textColor: '#ffffff',
+      },
+      support: {
+        text: 'Hỗ trợ kỹ thuật',
+        number: '0909090908',
+        backgroundColor: '#0EA5E9',
+        textColor: '#ffffff',
+      },
+    },
+    navigation: {
+      textColor: '#0EA5E9',
+      activeTextColor: '#0284C7',
+    },
+    darkMode: {
+      menuBackgroundColor: '#171717',
+    },
+    menuBackgroundColor: '#ffffff',
+  });
   
   /**
    * Lấy tất cả các cài đặt công khai và lưu vào bộ nhớ cache
@@ -23,13 +87,13 @@ export function useSettings() {
   const fetchPublicSettings = async (forceRefresh = false) => {
     // Nếu đã khởi tạo và không yêu cầu refresh, trả về kết quả từ cache
     if (isInitialized.value && !forceRefresh) {
-      settings.value = Object.values(globalSettings);
+      settings.value = { ...settings.value, ...globalSettings };
       return settings.value;
     }
     
     // Nếu đang tải, không gọi API lại
     if (isGlobalLoading.value) {
-      return Object.values(globalSettings);
+      return { ...settings.value, ...globalSettings };
     }
     
     try {
@@ -43,7 +107,7 @@ export function useSettings() {
       console.log('Public settings from tRPC:', data);
       
       // Lưu vào bộ nhớ cache
-      settings.value = data;
+      settings.value = { ...settings.value, ...data };
       
       // Cập nhật globalSettings
       data.forEach((setting: any) => {
@@ -53,7 +117,7 @@ export function useSettings() {
       });
       
       isInitialized.value = true;
-      return data;
+      return { ...settings.value, ...globalSettings };
     } catch (err) {
       if (err instanceof TRPCClientError) {
         error.value = err.message;
@@ -61,7 +125,7 @@ export function useSettings() {
         error.value = 'Đã xảy ra lỗi khi tải cài đặt';
       }
       console.error('Error fetching public settings:', err);
-      return [];
+      return { ...settings.value, ...globalSettings };
     } finally {
       isLoading.value = false;
       isGlobalLoading.value = false;
@@ -168,6 +232,15 @@ export function useSettings() {
     fetchPublicSettings();
   }
   
+  const fetchSettings = async () => {
+    try {
+      // TODO: Implement API call to fetch settings
+      // For now, using default settings
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+  };
+  
   return {
     isLoading,
     error,
@@ -178,5 +251,6 @@ export function useSettings() {
     isSettingEnabled,
     isAddToCartEnabled,
     isInitialized,
+    fetchSettings,
   };
 }
