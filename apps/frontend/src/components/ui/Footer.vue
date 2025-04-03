@@ -118,23 +118,36 @@ onMounted(async () => {
               <p v-if="address.subtitle" class="text-base font-semibold" style="color: #FF0000">{{ address.subtitle }}</p>
               <p class="mt-1">{{ address.location }}</p>
               
-              <!-- Phone numbers -->
-              <div v-if="address.phone && address.phone.length > 0" class="mt-2">
-                <div v-for="(phone, phoneIndex) in address.phone" :key="phoneIndex" class="flex items-center space-x-2">
-                  <span class="text-base font-semibold" style="color: #FF0000">{{ phone.label }}:</span>
-                  <a :href="'tel:' + phone.number" class="hover:text-primary">{{ phone.number }}</a>
-                  <span v-if="phone.contact" class="text-base font-semibold" style="color: #FF0000">({{ phone.contact }})</span>
-                </div>
-              </div>
-              
-              <!-- Email addresses -->
-              <div v-if="address.email && address.email.length > 0" class="mt-2">
-                <div v-for="(email, emailIndex) in address.email" :key="emailIndex" class="flex items-center space-x-2">
-                  <span class="text-base font-semibold" style="color: #FF0000">{{ email.label }}:</span>
-                  <a :href="'mailto:' + email.address" class="hover:text-primary">{{ email.address }}</a>
-                  <span v-if="email.contact" class="text-base font-semibold" style="color: #FF0000">({{ email.contact }})</span>
-                </div>
-              </div>
+              <!-- Contact Information Table -->
+              <table class="w-full mt-2">
+                <tbody>
+                  <!-- Phone numbers -->
+                  <template v-if="address.phone && address.phone.length > 0">
+                    <tr v-for="(phone, phoneIndex) in address.phone" :key="'phone-'+phoneIndex" class="align-top">
+                      <td class="py-1 pr-2 w-[120px]">
+                        <span class="text-base font-semibold whitespace-nowrap" style="color: #FF0000">{{ phone.label }}:</span>
+                      </td>
+                      <td class="py-1">
+                        <a :href="'tel:' + phone.number" class="hover:text-primary">{{ phone.number }}</a>
+                        <span v-if="phone.contact" class="text-base font-semibold ml-1" style="color: #FF0000">({{ phone.contact }})</span>
+                      </td>
+                    </tr>
+                  </template>
+                  
+                  <!-- Email addresses -->
+                  <template v-if="address.email && address.email.length > 0">
+                    <tr v-for="(email, emailIndex) in address.email" :key="'email-'+emailIndex" class="align-top">
+                      <td class="py-1 pr-2 w-[120px]">
+                        <span class="text-base font-semibold whitespace-nowrap" style="color: #FF0000">{{ email.label }}:</span>
+                      </td>
+                      <td class="py-1">
+                        <a :href="'mailto:' + email.address" class="hover:text-primary">{{ email.address }}</a>
+                        <span v-if="email.contact" class="text-base font-semibold ml-1" style="color: #FF0000">({{ email.contact }})</span>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
             </div>
 
             <!-- Map -->
