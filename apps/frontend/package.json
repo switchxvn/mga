@@ -2,8 +2,7 @@
   "dependencies": {
     "@nuxtjs/i18n": "^9.0.0-rc.2",
     "@tanstack/vue-query": "^5.66.9",
-    "@trpc/client": "^10.45.2",
-    "@trpc/server": "^10.45.2",
+    "trpc-nuxt": "^1.0.4",
     "vue": "^3.3.4",
     "vue-facebook-page": "^1.0.1"
   },

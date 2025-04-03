@@ -29,10 +29,10 @@ export class TrpcController {
       // Create context
       const ctx = await this.trpcService.createContext(req);
 
-      // Tạo URL đầy đủ từ request
+      // Create full URL from request
       const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
       
-      // Tạo Request object cho fetchRequestHandler
+      // Create Request object for fetchRequestHandler
       const request = new Request(url, {
         method: req.method,
         headers: new Headers(req.headers as Record<string, string>),
@@ -45,6 +45,9 @@ export class TrpcController {
         req: request,
         router: this.trpcRouter.getRouter(),
         createContext: () => ctx,
+        batching: {
+          enabled: true,
+        },
         onError: ({ error, path }) => {
           this.logger.error(`tRPC error on path ${path}: ${error.message}`);
           this.logger.error(error.stack);
@@ -54,22 +57,9 @@ export class TrpcController {
         },
       });
 
-      // Log response details
-      this.logger.debug(`tRPC response status: ${result.status}`);
-      
-      // Lấy headers từ response
-      const headers: Record<string, string> = {};
-      result.headers.forEach((value, key) => {
-        headers[key] = value;
-      });
-      
-      this.logger.debug(`tRPC response headers: ${JSON.stringify(headers)}`);
-      
       // Set response headers
-      Object.entries(headers).forEach(([key, value]) => {
-        if (value !== undefined) {
-          res.header(key, value);
-        }
+      result.headers.forEach((value, key) => {
+        res.header(key, value);
       });
 
       // Set CORS headers
@@ -84,12 +74,19 @@ export class TrpcController {
 
       // Send response
       res.status(result.status);
-      
-      // Log response body for debugging
       const responseBody = await result.text();
-      this.logger.debug(`Response body: ${responseBody.substring(0, 200)}${responseBody.length > 200 ? '...' : ''}`);
       
-      res.send(responseBody);
+      // Set content type for JSON response
+      res.header('Content-Type', 'application/json');
+      
+      try {
+        // Parse and re-stringify to ensure valid JSON
+        const parsedBody = JSON.parse(responseBody);
+        res.send(JSON.stringify(parsedBody));
+      } catch {
+        // If parsing fails, send raw response
+        res.send(responseBody);
+      }
     } catch (error) {
       this.logger.error(`Error handling tRPC request: ${error instanceof Error ? error.message : String(error)}`);
       if (error instanceof Error) {

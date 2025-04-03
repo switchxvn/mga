@@ -1,13 +1,31 @@
-import { useTrpc } from '../composables/useTrpc';
+import { createTRPCNuxtClient, httpBatchLink } from 'trpc-nuxt/client';
+import type { AppRouter } from '../../../../apps/backend/src/modules/trpc/trpc.router';
+import superjson from 'superjson';
 
 export default defineNuxtPlugin(() => {
   /**
-   * Cung cấp tRPC client cho ứng dụng Nuxt
+   * createTRPCNuxtClient adds a `useQuery` composable
+   * built on top of `useAsyncData`.
    */
-  const trpc = useTrpc();
+  const client = createTRPCNuxtClient<AppRouter>({
+    transformer: superjson,
+    links: [
+      httpBatchLink({
+        url: '/api/trpc',
+        headers() {
+          const token = localStorage.getItem('accessToken');
+          return {
+            Authorization: token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json',
+          };
+        },
+      }),
+    ],
+  });
+
   return {
     provide: {
-      trpc
-    }
+      client,
+    },
   };
 });

@@ -10,7 +10,7 @@ definePageMeta({
   middleware: ['guest']
 });
 
-const { login, isLoading, error } = useAuth();
+const { login, isLoading, error: authError } = useAuth();
 const toast = useToast();
 
 const form = ref({
@@ -42,9 +42,9 @@ const handleSubmit = async () => {
     });
     
     toast.success('Đăng nhập thành công!');
-  } catch (err) {
-    if (error.value) {
-      toast.error(error.value);
+  } catch (err: any) {
+    if (err.shape?.message) {
+      toast.error(err.shape.message);
     } else {
       toast.error('Đã xảy ra lỗi khi đăng nhập');
     }
@@ -106,14 +106,14 @@ const handleKeyPress = (e: KeyboardEvent) => {
         </NuxtLink>
       </div>
 
-      <div v-if="error" class="rounded-md bg-destructive/10 p-4">
+      <div v-if="authError" class="rounded-md bg-destructive/10 p-4">
         <div class="flex">
           <div class="flex-shrink-0">
             <UIcon name="i-heroicons-exclamation-circle" class="h-5 w-5 text-destructive" />
           </div>
           <div class="ml-3">
             <p class="text-sm text-destructive">
-              {{ error }}
+              {{ authError }}
             </p>
           </div>
         </div>

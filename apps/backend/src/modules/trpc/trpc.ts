@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { ITrpcServices } from './interfaces/trpc-services.interface';
 import { IUser } from './interfaces/user.interface';
+import superjson from 'superjson';
 
 // Define context type
 export interface Context {
@@ -15,9 +16,10 @@ const createContext = (): Context => ({
   services: {} as ITrpcServices, // Will be injected by NestJS
   logger: new Logger('tRPC'),
 });
-
 // Initialize tRPC
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  transformer: superjson,
+});
 
 // Create middleware for protected routes
 const isAuthed = t.middleware(({ ctx, next }) => {
