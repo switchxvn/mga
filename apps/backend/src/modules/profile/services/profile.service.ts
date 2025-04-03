@@ -20,11 +20,16 @@ type ProfileResponse = {
     state: string | null;
     country: string | null;
     zipCode: string | null;
-  };
+  } | null;
   countryPhoneCode: {
-    id: number;
-    code: string;
     phoneCode: string;
+    countryCode: string;
+    countryName: string;
+    isActive: boolean;
+    flagIcon: string | null;
+    flagEmoji: string | null;
+    createdAt: Date;
+    updatedAt: Date;
   } | null;
   createdAt: Date;
   updatedAt: Date;
@@ -53,6 +58,8 @@ export class ProfileService {
         });
       }
 
+      const countryPhoneCodeData = await profile.countryPhoneCode;
+
       return {
         id: profile.id,
         userId: profile.userId,
@@ -61,17 +68,22 @@ export class ProfileService {
         phoneNumber: profile.phoneNumber || null,
         phoneCode: profile.phoneCode || null,
         bio: profile.bio || null,
-        address: {
-          street: profile.address?.street || null,
-          city: profile.address?.city || null,
-          state: profile.address?.state || null,
-          country: profile.address?.country || null,
-          zipCode: profile.address?.zipCode || null,
+        address: profile.address || {
+          street: null,
+          city: null,
+          state: null,
+          country: null,
+          zipCode: null,
         },
-        countryPhoneCode: profile.countryPhoneCode ? {
-          id: profile.countryPhoneCode.id,
-          code: profile.countryPhoneCode.code,
-          phoneCode: profile.countryPhoneCode.phoneCode,
+        countryPhoneCode: countryPhoneCodeData ? {
+          phoneCode: countryPhoneCodeData.phoneCode,
+          countryCode: countryPhoneCodeData.countryCode,
+          countryName: countryPhoneCodeData.countryName,
+          isActive: countryPhoneCodeData.isActive,
+          flagIcon: countryPhoneCodeData.flagIcon,
+          flagEmoji: countryPhoneCodeData.flagEmoji,
+          createdAt: countryPhoneCodeData.createdAt,
+          updatedAt: countryPhoneCodeData.updatedAt,
         } : null,
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
@@ -96,37 +108,35 @@ export class ProfileService {
       if (!profile) {
         profile = this.profileRepository.create({
           userId,
+          ...data,
+          address: data.address || null,
+        });
+      } else {
+        Object.assign(profile, {
+          ...data,
+          address: data.address || profile.address,
         });
       }
 
-      // Update profile fields
-      Object.assign(profile, {
-        ...data,
-        address: {
-          ...(profile.address || {}),
-          ...(data.address || {}),
-        },
-      });
-
-      // If phone code is provided, validate and set country phone code
       if (data.phoneCode) {
         const countryPhoneCode = await this.countryPhoneCodeRepository.findOne({
-          where: { phoneCode: data.phoneCode }
+          where: { phoneCode: data.phoneCode },
         });
 
         if (!countryPhoneCode) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Invalid phone code',
+            code: 'NOT_FOUND',
+            message: `Country phone code ${data.phoneCode} not found`,
           });
         }
 
         profile.phoneCode = data.phoneCode;
-        profile.countryPhoneCode = countryPhoneCode;
+        profile.countryPhoneCode = Promise.resolve(countryPhoneCode);
       }
 
       const updatedProfile = await this.profileRepository.save(profile);
-      
+      const countryPhoneCodeData = await updatedProfile.countryPhoneCode;
+
       return {
         id: updatedProfile.id,
         userId: updatedProfile.userId,
@@ -135,17 +145,22 @@ export class ProfileService {
         phoneNumber: updatedProfile.phoneNumber || null,
         phoneCode: updatedProfile.phoneCode || null,
         bio: updatedProfile.bio || null,
-        address: {
-          street: updatedProfile.address?.street || null,
-          city: updatedProfile.address?.city || null,
-          state: updatedProfile.address?.state || null,
-          country: updatedProfile.address?.country || null,
-          zipCode: updatedProfile.address?.zipCode || null,
+        address: updatedProfile.address || {
+          street: null,
+          city: null,
+          state: null,
+          country: null,
+          zipCode: null,
         },
-        countryPhoneCode: updatedProfile.countryPhoneCode ? {
-          id: updatedProfile.countryPhoneCode.id,
-          code: updatedProfile.countryPhoneCode.code,
-          phoneCode: updatedProfile.countryPhoneCode.phoneCode,
+        countryPhoneCode: countryPhoneCodeData ? {
+          phoneCode: countryPhoneCodeData.phoneCode,
+          countryCode: countryPhoneCodeData.countryCode,
+          countryName: countryPhoneCodeData.countryName,
+          isActive: countryPhoneCodeData.isActive,
+          flagIcon: countryPhoneCodeData.flagIcon,
+          flagEmoji: countryPhoneCodeData.flagEmoji,
+          createdAt: countryPhoneCodeData.createdAt,
+          updatedAt: countryPhoneCodeData.updatedAt,
         } : null,
         createdAt: updatedProfile.createdAt,
         updatedAt: updatedProfile.updatedAt,
@@ -181,6 +196,7 @@ export class ProfileService {
       }
 
       const savedProfile = await this.profileRepository.save(profile);
+      const countryPhoneCodeData = await savedProfile.countryPhoneCode;
       
       return {
         id: savedProfile.id,
@@ -190,17 +206,22 @@ export class ProfileService {
         phoneNumber: savedProfile.phoneNumber || null,
         phoneCode: savedProfile.phoneCode || null,
         bio: savedProfile.bio || null,
-        address: {
-          street: savedProfile.address?.street || null,
-          city: savedProfile.address?.city || null,
-          state: savedProfile.address?.state || null,
-          country: savedProfile.address?.country || null,
-          zipCode: savedProfile.address?.zipCode || null,
+        address: savedProfile.address || {
+          street: null,
+          city: null,
+          state: null,
+          country: null,
+          zipCode: null,
         },
-        countryPhoneCode: savedProfile.countryPhoneCode ? {
-          id: savedProfile.countryPhoneCode.id,
-          code: savedProfile.countryPhoneCode.code,
-          phoneCode: savedProfile.countryPhoneCode.phoneCode,
+        countryPhoneCode: countryPhoneCodeData ? {
+          phoneCode: countryPhoneCodeData.phoneCode,
+          countryCode: countryPhoneCodeData.countryCode,
+          countryName: countryPhoneCodeData.countryName,
+          isActive: countryPhoneCodeData.isActive,
+          flagIcon: countryPhoneCodeData.flagIcon,
+          flagEmoji: countryPhoneCodeData.flagEmoji,
+          createdAt: countryPhoneCodeData.createdAt,
+          updatedAt: countryPhoneCodeData.updatedAt,
         } : null,
         createdAt: savedProfile.createdAt,
         updatedAt: savedProfile.updatedAt,
@@ -222,6 +243,8 @@ export class ProfileService {
 
     if (!profile) return null;
 
+    const countryPhoneCodeData = await profile.countryPhoneCode;
+
     return {
       id: profile.id,
       userId: profile.userId,
@@ -230,17 +253,22 @@ export class ProfileService {
       phoneNumber: profile.phoneNumber || null,
       phoneCode: profile.phoneCode || null,
       bio: profile.bio || null,
-      address: {
-        street: profile.address?.street || null,
-        city: profile.address?.city || null,
-        state: profile.address?.state || null,
-        country: profile.address?.country || null,
-        zipCode: profile.address?.zipCode || null,
+      address: profile.address || {
+        street: null,
+        city: null,
+        state: null,
+        country: null,
+        zipCode: null,
       },
-      countryPhoneCode: profile.countryPhoneCode ? {
-        id: profile.countryPhoneCode.id,
-        code: profile.countryPhoneCode.code,
-        phoneCode: profile.countryPhoneCode.phoneCode,
+      countryPhoneCode: countryPhoneCodeData ? {
+        phoneCode: countryPhoneCodeData.phoneCode,
+        countryCode: countryPhoneCodeData.countryCode,
+        countryName: countryPhoneCodeData.countryName,
+        isActive: countryPhoneCodeData.isActive,
+        flagIcon: countryPhoneCodeData.flagIcon,
+        flagEmoji: countryPhoneCodeData.flagEmoji,
+        createdAt: countryPhoneCodeData.createdAt,
+        updatedAt: countryPhoneCodeData.updatedAt,
       } : null,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
@@ -263,6 +291,7 @@ export class ProfileService {
     }
 
     const updatedProfile = await this.profileRepository.save(profile);
+    const countryPhoneCodeData = await updatedProfile.countryPhoneCode;
     
     return {
       id: updatedProfile.id,
@@ -272,17 +301,22 @@ export class ProfileService {
       phoneNumber: updatedProfile.phoneNumber || null,
       phoneCode: updatedProfile.phoneCode || null,
       bio: updatedProfile.bio || null,
-      address: {
-        street: updatedProfile.address?.street || null,
-        city: updatedProfile.address?.city || null,
-        state: updatedProfile.address?.state || null,
-        country: updatedProfile.address?.country || null,
-        zipCode: updatedProfile.address?.zipCode || null,
+      address: updatedProfile.address || {
+        street: null,
+        city: null,
+        state: null,
+        country: null,
+        zipCode: null,
       },
-      countryPhoneCode: updatedProfile.countryPhoneCode ? {
-        id: updatedProfile.countryPhoneCode.id,
-        code: updatedProfile.countryPhoneCode.code,
-        phoneCode: updatedProfile.countryPhoneCode.phoneCode,
+      countryPhoneCode: countryPhoneCodeData ? {
+        phoneCode: countryPhoneCodeData.phoneCode,
+        countryCode: countryPhoneCodeData.countryCode,
+        countryName: countryPhoneCodeData.countryName,
+        isActive: countryPhoneCodeData.isActive,
+        flagIcon: countryPhoneCodeData.flagIcon,
+        flagEmoji: countryPhoneCodeData.flagEmoji,
+        createdAt: countryPhoneCodeData.createdAt,
+        updatedAt: countryPhoneCodeData.updatedAt,
       } : null,
       createdAt: updatedProfile.createdAt,
       updatedAt: updatedProfile.updatedAt,

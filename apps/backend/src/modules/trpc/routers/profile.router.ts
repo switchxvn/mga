@@ -28,9 +28,14 @@ type UserResponse = {
       zipCode: string | null;
     };
     countryPhoneCode: {
-      id: number;
-      code: string;
       phoneCode: string;
+      countryCode: string;
+      countryName: string;
+      isActive: boolean;
+      flagIcon: string | null;
+      flagEmoji: string | null;
+      createdAt: Date;
+      updatedAt: Date;
     } | null;
     createdAt: Date;
     updatedAt: Date;

@@ -8,7 +8,13 @@ export const updateProfileSchema = z.object({
   bio: z.string().max(500).optional().nullable(),
   phoneNumber: z.string().regex(/^\d+$/).optional().nullable(),
   phoneCode: z.string().max(4).optional().nullable(),
-  address: z.string().max(200).optional().nullable(),
+  address: z.object({
+    street: z.string().max(200).optional().nullable(),
+    city: z.string().max(100).optional().nullable(),
+    state: z.string().max(100).optional().nullable(),
+    country: z.string().max(100).optional().nullable(),
+    zipCode: z.string().max(20).optional().nullable(),
+  }).optional().nullable(),
 });
 
 // Export the type

@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { createContext } from './context';
 import { ConfigService } from '@nestjs/config';
 import { initTRPC } from '@trpc/server';
+import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import { TRPCContext } from './context';
 import { UserService } from '../user/services/user.service';
 import { PostFrontendService } from '../post/frontend/services/post-frontend.service';
@@ -113,7 +114,10 @@ export class TrpcService {
   }
 
   async createContext(req: any) {
-    const context = await createContext({ req, res: {} as any });
+    const context = await createContext({ 
+      req, 
+      res: {} as any
+    } as CreateFastifyContextOptions);
     return {
       ...context,
       services: this.getServices(),

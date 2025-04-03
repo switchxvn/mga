@@ -73,7 +73,13 @@ export class PostFrontendService {
       lastName: authorProfile.lastName,
       phoneNumber: authorProfile.phoneNumber,
       phoneCode: authorProfile.phoneCode,
-      address: authorProfile.address,
+      address: authorProfile.address || {
+        street: null,
+        city: null,
+        state: null,
+        country: null,
+        zipCode: null
+      },
       createdAt: authorProfile.createdAt.toISOString(),
       updatedAt: authorProfile.updatedAt.toISOString()
     } : {
@@ -82,7 +88,13 @@ export class PostFrontendService {
       lastName: null,
       phoneNumber: null,
       phoneCode: null,
-      address: null,
+      address: {
+        street: null,
+        city: null,
+        state: null,
+        country: null,
+        zipCode: null
+      },
       createdAt: null,
       updatedAt: null
     };

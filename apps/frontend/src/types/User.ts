@@ -28,7 +28,13 @@ export interface UserProfile {
   bio: string | null;
   phoneNumber: string | null;
   phoneCode: string | null;
-  address: string | null;
+  address: {
+    street: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    zipCode: string | null;
+  } | null;
   createdAt: string;
   updatedAt: string;
   countryPhoneCode: CountryPhoneCode | null;
