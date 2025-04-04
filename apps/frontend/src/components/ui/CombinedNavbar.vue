@@ -94,6 +94,17 @@ interface NavbarProps {
       fontWeight?: string;
       activeTextColor?: string;
     };
+
+    // Top menu settings
+    topMenu?: {
+      links: {
+        label: string;
+        href: string;
+        textColor: string;
+        hoverColor: string;
+        isTranslated: boolean;
+      }[];
+    };
   };
 }
 
@@ -542,19 +553,21 @@ watch([logo, isLoadingLogo], () => {
           
           <!-- Right Actions -->
           <div class="hidden md:flex items-center gap-3">
-            <NuxtLink 
-              to="/danh-muc-san-pham/phu-tung-xe-nang"
-              class="text-[rgb(var(--tertiary-500))] hover:text-primary-500 transition-colors duration-300 font-bold uppercase"
-            >
-            PHỤ TÙNG XE NÂNG
-            </NuxtLink>
-            <span class="text-neutral-500 dark:text-neutral-400">|</span>
-            <NuxtLink 
-              to="/bai-viet?danh-muc=du-an-mga"
-              class="text-[rgb(var(--tertiary-500))] hover:text-primary-500 transition-colors duration-300 font-bold uppercase"
-            >
-              {{ $t('mga_projects') }}
-            </NuxtLink>
+            <template v-if="props.settings?.topMenu?.links">
+              <template v-for="(link, index) in props.settings.topMenu.links" :key="index">
+                <NuxtLink 
+                  :to="link.href"
+                  class="transition-colors duration-300 font-bold uppercase"
+                  :style="{
+                    color: link.textColor,
+                    '--hover-color': link.hoverColor
+                  }"
+                >
+                {{ $t(link.label.toLowerCase()) }}
+                </NuxtLink>
+                <span v-if="index < props.settings.topMenu.links.length - 1" class="text-neutral-500 dark:text-neutral-400">|</span>
+              </template>
+            </template>
             <div class="min-w-[140px]">
               <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
             </div>
