@@ -1,0 +1,31 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.btn {
+  @include transition-base;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-base;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  
+  &-primary {
+    background-color: $primary;
+    color: white;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+  
+  &-secondary {
+    background-color: $secondary;
+    color: white;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+} 

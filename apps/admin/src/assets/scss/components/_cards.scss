@@ -1,0 +1,30 @@
+@use '../abstracts/variables' as *;
+
+.card {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: $spacing-base;
+  
+  &-header {
+    margin-bottom: $spacing-base;
+    padding-bottom: $spacing-base;
+    border-bottom: 1px solid rgba($secondary, 0.2);
+  }
+  
+  &-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: inherit;
+  }
+  
+  &-body {
+    color: $secondary;
+  }
+  
+  &-footer {
+    margin-top: $spacing-base;
+    padding-top: $spacing-base;
+    border-top: 1px solid rgba($secondary, 0.2);
+  }
+} 

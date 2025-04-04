@@ -1,0 +1,32 @@
+@use '../abstracts/variables' as *;
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  
+  &-container {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 $spacing-base;
+  }
+  
+  &-logo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $primary;
+  }
+  
+  &-nav {
+    display: flex;
+    align-items: center;
+    gap: $spacing-base;
+  }
+} 
