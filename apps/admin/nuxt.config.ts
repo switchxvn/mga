@@ -34,7 +34,10 @@ export default defineNuxtConfig({
 
   ui: {
     global: true,
-    icons: ['heroicons']
+    icons: ['heroicons'],
+    notifications: {
+      position: 'top-right'
+    }
   },
 
   app: {
@@ -53,5 +56,12 @@ export default defineNuxtConfig({
     shim: false
   },
 
-  compatibilityDate: '2025-04-04'
+  compatibilityDate: '2025-04-04',
+
+  runtimeConfig: {
+    jwtSecret: process.env.JWT_SECRET,
+    public: {
+      apiBase: process.env.API_BASE || '/api'
+    }
+  }
 })
