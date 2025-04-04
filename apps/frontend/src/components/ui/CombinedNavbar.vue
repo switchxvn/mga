@@ -1,45 +1,21 @@
 <!-- Kết hợp NavbarWithLogoHotline và NavbarWithoutLogo -->
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
-import { useMenuItems } from "~/composables/useMenuItems";
-import type { MenuItem as SharedMenuItem } from "@ew/shared";
-import Icon from "./Icon.vue";
-import ThemeToggle from "~/components/common/ThemeToggle.vue";
-import LanguageSwitcher from "~/components/common/LanguageSwitcher.vue";
-import CartIcon from "~/components/cart/CartIcon.vue";
-import { useRoute } from "vue-router";
-import { useFeatureFlags } from "~/composables/useFeatureFlags";
-import { useLocalization } from "~/composables/useLocalization";
-import { useLogo } from "~/composables/useLogo";
-import { useDarkMode } from "~/composables/useDarkMode";
-import { useCssColorValue } from "~/composables/useColorUtils";
-import MegaMenu from "~/components/menu/MegaMenu.vue";
-import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
+import { ref, watch, nextTick, onMounted } from 'vue';
 import { useNow, useDateFormat } from '@vueuse/core';
-
-// Rename local interface to avoid conflict
-interface LocalMenuItemTranslation {
-  id?: number;
-  label: string;
-  href: string;
-  locale: string;
-  menuItemId?: number;
-}
-
-// Rename local interface to avoid conflict
-interface LocalMenuItem {
-  id: number;
-  defaultLocale: string;
-  icon?: string | null;
-  order: number;
-  level: number;
-  isActive: boolean;
-  parentId: number | null;
-  translations: LocalMenuItemTranslation[];
-  children?: LocalMenuItem[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { useFeatureFlags } from '~/composables/useFeatureFlags';
+import { useLocalization } from '~/composables/useLocalization';
+import { useLogo } from '~/composables/useLogo';
+import { useNavbar } from '~/composables/useNavbar';
+import { useNavMenu } from '~/composables/useNavMenu';
+import { useNavbarSettings } from '~/composables/useNavbarSettings';
+import { useNavbarFeatures } from '~/composables/useNavbarFeatures';
+import { useDarkMode } from '~/composables/useDarkMode';
+import Icon from './Icon.vue';
+import ThemeToggle from '~/components/common/ThemeToggle.vue';
+import LanguageSwitcher from '~/components/common/LanguageSwitcher.vue';
+import CartIcon from '~/components/cart/CartIcon.vue';
+import MegaMenu from '~/components/menu/MegaMenu.vue';
+import MobileMegaMenu from '~/components/menu/MobileMegaMenu.vue';
 
 // Props cho component
 interface NavbarProps {
@@ -110,7 +86,6 @@ interface NavbarProps {
 
 const props = withDefaults(defineProps<NavbarProps>(), {
   settings: () => ({
-    // Header section settings
     headerBackgroundColor: "#ffffff",
     slogan: {
       text: "XE NÂNG MGA FORKLIFT LẮP RÁP SKD TẠI VIỆT NAM",
@@ -129,14 +104,10 @@ const props = withDefaults(defineProps<NavbarProps>(), {
         number: "028.3620.80.81"
       }
     },
-    
-    // Menu section settings
     menuBackgroundColor: "#ffffff",
     textColor: "#000000",
     borderColor: "#e5e7eb",
     menuAlignment: "center",
-    
-    // Global settings
     showLanguageSwitcher: true,
     showThemeToggle: true,
     showCart: true,
@@ -144,29 +115,8 @@ const props = withDefaults(defineProps<NavbarProps>(), {
   })
 });
 
-// Route
-const route = useRoute();
-
-// Watch route changes to reset sticky state
-watch(
-  () => route.path,
-  () => {
-    isMobileMenuOpen.value = false;
-    activeMobileMegaMenu.value = null;
-    isScrolled.value = false;
-    lastScrollPosition.value = 0;
-    window.scrollTo(0, 0);
-    
-    // Reset nav height
-    nextTick(() => {
-      const nav = document.querySelector('.navigation-section') as HTMLElement;
-      if (nav) {
-        const navHeight = nav.offsetHeight;
-        document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
-      }
-    });
-  }
-);
+// Dark mode
+const { isDark } = useDarkMode();
 
 // Feature flags
 const { isFeatureEnabled } = useFeatureFlags();
@@ -176,349 +126,45 @@ const isLoadingFeatureFlag = ref(true);
 // Localization
 const { locale } = useLocalization();
 
-// Menu items
-const { menuItems, isLoading, error, fetchMenuItems } = useMenuItems();
-
-// Mobile menu state
-const isMobileMenuOpen = ref(false);
-
-// Scroll state
-const isScrolled = ref(false);
-const lastScrollPosition = ref(0);
-const navWrapperRef = ref<HTMLElement | null>(null);
-const logoSectionRef = ref<HTMLElement | null>(null);
-
-// Mega menu state
-const activeMegaMenu = ref<number | null>(null);
-const megaMenuTimeout = ref<number | null>(null);
-
 // Logo
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
 
-// Dark mode
-const { isDark } = useDarkMode();
+// Navbar
+const {
+  isMobileMenuOpen,
+  isScrolled,
+  navWrapperRef,
+  activeMegaMenu,
+  activeMobileMegaMenu,
+  toggleMobileMenu,
+  toggleMobileMegaMenu,
+  showMegaMenu,
+  hideMegaMenu,
+  keepMegaMenu,
+  updateBodyPadding
+} = useNavbar();
 
-// Color utils
-const { processColorValue } = useCssColorValue();
+// Menu
+const {
+  menuItems,
+  isLoading,
+  error,
+  fetchMenuItems,
+  processedMenuItems,
+  isMenuActive,
+  getColumnTitleTranslation,
+  getParentMenuLeftOffset
+} = useNavMenu();
 
-// Add new ref for mobile mega menu
-const activeMobileMegaMenu = ref<number | null>(null);
+// Settings
+const { getMenuBackgroundColor, getTextColor, processColorValue } = useNavbarSettings(props.settings);
 
-// Process menu items with translations
-const processedMenuItems = computed(() => {
-  if (!menuItems.value || menuItems.value.length === 0) {
-    console.log('No menu items available');
-    return [];
-  }
-
-  console.log('Processing menu items:', menuItems.value);
-
-  // Get level 0 items (parent menu items)
-  const parentItems = (menuItems.value as LocalMenuItem[])
-    .filter(item => item.level === 0 && item.isActive !== false)
-    .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-  console.log('Parent items:', parentItems);
-
-  return parentItems.map(item => ({
-    ...item,
-    href: item.translations?.find(t => t.locale === locale.value)?.href || 
-          item.translations?.[0]?.href || "#",
-    label: getTranslation(item, locale.value)
-  }));
-});
-
-// Hàm lấy bản dịch theo ngôn ngữ
-const getTranslation = (item: any, targetLocale: string) => {
-  if (!item.translations || item.translations.length === 0) {
-    return item.label;
-  }
-
-  const translation = item.translations.find((t: any) => t.locale === targetLocale);
-  if (translation) {
-    return translation.label;
-  }
-
-  const defaultTranslation = item.translations.find(
-    (t: any) => t.locale === item.defaultLocale
-  );
-  if (defaultTranslation) {
-    return defaultTranslation.label;
-  }
-
-  return item.label;
-};
-
-// Hàm lấy bản dịch cho tiêu đề menu
-const getColumnTitleTranslation = (column: any, targetLocale: string) => {
-  if (!column.titleTranslations || column.titleTranslations.length === 0) {
-    return column.title;
-  }
-
-  const translation = column.titleTranslations.find((t: any) => t.locale === targetLocale);
-  return translation?.label || column.title;
-};
-
-const updateNavbarVariables = () => {
-  if (typeof document === 'undefined' || !props.settings) return;
-
-  console.log('Updating navbar variables with settings:', props.settings);
-  const root = document.documentElement;
-  if (isDark.value && props.settings.darkMode) {
-    console.log('Applying dark mode settings');
-    root.style.setProperty('--navbar-header-bg', props.settings.darkMode.headerBackgroundColor || '#171717');
-    root.style.setProperty('--navbar-menu-bg', props.settings.darkMode.menuBackgroundColor || '#171717');
-    root.style.setProperty('--navbar-text', props.settings.darkMode.textColor || '#ffffff');
-    root.style.setProperty('--navbar-border', props.settings.darkMode.borderColor || '#404040');
-  } else {
-    console.log('Applying light mode settings');
-    root.style.setProperty('--navbar-header-bg', props.settings.headerBackgroundColor || '#ffffff');
-    root.style.setProperty('--navbar-menu-bg', props.settings.menuBackgroundColor || '#ffffff');
-    root.style.setProperty('--navbar-text', props.settings.textColor || '#000000');
-    root.style.setProperty('--navbar-border', props.settings.borderColor || '#e5e7eb');
-  }
-};
-
-// Watch for settings changes
-watch(() => props.settings, (newSettings) => {
-  console.log('Settings changed:', newSettings);
-  updateNavbarVariables();
-}, { deep: true });
-
-// Watch for dark mode changes
-watch(isDark, () => {
-  console.log('Dark mode changed:', isDark.value);
-  updateNavbarVariables();
-});
-
-// Methods
-const toggleMobileMenu = () => {
-  isMobileMenuOpen.value = !isMobileMenuOpen.value;
-};
-
-const isMenuActive = (href: string) => {
-  if (href === "/") {
-    return route.path === "/";
-  }
-  return href !== "/" && route.path.startsWith(href);
-};
-
-const showMegaMenu = (id: number) => {
-  if (megaMenuTimeout.value) {
-    clearTimeout(megaMenuTimeout.value);
-    megaMenuTimeout.value = null;
-  }
-  activeMegaMenu.value = id;
-};
-
-const hideMegaMenu = () => {
-  megaMenuTimeout.value = window.setTimeout(() => {
-    activeMegaMenu.value = null;
-  }, 300);
-};
-
-const keepMegaMenu = () => {
-  if (megaMenuTimeout.value) {
-    clearTimeout(megaMenuTimeout.value);
-    megaMenuTimeout.value = null;
-  }
-};
-
-// Add new computed property for mobile menu position
-const mobileMenuTop = computed(() => {
-  if (!navWrapperRef.value) return '0px';
-  const navRect = navWrapperRef.value.getBoundingClientRect();
-  return `${navRect.bottom}px`;
-});
-
-// Add these refs at the top of your script
-const initialNavPosition = ref<number>(0);
-const isInitialized = ref(false);
-
-// Update the handleScroll function
-const handleScroll = () => {
-  if (!navWrapperRef.value || !isInitialized.value) return;
-  
-  const currentScrollPosition = Math.round(window.scrollY);
-  
-  // Check if we've scrolled past the original navbar position
-  if (currentScrollPosition >= initialNavPosition.value) {
-    if (!isScrolled.value) {
-      isScrolled.value = true;
-      nextTick(() => {
-        const nav = document.querySelector('.navigation-section') as HTMLElement;
-        if (nav) {
-          const navHeight = Math.round(nav.offsetHeight);
-          document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
-        }
-      });
-    }
-  } else {
-    if (isScrolled.value) {
-      isScrolled.value = false;
-      // Remove padding when navbar is not sticky
-      document.documentElement.style.setProperty('--nav-height', '0px');
-    }
-  }
-  
-  lastScrollPosition.value = currentScrollPosition;
-};
-
-// Define handleResize outside onMounted
-const handleResize = () => {
-  if (navWrapperRef.value) {
-    const navRect = navWrapperRef.value.getBoundingClientRect();
-    initialNavPosition.value = navRect.top + window.scrollY;
-  }
-};
-
-// Update onMounted to initialize position
-onMounted(() => {
-  console.log('CombinedNavbar mounted with settings:', props.settings);
-  
-  // Initialize navbar position after everything is loaded
-  nextTick(() => {
-    if (navWrapperRef.value) {
-      // Get the top offset of the navbar relative to the document
-      const navRect = navWrapperRef.value.getBoundingClientRect();
-      initialNavPosition.value = navRect.top + window.scrollY;
-      isInitialized.value = true;
-
-      // Initial scroll check
-      handleScroll();
-    }
-  });
-  
-  window.addEventListener('scroll', throttledHandleScroll, { passive: true });
-  console.log('Fetching menu items...');
-  fetchMenuItems().then(() => {
-    console.log('Menu items fetched:', menuItems.value);
-  }).catch(err => {
-    console.error('Error fetching menu items:', err);
-  });
-  checkCartFeatureFlag();
-  updateNavbarVariables();
-  
-  // Initial scroll check and height calculation
-  nextTick(() => {
-    handleScroll();
-    const nav = document.querySelector('.navigation-section') as HTMLElement;
-    if (nav) {
-      const navHeight = nav.offsetHeight;
-      document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
-    }
-  });
-  updateBodyPadding();
-
-  // Update onMounted to add resize listener
-  window.addEventListener('resize', handleResize, { passive: true });
-});
-
-// Watch for locale changes
-watch(locale, () => {
-  fetchMenuItems();
-});
-
-// Ensure onUnmounted is at the top level
-onUnmounted(() => {
-  document.body.style.overflow = '';
-  window.removeEventListener('scroll', throttledHandleScroll);
-  document.documentElement.style.removeProperty('--nav-height');
-  document.documentElement.style.removeProperty('--mobile-menu-top');
-  if (typeof document !== 'undefined') {
-    document.body.classList.remove('has-sticky-nav');
-  }
-  // Remove the resize listener
-  window.removeEventListener('resize', handleResize);
-});
-
-// Add new method for mobile mega menu
-const toggleMobileMegaMenu = (itemId: number) => {
-  activeMobileMegaMenu.value = activeMobileMegaMenu.value === itemId ? null : itemId;
-};
-
-// Add new computed property for mega menu position
-const getMegaMenuPosition = (event: MouseEvent) => {
-  const target = event.currentTarget as HTMLElement;
-  if (!target) return { left: '0px' };
-  
-  const rect = target.getBoundingClientRect();
-  return {
-    left: `${rect.left + rect.width / 2}px`
-  };
-};
-
-// Add new computed property for generating unique keys
-const getUniqueKey = (prefix: string, item: any, index: number) => {
-  return `${prefix}-${item.id || index}`;
-};
-
-// Add new method to calculate parent menu item position
-const getParentMenuLeftOffset = (menuId: string) => {
-  const menuElement = document.querySelector(`[data-menu-id="${menuId}"]`);
-  const container = document.querySelector('.navigation-section .container');
-  
-  if (!menuElement || !container) return 0;
-  
-  const menuRect = menuElement.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect();
-  
-  // Calculate center position of the menu item
-  const menuCenterX = menuRect.left + (menuRect.width / 2);
-  
-  // Calculate the offset from the container's left edge
-  const offset = menuCenterX - containerRect.left;
-  
-  return offset;
-};
-
-// Add these near the top of the script
+// Time
 const now = useNow();
-const formattedTime = computed(() => {
-  return useDateFormat(now, 'HH:mm:ss - DD/MM/YYYY').value;
-});
+const formattedTime = useDateFormat(now, 'HH:mm:ss - DD/MM/YYYY');
 
-// Add this to your script setup
-const updateBodyPadding = () => {
-  if (typeof document !== 'undefined') {
-    document.body.classList.toggle('has-sticky-nav', isScrolled.value);
-  }
-};
-
-// Update your watch for isScrolled
-watch(isScrolled, (newValue) => {
-  nextTick(() => {
-    updateBodyPadding();
-  });
-});
-
-// Update the throttled scroll handler to be more precise
-const throttledHandleScroll = (() => {
-  let frame: number | undefined;
-  
-  return () => {
-    if (frame) {
-      cancelAnimationFrame(frame);
-    }
-    
-    frame = requestAnimationFrame(() => {
-      handleScroll();
-    });
-  };
-})();
-
-// Check cart feature flag
-const checkCartFeatureFlag = async () => {
-  try {
-    isLoadingFeatureFlag.value = true;
-    isCartEnabled.value = await isFeatureEnabled("enable_add_to_cart", true);
-  } catch (err) {
-    console.error("Error checking cart feature flag:", err);
-    isCartEnabled.value = false;
-  } finally {
-    isLoadingFeatureFlag.value = false;
-  }
-};
+// Features (Time and Cart)
+const { checkCartFeatureFlag } = useNavbarFeatures();
 
 // Watch for logo changes to update navbar height
 watch([logo, isLoadingLogo], () => {
@@ -529,6 +175,26 @@ watch([logo, isLoadingLogo], () => {
       document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
     }
   });
+});
+
+onMounted(() => {
+  const init = async () => {
+    console.log('CombinedNavbar mounted with settings:', props.settings);
+    try {
+      await fetchMenuItems();
+      console.log('Menu items fetched:', menuItems.value);
+    } catch (err) {
+      console.error('Error fetching menu items:', err);
+    }
+    await checkCartFeatureFlag();
+  };
+  
+  init();
+});
+
+// Watch for locale changes
+watch(locale, () => {
+  fetchMenuItems();
 });
 </script>
 
