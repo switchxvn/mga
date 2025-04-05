@@ -1,24 +1,45 @@
 <script setup lang="ts">
-import { type Icon as LucideIcon, type LucideProps } from 'lucide-vue-next'
-import * as lucideIcons from 'lucide-vue-next'
-import { computed } from 'vue'
+import * as LucideIcons from 'lucide-vue-next';
+import { computed } from 'vue';
 
-export interface IconProps {
-  name: keyof typeof lucideIcons
-  size?: number
-  strokeWidth?: number
+interface IconProps {
+  name: string;
+  size?: number;
+  strokeWidth?: number;
 }
 
 const props = withDefaults(defineProps<IconProps>(), {
   size: 24,
-  strokeWidth: 2,
-})
+  strokeWidth: 2
+});
 
-const Icon = computed(() => lucideIcons[props.name])
+// Convert kebab-case to PascalCase for icon names
+const toPascalCase = (str: string) => {
+  return str
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('');
+};
+
+// Get icon component dynamically
+const Icon = computed(() => {
+  // Try direct match first (for static icons)
+  const directIcon = LucideIcons[props.name as keyof typeof LucideIcons];
+  if (directIcon) return directIcon;
+  
+  // Try PascalCase conversion (for kebab-case static icons)
+  const pascalCaseName = toPascalCase(props.name);
+  const pascalIcon = LucideIcons[pascalCaseName as keyof typeof LucideIcons];
+  if (pascalIcon) return pascalIcon;
+  
+  // If not found, return HelpCircle
+  console.warn(`Icon "${props.name}" not found, using HelpCircle`);
+  return LucideIcons.HelpCircle;
+});
 </script>
 
 <template>
-  <component
+  <component 
     :is="Icon"
     :size="props.size"
     :stroke-width="props.strokeWidth"

@@ -12,7 +12,7 @@ import BackToTop from '~/components/ui/BackToTop.vue';
 import FloatingPhoneSupport from '~/components/ui/FloatingPhoneSupport.vue';
 import FloatingZaloSupport from '~/components/ui/FloatingZaloSupport.vue';
 import FloatingMessengerSupport from '~/components/ui/FloatingMessengerSupport.vue';
-
+import SimpleNavbar from '~/components/ui/SimpleNavbar.vue';
 const router = useRouter();
 const trpc = useTrpc();
 const { getActiveTheme } = useTheme();
@@ -24,24 +24,33 @@ const theme = ref<any>({ sections: [] }); // Initialize with empty sections
 
 // Register available components
 const components = {
-  CombinedNavbar
+  CombinedNavbar,
+  SimpleNavbar
 } as const;
 
 // Function to get component name based on section type and componentName
 const resolveComponent = (section: any) => {
   console.log('Resolving component for section:', section);
+  console.log('Section type:', section.type);
+  console.log('Section componentName:', section.componentName);
+  
   if (section.componentName && components[section.componentName as keyof typeof components]) {
-    return components[section.componentName as keyof typeof components];
+    const component = components[section.componentName as keyof typeof components];
+    console.log('Using component from componentName:', component.name);
+    return component;
   }
+  
   const component = getDefaultComponent(section.type);
-  console.log('Resolved component:', component?.name);
+  console.log('Using default component for type:', section.type, component?.name);
   return component;
 };
 
 // Function to get default component based on section type
 const getDefaultComponent = (type: string) => {
   const typeToComponent: Record<string, any> = {
-    'navbar': components.CombinedNavbar
+    'navbar': components.CombinedNavbar,
+    'simple_navbar': components.SimpleNavbar,
+    'combined_navbar': components.CombinedNavbar
   };
   
   return typeToComponent[type] || components.CombinedNavbar;
@@ -83,6 +92,9 @@ onMounted(async () => {
       const activeTheme = await getActiveTheme({ pageType: PageType.COMMON });
       if (activeTheme) {
         theme.value = activeTheme;
+        console.log('Active theme loaded:', activeTheme);
+        console.log('Theme sections:', activeTheme.sections);
+        console.log('Active sections:', activeTheme.sections?.filter(s => s.isActive));
       }
     } catch (error) {
       console.error('Failed to load theme:', error);

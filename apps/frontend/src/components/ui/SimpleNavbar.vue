@@ -17,6 +17,7 @@ import MegaMenu from '~/components/menu/MegaMenu.vue';
 import MobileMegaMenu from '~/components/menu/MobileMegaMenu.vue';
 import { getIconName } from '~/utils/icon';
 import type { Icon as LucideIcon } from 'lucide-vue-next';
+import { useCssColorValue } from '~/composables/useColorUtils';
 
 // Props cho component
 interface NavbarProps {
@@ -69,7 +70,17 @@ const props = withDefaults(defineProps<NavbarProps>(), {
     showLanguageSwitcher: true,
     showThemeToggle: true,
     showCart: true,
-    mobileMenuBreakpoint: "md"
+    mobileMenuBreakpoint: "md",
+    darkMode: {
+      menuBackgroundColor: "#171717",
+      textColor: "#ffffff",
+      borderColor: "#404040"
+    },
+    navigation: {
+      textColor: "var(--tertiary-500)",
+      fontWeight: "semibold",
+      activeTextColor: "var(--primary-500)"
+    }
   })
 });
 
@@ -112,7 +123,9 @@ const {
 } = useNavMenu();
 
 // Settings
-const { getMenuBackgroundColor, getTextColor, processColorValue } = useNavbarSettings(props.settings);
+const navbarSettings = useNavbarSettings(props.settings);
+const { settings, menuBackgroundColor, textColor, borderColor, navigationTextColor, navigationActiveTextColor } = navbarSettings;
+const { processColorValue } = useCssColorValue();
 
 // Time
 const now = useNow();
@@ -145,42 +158,43 @@ watch(locale, () => {
 <template>
   <div class="navbar-container">
     <!-- Top Menu -->
-    <div class="top-menu w-full border-b relative">
-      <div class="top-menu-bg-layer"></div>
+    <div class="top-menu w-full border-b relative" :style="{
+      borderColor: isDark ? props.settings?.darkMode?.borderColor : 'rgb(var(--color-primary-DEFAULT))',
+      backgroundColor: isDark ? props.settings?.darkMode?.menuBackgroundColor : 'rgb(var(--color-primary-DEFAULT))',
+      color: isDark ? props.settings?.darkMode?.textColor : '#ffffff'
+    }">
       <div class="container mx-auto">
-        <div class="flex items-center justify-between h-12 px-4">
+        <div class="flex items-center h-12 px-4">
           <!-- Current Time -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 w-[180px]">
             <Icon 
               name="Clock" 
-              class="h-4 w-4 text-neutral-500 dark:text-neutral-400" 
+              class="h-4 w-4 text-white"
             />
-            <span class="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+            <span class="text-sm font-medium text-white">
               {{ formattedTime }}
             </span>
           </div>
           
+          <!-- Center Hotline -->
+          <div class="flex-1 flex justify-center">
+            <div class="flex items-center gap-3">
+              <Icon 
+                name="Phone" 
+                class="h-6 w-6 text-white"
+              />
+              <span class="text-lg font-bold text-white">
+                Hotline: 1900 1234
+              </span>
+            </div>
+          </div>
+
           <!-- Right Actions -->
-          <div class="hidden md:flex items-center gap-3">
-            <template v-if="props.settings?.topMenu?.links">
-              <template v-for="(link, index) in props.settings.topMenu.links" :key="index">
-                <NuxtLink 
-                  :to="link.href"
-                  class="transition-colors duration-300 font-bold uppercase"
-                  :style="{
-                    color: link.textColor,
-                    '--hover-color': link.hoverColor
-                  }"
-                >
-                {{ $t(link.label.toLowerCase()) }}
-                </NuxtLink>
-                <span v-if="index < props.settings.topMenu.links.length - 1" class="text-neutral-500 dark:text-neutral-400">|</span>
-              </template>
-            </template>
-            <div class="min-w-[140px]">
+          <div class="flex items-center gap-6 w-[400px] justify-end">
+            <div class="w-44">
               <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
             </div>
-            <div class="min-w-[140px]">
+            <div class="w-44">
               <ThemeToggle v-if="props.settings?.showThemeToggle" />
             </div>
           </div>
@@ -191,25 +205,23 @@ watch(locale, () => {
     <!-- Navigation Section -->
     <div 
       ref="navWrapperRef"
-      class="nav-wrapper w-full"
+      class="nav-wrapper w-full h-[60px]"
       :class="{ 'nav-sticky': isScrolled }"
+      :style="{
+        backgroundColor: isDark ? props.settings?.darkMode?.menuBackgroundColor : props.settings?.menuBackgroundColor
+      }"
     >
-      <nav
-        class="navigation-section w-full relative"
-      >
-        <div 
-          class="nav-bg-layer"
-          :style="{
-            backgroundColor: isDark 
-              ? processColorValue(props.settings?.darkMode?.menuBackgroundColor || '#171717')
-              : processColorValue(props.settings?.menuBackgroundColor || '#ffffff')
-          }"
-        ></div>
-        <div class="container mx-auto px-4">
+      <nav class="navigation-section w-full h-full relative">
+        <div class="container mx-auto px-4 h-full">
           <div class="flex items-center justify-between h-full relative">
             <!-- Desktop Navigation -->
-            <nav class="hidden md:flex items-center space-x-5 flex-grow justify-start">
-              <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400">Đang tải menu...</div>
+            <nav 
+              class="hidden md:flex items-center space-x-5 flex-grow"
+              :style="{ justifyContent: props.settings?.menuAlignment || 'center' }"
+            >
+              <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
+                Đang tải menu...
+              </div>
               <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
               <template v-else>
                 <div
@@ -223,8 +235,10 @@ watch(locale, () => {
                   <NuxtLink
                     :to="item.href"
                     class="main-menu-item text-[1.05rem] uppercase transition-colors py-5 flex items-center space-x-1"
-                    :style="{ fontSize: '1.05rem' }"
-                    :class="{ 'menu-active': isMenuActive(item.href) }"
+                    :class="{ 
+                      'menu-active': isMenuActive(item.href),
+                      [props.settings?.navigation?.fontWeight || '']: true
+                    }"
                   >
                     <Icon
                       v-if="item.icon"
@@ -232,17 +246,16 @@ watch(locale, () => {
                       class="h-5 w-5 mr-1"
                       :style="{ 
                         color: isMenuActive(item.href) 
-                          ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
-                          : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)')
+                          ? props.settings?.navigation?.activeTextColor
+                          : props.settings?.navigation?.textColor
                       }"
                     />
                     <span 
                       class="text-[1.05rem] transition-colors duration-300" 
                       :style="{ 
                         color: isMenuActive(item.href) 
-                          ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
-                          : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)'),
-                        '--hover-color': processColorValue('var(--primary-400)')
+                          ? props.settings?.navigation?.activeTextColor
+                          : props.settings?.navigation?.textColor
                       }"
                     >
                       {{ item.label }}
@@ -253,8 +266,8 @@ watch(locale, () => {
                       class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
                       :style="{ 
                         color: isMenuActive(item.href) 
-                          ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
-                          : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)')
+                          ? props.settings?.navigation?.activeTextColor
+                          : props.settings?.navigation?.textColor
                       }"
                     />
                   </NuxtLink>
@@ -429,14 +442,11 @@ watch(locale, () => {
 
   .top-menu {
     @apply relative z-50;
-    
-    .top-menu-bg-layer {
-      @apply absolute inset-0 bg-white dark:bg-neutral-900;
-    }
   }
 
   .nav-wrapper {
     @apply relative z-40;
+    position: relative;
 
     &.nav-sticky {
       @apply fixed top-0 left-0 right-0 shadow-md;
@@ -446,25 +456,24 @@ watch(locale, () => {
 
   .navigation-section {
     @apply relative;
-    height: var(--nav-height, 60px);
-
-    .nav-bg-layer {
-      @apply absolute inset-0;
-    }
   }
 
   .main-menu-item {
     @apply relative;
 
+    span, .icon {
+      @apply transition-colors duration-300;
+    }
+
     &:hover {
-      span {
-        @apply text-primary-500;
+      span, .icon {
+        color: var(--primary-500) !important;
       }
     }
 
     &.menu-active {
-      span {
-        @apply text-primary-500;
+      span, .icon {
+        color: var(--primary-500) !important;
       }
     }
   }

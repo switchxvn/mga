@@ -130,6 +130,7 @@ export const useNavbarSettings = (settings: NavbarSettings = {}) => {
     textColor,
     borderColor,
     navigationTextColor,
-    navigationActiveTextColor
+    navigationActiveTextColor,
+    processColorValue
   };
 }; 
