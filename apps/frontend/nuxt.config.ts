@@ -233,7 +233,8 @@ export default defineNuxtConfig({
     build: {
       rollupOptions: {
         external: ['photoswipe'],
-      }
+      },
+      cssCodeSplit: true
     },
     vue: {
       script: {
@@ -300,4 +301,12 @@ export default defineNuxtConfig({
 
   // Enable source maps in production for better error tracking
   sourcemap: true,
+
+  experimental: {
+    componentIslands: true
+  },
+
+  build: {
+    transpile: ['vue']
+  },
 });

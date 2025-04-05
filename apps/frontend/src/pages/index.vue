@@ -1,37 +1,18 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
-import HeroSection from "../components/sections/home_page/HeroSection.vue";
-import HeroSectionFullWidth from "../components/sections/home_page/HeroSectionFullWidth.vue";
-import ProductCategoriesSection from "../components/sections/home_page/ProductCategoriesSection.vue";
-import ServiceSection from "../components/sections/home_page/ServiceSection.vue";
-import PostCard from "../components/ui/card/PostCard.vue";
 import { useLocalization } from "../composables/useLocalization";
 import { useTrpc } from "../composables/useTrpc";
 import { computed, onMounted, ref, watch } from "../composables/useVueComposables";
 // Import Swiper
+import { PageType } from '@ew/shared';
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/vue";
-import FeaturedProductsSection from "../components/sections/home_page/FeaturedProductsSection.vue";
+import type { Component } from 'vue';
+import { defineAsyncComponent } from 'vue';
 import { useTheme } from '../composables/useTheme';
-import CompanyIntroSection from "../components/sections/home_page/CompanyIntroSection.vue";
-import NewsSection from "../components/sections/home_page/NewsSection.vue";
-import VideoIntroSection from "../components/sections/home_page/VideoIntroSection.vue";
-import StyledProductCategoriesSection from "../components/sections/home_page/StyledProductCategoriesSection.vue";
-import StyledFeaturedProductsSection from "../components/sections/home_page/StyledFeaturedProductsSection.vue";
-import CustomerLogosSection from "../components/sections/home_page/CustomerLogosSection.vue";
-import FeatureServicesSection from "../components/sections/home_page/FeatureServicesSection.vue";
-import WhyChooseUsSection from "../components/sections/home_page/WhyChooseUsSection.vue";
-import TicketBookingSection from "../components/sections/home_page/TicketBookingSection.vue";
-import VideoIntroWithTextSection from "../components/sections/home_page/VideoIntroWithTextSection.vue";
-import GalleryMasonrySection from "../components/sections/home_page/GalleryMasonrySection.vue";
-import FoodGallerySection from "../components/sections/home_page/FoodGallerySection.vue";
-import StyledNewsSection from "../components/sections/home_page/StyledNewsSection.vue";
-import CustomerReviewsSection from "../components/sections/home_page/CustomerReviewsSection.vue";
-import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface PostTranslation {
@@ -320,49 +301,43 @@ const error = ref<string | null>(null);
 const { getActiveTheme } = useTheme();
 const theme = ref<Theme | null>(null);
 
-// Modify the components registration to be more explicit
+// Định nghĩa type cho components
+type ComponentType = Component;
+type ComponentRegistry = Record<string, ComponentType>;
+
+// Modify the components registration to use defineAsyncComponent
 const registeredComponents = {
-  'HeroSection': HeroSection,
-  'FeaturedProductsSection': FeaturedProductsSection,
-  'ProductCategoriesSection': ProductCategoriesSection,
-  'ServiceSection': ServiceSection,
-  'NewsSection': NewsSection,
-  'CompanyIntroSection': CompanyIntroSection,
-  'HeroSectionFullWidth': HeroSectionFullWidth,
-  'VideoIntroSection': VideoIntroSection,
-  'StyledProductCategoriesSection': StyledProductCategoriesSection,
-  'StyledFeaturedProductsSection': StyledFeaturedProductsSection,
-  'CustomerLogosSection': CustomerLogosSection,
-  'FeatureServicesSection': FeatureServicesSection,
-  'WhyChooseUsSection': WhyChooseUsSection,
-  'TicketBookingSection': TicketBookingSection,
-  'VideoIntroWithTextSection': VideoIntroWithTextSection,
-  'GalleryMasonrySection': GalleryMasonrySection,
-  'FoodGallerySection': FoodGallerySection,
-  'StyledNewsSection': StyledNewsSection,
-  'CustomerReviewsSection': CustomerReviewsSection
-} as const;
+  'HeroSection': defineAsyncComponent(() => import("../components/sections/home_page/HeroSection.vue")),
+  'FeaturedProductsSection': defineAsyncComponent(() => import("../components/sections/home_page/FeaturedProductsSection.vue")),
+  'ProductCategoriesSection': defineAsyncComponent(() => import("../components/sections/home_page/ProductCategoriesSection.vue")),
+  'ServiceSection': defineAsyncComponent(() => import("../components/sections/home_page/ServiceSection.vue")),
+  'NewsSection': defineAsyncComponent(() => import("../components/sections/home_page/NewsSection.vue")),
+  'CompanyIntroSection': defineAsyncComponent(() => import("../components/sections/home_page/CompanyIntroSection.vue")),
+  'HeroSectionFullWidth': defineAsyncComponent(() => import("../components/sections/home_page/HeroSectionFullWidth.vue")),
+  'VideoIntroSection': defineAsyncComponent(() => import("../components/sections/home_page/VideoIntroSection.vue")),
+  'StyledProductCategoriesSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledProductCategoriesSection.vue")),
+  'StyledFeaturedProductsSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledFeaturedProductsSection.vue")),
+  'CustomerLogosSection': defineAsyncComponent(() => import("../components/sections/home_page/CustomerLogosSection.vue")),
+  'FeatureServicesSection': defineAsyncComponent(() => import("../components/sections/home_page/FeatureServicesSection.vue")),
+  'WhyChooseUsSection': defineAsyncComponent(() => import("../components/sections/home_page/WhyChooseUsSection.vue")),
+  'TicketBookingSection': defineAsyncComponent(() => import("../components/sections/home_page/TicketBookingSection.vue")),
+  'VideoIntroWithTextSection': defineAsyncComponent(() => import("../components/sections/home_page/VideoIntroWithTextSection.vue")),
+  'GalleryMasonrySection': defineAsyncComponent(() => import("../components/sections/home_page/GalleryMasonrySection.vue")),
+  'FoodGallerySection': defineAsyncComponent(() => import("../components/sections/home_page/FoodGallerySection.vue")),
+  'StyledNewsSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledNewsSection.vue")),
+  'CustomerReviewsSection': defineAsyncComponent(() => import("../components/sections/home_page/CustomerReviewsSection.vue"))
+} as ComponentRegistry;
 
 // Modify the resolveComponent function
-const resolveComponent = (section: ThemeSection): any => {
-  if (!section) {
-    console.warn('Section is undefined');
+const resolveComponent = (section: ThemeSection): ComponentType | null => {
+  if (!section?.type && !section?.componentName) {
+    console.warn('Invalid section configuration');
     return null;
   }
 
-  // Log for debugging
-  console.log('Resolving section:', {
-    type: section.type,
-    componentName: section.componentName,
-    isActive: section.isActive
-  });
-
   // First try componentName if specified
-  if (section.componentName) {
-    const component = registeredComponents[section.componentName as keyof typeof registeredComponents];
-    if (component) {
-      return markRaw(component);
-    }
+  if (section.componentName && registeredComponents[section.componentName]) {
+    return registeredComponents[section.componentName];
   }
 
   // Then try type mapping
@@ -387,11 +362,11 @@ const resolveComponent = (section: ThemeSection): any => {
   };
 
   const componentName = typeToComponentName[section.type];
-  if (componentName) {
-    return markRaw(registeredComponents[componentName]);
+  if (componentName && registeredComponents[componentName]) {
+    return registeredComponents[componentName];
   }
 
-  console.warn(`Could not resolve component for section type: ${section.type}`);
+  console.warn(`No component found for section type: ${section.type}`);
   return null;
 };
 
@@ -574,16 +549,17 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
       <template v-if="theme?.sections">
         <template v-for="(section, index) in theme.sections" :key="`section-${section.id}-${index}`">
           <ClientOnly>
-            <Suspense>
-              <template #default>
-              
-              </template>
-              <template #fallback>
-                <div class="p-4 text-center">
-                  <ULoader />
-                </div>
-              </template>
-            </Suspense>
+            <component
+              v-if="section.isActive"
+              :is="resolveComponent(section)"
+              :section="section"
+              :config="getSectionConfig(section.type)"
+            />
+            <template #fallback>
+              <div class="p-4 text-center">
+                <ULoader />
+              </div>
+            </template>
           </ClientOnly>
         </template>
       </template>
