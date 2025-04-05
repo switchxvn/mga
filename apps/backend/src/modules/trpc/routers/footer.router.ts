@@ -19,6 +19,7 @@ export const footerRouter = router({
       return {
         id: footer.id,
         name: footer.name,
+        componentName: footer.componentName,
         addresses: footer.addresses,
         mapUrl: footer.mapUrl,
         fanpageUrl: footer.fanpageUrl,

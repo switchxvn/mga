@@ -73,6 +73,9 @@ export class Footer {
     @Column()
     name: string;
 
+    @Column({ name: 'component_name', default: 'Footer' })
+    componentName: string;
+
     @Column({ type: 'jsonb', name: 'addresses' })
     addresses: Address[];
 

@@ -221,6 +221,9 @@
     "noPosts": "No posts found",
     "resetFilters": "Reset Filters"
   },
+  "news": {
+    "viewAll": "View All News"
+  },
   "sort": {
     "newest": "Newest",
     "oldest": "Oldest",

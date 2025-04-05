@@ -47,6 +47,7 @@ export class FooterFrontendService {
         isActive: footer.isActive,
         createdAt: footer.createdAt,
         updatedAt: footer.updatedAt,
+        componentName: footer.componentName,
       };
     } catch (error) {
       console.log(error);

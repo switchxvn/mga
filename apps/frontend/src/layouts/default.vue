@@ -8,11 +8,13 @@ import { PageType } from '@ew/shared';
 // Import components
 import CombinedNavbar from '../components/ui/CombinedNavbar.vue';
 import Footer from '../components/ui/Footer.vue';
+import TourismFooter from '../components/ui/TourismFooter.vue';
 import BackToTop from '~/components/ui/BackToTop.vue';
 import FloatingPhoneSupport from '~/components/ui/FloatingPhoneSupport.vue';
 import FloatingZaloSupport from '~/components/ui/FloatingZaloSupport.vue';
 import FloatingMessengerSupport from '~/components/ui/FloatingMessengerSupport.vue';
 import SimpleNavbar from '~/components/ui/SimpleNavbar.vue';
+
 const router = useRouter();
 const trpc = useTrpc();
 const { getActiveTheme } = useTheme();
@@ -21,12 +23,21 @@ const user = ref<any>(null);
 const isLoading = ref(true);
 const isDarkMode = ref(false);
 const theme = ref<any>({ sections: [] }); // Initialize with empty sections
+const footer = ref<any>(null);
 
 // Register available components
 const components = {
   CombinedNavbar,
-  SimpleNavbar
+  SimpleNavbar,
+  Footer,
+  TourismFooter,
 } as const;
+
+// Function to resolve footer component
+const resolveFooterComponent = (componentName?: string) => {
+  if (!componentName) return Footer;
+  return components[componentName as keyof typeof components] || Footer;
+};
 
 // Function to get component name based on section type and componentName
 const resolveComponent = (section: any) => {
@@ -98,6 +109,17 @@ onMounted(async () => {
       }
     } catch (error) {
       console.error('Failed to load theme:', error);
+    }
+    
+    // Fetch footer data
+    try {
+      const activeFooter = await trpc.footer.getActiveFooter.query();
+      if (activeFooter) {
+        footer.value = activeFooter;
+        console.log('Active footer loaded:', activeFooter);
+      }
+    } catch (error) {
+      console.error('Failed to load footer:', error);
     }
     
     // Kiểm tra dark mode
@@ -186,7 +208,11 @@ async function handleLogout() {
     </main>
     
     <!-- Footer -->
-    <Footer appName="E-Commerce" />
+    <component
+      v-if="footer"
+      :is="resolveFooterComponent(footer.componentName)"
+      v-bind="footer"
+    />
     <BackToTop />
     <FloatingPhoneSupport />
     <FloatingZaloSupport />

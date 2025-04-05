@@ -28,6 +28,7 @@ import WhyChooseUsSection from "../components/sections/home_page/WhyChooseUsSect
 import TicketBookingSection from "../components/sections/home_page/TicketBookingSection.vue";
 import VideoIntroWithTextSection from "../components/sections/home_page/VideoIntroWithTextSection.vue";
 import GalleryMasonrySection from "../components/sections/home_page/GalleryMasonrySection.vue";
+import StyledNewsSection from "../components/sections/home_page/StyledNewsSection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -334,7 +335,8 @@ const components = {
   WhyChooseUsSection,
   TicketBookingSection,
   VideoIntroWithTextSection,
-  GalleryMasonrySection
+  GalleryMasonrySection,
+  StyledNewsSection
 } as const;
 
 // Function to get component name based on section type and componentName
@@ -364,7 +366,8 @@ const getDefaultComponent = (type: string) => {
     'customer_logos': components.CustomerLogosSection,
     'feature_services': components.FeatureServicesSection,
     'ticket_booking': components.TicketBookingSection,
-    'gallery': components.GalleryMasonrySection
+    'gallery': components.GalleryMasonrySection,
+    'styled_news': components.StyledNewsSection
   };
   
   return typeToComponent[type] || null;

@@ -221,6 +221,9 @@
     "noPosts": "Chưa có bài viết nào",
     "resetFilters": "Đặt lại bộ lọc"
   },
+  "news": {
+    "viewAll": "Xem tất cả tin tức"
+  },
   "sort": {
     "newest": "Mới nhất",
     "oldest": "Cũ nhất",
