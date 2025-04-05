@@ -327,9 +327,7 @@ watch(locale, () => {
               <div class="w-44">
                 <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
               </div>
-              <div class="w-44">
-                <ThemeToggle v-if="props.settings?.showThemeToggle" />
-              </div>
+             
             </div>
           </div>
         </div>
@@ -608,7 +606,7 @@ watch(locale, () => {
                 <LanguageSwitcher />
               </div>
               <div v-if="props.settings?.showThemeToggle" class="w-full">
-                <ThemeToggle />
+                <ThemeToggle mode="full" />
               </div>
             </div>
 

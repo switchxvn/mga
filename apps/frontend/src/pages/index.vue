@@ -346,12 +346,18 @@ const components = {
 // Function to get component name based on section type and componentName
 const resolveComponent = (section: ThemeSection) => {
   console.log('Resolving component for section:', section);
+  
+  // First try to get component by componentName if specified
   if (section.componentName && components[section.componentName as keyof typeof components]) {
     return components[section.componentName as keyof typeof components];
   }
+  
+  // Then try to get default component by type
   const component = getDefaultComponent(section.type);
   console.log('Resolved component:', component?.name);
-  return component;
+  
+  // Return the component or UCard as fallback to avoid 'default' component error
+  return component || 'UCard';
 };
 
 // Function to get default component based on section type
@@ -557,14 +563,15 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
     <template v-else>
       <!-- Render sections based on their order -->
       <template v-for="(section, index) in theme?.sections" :key="`section-${section.id}-${index}`">
-        <component 
-          v-if="section.isActive && resolveComponent(section)"
-          :is="resolveComponent(section)"
-          :section="section"
-          :config="getSectionConfig(section.type)"
-        />
+        <ClientOnly>
+          <component 
+            v-if="section.isActive && resolveComponent(section)"
+            :is="resolveComponent(section)"
+            :section="section"
+            :config="getSectionConfig(section.type)"
+          />
+        </ClientOnly>
       </template>
-
     </template>
   </div>
 </template>
