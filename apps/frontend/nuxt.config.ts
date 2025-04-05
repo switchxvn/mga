@@ -229,12 +229,16 @@ export default defineNuxtConfig({
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
       include: ['@trpc/client', '@trpc/server', 'photoswipe'],
+      exclude: ['entities']
     },
     build: {
       rollupOptions: {
         external: ['photoswipe'],
       },
       cssCodeSplit: true
+    },
+    ssr: {
+      noExternal: ['entities']
     },
     vue: {
       script: {
