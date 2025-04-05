@@ -228,7 +228,7 @@ export default defineNuxtConfig({
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
-      include: ['@trpc/client', '@trpc/server', 'photoswipe'],
+      include: ['@trpc/client', '@trpc/server', 'photoswipe', 'estree-walker'],
       exclude: ['entities']
     },
     build: {
