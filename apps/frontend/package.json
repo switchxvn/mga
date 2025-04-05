@@ -11,5 +11,9 @@
   "devDependencies": {
     "@headlessui/tailwindcss": "^0.2.2",
     "sass": "^1.85.1"
-  }
+  },
+  "resolutions": {
+  "estree-walker": "2.0.2"
+}
+
 }
