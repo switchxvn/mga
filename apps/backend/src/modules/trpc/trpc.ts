@@ -3,7 +3,6 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { ITrpcServices } from './interfaces/trpc-services.interface';
 import { IUser } from './interfaces/user.interface';
 import superjson from 'superjson';
-
 // Define context type
 export interface Context {
   user?: IUser;
@@ -16,6 +15,7 @@ const createContext = (): Context => ({
   services: {} as ITrpcServices, // Will be injected by NestJS
   logger: new Logger('tRPC'),
 });
+
 // Initialize tRPC
 const t = initTRPC.context<Context>().create({
   transformer: superjson,

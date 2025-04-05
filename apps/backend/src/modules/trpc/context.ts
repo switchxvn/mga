@@ -1,12 +1,11 @@
 import { Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../app.module';
 import { User } from '../user/entities/user.entity';
 import { ITrpcServices } from './interfaces/trpc-services.interface';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 
 let dataSource: DataSource | null = null;
 let jwtService: JwtService | null = null;

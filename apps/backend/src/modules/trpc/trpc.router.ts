@@ -21,6 +21,7 @@ import { aboutRouter } from './routers/about.router';
 import { logoRouter } from './routers/logo.router';
 import { customerLogoRouter } from './routers/customer-logo.router';
 import { contactRouter } from './routers/contact.router';
+import { galleryRouter } from './routers/gallery.router';
 //Admin
 import { adminMenuItemsRouter } from './routers/admin/menu-items.router';
 
@@ -54,6 +55,7 @@ export class TrpcRouter {
       logo: logoRouter,
       customerLogo: customerLogoRouter,
       contact: contactRouter,
+      gallery: galleryRouter,
       admin: this.trpc.createRouter({
         menuItems: adminMenuItemsRouter,
       }),
