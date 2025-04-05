@@ -337,7 +337,7 @@ watch(locale, () => {
     <!-- Navigation Section -->
     <div 
       ref="navWrapperRef"
-      class="nav-wrapper w-full h-[80px]"
+      class="nav-wrapper w-full h-[90px]"
       :class="{ 'nav-sticky': isScrolled }"
       :style="{
         backgroundColor: isDark ? props.settings?.darkMode?.menuBackgroundColor : props.settings?.menuBackgroundColor
@@ -371,8 +371,8 @@ watch(locale, () => {
 
             <!-- Navigation Menu - Center column -->
             <nav class="w-[70%] hidden lg:flex h-full">
-              <div class="flex items-center justify-center w-full py-4" ref="menuContainerRef">
-                <div class="flex items-center justify-center gap-8">
+              <div class="flex items-center justify-center w-full h-full" ref="menuContainerRef">
+                <div class="flex items-center justify-center gap-8 h-full">
                   <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
                     Đang tải menu...
                   </div>
@@ -382,7 +382,7 @@ watch(locale, () => {
                       <div
                         v-for="(item, itemIndex) in visibleMenuItems"
                         :key="item.id"
-                        class="relative group"
+                        class="relative group h-full flex items-center"
                         :data-menu-id="item.id"
                         :ref="el => { if (el) menuItemsRefs[itemIndex] = el as HTMLElement }"
                         @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
@@ -390,7 +390,7 @@ watch(locale, () => {
                       >
                         <NuxtLink
                           :to="item.href"
-                          class="main-menu-item flex items-center space-x-1 whitespace-nowrap py-5 px-4"
+                          class="main-menu-item flex items-center space-x-1 whitespace-nowrap h-full px-4"
                           :class="{ 
                             'menu-active': isMenuActive(item.href),
                             [props.settings?.navigation?.fontWeight || '']: true
@@ -402,15 +402,15 @@ watch(locale, () => {
                             class="nav-icon w-6 h-6"
                             :style="{ 
                               color: isMenuActive(item.href) 
-                                ? props.settings?.navigation?.activeTextColor
+                                ? 'rgb(var(--color-primary-500))'
                                 : props.settings?.navigation?.textColor
                             }"
                           />
                           <span 
-                            class="text-[1.05rem] uppercase transition-colors duration-300" 
+                            class="text-[1.05rem] uppercase" 
                             :style="{ 
                               color: isMenuActive(item.href) 
-                                ? props.settings?.navigation?.activeTextColor
+                                ? 'rgb(var(--color-primary-500))'
                                 : props.settings?.navigation?.textColor
                             }"
                           >
@@ -422,7 +422,7 @@ watch(locale, () => {
                             class="nav-icon w-5 h-5 transition-transform duration-300 group-hover:rotate-180"
                             :style="{ 
                               color: isMenuActive(item.href) 
-                                ? props.settings?.navigation?.activeTextColor
+                                ? 'rgb(var(--color-primary-500))'
                                 : props.settings?.navigation?.textColor
                             }"
                           />
@@ -691,6 +691,34 @@ watch(locale, () => {
     height: auto;
   }
 
+  .main-menu-item {
+    @apply relative transition-colors duration-300;
+
+    &::after {
+      content: none;
+    }
+
+    span, .icon {
+      @apply transition-colors duration-300;
+    }
+
+    &:hover {
+      span, .icon {
+        color: rgb(var(--color-primary-500)) !important;
+      }
+    }
+
+    &.menu-active {
+      span, .icon {
+        color: rgb(var(--color-primary-500)) !important;
+      }
+
+      &::after {
+        content: none;
+      }
+    }
+  }
+
   .top-menu {
     @apply relative z-50;
     background-color: rgb(var(--color-primary-DEFAULT));
@@ -719,26 +747,6 @@ watch(locale, () => {
       
       > div {
         @apply h-full;
-      }
-    }
-  }
-
-  .main-menu-item {
-    @apply relative;
-
-    span, .icon {
-      @apply transition-colors duration-300;
-    }
-
-    &:hover {
-      span, .icon {
-        color: var(--primary-500) !important;
-      }
-    }
-
-    &.menu-active {
-      span, .icon {
-        color: var(--primary-500) !important;
       }
     }
   }
