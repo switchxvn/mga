@@ -29,53 +29,54 @@ const mdiToLucideMap: Record<string, LucideIconName> = {
   // Add more mappings as needed
 };
 
+// Cache for icon name conversions
+const iconNameCache = new Map<string, LucideIconName>();
+
 /**
  * Lấy tên icon chính xác từ thư viện Lucide
  * @param iconName Tên icon (có thể ở nhiều định dạng khác nhau)
  * @returns Tên icon chính xác từ thư viện Lucide hoặc icon mặc định nếu không tìm thấy
  */
 export const getIconName = (iconName: string | null | undefined): LucideIconName => {
-  console.log('getIconName - Input:', iconName);
-  
   if (!iconName) {
-    console.log('getIconName - Icon name is null or undefined, using HelpCircle');
     return 'HelpCircle';
   }
-  
+
+  // Check cache first
+  const cachedName = iconNameCache.get(iconName);
+  if (cachedName) {
+    return cachedName;
+  }
+
   // Check if it's an MDI icon
   if (iconName.startsWith('mdi:')) {
     const lucideIcon = mdiToLucideMap[iconName];
     if (lucideIcon) {
-      console.log('getIconName - Mapped MDI icon to Lucide:', lucideIcon);
+      iconNameCache.set(iconName, lucideIcon);
       return lucideIcon;
     }
     // If no mapping found, try to convert the MDI name to Lucide format
-    const mdiName = iconName.split(':')[1];
-    console.log('getIconName - Extracted MDI name:', mdiName);
-    iconName = mdiName;
+    iconName = iconName.split(':')[1];
   }
-  
+
   // Loại bỏ phần mở rộng file nếu có
   const cleanName = iconName.replace(/\.[^/.]+$/, '');
-  console.log('getIconName - Clean name:', cleanName);
-  
+
   // Thử khớp trực tiếp trước
   if (LucideIcons[cleanName as LucideIconName]) {
-    console.log('getIconName - Found direct match:', cleanName);
+    iconNameCache.set(iconName, cleanName as LucideIconName);
     return cleanName as LucideIconName;
   }
-  
+
   // Thử chuyển đổi sang PascalCase
   const pascalCaseName = toPascalCase(cleanName);
-  console.log('getIconName - PascalCase name:', pascalCaseName);
-  
+
   if (LucideIcons[pascalCaseName as LucideIconName]) {
-    console.log('getIconName - Found match after PascalCase conversion:', pascalCaseName);
+    iconNameCache.set(iconName, pascalCaseName as LucideIconName);
     return pascalCaseName as LucideIconName;
   }
-  
-  // Log available icons for debugging
-  console.log('getIconName - Available Lucide icons:', Object.keys(LucideIcons).join(', '));
-  console.warn(`getIconName - Icon "${iconName}" không tìm thấy trong Lucide icons, sử dụng icon mặc định`);
+
+  // Fallback to default icon
+  iconNameCache.set(iconName, 'HelpCircle');
   return 'HelpCircle';
 }; 

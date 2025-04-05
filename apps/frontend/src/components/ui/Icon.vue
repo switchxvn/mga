@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as LucideIcons from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useIcon } from '~/composables/useIcon';
 
 interface IconProps {
   name: string;
@@ -13,6 +14,8 @@ const props = withDefaults(defineProps<IconProps>(), {
   strokeWidth: 2
 });
 
+const { getIconComponent } = useIcon();
+
 // Convert kebab-case to PascalCase for icon names
 const toPascalCase = (str: string) => {
   return str
@@ -23,18 +26,7 @@ const toPascalCase = (str: string) => {
 
 // Get icon component dynamically
 const Icon = computed(() => {
-  // Try direct match first (for static icons)
-  const directIcon = LucideIcons[props.name as keyof typeof LucideIcons];
-  if (directIcon) return directIcon;
-  
-  // Try PascalCase conversion (for kebab-case static icons)
-  const pascalCaseName = toPascalCase(props.name);
-  const pascalIcon = LucideIcons[pascalCaseName as keyof typeof LucideIcons];
-  if (pascalIcon) return pascalIcon;
-  
-  // If not found, return HelpCircle
-  console.warn(`Icon "${props.name}" not found, using HelpCircle`);
-  return LucideIcons.HelpCircle;
+  return getIconComponent(props.name);
 });
 </script>
 

@@ -36,6 +36,7 @@
     "@nuxt/image": "^1.10.0",
     "@nuxt/ui": "^2.21.0",
     "@nuxtjs/i18n": "^9.2.1",
+    "@popperjs/core": "^2.11.8",
     "@tanstack/vue-query": "^4.36.1",
     "@trpc/client": "^11",
     "@trpc/react-query": "^10.45.2",
@@ -62,6 +63,7 @@
     "swagger-ui-express": "^5.0.1",
     "swiper": "^11.2.5",
     "typeorm": "^0.3.20",
+    "v-calendar": "^3.1.2",
     "vue-facebook-page": "^1.0.1",
     "vue-toast-notification": "^3",
     "zod": "^3.22.4"

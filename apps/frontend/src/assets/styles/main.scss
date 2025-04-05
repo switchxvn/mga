@@ -88,4 +88,69 @@
 
 :root.disable-transitions .transition-\[background\] {
   transition: background-color 150ms !important;
+}
+
+/* v-calendar custom styles */
+.vc-container {
+  --vc-font-family: inherit;
+  --vc-rounded-full: 9999px;
+  --vc-font-bold: 600;
+  --vc-font-semibold: 500;
+  --vc-text-lg: 1.125rem;
+
+  .vc-weeks {
+    padding: 0 1rem;
+  }
+
+  .vc-day {
+    &:not(.is-not-in-month) {
+      .vc-day-content {
+        color: theme('colors.gray.700');
+        font-weight: 500;
+        border-radius: theme('borderRadius.lg');
+
+        &:hover {
+          background-color: theme('colors.primary.500') !important;
+          color: theme('colors.white') !important;
+        }
+
+        &.is-today {
+          background-color: theme('colors.gray.100') !important;
+          color: theme('colors.gray.900') !important;
+        }
+      }
+    }
+  }
+
+  .vc-nav-title {
+    color: theme('colors.gray.700');
+    font-weight: 600;
+  }
+
+  .vc-nav-arrow {
+    color: theme('colors.gray.400');
+    &:hover {
+      color: theme('colors.gray.600');
+    }
+  }
+
+  .vc-weekday {
+    color: theme('colors.gray.400');
+    font-weight: 500;
+  }
+
+  /* Custom highlight styles */
+  .vc-highlight-content-solid {
+    background-color: theme('colors.primary.500') !important;
+    color: theme('colors.white') !important;
+    border-radius: theme('borderRadius.lg') !important;
+  }
+
+  .vc-highlight {
+    background-color: transparent !important;
+    .vc-highlight-base-start {
+      width: 100% !important;
+      border-radius: theme('borderRadius.lg') !important;
+    }
+  }
 } 

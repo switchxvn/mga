@@ -16,7 +16,7 @@ import LanguageSwitcher from '~/components/common/LanguageSwitcher.vue';
 import CartIcon from '~/components/cart/CartIcon.vue';
 import MegaMenu from '~/components/menu/MegaMenu.vue';
 import MobileMegaMenu from '~/components/menu/MobileMegaMenu.vue';
-import { getIconName } from '~/utils/icon';
+import { useIcon } from '~/composables/useIcon';
 import type { Icon as LucideIcon } from 'lucide-vue-next';
 import { useCssColorValue } from '~/composables/useColorUtils';
 import { Phone } from 'lucide-vue-next';
@@ -236,6 +236,8 @@ let resizeObserver: ResizeObserver | null = null;
 // Add these refs and handlers
 const moreMenuRef = ref<HTMLElement | null>(null);
 
+const { getIconComponent } = useIcon();
+
 onMounted(() => {
   const init = async () => {
     try {
@@ -398,7 +400,7 @@ watch(locale, () => {
                         >
                           <Icon
                             v-if="item.icon"
-                            :name="getIconName(item.icon)"
+                            :name="item.icon"
                             class="nav-icon w-6 h-6"
                             :style="{ 
                               color: isMenuActive(item.href) 
@@ -483,7 +485,7 @@ watch(locale, () => {
                               >
                                 <Icon
                                   v-if="item.icon"
-                                  :name="getIconName(item.icon)"
+                                  :name="item.icon"
                                   class="nav-icon w-5 h-5"
                                 />
                                 <span>{{ item.label }}</span>
@@ -630,7 +632,7 @@ watch(locale, () => {
                   >
                     <Icon
                       v-if="item.icon"
-                      :name="getIconName(item.icon)"
+                      :name="item.icon"
                       class="nav-icon w-6 h-6"
                     />
                     {{ item.label }}
@@ -657,7 +659,7 @@ watch(locale, () => {
                 >
                   <Icon
                     v-if="item.icon"
-                    :name="getIconName(item.icon)"
+                    :name="item.icon"
                     class="nav-icon w-6 h-6"
                   />
                   {{ item.label }}

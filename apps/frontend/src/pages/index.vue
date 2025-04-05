@@ -25,6 +25,7 @@ import StyledFeaturedProductsSection from "../components/sections/home_page/Styl
 import CustomerLogosSection from "../components/sections/home_page/CustomerLogosSection.vue";
 import FeatureServicesSection from "../components/sections/home_page/FeatureServicesSection.vue";
 import WhyChooseUsSection from "../components/sections/home_page/WhyChooseUsSection.vue";
+import TicketBookingSection from "../components/sections/home_page/TicketBookingSection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -328,7 +329,8 @@ const components = {
   StyledFeaturedProductsSection,
   CustomerLogosSection,
   FeatureServicesSection,
-  WhyChooseUsSection
+  WhyChooseUsSection,
+  TicketBookingSection
 } as const;
 
 // Function to get component name based on section type and componentName
@@ -356,7 +358,8 @@ const getDefaultComponent = (type: string) => {
     'styled_product_categories': components.StyledProductCategoriesSection,
     'styled_featured_products': components.StyledFeaturedProductsSection,
     'customer_logos': components.CustomerLogosSection,
-    'feature_services': components.FeatureServicesSection
+    'feature_services': components.FeatureServicesSection,
+    'ticket_booking': components.TicketBookingSection
   };
   
   return typeToComponent[type] || null;
