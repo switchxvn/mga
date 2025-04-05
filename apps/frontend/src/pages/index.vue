@@ -576,12 +576,7 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
           <ClientOnly>
             <Suspense>
               <template #default>
-                <component
-                  v-if="section.isActive && resolveComponent(section)"
-                  :is="resolveComponent(section)"
-                  :section="section"
-                  :config="getSectionConfig(section.type)"
-                />
+              
               </template>
               <template #fallback>
                 <div class="p-4 text-center">
