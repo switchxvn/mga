@@ -53,6 +53,35 @@
   .text-card-foreground {
     color: rgb(var(--card-foreground));
   }
+
+  /* Primary background colors */
+  .bg-primary-100 {
+    background-color: rgb(var(--primary-100));
+  }
+  .bg-primary-200 {
+    background-color: rgb(var(--primary-200));
+  }
+  .bg-primary-300 {
+    background-color: rgb(var(--primary-300));
+  }
+  .bg-primary-400 {
+    background-color: rgb(var(--primary-400));
+  }
+  .bg-primary-500 {
+    background-color: rgb(var(--primary-500));
+  }
+  .bg-primary-600 {
+    background-color: rgb(var(--primary-600));
+  }
+  .bg-primary-700 {
+    background-color: rgb(var(--primary-700));
+  }
+  .bg-primary-800 {
+    background-color: rgb(var(--primary-800));
+  }
+  .bg-primary-900 {
+    background-color: rgb(var(--primary-900));
+  }
 }
 
 /* Custom styles for Nuxt UI inputs */

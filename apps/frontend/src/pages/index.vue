@@ -28,7 +28,9 @@ import WhyChooseUsSection from "../components/sections/home_page/WhyChooseUsSect
 import TicketBookingSection from "../components/sections/home_page/TicketBookingSection.vue";
 import VideoIntroWithTextSection from "../components/sections/home_page/VideoIntroWithTextSection.vue";
 import GalleryMasonrySection from "../components/sections/home_page/GalleryMasonrySection.vue";
+import FoodGallerySection from "../components/sections/home_page/FoodGallerySection.vue";
 import StyledNewsSection from "../components/sections/home_page/StyledNewsSection.vue";
+import CustomerReviewsSection from "../components/sections/home_page/CustomerReviewsSection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -336,7 +338,9 @@ const components = {
   TicketBookingSection,
   VideoIntroWithTextSection,
   GalleryMasonrySection,
-  StyledNewsSection
+  FoodGallerySection,
+  StyledNewsSection,
+  CustomerReviewsSection
 } as const;
 
 // Function to get component name based on section type and componentName
@@ -367,7 +371,9 @@ const getDefaultComponent = (type: string) => {
     'feature_services': components.FeatureServicesSection,
     'ticket_booking': components.TicketBookingSection,
     'gallery': components.GalleryMasonrySection,
-    'styled_news': components.StyledNewsSection
+    'food_gallery': components.FoodGallerySection,
+    'styled_news': components.StyledNewsSection,
+    'customer_reviews': components.CustomerReviewsSection
   };
   
   return typeToComponent[type] || null;

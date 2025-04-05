@@ -1,12 +1,12 @@
-<!-- GalleryMasonrySection.vue -->
+<!-- FoodGallerySection.vue -->
 <template>
-  <section :class="[settings.colors.background, settings.padding.top, settings.padding.bottom]" >
+  <section :class="[settings.colors.background, settings.padding.top, settings.padding.bottom]" class="pb-12">
     <div class="container mx-auto px-4">
       <!-- Section Header -->
       <div v-if="settings.showTitle" class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
         <div class="container mx-auto px-4">
           <div class="flex items-center justify-between gap-4 py-3">
-            <div class="w-32 hidden sm:block"><!-- Spacer to help with centering --></div>
+            <div class="w-32 hidden sm:block"><!-- Spacer --></div>
             <div class="category-header flex-1 text-center">
               <h2 
                 class="inline-flex items-center px-4 py-2 mobile-title"
@@ -19,40 +19,68 @@
                 {{ section.title }}
               </h2>
             </div>
-            <div class="w-32"><!-- Spacer to help with centering --></div>
+            <div class="w-32"><!-- Spacer --></div>
           </div>
         </div>
       </div>
 
-      <!-- Masonry Gallery -->
-      <ClientOnly>
-        <div v-if="galleries?.length" class="pswp-gallery" ref="galleryRef">
-          <div 
-            class="masonry"
-            :style="{ 
-              columnCount: currentColumns, 
-              columnGap: `${settings.gap}px`,
-              margin: '0 auto'
-            }"
-          >
-            <div
-              v-for="(item, index) in galleries"
-              :key="item.id"
-              class="masonry-item mb-4 break-inside-avoid cursor-pointer"
-              @click="openGallery(index)"
+      <!-- Food Grid -->
+      <div v-if="galleries?.length" class="grid gap-6"
+        :class="{
+          'grid-cols-1': currentColumns === 1,
+          'grid-cols-2': currentColumns === 2,
+          'grid-cols-3': currentColumns === 3,
+          'grid-cols-4': currentColumns === 4
+        }"
+      >
+        <div
+          v-for="(item, index) in galleries"
+          :key="item.id"
+          class="relative group cursor-pointer"
+          :class="[settings.card.rounded, settings.card.shadow]"
+          @click="openGallery(index)"
+        >
+          <!-- Image Container -->
+          <div class="relative overflow-hidden" :class="settings.card.rounded">
+            <NuxtImg
+              :src="item.image"
+              :alt="item.translations?.[0]?.title || ''"
+              class="w-full h-full object-cover transition-transform duration-300"
+              :class="settings.card.animation"
+              :style="{
+                aspectRatio: settings.card.aspectRatio
+              }"
+              loading="lazy"
+            />
+            
+            <!-- Overlay -->
+            <div v-if="settings.card.overlay.show"
+              class="absolute inset-0 transition-opacity duration-300"
+              :class="[
+                settings.card.overlay.opacity,
+                'group-hover:opacity-100',
+                settings.card.overlay.content.position === 'bottom' ? 'bg-gradient-to-t from-black/60 to-transparent' : ''
+              ]"
             >
-              <div class="relative overflow-hidden rounded-lg transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                <NuxtImg
-                  :src="item.image"
-                  :alt="item.translations?.[0]?.title || ''"
-                  class="w-full h-auto object-cover"
-                  loading="lazy"
-                />
+              <div class="absolute bottom-0 left-0 right-0"
+                :class="settings.card.overlay.content.padding"
+              >
+                <h3 class="text-white font-semibold mb-1"
+                  :class="settings.card.overlay.content.titleSize"
+                >
+                  {{ item.translations?.[0]?.title }}
+                </h3>
+                <p v-if="item.translations?.[0]?.description"
+                  class="text-white/90"
+                  :class="settings.card.overlay.content.descriptionSize"
+                >
+                  {{ item.translations?.[0]?.description }}
+                </p>
               </div>
             </div>
           </div>
         </div>
-      </ClientOnly>
+      </div>
 
       <!-- Load More Button -->
       <div v-if="settings.loadMoreButton.show && hasMoreItems" class="text-center mt-8">
@@ -140,29 +168,45 @@ const props = defineProps<{
 
 // Default settings
 const defaultSettings = {
-  layout: 'masonry',
+  layout: 'grid',
   columns: {
     sm: 1,
     md: 2,
     lg: 3,
     xl: 4
   },
-  gap: '16',
+  gap: '1.5rem',
   padding: {
     top: 'py-4',
-    bottom: 'pb-4'
+    bottom: 'pb-24'
   },
-  maxItems: 12,
+  maxItems: 8,
   showTitle: true,
   colors: {
     background: 'bg-white dark:bg-gray-900'
   },
   loadMoreButton: {
     show: true,
-    text: 'Xem thêm',
+    text: 'Xem thêm món ăn',
     style: 'primary'
   },
-  useUppercase: true
+  useUppercase: true,
+  card: {
+    aspectRatio: '1/1',
+    rounded: 'rounded-xl',
+    shadow: 'shadow-lg hover:shadow-xl',
+    animation: 'hover:scale-105',
+    overlay: {
+      show: true,
+      opacity: 'bg-black/40',
+      content: {
+        position: 'bottom',
+        padding: 'p-4',
+        titleSize: 'text-lg',
+        descriptionSize: 'text-sm'
+      }
+    }
+  }
 };
 
 const settings = computed(() => ({
@@ -171,7 +215,6 @@ const settings = computed(() => ({
 }));
 
 const currentColumns = ref(settings.value.columns.xl);
-const galleryRef = ref<HTMLElement | null>(null);
 
 // Handle responsive columns
 const updateColumns = () => {
@@ -211,6 +254,7 @@ const openGallery = async (index: number) => {
         src: item.image,
         w: dimensions.width,
         h: dimensions.height,
+        title: item.translations?.[0]?.title,
         originalSrc: item.image,
       };
     })
@@ -235,16 +279,6 @@ const openGallery = async (index: number) => {
     dataSource: items,
     ...options,
     pswpModule: PhotoSwipe,
-  });
-
-  // Set zoom levels for maintaining aspect ratio
-  pswpInstance.on('firstUpdate', () => {
-    const slide = pswpInstance?.currSlide;
-    if (slide) {
-      slide.zoomLevels.initial = 1;
-      slide.zoomLevels.secondary = 2;
-      slide.zoomLevels.max = 4;
-    }
   });
 
   pswpInstance.init();
@@ -282,13 +316,25 @@ const fetchGalleries = async () => {
     const { locale } = useI18n();
     const result = await trpc.gallery.active.query({ 
       locale: locale.value,
-      type: 'common'
+      type: 'food'
     });
-    galleries.value = result;
-    totalItems.value = result.length;
+    // Filter to only include food galleries and map to match Gallery interface
+    galleries.value = result.map(item => ({
+      id: item.id,
+      image: item.image,
+      isActive: item.isActive,
+      sequence: item.sequence,
+      type: 'food',
+      translations: item.translations.map(t => ({
+        id: t.id,
+        locale: t.locale,
+        title: t.title,
+        description: t.description
+      }))
+    }));
+    totalItems.value = galleries.value.length;
   } catch (error) {
     console.error('Error fetching galleries:', error);
-    // Show user-friendly error message
     const { t } = useI18n();
     useToast().add({
       id: 'gallery-error',
@@ -316,22 +362,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.masonry {
-  columns: v-bind('currentColumns');
-  column-gap: v-bind('settings.gap');
-  width: 100%;
-}
-
-.masonry-item {
-  display: inline-block;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.break-inside-avoid {
-  break-inside: avoid;
-}
-
 .category-header {
   position: relative;
 

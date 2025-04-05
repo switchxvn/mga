@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { z } from 'zod';
+import { Gallery, GalleryType } from '@ew/shared';
 
 const galleryTranslationSchema = z.object({
   locale: z.string(),
@@ -12,11 +13,13 @@ const createGallerySchema = z.object({
   image: z.string(),
   isActive: z.boolean().default(true),
   sequence: z.number().default(0),
+  type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).default('common' as GalleryType),
   translations: z.array(galleryTranslationSchema),
 }).transform((data) => ({
   image: data.image,
   isActive: data.isActive ?? true,
   sequence: data.sequence ?? 0,
+  type: data.type ?? 'common',
   translations: data.translations.map(t => ({
     locale: t.locale,
     title: t.title,
@@ -29,12 +32,14 @@ const updateGallerySchema = z.object({
   image: z.string().optional(),
   isActive: z.boolean().optional(),
   sequence: z.number().optional(),
+  type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional(),
   translations: z.array(galleryTranslationSchema).optional(),
 }).transform((data) => ({
   id: data.id,
   ...(data.image !== undefined && { image: data.image }),
   ...(data.isActive !== undefined && { isActive: data.isActive }),
   ...(data.sequence !== undefined && { sequence: data.sequence }),
+  ...(data.type !== undefined && { type: data.type }),
   ...(data.translations && {
     translations: data.translations.map(t => ({
       locale: t.locale,
@@ -47,15 +52,24 @@ const updateGallerySchema = z.object({
 export const galleryRouter = router({
   latest: publicProcedure
     .input(z.object({
-      locale: z.string().optional()
+      locale: z.string(),
+      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
     }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ ctx, input }) => {
       try {
-        const { locale } = input || {};
-        if (locale) {
-          return ctx.services.galleryFrontendService.findByLocale(locale);
-        }
-        return ctx.services.galleryFrontendService.findAll();
+        ctx.logger.log('Fetching latest galleries with params:', input);
+        
+        const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale);
+        ctx.logger.log('Found galleries:', galleries);
+        
+        // Filter by type if specified
+        const filteredGalleries = input.type ? galleries.filter(gallery => {
+          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: input.type });
+          return gallery.type === input.type;
+        }) : galleries;
+        
+        ctx.logger.log('Filtered galleries:', filteredGalleries);
+        return filteredGalleries;
       } catch (error) {
         ctx.logger.error('Failed to fetch latest galleries:', error);
         throw new TRPCError({
@@ -67,11 +81,25 @@ export const galleryRouter = router({
     }),
 
   byLocale: publicProcedure
-    .input(z.object({ locale: z.string() }))
+    .input(z.object({ 
+      locale: z.string(),
+      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
+    }))
     .query(async ({ ctx, input }) => {
       try {
+        ctx.logger.log('Fetching galleries by locale with params:', input);
+        
         const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale);
-        return galleries;
+        ctx.logger.log('Found galleries:', galleries);
+        
+        // Filter by type if specified
+        const filteredGalleries = input.type ? galleries.filter(gallery => {
+          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: input.type });
+          return gallery.type === input.type;
+        }) : galleries;
+        
+        ctx.logger.log('Filtered galleries:', filteredGalleries);
+        return filteredGalleries;
       } catch (error) {
         ctx.logger.error(`Failed to fetch galleries by locale ${input.locale}:`, error);
         throw new TRPCError({
@@ -113,15 +141,25 @@ export const galleryRouter = router({
 
   active: publicProcedure
     .input(z.object({
-      locale: z.string().optional()
+      locale: z.string().optional(),
+      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
     }))
     .query(async ({ input, ctx }) => {
       try {
-        const { locale } = input || {};
-        if (locale) {
-          return ctx.services.galleryFrontendService.findActiveByLocale(locale);
-        }
-        return ctx.services.galleryFrontendService.findActive();
+        const { locale = 'vi', type } = input || {};
+        ctx.logger.log('Fetching active galleries with params:', { locale, type });
+        
+        const galleries = await ctx.services.galleryFrontendService.findActiveByLocale(locale);
+        ctx.logger.log('Found active galleries:', galleries);
+        
+        // Filter by type if specified
+        const filteredGalleries = type ? galleries.filter(gallery => {
+          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: type });
+          return gallery.type === type;
+        }) : galleries;
+        
+        ctx.logger.log('Filtered active galleries:', filteredGalleries);
+        return filteredGalleries;
       } catch (error) {
         ctx.logger.error('Failed to fetch active galleries:', error);
         throw new TRPCError({
@@ -136,7 +174,7 @@ export const galleryRouter = router({
     .input(createGallerySchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        ctx.logger.log('Creating new gallery');
+        ctx.logger.log('Creating new gallery:', input);
         const newGallery = await ctx.services.galleryFrontendService.create(input);
         ctx.logger.log(`Successfully created gallery ID: ${newGallery.id}`);
         return newGallery;
@@ -154,7 +192,7 @@ export const galleryRouter = router({
     .input(updateGallerySchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        ctx.logger.log(`Updating gallery ID: ${input.id}`);
+        ctx.logger.log(`Updating gallery ID: ${input.id}`, input);
         const { id, ...updateData } = input;
         const updatedGallery = await ctx.services.galleryFrontendService.update(id, updateData);
         ctx.logger.log(`Successfully updated gallery ID: ${updatedGallery.id}`);

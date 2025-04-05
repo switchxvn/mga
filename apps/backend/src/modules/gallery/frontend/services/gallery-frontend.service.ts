@@ -35,6 +35,7 @@ export class GalleryFrontendService {
       image: gallery.image,
       isActive: gallery.isActive,
       sequence: gallery.sequence,
+      type: gallery.type,
       createdAt: gallery.createdAt,
       updatedAt: gallery.updatedAt,
       translations: gallery.translations?.map(t => ({

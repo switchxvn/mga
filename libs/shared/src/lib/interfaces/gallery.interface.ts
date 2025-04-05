@@ -8,11 +8,14 @@ export interface GalleryTranslation {
   updatedAt: Date;
 }
 
+export type GalleryType = 'common' | 'food';
+
 export interface Gallery {
   id: number;
   image: string;
   isActive: boolean;
   sequence: number;
+  type: GalleryType;
   createdAt: Date;
   updatedAt: Date;
   translations: GalleryTranslation[];

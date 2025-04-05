@@ -1,6 +1,11 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { GalleryTranslation } from './gallery-translation.entity';
 
+export enum GalleryType {
+  COMMON = 'common',
+  FOOD = 'food'
+}
+
 @Entity('galleries')
 export class Gallery {
   @PrimaryGeneratedColumn()
@@ -8,6 +13,14 @@ export class Gallery {
 
   @Column({ type: 'varchar', length: 255 })
   image: string;
+
+  @Column({
+    type: 'varchar',
+    length: 50,
+    default: GalleryType.COMMON,
+    enum: GalleryType
+  })
+  type: GalleryType;
 
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
