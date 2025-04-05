@@ -196,6 +196,7 @@ export default defineNuxtConfig({
 
   css: [
     '@/assets/styles/main.scss',
+    'photoswipe/style.css'
   ],
   
   postcss: {
@@ -227,7 +228,12 @@ export default defineNuxtConfig({
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
-      include: ['@trpc/client', '@trpc/server'],
+      include: ['@trpc/client', '@trpc/server', 'photoswipe'],
+    },
+    build: {
+      rollupOptions: {
+        external: ['photoswipe'],
+      }
     },
     vue: {
       script: {
