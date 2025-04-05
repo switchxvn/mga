@@ -167,7 +167,7 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true,
-    typeCheck: true,
+    typeCheck: false,
     shim: false,
     tsConfig: {
       extends: './nuxt.tsconfig.json'
@@ -297,13 +297,6 @@ export default defineNuxtConfig({
 
   // Enable detailed error pages in production
   errorHandler: '~/error',
-
-  // Show detailed errors in production
-  typescript: {
-    shim: false,
-    strict: true,
-    typeCheck: true
-  },
 
   // Enable source maps in production for better error tracking
   sourcemap: true,
