@@ -189,7 +189,7 @@ export default defineNuxtConfig({
     presets: [
       {
         from: 'vue',
-        imports: [] as string[]
+        imports: []
       }
     ]
   },
