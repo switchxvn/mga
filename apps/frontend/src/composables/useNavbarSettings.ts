@@ -70,34 +70,48 @@ export const useNavbarSettings = (settings: NavbarSettings = {}) => {
   const { isDark } = useDarkMode();
   const { processColorValue } = useCssColorValue();
 
+  // Computed properties for all color values
+  const headerBackgroundColor = computed(() => 
+    isDark.value
+      ? processColorValue(settings.darkMode?.headerBackgroundColor || '#171717')
+      : processColorValue(settings.headerBackgroundColor || '#ffffff')
+  );
+
+  const menuBackgroundColor = computed(() => 
+    isDark.value
+      ? processColorValue(settings.darkMode?.menuBackgroundColor || '#171717')
+      : processColorValue(settings.menuBackgroundColor || '#ffffff')
+  );
+
+  const textColor = computed(() => 
+    isDark.value
+      ? processColorValue(settings.darkMode?.textColor || '#ffffff')
+      : processColorValue(settings.textColor || '#000000')
+  );
+
+  const borderColor = computed(() => 
+    isDark.value
+      ? processColorValue(settings.darkMode?.borderColor || '#404040')
+      : processColorValue(settings.borderColor || '#e5e7eb')
+  );
+
+  const navigationTextColor = computed(() => 
+    processColorValue(settings.navigation?.textColor || 'var(--tertiary-500)')
+  );
+
+  const navigationActiveTextColor = computed(() => 
+    processColorValue(settings.navigation?.activeTextColor || 'var(--primary-500)')
+  );
+
   const updateNavbarVariables = () => {
     if (typeof document === 'undefined') return;
 
     const root = document.documentElement;
-    if (isDark.value && settings.darkMode) {
-      root.style.setProperty('--navbar-header-bg', settings.darkMode.headerBackgroundColor || '#171717');
-      root.style.setProperty('--navbar-menu-bg', settings.darkMode.menuBackgroundColor || '#171717');
-      root.style.setProperty('--navbar-text', settings.darkMode.textColor || '#ffffff');
-      root.style.setProperty('--navbar-border', settings.darkMode.borderColor || '#404040');
-    } else {
-      root.style.setProperty('--navbar-header-bg', settings.headerBackgroundColor || '#ffffff');
-      root.style.setProperty('--navbar-menu-bg', settings.menuBackgroundColor || '#ffffff');
-      root.style.setProperty('--navbar-text', settings.textColor || '#000000');
-      root.style.setProperty('--navbar-border', settings.borderColor || '#e5e7eb');
-    }
+    root.style.setProperty('--navbar-header-bg', headerBackgroundColor.value);
+    root.style.setProperty('--navbar-menu-bg', menuBackgroundColor.value);
+    root.style.setProperty('--navbar-text', textColor.value);
+    root.style.setProperty('--navbar-border', borderColor.value);
   };
-
-  const getMenuBackgroundColor = computed(() => {
-    return isDark.value
-      ? processColorValue(settings.darkMode?.menuBackgroundColor || '#171717')
-      : processColorValue(settings.menuBackgroundColor || '#ffffff');
-  });
-
-  const getTextColor = computed(() => {
-    return isDark.value
-      ? processColorValue(settings.darkMode?.textColor || '#ffffff')
-      : processColorValue(settings.textColor || '#000000');
-  });
 
   watch(isDark, () => {
     updateNavbarVariables();
@@ -111,8 +125,11 @@ export const useNavbarSettings = (settings: NavbarSettings = {}) => {
     isDark,
     settings,
     updateNavbarVariables,
-    getMenuBackgroundColor,
-    getTextColor,
-    processColorValue
+    headerBackgroundColor,
+    menuBackgroundColor,
+    textColor,
+    borderColor,
+    navigationTextColor,
+    navigationActiveTextColor
   };
 }; 

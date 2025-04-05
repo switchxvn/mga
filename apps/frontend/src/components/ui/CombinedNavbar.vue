@@ -1,21 +1,21 @@
 <!-- Kết hợp NavbarWithLogoHotline và NavbarWithoutLogo -->
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue';
-import { useNow, useDateFormat } from '@vueuse/core';
-import { useFeatureFlags } from '~/composables/useFeatureFlags';
-import { useLocalization } from '~/composables/useLocalization';
-import { useLogo } from '~/composables/useLogo';
-import { useNavbar } from '~/composables/useNavbar';
-import { useNavMenu } from '~/composables/useNavMenu';
-import { useNavbarSettings } from '~/composables/useNavbarSettings';
-import { useNavbarFeatures } from '~/composables/useNavbarFeatures';
-import { useDarkMode } from '~/composables/useDarkMode';
-import Icon from './Icon.vue';
-import ThemeToggle from '~/components/common/ThemeToggle.vue';
-import LanguageSwitcher from '~/components/common/LanguageSwitcher.vue';
-import CartIcon from '~/components/cart/CartIcon.vue';
-import MegaMenu from '~/components/menu/MegaMenu.vue';
-import MobileMegaMenu from '~/components/menu/MobileMegaMenu.vue';
+import { ref, watch, nextTick, onMounted, computed } from "vue";
+import { useNow, useDateFormat } from "@vueuse/core";
+import { useFeatureFlags } from "~/composables/useFeatureFlags";
+import { useLocalization } from "~/composables/useLocalization";
+import { useLogo } from "~/composables/useLogo";
+import { useNavbar } from "~/composables/useNavbar";
+import { useNavMenu } from "~/composables/useNavMenu";
+import { useNavbarSettings } from "~/composables/useNavbarSettings";
+import { useNavbarFeatures } from "~/composables/useNavbarFeatures";
+import { useDarkMode } from "~/composables/useDarkMode";
+import Icon from "./Icon.vue";
+import ThemeToggle from "~/components/common/ThemeToggle.vue";
+import LanguageSwitcher from "~/components/common/LanguageSwitcher.vue";
+import CartIcon from "~/components/cart/CartIcon.vue";
+import MegaMenu from "~/components/menu/MegaMenu.vue";
+import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
 
 // Props cho component
 interface NavbarProps {
@@ -43,13 +43,13 @@ interface NavbarProps {
         backgroundColor?: string;
       };
     };
-    
+
     // Menu section settings
     menuBackgroundColor?: string;
     textColor?: string;
     borderColor?: string;
     menuAlignment?: string;
-    
+
     // Global settings
     showLanguageSwitcher?: boolean;
     showThemeToggle?: boolean;
@@ -92,17 +92,17 @@ const props = withDefaults(defineProps<NavbarProps>(), {
       subText: "ĐỘNG CƠ ISUZU NHẬP KHẨU NỘI ĐỊA TỪ NHẬT BẢN",
       additionalText: "BÁN VÀ CHO THUÊ GIÁ TỐT NHẤT",
       fontSize: "lg",
-      fontWeight: "bold"
+      fontWeight: "bold",
     },
     hotlines: {
       sales: {
         text: "Mua hàng",
-        number: "0901.20.30.70"
+        number: "0901.20.30.70",
       },
       support: {
         text: "Hỗ trợ kỹ thuật",
-        number: "028.3620.80.81"
-      }
+        number: "028.3620.80.81",
+      },
     },
     menuBackgroundColor: "#ffffff",
     textColor: "#000000",
@@ -111,8 +111,8 @@ const props = withDefaults(defineProps<NavbarProps>(), {
     showLanguageSwitcher: true,
     showThemeToggle: true,
     showCart: true,
-    mobileMenuBreakpoint: "md"
-  })
+    mobileMenuBreakpoint: "md",
+  }),
 });
 
 // Dark mode
@@ -141,7 +141,7 @@ const {
   showMegaMenu,
   hideMegaMenu,
   keepMegaMenu,
-  updateBodyPadding
+  updateBodyPadding,
 } = useNavbar();
 
 // Menu
@@ -153,15 +153,55 @@ const {
   processedMenuItems,
   isMenuActive,
   getColumnTitleTranslation,
-  getParentMenuLeftOffset
+  getParentMenuLeftOffset,
 } = useNavMenu();
 
 // Settings
-const { getMenuBackgroundColor, getTextColor, processColorValue } = useNavbarSettings(props.settings);
+const {
+  menuBackgroundColor,
+  textColor,
+  borderColor,
+  navigationTextColor,
+  navigationActiveTextColor,
+} = useNavbarSettings(props.settings);
+
+// Computed color values
+const salesBackgroundColor = computed(
+  () => props.settings.hotlines?.sales?.backgroundColor || "#0EA5E9"
+);
+
+const salesTextColor = computed(
+  () => props.settings.hotlines?.sales?.textColor || "#ffffff"
+);
+
+const supportBackgroundColor = computed(
+  () => props.settings.hotlines?.support?.backgroundColor || "#0EA5E9"
+);
+
+const supportTextColor = computed(
+  () => props.settings.hotlines?.support?.textColor || "#ffffff"
+);
+
+const tertiaryBorderColor = computed(() => "var(--tertiary-900)");
+
+const darkModeMenuBackground = computed(
+  () => props.settings?.darkMode?.menuBackgroundColor || "#171717"
+);
+
+const lightModeMenuBackground = computed(
+  () => props.settings?.menuBackgroundColor || "#ffffff"
+);
+
+const primaryHoverColor = computed(() => "var(--primary-400)");
+
+const getNavLinkColor = (isActive: boolean) => ({
+  color: isActive ? navigationActiveTextColor : navigationTextColor,
+  "--hover-color": primaryHoverColor.value,
+});
 
 // Time
 const now = useNow();
-const formattedTime = useDateFormat(now, 'HH:mm:ss - DD/MM/YYYY');
+const formattedTime = useDateFormat(now, "HH:mm:ss - DD/MM/YYYY");
 
 // Features (Time and Cart)
 const { checkCartFeatureFlag } = useNavbarFeatures();
@@ -169,26 +209,26 @@ const { checkCartFeatureFlag } = useNavbarFeatures();
 // Watch for logo changes to update navbar height
 watch([logo, isLoadingLogo], () => {
   nextTick(() => {
-    const nav = document.querySelector('.navigation-section') as HTMLElement;
+    const nav = document.querySelector(".navigation-section") as HTMLElement;
     if (nav) {
       const navHeight = nav.offsetHeight;
-      document.documentElement.style.setProperty('--nav-height', `${navHeight}px`);
+      document.documentElement.style.setProperty("--nav-height", `${navHeight}px`);
     }
   });
 });
 
 onMounted(() => {
   const init = async () => {
-    console.log('CombinedNavbar mounted with settings:', props.settings);
+    console.log("CombinedNavbar mounted with settings:", props.settings);
     try {
       await fetchMenuItems();
-      console.log('Menu items fetched:', menuItems.value);
+      console.log("Menu items fetched:", menuItems.value);
     } catch (err) {
-      console.error('Error fetching menu items:', err);
+      console.error("Error fetching menu items:", err);
     }
     await checkCartFeatureFlag();
   };
-  
+
   init();
 });
 
@@ -200,7 +240,6 @@ watch(locale, () => {
 
 <template>
   <div class="navbar-container">
-
     <!-- Top Menu - New Section -->
     <div class="top-menu w-full border-b relative">
       <div class="top-menu-bg-layer"></div>
@@ -208,30 +247,34 @@ watch(locale, () => {
         <div class="flex items-center justify-between h-12 px-4">
           <!-- Current Time -->
           <div class="flex items-center gap-2">
-            <Icon 
-              name="Clock" 
-              class="h-4 w-4 text-neutral-500 dark:text-neutral-400" 
-            />
+            <Icon name="Clock" class="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
             <span class="text-sm font-medium text-neutral-600 dark:text-neutral-300">
               {{ formattedTime }}
             </span>
           </div>
-          
+
           <!-- Right Actions -->
           <div class="hidden md:flex items-center gap-3">
             <template v-if="props.settings?.topMenu?.links">
-              <template v-for="(link, index) in props.settings.topMenu.links" :key="index">
-                <NuxtLink 
+              <template
+                v-for="(link, index) in props.settings.topMenu.links"
+                :key="index"
+              >
+                <NuxtLink
                   :to="link.href"
                   class="transition-colors duration-300 font-bold uppercase"
                   :style="{
                     color: link.textColor,
-                    '--hover-color': link.hoverColor
+                    '--hover-color': link.hoverColor,
                   }"
                 >
-                {{ $t(link.label.toLowerCase()) }}
+                  {{ $t(link.label.toLowerCase()) }}
                 </NuxtLink>
-                <span v-if="index < props.settings.topMenu.links.length - 1" class="text-neutral-500 dark:text-neutral-400">|</span>
+                <span
+                  v-if="index < props.settings.topMenu.links.length - 1"
+                  class="text-neutral-500 dark:text-neutral-400"
+                  >|</span
+                >
               </template>
             </template>
             <div class="min-w-[140px]">
@@ -252,8 +295,8 @@ watch(locale, () => {
           <!-- Logo -->
           <div class="flex-shrink-0">
             <NuxtLink to="/" class="block">
-              <div 
-                class="flex items-center justify-center" 
+              <div
+                class="flex items-center justify-center"
                 :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
               >
                 <img
@@ -264,7 +307,10 @@ watch(locale, () => {
                   :height="logo?.height"
                   class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
                 />
-                <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
+                <span
+                  v-else-if="isLoadingLogo"
+                  class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
+                ></span>
               </div>
             </NuxtLink>
           </div>
@@ -274,10 +320,16 @@ watch(locale, () => {
             <h1 v-if="props.settings?.slogan" class="text-xl font-bold text-red-600">
               {{ props.settings.slogan.text }}
             </h1>
-            <h4 v-if="props.settings?.slogan" class="text-md font-semibold text-black-600">
+            <h4
+              v-if="props.settings?.slogan"
+              class="text-md font-semibold text-black-600"
+            >
               {{ props.settings.slogan.subText }}
             </h4>
-            <p v-if="props.settings?.slogan?.additionalText" class="text-2xl font-bold text-red-600">
+            <p
+              v-if="props.settings?.slogan?.additionalText"
+              class="text-2xl font-bold text-red-600"
+            >
               {{ props.settings.slogan.additionalText }}
             </p>
           </div>
@@ -290,24 +342,26 @@ watch(locale, () => {
               :to="`tel:${props.settings.hotlines.sales.number}`"
               class="hotline-button group flex items-center gap-3 px-4 py-2.5 rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
               :style="{
-                backgroundColor: processColorValue(props.settings.hotlines.sales.backgroundColor || '#0EA5E9'),
-                color: props.settings.hotlines.sales.textColor || '#ffffff'
+                backgroundColor: salesBackgroundColor,
+                color: salesTextColor,
               }"
             >
               <div class="relative">
-                <div 
+                <div
                   class="animate-ring absolute -inset-1 rounded-full border-2 opacity-75"
-                  :style="{ borderColor: processColorValue('var(--tertiary-900)') }"
+                  :style="{ borderColor: tertiaryBorderColor }"
                 ></div>
-                <div class="relative flex items-center justify-center rounded-full bg-white/20 p-2">
-                  <Icon name="Phone" class="h-5 w-5" :style="{ color: props.settings.hotlines.sales.textColor || '#ffffff' }" />
+                <div
+                  class="relative flex items-center justify-center rounded-full bg-white/20 p-2"
+                >
+                  <Icon name="Phone" class="h-5 w-5" :style="{ color: salesTextColor }" />
                 </div>
               </div>
               <div class="flex flex-col">
-                <span class="text-sm" :style="{ color: props.settings.hotlines.sales.textColor || '#ffffff' }">
+                <span class="text-sm" :style="{ color: salesTextColor }">
                   {{ props.settings.hotlines.sales.text }}
                 </span>
-                <span class="text-lg font-bold" :style="{ color: props.settings.hotlines.sales.textColor || '#ffffff' }">
+                <span class="text-lg font-bold" :style="{ color: salesTextColor }">
                   {{ props.settings.hotlines.sales.number }}
                 </span>
               </div>
@@ -319,24 +373,30 @@ watch(locale, () => {
               :to="`tel:${props.settings.hotlines.support.number}`"
               class="hotline-button group flex items-center gap-3 px-4 py-2.5 rounded-full border border-neutral-200 hover:border-primary-500 transition-all duration-300 shadow-sm hover:shadow-md"
               :style="{
-                backgroundColor: processColorValue(props.settings.hotlines.support.backgroundColor || '#0EA5E9'),
-                color: props.settings.hotlines.support.textColor || '#ffffff'
+                backgroundColor: supportBackgroundColor,
+                color: supportTextColor,
               }"
             >
               <div class="relative">
-                <div 
+                <div
                   class="animate-ring absolute -inset-1 rounded-full border-2 opacity-75"
-                  :style="{ borderColor: processColorValue('var(--tertiary-900)') }"
+                  :style="{ borderColor: tertiaryBorderColor }"
                 ></div>
-                <div class="relative flex items-center justify-center rounded-full bg-white/20 p-2">
-                  <Icon name="Phone" class="h-5 w-5" :style="{ color: props.settings.hotlines.support.textColor || '#ffffff' }" />
+                <div
+                  class="relative flex items-center justify-center rounded-full bg-white/20 p-2"
+                >
+                  <Icon
+                    name="Phone"
+                    class="h-5 w-5"
+                    :style="{ color: supportTextColor }"
+                  />
                 </div>
               </div>
               <div class="flex flex-col">
-                <span class="text-sm" :style="{ color: props.settings.hotlines.support.textColor || '#ffffff' }">
+                <span class="text-sm" :style="{ color: supportTextColor }">
                   {{ props.settings.hotlines.support.text }}
                 </span>
-                <span class="text-lg font-bold" :style="{ color: props.settings.hotlines.support.textColor || '#ffffff' }">
+                <span class="text-lg font-bold" :style="{ color: supportTextColor }">
                   {{ props.settings.hotlines.support.number }}
                 </span>
               </div>
@@ -347,20 +407,22 @@ watch(locale, () => {
     </div>
 
     <!-- Navigation Section -->
-    <div 
+    <div
       ref="navWrapperRef"
       class="nav-wrapper w-full"
       :class="{ 'nav-sticky': isScrolled }"
     >
       <nav
         class="navigation-section w-full relative"
+        :style="{
+          backgroundColor: isDark ? darkModeMenuBackground : lightModeMenuBackground,
+          borderColor: borderColor,
+        }"
       >
-        <div 
+        <div
           class="nav-bg-layer"
           :style="{
-            backgroundColor: isDark 
-              ? processColorValue(props.settings?.darkMode?.menuBackgroundColor || '#171717')
-              : processColorValue(props.settings?.menuBackgroundColor || '#ffffff')
+            backgroundColor: isDark ? darkModeMenuBackground : lightModeMenuBackground,
           }"
         ></div>
         <div class="container mx-auto px-4">
@@ -368,9 +430,13 @@ watch(locale, () => {
             <!-- Mobile Logo - Left -->
             <div class="flex-shrink-0 md:hidden">
               <NuxtLink to="/" class="block py-3">
-                <div 
-                  class="mobile-logo flex items-center justify-center" 
-                  :style="logo ? `width: ${logo.width * 0.5}px; height: ${logo.height * 0.5}px` : ''"
+                <div
+                  class="mobile-logo flex items-center justify-center"
+                  :style="
+                    logo
+                      ? `width: ${logo.width * 0.5}px; height: ${logo.height * 0.5}px`
+                      : ''
+                  "
                 >
                   <img
                     v-if="currentLogoUrl"
@@ -378,14 +444,22 @@ watch(locale, () => {
                     :alt="logo?.altText || 'Logo'"
                     class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
                   />
-                  <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
+                  <span
+                    v-else-if="isLoadingLogo"
+                    class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
+                  ></span>
                 </div>
               </NuxtLink>
             </div>
 
             <!-- Desktop Navigation -->
             <nav class="hidden md:flex items-center space-x-5 flex-grow justify-start">
-              <div v-if="isLoading" class="text-sm text-neutral-500 dark:text-neutral-400">Đang tải menu...</div>
+              <div
+                v-if="isLoading"
+                class="text-sm text-neutral-500 dark:text-neutral-400"
+              >
+                Đang tải menu...
+              </div>
               <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
               <template v-else>
                 <div
@@ -393,35 +467,29 @@ watch(locale, () => {
                   :key="itemIndex"
                   class="relative group"
                   :data-menu-id="item.id"
-                  @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
+                  @mouseenter="
+                    (e) => {
+                      if (item.children?.length) {
+                        showMegaMenu(item.id);
+                      }
+                    }
+                  "
                   @mouseleave="item.children?.length ? hideMegaMenu() : null"
                 >
                   <NuxtLink
                     :to="item.href"
                     class="main-menu-item text-[1.05rem] uppercase transition-colors py-5 flex items-center space-x-1"
-                    :style="{ fontSize: '1.05rem' }"
+                    :style="getNavLinkColor(isMenuActive(item.href))"
                     :class="{ 'menu-active': isMenuActive(item.href) }"
                   >
-                    <span 
-                      class="text-[1.05rem] transition-colors duration-300" 
-                      :style="{ 
-                        color: isMenuActive(item.href) 
-                          ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
-                          : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)'),
-                        '--hover-color': processColorValue('var(--primary-400)')
-                      }"
-                    >
+                    <span class="text-[1.05rem] transition-colors duration-300">
                       {{ item.label }}
                     </span>
                     <Icon
                       v-if="item.children?.length"
                       name="ChevronDown"
                       class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
-                      :style="{ 
-                        color: isMenuActive(item.href) 
-                          ? processColorValue(props.settings?.navigation?.activeTextColor || 'var(--primary-500)')
-                          : processColorValue(props.settings?.navigation?.textColor || 'var(--tertiary-500)')
-                      }"
+                      :style="getNavLinkColor(isMenuActive(item.href))"
                     />
                   </NuxtLink>
 
@@ -431,7 +499,7 @@ watch(locale, () => {
                       v-if="item.children?.length && activeMegaMenu === item.id"
                       :item="item"
                       :is-active="true"
-                      :on-close="() => activeMegaMenu = null"
+                      :on-close="() => (activeMegaMenu = null)"
                       @mouseenter="keepMegaMenu"
                       @mouseleave="hideMegaMenu"
                     />
@@ -450,8 +518,8 @@ watch(locale, () => {
               <!-- Mobile Actions -->
               <div class="md:hidden flex items-center gap-2 py-3">
                 <!-- User Icon -->
-                <NuxtLink 
-                  to="/auth/login" 
+                <NuxtLink
+                  to="/auth/login"
                   class="flex items-center justify-center w-10 h-10 text-white hover:bg-primary-400 rounded-full transition-colors"
                 >
                   <Icon name="User" class="h-6 w-6" />
@@ -479,16 +547,19 @@ watch(locale, () => {
         class="mobile-menu-overlay"
         @click="isMobileMenuOpen = false"
       >
-        <div 
-          class="mobile-menu-content bg-white dark:bg-neutral-900"
-          @click.stop
-        >
+        <div class="mobile-menu-content bg-white dark:bg-neutral-900" @click.stop>
           <!-- Mobile Menu Header -->
-          <div class="mobile-menu-header flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+          <div
+            class="mobile-menu-header flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700"
+          >
             <NuxtLink to="/" class="block" @click="isMobileMenuOpen = false">
-              <div 
-                class="flex items-center justify-center" 
-                :style="logo ? `width: ${logo.width * 0.6}px; height: ${logo.height * 0.6}px` : ''"
+              <div
+                class="flex items-center justify-center"
+                :style="
+                  logo
+                    ? `width: ${logo.width * 0.6}px; height: ${logo.height * 0.6}px`
+                    : ''
+                "
               >
                 <img
                   v-if="currentLogoUrl"
@@ -496,10 +567,13 @@ watch(locale, () => {
                   :alt="logo?.altText || 'Logo'"
                   class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[40px]"
                 />
-                <span v-else-if="isLoadingLogo" class="h-6 w-6 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
+                <span
+                  v-else-if="isLoadingLogo"
+                  class="h-6 w-6 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
+                ></span>
               </div>
             </NuxtLink>
-            
+
             <button
               class="p-2 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400"
               @click="isMobileMenuOpen = false"
@@ -512,8 +586,8 @@ watch(locale, () => {
           <div class="px-4 py-3 space-y-1 bg-white dark:bg-neutral-900">
             <!-- Cart Icon for Mobile -->
             <div v-if="props.settings?.showCart && isCartEnabled" class="mb-4">
-              <NuxtLink 
-                to="/cart" 
+              <NuxtLink
+                to="/cart"
                 class="flex items-center gap-3 px-3 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
                 @click="isMobileMenuOpen = false"
               >
@@ -541,11 +615,15 @@ watch(locale, () => {
               >
                 <Icon name="Phone" class="h-5 w-5" />
                 <div class="flex flex-col">
-                  <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.sales.text }}</span>
-                  <span class="font-bold">{{ props.settings.hotlines.sales.number }}</span>
+                  <span class="text-sm text-neutral-600 dark:text-neutral-400">{{
+                    props.settings.hotlines.sales.text
+                  }}</span>
+                  <span class="font-bold">{{
+                    props.settings.hotlines.sales.number
+                  }}</span>
                 </div>
               </NuxtLink>
-              
+
               <NuxtLink
                 v-if="props.settings?.hotlines?.support"
                 :to="`tel:${props.settings.hotlines.support.number}`"
@@ -553,8 +631,12 @@ watch(locale, () => {
               >
                 <Icon name="Phone" class="h-5 w-5" />
                 <div class="flex flex-col">
-                  <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ props.settings.hotlines.support.text }}</span>
-                  <span class="font-bold">{{ props.settings.hotlines.support.number }}</span>
+                  <span class="text-sm text-neutral-600 dark:text-neutral-400">{{
+                    props.settings.hotlines.support.text
+                  }}</span>
+                  <span class="font-bold">{{
+                    props.settings.hotlines.support.number
+                  }}</span>
                 </div>
               </NuxtLink>
             </div>
@@ -579,10 +661,7 @@ watch(locale, () => {
                   >
                     {{ item.label }}
                   </NuxtLink>
-                  <button
-                    class="p-2 -m-2"
-                    @click.stop="toggleMobileMegaMenu(item.id)"
-                  >
+                  <button class="p-2 -m-2" @click.stop="toggleMobileMegaMenu(item.id)">
                     <Icon
                       name="ChevronRight"
                       class="h-5 w-5 transition-transform duration-300"
@@ -596,7 +675,9 @@ watch(locale, () => {
                   v-else
                   :to="item.href"
                   class="mobile-main-menu-item block px-3 py-2 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-md transition-colors duration-300"
-                  :class="{ 'text-primary-600 dark:text-primary-400': isMenuActive(item.href) }"
+                  :class="{
+                    'text-primary-600 dark:text-primary-400': isMenuActive(item.href),
+                  }"
                   @click="isMobileMenuOpen = false"
                 >
                   {{ item.label }}
@@ -605,10 +686,19 @@ watch(locale, () => {
                 <!-- Mobile Mega Menu Content -->
                 <Transition name="slide-fade">
                   <MobileMegaMenu
-                    v-if="item.children && item.children.length > 0 && activeMobileMegaMenu === item.id"
+                    v-if="
+                      item.children &&
+                      item.children.length > 0 &&
+                      activeMobileMegaMenu === item.id
+                    "
                     :item="item"
                     :is-active="isMenuActive(item.href)"
-                    :on-close="() => { isMobileMenuOpen = false; activeMobileMegaMenu = null; }"
+                    :on-close="
+                      () => {
+                        isMobileMenuOpen = false;
+                        activeMobileMegaMenu = null;
+                      }
+                    "
                   />
                 </Transition>
               </div>
@@ -620,4 +710,4 @@ watch(locale, () => {
   </div>
 </template>
 
-<style lang="scss" scoped src="./CombinedNavbar.scss"></style> 
+<style lang="scss" scoped src="./CombinedNavbar.scss"></style>

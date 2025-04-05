@@ -5,6 +5,7 @@ import { ref, onMounted } from 'vue';
  */
 export const useCssColorValue = () => {
   const isClient = typeof window !== 'undefined';
+  const colorCache = new Map<string, string>();
 
   /**
    * Convert hex color to RGB
@@ -27,18 +28,20 @@ export const useCssColorValue = () => {
   };
 
   /**
-   * Process color value
+   * Process color value with caching
    */
   const processColorValue = (colorValue: string): string => {
     if (!colorValue) return '';
 
-    console.log('Input color value:', colorValue);
+    // Check cache first
+    if (colorCache.has(colorValue)) {
+      return colorCache.get(colorValue)!;
+    }
 
     // If it's a CSS variable
     if (colorValue.startsWith('var(--')) {
       // Extract the variable name
       const variableName = colorValue.match(/var\((.*?)\)/)?.[1];
-      console.log('Extracted variable name:', variableName);
       
       if (!variableName) return colorValue;
 
@@ -50,28 +53,38 @@ export const useCssColorValue = () => {
         .getPropertyValue(variableName)
         .trim();
       
-      console.log('Retrieved color value:', color);
-      
       // If it's space-separated RGB values
       if (color.match(/^\d+\s+\d+\s+\d+$/)) {
         const [r, g, b] = color.split(/\s+/).map(Number);
-        return `rgb(${r}, ${g}, ${b})`;
+        const result = `rgb(${r}, ${g}, ${b})`;
+        colorCache.set(colorValue, result);
+        return result;
       }
       
       // If it's a hex color
       if (color.startsWith('#')) {
         const rgb = hexToRgb(color);
-        console.log('Converted RGB:', rgb);
         if (rgb) {
-          return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+          const result = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+          colorCache.set(colorValue, result);
+          return result;
         }
       }
       
+      colorCache.set(colorValue, color || colorValue);
       return color || colorValue;
     }
     
+    colorCache.set(colorValue, colorValue);
     return colorValue;
   };
+
+  // Clear cache when window is focused (in case CSS variables have changed)
+  if (isClient) {
+    window.addEventListener('focus', () => {
+      colorCache.clear();
+    });
+  }
 
   return {
     processColorValue
