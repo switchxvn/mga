@@ -12,6 +12,8 @@ export * from './transformers/date.transformer';
 
 // Interfaces
 export * from './lib/interfaces';
+export * from './lib/interfaces/gallery.interface';
+export * from './lib/dtos/gallery.dto';
 
 // Types
 export * from './types/page-type';

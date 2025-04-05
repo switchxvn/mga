@@ -164,6 +164,7 @@ export class TrpcService {
       customerLogoAdminService: this.customerLogoAdminService,
       contactAdminService: this.contactAdminService,
       contactFrontendService: this.contactFrontendService,
+      galleryFrontendService: this.galleryFrontendService,
     };
   }
 } 

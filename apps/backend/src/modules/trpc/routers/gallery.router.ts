@@ -2,6 +2,48 @@ import { TRPCError } from '@trpc/server';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { z } from 'zod';
 
+const galleryTranslationSchema = z.object({
+  locale: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+});
+
+const createGallerySchema = z.object({
+  image: z.string(),
+  isActive: z.boolean().default(true),
+  sequence: z.number().default(0),
+  translations: z.array(galleryTranslationSchema),
+}).transform((data) => ({
+  image: data.image,
+  isActive: data.isActive ?? true,
+  sequence: data.sequence ?? 0,
+  translations: data.translations.map(t => ({
+    locale: t.locale,
+    title: t.title,
+    description: t.description,
+  })),
+}));
+
+const updateGallerySchema = z.object({
+  id: z.number(),
+  image: z.string().optional(),
+  isActive: z.boolean().optional(),
+  sequence: z.number().optional(),
+  translations: z.array(galleryTranslationSchema).optional(),
+}).transform((data) => ({
+  id: data.id,
+  ...(data.image !== undefined && { image: data.image }),
+  ...(data.isActive !== undefined && { isActive: data.isActive }),
+  ...(data.sequence !== undefined && { sequence: data.sequence }),
+  ...(data.translations && {
+    translations: data.translations.map(t => ({
+      locale: t.locale,
+      title: t.title,
+      description: t.description,
+    })),
+  }),
+}));
+
 export const galleryRouter = router({
   latest: publicProcedure
     .input(z.object({
@@ -15,7 +57,7 @@ export const galleryRouter = router({
         }
         return ctx.services.galleryFrontendService.findAll();
       } catch (error) {
-        console.error('Failed to fetch latest galleries:', error);
+        ctx.logger.error('Failed to fetch latest galleries:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch latest galleries',
@@ -31,7 +73,7 @@ export const galleryRouter = router({
         const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale);
         return galleries;
       } catch (error) {
-        console.error(`Failed to fetch galleries by locale ${input.locale}:`, error);
+        ctx.logger.error(`Failed to fetch galleries by locale ${input.locale}:`, error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch galleries by locale',
@@ -81,7 +123,7 @@ export const galleryRouter = router({
         }
         return ctx.services.galleryFrontendService.findActive();
       } catch (error) {
-        console.error('Failed to fetch active galleries:', error);
+        ctx.logger.error('Failed to fetch active galleries:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch active galleries',
@@ -91,18 +133,7 @@ export const galleryRouter = router({
     }),
 
   create: protectedProcedure
-    .input(z.object({
-      image: z.string(),
-      isActive: z.boolean().default(true),
-      sequence: z.number().default(0),
-      translations: z.array(
-        z.object({
-          locale: z.string(),
-          title: z.string(),
-          description: z.string().optional(),
-        })
-      ),
-    }))
+    .input(createGallerySchema)
     .mutation(async ({ input, ctx }) => {
       try {
         ctx.logger.log('Creating new gallery');
@@ -120,19 +151,7 @@ export const galleryRouter = router({
     }),
 
   update: protectedProcedure
-    .input(z.object({
-      id: z.number(),
-      image: z.string().optional(),
-      isActive: z.boolean().optional(),
-      sequence: z.number().optional(),
-      translations: z.array(
-        z.object({
-          locale: z.string(),
-          title: z.string(),
-          description: z.string().optional(),
-        })
-      ).optional(),
-    }))
+    .input(updateGallerySchema)
     .mutation(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Updating gallery ID: ${input.id}`);

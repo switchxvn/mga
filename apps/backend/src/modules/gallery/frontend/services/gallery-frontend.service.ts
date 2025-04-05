@@ -24,8 +24,9 @@ export class GalleryFrontendService {
     let currentTranslation = null;
     if (locale) {
       currentTranslation = gallery.translations?.find(t => t.locale === locale);
+      // Instead of throwing error, just log a warning
       if (!currentTranslation) {
-        throw new NotFoundException(`Translation not found for locale "${locale}"`);
+        this.logger.warn(`Translation not found for locale "${locale}" in gallery ${gallery.id}`);
       }
     }
 
@@ -41,7 +42,7 @@ export class GalleryFrontendService {
         locale: t.locale,
         title: t.title,
         description: t.description,
-        galleryId: t.gallery.id,
+        galleryId: t.galleryId,
         createdAt: t.createdAt,
         updatedAt: t.updatedAt
       })) || []

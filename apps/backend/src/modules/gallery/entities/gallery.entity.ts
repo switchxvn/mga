@@ -9,20 +9,20 @@ export class Gallery {
   @Column({ type: 'varchar', length: 255 })
   image: string;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
 
   @Column({ type: 'int', default: 0 })
   sequence: number;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', name: 'updated_at' })
   updatedAt: Date;
 
   @OneToMany(() => GalleryTranslation, translation => translation.gallery, {
-    cascade: true,
+    cascade: ['insert', 'update', 'remove'],
     eager: true
   })
   translations: GalleryTranslation[];

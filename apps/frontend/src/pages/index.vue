@@ -27,6 +27,7 @@ import FeatureServicesSection from "../components/sections/home_page/FeatureServ
 import WhyChooseUsSection from "../components/sections/home_page/WhyChooseUsSection.vue";
 import TicketBookingSection from "../components/sections/home_page/TicketBookingSection.vue";
 import VideoIntroWithTextSection from "../components/sections/home_page/VideoIntroWithTextSection.vue";
+import GalleryMasonrySection from "../components/sections/home_page/GalleryMasonrySection.vue";
 import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -332,7 +333,8 @@ const components = {
   FeatureServicesSection,
   WhyChooseUsSection,
   TicketBookingSection,
-  VideoIntroWithTextSection
+  VideoIntroWithTextSection,
+  GalleryMasonrySection
 } as const;
 
 // Function to get component name based on section type and componentName
@@ -361,7 +363,8 @@ const getDefaultComponent = (type: string) => {
     'styled_featured_products': components.StyledFeaturedProductsSection,
     'customer_logos': components.CustomerLogosSection,
     'feature_services': components.FeatureServicesSection,
-    'ticket_booking': components.TicketBookingSection
+    'ticket_booking': components.TicketBookingSection,
+    'gallery': components.GalleryMasonrySection
   };
   
   return typeToComponent[type] || null;
@@ -548,6 +551,7 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
         <component 
           :is="resolveComponent(section)"
           v-if="section.isActive"
+          :section="section"
           :config="getSectionConfig(section.type)"
         />
       </template>
