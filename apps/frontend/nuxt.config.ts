@@ -167,7 +167,7 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true,
-    typeCheck: false,
+    typeCheck: true,
     shim: false,
     tsConfig: {
       extends: './nuxt.tsconfig.json'
@@ -240,6 +240,14 @@ export default defineNuxtConfig({
         defineModel: true,
         propsDestructure: true,
       },
+      config: {
+        errorHandler(err: any, vm: any, info: string) {
+          console.error('Vue Error:', err, info);
+        },
+        warnHandler(msg: string, vm: any, trace: string) {
+          console.warn('Vue Warning:', msg, trace);
+        }
+      }
     },
     server: {
       proxy: {
@@ -270,7 +278,8 @@ export default defineNuxtConfig({
   app: {
     head: {
       script: []
-    }
+    },
+    pageTransition: { name: 'page', mode: 'out-in' }
   },
 
   image: {
@@ -285,4 +294,17 @@ export default defineNuxtConfig({
       xxl: 1536,
     },
   },
+
+  // Enable detailed error pages in production
+  errorHandler: '~/error',
+
+  // Show detailed errors in production
+  typescript: {
+    shim: false,
+    strict: true,
+    typeCheck: true
+  },
+
+  // Enable source maps in production for better error tracking
+  sourcemap: true,
 });

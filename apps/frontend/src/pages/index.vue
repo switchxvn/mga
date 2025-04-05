@@ -320,69 +320,79 @@ const error = ref<string | null>(null);
 const { getActiveTheme } = useTheme();
 const theme = ref<Theme | null>(null);
 
-// Register components
-const components = {
-  HeroSection,
-  FeaturedProductsSection,
-  ProductCategoriesSection,
-  ServiceSection,
-  NewsSection,
-  CompanyIntroSection,
-  HeroSectionFullWidth,
-  VideoIntroSection,
-  StyledProductCategoriesSection,
-  StyledFeaturedProductsSection,
-  CustomerLogosSection,
-  FeatureServicesSection,
-  WhyChooseUsSection,
-  TicketBookingSection,
-  VideoIntroWithTextSection,
-  GalleryMasonrySection,
-  FoodGallerySection,
-  StyledNewsSection,
-  CustomerReviewsSection
+// Modify the components registration to be more explicit
+const registeredComponents = {
+  'HeroSection': HeroSection,
+  'FeaturedProductsSection': FeaturedProductsSection,
+  'ProductCategoriesSection': ProductCategoriesSection,
+  'ServiceSection': ServiceSection,
+  'NewsSection': NewsSection,
+  'CompanyIntroSection': CompanyIntroSection,
+  'HeroSectionFullWidth': HeroSectionFullWidth,
+  'VideoIntroSection': VideoIntroSection,
+  'StyledProductCategoriesSection': StyledProductCategoriesSection,
+  'StyledFeaturedProductsSection': StyledFeaturedProductsSection,
+  'CustomerLogosSection': CustomerLogosSection,
+  'FeatureServicesSection': FeatureServicesSection,
+  'WhyChooseUsSection': WhyChooseUsSection,
+  'TicketBookingSection': TicketBookingSection,
+  'VideoIntroWithTextSection': VideoIntroWithTextSection,
+  'GalleryMasonrySection': GalleryMasonrySection,
+  'FoodGallerySection': FoodGallerySection,
+  'StyledNewsSection': StyledNewsSection,
+  'CustomerReviewsSection': CustomerReviewsSection
 } as const;
 
-// Function to get component name based on section type and componentName
-const resolveComponent = (section: ThemeSection) => {
-  console.log('Resolving component for section:', section);
-  
-  // First try to get component by componentName if specified
-  if (section.componentName && components[section.componentName as keyof typeof components]) {
-    return components[section.componentName as keyof typeof components];
+// Modify the resolveComponent function
+const resolveComponent = (section: ThemeSection): any => {
+  if (!section) {
+    console.warn('Section is undefined');
+    return null;
   }
-  
-  // Then try to get default component by type
-  const component = getDefaultComponent(section.type);
-  console.log('Resolved component:', component?.name);
-  
-  // Return the component or UCard as fallback to avoid 'default' component error
-  return component || 'UCard';
-};
 
-// Function to get default component based on section type
-const getDefaultComponent = (type: string) => {
-  const typeToComponent: Record<string, any> = {
-    'hero': components.HeroSection,
-    'featured_products': components.FeaturedProductsSection,
-    'product_categories': components.ProductCategoriesSection,
-    'services': components.ServiceSection,
-    'news': components.NewsSection,
-    'company_intro': components.CompanyIntroSection,
-    'hero_full_width': components.HeroSectionFullWidth,
-    'video_intro': components.VideoIntroSection,
-    'styled_product_categories': components.StyledProductCategoriesSection,
-    'styled_featured_products': components.StyledFeaturedProductsSection,
-    'customer_logos': components.CustomerLogosSection,
-    'feature_services': components.FeatureServicesSection,
-    'ticket_booking': components.TicketBookingSection,
-    'gallery': components.GalleryMasonrySection,
-    'food_gallery': components.FoodGallerySection,
-    'styled_news': components.StyledNewsSection,
-    'customer_reviews': components.CustomerReviewsSection
+  // Log for debugging
+  console.log('Resolving section:', {
+    type: section.type,
+    componentName: section.componentName,
+    isActive: section.isActive
+  });
+
+  // First try componentName if specified
+  if (section.componentName) {
+    const component = registeredComponents[section.componentName as keyof typeof registeredComponents];
+    if (component) {
+      return markRaw(component);
+    }
+  }
+
+  // Then try type mapping
+  const typeToComponentName: Record<string, keyof typeof registeredComponents> = {
+    'hero': 'HeroSection',
+    'featured_products': 'FeaturedProductsSection',
+    'product_categories': 'ProductCategoriesSection',
+    'services': 'ServiceSection',
+    'news': 'NewsSection',
+    'company_intro': 'CompanyIntroSection',
+    'hero_full_width': 'HeroSectionFullWidth',
+    'video_intro': 'VideoIntroSection',
+    'styled_product_categories': 'StyledProductCategoriesSection',
+    'styled_featured_products': 'StyledFeaturedProductsSection',
+    'customer_logos': 'CustomerLogosSection',
+    'feature_services': 'FeatureServicesSection',
+    'ticket_booking': 'TicketBookingSection',
+    'gallery': 'GalleryMasonrySection',
+    'food_gallery': 'FoodGallerySection',
+    'styled_news': 'StyledNewsSection',
+    'customer_reviews': 'CustomerReviewsSection'
   };
-  
-  return typeToComponent[type] || null;
+
+  const componentName = typeToComponentName[section.type];
+  if (componentName) {
+    return markRaw(registeredComponents[componentName]);
+  }
+
+  console.warn(`Could not resolve component for section type: ${section.type}`);
+  return null;
 };
 
 // Fetch theme on mount
@@ -561,16 +571,31 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
       </div>
     </template>
     <template v-else>
-      <!-- Render sections based on their order -->
-      <template v-for="(section, index) in theme?.sections" :key="`section-${section.id}-${index}`">
-        <ClientOnly>
-          <component 
-            v-if="section.isActive && resolveComponent(section)"
-            :is="resolveComponent(section)"
-            :section="section"
-            :config="getSectionConfig(section.type)"
-          />
-        </ClientOnly>
+      <template v-if="theme?.sections">
+        <template v-for="(section, index) in theme.sections" :key="`section-${section.id}-${index}`">
+          <ClientOnly>
+            <Suspense>
+              <template #default>
+                <component
+                  v-if="section.isActive && resolveComponent(section)"
+                  :is="resolveComponent(section)"
+                  :section="section"
+                  :config="getSectionConfig(section.type)"
+                />
+              </template>
+              <template #fallback>
+                <div class="p-4 text-center">
+                  <ULoader />
+                </div>
+              </template>
+            </Suspense>
+          </ClientOnly>
+        </template>
+      </template>
+      <template v-else>
+        <div class="container mx-auto px-4 py-12 text-center">
+          No sections configured
+        </div>
       </template>
     </template>
   </div>
