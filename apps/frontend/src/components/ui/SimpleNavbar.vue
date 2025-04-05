@@ -346,173 +346,177 @@ watch(locale, () => {
       <nav class="navigation-section w-full h-full relative">
         <div class="w-full px-8 h-full">
           <div class="flex items-center h-full relative">
-            <!-- Logo - Fixed width -->
-            <NuxtLink to="/" class="flex-shrink-0 mr-8 py-3">
-              <div 
-                class="flex items-center justify-center"
-                :style="logo ? `width: ${Math.min(logo.width * 1.5, 200)}px; height: ${Math.min(logo.height * 1.5, 60)}px` : ''"
-              >
-                <img
-                  v-if="currentLogoUrl"
-                  :src="currentLogoUrl"
-                  :alt="logo?.altText || 'Logo'"
-                  :width="logo?.width"
-                  :height="logo?.height"
-                  class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[60px]"
-                />
-                <span
-                  v-else-if="isLoadingLogo"
-                  class="h-12 w-12 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
-                ></span>
-              </div>
-            </NuxtLink>
+            <!-- Logo - Left column -->
+            <div class="w-[15%] flex justify-start">
+              <NuxtLink to="/" class="flex-shrink-0 mr-8 py-3">
+                <div 
+                  class="flex items-center justify-center"
+                  :style="logo ? `width: ${Math.min(logo.width * 1.5, 200)}px; height: ${Math.min(logo.height * 1.5, 60)}px` : ''"
+                >
+                  <img
+                    v-if="currentLogoUrl"
+                    :src="currentLogoUrl"
+                    :alt="logo?.altText || 'Logo'"
+                    :width="logo?.width"
+                    :height="logo?.height"
+                    class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[60px]"
+                  />
+                  <span
+                    v-else-if="isLoadingLogo"
+                    class="h-12 w-12 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
+                  ></span>
+                </div>
+              </NuxtLink>
+            </div>
 
-            <!-- Navigation Menu - Flexible width -->
-            <nav class="hidden lg:flex flex-1 h-full">
+            <!-- Navigation Menu - Center column -->
+            <nav class="w-[70%] hidden lg:flex h-full">
               <div class="flex items-center justify-center w-full py-4" ref="menuContainerRef">
                 <div class="flex items-center justify-center gap-8">
                   <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
                     Đang tải menu...
                   </div>
                   <template v-else>
-                    <!-- Visible Menu Items -->
-                    <div
-                      v-for="(item, itemIndex) in visibleMenuItems"
-                      :key="item.id"
-                      class="relative group"
-                      :data-menu-id="item.id"
-                      :ref="el => { if (el) menuItemsRefs[itemIndex] = el as HTMLElement }"
-                      @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
-                      @mouseleave="item.children?.length ? hideMegaMenu() : null"
-                    >
-                      <NuxtLink
-                        :to="item.href"
-                        class="main-menu-item flex items-center space-x-1 whitespace-nowrap py-5 px-4"
-                        :class="{ 
-                          'menu-active': isMenuActive(item.href),
-                          [props.settings?.navigation?.fontWeight || '']: true
-                        }"
+                    <div class="flex items-center justify-center gap-6">
+                      <!-- Visible Menu Items -->
+                      <div
+                        v-for="(item, itemIndex) in visibleMenuItems"
+                        :key="item.id"
+                        class="relative group"
+                        :data-menu-id="item.id"
+                        :ref="el => { if (el) menuItemsRefs[itemIndex] = el as HTMLElement }"
+                        @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
+                        @mouseleave="item.children?.length ? hideMegaMenu() : null"
                       >
-                        <Icon
-                          v-if="item.icon"
-                          :name="getIconName(item.icon)"
-                          class="nav-icon w-6 h-6"
-                          :style="{ 
-                            color: isMenuActive(item.href) 
-                              ? props.settings?.navigation?.activeTextColor
-                              : props.settings?.navigation?.textColor
-                          }"
-                        />
-                        <span 
-                          class="text-[1.05rem] uppercase transition-colors duration-300" 
-                          :style="{ 
-                            color: isMenuActive(item.href) 
-                              ? props.settings?.navigation?.activeTextColor
-                              : props.settings?.navigation?.textColor
+                        <NuxtLink
+                          :to="item.href"
+                          class="main-menu-item flex items-center space-x-1 whitespace-nowrap py-5 px-4"
+                          :class="{ 
+                            'menu-active': isMenuActive(item.href),
+                            [props.settings?.navigation?.fontWeight || '']: true
                           }"
                         >
-                          {{ item.label }}
-                        </span>
-                        <Icon
-                          v-if="item.children?.length"
-                          name="ChevronDown"
-                          class="nav-icon w-5 h-5 transition-transform duration-300 group-hover:rotate-180"
-                          :style="{ 
-                            color: isMenuActive(item.href) 
-                              ? props.settings?.navigation?.activeTextColor
-                              : props.settings?.navigation?.textColor
-                          }"
-                        />
-                      </NuxtLink>
+                          <Icon
+                            v-if="item.icon"
+                            :name="getIconName(item.icon)"
+                            class="nav-icon w-6 h-6"
+                            :style="{ 
+                              color: isMenuActive(item.href) 
+                                ? props.settings?.navigation?.activeTextColor
+                                : props.settings?.navigation?.textColor
+                            }"
+                          />
+                          <span 
+                            class="text-[1.05rem] uppercase transition-colors duration-300" 
+                            :style="{ 
+                              color: isMenuActive(item.href) 
+                                ? props.settings?.navigation?.activeTextColor
+                                : props.settings?.navigation?.textColor
+                            }"
+                          >
+                            {{ item.label }}
+                          </span>
+                          <Icon
+                            v-if="item.children?.length"
+                            name="ChevronDown"
+                            class="nav-icon w-5 h-5 transition-transform duration-300 group-hover:rotate-180"
+                            :style="{ 
+                              color: isMenuActive(item.href) 
+                                ? props.settings?.navigation?.activeTextColor
+                                : props.settings?.navigation?.textColor
+                            }"
+                          />
+                        </NuxtLink>
 
-                      <!-- Mega Menu -->
-                      <Transition name="fade">
-                        <MegaMenu
-                          v-if="item.children?.length && activeMegaMenu === item.id"
-                          :item="item"
-                          :is-active="true"
-                          :on-close="() => activeMegaMenu = null"
-                          @mouseenter="keepMegaMenu"
-                          @mouseleave="hideMegaMenu"
-                        />
-                      </Transition>
-                    </div>
+                        <!-- Mega Menu -->
+                        <Transition name="fade">
+                          <MegaMenu
+                            v-if="item.children?.length && activeMegaMenu === item.id"
+                            :item="item"
+                            :is-active="true"
+                            :on-close="() => activeMegaMenu = null"
+                            @mouseenter="keepMegaMenu"
+                            @mouseleave="hideMegaMenu"
+                          />
+                        </Transition>
+                      </div>
 
-                    <!-- More Menu -->
-                    <div 
-                      v-if="hiddenMenuItems.length > 0"
-                      class="more-menu flex-shrink-0 ml-2"
-                      ref="moreMenuRef"
-                    >
-                      <button 
-                        class="flex items-center space-x-1 py-5 px-4 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md"
-                        :style="{ color: props.settings?.navigation?.textColor }"
-                        @click="showMoreMenu = !showMoreMenu"
+                      <!-- More Menu -->
+                      <div 
+                        v-if="hiddenMenuItems.length > 0"
+                        class="more-menu flex-shrink-0 ml-2"
+                        ref="moreMenuRef"
                       >
-                        <Icon name="MoreHorizontal" class="nav-icon w-6 h-6" />
-                      </button>
+                        <button 
+                          class="flex items-center space-x-1 py-5 px-4 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md"
+                          :style="{ color: props.settings?.navigation?.textColor }"
+                          @click="showMoreMenu = !showMoreMenu"
+                        >
+                          <Icon name="MoreHorizontal" class="nav-icon w-6 h-6" />
+                        </button>
 
-                      <!-- More Menu Dropdown -->
-                      <Transition
-                        enter-active-class="transition ease-out duration-200"
-                        enter-from-class="transform opacity-0 scale-95"
-                        enter-to-class="transform opacity-100 scale-100"
-                        leave-active-class="transition ease-in duration-150"
-                        leave-from-class="transform opacity-100 scale-100"
-                        leave-to-class="transform opacity-0 scale-95"
-                      >
-                        <div
-                          v-show="showMoreMenu"
-                          class="more-menu-dropdown"
+                        <!-- More Menu Dropdown -->
+                        <Transition
+                          enter-active-class="transition ease-out duration-200"
+                          enter-from-class="transform opacity-0 scale-95"
+                          enter-to-class="transform opacity-100 scale-100"
+                          leave-active-class="transition ease-in duration-150"
+                          leave-from-class="transform opacity-100 scale-100"
+                          leave-to-class="transform opacity-0 scale-95"
                         >
                           <div
-                            v-for="item in hiddenMenuItems"
-                            :key="item.id"
-                            class="menu-item"
-                            @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
-                            @mouseleave="item.children?.length ? hideMegaMenu() : null"
+                            v-show="showMoreMenu"
+                            class="more-menu-dropdown"
                           >
-                            <NuxtLink
-                              :to="item.href"
-                              class="flex items-center space-x-2 w-full"
-                              :style="{ color: props.settings?.navigation?.textColor }"
-                              @click="showMoreMenu = false"
+                            <div
+                              v-for="item in hiddenMenuItems"
+                              :key="item.id"
+                              class="menu-item"
+                              @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
+                              @mouseleave="item.children?.length ? hideMegaMenu() : null"
                             >
-                              <Icon
-                                v-if="item.icon"
-                                :name="getIconName(item.icon)"
-                                class="nav-icon w-5 h-5"
-                              />
-                              <span>{{ item.label }}</span>
-                              <Icon
-                                v-if="item.children?.length"
-                                name="ChevronRight"
-                                class="nav-icon w-5 h-5 ml-auto"
-                              />
-                            </NuxtLink>
+                              <NuxtLink
+                                :to="item.href"
+                                class="flex items-center space-x-2 w-full"
+                                :style="{ color: props.settings?.navigation?.textColor }"
+                                @click="showMoreMenu = false"
+                              >
+                                <Icon
+                                  v-if="item.icon"
+                                  :name="getIconName(item.icon)"
+                                  class="nav-icon w-5 h-5"
+                                />
+                                <span>{{ item.label }}</span>
+                                <Icon
+                                  v-if="item.children?.length"
+                                  name="ChevronRight"
+                                  class="nav-icon w-5 h-5 ml-auto"
+                                />
+                              </NuxtLink>
 
-                            <!-- Mega Menu for More Menu Items -->
-                            <Transition name="fade">
-                              <MegaMenu
-                                v-if="item.children?.length && activeMegaMenu === item.id"
-                                :item="item"
-                                :is-active="true"
-                                :on-close="() => activeMegaMenu = null"
-                                @mouseenter="keepMegaMenu"
-                                @mouseleave="hideMegaMenu"
-                              />
-                            </Transition>
+                              <!-- Mega Menu for More Menu Items -->
+                              <Transition name="fade">
+                                <MegaMenu
+                                  v-if="item.children?.length && activeMegaMenu === item.id"
+                                  :item="item"
+                                  :is-active="true"
+                                  :on-close="() => activeMegaMenu = null"
+                                  @mouseenter="keepMegaMenu"
+                                  @mouseleave="hideMegaMenu"
+                                />
+                              </Transition>
+                            </div>
                           </div>
-                        </div>
-                      </Transition>
+                        </Transition>
+                      </div>
                     </div>
                   </template>
                 </div>
               </div>
             </nav>
 
-            <!-- Right Actions - Fixed width -->
-            <div class="flex items-center gap-4">
+            <!-- Right Actions - Right column -->
+            <div class="w-[15%] flex items-center justify-end gap-4">
               <!-- Combined Book Now Button -->
               <NuxtLink
                 :to="props.settings?.bookingButton?.href || '/booking'"
