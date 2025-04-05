@@ -558,12 +558,13 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
       <!-- Render sections based on their order -->
       <template v-for="(section, index) in theme?.sections" :key="`section-${section.id}-${index}`">
         <component 
+          v-if="section.isActive && resolveComponent(section)"
           :is="resolveComponent(section)"
-          v-if="section.isActive"
           :section="section"
           :config="getSectionConfig(section.type)"
         />
       </template>
+
     </template>
   </div>
 </template>
