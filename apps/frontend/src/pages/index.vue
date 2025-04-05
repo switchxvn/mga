@@ -11,7 +11,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import type { Component } from 'vue';
-import { defineAsyncComponent } from 'vue';
+import { defineAsyncComponent, markRaw } from 'vue';
 import { useTheme } from '../composables/useTheme';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
@@ -305,7 +305,7 @@ const theme = ref<Theme | null>(null);
 type ComponentType = Component;
 type ComponentRegistry = Record<string, ComponentType>;
 
-// Modify the components registration to use defineAsyncComponent
+// Register components using defineAsyncComponent
 const registeredComponents = {
   'HeroSection': defineAsyncComponent(() => import("../components/sections/home_page/HeroSection.vue")),
   'FeaturedProductsSection': defineAsyncComponent(() => import("../components/sections/home_page/FeaturedProductsSection.vue")),
@@ -337,7 +337,7 @@ const resolveComponent = (section: ThemeSection): ComponentType | null => {
 
   // First try componentName if specified
   if (section.componentName && registeredComponents[section.componentName]) {
-    return registeredComponents[section.componentName];
+    return markRaw(registeredComponents[section.componentName]);
   }
 
   // Then try type mapping
@@ -363,7 +363,7 @@ const resolveComponent = (section: ThemeSection): ComponentType | null => {
 
   const componentName = typeToComponentName[section.type];
   if (componentName && registeredComponents[componentName]) {
-    return registeredComponents[componentName];
+    return markRaw(registeredComponents[componentName]);
   }
 
   console.warn(`No component found for section type: ${section.type}`);
