@@ -1,7 +1,7 @@
 <!-- Simple Navbar without Logo and Hotline sections -->
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { useNow, useDateFormat } from '@vueuse/core';
+import { useNow, useDateFormat, onClickOutside } from '@vueuse/core';
 import { useFeatureFlags } from '~/composables/useFeatureFlags';
 import { useLocalization } from '~/composables/useLocalization';
 import { useLogo } from '~/composables/useLogo';
@@ -200,21 +200,30 @@ const showMoreMenu = ref(false);
 
 // Add method to calculate visible items
 const calculateVisibleItems = () => {
-  if (!menuContainerRef.value || !menuItemsRefs.value.length || !processedMenuItems.value) return;
+  if (!menuContainerRef.value || !processedMenuItems.value) return;
 
   const containerWidth = menuContainerRef.value.clientWidth;
-  const moreButtonWidth = 60; // Width reserved for more button
+  const moreButtonWidth = 80; // Width reserved for more button with padding
   let availableWidth = containerWidth - moreButtonWidth;
   let totalWidth = 0;
   
   visibleMenuItems.value = [];
   hiddenMenuItems.value = [];
 
-  processedMenuItems.value.forEach((item, index) => {
-    const itemWidth = menuItemsRefs.value[index]?.clientWidth || 0;
-    if (totalWidth + itemWidth <= availableWidth) {
+  // Reset refs array
+  menuItemsRefs.value = [];
+
+  // Calculate widths and distribute items
+  processedMenuItems.value.forEach((item) => {
+    // Estimate item width based on content
+    const estimatedWidth = (item.label.length * 12) + // Text width
+                          (item.icon ? 40 : 0) + // Icon width if present
+                          (item.children?.length ? 30 : 0) + // Dropdown arrow if present
+                          32; // Padding
+
+    if (totalWidth + estimatedWidth <= availableWidth) {
       visibleMenuItems.value.push(item);
-      totalWidth += itemWidth;
+      totalWidth += estimatedWidth;
     } else {
       hiddenMenuItems.value.push(item);
     }
@@ -223,6 +232,9 @@ const calculateVisibleItems = () => {
 
 // Update the resize observer
 let resizeObserver: ResizeObserver | null = null;
+
+// Add these refs and handlers
+const moreMenuRef = ref<HTMLElement | null>(null);
 
 onMounted(() => {
   const init = async () => {
@@ -245,6 +257,12 @@ onMounted(() => {
 
   if (menuContainerRef.value) {
     resizeObserver.observe(menuContainerRef.value);
+  }
+
+  if (moreMenuRef.value) {
+    onClickOutside(moreMenuRef, () => {
+      showMoreMenu.value = false;
+    });
   }
 });
 
@@ -350,17 +368,16 @@ watch(locale, () => {
             </NuxtLink>
 
             <!-- Navigation Menu - Flexible width -->
-            <nav class="hidden lg:flex flex-1 items-center justify-center px-4">
-              <div class="flex items-center space-x-6" ref="menuContainerRef">
-                <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
-                  Đang tải menu...
-                </div>
-                <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
-                <template v-else>
-                  <div class="flex items-center justify-between w-full">
+            <nav class="hidden lg:flex flex-1 h-full">
+              <div class="flex items-center justify-center w-full py-4" ref="menuContainerRef">
+                <div class="flex items-center justify-center gap-8">
+                  <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
+                    Đang tải menu...
+                  </div>
+                  <template v-else>
                     <!-- Visible Menu Items -->
                     <div
-                      v-for="(item, itemIndex) in processedMenuItems"
+                      v-for="(item, itemIndex) in visibleMenuItems"
                       :key="item.id"
                       class="relative group"
                       :data-menu-id="item.id"
@@ -424,43 +441,73 @@ watch(locale, () => {
                     <!-- More Menu -->
                     <div 
                       v-if="hiddenMenuItems.length > 0"
-                      class="relative"
-                      @mouseenter="showMoreMenu = true"
-                      @mouseleave="showMoreMenu = false"
+                      class="more-menu flex-shrink-0 ml-2"
+                      ref="moreMenuRef"
                     >
                       <button 
-                        class="flex items-center space-x-1 py-5"
+                        class="flex items-center space-x-1 py-5 px-4 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md"
                         :style="{ color: props.settings?.navigation?.textColor }"
+                        @click="showMoreMenu = !showMoreMenu"
                       >
                         <Icon name="MoreHorizontal" class="nav-icon w-6 h-6" />
                       </button>
 
                       <!-- More Menu Dropdown -->
-                      <Transition name="fade">
-                        <div 
-                          v-if="showMoreMenu"
-                          class="absolute top-full right-0 bg-white dark:bg-neutral-800 shadow-lg rounded-md py-2 min-w-[200px] z-50"
+                      <Transition
+                        enter-active-class="transition ease-out duration-200"
+                        enter-from-class="transform opacity-0 scale-95"
+                        enter-to-class="transform opacity-100 scale-100"
+                        leave-active-class="transition ease-in duration-150"
+                        leave-from-class="transform opacity-100 scale-100"
+                        leave-to-class="transform opacity-0 scale-95"
+                      >
+                        <div
+                          v-show="showMoreMenu"
+                          class="more-menu-dropdown"
                         >
-                          <NuxtLink
+                          <div
                             v-for="item in hiddenMenuItems"
                             :key="item.id"
-                            :to="item.href"
-                            class="flex items-center space-x-2 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 whitespace-nowrap"
-                            :style="{ color: props.settings?.navigation?.textColor }"
-                            @click="showMoreMenu = false"
+                            class="menu-item"
+                            @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
+                            @mouseleave="item.children?.length ? hideMegaMenu() : null"
                           >
-                            <Icon
-                              v-if="item.icon"
-                              :name="getIconName(item.icon)"
-                              class="nav-icon w-6 h-6"
-                            />
-                            <span>{{ item.label }}</span>
-                          </NuxtLink>
+                            <NuxtLink
+                              :to="item.href"
+                              class="flex items-center space-x-2 w-full"
+                              :style="{ color: props.settings?.navigation?.textColor }"
+                              @click="showMoreMenu = false"
+                            >
+                              <Icon
+                                v-if="item.icon"
+                                :name="getIconName(item.icon)"
+                                class="nav-icon w-5 h-5"
+                              />
+                              <span>{{ item.label }}</span>
+                              <Icon
+                                v-if="item.children?.length"
+                                name="ChevronRight"
+                                class="nav-icon w-5 h-5 ml-auto"
+                              />
+                            </NuxtLink>
+
+                            <!-- Mega Menu for More Menu Items -->
+                            <Transition name="fade">
+                              <MegaMenu
+                                v-if="item.children?.length && activeMegaMenu === item.id"
+                                :item="item"
+                                :is-active="true"
+                                :on-close="() => activeMegaMenu = null"
+                                @mouseenter="keepMegaMenu"
+                                @mouseleave="hideMegaMenu"
+                              />
+                            </Transition>
+                          </div>
                         </div>
                       </Transition>
                     </div>
-                  </div>
-                </template>
+                  </template>
+                </div>
               </div>
             </nav>
 
@@ -688,6 +735,30 @@ watch(locale, () => {
     &.menu-active {
       span, .icon {
         color: var(--primary-500) !important;
+      }
+    }
+  }
+
+  // Add styles for More menu
+  .more-menu {
+    @apply relative;
+
+    &-dropdown {
+      @apply absolute right-0 mt-2 py-2 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700;
+      min-width: 280px;
+      z-index: 1000;
+
+      &::before {
+        content: '';
+        @apply absolute -top-2 right-[20px] h-4 w-4 bg-white dark:bg-neutral-800 border-l border-t border-neutral-200 dark:border-neutral-700 rotate-45;
+      }
+
+      .menu-item {
+        @apply flex items-center justify-between px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer;
+
+        span {
+          @apply text-[1.05rem];
+        }
       }
     }
   }
