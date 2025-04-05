@@ -2,9 +2,11 @@
   "dependencies": {
     "@nuxtjs/i18n": "^9.0.0-rc.2",
     "@tanstack/vue-query": "^5.66.9",
+    "photoswipe": "^5.4.4",
     "trpc-nuxt": "^1.0.4",
     "vue": "^3.3.4",
-    "vue-facebook-page": "^1.0.1"
+    "vue-facebook-page": "^1.0.1",
+    "vue-masonry-css": "^1.0.3"
   },
   "devDependencies": {
     "@headlessui/tailwindcss": "^0.2.2",

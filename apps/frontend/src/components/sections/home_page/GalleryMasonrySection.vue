@@ -25,34 +25,34 @@
       </div>
 
       <!-- Masonry Gallery -->
-      <div v-if="galleries?.length" class="masonry-grid" :style="gridStyle">
-        <div
-          v-for="(item, index) in galleries"
-          :key="item.id"
-          class="masonry-item"
-          :style="{ marginBottom: settings.gap }"
-          @click="openLightbox(index)"
-        >
-          <div class="relative overflow-hidden rounded-lg">
-            <NuxtImg
-              :src="item.image"
-              :alt="item.translations?.[0]?.title || ''"
-              class="w-full h-auto object-cover transition-transform duration-300"
-              :class="{ 'hover:scale-110': settings.imageHoverEffect === 'zoom' }"
-              loading="lazy"
-            />
+      <ClientOnly>
+        <div v-if="galleries?.length" class="pswp-gallery" ref="galleryRef">
+          <div 
+            class="masonry"
+            :style="{ 
+              columnCount: currentColumns, 
+              columnGap: `${settings.gap}px`,
+              margin: '0 auto'
+            }"
+          >
             <div
-              v-if="settings.showTitle && item.translations?.[0]?.title"
-              class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent"
+              v-for="(item, index) in galleries"
+              :key="item.id"
+              class="masonry-item mb-4 break-inside-avoid cursor-pointer"
+              @click="openGallery(index)"
             >
-              <h3 class="text-white text-lg font-semibold">{{ item.translations[0].title }}</h3>
-              <p v-if="settings.showDescription && item.translations?.[0]?.description" class="text-white/80 text-sm mt-1">
-                {{ item.translations[0].description }}
-              </p>
+              <div class="relative overflow-hidden rounded-lg transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <NuxtImg
+                  :src="item.image"
+                  :alt="item.translations?.[0]?.title || ''"
+                  class="w-full h-auto object-cover"
+                  loading="lazy"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </ClientOnly>
 
       <!-- Load More Button -->
       <div v-if="settings.loadMoreButton.show && hasMoreItems" class="text-center mt-8">
@@ -64,46 +64,52 @@
           :loading="isLoading"
         />
       </div>
+    </div>
 
-      <!-- Lightbox -->
-      <UModal v-model="isLightboxOpen" :ui="{ width: 'max-w-7xl' }">
-        <div class="relative">
-          <button
-            class="absolute top-2 right-2 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
-            @click="closeLightbox"
-          >
-            <UIcon name="i-heroicons-x-mark" />
-          </button>
-          <UCarousel
-            v-if="settings.lightbox.enabled"
-            v-model="currentSlide"
-            :items="galleries.map(g => ({
-              url: g.image,
-              alt: g.translations?.[0]?.title
-            }))"
-          >
-            <template #item="{ item }">
-              <img :src="item.url" :alt="item.alt" class="w-full h-auto object-contain" />
-            </template>
-          </UCarousel>
-          <div
-            v-if="settings.lightbox.showCaption && galleries[currentSlide]?.translations?.[0]"
-            class="text-center mt-4"
-          >
-            <h3 class="text-lg font-semibold">{{ galleries[currentSlide].translations[0].title }}</h3>
-            <p v-if="galleries[currentSlide].translations[0].description" class="text-sm mt-1 text-gray-600">
-              {{ galleries[currentSlide].translations[0].description }}
-            </p>
+    <!-- PhotoSwipe Root Element -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="pswp__bg"></div>
+      <div class="pswp__scroll-wrap">
+        <div class="pswp__container">
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+        </div>
+        <div class="pswp__ui pswp__ui--hidden">
+          <div class="pswp__top-bar">
+            <div class="pswp__counter"></div>
+            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+            <button class="pswp__button pswp__button--share" title="Share"></button>
+            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+            <div class="pswp__preloader">
+              <div class="pswp__preloader__icn">
+                <div class="pswp__preloader__cut">
+                  <div class="pswp__preloader__donut"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+            <div class="pswp__share-tooltip"></div>
+          </div>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
+          <div class="pswp__caption">
+            <div class="pswp__caption__center"></div>
           </div>
         </div>
-      </UModal>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
+import PhotoSwipe from 'photoswipe';
+import type { PhotoSwipeOptions } from 'photoswipe';
+import 'photoswipe/style.css';
 
 interface GalleryTranslation {
   id: number;
@@ -140,30 +146,20 @@ const defaultSettings = {
     lg: 3,
     xl: 4
   },
-  gap: '1rem',
+  gap: '16',
   padding: {
     top: 'py-4',
     bottom: 'pb-4'
   },
   maxItems: 12,
   showTitle: true,
-  showDescription: true,
-  titleAlignment: 'center',
   colors: {
-    title: 'text-gray-900 dark:text-white',
-    description: 'text-gray-600 dark:text-gray-400',
     background: 'bg-white dark:bg-gray-900'
   },
-  imageHoverEffect: 'zoom',
   loadMoreButton: {
     show: true,
     text: 'Xem thêm',
     style: 'primary'
-  },
-  lightbox: {
-    enabled: true,
-    showCaption: true,
-    showThumbnails: true
   },
   useUppercase: true
 };
@@ -173,7 +169,98 @@ const settings = computed(() => ({
   ...(props.section?.settings || {})
 }));
 
-const description = ref('Khám phá bộ sưu tập hình ảnh đa dạng của chúng tôi');
+const currentColumns = ref(settings.value.columns.xl);
+const galleryRef = ref<HTMLElement | null>(null);
+
+// Handle responsive columns
+const updateColumns = () => {
+  const width = window.innerWidth;
+  if (width >= 1280) {
+    currentColumns.value = settings.value.columns.xl;
+  } else if (width >= 1024) {
+    currentColumns.value = settings.value.columns.lg;
+  } else if (width >= 768) {
+    currentColumns.value = settings.value.columns.md;
+  } else {
+    currentColumns.value = settings.value.columns.sm;
+  }
+};
+
+// PhotoSwipe
+let pswpInstance: PhotoSwipe | null = null;
+
+const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      });
+    };
+    img.src = url;
+  });
+};
+
+const openGallery = async (index: number) => {
+  const items = await Promise.all(
+    galleries.value.map(async (item) => {
+      const dimensions = await getImageDimensions(item.image);
+      return {
+        src: item.image,
+        w: dimensions.width,
+        h: dimensions.height,
+        originalSrc: item.image,
+      };
+    })
+  );
+
+  const options: Partial<PhotoSwipeOptions> = {
+    index,
+    bgOpacity: 0.9,
+    padding: { top: 20, bottom: 20, left: 20, right: 20 },
+    showHideOpacity: true,
+    allowPanToNext: true,
+    wheelToZoom: false,
+    pinchToClose: true,
+    maxZoomLevel: 4,
+    imageClickAction: false,
+    tapAction: false,
+    doubleTapAction: false,
+    errorMsg: 'Không thể tải ảnh',
+  };
+
+  pswpInstance = new PhotoSwipe({
+    dataSource: items,
+    ...options,
+    pswpModule: PhotoSwipe,
+  });
+
+  // Set zoom levels for maintaining aspect ratio
+  pswpInstance.on('firstUpdate', () => {
+    const slide = pswpInstance?.currSlide;
+    if (slide) {
+      slide.zoomLevels.initial = 1;
+      slide.zoomLevels.secondary = 2;
+      slide.zoomLevels.max = 4;
+    }
+  });
+
+  pswpInstance.init();
+};
+
+onMounted(() => {
+  updateColumns();
+  window.addEventListener('resize', updateColumns);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateColumns);
+  if (pswpInstance) {
+    pswpInstance.destroy();
+    pswpInstance = null;
+  }
+});
 
 // tRPC client
 const trpc = useTrpc();
@@ -182,30 +269,10 @@ const trpc = useTrpc();
 const galleries = ref<Gallery[]>([]);
 const isLoading = ref(false);
 const currentPage = ref(1);
-const isLightboxOpen = ref(false);
-const currentSlide = ref(0);
+const totalItems = ref(0);
 
 // Computed
 const hasMoreItems = computed(() => galleries.value.length < totalItems.value);
-const totalItems = ref(0);
-
-const gridStyle = computed(() => {
-  const columns = settings.value.columns;
-  return {
-    display: 'grid',
-    gap: settings.value.gap,
-    gridTemplateColumns: `repeat(${columns.sm}, 1fr)`,
-    '@media (min-width: 768px)': {
-      gridTemplateColumns: `repeat(${columns.md}, 1fr)`,
-    },
-    '@media (min-width: 1024px)': {
-      gridTemplateColumns: `repeat(${columns.lg}, 1fr)`,
-    },
-    '@media (min-width: 1280px)': {
-      gridTemplateColumns: `repeat(${columns.xl}, 1fr)`,
-    },
-  };
-});
 
 // Methods
 const fetchGalleries = async () => {
@@ -238,16 +305,6 @@ const loadMore = async () => {
   await fetchGalleries();
 };
 
-const openLightbox = (index: number) => {
-  if (!settings.value.lightbox.enabled) return;
-  currentSlide.value = index;
-  isLightboxOpen.value = true;
-};
-
-const closeLightbox = () => {
-  isLightboxOpen.value = false;
-};
-
 // Initial fetch
 onMounted(() => {
   fetchGalleries();
@@ -255,40 +312,20 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.masonry-grid {
-  columns: v-bind('settings.columns.sm');
+.masonry {
+  columns: v-bind('currentColumns');
   column-gap: v-bind('settings.gap');
-  
-  @media (min-width: 768px) {
-    columns: v-bind('settings.columns.md');
-  }
-  
-  @media (min-width: 1024px) {
-    columns: v-bind('settings.columns.lg');
-  }
-  
-  @media (min-width: 1280px) {
-    columns: v-bind('settings.columns.xl');
-  }
+  width: 100%;
 }
 
 .masonry-item {
-  break-inside: avoid;
-  margin-bottom: v-bind('settings.gap');
   display: inline-block;
   width: 100%;
-  transition: transform 0.3s ease-in-out;
-  
-  img {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: 0.5rem;
-  }
-  
-  &:hover {
-    transform: translateY(-5px);
-  }
+  box-sizing: border-box;
+}
+
+.break-inside-avoid {
+  break-inside: avoid;
 }
 
 .category-header {
@@ -306,5 +343,13 @@ onMounted(() => {
       font-weight: 600 !important;
     }
   }
+}
+
+:deep(.pswp__img) {
+  object-fit: contain !important;
+}
+
+:deep(.pswp__zoom-wrap) {
+  transform-origin: center !important;
 }
 </style> 
