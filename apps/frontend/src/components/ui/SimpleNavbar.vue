@@ -19,6 +19,7 @@ import MobileMegaMenu from '~/components/menu/MobileMegaMenu.vue';
 import { getIconName } from '~/utils/icon';
 import type { Icon as LucideIcon } from 'lucide-vue-next';
 import { useCssColorValue } from '~/composables/useColorUtils';
+import { Phone } from 'lucide-vue-next';
 
 // Props cho component
 interface NavbarProps {
@@ -59,6 +60,23 @@ interface NavbarProps {
         isTranslated: boolean;
       }[];
     };
+
+    // Update button settings
+    bookingButton?: {
+      text: string;
+      href: string;
+      phoneNumber: string;
+      backgroundColor?: string;
+      textColor?: string;
+    };
+    
+    // Add phone button settings
+    phoneButton?: {
+      text: string;
+      number: string;
+      backgroundColor?: string;
+      textColor?: string;
+    };
   };
 }
 
@@ -81,6 +99,19 @@ const props = withDefaults(defineProps<NavbarProps>(), {
       textColor: "var(--tertiary-500)",
       fontWeight: "semibold",
       activeTextColor: "var(--primary-500)"
+    },
+    bookingButton: {
+      text: "Đặt vé ngay",
+      href: "/booking",
+      phoneNumber: "1900 1234",
+      backgroundColor: "rgb(var(--color-primary-500))",
+      textColor: "#ffffff"
+    },
+    phoneButton: {
+      text: "Hotline",
+      number: "1900 1234",
+      backgroundColor: "rgb(var(--color-primary-500))",
+      textColor: "#ffffff"
     }
   })
 });
@@ -251,7 +282,7 @@ watch(locale, () => {
             <div class="w-1/3 flex items-center gap-2">
               <Icon 
                 name="Clock" 
-                class="h-4 w-4 text-white"
+                class="nav-icon text-white w-6 h-6"
               />
               <span class="text-sm font-medium text-white">
                 {{ formattedTime }}
@@ -263,7 +294,7 @@ watch(locale, () => {
               <div class="flex items-center gap-3">
                 <Icon 
                   name="Phone" 
-                  class="h-6 w-6 text-white"
+                  class="nav-icon text-white w-7 h-7"
                 />
                 <span class="text-lg font-bold text-white">
                   Hotline: 1900 1234
@@ -295,9 +326,9 @@ watch(locale, () => {
       }"
     >
       <nav class="navigation-section w-full h-full relative">
-        <div class="max-w-[1920px] mx-auto px-4 h-full">
+        <div class="w-full px-8 h-full">
           <div class="flex items-center h-full relative">
-            <!-- Logo -->
+            <!-- Logo - Fixed width -->
             <NuxtLink to="/" class="flex-shrink-0 mr-8 py-3">
               <div 
                 class="flex items-center justify-center"
@@ -318,15 +349,15 @@ watch(locale, () => {
               </div>
             </NuxtLink>
 
-            <!-- Desktop Navigation -->
-            <nav class="hidden lg:flex flex-1 items-center">
-              <div class="flex-1 flex items-center" ref="menuContainerRef">
+            <!-- Navigation Menu - Flexible width -->
+            <nav class="hidden lg:flex flex-1 items-center justify-center px-4">
+              <div class="flex items-center space-x-6" ref="menuContainerRef">
                 <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
                   Đang tải menu...
                 </div>
                 <div v-else-if="error" class="text-sm text-red-500">{{ error }}</div>
                 <template v-else>
-                  <div class="flex items-center gap-x-8 w-full">
+                  <div class="flex items-center justify-between w-full">
                     <!-- Visible Menu Items -->
                     <div
                       v-for="(item, itemIndex) in processedMenuItems"
@@ -339,7 +370,7 @@ watch(locale, () => {
                     >
                       <NuxtLink
                         :to="item.href"
-                        class="main-menu-item flex items-center space-x-1 whitespace-nowrap py-5"
+                        class="main-menu-item flex items-center space-x-1 whitespace-nowrap py-5 px-4"
                         :class="{ 
                           'menu-active': isMenuActive(item.href),
                           [props.settings?.navigation?.fontWeight || '']: true
@@ -348,7 +379,7 @@ watch(locale, () => {
                         <Icon
                           v-if="item.icon"
                           :name="getIconName(item.icon)"
-                          class="h-5 w-5"
+                          class="nav-icon w-6 h-6"
                           :style="{ 
                             color: isMenuActive(item.href) 
                               ? props.settings?.navigation?.activeTextColor
@@ -368,7 +399,7 @@ watch(locale, () => {
                         <Icon
                           v-if="item.children?.length"
                           name="ChevronDown"
-                          class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
+                          class="nav-icon w-5 h-5 transition-transform duration-300 group-hover:rotate-180"
                           :style="{ 
                             color: isMenuActive(item.href) 
                               ? props.settings?.navigation?.activeTextColor
@@ -401,7 +432,7 @@ watch(locale, () => {
                         class="flex items-center space-x-1 py-5"
                         :style="{ color: props.settings?.navigation?.textColor }"
                       >
-                        <Icon name="MoreHorizontal" class="h-5 w-5" />
+                        <Icon name="MoreHorizontal" class="nav-icon w-6 h-6" />
                       </button>
 
                       <!-- More Menu Dropdown -->
@@ -421,7 +452,7 @@ watch(locale, () => {
                             <Icon
                               v-if="item.icon"
                               :name="getIconName(item.icon)"
-                              class="h-5 w-5"
+                              class="nav-icon w-6 h-6"
                             />
                             <span>{{ item.label }}</span>
                           </NuxtLink>
@@ -433,8 +464,39 @@ watch(locale, () => {
               </div>
             </nav>
 
-            <!-- Right Actions -->
+            <!-- Right Actions - Fixed width -->
             <div class="flex items-center gap-4">
+              <!-- Combined Book Now Button -->
+              <NuxtLink
+                :to="props.settings?.bookingButton?.href || '/booking'"
+                class="hidden lg:flex items-center gap-4 px-6 py-3 rounded-full transition-all duration-300 hover:opacity-90"
+                :style="{
+                  backgroundColor: props.settings?.bookingButton?.backgroundColor || 'rgb(var(--color-primary-500))',
+                  color: props.settings?.bookingButton?.textColor || '#ffffff'
+                }"
+              >
+                <div class="relative">
+                  <div class="animate-ring absolute -inset-1 rounded-full border-2 opacity-75 border-white"></div>
+                  <div class="relative flex items-center justify-center rounded-full bg-white/20 w-10 h-10">
+                    <Phone
+                      class="text-white"
+                      :size="24"
+                      :stroke-width="2.5"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                <div class="flex flex-col items-start">
+                  <span class="text-lg font-bold whitespace-nowrap">
+                    {{ props.settings?.bookingButton?.text || 'Đặt vé ngay' }}
+                  </span>
+                  <span class="text-sm opacity-90">
+                    {{ props.settings?.bookingButton?.phoneNumber || '1900 1234' }}
+                  </span>
+                </div>
+              </NuxtLink>
+
+              <!-- Cart Icon -->
               <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
               
               <!-- Mobile Menu Button -->
@@ -443,7 +505,7 @@ watch(locale, () => {
                 @click="toggleMobileMenu"
                 aria-label="Toggle Menu"
               >
-                <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="h-6 w-6" />
+                <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="nav-icon w-6 h-6" />
               </button>
             </div>
           </div>
@@ -470,7 +532,7 @@ watch(locale, () => {
               @click="isMobileMenuOpen = false"
               aria-label="Close Menu"
             >
-              <Icon name="X" class="h-6 w-6" />
+              <Icon name="X" class="nav-icon w-6 h-6" />
             </button>
           </div>
 
@@ -482,7 +544,7 @@ watch(locale, () => {
                 class="flex items-center gap-3 px-3 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
                 @click="isMobileMenuOpen = false"
               >
-                <Icon name="ShoppingCart" class="h-6 w-6" />
+                <Icon name="ShoppingCart" class="nav-icon w-6 h-6" />
                 <span class="text-base font-medium">Giỏ hàng</span>
               </NuxtLink>
             </div>
@@ -518,7 +580,7 @@ watch(locale, () => {
                     <Icon
                       v-if="item.icon"
                       :name="getIconName(item.icon)"
-                      class="h-5 w-5"
+                      class="nav-icon w-6 h-6"
                     />
                     {{ item.label }}
                   </NuxtLink>
@@ -528,7 +590,7 @@ watch(locale, () => {
                   >
                     <Icon
                       name="ChevronRight"
-                      class="h-5 w-5 transition-transform duration-300"
+                      class="nav-icon w-5 h-5 transition-transform duration-300"
                       :class="{ 'rotate-90': activeMobileMegaMenu === item.id }"
                     />
                   </button>
@@ -545,7 +607,7 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="getIconName(item.icon)"
-                    class="h-5 w-5"
+                    class="nav-icon w-6 h-6"
                   />
                   {{ item.label }}
                 </NuxtLink>
@@ -572,9 +634,20 @@ watch(locale, () => {
 .navbar-container {
   @apply relative z-50;
 
+  .nav-icon {
+    @apply flex-shrink-0;
+    width: auto;
+    height: auto;
+  }
+
   .top-menu {
     @apply relative z-50;
     background-color: rgb(var(--color-primary-DEFAULT));
+
+    .icon {
+      width: auto;
+      height: auto;
+    }
   }
 
   .nav-wrapper {
@@ -637,6 +710,21 @@ watch(locale, () => {
     &.mobile-menu-active {
       @apply text-primary-500;
     }
+  }
+
+  @keyframes ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(1.2);
+      opacity: 0;
+    }
+  }
+
+  .animate-ring {
+    animation: ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }
 
