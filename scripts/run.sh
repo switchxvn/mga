@@ -35,28 +35,28 @@ pull_and_run() {
     local EXTRA_ARGS=$4
 
     echo "Pulling $SERVICE image..."
-    docker pull $REGISTRY/$GITHUB_USERNAME/ew-$SERVICE:$VERSION
+    docker pull $REGISTRY/$GITHUB_USERNAME/cable-car-$SERVICE:$VERSION
 
     echo "Stopping existing $SERVICE container if running..."
-    docker stop ew-$SERVICE 2>/dev/null || true
-    docker rm ew-$SERVICE 2>/dev/null || true
+    docker stop cable-car-$SERVICE 2>/dev/null || true
+    docker rm cable-car-$SERVICE 2>/dev/null || true
 
     echo "Starting $SERVICE container..."
     if [ -n "$ENV_FILE" ]; then
         docker run -d \
-            --name ew-$SERVICE \
+            --name cable-car-$SERVICE \
             --network $NETWORK_NAME \
             $PORTS \
             --env-file $ENV_FILE \
             $EXTRA_ARGS \
-            $REGISTRY/$GITHUB_USERNAME/ew-$SERVICE:$VERSION
+            $REGISTRY/$GITHUB_USERNAME/cable-car-$SERVICE:$VERSION
     else
         docker run -d \
-            --name ew-$SERVICE \
+            --name cable-car-$SERVICE \
             --network $NETWORK_NAME \
             $PORTS \
             $EXTRA_ARGS \
-            $REGISTRY/$GITHUB_USERNAME/ew-$SERVICE:$VERSION
+            $REGISTRY/$GITHUB_USERNAME/cable-car-$SERVICE:$VERSION
     fi
 }
 
