@@ -109,7 +109,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import PhotoSwipe from 'photoswipe';
 import type { PhotoSwipeOptions } from 'photoswipe';
-import 'photoswipe/style.css';
+// CSS is already imported globally in nuxt.config.ts
 
 interface GalleryTranslation {
   id: number;

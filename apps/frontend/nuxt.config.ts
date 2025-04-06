@@ -229,13 +229,26 @@ export default defineNuxtConfig({
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
       include: ['@trpc/client', '@trpc/server', 'photoswipe', 'estree-walker'],
-      exclude: ['entities']
+      exclude: ['entities'],
+      esbuildOptions: {
+        target: 'es2020'
+      }
     },
     build: {
+      target: 'es2020',
       rollupOptions: {
-        external: []
+        external: [],
+        output: {
+          manualChunks: {
+            photoswipe: ['photoswipe']
+          }
+        }
       },
-      cssCodeSplit: true
+      cssCodeSplit: true,
+      commonjsOptions: {
+        include: [/node_modules/],
+        transformMixedEsModules: true
+      }
     },
     ssr: {
       noExternal: ['entities', 'photoswipe']
@@ -244,14 +257,6 @@ export default defineNuxtConfig({
       script: {
         defineModel: true,
         propsDestructure: true,
-      },
-      config: {
-        errorHandler(err: any, vm: any, info: string) {
-          console.error('Vue Error:', err, info);
-        },
-        warnHandler(msg: string, vm: any, trace: string) {
-          console.warn('Vue Warning:', msg, trace);
-        }
       }
     },
     server: {
@@ -311,6 +316,6 @@ export default defineNuxtConfig({
   },
 
   build: {
-    transpile: ['vue', 'estree-walker']
+    transpile: ['vue', 'estree-walker', 'photoswipe']
   },
 });
