@@ -299,7 +299,7 @@ watch(locale, () => {
         <div class="container mx-auto px-4">
           <div class="flex items-center h-12">
             <!-- Current Time -->
-            <div class="w-1/3 flex items-center gap-2">
+            <div class="w-[40%] flex items-center gap-2 justify-start">
               <Icon 
                 name="Clock" 
                 class="nav-icon text-white w-6 h-6"
@@ -310,7 +310,7 @@ watch(locale, () => {
             </div>
             
             <!-- Center Hotline -->
-            <div class="w-1/3 flex justify-center">
+            <div class="w-[20%] flex justify-center">
               <div class="flex items-center gap-3">
                 <Icon 
                   name="Phone" 
@@ -323,11 +323,11 @@ watch(locale, () => {
             </div>
 
             <!-- Right Actions -->
-            <div class="w-1/3 flex items-center gap-6 justify-end">
-              <div class="w-44">
+            <div class="w-[40%] flex items-center justify-end">
+              <div class="flex items-center gap-2">
                 <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
+                <ThemeToggle mode="full" />
               </div>
-             
             </div>
           </div>
         </div>

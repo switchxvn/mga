@@ -153,10 +153,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="language-switcher w-full">
+  <div class="language-switcher inline-block">
     <button 
       @click.stop="toggleDropdown"
-      class="w-full flex items-center justify-between space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-[background] duration-150 text-gray-900 dark:text-gray-100"
+      class="inline-flex items-center justify-between space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-[background] duration-150 text-gray-900 dark:text-gray-100"
       type="button"
       :title="t('language')"
       :disabled="isLoadingLanguages"
@@ -186,7 +186,7 @@ onBeforeUnmount(() => {
     <!-- Dropdown menu -->
     <div 
       v-if="isOpen" 
-      class="absolute z-[120] mt-1 w-40 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 focus:outline-none !transition-none"
+      class="absolute z-[120] mt-1 min-w-[160px] rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 focus:outline-none !transition-none"
     >
       <div v-if="isLoadingLanguages" class="py-4 px-4 text-center text-sm text-gray-900 dark:text-gray-100 !transition-none">
         <span>Loading...</span>
@@ -219,6 +219,7 @@ onBeforeUnmount(() => {
 .language-switcher {
   position: relative;
   display: inline-block;
+  width: auto;
 }
 
 /* Dropdown menu */
