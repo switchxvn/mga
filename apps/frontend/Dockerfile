@@ -35,7 +35,7 @@ COPY --chown=node:node apps/frontend/${ENV_FILE} apps/frontend/.env
 # Build only frontend application
 RUN mkdir -p apps/frontend/.output && \
     cd apps/frontend && \
-    NODE_OPTIONS="--max-old-space-size=4096" npx nuxt build && \
+    NODE_OPTIONS="--max-old-space-size=6096" npx nuxt build && \
     ls -la .output/server || exit 1
 
 # Production stage
