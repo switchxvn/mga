@@ -311,6 +311,6 @@ export default defineNuxtConfig({
   },
 
   build: {
-    transpile: ['vue']
+    transpile: ['vue', 'estree-walker']
   },
 });
