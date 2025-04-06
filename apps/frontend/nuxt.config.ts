@@ -233,12 +233,12 @@ export default defineNuxtConfig({
     },
     build: {
       rollupOptions: {
-        external: ['photoswipe'],
+        external: []
       },
       cssCodeSplit: true
     },
     ssr: {
-      noExternal: ['entities']
+      noExternal: ['entities', 'photoswipe']
     },
     vue: {
       script: {
