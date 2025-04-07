@@ -144,26 +144,22 @@ const handleLinkClick = () => {
 <template>
   <div
     v-if="menuStructure.length > 0"
-    class="absolute left-1/2 z-50 mt-4 w-screen max-w-max -translate-x-1/2"
+    class="absolute top-full left-0 z-50 w-screen max-w-max"
+    style="min-width: 280px; margin-top: 15px;"
   >
     <!-- Arrow -->
-    <div class="absolute -top-[10px] left-1/2 h-[20px] w-[28px] -translate-x-1/2">
-      <div 
-        class="absolute h-full w-full bg-white dark:bg-neutral-900"
-        style="clip-path: polygon(50% 20%, 0 100%, 100% 100%); border-left: 1px solid var(--navbar-border); border-right: 1px solid var(--navbar-border); border-bottom: 1px solid var(--navbar-border);"
-      ></div>
-    </div>
+    <div class="absolute -top-2 left-8 h-3 w-3 rotate-45 bg-white dark:bg-neutral-900 border-t border-l border-neutral-200 dark:border-neutral-700"></div>
     
     <!-- Content -->
-    <div class="relative mt-2 rounded-lg bg-neutral-50/95 dark:bg-neutral-800/95 shadow-lg ring-1 ring-black ring-opacity-5">
+    <div class="relative rounded-lg bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700">
       <div class="relative p-4">
         <div 
           class="grid gap-6"
           :class="{
             'grid-cols-2': menuStructure.length > 1,
             'grid-cols-1': menuStructure.length === 1,
-            'w-[300px]': menuStructure.length === 1 && menuStructure[0]?.itemColumns?.length === 1,
-            'w-[600px]': menuStructure.length === 1 && menuStructure[0]?.itemColumns?.length > 1
+            'w-[280px]': menuStructure.length === 1 && menuStructure[0]?.itemColumns?.length === 1,
+            'w-[560px]': menuStructure.length === 1 && menuStructure[0]?.itemColumns?.length > 1
           }"
         >
           <div 
@@ -210,8 +206,9 @@ const handleLinkClick = () => {
     </div>
   </div>
   <div v-else>
-    <div class="absolute left-1/2 z-50 mt-4 w-screen max-w-max -translate-x-1/2">
-      <div class="relative mt-2 rounded-lg bg-neutral-50/95 dark:bg-neutral-800/95 shadow-lg ring-1 ring-black ring-opacity-5">
+    <div class="absolute top-full left-0 z-50 w-screen max-w-max" style="min-width: 280px; margin-top: 15px;">
+      <div class="absolute -top-2 left-8 h-3 w-3 rotate-45 bg-white dark:bg-neutral-900 border-t border-l border-neutral-200 dark:border-neutral-700"></div>
+      <div class="relative rounded-lg bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700">
         <div class="px-4 py-2 text-sm text-neutral-500">
           No menu items available
         </div>

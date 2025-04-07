@@ -122,7 +122,7 @@ onMounted(async () => {
                              class="quick-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
                       <UIcon :name="link.icon || 'Link'" 
                             class="w-6 h-6 text-white/70 group-hover:text-white transition-colors duration-300" />
-                      <span class="text-lg font-medium text-white/70 group-hover:text-white transition-colors duration-300">{{ link.label }}</span>
+                      <span class="text-lg font-bold text-white/70 group-hover:text-white transition-colors duration-300">{{ link.label }}</span>
                     </NuxtLink>
                   </li>
                 </ul>
@@ -134,14 +134,14 @@ onMounted(async () => {
                 <div class="space-y-4 mt-6">
                   <p class="flex items-start space-x-3 group p-3">
                     <MapPin class="w-6 h-6 mt-1 flex-shrink-0 text-white/70" />
-                    <span class="text-lg font-medium text-white/70">{{ address.location }}</span>
+                    <span class="text-lg font-bold text-white/70">{{ address.location }}</span>
                   </p>
                   
                   <div v-for="(phone, phoneIndex) in address.phone" :key="'phone-'+phoneIndex">
                     <a :href="'tel:' + phone.number" 
                        class="contact-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
                       <Phone class="w-6 h-6 text-white/70 group-hover:text-white transition-colors duration-300" />
-                      <span class="text-lg font-medium text-white/70 group-hover:text-white transition-colors duration-300">{{ phone.number }}</span>
+                      <span class="text-lg font-bold text-white/70 group-hover:text-white transition-colors duration-300">{{ phone.number }}</span>
                     </a>
                   </div>
 
@@ -149,7 +149,7 @@ onMounted(async () => {
                     <a :href="'mailto:' + email.address" 
                        class="contact-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
                       <Mail class="w-6 h-6 text-white/70 group-hover:text-white transition-colors duration-300" />
-                      <span class="text-lg font-medium text-white/70 group-hover:text-white transition-colors duration-300">{{ email.address }}</span>
+                      <span class="text-lg font-bold text-white/70 group-hover:text-white transition-colors duration-300">{{ email.address }}</span>
                     </a>
                   </div>
                 </div>
@@ -173,7 +173,7 @@ onMounted(async () => {
 
               <!-- Map with enhanced container -->
               <div v-if="activeFooter.mapUrl" 
-                   class="map-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300">
+                   class="map-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
                 <iframe :src="activeFooter.mapUrl + '&zoom=15&style=feature:all|element:labels.text.fill|color:0x000000|saturation:36|lightness:40&style=feature:all|element:labels.text.stroke|visibility:off&style=feature:administrative|element:geometry.stroke|color:0xdc2626|weight:1&style=feature:landscape|element:geometry.fill|color:0xfecaca&style=feature:poi|element:geometry.fill|color:0xfee2e2&style=feature:road|element:geometry.fill|color:0xffffff&style=feature:road|element:geometry.stroke|color:0xdc2626|weight:0.5&style=feature:water|element:geometry.fill|color:0xfca5a5'" 
                         width="100%" 
                         height="200" 
@@ -183,6 +183,28 @@ onMounted(async () => {
                         referrerpolicy="no-referrer-when-downgrade"
                         class="transition-all duration-500">
                 </iframe>
+              </div>
+
+              <!-- Facebook Fanpage -->
+              <div v-if="activeFooter.fanpageUrl" class="facebook-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
+                <ClientOnly>
+                  <div id="fb-root"></div>
+                  <div 
+                    class="fb-page" 
+                    :data-href="activeFooter.fanpageUrl"
+                    data-tabs="timeline"
+                    data-width=""
+                    data-height="300"
+                    data-small-header="true"
+                    data-adapt-container-width="true"
+                    data-hide-cover="false"
+                    data-show-facepile="true"
+                  >
+                    <blockquote :cite="activeFooter.fanpageUrl" class="fb-xfbml-parse-ignore">
+                      <a :href="activeFooter.fanpageUrl" class="text-white">{{ activeFooter.companyInfo.name }}</a>
+                    </blockquote>
+                  </div>
+                </ClientOnly>
               </div>
 
               <!-- Social Icons -->
@@ -301,11 +323,17 @@ onMounted(async () => {
 
 /* Adjust existing styles to work with new background */
 .quick-link, .contact-link, .branch-card, .certification-item {
-  @apply backdrop-blur-sm bg-white/5;
+  @apply backdrop-blur-sm;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .social-icon-link {
-  @apply backdrop-blur-sm;
+  @apply shadow-lg hover:shadow-xl backdrop-blur-sm;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.social-icon-link:hover {
+  background: rgba(185, 28, 28, 0.8); /* Darker red on hover */
 }
 
 /* Make sure content sections have proper contrast */
@@ -320,7 +348,7 @@ onMounted(async () => {
 }
 
 .section-title {
-  @apply text-2xl font-black tracking-wide mb-2 relative;
+  @apply text-2xl font-black tracking-wide mb-2 relative uppercase;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -333,6 +361,7 @@ onMounted(async () => {
 /* Enhance text contrast and readability */
 h3, h4, h5 {
   letter-spacing: 0.02em;
+  @apply font-extrabold uppercase;
 }
 
 .company-brand h3 {
@@ -340,19 +369,25 @@ h3, h4, h5 {
 }
 
 .quick-link, .contact-link {
-  @apply text-white/80 hover:text-white transform hover:translate-x-1;
+  @apply text-white/80 hover:text-white transform hover:translate-x-1 font-black;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .quick-link:hover, .contact-link:hover {
-  @apply shadow-lg;
-}
-
-.social-icon-link {
-  @apply shadow-lg hover:shadow-xl;
+  @apply shadow-lg bg-[#b91c1c] backdrop-blur-sm;
 }
 
 .branch-card {
-  @apply shadow-md hover:shadow-lg;
+  @apply shadow-md hover:shadow-lg backdrop-blur-sm;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.branch-card:hover {
+  background: rgba(185, 28, 28, 0.8);
+}
+
+/* Remove old Facebook container styling */
+.facebook-container {
+  @apply shadow-lg hover:shadow-xl transition-all duration-300;
 }
 </style> 

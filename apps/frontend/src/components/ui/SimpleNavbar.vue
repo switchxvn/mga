@@ -215,11 +215,11 @@ const calculateVisibleItems = () => {
 
   // Calculate widths and distribute items
   processedMenuItems.value.forEach((item) => {
-    // Estimate item width based on content
-    const estimatedWidth = (item.label.length * 12) + // Text width
-                          (item.icon ? 40 : 0) + // Icon width if present
-                          (item.children?.length ? 30 : 0) + // Dropdown arrow if present
-                          32; // Padding
+    // Optimize width calculation with smaller padding
+    const estimatedWidth = (item.label.length * 10) + // Reduced text width multiplier
+                        (item.icon ? 24 : 0) + // Reduced icon width
+                        (item.children?.length ? 20 : 0) + // Reduced dropdown arrow space
+                        24; // Reduced padding (12px on each side)
 
     if (totalWidth + estimatedWidth <= availableWidth) {
       visibleMenuItems.value.push(item);
@@ -347,7 +347,7 @@ watch(locale, () => {
         <div class="w-full px-8 h-full">
           <div class="flex items-center h-full relative">
             <!-- Logo - Left column -->
-            <div class="w-[15%] flex justify-start">
+            <div class="w-[13%] flex justify-start">
               <NuxtLink to="/" class="flex-shrink-0 mr-8 py-3">
                 <div 
                   class="flex items-center justify-center"
@@ -370,14 +370,14 @@ watch(locale, () => {
             </div>
 
             <!-- Navigation Menu - Center column -->
-            <nav class="w-[70%] hidden lg:flex h-full">
-              <div class="flex items-center justify-center w-full h-full" ref="menuContainerRef">
-                <div class="flex items-center justify-center gap-8 h-full">
+            <nav class="w-[74%] hidden lg:flex h-full">
+              <div class="flex items-center justify-between w-full h-full" ref="menuContainerRef">
+                <div class="flex items-center justify-between w-full h-full">
                   <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
                     Đang tải menu...
                   </div>
                   <template v-else>
-                    <div class="flex items-center justify-center gap-6">
+                    <div class="flex items-center justify-between w-full gap-2">
                       <!-- Visible Menu Items -->
                       <div
                         v-for="(item, itemIndex) in visibleMenuItems"
@@ -390,7 +390,7 @@ watch(locale, () => {
                       >
                         <NuxtLink
                           :to="item.href"
-                          class="main-menu-item flex items-center space-x-1 whitespace-nowrap h-full px-4"
+                          class="main-menu-item flex items-center space-x-1 whitespace-nowrap h-full px-3"
                           :class="{ 
                             'menu-active': isMenuActive(item.href),
                             [props.settings?.navigation?.fontWeight || '']: true
@@ -516,7 +516,7 @@ watch(locale, () => {
             </nav>
 
             <!-- Right Actions - Right column -->
-            <div class="w-[15%] flex items-center justify-end gap-4">
+            <div class="w-[13%] flex items-center justify-end gap-4">
               <!-- Combined Book Now Button -->
               <NuxtLink
                 :to="props.settings?.bookingButton?.href || '/booking'"
