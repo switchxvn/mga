@@ -1,14 +1,6 @@
 import { ref, computed } from 'vue';
 import { useAuth } from './useAuth';
-
-export interface CartItem {
-  id: string;
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string;
-}
+import type { CartItem } from '~/types';
 
 /**
  * Composable để quản lý giỏ hàng
@@ -44,46 +36,45 @@ export function useCart() {
     }
   };
 
-  const addToCart = async (productId: string, quantity: number = 1) => {
-    try {
-      isLoading.value = true;
-      error.value = null;
-      // TODO: Implement API call to add item to cart
-      // For now, just log the action
-      console.log('Adding to cart:', { productId, quantity });
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi thêm vào giỏ hàng';
-    } finally {
-      isLoading.value = false;
+  const addToCart = async (item: CartItem) => {
+    // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
+    const existingItem = items.value.find(
+      i => i.productId === item.productId && i.variantId === item.variantId
+    );
+
+    if (existingItem) {
+      // Nếu có rồi thì tăng số lượng
+      existingItem.quantity += item.quantity;
+    } else {
+      // Nếu chưa có thì thêm mới
+      items.value.push(item);
     }
   };
 
-  const removeFromCart = async (itemId: string) => {
-    try {
-      isLoading.value = true;
-      error.value = null;
-      // TODO: Implement API call to remove item from cart
-      // For now, just log the action
-      console.log('Removing from cart:', itemId);
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi xóa khỏi giỏ hàng';
-    } finally {
-      isLoading.value = false;
+  const removeFromCart = (itemId: string) => {
+    const index = items.value.findIndex(item => item.id === itemId);
+    if (index > -1) {
+      items.value.splice(index, 1);
     }
   };
 
-  const updateQuantity = async (itemId: string, quantity: number) => {
-    try {
-      isLoading.value = true;
-      error.value = null;
-      // TODO: Implement API call to update item quantity
-      // For now, just log the action
-      console.log('Updating quantity:', { itemId, quantity });
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi cập nhật số lượng';
-    } finally {
-      isLoading.value = false;
+  const updateQuantity = (itemId: string, quantity: number) => {
+    const item = items.value.find(item => item.id === itemId);
+    if (item) {
+      item.quantity = quantity;
     }
+  };
+
+  const clearCart = () => {
+    items.value = [];
+  };
+
+  const getTotal = () => {
+    return items.value.reduce((total, item) => total + item.price * item.quantity, 0);
+  };
+
+  const getItemCount = () => {
+    return items.value.reduce((count, item) => count + item.quantity, 0);
   };
 
   return {
@@ -96,5 +87,8 @@ export function useCart() {
     addToCart,
     removeFromCart,
     updateQuantity,
+    clearCart,
+    getTotal,
+    getItemCount
   };
 } 

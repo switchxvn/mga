@@ -1,3 +1,5 @@
+import { ProductType } from '../types/product.type';
+import { PriceRequest } from './price-request.interface';
 import { Category } from './category.interface';
 
 export interface ProductTranslation {

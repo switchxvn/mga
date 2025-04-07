@@ -480,17 +480,26 @@ const shouldShowFromPrice = computed(() => {
 
 // Kiểm tra xem có cần hiển thị nút yêu cầu báo giá không
 const shouldShowPriceRequest = computed(() => {
-  // Nếu đã chọn variant và giá variant là null
-  if (matchingVariant.value && !matchingVariant.value.price) {
-    return true;
+  // Nếu sản phẩm có variants
+  if (productData.value?.variantAttributes?.variants?.length) {
+    // Chỉ hiện yêu cầu báo giá khi đã chọn variant và variant đó không có giá
+    return matchingVariant.value && !matchingVariant.value.price;
   }
   
-  // Nếu không có variants và giá sản phẩm là null
-  if (!productData.value?.variantAttributes?.variants?.length && !productData.value?.price) {
-    return true;
+  // Nếu không có variants thì kiểm tra giá sản phẩm
+  return !productData.value?.price;
+});
+
+// Kiểm tra xem có thể thêm vào giỏ hàng không
+const canAddToCart = computed(() => {
+  // Nếu sản phẩm có variants
+  if (productData.value?.variantAttributes?.variants?.length) {
+    // Phải có matching variant và variant đó phải có giá
+    return matchingVariant.value && matchingVariant.value.price;
   }
   
-  return false;
+  // Nếu không có variants thì chỉ cần có giá sản phẩm
+  return !!productData.value?.price;
 });
 
 // Tính toán giá hiển thị
@@ -518,6 +527,12 @@ const displayComparePrice = computed(() => {
 const getProductForCart = computed(() => {
   if (!productData.value) return null;
 
+  const hasRequiredAttributes = productData.value?.variantAttributes?.attributes?.some(attr => attr.required) || false;
+  const hasSelectedAllAttributes = hasRequiredAttributes ? 
+    productData.value?.variantAttributes?.attributes?.every(attr => 
+      !attr.required || selectedAttributes.value[attr.id]
+    ) : true;
+
   return {
     id: productData.value.id,
     title: productTitle.value,
@@ -533,6 +548,8 @@ const getProductForCart = computed(() => {
     }).join(' - ') : undefined,
     sku: matchingVariant.value?.sku || productData.value.sku,
     stock: matchingVariant.value?.stock || productData.value.stock,
+    hasRequiredAttributes,
+    hasSelectedAllAttributes
   };
 });
 
@@ -766,15 +783,7 @@ const getTabIcon = (tabId: string) => {
                   </div>
                 </div>
 
-                <!-- Hiển thị thông báo nếu chưa chọn đủ attributes -->
-                <div
-                  v-if="!hasRequiredAttributes"
-                  class="text-sm text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-2"
-                >
-                  <AlertCircle class="w-4 h-4" />
-                  {{ t("products.selectAllAttributes") || "Vui lòng chọn đầy đủ các thuộc tính" }}
-                </div>
-
+             
                 <!-- Hiển thị thông báo nếu không có variant phù hợp -->
                 <div
                   v-if="hasRequiredAttributes && !matchingVariant"
@@ -891,7 +900,7 @@ const getTabIcon = (tabId: string) => {
               <!-- Buttons -->
               <div class="space-y-4">
                 <AddToCartButton
-                  v-if="hasRequiredAttributes && matchingVariant && !shouldShowPriceRequest"
+                  v-if="canAddToCart"
                   :product="getProductForCart"
                   :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
                   :showQuantity="true"
