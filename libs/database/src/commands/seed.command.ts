@@ -8,7 +8,13 @@ interface SeedCommandOptions {
   seeder?: string;
 }
 
-@Command({ name: 'seed', description: 'Seed database with initial data' })
+@Command({
+  name: 'seed',
+  description: 'Seed database with initial data',
+  options: {
+    isDefault: true,
+  },
+})
 export class SeedCommand extends CommandRunner {
   private readonly logger = new Logger(SeedCommand.name);
 
@@ -50,7 +56,7 @@ export class SeedCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--seeder [string]',
+    flags: '-s, --seeder [seederName]',
     description: 'Specific seeder to run (country-phone-code, service, ticket-product)',
   })
   parseSeeder(val: string): string {

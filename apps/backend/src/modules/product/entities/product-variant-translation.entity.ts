@@ -21,10 +21,10 @@ export class ProductVariantTranslation {
   @Column({ type: 'text', nullable: true, name: 'short_description' })
   shortDescription!: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'meta_title' })
   metaTitle!: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, name: 'meta_description' })
   metaDescription!: string;
 
   @CreateDateColumn({ name: 'created_at' })

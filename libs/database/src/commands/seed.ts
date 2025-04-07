@@ -46,9 +46,9 @@ async function bootstrap() {
   
   try {
     logger.log('Initializing CommandFactory...');
-    await CommandFactory.run(SeedModule, {
-      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
-    });
+    logger.log('Process arguments:', process.argv);
+    
+    await CommandFactory.run(SeedModule, ['error', 'warn', 'log', 'debug', 'verbose']);
     logger.log('CommandFactory completed successfully');
   } catch (error) {
     logger.error(`Error during bootstrap: ${error.message}`);
