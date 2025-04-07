@@ -53,8 +53,6 @@ interface PriceRequest {
   updatedAt: string;
 }
 
-
-
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
 const route = useRoute();
@@ -433,20 +431,10 @@ const tabs = computed(() => [
 // Ref cho modal yêu cầu báo giá
 const isPriceRequestModalOpen = ref(false);
 
-// Xử lý selected attributes
-const selectedAttributes = ref<{ [key: number]: number | null }>({});
+// Thêm ref cho selectedAttributes
+const selectedAttributes = ref<{ [key: number]: number }>({});
 
-// Reset selected attributes khi product thay đổi
-watch(() => productData.value, (newProduct) => {
-  if (newProduct) {
-    // Reset selected attributes khi product thay đổi
-    Object.keys(selectedAttributes.value).forEach(key => {
-      selectedAttributes.value[parseInt(key)] = null;
-    });
-  }
-}, { immediate: true });
-
-// Sử dụng composable cho variants
+// Cập nhật cách sử dụng useProductVariants
 const {
   productAttributes,
   matchingVariant,
@@ -456,6 +444,18 @@ const {
   selectAttributeValue,
   resetSelectedAttributes
 } = useProductVariants(computed(() => productData.value));
+
+// Xử lý chọn variant
+const handleSelectAttribute = (attributeId: number, valueId: number) => {
+  selectedAttributes.value[attributeId] = valueId;
+  selectAttributeValue(attributeId, valueId);
+};
+
+// Reset selected attributes khi product thay đổi
+watch(() => productData.value, () => {
+  selectedAttributes.value = {};
+  resetSelectedAttributes();
+}, { immediate: true });
 
 // Tìm giá thấp nhất trong các variants
 const minVariantPrice = computed(() => {
@@ -728,40 +728,40 @@ const getTabIcon = (tabId: string) => {
                     <button
                       v-for="value in attribute.values"
                       :key="value.id"
-                      @click="selectAttributeValue(attribute.id, value.id)"
+                      @click="handleSelectAttribute(attribute.id, value.id)"
                       :class="[
-                        'attribute-value-btn',
-                        'relative flex items-center gap-2 p-2 rounded-lg border transition-all',
+                        'attribute-value-btn min-w-[120px]',
+                        'relative flex items-center justify-between gap-2 p-3 rounded-lg transition-all',
                         selectedAttributes[attribute.id] === value.id
-                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-primary-300',
+                          ? 'bg-primary-500 text-white dark:bg-primary-600'
+                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-gray-700',
                         !isAttributeValueAvailable(attribute.id, value.id)
                           ? 'opacity-50 cursor-not-allowed'
                           : 'cursor-pointer'
                       ]"
                       :disabled="!isAttributeValueAvailable(attribute.id, value.id)"
                     >
-                      <!-- Thumbnail nếu có -->
-                      <LazyImage
-                        v-if="value.thumbnail"
-                        :src="value.thumbnail"
-                        :alt="value.displayValue"
-                        class="w-10 h-10 rounded-md object-cover"
-                        @error="(e) => e.target.style.display = 'none'"
-                      />
-                      
-                      <!-- Value Info -->
-                      <span class="text-sm font-medium text-gray-900 dark:text-white">
-                        {{ value.displayValue }}
-                      </span>
+                      <div class="flex items-center gap-2 flex-1">
+                        <!-- Thumbnail nếu có -->
+                        <LazyImage
+                          v-if="value.thumbnail"
+                          :src="value.thumbnail"
+                          :alt="value.displayValue"
+                          class="w-10 h-10 rounded-md object-cover"
+                          @error="(e) => e.target.style.display = 'none'"
+                        />
+                        
+                        <!-- Value Info -->
+                        <span class="text-sm font-medium">
+                          {{ value.displayValue }}
+                        </span>
+                      </div>
 
                       <!-- Selected Indicator -->
-                      <div
+                      <Check
                         v-if="selectedAttributes[attribute.id] === value.id"
-                        class="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center"
-                      >
-                        <Check class="w-3 h-3 text-white" />
-                      </div>
+                        class="w-5 h-5 text-white flex-shrink-0"
+                      />
                     </button>
                   </div>
                 </div>
