@@ -250,15 +250,7 @@ export const productRouter = router({
         metaDescription: translation?.metaDescription || '',
         metaKeywords: translation?.metaKeywords || '',
         formattedPrice: ctx.services.productFrontendService.formatPrice(product.price),
-        variants: product.variants?.map(variant => {
-          const variantTranslation = ctx.services.productFrontendService.getVariantTranslation(variant, input.locale);
-          return {
-            ...variant,
-            name: variantTranslation?.name || '',
-            description: variantTranslation?.description || '',
-            formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
-          };
-        }) || [],
+        variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
       };
     }),
 

@@ -9,7 +9,7 @@ import TableOfContents from "~/components/common/TableOfContents.vue";
 import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
 import { formatFullProductContent } from "~/utils/contentFormatter";
 import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
-import { useHead, useAsyncData } from '#app';
+import { useHead, useAsyncData } from '#imports';
 import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
 import { useNotification } from "~/composables/useNotification";
 import AddToCartButton from "~/components/cart/AddToCartButton.vue";
@@ -32,6 +32,7 @@ import {
   FileText,
   Settings
 } from 'lucide-vue-next';
+import { useProductVariants } from '~/composables/useProduct';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -49,8 +50,8 @@ interface PriceRequest {
   updatedAt: string;
 }
 
-// Định nghĩa interface cho Product
-interface Product {
+// Định nghĩa interface cho API response
+interface ApiProduct {
   id: number;
   type: ProductType;
   title: string;
@@ -80,6 +81,31 @@ interface Product {
   variants: ProductVariant[];
   translations: ProductTranslation[];
   priceRequests: PriceRequest[];
+  variantAttributes?: {
+    attributes: {
+      id: number;
+      name: string;
+      displayName: string;
+      values: {
+        id: number;
+        value: string;
+        displayValue: string;
+        thumbnail?: string;
+      }[];
+      required: boolean;
+    }[];
+    variants: {
+      id: number;
+      sku: string;
+      price: string | number;
+      comparePrice: string | number | null;
+      formattedPrice: string;
+      stock: number;
+      attributeValues: {
+        [key: string]: number;
+      };
+    }[];
+  };
 }
 
 // Định nghĩa interface cho Category
@@ -189,7 +215,7 @@ definePageMeta({
 });
 
 // Sửa lại cách sử dụng useAsyncData với tRPC
-const { data: productData, pending: isLoading, error, refresh } = useAsyncData<Product | null>(
+const { data: productData, pending: isLoading, error, refresh } = useAsyncData<ApiProduct | null>(
   `product-${route.params.slug}`,
   async () => {
     try {
@@ -209,35 +235,14 @@ const { data: productData, pending: isLoading, error, refresh } = useAsyncData<P
           router.replace({ path: productSlug, query: route.query });
         }
 
-        return result as Product | null;
+        return result as ApiProduct;
       } else {
         const result = await trpc.product.getBySlug.query({
           slug: slug.value,
           locale: currentLocale.value,
         });
 
-        // Lấy translation dựa vào locale hiện tại
-        if (result?.translations && result.translations.length > 0) {
-          const currentTranslation = result.translations.find(
-            (t) => t.locale === currentLocale.value
-          );
-          if (currentTranslation) {
-            return {
-              ...result,
-              title: currentTranslation.title,
-              content: currentTranslation.content,
-              shortDescription: currentTranslation.shortDescription,
-              metaTitle: currentTranslation.metaTitle,
-              metaDescription: currentTranslation.metaDescription,
-              metaKeywords: currentTranslation.metaKeywords,
-              ogTitle: currentTranslation.ogTitle,
-              ogDescription: currentTranslation.ogDescription,
-              videoTitle: currentTranslation.videoTitle,
-            } as Product;
-          }
-        }
-
-        return result as Product | null;
+        return result as ApiProduct;
       }
     } catch (err: any) {
       console.error("Error fetching product:", err);
@@ -548,55 +553,50 @@ const tabs = computed(() => [
 // Ref cho modal yêu cầu báo giá
 const isPriceRequestModalOpen = ref(false);
 
-// Thêm ref để lưu trữ variant đã chọn
-const selectedVariant = ref<ProductVariant | null>(null);
+// Sử dụng composable cho variants
+const {
+  selectedAttributes,
+  productAttributes,
+  matchingVariant,
+  variantPrice,
+  hasRequiredAttributes,
+  isAttributeValueAvailable,
+  selectAttributeValue
+} = useProductVariants(productData.value);
 
-// Theo dõi thay đổi của product để cập nhật selectedVariant
-watch(productData, (newProduct) => {
-  if (newProduct && newProduct.variants && newProduct.variants.length > 0) {
-    // Mặc định chọn variant đầu tiên
-    selectedVariant.value = newProduct.variants[0];
-  } else {
-    selectedVariant.value = null;
-  }
-}, { immediate: true });
-
-// Computed để lấy giá hiển thị (từ variant hoặc từ sản phẩm)
+// Cập nhật displayPrice để sử dụng variantPrice
 const displayPrice = computed(() => {
-  if (selectedVariant.value && selectedVariant.value.price !== null) {
-    return selectedVariant.value.formattedPrice;
+  if (variantPrice.value) {
+    return variantPrice.value.formattedPrice;
   }
-  return productData.value.formattedPrice;
+  return productData.value?.formattedPrice;
 });
 
-// Computed để lấy giá so sánh hiển thị (từ variant hoặc từ sản phẩm)
+// Cập nhật displayComparePrice
 const displayComparePrice = computed(() => {
-  if (selectedVariant.value && selectedVariant.value.comparePrice) {
+  if (variantPrice.value?.comparePrice) {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
-    }).format(selectedVariant.value.comparePrice);
-  }
-  if (productData.value.comparePrice) {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(productData.value.comparePrice);
+    }).format(variantPrice.value.comparePrice);
   }
   return null;
 });
 
-// Computed để kiểm tra xem sản phẩm có variants không
-const hasVariants = computed(() => {
-  return productData.value.variants && productData.value.variants.length > 0;
-});
-
-// Computed để kiểm tra xem sản phẩm có giá không
-const hasPrice = computed(() => {
-  if (selectedVariant.value && selectedVariant.value.price !== null) {
-    return true;
+// Cập nhật getProductForCart
+const getProductForCart = computed(() => {
+  if (matchingVariant.value) {
+    return {
+      ...productData.value,
+      price: matchingVariant.value.price,
+      comparePrice: matchingVariant.value.comparePrice,
+      formattedPrice: matchingVariant.value.formattedPrice,
+      sku: matchingVariant.value.sku || productData.value?.sku,
+      variantId: matchingVariant.value.id,
+      variantName: matchingVariant.value.sku,
+    };
   }
-  return productData.value.price !== null;
+  return productData.value;
 });
 
 // Hàm mở modal yêu cầu báo giá
@@ -629,22 +629,6 @@ const handlePriceRequestSuccess = () => {
 // Theo dõi trạng thái modal
 watch(isPriceRequestModalOpen, (newVal) => {
   console.log("Modal state changed:", newVal);
-});
-
-// Cập nhật hàm để truyền thông tin variant cho AddToCartButton
-const getProductForCart = computed(() => {
-  if (selectedVariant.value) {
-    return {
-      ...productData.value,
-      price: selectedVariant.value.price,
-      comparePrice: selectedVariant.value.comparePrice,
-      formattedPrice: selectedVariant.value.formattedPrice,
-      sku: selectedVariant.value.sku || productData.value.sku,
-      variantId: selectedVariant.value.id,
-      variantName: selectedVariant.value.name,
-    };
-  }
-  return productData.value;
 });
 
 // Hàm helper để lấy icon cho từng tab
@@ -793,53 +777,80 @@ const getTabIcon = (tabId: string) => {
                 </div>
               </div>
 
-              <!-- Hiển thị variants nếu có -->
-              <div v-if="hasVariants" class="mb-6">
-                <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {{ t("products.variants") || "Biến thể:" }}
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="variant in productData.variants"
-                    :key="variant.id"
-                    @click="selectedVariant = variant"
-                    class="variant-item relative flex items-center gap-2 p-2 rounded-lg border transition-all"
-                    :class="[
-                      selectedVariant?.id === variant.id
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300',
-                    ]"
-                  >
-                    <!-- Variant Image -->
-                    <LazyImage
-                      v-if="variant.thumbnail"
-                      :src="variant.thumbnail"
-                      :alt="variant.name"
-                      class="w-10 h-10 rounded-md object-cover"
-                      @error="(e) => e.target.style.display = 'none'"
-                    />
-                    
-                    <!-- Variant Info -->
-                    <div class="flex flex-col text-left">
-                      <span class="text-sm font-medium text-gray-900 dark:text-white">
-                        {{ variant.name }}
-                      </span>
-                      <span class="text-xs text-primary-600 dark:text-primary-400 font-medium">
-                        {{ variant.formattedPrice }}
-                      </span>
-                    </div>
-
-                    <!-- Selected Indicator -->
-                    <div
-                      v-if="selectedVariant?.id === variant.id"
-                      class="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center"
+              <!-- Product Variants -->
+              <div v-if="productData?.variantAttributes?.attributes?.length > 0" class="mb-6 space-y-4">
+                <div 
+                  v-for="attribute in productData.variantAttributes.attributes" 
+                  :key="attribute.id" 
+                  class="attribute-group"
+                >
+                  <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ attribute.displayName }}
+                    <span v-if="attribute.required" class="text-red-500">*</span>
+                  </div>
+                  
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      v-for="value in attribute.values"
+                      :key="value.id"
+                      @click="selectAttributeValue(attribute.id, value.id)"
+                      :class="[
+                        'attribute-value-btn',
+                        'relative flex items-center gap-2 p-2 rounded-lg border transition-all',
+                        selectedAttributes[attribute.id] === value.id
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-primary-300',
+                        !isAttributeValueAvailable(attribute.id, value.id)
+                          ? 'opacity-50 cursor-not-allowed'
+                          : 'cursor-pointer'
+                      ]"
+                      :disabled="!isAttributeValueAvailable(attribute.id, value.id)"
                     >
-                      <Check class="w-3 h-3 text-white" />
-                    </div>
-                  </button>
+                      <!-- Thumbnail nếu có -->
+                      <LazyImage
+                        v-if="value.thumbnail"
+                        :src="value.thumbnail"
+                        :alt="value.displayValue"
+                        class="w-10 h-10 rounded-md object-cover"
+                        @error="(e) => e.target.style.display = 'none'"
+                      />
+                      
+                      <!-- Value Info -->
+                      <span class="text-sm font-medium text-gray-900 dark:text-white">
+                        {{ value.displayValue }}
+                      </span>
+
+                      <!-- Selected Indicator -->
+                      <div
+                        v-if="selectedAttributes[attribute.id] === value.id"
+                        class="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center"
+                      >
+                        <Check class="w-3 h-3 text-white" />
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Hiển thị thông báo nếu chưa chọn đủ attributes -->
+                <div
+                  v-if="!hasRequiredAttributes"
+                  class="text-sm text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-2"
+                >
+                  <AlertCircle class="w-4 h-4" />
+                  {{ t("products.selectAllAttributes") || "Vui lòng chọn đầy đủ các thuộc tính" }}
+                </div>
+
+                <!-- Hiển thị thông báo nếu không có variant phù hợp -->
+                <div
+                  v-if="hasRequiredAttributes && !matchingVariant"
+                  class="text-sm text-red-600 dark:text-red-400 mt-2 flex items-center gap-2"
+                >
+                  <AlertTriangle class="w-4 h-4" />
+                  {{ t("products.noMatchingVariant") || "Không có sản phẩm phù hợp với lựa chọn của bạn" }}
                 </div>
               </div>
 
+              <!-- Hiển thị giá -->
               <div class="mb-6 flex items-center gap-3">
                 <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
                   {{ displayPrice }}
@@ -943,7 +954,7 @@ const getTabIcon = (tabId: string) => {
               </div>
 
               <AddToCartButton
-                v-if="hasPrice"
+                v-if="hasRequiredAttributes && matchingVariant"
                 :product="getProductForCart"
                 :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
                 :showQuantity="true"
@@ -1115,8 +1126,8 @@ const getTabIcon = (tabId: string) => {
               :is-open="isPriceRequestModalOpen"
               :product-id="productData.value?.id"
               :product-name="productData.value?.title"
-              :variant-id="selectedVariant?.id"
-              :variant-name="selectedVariant?.name"
+              :variant-id="matchingVariant?.id"
+              :variant-name="matchingVariant?.name"
               @success="handlePriceRequestSuccess"
               @close="closePriceRequestModal"
             />
@@ -1506,25 +1517,28 @@ const getTabIcon = (tabId: string) => {
   justify-content: center;
 }
 
-/* CSS cho variant items */
-.variant-item {
-  min-width: 120px;
+/* CSS cho attribute buttons */
+.attribute-value-btn {
+  min-width: 80px;
   max-width: fit-content;
-  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.variant-item:hover {
+.attribute-value-btn:not(:disabled):hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.dark .variant-item:hover {
+.dark .attribute-value-btn:not(:disabled):hover {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Remove old variant card styles */
-.variant-card {
-  display: none;
+.attribute-group {
+  border-bottom: 1px solid var(--color-gray-200);
+  padding-bottom: 1rem;
+}
+
+.dark .attribute-group {
+  border-bottom-color: var(--color-gray-700);
 }
 </style>

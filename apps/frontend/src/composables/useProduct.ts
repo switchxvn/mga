@@ -34,6 +34,49 @@ export interface ProductListResponse {
   totalPages: number;
 }
 
+// Product Variant Interfaces
+export interface ProductAttributeValue {
+  id: number;
+  value: string;
+  displayValue: string;
+  thumbnail?: string | null;
+}
+
+export interface ProductAttribute {
+  id: number;
+  name: string;
+  displayName: string;
+  values: ProductAttributeValue[];
+  required?: boolean;
+}
+
+export interface SelectedAttributes {
+  [attributeId: number]: number; // attributeId -> selectedValueId
+}
+
+// Mở rộng interface ProductVariant
+export interface ProductVariant {
+  id: number;
+  sku: string;
+  price: number | null;
+  comparePrice: number | null;
+  formattedPrice: string;
+  stock: number;
+  attributeValues: {
+    [attributeId: number]: number; // attributeId -> valueId
+  };
+}
+
+export interface VariantAttributes {
+  attributes: ProductAttribute[];
+  variants: ProductVariant[];
+}
+
+// Add to Product interface
+export interface Product {
+  variantAttributes?: VariantAttributes;
+}
+
 export function useProduct(initialFilters?: ProductFilter) {
   const { locale } = useLocalization();
   const trpc = useTrpc();
@@ -280,5 +323,92 @@ export function useProduct(initialFilters?: ProductFilter) {
     handleSearch,
     toggleCategory,
     resetFilters
+  };
+}
+
+export function useProductVariants(product: Product | null) {
+  const selectedAttributes = ref<{ [key: number]: number }>({});
+
+  // Get available attributes
+  const productAttributes = computed(() => {
+    return product?.variantAttributes?.attributes || [];
+  });
+
+  // Find matching variant based on selected attributes
+  const matchingVariant = computed(() => {
+    if (!product?.variantAttributes?.variants || Object.keys(selectedAttributes.value).length === 0) {
+      return null;
+    }
+
+    return product.variantAttributes.variants.find(variant => {
+      return Object.entries(selectedAttributes.value).every(([attributeId, valueId]) => {
+        return variant.attributeValues[Number(attributeId)] === valueId;
+      });
+    });
+  });
+
+  // Check if a specific attribute value is available
+  const isAttributeValueAvailable = (attributeId: number, valueId: number): boolean => {
+    if (!product?.variantAttributes?.variants) return false;
+
+    // Get currently selected attributes excluding the one we're checking
+    const otherSelectedAttributes = Object.entries(selectedAttributes.value)
+      .filter(([id]) => Number(id) !== attributeId)
+      .reduce((acc, [id, val]) => ({ ...acc, [id]: val }), {});
+
+    // Find variants that match current selection
+    const possibleVariants = product.variantAttributes.variants.filter(variant => {
+      return Object.entries(otherSelectedAttributes).every(([attrId, valId]) => {
+        return variant.attributeValues[Number(attrId)] === valId;
+      });
+    });
+
+    // Check if any of these variants have the value we're looking for
+    return possibleVariants.some(variant => 
+      variant.attributeValues[attributeId] === valueId
+    );
+  };
+
+  // Handle attribute selection
+  const selectAttributeValue = (attributeId: number, valueId: number) => {
+    selectedAttributes.value = {
+      ...selectedAttributes.value,
+      [attributeId]: valueId
+    };
+  };
+
+  // Reset selections
+  const resetSelectedAttributes = () => {
+    selectedAttributes.value = {};
+  };
+
+  // Check if all required attributes are selected
+  const hasRequiredAttributes = computed(() => {
+    return productAttributes.value
+      .filter(attr => attr.required)
+      .every(attr => selectedAttributes.value[attr.id] !== undefined);
+  });
+
+  // Get current variant price
+  const variantPrice = computed(() => {
+    if (matchingVariant.value) {
+      return {
+        price: matchingVariant.value.price,
+        comparePrice: matchingVariant.value.comparePrice,
+        formattedPrice: matchingVariant.value.formattedPrice
+      };
+    }
+    return null;
+  });
+
+  return {
+    selectedAttributes,
+    productAttributes,
+    matchingVariant,
+    variantPrice,
+    hasRequiredAttributes,
+    isAttributeValueAvailable,
+    selectAttributeValue,
+    resetSelectedAttributes
   };
 } 

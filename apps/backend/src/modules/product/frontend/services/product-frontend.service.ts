@@ -28,6 +28,33 @@ export interface PaginatedProducts {
   totalPages: number;
 }
 
+export interface ProductAttributeValue {
+  id: number;
+  value: string;
+  displayValue: string;
+  thumbnail?: string | null;
+}
+
+export interface ProductAttribute {
+  id: number;
+  name: string;
+  displayName: string;
+  values: ProductAttributeValue[];
+  required?: boolean;
+}
+
+export interface TransformedVariant {
+  id: number;
+  sku: string;
+  price: number | null;
+  comparePrice: number | null;
+  formattedPrice: string;
+  stock: number;
+  attributeValues: {
+    [attributeId: number]: number; // attributeId -> valueId
+  };
+}
+
 @Injectable()
 export class ProductFrontendService {
   constructor(
@@ -249,13 +276,31 @@ export class ProductFrontendService {
   /**
    * Get translation for a product
    */
-  getTranslation(product: Product, locale: string = 'en'): ProductTranslation | null {
-    if (!product.translations || product.translations.length === 0) {
+  getTranslation(product: Product, locale: string = 'en'): ProductTranslation & {
+    variantAttributes?: {
+      attributes: ProductAttribute[];
+      variants: TransformedVariant[];
+    }
+  } {
+    const translation = product.translations?.find(t => t.locale === locale) || product.translations?.[0];
+    
+    if (!translation) {
       return null;
     }
 
-    const translation = product.translations.find(t => t.locale === locale);
-    return translation || product.translations[0];
+    // Transform variants if they exist
+    if (product.variants?.length) {
+      const { attributes, transformedVariants } = this.transformVariantsToAttributes(product.variants, locale);
+      return {
+        ...translation,
+        variantAttributes: {
+          attributes,
+          variants: transformedVariants
+        }
+      };
+    }
+
+    return translation;
   }
 
   /**
@@ -278,5 +323,98 @@ export class ProductFrontendService {
       return 'Liên hệ';
     }
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  }
+
+  /**
+   * Transform variants into attributes structure
+   */
+  private transformVariantsToAttributes(variants: ProductVariant[], locale: string): {
+    attributes: ProductAttribute[];
+    transformedVariants: TransformedVariant[];
+  } {
+    const attributesMap = new Map<string, ProductAttribute>();
+    const transformedVariants: TransformedVariant[] = [];
+
+    // Extract unique attributes from variant names
+    variants.forEach(variant => {
+      const translation = this.getVariantTranslation(variant, locale);
+      const name = translation?.name || variant.sku || '';
+
+      // Phân tích tên variant để lấy ra các thuộc tính
+      // Ví dụ: "Người lớn có buffet" -> { "Loại người": "Người lớn", "Loại buffet": "Có buffet" }
+      const attributes = this.parseVariantName(name);
+
+      // Thêm các thuộc tính vào map
+      Object.entries(attributes).forEach(([attrName, value]) => {
+        if (!attributesMap.has(attrName)) {
+          attributesMap.set(attrName, {
+            id: attributesMap.size + 1, // Generate sequential IDs
+            name: attrName,
+            displayName: attrName,
+            values: [],
+            required: true
+          });
+        }
+
+        const attribute = attributesMap.get(attrName)!;
+        const existingValue = attribute.values.find(v => v.value === value);
+        
+        if (!existingValue) {
+          attribute.values.push({
+            id: attribute.values.length + 1,
+            value: value,
+            displayValue: value,
+            thumbnail: null
+          });
+        }
+      });
+
+      // Transform variant
+      const attributeValues: { [key: number]: number } = {};
+      Object.entries(attributes).forEach(([attrName, value]) => {
+        const attribute = attributesMap.get(attrName)!;
+        const attrValue = attribute.values.find(v => v.value === value)!;
+        attributeValues[attribute.id] = attrValue.id;
+      });
+
+      transformedVariants.push({
+        id: variant.id,
+        sku: variant.sku || '',
+        price: variant.price,
+        comparePrice: variant.comparePrice || null,
+        formattedPrice: this.formatPrice(variant.price),
+        stock: variant.quantity || 0,
+        attributeValues
+      });
+    });
+
+    return {
+      attributes: Array.from(attributesMap.values()),
+      transformedVariants
+    };
+  }
+
+  /**
+   * Parse variant name to extract attributes
+   */
+  private parseVariantName(name: string): { [key: string]: string } {
+    // Phân tích tên variant để lấy ra các thuộc tính
+    const attributes: { [key: string]: string } = {};
+    
+    // Xử lý "Người lớn/Trẻ em"
+    if (name.includes('Người lớn')) {
+      attributes['Loại người'] = 'Người lớn';
+    } else if (name.includes('Trẻ em')) {
+      attributes['Loại người'] = 'Trẻ em';
+    }
+
+    // Xử lý "có buffet/không buffet"
+    if (name.includes('có buffet')) {
+      attributes['Loại buffet'] = 'Có buffet';
+    } else if (name.includes('không buffet')) {
+      attributes['Loại buffet'] = 'Không buffet';
+    }
+
+    return attributes;
   }
 }
