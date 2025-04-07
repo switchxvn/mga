@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Like, FindOptionsWhere, In, IsNull, Not } from 'typeorm';
 import { Product } from '../../entities/product.entity';
 import { ProductTranslation } from '../../entities/product-translation.entity';
+import { ProductVariant } from '../../entities/product-variant.entity';
+import { ProductVariantTranslation } from '../../entities/product-variant-translation.entity';
 
 export interface ProductFilterOptions {
   search?: string;
@@ -33,6 +35,10 @@ export class ProductFrontendService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(ProductTranslation)
     private readonly productTranslationRepository: Repository<ProductTranslation>,
+    @InjectRepository(ProductVariant)
+    private readonly productVariantRepository: Repository<ProductVariant>,
+    @InjectRepository(ProductVariantTranslation)
+    private readonly productVariantTranslationRepository: Repository<ProductVariantTranslation>,
   ) {}
 
   async findAll(locale: string = 'en', options?: ProductFilterOptions): Promise<PaginatedProducts> {
@@ -202,14 +208,14 @@ export class ProductFrontendService {
   async findBySlug(slug: string, locale: string = 'en'): Promise<Product | null> {
     const translation = await this.productTranslationRepository.findOne({
       where: { slug, locale },
-      relations: ['product', 'product.translations'],
+      relations: ['product', 'product.translations', 'product.variants', 'product.variants.translations'],
     });
 
     if (!translation) {
       // Try to find in any locale if not found in specified locale
       const anyTranslation = await this.productTranslationRepository.findOne({
         where: { slug },
-        relations: ['product', 'product.translations'],
+        relations: ['product', 'product.translations', 'product.variants', 'product.variants.translations'],
       });
       
       return anyTranslation?.product || null;
@@ -221,7 +227,7 @@ export class ProductFrontendService {
   async findById(id: number, locale: string = 'en'): Promise<Product> {
     return this.productRepository.findOne({
       where: { id, published: true },
-      relations: ['translations', 'categories'],
+      relations: ['translations', 'categories', 'variants', 'variants.translations'],
     });
   }
 
@@ -250,6 +256,18 @@ export class ProductFrontendService {
 
     const translation = product.translations.find(t => t.locale === locale);
     return translation || product.translations[0];
+  }
+
+  /**
+   * Get translation for a product variant
+   */
+  getVariantTranslation(variant: ProductVariant, locale: string = 'en'): ProductVariantTranslation | null {
+    if (!variant.translations || variant.translations.length === 0) {
+      return null;
+    }
+
+    const translation = variant.translations.find(t => t.locale === locale);
+    return translation || variant.translations[0];
   }
 
   /**

@@ -60,7 +60,20 @@ export class TicketProductSeeder {
       const childValue = await this.createAttributeValue(ticketTypeAttribute.id, 'child', 'Trẻ em', 'Child');
       this.logger.log(`Created child value with ID: ${childValue.id}`);
 
-      // 3. Tạo sản phẩm ticket
+      // 3. Tạo thuộc tính "Buffet"
+      this.logger.log('Creating buffet attribute...');
+      const buffetAttribute = await this.createAttribute('buffet', 'Buffet', 'Buffet');
+      this.logger.log(`Created buffet attribute with ID: ${buffetAttribute.id}`);
+      
+      // 4. Tạo giá trị thuộc tính "Có buffet" và "Không buffet"
+      this.logger.log('Creating buffet attribute values...');
+      const withBuffetValue = await this.createAttributeValue(buffetAttribute.id, 'with_buffet', 'Có buffet', 'With Buffet');
+      this.logger.log(`Created with buffet value with ID: ${withBuffetValue.id}`);
+      
+      const withoutBuffetValue = await this.createAttributeValue(buffetAttribute.id, 'without_buffet', 'Không buffet', 'Without Buffet');
+      this.logger.log(`Created without buffet value with ID: ${withoutBuffetValue.id}`);
+
+      // 5. Tạo sản phẩm ticket
       this.logger.log('Creating ticket product...');
       const ticketProduct = this.productRepository.create({
         sku: 'TICKET001',
@@ -77,35 +90,59 @@ export class TicketProductSeeder {
       const savedProduct = await this.productRepository.save(ticketProduct);
       this.logger.log(`Created ticket product with ID: ${savedProduct.id}`);
 
-      // 4. Tạo bản dịch cho sản phẩm
+      // 6. Tạo bản dịch cho sản phẩm
       this.logger.log('Creating product translations...');
       await this.createProductTranslation(savedProduct.id, 'vi', 'Vé tham quan', 'Vé tham quan với nhiều lựa chọn cho người lớn và trẻ em', 'Vé tham quan với giá ưu đãi cho người lớn và trẻ em');
       await this.createProductTranslation(savedProduct.id, 'en', 'Tour Ticket', 'Tour ticket with options for adults and children', 'Tour ticket with special pricing for adults and children');
       this.logger.log('Created product translations');
 
-      // 5. Tạo variant cho người lớn
-      this.logger.log('Creating adult variant...');
-      const adultVariant = await this.createVariant(
+      // 7. Tạo variant cho người lớn có buffet
+      this.logger.log('Creating adult with buffet variant...');
+      const adultWithBuffetVariant = await this.createVariant(
         savedProduct.id, 
-        'TICKET001-ADULT', 
-        150000, 
-        'Người lớn', 
-        'Adult',
-        adultValue.id
+        'TICKET001-ADULT-WITH-BUFFET', 
+        250000, 
+        'Người lớn có buffet', 
+        'Adult with Buffet',
+        [adultValue.id, withBuffetValue.id]
       );
-      this.logger.log(`Created adult variant with ID: ${adultVariant.id}`);
+      this.logger.log(`Created adult with buffet variant with ID: ${adultWithBuffetVariant.id}`);
 
-      // 6. Tạo variant cho trẻ em
-      this.logger.log('Creating child variant...');
-      const childVariant = await this.createVariant(
+      // 8. Tạo variant cho người lớn không có buffet
+      this.logger.log('Creating adult without buffet variant...');
+      const adultWithoutBuffetVariant = await this.createVariant(
         savedProduct.id, 
-        'TICKET001-CHILD', 
-        70000, 
-        'Trẻ em', 
-        'Child',
-        childValue.id
+        'TICKET001-ADULT-WITHOUT-BUFFET', 
+        150000, 
+        'Người lớn không buffet', 
+        'Adult without Buffet',
+        [adultValue.id, withoutBuffetValue.id]
       );
-      this.logger.log(`Created child variant with ID: ${childVariant.id}`);
+      this.logger.log(`Created adult without buffet variant with ID: ${adultWithoutBuffetVariant.id}`);
+
+      // 9. Tạo variant cho trẻ em có buffet
+      this.logger.log('Creating child with buffet variant...');
+      const childWithBuffetVariant = await this.createVariant(
+        savedProduct.id, 
+        'TICKET001-CHILD-WITH-BUFFET', 
+        120000, 
+        'Trẻ em có buffet', 
+        'Child with Buffet',
+        [childValue.id, withBuffetValue.id]
+      );
+      this.logger.log(`Created child with buffet variant with ID: ${childWithBuffetVariant.id}`);
+
+      // 10. Tạo variant cho trẻ em không có buffet
+      this.logger.log('Creating child without buffet variant...');
+      const childWithoutBuffetVariant = await this.createVariant(
+        savedProduct.id, 
+        'TICKET001-CHILD-WITHOUT-BUFFET', 
+        70000, 
+        'Trẻ em không buffet', 
+        'Child without Buffet',
+        [childValue.id, withoutBuffetValue.id]
+      );
+      this.logger.log(`Created child without buffet variant with ID: ${childWithoutBuffetVariant.id}`);
 
       this.logger.log('Ticket product seeded successfully');
     } catch (error) {
@@ -198,7 +235,7 @@ export class TicketProductSeeder {
     price: number, 
     nameVi: string, 
     nameEn: string,
-    attributeValueId: number
+    attributeValueIds: number[]
   ): Promise<ProductVariant> {
     const variant = this.productVariantRepository.create({
       productId,
@@ -224,12 +261,12 @@ export class TicketProductSeeder {
       },
     ]);
 
-    // Liên kết variant với giá trị thuộc tính
+    // Liên kết variant với các giá trị thuộc tính
     await this.productVariantRepository
       .createQueryBuilder()
       .relation(ProductVariant, 'attributeValues')
       .of(savedVariant)
-      .add(attributeValueId);
+      .add(attributeValueIds);
 
     return savedVariant;
   }

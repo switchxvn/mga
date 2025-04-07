@@ -9,47 +9,158 @@ import TableOfContents from "~/components/common/TableOfContents.vue";
 import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
 import { formatFullProductContent } from "~/utils/contentFormatter";
 import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
-import { useHead } from "unhead";
+import { useHead, useAsyncData } from '#app';
 import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
 import { useNotification } from "~/composables/useNotification";
 import AddToCartButton from "~/components/cart/AddToCartButton.vue";
 import Breadcrumb from "~/components/common/Breadcrumb.vue";
 import GlobalModal from "~/components/ui/GlobalModal.vue";
+import { unref } from 'vue';
+import { 
+  Check, 
+  Share, 
+  Facebook, 
+  Twitter, 
+  Linkedin, 
+  Mail, 
+  Link, 
+  Video,
+  AlertTriangle,
+  AlertCircle,
+  Tag,
+  LayoutGrid,
+  FileText,
+  Settings
+} from 'lucide-vue-next';
+
+// Định nghĩa interface cho PriceRequest
+interface PriceRequest {
+  id: number;
+  productId: number;
+  productName: string;
+  variantId?: number;
+  variantName?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  message: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 // Định nghĩa interface cho Product
 interface Product {
   id: number;
+  type: ProductType;
   title: string;
   slug: string;
-  sku?: string;
-  price: number | null;
-  comparePrice?: number;
+  sku: string;
+  price: number;
+  comparePrice: number | null;
   formattedPrice?: string;
-  shortDescription?: string;
-  content?: string;
+  shortDescription: string;
+  content: string;
+  thumbnail: string;
+  gallery: string[];
+  metaTitle: string;
+  metaDescription: string;
+  metaKeywords: string;
+  ogTitle: string;
+  ogDescription: string;
+  ogImage: string;
+  videoTitle: string;
+  videoUrl: string;
+  videoThumbnail: string;
   videoReview?: string;
-  videoTitle?: string;
-  thumbnail?: string;
-  gallery?: string[];
   isNew?: boolean;
   isSale?: boolean;
   isFeatured?: boolean;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
-  ogTitle?: string;
-  ogDescription?: string;
-  ogImage?: string;
-  categories?: Category[];
+  categories: Category[];
+  variants: ProductVariant[];
+  translations: ProductTranslation[];
+  priceRequests: PriceRequest[];
 }
 
 // Định nghĩa interface cho Category
 interface Category {
   id: number;
+  type: CategoryType;
+  name: string;
+  slug: string;
+  description: string;
+  thumbnail: string;
+  posts?: Post[];
+  products?: Product[];
+}
+
+// Định nghĩa interface cho Post
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  published: boolean;
+  authorId: number;
+  thumbnail: string;
+  shortDescription: string;
+  categories: Category[];
+  postTags: PostTag[];
+}
+
+// Định nghĩa interface cho PostTag
+interface PostTag {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+// Định nghĩa interface cho ProductVariant
+interface ProductVariant {
+  id: number;
+  name: string;
+  description?: string;
+  sku?: string;
+  price: number | null;
+  comparePrice?: number;
+  formattedPrice?: string;
+  stock?: number;
+  active: boolean;
+  productId: number;
+  thumbnail?: string;
+}
+
+// Định nghĩa interface cho ProductTranslation
+interface ProductTranslation {
+  locale: string;
+  title: string;
+  content: string;
+  shortDescription: string;
+  metaTitle: string;
+  metaDescription: string;
+  metaKeywords: string;
+  ogTitle: string;
+  ogDescription: string;
+  videoTitle: string;
+}
+
+// Định nghĩa interface cho ProductType
+interface ProductType {
+  id: number;
   name: string;
   slug: string;
   description?: string;
   thumbnail?: string;
+  products?: Product[];
+}
+
+// Định nghĩa interface cho CategoryType
+interface CategoryType {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  thumbnail?: string;
+  categories?: Category[];
 }
 
 const { t, locale } = useLocalization();
@@ -77,14 +188,9 @@ definePageMeta({
   layout: "default",
 });
 
-// Sử dụng useAsyncData thay vì onMounted để hỗ trợ SSR
-const {
-  data: product,
-  pending: isLoading,
-  error,
-  refresh,
-} = useAsyncData<Product | null>(
-  `product-${slug.value}`,
+// Sửa lại cách sử dụng useAsyncData với tRPC
+const { data: productData, pending: isLoading, error, refresh } = useAsyncData<Product | null>(
+  `product-${route.params.slug}`,
   async () => {
     try {
       // Kiểm tra xem slug có phải là số không
@@ -103,7 +209,7 @@ const {
           router.replace({ path: productSlug, query: route.query });
         }
 
-        return result;
+        return result as Product | null;
       } else {
         const result = await trpc.product.getBySlug.query({
           slug: slug.value,
@@ -127,32 +233,28 @@ const {
               ogTitle: currentTranslation.ogTitle,
               ogDescription: currentTranslation.ogDescription,
               videoTitle: currentTranslation.videoTitle,
-            };
+            } as Product;
           }
         }
 
-        return result;
+        return result as Product | null;
       }
     } catch (err: any) {
       console.error("Error fetching product:", err);
       throw new Error(err.message || "Có lỗi xảy ra khi tải chi tiết sản phẩm");
     }
-  },
-  {
-    // Đảm bảo dữ liệu được tải ngay lập tức
-    immediate: true,
   }
 );
 
 // Đảm bảo dữ liệu được tải ở phía client nếu cần
 onMounted(() => {
-  if (!product.value) {
+  if (!productData.value) {
     refresh();
   }
 
   // Kiểm tra dữ liệu danh mục
-  console.log("Product data:", product.value);
-  console.log("Categories:", product.value?.categories);
+  console.log("Product data:", productData.value);
+  console.log("Categories:", productData.value?.categories);
 });
 
 // Theo dõi thay đổi của slug hoặc locale
@@ -161,10 +263,9 @@ watch([slug, currentLocale], () => {
 });
 
 // Tạo các computed properties để truy cập dữ liệu sản phẩm an toàn
-const productData = computed(() => product.value || ({} as Product));
-const productTitle = computed(() => productData.value.title || "");
-const productContent = computed(() => productData.value.content || "");
-const productShortDescription = computed(() => productData.value.shortDescription || "");
+const productTitle = computed(() => productData.value?.title || "");
+const productContent = computed(() => productData.value?.content || "");
+const productShortDescription = computed(() => productData.value?.shortDescription || "");
 
 // Lấy URL hiện tại từ server
 let serverUrl = "";
@@ -224,51 +325,67 @@ const getShareUrlWithUtm = (
 };
 
 // Thiết lập meta tags
-useHead(() => {
-  return {
-    title: productData.value.metaTitle || productTitle.value || "Chi tiết sản phẩm",
-    meta: [
-      {
-        name: "description",
-        content: productData.value.metaDescription || productShortDescription.value || "",
-      },
-      { name: "keywords", content: productData.value.metaKeywords || "" },
-      // Open Graph
-      {
-        property: "og:title",
-        content: productData.value.ogTitle || productTitle.value || "",
-      },
-      {
-        property: "og:description",
-        content:
-          productData.value.ogDescription ||
-          productData.value.metaDescription ||
-          productShortDescription.value ||
-          "",
-      },
-      {
-        property: "og:image",
-        content: productData.value.ogImage || productData.value.thumbnail || "",
-      },
-      { property: "og:url", content: canonicalUrl.value },
-      { property: "og:type", content: "product" },
-      // Twitter Card
-      { name: "twitter:card", content: "summary_large_image" },
-      {
-        name: "twitter:title",
-        content: productData.value.ogTitle || productTitle.value || "",
-      },
-      {
-        name: "twitter:description",
-        content: productData.value.ogDescription || productShortDescription.value || "",
-      },
-      {
-        name: "twitter:image",
-        content: productData.value.ogImage || productData.value.thumbnail || "",
-      },
-    ],
-    link: [{ rel: "canonical", href: canonicalUrl.value }],
-  };
+useHead({
+  title: unref(computed(() => productData.value?.metaTitle || productTitle.value || "Chi tiết sản phẩm")),
+  meta: [
+    {
+      name: "description",
+      content: unref(computed(() => productData.value?.metaDescription || productShortDescription.value || "")),
+    },
+    { 
+      name: "keywords", 
+      content: unref(computed(() => productData.value?.metaKeywords || "")),
+    },
+    // Open Graph
+    {
+      property: "og:title",
+      content: unref(computed(() => productData.value?.ogTitle || productTitle.value || "")),
+    },
+    {
+      property: "og:description",
+      content: unref(computed(() => 
+        productData.value?.ogDescription ||
+        productData.value?.metaDescription ||
+        productShortDescription.value ||
+        ""
+      )),
+    },
+    {
+      property: "og:image",
+      content: unref(computed(() => productData.value?.ogImage || productData.value?.thumbnail || "")),
+    },
+    { 
+      property: "og:url", 
+      content: unref(computed(() => canonicalUrl.value)),
+    },
+    { 
+      property: "og:type", 
+      content: "product",
+    },
+    // Twitter Card
+    { 
+      name: "twitter:card", 
+      content: "summary_large_image",
+    },
+    {
+      name: "twitter:title",
+      content: unref(computed(() => productData.value?.ogTitle || productTitle.value || "")),
+    },
+    {
+      name: "twitter:description",
+      content: unref(computed(() => productData.value?.ogDescription || productShortDescription.value || "")),
+    },
+    {
+      name: "twitter:image",
+      content: unref(computed(() => productData.value?.ogImage || productData.value?.thumbnail || "")),
+    },
+  ],
+  link: [
+    { 
+      rel: "canonical", 
+      href: unref(computed(() => canonicalUrl.value)),
+    },
+  ],
 });
 
 // Thêm hàm để xử lý chia sẻ mạng xã hội
@@ -414,17 +531,14 @@ const tabs = computed(() => [
   {
     id: "description",
     label: t("products.description") || "MÔ TẢ SẢN PHẨM",
-    icon: "i-heroicons-document-text",
   },
   {
     id: "specifications",
     label: t("products.specifications") || "THÔNG SỐ KỸ THUẬT",
-    icon: "i-heroicons-adjustments-horizontal",
   },
   {
     id: "video",
     label: t("products.videoReview") || "VIDEO REVIEW",
-    icon: "i-heroicons-video-camera",
     badge: hasVideoReview.value
       ? { label: t("products.new") || "Mới", color: "blue" }
       : undefined,
@@ -433,6 +547,57 @@ const tabs = computed(() => [
 
 // Ref cho modal yêu cầu báo giá
 const isPriceRequestModalOpen = ref(false);
+
+// Thêm ref để lưu trữ variant đã chọn
+const selectedVariant = ref<ProductVariant | null>(null);
+
+// Theo dõi thay đổi của product để cập nhật selectedVariant
+watch(productData, (newProduct) => {
+  if (newProduct && newProduct.variants && newProduct.variants.length > 0) {
+    // Mặc định chọn variant đầu tiên
+    selectedVariant.value = newProduct.variants[0];
+  } else {
+    selectedVariant.value = null;
+  }
+}, { immediate: true });
+
+// Computed để lấy giá hiển thị (từ variant hoặc từ sản phẩm)
+const displayPrice = computed(() => {
+  if (selectedVariant.value && selectedVariant.value.price !== null) {
+    return selectedVariant.value.formattedPrice;
+  }
+  return productData.value.formattedPrice;
+});
+
+// Computed để lấy giá so sánh hiển thị (từ variant hoặc từ sản phẩm)
+const displayComparePrice = computed(() => {
+  if (selectedVariant.value && selectedVariant.value.comparePrice) {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(selectedVariant.value.comparePrice);
+  }
+  if (productData.value.comparePrice) {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(productData.value.comparePrice);
+  }
+  return null;
+});
+
+// Computed để kiểm tra xem sản phẩm có variants không
+const hasVariants = computed(() => {
+  return productData.value.variants && productData.value.variants.length > 0;
+});
+
+// Computed để kiểm tra xem sản phẩm có giá không
+const hasPrice = computed(() => {
+  if (selectedVariant.value && selectedVariant.value.price !== null) {
+    return true;
+  }
+  return productData.value.price !== null;
+});
 
 // Hàm mở modal yêu cầu báo giá
 const openPriceRequestModal = () => {
@@ -465,6 +630,36 @@ const handlePriceRequestSuccess = () => {
 watch(isPriceRequestModalOpen, (newVal) => {
   console.log("Modal state changed:", newVal);
 });
+
+// Cập nhật hàm để truyền thông tin variant cho AddToCartButton
+const getProductForCart = computed(() => {
+  if (selectedVariant.value) {
+    return {
+      ...productData.value,
+      price: selectedVariant.value.price,
+      comparePrice: selectedVariant.value.comparePrice,
+      formattedPrice: selectedVariant.value.formattedPrice,
+      sku: selectedVariant.value.sku || productData.value.sku,
+      variantId: selectedVariant.value.id,
+      variantName: selectedVariant.value.name,
+    };
+  }
+  return productData.value;
+});
+
+// Hàm helper để lấy icon cho từng tab
+const getTabIcon = (tabId: string) => {
+  switch (tabId) {
+    case 'description':
+      return FileText;
+    case 'specifications':
+      return Settings;
+    case 'video':
+      return Video;
+    default:
+      return FileText;
+  }
+};
 </script>
 
 <template>
@@ -498,10 +693,7 @@ watch(isPriceRequestModalOpen, (newVal) => {
         v-else-if="error"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center"
       >
-        <UIcon
-          name="i-heroicons-exclamation-circle"
-          class="mx-auto mb-4 h-16 w-16 text-red-500"
-        />
+        <AlertCircle class="mx-auto mb-4 h-16 w-16 text-red-500" />
         <h2 class="mb-2 text-2xl font-bold">{{ t("products.error") || "Lỗi" }}</h2>
         <p class="mb-6 text-gray-600 dark:text-gray-400">
           {{
@@ -518,7 +710,7 @@ watch(isPriceRequestModalOpen, (newVal) => {
         </UButton>
       </div>
 
-      <div v-else-if="product" class="product-content space-y-8">
+      <div v-else-if="productData" class="product-content space-y-8">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <!-- Phần thông tin sản phẩm -->
           <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -577,13 +769,8 @@ watch(isPriceRequestModalOpen, (newVal) => {
                 v-if="productData.categories && productData.categories.length > 0"
                 class="mb-5"
               >
-                <div
-                  class="category-title text-base font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  <UIcon
-                    name="i-heroicons-rectangle-stack"
-                    class="inline-block mr-1 h-5 w-5 text-primary-500"
-                  />
+                <div class="category-title text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <LayoutGrid class="inline-block mr-1 h-5 w-5 text-primary-500" />
                   {{ t("products.categories") || "Danh mục:" }}
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -598,7 +785,7 @@ watch(isPriceRequestModalOpen, (newVal) => {
                   >
                     <template #default>
                       <div class="flex items-center gap-1">
-                        <UIcon name="i-heroicons-tag" class="h-4 w-4" />
+                        <Tag class="h-4 w-4" />
                         <span class="text-sm font-medium">{{ category.name }}</span>
                       </div>
                     </template>
@@ -606,20 +793,62 @@ watch(isPriceRequestModalOpen, (newVal) => {
                 </div>
               </div>
 
+              <!-- Hiển thị variants nếu có -->
+              <div v-if="hasVariants" class="mb-6">
+                <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ t("products.variants") || "Biến thể:" }}
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="variant in productData.variants"
+                    :key="variant.id"
+                    @click="selectedVariant = variant"
+                    class="variant-item relative flex items-center gap-2 p-2 rounded-lg border transition-all"
+                    :class="[
+                      selectedVariant?.id === variant.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300',
+                    ]"
+                  >
+                    <!-- Variant Image -->
+                    <LazyImage
+                      v-if="variant.thumbnail"
+                      :src="variant.thumbnail"
+                      :alt="variant.name"
+                      class="w-10 h-10 rounded-md object-cover"
+                      @error="(e) => e.target.style.display = 'none'"
+                    />
+                    
+                    <!-- Variant Info -->
+                    <div class="flex flex-col text-left">
+                      <span class="text-sm font-medium text-gray-900 dark:text-white">
+                        {{ variant.name }}
+                      </span>
+                      <span class="text-xs text-primary-600 dark:text-primary-400 font-medium">
+                        {{ variant.formattedPrice }}
+                      </span>
+                    </div>
+
+                    <!-- Selected Indicator -->
+                    <div
+                      v-if="selectedVariant?.id === variant.id"
+                      class="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center"
+                    >
+                      <Check class="w-3 h-3 text-white" />
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <div class="mb-6 flex items-center gap-3">
                 <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                  {{ productData.formattedPrice }}
+                  {{ displayPrice }}
                 </span>
                 <span
-                  v-if="productData.comparePrice"
+                  v-if="displayComparePrice"
                   class="text-lg text-gray-500 line-through dark:text-gray-400"
                 >
-                  {{
-                    new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(productData.comparePrice)
-                  }}
+                  {{ displayComparePrice }}
                 </span>
               </div>
 
@@ -640,11 +869,12 @@ watch(isPriceRequestModalOpen, (newVal) => {
                     <UButton
                       color="blue"
                       variant="soft"
-                      icon="i-mdi-facebook"
                       size="sm"
                       @click="shareToFacebook"
                       class="share-button"
-                    />
+                    >
+                      <Facebook class="h-5 w-5" />
+                    </UButton>
                     <span class="tooltip-text">{{
                       t("products.shareOnFacebook") || "Chia sẻ lên Facebook"
                     }}</span>
@@ -654,11 +884,12 @@ watch(isPriceRequestModalOpen, (newVal) => {
                     <UButton
                       color="sky"
                       variant="soft"
-                      icon="i-mdi-twitter"
                       size="sm"
                       @click="shareToTwitter"
                       class="share-button"
-                    />
+                    >
+                      <Twitter class="h-5 w-5" />
+                    </UButton>
                     <span class="tooltip-text">{{
                       t("products.shareOnTwitter") || "Chia sẻ lên Twitter"
                     }}</span>
@@ -668,11 +899,12 @@ watch(isPriceRequestModalOpen, (newVal) => {
                     <UButton
                       color="blue"
                       variant="soft"
-                      icon="i-mdi-linkedin"
                       size="sm"
                       @click="shareToLinkedIn"
                       class="share-button"
-                    />
+                    >
+                      <Linkedin class="h-5 w-5" />
+                    </UButton>
                     <span class="tooltip-text">{{
                       t("products.shareOnLinkedIn") || "Chia sẻ lên LinkedIn"
                     }}</span>
@@ -682,11 +914,12 @@ watch(isPriceRequestModalOpen, (newVal) => {
                     <UButton
                       color="emerald"
                       variant="soft"
-                      icon="i-heroicons-envelope"
                       size="sm"
                       @click="shareViaEmail"
                       class="share-button"
-                    />
+                    >
+                      <Mail class="h-5 w-5" />
+                    </UButton>
                     <span class="tooltip-text">{{
                       t("products.shareViaEmail") || "Chia sẻ qua Email"
                     }}</span>
@@ -696,11 +929,12 @@ watch(isPriceRequestModalOpen, (newVal) => {
                     <UButton
                       color="gray"
                       variant="soft"
-                      icon="i-heroicons-link"
                       size="sm"
                       @click="copyProductLink"
                       class="share-button"
-                    />
+                    >
+                      <Link class="h-5 w-5" />
+                    </UButton>
                     <span class="tooltip-text">{{
                       t("products.copyLink") || "Sao chép liên kết"
                     }}</span>
@@ -709,8 +943,8 @@ watch(isPriceRequestModalOpen, (newVal) => {
               </div>
 
               <AddToCartButton
-                v-if="productData.price !== null"
-                :product="productData"
+                v-if="hasPrice"
+                :product="getProductForCart"
                 :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
                 :showQuantity="true"
                 buttonClass="flex-1"
@@ -766,7 +1000,10 @@ watch(isPriceRequestModalOpen, (newVal) => {
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
                     ]"
                   >
-                    <UIcon :name="tab.icon" class="h-5 w-5" />
+                    <component 
+                      :is="getTabIcon(tab.id)" 
+                      class="h-5 w-5"
+                    />
                     {{ tab.label }}
                     <UBadge v-if="tab.badge" color="blue" variant="soft" size="xs">
                       {{ tab.badge.label }}
@@ -834,7 +1071,7 @@ watch(isPriceRequestModalOpen, (newVal) => {
                     <div v-else class="empty-state flex h-64 items-center justify-center">
                       <div class="text-center">
                         <UIcon
-                          name="i-heroicons-video-camera"
+                          name="i-heroicons-video"
                           class="mx-auto mb-4 h-16 w-16 text-gray-400"
                         />
                         <p class="text-gray-600 dark:text-gray-400">
@@ -875,20 +1112,20 @@ watch(isPriceRequestModalOpen, (newVal) => {
         <GlobalModal :show="isPriceRequestModalOpen" @close="closePriceRequestModal">
           <div class="modal-content">
             <PriceRequestModal
-              :product-id="productData.id"
-              :product-name="productTitle"
-              @close="closePriceRequestModal"
+              :is-open="isPriceRequestModalOpen"
+              :product-id="productData.value?.id"
+              :product-name="productData.value?.title"
+              :variant-id="selectedVariant?.id"
+              :variant-name="selectedVariant?.name"
               @success="handlePriceRequestSuccess"
+              @close="closePriceRequestModal"
             />
           </div>
         </GlobalModal>
       </div>
 
       <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
-        <UIcon
-          name="i-heroicons-exclamation-triangle"
-          class="mx-auto mb-4 h-16 w-16 text-amber-500"
-        />
+        <AlertTriangle class="mx-auto mb-4 h-16 w-16 text-amber-500" />
         <h2 class="mb-2 text-2xl font-bold">{{ t("products.notFound") }}</h2>
         <p class="mb-6 text-gray-600 dark:text-gray-400">
           {{ t("products.notFoundDescription") }}
@@ -1267,5 +1504,27 @@ watch(isPriceRequestModalOpen, (newVal) => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* CSS cho variant items */
+.variant-item {
+  min-width: 120px;
+  max-width: fit-content;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.variant-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dark .variant-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Remove old variant card styles */
+.variant-card {
+  display: none;
 }
 </style>
