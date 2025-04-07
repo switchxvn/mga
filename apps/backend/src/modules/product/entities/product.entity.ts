@@ -5,6 +5,16 @@ import { CrossSellProduct } from './cross-sell-product.entity';
 import { ProductSpecification } from './product-specification.entity';
 import { ProductCombo } from './product-combo.entity';
 import { PriceRequest } from '../../price-request/entities/price-request.entity';
+import { ProductVariant } from './product-variant.entity';
+
+export enum ProductType {
+  PHYSICAL = 'PHYSICAL', // Sản phẩm vật lý
+  VOUCHER = 'VOUCHER', // Voucher
+  TICKET = 'TICKET', // Vé
+  DIGITAL = 'DIGITAL', // Sản phẩm số
+  SERVICE = 'SERVICE', // Dịch vụ
+  SUBSCRIPTION = 'SUBSCRIPTION', // Đăng ký định kỳ
+}
 
 @Entity('products')
 export class Product {
@@ -40,6 +50,14 @@ export class Product {
 
   @Column({ name: 'is_sale', default: false })
   isSale!: boolean;
+
+  @Column({ 
+    type: 'enum', 
+    enum: ProductType, 
+    default: ProductType.PHYSICAL,
+    name: 'product_type'
+  })
+  type!: ProductType;
 
   // Video review field
   @Column({ name: 'video_review', nullable: true })
@@ -92,4 +110,8 @@ export class Product {
   // Relationship with PriceRequest
   @OneToMany(() => PriceRequest, priceRequest => priceRequest.product)
   priceRequests!: PriceRequest[];
+
+  // Product variants relationship
+  @OneToMany(() => ProductVariant, variant => variant.product, { cascade: true })
+  variants!: ProductVariant[];
 } 

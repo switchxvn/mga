@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Post } from '../../post/entities/post.entity';
 import { Product } from '../../product/entities/product.entity';
 import { CategoryTranslation } from './category-translation.entity';
-import { CategoryType } from '@ew/shared';
+import { CategoryType } from '../../../../../../libs/shared/src/types/category.type';
 
 @Entity('categories')
 export class Category {

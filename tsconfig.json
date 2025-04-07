@@ -23,6 +23,6 @@
       "@ew/shared": ["libs/shared/src"]
     }
   },
-  "include": ["libs/database/src/**/*", "libs/shared/src/**/*"],
+  "include": ["libs/database/src/**/*", "libs/shared/src/**/*", "apps/backend/src/**/*"],
   "exclude": ["node_modules", "dist"]
 } 

@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@ew/shared": ["libs/shared/src"],
+      "@ew/database": ["libs/database/src"]
+    }
+  },
+  "include": [
+    "libs/database/src/**/*",
+    "libs/shared/src/**/*",
+    "apps/backend/src/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
+} 

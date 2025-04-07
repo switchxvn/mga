@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CountryPhoneCode } from '../entities/country-phone-code.entity';
+import { CountryPhoneCode } from '../../../../apps/backend/src/modules/common/entities/country-phone-code.entity';
 
 @Injectable()
 export class CountryPhoneCodeSeeder {

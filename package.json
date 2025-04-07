@@ -9,7 +9,7 @@
     "migration:run": "yarn typeorm migration:run -d libs/database/src/config/typeorm.config.ts",
     "migration:revert": "yarn typeorm migration:revert -d libs/database/src/config/typeorm.config.ts",
     "migration:show": "yarn typeorm migration:show -d libs/database/src/config/typeorm.config.ts",
-    "seed": "ts-node -r tsconfig-paths/register libs/database/src/commands/seed.command.ts",
+    "seed": "ts-node -r tsconfig-paths/register -P ./tsconfig.seed.json libs/database/src/commands/seed.command.ts --debug --verbose",
     "dev:backend": "nx run backend:serve:development",
     "dev:frontend": "cd apps/frontend && npx nuxt dev --dotenv apps/frontend/.env --no-typecheck",
     "typecheck:frontend": "cd apps/frontend && vue-tsc --project vue-tsc.config.json",
