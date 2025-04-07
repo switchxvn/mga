@@ -40,23 +40,63 @@ export interface ProductCombo {
 
 export interface Product {
   id: number;
+  type: ProductType;
+  title: string;
   slug: string;
-  sku?: string;
-  price?: number;
-  discountPrice?: number;
-  stock?: number;
-  isNew?: boolean;
-  isFeatured?: boolean;
-  isSale?: boolean;
-  active: boolean;
-  thumbnail?: string;
-  images?: string[];
+  sku: string;
+  price: number;
+  comparePrice: number | null;
+  formattedPrice?: string;
+  shortDescription: string;
+  content: string;
+  thumbnail: string;
+  gallery: string[];
+  metaTitle: string;
+  metaDescription: string;
+  metaKeywords: string;
+  ogTitle: string;
+  ogDescription: string;
+  ogImage: string;
+  videoTitle: string;
+  videoUrl: string;
+  videoThumbnail: string;
   videoReview?: string;
+  isNew?: boolean;
+  isSale?: boolean;
+  isFeatured?: boolean;
+  stock?: number;
+  active: boolean;
   categories: Category[];
   translations: ProductTranslation[];
   specifications?: ProductSpecification[];
   combos?: ProductCombo[];
   crossSellProducts?: Product[];
+  priceRequests: PriceRequest[];
+  variantAttributes?: {
+    attributes: {
+      id: number;
+      name: string;
+      displayName: string;
+      values: {
+        id: number;
+        value: string;
+        displayValue: string;
+        thumbnail?: string;
+      }[];
+      required: boolean;
+    }[];
+    variants: {
+      id: number;
+      sku: string;
+      price: number | null;
+      comparePrice: number | null;
+      formattedPrice: string;
+      stock: number;
+      attributeValues: {
+        [attributeId: number]: number;
+      };
+    }[];
+  };
   createdAt: Date;
   updatedAt: Date;
 } 

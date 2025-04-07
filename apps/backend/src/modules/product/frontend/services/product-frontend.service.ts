@@ -235,14 +235,32 @@ export class ProductFrontendService {
   async findBySlug(slug: string, locale: string = 'en'): Promise<Product | null> {
     const translation = await this.productTranslationRepository.findOne({
       where: { slug, locale },
-      relations: ['product', 'product.translations', 'product.variants', 'product.variants.translations'],
+      relations: [
+        'product', 
+        'product.translations', 
+        'product.variants', 
+        'product.variants.translations',
+        'product.variants.attributeValues',
+        'product.variants.attributeValues.attribute',
+        'product.variants.attributeValues.attribute.translations',
+        'product.variants.attributeValues.translations'
+      ],
     });
 
     if (!translation) {
       // Try to find in any locale if not found in specified locale
       const anyTranslation = await this.productTranslationRepository.findOne({
         where: { slug },
-        relations: ['product', 'product.translations', 'product.variants', 'product.variants.translations'],
+        relations: [
+          'product', 
+          'product.translations', 
+          'product.variants', 
+          'product.variants.translations',
+          'product.variants.attributeValues',
+          'product.variants.attributeValues.attribute',
+          'product.variants.attributeValues.attribute.translations',
+          'product.variants.attributeValues.translations'
+        ],
       });
       
       return anyTranslation?.product || null;
@@ -254,7 +272,16 @@ export class ProductFrontendService {
   async findById(id: number, locale: string = 'en'): Promise<Product> {
     return this.productRepository.findOne({
       where: { id, published: true },
-      relations: ['translations', 'categories', 'variants', 'variants.translations'],
+      relations: [
+        'translations', 
+        'categories', 
+        'variants', 
+        'variants.translations',
+        'variants.attributeValues',
+        'variants.attributeValues.attribute',
+        'variants.attributeValues.attribute.translations',
+        'variants.attributeValues.translations'
+      ],
     });
   }
 
@@ -326,7 +353,7 @@ export class ProductFrontendService {
   }
 
   /**
-   * Transform variants into attributes structure
+   * Transform variants to attributes structure
    */
   private transformVariantsToAttributes(variants: ProductVariant[], locale: string): {
     attributes: ProductAttribute[];
@@ -335,47 +362,44 @@ export class ProductFrontendService {
     const attributesMap = new Map<string, ProductAttribute>();
     const transformedVariants: TransformedVariant[] = [];
 
-    // Extract unique attributes from variant names
     variants.forEach(variant => {
       const translation = this.getVariantTranslation(variant, locale);
-      const name = translation?.name || variant.sku || '';
 
-      // Phân tích tên variant để lấy ra các thuộc tính
-      // Ví dụ: "Người lớn có buffet" -> { "Loại người": "Người lớn", "Loại buffet": "Có buffet" }
-      const attributes = this.parseVariantName(name);
+      // Process each attribute value
+      const attributeValues: { [attributeId: number]: number } = {};
+      
+      // Check if variant has attribute values
+      if (variant.attributeValues && variant.attributeValues.length > 0) {
+        variant.attributeValues.forEach(value => {
+          const attribute = value.attribute;
+          const attributeId = attribute.id;
 
-      // Thêm các thuộc tính vào map
-      Object.entries(attributes).forEach(([attrName, value]) => {
-        if (!attributesMap.has(attrName)) {
-          attributesMap.set(attrName, {
-            id: attributesMap.size + 1, // Generate sequential IDs
-            name: attrName,
-            displayName: attrName,
-            values: [],
-            required: true
-          });
-        }
+          // Add attribute to map if not exists
+          if (!attributesMap.has(String(attributeId))) {
+            attributesMap.set(String(attributeId), {
+              id: attributeId,
+              name: attribute.code || '',
+              displayName: attribute.translations?.find(t => t.locale === locale)?.name || attribute.code || '',
+              values: [],
+              required: true
+            });
+          }
 
-        const attribute = attributesMap.get(attrName)!;
-        const existingValue = attribute.values.find(v => v.value === value);
-        
-        if (!existingValue) {
-          attribute.values.push({
-            id: attribute.values.length + 1,
-            value: value,
-            displayValue: value,
-            thumbnail: null
-          });
-        }
-      });
+          // Add value to attribute if not exists
+          const existingAttribute = attributesMap.get(String(attributeId));
+          if (!existingAttribute.values.some(v => v.id === value.id)) {
+            existingAttribute.values.push({
+              id: value.id,
+              value: value.code || '',
+              displayValue: value.translations?.find(t => t.locale === locale)?.name || value.code || '',
+              thumbnail: null
+            });
+          }
 
-      // Transform variant
-      const attributeValues: { [key: number]: number } = {};
-      Object.entries(attributes).forEach(([attrName, value]) => {
-        const attribute = attributesMap.get(attrName)!;
-        const attrValue = attribute.values.find(v => v.value === value)!;
-        attributeValues[attribute.id] = attrValue.id;
-      });
+          // Add to variant's attribute values
+          attributeValues[attributeId] = value.id;
+        });
+      }
 
       transformedVariants.push({
         id: variant.id,
@@ -392,29 +416,5 @@ export class ProductFrontendService {
       attributes: Array.from(attributesMap.values()),
       transformedVariants
     };
-  }
-
-  /**
-   * Parse variant name to extract attributes
-   */
-  private parseVariantName(name: string): { [key: string]: string } {
-    // Phân tích tên variant để lấy ra các thuộc tính
-    const attributes: { [key: string]: string } = {};
-    
-    // Xử lý "Người lớn/Trẻ em"
-    if (name.includes('Người lớn')) {
-      attributes['Loại người'] = 'Người lớn';
-    } else if (name.includes('Trẻ em')) {
-      attributes['Loại người'] = 'Trẻ em';
-    }
-
-    // Xử lý "có buffet/không buffet"
-    if (name.includes('có buffet')) {
-      attributes['Loại buffet'] = 'Có buffet';
-    } else if (name.includes('không buffet')) {
-      attributes['Loại buffet'] = 'Không buffet';
-    }
-
-    return attributes;
   }
 }

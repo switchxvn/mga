@@ -9,7 +9,8 @@ import TableOfContents from "~/components/common/TableOfContents.vue";
 import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
 import { formatFullProductContent } from "~/utils/contentFormatter";
 import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
-import { useHead, useAsyncData } from '#imports';
+import { useHead } from '@unhead/vue';
+import { useAsyncData } from 'nuxt/app';
 import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
 import { useNotification } from "~/composables/useNotification";
 import AddToCartButton from "~/components/cart/AddToCartButton.vue";
@@ -33,6 +34,8 @@ import {
   Settings
 } from 'lucide-vue-next';
 import { useProductVariants } from '~/composables/useProduct';
+import { formatPrice } from '@ew/shared';
+import type { Product } from '@ew/shared';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -50,144 +53,7 @@ interface PriceRequest {
   updatedAt: string;
 }
 
-// Định nghĩa interface cho API response
-interface ApiProduct {
-  id: number;
-  type: ProductType;
-  title: string;
-  slug: string;
-  sku: string;
-  price: number;
-  comparePrice: number | null;
-  formattedPrice?: string;
-  shortDescription: string;
-  content: string;
-  thumbnail: string;
-  gallery: string[];
-  metaTitle: string;
-  metaDescription: string;
-  metaKeywords: string;
-  ogTitle: string;
-  ogDescription: string;
-  ogImage: string;
-  videoTitle: string;
-  videoUrl: string;
-  videoThumbnail: string;
-  videoReview?: string;
-  isNew?: boolean;
-  isSale?: boolean;
-  isFeatured?: boolean;
-  categories: Category[];
-  variants: ProductVariant[];
-  translations: ProductTranslation[];
-  priceRequests: PriceRequest[];
-  variantAttributes?: {
-    attributes: {
-      id: number;
-      name: string;
-      displayName: string;
-      values: {
-        id: number;
-        value: string;
-        displayValue: string;
-        thumbnail?: string;
-      }[];
-      required: boolean;
-    }[];
-    variants: {
-      id: number;
-      sku: string;
-      price: string | number;
-      comparePrice: string | number | null;
-      formattedPrice: string;
-      stock: number;
-      attributeValues: {
-        [key: string]: number;
-      };
-    }[];
-  };
-}
 
-// Định nghĩa interface cho Category
-interface Category {
-  id: number;
-  type: CategoryType;
-  name: string;
-  slug: string;
-  description: string;
-  thumbnail: string;
-  posts?: Post[];
-  products?: Product[];
-}
-
-// Định nghĩa interface cho Post
-interface Post {
-  id: number;
-  title: string;
-  content: string;
-  published: boolean;
-  authorId: number;
-  thumbnail: string;
-  shortDescription: string;
-  categories: Category[];
-  postTags: PostTag[];
-}
-
-// Định nghĩa interface cho PostTag
-interface PostTag {
-  id: number;
-  name: string;
-  slug: string;
-}
-
-// Định nghĩa interface cho ProductVariant
-interface ProductVariant {
-  id: number;
-  name: string;
-  description?: string;
-  sku?: string;
-  price: number | null;
-  comparePrice?: number;
-  formattedPrice?: string;
-  stock?: number;
-  active: boolean;
-  productId: number;
-  thumbnail?: string;
-}
-
-// Định nghĩa interface cho ProductTranslation
-interface ProductTranslation {
-  locale: string;
-  title: string;
-  content: string;
-  shortDescription: string;
-  metaTitle: string;
-  metaDescription: string;
-  metaKeywords: string;
-  ogTitle: string;
-  ogDescription: string;
-  videoTitle: string;
-}
-
-// Định nghĩa interface cho ProductType
-interface ProductType {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  thumbnail?: string;
-  products?: Product[];
-}
-
-// Định nghĩa interface cho CategoryType
-interface CategoryType {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  thumbnail?: string;
-  categories?: Category[];
-}
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -215,7 +81,7 @@ definePageMeta({
 });
 
 // Sửa lại cách sử dụng useAsyncData với tRPC
-const { data: productData, pending: isLoading, error, refresh } = useAsyncData<ApiProduct | null>(
+const { data: productData, pending: isLoading, error, refresh } = useAsyncData<Product | null>(
   `product-${route.params.slug}`,
   async () => {
     try {
@@ -235,14 +101,24 @@ const { data: productData, pending: isLoading, error, refresh } = useAsyncData<A
           router.replace({ path: productSlug, query: route.query });
         }
 
-        return result as ApiProduct;
+        return result as unknown as Product;
       } else {
         const result = await trpc.product.getBySlug.query({
           slug: slug.value,
           locale: currentLocale.value,
         });
 
-        return result as ApiProduct;
+        // Nếu sản phẩm có translations và đang ở client side, chuyển hướng đến URL có slug
+        const translation = result?.translations?.find(t => t.locale === currentLocale.value) || result?.translations?.[0];
+        if (translation && process.client) {
+          const productSlug =
+            currentLocale.value === "vi"
+              ? `/san-pham/${slug.value}`
+              : `/products/${slug.value}`;
+          router.replace({ path: productSlug, query: route.query });
+        }
+
+        return result as unknown as Product;
       }
     } catch (err: any) {
       console.error("Error fetching product:", err);
@@ -313,21 +189,37 @@ const canonicalUrl = computed(() => {
   return `${currentURL.value}/san-pham/${productData.value.slug}`;
 });
 
-// URL với UTM parameters cho chia sẻ
-const getShareUrlWithUtm = (
-  source: string,
-  medium: string,
-  campaign: string = "product_share"
-) => {
-  if (!canonicalUrl.value) return "";
+// Tạo URL chia sẻ với UTM parameters
+const createShareUrl = (medium: string, campaign: string) => {
+  const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
   const utmParams = new URLSearchParams({
-    utm_source: source,
+    utm_source: "share",
     utm_medium: medium,
     utm_campaign: campaign,
-    utm_content: productData.value.slug || "",
+    utm_content: translation?.slug || "",
   });
   return `${canonicalUrl.value}?${utmParams.toString()}`;
 };
+
+const shareUrl = computed(() => canonicalUrl.value);
+const shareTitle = computed(
+  () => {
+    const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
+    return translation?.metaTitle || productTitle.value || "";
+  }
+);
+const shareDescription = computed(
+  () => {
+    const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
+    return translation?.metaDescription || productShortDescription.value || "";
+  }
+);
+const shareImage = computed(
+  () => {
+    const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
+    return translation?.ogImage || productData.value?.thumbnail || "";
+  }
+);
 
 // Thiết lập meta tags
 useHead({
@@ -371,7 +263,7 @@ useHead({
     { 
       name: "twitter:card", 
       content: "summary_large_image",
-    },
+    },  
     {
       name: "twitter:title",
       content: unref(computed(() => productData.value?.ogTitle || productTitle.value || "")),
@@ -394,21 +286,9 @@ useHead({
 });
 
 // Thêm hàm để xử lý chia sẻ mạng xã hội
-const shareUrl = computed(() => canonicalUrl.value);
-const shareTitle = computed(
-  () => productData.value.metaTitle || productTitle.value || ""
-);
-const shareDescription = computed(
-  () => productData.value.metaDescription || productShortDescription.value || ""
-);
-const shareImage = computed(
-  () => productData.value.ogImage || productData.value.thumbnail || ""
-);
-
-// Hàm chia sẻ lên Facebook
 const shareToFacebook = () => {
   if (process.client) {
-    const shareUrlWithUtm = getShareUrlWithUtm("facebook", "social");
+    const shareUrlWithUtm = createShareUrl("facebook", "social");
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
       shareUrlWithUtm
     )}`;
@@ -419,7 +299,7 @@ const shareToFacebook = () => {
 // Hàm chia sẻ lên Twitter
 const shareToTwitter = () => {
   if (process.client) {
-    const shareUrlWithUtm = getShareUrlWithUtm("twitter", "social");
+    const shareUrlWithUtm = createShareUrl("twitter", "social");
     const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
       shareUrlWithUtm
     )}&text=${encodeURIComponent(shareTitle.value)}`;
@@ -430,7 +310,7 @@ const shareToTwitter = () => {
 // Hàm chia sẻ lên LinkedIn
 const shareToLinkedIn = () => {
   if (process.client) {
-    const shareUrlWithUtm = getShareUrlWithUtm("linkedin", "social");
+    const shareUrlWithUtm = createShareUrl("linkedin", "social");
     const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
       shareUrlWithUtm
     )}`;
@@ -441,7 +321,7 @@ const shareToLinkedIn = () => {
 // Hàm chia sẻ qua Email
 const shareViaEmail = () => {
   if (process.client) {
-    const shareUrlWithUtm = getShareUrlWithUtm("email", "referral");
+    const shareUrlWithUtm = createShareUrl("email", "referral");
     const url = `mailto:?subject=${encodeURIComponent(
       shareTitle.value
     )}&body=${encodeURIComponent(`${shareDescription.value}\n\n${shareUrlWithUtm}`)}`;
@@ -454,7 +334,7 @@ const copyProductLink = async () => {
   if (process.client && navigator.clipboard) {
     try {
       // Sử dụng UTM cho link copy
-      const shareUrlWithUtm = getShareUrlWithUtm("copy", "direct");
+      const shareUrlWithUtm = createShareUrl("copy", "direct");
       await navigator.clipboard.writeText(shareUrlWithUtm);
       // Hiển thị thông báo thành công với notification
       useNotification().success({
@@ -482,7 +362,7 @@ const copyProductLink = async () => {
 
 // Tạo ID cho phần nội dung sản phẩm để sử dụng với TableOfContents
 const productContentId = computed(
-  () => `product-content-${productData.value.id || "detail"}`
+  () => `product-content-${productData.value?.id || "detail"}`
 );
 
 // Định dạng nội dung sản phẩm với các thẻ h2 và ID
@@ -494,7 +374,7 @@ const formattedProductContent = computed(() => {
 const activeTab = ref("description");
 
 // Kiểm tra xem sản phẩm có video review không
-const hasVideoReview = computed(() => !!productData.value.videoReview);
+const hasVideoReview = computed(() => !!productData.value?.videoReview);
 
 // Theo dõi thay đổi của activeTab để cập nhật lại TableOfContents
 watch(activeTab, (newTab, oldTab) => {
@@ -553,50 +433,107 @@ const tabs = computed(() => [
 // Ref cho modal yêu cầu báo giá
 const isPriceRequestModalOpen = ref(false);
 
+// Xử lý selected attributes
+const selectedAttributes = ref<{ [key: number]: number | null }>({});
+
+// Reset selected attributes khi product thay đổi
+watch(() => productData.value, (newProduct) => {
+  if (newProduct) {
+    // Reset selected attributes khi product thay đổi
+    Object.keys(selectedAttributes.value).forEach(key => {
+      selectedAttributes.value[parseInt(key)] = null;
+    });
+  }
+}, { immediate: true });
+
 // Sử dụng composable cho variants
 const {
-  selectedAttributes,
   productAttributes,
   matchingVariant,
   variantPrice,
   hasRequiredAttributes,
   isAttributeValueAvailable,
-  selectAttributeValue
-} = useProductVariants(productData.value);
+  selectAttributeValue,
+  resetSelectedAttributes
+} = useProductVariants(computed(() => productData.value));
 
-// Cập nhật displayPrice để sử dụng variantPrice
-const displayPrice = computed(() => {
-  if (variantPrice.value) {
-    return variantPrice.value.formattedPrice;
-  }
-  return productData.value?.formattedPrice;
+// Tìm giá thấp nhất trong các variants
+const minVariantPrice = computed(() => {
+  if (!productData.value?.variantAttributes?.variants?.length) return null;
+  
+  const validPrices = productData.value.variantAttributes.variants
+    .map((v: { price: string | number | null }) => {
+      if (v.price === null) return null;
+      return typeof v.price === 'string' ? parseFloat(v.price) : v.price;
+    })
+    .filter((price: number | null): price is number => price !== null && !isNaN(price));
+    
+  if (!validPrices.length) return null;
+  
+  return Math.min(...validPrices);
 });
 
-// Cập nhật displayComparePrice
+// Kiểm tra xem có cần hiển thị "Từ XXX đồng" không
+const shouldShowFromPrice = computed(() => {
+  return !matchingVariant.value && minVariantPrice.value !== null;
+});
+
+// Kiểm tra xem có cần hiển thị nút yêu cầu báo giá không
+const shouldShowPriceRequest = computed(() => {
+  // Nếu đã chọn variant và giá variant là null
+  if (matchingVariant.value && !matchingVariant.value.price) {
+    return true;
+  }
+  
+  // Nếu không có variants và giá sản phẩm là null
+  if (!productData.value?.variantAttributes?.variants?.length && !productData.value?.price) {
+    return true;
+  }
+  
+  return false;
+});
+
+// Tính toán giá hiển thị
+const displayPrice = computed(() => {
+  if (!productData.value) return 'Liên hệ';
+  
+  if (matchingVariant.value) {
+    return matchingVariant.value.formattedPrice;
+  }
+  if (shouldShowFromPrice.value && minVariantPrice.value !== null) {
+    return `Từ ${formatPrice(minVariantPrice.value)}`;
+  }
+  return productData.value.formattedPrice || 'Liên hệ';
+});
+
+// Tính toán giá so sánh
 const displayComparePrice = computed(() => {
-  if (variantPrice.value?.comparePrice) {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(variantPrice.value.comparePrice);
+  if (matchingVariant.value?.comparePrice) {
+    return formatPrice(matchingVariant.value.comparePrice);
   }
   return null;
 });
 
-// Cập nhật getProductForCart
+// Lấy thông tin sản phẩm cho giỏ hàng
 const getProductForCart = computed(() => {
-  if (matchingVariant.value) {
-    return {
-      ...productData.value,
-      price: matchingVariant.value.price,
-      comparePrice: matchingVariant.value.comparePrice,
-      formattedPrice: matchingVariant.value.formattedPrice,
-      sku: matchingVariant.value.sku || productData.value?.sku,
-      variantId: matchingVariant.value.id,
-      variantName: matchingVariant.value.sku,
-    };
-  }
-  return productData.value;
+  if (!productData.value) return null;
+
+  return {
+    id: productData.value.id,
+    title: productTitle.value,
+    thumbnail: productData.value.thumbnail,
+    price: matchingVariant.value?.price || productData.value.price,
+    comparePrice: matchingVariant.value?.comparePrice || productData.value.comparePrice,
+    formattedPrice: matchingVariant.value?.formattedPrice || productData.value.formattedPrice,
+    variantId: matchingVariant.value?.id,
+    variantName: matchingVariant.value ? Object.entries(selectedAttributes.value).map(([attributeId, valueId]) => {
+      const attribute = productAttributes.value.find(attr => attr.id === Number(attributeId));
+      const value = attribute?.values.find(val => val.id === Number(valueId));
+      return value?.displayValue;
+    }).join(' - ') : undefined,
+    sku: matchingVariant.value?.sku || productData.value.sku,
+    stock: matchingVariant.value?.stock || productData.value.stock,
+  };
 });
 
 // Hàm mở modal yêu cầu báo giá
@@ -761,16 +698,14 @@ const getTabIcon = (tabId: string) => {
                   <UBadge
                     v-for="category in productData.categories"
                     :key="category.id"
-                    color="primary"
-                    variant="soft"
                     size="lg"
                     class="category-badge cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-800 transition-colors"
-                    @click="router.push(`/categories/${category.slug}`)"
+                    @click="router.push(`/categories/${category.translations?.[0]?.slug || ''}`)"
                   >
                     <template #default>
                       <div class="flex items-center gap-1">
                         <Tag class="h-4 w-4" />
-                        <span class="text-sm font-medium">{{ category.name }}</span>
+                        <span class="text-sm font-medium">{{ category.translations?.[0]?.name || '' }}</span>
                       </div>
                     </template>
                   </UBadge>
@@ -778,9 +713,9 @@ const getTabIcon = (tabId: string) => {
               </div>
 
               <!-- Product Variants -->
-              <div v-if="productData?.variantAttributes?.attributes?.length > 0" class="mb-6 space-y-4">
+              <div v-if="productAttributes.length > 0" class="mb-6 space-y-4">
                 <div 
-                  v-for="attribute in productData.variantAttributes.attributes" 
+                  v-for="attribute in productAttributes" 
                   :key="attribute.id" 
                   class="attribute-group"
                 >
@@ -856,7 +791,7 @@ const getTabIcon = (tabId: string) => {
                   {{ displayPrice }}
                 </span>
                 <span
-                  v-if="displayComparePrice"
+                  v-if="displayComparePrice && matchingVariant"
                   class="text-lg text-gray-500 line-through dark:text-gray-400"
                 >
                   {{ displayComparePrice }}
@@ -953,25 +888,28 @@ const getTabIcon = (tabId: string) => {
                 </div>
               </div>
 
-              <AddToCartButton
-                v-if="hasRequiredAttributes && matchingVariant"
-                :product="getProductForCart"
-                :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
-                :showQuantity="true"
-                buttonClass="flex-1"
-              />
+              <!-- Buttons -->
+              <div class="space-y-4">
+                <AddToCartButton
+                  v-if="hasRequiredAttributes && matchingVariant && !shouldShowPriceRequest"
+                  :product="getProductForCart"
+                  :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
+                  :showQuantity="true"
+                  buttonClass="flex-1"
+                />
 
-              <UButton
-                v-else
-                color="primary"
-                size="lg"
-                block
-                icon="i-heroicons-currency-dollar"
-                class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
-                @click="openPriceRequestModal"
-              >
-                {{ t("products.requestPrice") || "Yêu cầu báo giá" }}
-              </UButton>
+                <UButton
+                  v-if="shouldShowPriceRequest"
+                  color="primary"
+                  size="lg"
+                  block
+                  icon="i-heroicons-currency-dollar"
+                  class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
+                  @click="openPriceRequestModal"
+                >
+                  {{ t("products.requestPrice") || "Yêu cầu báo giá" }}
+                </UButton>
+              </div>
             </div>
           </div>
         </div>
@@ -1123,11 +1061,12 @@ const getTabIcon = (tabId: string) => {
         <GlobalModal :show="isPriceRequestModalOpen" @close="closePriceRequestModal">
           <div class="modal-content">
             <PriceRequestModal
+              v-if="productData"
               :is-open="isPriceRequestModalOpen"
-              :product-id="productData.value?.id"
-              :product-name="productData.value?.title"
+              :product-id="productData.id"
+              :product-name="productData.translations?.[0]?.title"
               :variant-id="matchingVariant?.id"
-              :variant-name="matchingVariant?.name"
+              :variant-name="matchingVariant?.sku"
               @success="handlePriceRequestSuccess"
               @close="closePriceRequestModal"
             />

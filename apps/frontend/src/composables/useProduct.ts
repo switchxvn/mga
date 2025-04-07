@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, unref } from 'vue';
 import type { Product, ProductTranslation } from '@ew/shared';
 import { useLocalization } from './useLocalization';
 import { getLocalizedRoute } from '../utils/routes';
@@ -326,21 +326,27 @@ export function useProduct(initialFilters?: ProductFilter) {
   };
 }
 
-export function useProductVariants(product: Product | null) {
+export function useProductVariants(product: MaybeRef<Product | null>) {
   const selectedAttributes = ref<{ [key: number]: number }>({});
 
   // Get available attributes
   const productAttributes = computed(() => {
-    return product?.variantAttributes?.attributes || [];
+    return unref(product)?.variantAttributes?.attributes || [];
   });
+
+  // Reset selected attributes when product changes
+  watch(() => unref(product), () => {
+    selectedAttributes.value = {};
+  }, { immediate: true });
 
   // Find matching variant based on selected attributes
   const matchingVariant = computed(() => {
-    if (!product?.variantAttributes?.variants || Object.keys(selectedAttributes.value).length === 0) {
+    const currentProduct = unref(product);
+    if (!currentProduct?.variantAttributes?.variants || Object.keys(selectedAttributes.value).length === 0) {
       return null;
     }
 
-    return product.variantAttributes.variants.find(variant => {
+    return currentProduct.variantAttributes.variants.find(variant => {
       return Object.entries(selectedAttributes.value).every(([attributeId, valueId]) => {
         return variant.attributeValues[Number(attributeId)] === valueId;
       });
@@ -349,7 +355,8 @@ export function useProductVariants(product: Product | null) {
 
   // Check if a specific attribute value is available
   const isAttributeValueAvailable = (attributeId: number, valueId: number): boolean => {
-    if (!product?.variantAttributes?.variants) return false;
+    const currentProduct = unref(product);
+    if (!currentProduct?.variantAttributes?.variants) return false;
 
     // Get currently selected attributes excluding the one we're checking
     const otherSelectedAttributes = Object.entries(selectedAttributes.value)
@@ -357,7 +364,7 @@ export function useProductVariants(product: Product | null) {
       .reduce((acc, [id, val]) => ({ ...acc, [id]: val }), {});
 
     // Find variants that match current selection
-    const possibleVariants = product.variantAttributes.variants.filter(variant => {
+    const possibleVariants = currentProduct.variantAttributes.variants.filter(variant => {
       return Object.entries(otherSelectedAttributes).every(([attrId, valId]) => {
         return variant.attributeValues[Number(attrId)] === valId;
       });
