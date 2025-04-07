@@ -8,6 +8,7 @@ export interface ProductTranslation {
   content?: string;
   shortDescription?: string;
   locale: string;
+  slug: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;

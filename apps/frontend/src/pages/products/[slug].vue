@@ -31,11 +31,20 @@ import {
   Tag,
   LayoutGrid,
   FileText,
-  Settings
+  Settings,
+  Ticket,
+  Calendar,
+  Clock,
+  MapPin,
+  Info,
+  ListOrdered
 } from 'lucide-vue-next';
 import { useProductVariants } from '~/composables/useProduct';
 import { formatPrice } from '@ew/shared';
 import type { Product } from '@ew/shared';
+import { useProductDetail } from '~/composables/useProductDetail';
+import { DatePicker } from 'v-calendar';
+import 'v-calendar/style.css';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -54,170 +63,93 @@ interface PriceRequest {
 }
 
 const { t, locale } = useLocalization();
-const trpc = useTrpc();
 const route = useRoute();
 const router = useRouter();
-const slug = computed(() => route.params.slug as string);
 
-// Xác định locale từ URL path
-const currentLocale = computed(() => {
-  // Nếu URL bắt đầu bằng /san-pham/ thì là tiếng Việt
-  if (route.path.startsWith("/san-pham/")) {
-    return "vi";
+// Sử dụng composable useProductDetail
+const {
+  productData,
+  isLoading,
+  error,
+  refresh,
+  currentLocale,
+  productTitle,
+  productContent,
+  productShortDescription,
+  productContentId,
+  formattedProductContent,
+  hasVideoReview,
+  tabs,
+  shareUrl,
+  shareTitle,
+  shareDescription,
+  shareImage,
+  canonicalUrl,
+  activeTab,
+  isPriceRequestModalOpen,
+  selectedAttributes,
+  productAttributes,
+  matchingVariant,
+  variantPrice,
+  hasRequiredAttributes,
+  isAttributeValueAvailable,
+  minVariantPrice,
+  shouldShowFromPrice,
+  shouldShowPriceRequest,
+  canAddToCart: baseCanAddToCart,
+  displayPrice,
+  displayComparePrice,
+  getProductForCart,
+  handleSelectAttribute,
+  openPriceRequestModal,
+  closePriceRequestModal,
+  handlePriceRequestSuccess,
+  shareToFacebook,
+  shareToTwitter,
+  shareToLinkedIn,
+  shareViaEmail,
+  copyProductLink,
+  getTabIcon
+} = useProductDetail();
+
+// Add new refs for date selection
+const selectedDate = ref<Date | null>(null);
+
+const masks = {
+  input: 'DD/MM/YYYY',
+  data: 'YYYY-MM-DD'
+};
+
+// Fix disabled dates configuration
+const disabledDates = computed(() => {
+  const dates = [];
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  // Add all dates from the past up to yesterday
+  let currentDate = new Date(0); // Start from epoch
+  while (currentDate <= yesterday) {
+    dates.push(new Date(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
   }
-  // Nếu URL bắt đầu bằng /products/ thì là tiếng Anh
-  if (route.path.startsWith("/products/")) {
-    return "en";
+  
+  return dates;
+});
+
+// Extend base canAddToCart with date validation for tickets
+const canAddToCart = computed(() => {
+  const baseCanAdd = baseCanAddToCart.value;
+  if (productData.value?.type === 'TICKET') {
+    return baseCanAdd && selectedDate.value !== null;
   }
-  // Mặc định lấy từ useLocalization
-  return locale.value;
+  return baseCanAdd;
 });
 
 // Định nghĩa alias cho URL tiếng Việt (nếu cần)
 definePageMeta({
   layout: "default",
 });
-
-// Sửa lại cách sử dụng useAsyncData với tRPC
-const { data: productData, pending: isLoading, error, refresh } = useAsyncData<Product | null>(
-  `product-${route.params.slug}`,
-  async () => {
-    try {
-      // Kiểm tra xem slug có phải là số không
-      if (!isNaN(Number(slug.value))) {
-        const result = await trpc.product.getById.query({
-          id: Number(slug.value),
-          locale: currentLocale.value,
-        });
-
-        // Nếu sản phẩm có slug, chuyển hướng đến URL có slug
-        if (result?.slug && process.client) {
-          const productSlug =
-            currentLocale.value === "vi"
-              ? `/san-pham/${result.slug}`
-              : `/products/${result.slug}`;
-          router.replace({ path: productSlug, query: route.query });
-        }
-
-        return result as unknown as Product;
-      } else {
-        const result = await trpc.product.getBySlug.query({
-          slug: slug.value,
-          locale: currentLocale.value,
-        });
-
-        // Nếu sản phẩm có translations và đang ở client side, chuyển hướng đến URL có slug
-        const translation = result?.translations?.find(t => t.locale === currentLocale.value) || result?.translations?.[0];
-        if (translation && process.client) {
-          const productSlug =
-            currentLocale.value === "vi"
-              ? `/san-pham/${slug.value}`
-              : `/products/${slug.value}`;
-          router.replace({ path: productSlug, query: route.query });
-        }
-
-        return result as unknown as Product;
-      }
-    } catch (err: any) {
-      console.error("Error fetching product:", err);
-      throw new Error(err.message || "Có lỗi xảy ra khi tải chi tiết sản phẩm");
-    }
-  }
-);
-
-// Đảm bảo dữ liệu được tải ở phía client nếu cần
-onMounted(() => {
-  if (!productData.value) {
-    refresh();
-  }
-
-  // Kiểm tra dữ liệu danh mục
-  console.log("Product data:", productData.value);
-  console.log("Categories:", productData.value?.categories);
-});
-
-// Theo dõi thay đổi của slug hoặc locale
-watch([slug, currentLocale], () => {
-  refresh();
-});
-
-// Tạo các computed properties để truy cập dữ liệu sản phẩm an toàn
-const productTitle = computed(() => productData.value?.title || "");
-const productContent = computed(() => productData.value?.content || "");
-const productShortDescription = computed(() => productData.value?.shortDescription || "");
-
-// Lấy URL hiện tại từ server
-let serverUrl = "";
-if (process.server) {
-  try {
-    const config = useRuntimeConfig();
-    if (
-      config.public &&
-      config.public.siteUrl &&
-      typeof config.public.siteUrl === "string"
-    ) {
-      serverUrl = config.public.siteUrl;
-    } else {
-      const reqURL = useRequestURL();
-      serverUrl = `${reqURL.protocol}//${reqURL.host}`;
-    }
-  } catch (e) {
-    console.error("Error in server URL setup:", e);
-  }
-}
-
-// Sử dụng ref để lưu trữ URL
-const baseUrl = ref(serverUrl);
-
-// Cập nhật URL ở client side khi component được mount
-onMounted(() => {
-  if (process.client && !baseUrl.value) {
-    baseUrl.value = window.location.origin;
-  }
-});
-
-// Sử dụng giá trị đã lưu trong ref
-const currentURL = computed(() => {
-  return baseUrl.value || "";
-});
-
-// Tạo canonical URL (không chứa UTM parameters)
-const canonicalUrl = computed(() => {
-  if (!productData.value || !productData.value.slug) return "";
-  return `${currentURL.value}/san-pham/${productData.value.slug}`;
-});
-
-// Tạo URL chia sẻ với UTM parameters
-const createShareUrl = (medium: string, campaign: string) => {
-  const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
-  const utmParams = new URLSearchParams({
-    utm_source: "share",
-    utm_medium: medium,
-    utm_campaign: campaign,
-    utm_content: translation?.slug || "",
-  });
-  return `${canonicalUrl.value}?${utmParams.toString()}`;
-};
-
-const shareUrl = computed(() => canonicalUrl.value);
-const shareTitle = computed(
-  () => {
-    const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
-    return translation?.metaTitle || productTitle.value || "";
-  }
-);
-const shareDescription = computed(
-  () => {
-    const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
-    return translation?.metaDescription || productShortDescription.value || "";
-  }
-);
-const shareImage = computed(
-  () => {
-    const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
-    return translation?.ogImage || productData.value?.thumbnail || "";
-  }
-);
 
 // Thiết lập meta tags
 useHead({
@@ -283,97 +215,6 @@ useHead({
   ],
 });
 
-// Thêm hàm để xử lý chia sẻ mạng xã hội
-const shareToFacebook = () => {
-  if (process.client) {
-    const shareUrlWithUtm = createShareUrl("facebook", "social");
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      shareUrlWithUtm
-    )}`;
-    window.open(url, "_blank", "width=600,height=400");
-  }
-};
-
-// Hàm chia sẻ lên Twitter
-const shareToTwitter = () => {
-  if (process.client) {
-    const shareUrlWithUtm = createShareUrl("twitter", "social");
-    const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
-      shareUrlWithUtm
-    )}&text=${encodeURIComponent(shareTitle.value)}`;
-    window.open(url, "_blank", "width=600,height=400");
-  }
-};
-
-// Hàm chia sẻ lên LinkedIn
-const shareToLinkedIn = () => {
-  if (process.client) {
-    const shareUrlWithUtm = createShareUrl("linkedin", "social");
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-      shareUrlWithUtm
-    )}`;
-    window.open(url, "_blank", "width=600,height=400");
-  }
-};
-
-// Hàm chia sẻ qua Email
-const shareViaEmail = () => {
-  if (process.client) {
-    const shareUrlWithUtm = createShareUrl("email", "referral");
-    const url = `mailto:?subject=${encodeURIComponent(
-      shareTitle.value
-    )}&body=${encodeURIComponent(`${shareDescription.value}\n\n${shareUrlWithUtm}`)}`;
-    window.location.href = url;
-  }
-};
-
-// Hàm copy link sản phẩm
-const copyProductLink = async () => {
-  if (process.client && navigator.clipboard) {
-    try {
-      // Sử dụng UTM cho link copy
-      const shareUrlWithUtm = createShareUrl("copy", "direct");
-      await navigator.clipboard.writeText(shareUrlWithUtm);
-      // Hiển thị thông báo thành công với notification
-      useNotification().success({
-        title: t("products.linkCopied") || "Đã sao chép liên kết sản phẩm",
-        description:
-          t("products.linkCopiedDescription") ||
-          "Liên kết đã được sao chép vào clipboard",
-        icon: "i-heroicons-check-circle",
-        timeout: 3000,
-      });
-    } catch (err) {
-      console.error("Failed to copy link:", err);
-      // Hiển thị thông báo lỗi
-      useNotification().error({
-        title: t("products.linkCopyFailed") || "Không thể sao chép liên kết",
-        description:
-          t("products.linkCopyFailedDescription") ||
-          "Đã xảy ra lỗi khi sao chép liên kết",
-        icon: "i-heroicons-exclamation-circle",
-        timeout: 3000,
-      });
-    }
-  }
-};
-
-// Tạo ID cho phần nội dung sản phẩm để sử dụng với TableOfContents
-const productContentId = computed(
-  () => `product-content-${productData.value?.id || "detail"}`
-);
-
-// Định dạng nội dung sản phẩm với các thẻ h2 và ID
-const formattedProductContent = computed(() => {
-  return formatFullProductContent(productContent.value);
-});
-
-// Tab cho mô tả sản phẩm và video review
-const activeTab = ref("description");
-
-// Kiểm tra xem sản phẩm có video review không
-const hasVideoReview = computed(() => !!productData.value?.videoReview);
-
 // Theo dõi thay đổi của activeTab để cập nhật lại TableOfContents
 watch(activeTab, (newTab, oldTab) => {
   if (newTab === "description") {
@@ -408,196 +249,6 @@ watch(activeTab, (newTab, oldTab) => {
     });
   }
 });
-
-// Định nghĩa tabs
-const tabs = computed(() => [
-  {
-    id: "description",
-    label: t("products.description") || "MÔ TẢ SẢN PHẨM",
-  },
-  {
-    id: "specifications",
-    label: t("products.specifications") || "THÔNG SỐ KỸ THUẬT",
-  },
-  {
-    id: "video",
-    label: t("products.videoReview") || "VIDEO REVIEW",
-    badge: hasVideoReview.value
-      ? { label: t("products.new") || "Mới", color: "blue" }
-      : undefined,
-  },
-]);
-
-// Ref cho modal yêu cầu báo giá
-const isPriceRequestModalOpen = ref(false);
-
-// Thêm ref cho selectedAttributes
-const selectedAttributes = ref<{ [key: number]: number }>({});
-
-// Cập nhật cách sử dụng useProductVariants
-const {
-  productAttributes,
-  matchingVariant,
-  variantPrice,
-  hasRequiredAttributes,
-  isAttributeValueAvailable,
-  selectAttributeValue,
-  resetSelectedAttributes
-} = useProductVariants(computed(() => productData.value));
-
-// Xử lý chọn variant
-const handleSelectAttribute = (attributeId: number, valueId: number) => {
-  selectedAttributes.value[attributeId] = valueId;
-  selectAttributeValue(attributeId, valueId);
-};
-
-// Reset selected attributes khi product thay đổi
-watch(() => productData.value, () => {
-  selectedAttributes.value = {};
-  resetSelectedAttributes();
-}, { immediate: true });
-
-// Tìm giá thấp nhất trong các variants
-const minVariantPrice = computed(() => {
-  if (!productData.value?.variantAttributes?.variants?.length) return null;
-  
-  const validPrices = productData.value.variantAttributes.variants
-    .map((v: { price: string | number | null }) => {
-      if (v.price === null) return null;
-      return typeof v.price === 'string' ? parseFloat(v.price) : v.price;
-    })
-    .filter((price: number | null): price is number => price !== null && !isNaN(price));
-    
-  if (!validPrices.length) return null;
-  
-  return Math.min(...validPrices);
-});
-
-// Kiểm tra xem có cần hiển thị "Từ XXX đồng" không
-const shouldShowFromPrice = computed(() => {
-  return !matchingVariant.value && minVariantPrice.value !== null;
-});
-
-// Kiểm tra xem có cần hiển thị nút yêu cầu báo giá không
-const shouldShowPriceRequest = computed(() => {
-  // Nếu sản phẩm có variants
-  if (productData.value?.variantAttributes?.variants?.length) {
-    // Chỉ hiện yêu cầu báo giá khi đã chọn variant và variant đó không có giá
-    return matchingVariant.value && !matchingVariant.value.price;
-  }
-  
-  // Nếu không có variants thì kiểm tra giá sản phẩm
-  return !productData.value?.price;
-});
-
-// Kiểm tra xem có thể thêm vào giỏ hàng không
-const canAddToCart = computed(() => {
-  // Nếu sản phẩm có variants
-  if (productData.value?.variantAttributes?.variants?.length) {
-    // Phải có matching variant và variant đó phải có giá
-    return matchingVariant.value && matchingVariant.value.price;
-  }
-  
-  // Nếu không có variants thì chỉ cần có giá sản phẩm
-  return !!productData.value?.price;
-});
-
-// Tính toán giá hiển thị
-const displayPrice = computed(() => {
-  if (!productData.value) return 'Liên hệ';
-  
-  if (matchingVariant.value) {
-    return matchingVariant.value.formattedPrice;
-  }
-  if (shouldShowFromPrice.value && minVariantPrice.value !== null) {
-    return `Từ ${formatPrice(minVariantPrice.value)}`;
-  }
-  return productData.value.formattedPrice || 'Liên hệ';
-});
-
-// Tính toán giá so sánh
-const displayComparePrice = computed(() => {
-  if (matchingVariant.value?.comparePrice) {
-    return formatPrice(matchingVariant.value.comparePrice);
-  }
-  return null;
-});
-
-// Lấy thông tin sản phẩm cho giỏ hàng
-const getProductForCart = computed(() => {
-  if (!productData.value) return null;
-
-  const hasRequiredAttributes = productData.value?.variantAttributes?.attributes?.some(attr => attr.required) || false;
-  const hasSelectedAllAttributes = hasRequiredAttributes ? 
-    productData.value?.variantAttributes?.attributes?.every(attr => 
-      !attr.required || selectedAttributes.value[attr.id]
-    ) : true;
-
-  return {
-    id: productData.value.id,
-    title: productTitle.value,
-    thumbnail: productData.value.thumbnail,
-    price: matchingVariant.value?.price || productData.value.price,
-    comparePrice: matchingVariant.value?.comparePrice || productData.value.comparePrice,
-    formattedPrice: matchingVariant.value?.formattedPrice || productData.value.formattedPrice,
-    variantId: matchingVariant.value?.id,
-    variantName: matchingVariant.value ? Object.entries(selectedAttributes.value).map(([attributeId, valueId]) => {
-      const attribute = productAttributes.value.find(attr => attr.id === Number(attributeId));
-      const value = attribute?.values.find(val => val.id === Number(valueId));
-      return value?.displayValue;
-    }).join(' - ') : undefined,
-    sku: matchingVariant.value?.sku || productData.value.sku,
-    stock: matchingVariant.value?.stock || productData.value.stock,
-    hasRequiredAttributes,
-    hasSelectedAllAttributes
-  };
-});
-
-// Hàm mở modal yêu cầu báo giá
-const openPriceRequestModal = () => {
-  console.log("Opening modal...");
-  isPriceRequestModalOpen.value = true;
-  console.log("Modal state after open:", isPriceRequestModalOpen.value);
-};
-
-// Hàm đóng modal yêu cầu báo giá
-const closePriceRequestModal = () => {
-  console.log("Closing modal...");
-  isPriceRequestModalOpen.value = false;
-  console.log("Modal state after close:", isPriceRequestModalOpen.value);
-};
-
-// Hàm xử lý khi gửi yêu cầu báo giá thành công
-const handlePriceRequestSuccess = () => {
-  const notification = useNotification();
-  notification.success({
-    title: t("priceRequest.successToast") || "Yêu cầu báo giá đã được gửi",
-    description:
-      t("priceRequest.successToastDescription") ||
-      "Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất",
-    icon: "i-heroicons-check-circle",
-    timeout: 5000,
-  });
-};
-
-// Theo dõi trạng thái modal
-watch(isPriceRequestModalOpen, (newVal) => {
-  console.log("Modal state changed:", newVal);
-});
-
-// Hàm helper để lấy icon cho từng tab
-const getTabIcon = (tabId: string) => {
-  switch (tabId) {
-    case 'description':
-      return FileText;
-    case 'specifications':
-      return Settings;
-    case 'video':
-      return Video;
-    default:
-      return FileText;
-  }
-};
 </script>
 
 <template>
@@ -661,6 +312,7 @@ const getTabIcon = (tabId: string) => {
                 customClass="h-auto w-full rounded-lg"
               />
 
+              <!-- Gallery slider -->
               <div
                 v-if="productData.gallery && productData.gallery.length > 0"
                 class="mt-4 grid grid-cols-4 gap-2"
@@ -674,10 +326,99 @@ const getTabIcon = (tabId: string) => {
                   customClass="h-20 w-full cursor-pointer rounded-md"
                 />
               </div>
+
+              <!-- Thông tin bổ sung cho vé -->
+              <div v-if="productData.type === 'TICKET'" class="mt-4 space-y-4">
+                <!-- Các lưu ý quan trọng -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 class="text-base font-medium text-gray-900 dark:text-white mb-2 flex items-center">
+                    <AlertCircle class="w-5 h-5 mr-2 text-amber-500" />
+                    {{ t("products.ticketNotes") || "Lưu ý quan trọng" }}
+                  </h3>
+                  <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("products.ticketNote1") || "Vé có giá trị trong ngày tham quan" }}
+                    </li>
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("products.ticketNote2") || "Vui lòng mang theo CMND/CCCD khi sử dụng vé" }}
+                    </li>
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("products.ticketNote3") || "Trẻ em dưới 3 tuổi được miễn phí vé vào cổng" }}
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Quy trình sử dụng vé -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 class="text-base font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                    <ListOrdered class="w-5 h-5 mr-2 text-primary-500" />
+                    {{ t("products.ticketProcess") || "Quy trình sử dụng vé" }}
+                  </h3>
+                  <div class="relative">
+                    <!-- Timeline line -->
+                    <div class="absolute left-2.5 top-0 h-full w-[2px] bg-gray-200 dark:bg-gray-700"></div>
+                    
+                    <ul class="relative space-y-6">
+                      <li class="flex items-start">
+                        <div class="flex-shrink-0 relative">
+                          <div class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary-500 bg-white dark:bg-gray-800 text-primary-600 text-sm font-medium">1</div>
+                        </div>
+                        <div class="ml-4 flex-grow">
+                          <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ t("products.ticketStep1") || "Đặt vé trực tuyến" }}
+                          </h4>
+                          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ t("products.ticketStep1Desc") || "Chọn loại vé và thanh toán" }}
+                          </p>
+                        </div>
+                      </li>
+
+                      <li class="flex items-start">
+                        <div class="flex-shrink-0 relative">
+                          <div class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary-500 bg-white dark:bg-gray-800 text-primary-600 text-sm font-medium">2</div>
+                        </div>
+                        <div class="ml-4 flex-grow">
+                          <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ t("products.ticketStep2") || "Nhận mã vé" }}
+                          </h4>
+                          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ t("products.ticketStep2Desc") || "Qua email hoặc tin nhắn SMS" }}
+                          </p>
+                        </div>
+                      </li>
+
+                      <li class="flex items-start">
+                        <div class="flex-shrink-0 relative">
+                          <div class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary-500 bg-white dark:bg-gray-800 text-primary-600 text-sm font-medium">3</div>
+                        </div>
+                        <div class="ml-4 flex-grow">
+                          <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ t("products.ticketStep3") || "Sử dụng vé" }}
+                          </h4>
+                          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ t("products.ticketStep3Desc") || "Xuất trình mã vé tại cổng" }}
+                          </p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Product Info -->
             <div class="product-info bg-white dark:bg-gray-800 rounded-lg p-6">
+              <!-- Ticket Type Badge -->
+              <div v-if="productData.type === 'TICKET'" class="mb-4">
+                <UBadge color="purple" variant="solid" class="text-sm font-medium">
+                  <Ticket class="w-4 h-4 mr-1" />
+                  {{ t("products.ticketType") || "Vé" }}
+                </UBadge>
+              </div>
+
               <div
                 v-if="productData.isNew || productData.isSale || productData.isFeatured"
                 class="mb-4 flex flex-wrap gap-2"
@@ -726,6 +467,36 @@ const getTabIcon = (tabId: string) => {
                       </div>
                     </template>
                   </UBadge>
+                </div>
+              </div>
+
+              <!-- Product Variants -->
+              <div v-if="productData?.type === 'TICKET'" class="mb-6">
+                <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ t("products.departureDate") }}
+                  <span class="text-red-500">*</span>
+                </div>
+                <div class="space-y-4">
+                  <DatePicker
+                    v-model="selectedDate"
+                    :min-date="new Date()"
+                    :masks="masks"
+                    :disabled-dates="disabledDates"
+                    class="w-full [&_.vc-highlight-base-start]:!bg-primary-500 [&_.vc-highlight-base-start]:!text-white [&_.vc-disabled]:!opacity-25 [&_.vc-disabled]:!cursor-not-allowed"
+                  >
+                    <template #default="{ inputValue, inputEvents }">
+                      <input
+                        :value="inputValue"
+                        v-on="inputEvents"
+                        :placeholder="t('products.selectDepartureDate')"
+                        class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none dark:bg-gray-800"
+                        readonly
+                      />
+                    </template>
+                  </DatePicker>
+                  <div v-if="selectedDate" class="text-sm text-gray-600 dark:text-gray-400">
+                    {{ t("products.selectedDate") }}: {{ selectedDate.toLocaleDateString(currentLocale) }}
+                  </div>
                 </div>
               </div>
 
@@ -783,7 +554,6 @@ const getTabIcon = (tabId: string) => {
                   </div>
                 </div>
 
-             
                 <!-- Hiển thị thông báo nếu không có variant phù hợp -->
                 <div
                   v-if="hasRequiredAttributes && !matchingVariant"
@@ -791,6 +561,50 @@ const getTabIcon = (tabId: string) => {
                 >
                   <AlertTriangle class="w-4 h-4" />
                   {{ t("products.noMatchingVariant") || "Không có sản phẩm phù hợp với lựa chọn của bạn" }}
+                </div>
+              </div>
+
+              <!-- Ticket Specific Information -->
+              <div v-if="productData.type === 'TICKET'" class="mb-6">
+                <div class="ticket-info bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="ticket-info-item">
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        <Calendar class="w-4 h-4 inline-block mr-1" />
+                        {{ t("products.ticketDate") || "Ngày sử dụng" }}
+                      </div>
+                      <div class="font-medium">
+                        {{ productData.specifications?.find(spec => spec.name === 'date')?.value || 'Liên hệ để biết thêm' }}
+                      </div>
+                    </div>
+                    <div class="ticket-info-item">
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        <Clock class="w-4 h-4 inline-block mr-1" />
+                        {{ t("products.ticketTime") || "Thời gian" }}
+                      </div>
+                      <div class="font-medium">
+                        {{ productData.specifications?.find(spec => spec.name === 'time')?.value || 'Liên hệ để biết thêm' }}
+                      </div>
+                    </div>
+                    <div class="ticket-info-item">
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        <MapPin class="w-4 h-4 inline-block mr-1" />
+                        {{ t("products.ticketLocation") || "Địa điểm" }}
+                      </div>
+                      <div class="font-medium">
+                        {{ productData.specifications?.find(spec => spec.name === 'location')?.value || 'Liên hệ để biết thêm' }}
+                      </div>
+                    </div>
+                    <div class="ticket-info-item">
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        <Info class="w-4 h-4 inline-block mr-1" />
+                        {{ t("products.ticketValidity") || "Hiệu lực" }}
+                      </div>
+                      <div class="font-medium">
+                        {{ productData.specifications?.find(spec => spec.name === 'validity')?.value || 'Liên hệ để biết thêm' }}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -900,7 +714,7 @@ const getTabIcon = (tabId: string) => {
               <!-- Buttons -->
               <div class="space-y-4">
                 <AddToCartButton
-                  v-if="canAddToCart"
+                  v-if="canAddToCart && getProductForCart"
                   :product="getProductForCart"
                   :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
                   :showQuantity="true"
@@ -1097,396 +911,4 @@ const getTabIcon = (tabId: string) => {
   </div>
 </template>
 
-<style scoped>
-/* Thêm CSS để định dạng các thẻ h2 trong nội dung sản phẩm */
-:deep(.product-content-wrapper h2) {
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #111827;
-  scroll-margin-top: 100px; /* Để khi scroll đến heading, nó không bị ẩn bởi header */
-}
-
-:deep(.dark .product-content-wrapper h2) {
-  color: #f9fafb;
-}
-
-/* Thêm CSS để làm nổi bật heading khi được active */
-:deep(.product-content-wrapper h2:target) {
-  background-color: rgba(14, 165, 233, 0.1); /* Màu nền nhẹ khi heading được active */
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
-}
-
-:deep(.dark .product-content-wrapper h2:target) {
-  background-color: rgba(56, 189, 248, 0.1);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
-}
-
-/* CSS cho product tabs */
-.product-tabs {
-  margin-bottom: 2rem;
-}
-
-/* CSS cho tab buttons */
-.product-tabs button {
-  transition: all 0.3s ease;
-  position: relative;
-  font-weight: 600;
-  margin-right: 1rem;
-}
-
-.product-tabs button:last-child {
-  margin-right: 0;
-}
-
-.product-tabs button:hover {
-  color: var(--color-primary-600);
-}
-
-.product-tabs button:focus {
-  outline: none;
-}
-
-/* CSS cho tab content */
-.tab-content {
-  min-height: 300px;
-  transition: all 0.3s ease;
-}
-
-.tab-content-inner {
-  width: 100%;
-}
-
-/* CSS cho empty state */
-.empty-state {
-  min-height: 300px;
-}
-
-/* CSS cho transition giữa các tab */
-.tab-fade-enter-active,
-.tab-fade-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.tab-fade-enter-from,
-.tab-fade-leave-to {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.tab-fade-enter-to,
-.tab-fade-leave-from {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* CSS cho hiệu ứng fade */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* CSS cho video container */
-.video-review-container {
-  width: 100%;
-}
-
-/* CSS cho responsive video */
-.aspect-w-16 {
-  position: relative;
-  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-}
-
-.aspect-w-16 iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-}
-
-/* CSS cho badge */
-:deep(.badge) {
-  transition: all 0.2s ease;
-}
-
-:deep(.badge:hover) {
-  transform: scale(1.05);
-}
-
-/* Thêm hiệu ứng hover cho video container */
-.video-review-container:hover .aspect-w-16 iframe {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* CSS cho sticky sidebar */
-.sticky {
-  position: sticky;
-  top: 24px; /* Khoảng cách từ top khi sticky */
-}
-
-/* CSS cho nút chia sẻ mạng xã hội */
-.share-buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.share-button {
-  transition: all 0.2s ease;
-  border-radius: 0.375rem;
-}
-
-.share-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* CSS cho tiêu đề danh mục */
-.category-title {
-  display: inline-flex;
-  align-items: center;
-  padding-bottom: 0.25rem;
-  border-bottom: 2px solid var(--color-primary-500);
-  margin-bottom: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.025em;
-}
-
-/* CSS cho danh mục sản phẩm */
-.category-badge {
-  transition: all 0.3s ease;
-  cursor: pointer;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  position: relative;
-  overflow: hidden;
-}
-
-.category-badge:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.category-badge:active {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
-}
-
-.category-badge::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 120%;
-  height: 120%;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  opacity: 0;
-  transition: transform 0.8s ease-out, opacity 0.8s ease-out;
-}
-
-.category-badge:hover::after {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 0.5;
-}
-
-.dark .category-badge {
-  box-shadow: 0 1px 2px rgba(255, 255, 255, 0.05);
-}
-
-.dark .category-badge:hover {
-  box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.1),
-    0 2px 4px -1px rgba(255, 255, 255, 0.06);
-}
-
-.dark .category-badge:active {
-  box-shadow: 0 2px 4px -1px rgba(255, 255, 255, 0.1),
-    0 1px 2px -1px rgba(255, 255, 255, 0.06);
-}
-
-.dark .category-badge::after {
-  background: rgba(0, 0, 0, 0.2);
-}
-
-/* CSS cho tooltip */
-.tooltip {
-  position: relative;
-  display: inline-block;
-}
-
-.tooltip .tooltip-text {
-  visibility: hidden;
-  width: 120px;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  text-align: center;
-  border-radius: 6px;
-  padding: 5px;
-  position: absolute;
-  z-index: 1;
-  bottom: 125%;
-  left: 50%;
-  margin-left: -60px;
-  opacity: 0;
-  transition: opacity 0.3s;
-  font-size: 0.75rem;
-}
-
-.tooltip:hover .tooltip-text {
-  visibility: visible;
-  opacity: 1;
-}
-
-/* CSS cho nút thêm vào giỏ hàng */
-:deep(.add-to-cart-container) {
-  margin-bottom: 1.5rem;
-  width: 100%;
-}
-
-:deep(.add-to-cart-button) {
-  margin-bottom: 0;
-}
-
-/* Fix cho UButton trong trang chi tiết sản phẩm */
-:deep(.u-button) {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-:deep(.u-button[block]) {
-  display: flex !important;
-  width: 100% !important;
-}
-
-/* Thêm CSS cho product-info */
-.product-info {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.dark .product-info {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-/* Thêm CSS cho product-images */
-.product-images {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.dark .product-images {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-/* CSS cho modal overlay */
-:deep(.u-modal-overlay),
-:deep(.u-modal-container),
-:deep(.u-modal) {
-  position: fixed !important;
-  z-index: 999999 !important;
-}
-
-:deep(.u-modal-overlay) {
-  position: fixed !important;
-  inset: 0 !important;
-  background-color: rgba(0, 0, 0, 0.75) !important;
-  backdrop-filter: blur(2px) !important;
-}
-
-:deep(.u-modal-container) {
-  position: fixed !important;
-  inset: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow-y: auto !important;
-}
-
-:deep(.u-modal-content) {
-  position: relative !important;
-  width: 90vw !important;
-  max-width: 600px !important;
-  margin: auto !important;
-  background: white !important;
-  border-radius: 0.5rem !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-}
-
-/* Đảm bảo modal luôn ở trên cùng */
-:root {
-  --modal-z-index: 999999;
-}
-
-/* Ghi đè style của Nuxt UI nếu cần */
-:deep(.modal-overlay),
-:deep(.modal-container),
-:deep(.modal-content) {
-  z-index: var(--modal-z-index) !important;
-}
-
-/* Vô hiệu hóa pointer-events trên các phần tử khác khi modal mở */
-:deep(body.modal-open) > *:not(.modal-overlay):not(.modal-container) {
-  pointer-events: none !important;
-}
-
-/* Đảm bảo modal container có highest stacking context */
-:deep(.modal-container) {
-  isolation: isolate !important;
-  transform: translateZ(0) !important;
-}
-
-/* CSS cho table of contents */
-:deep(.table-of-contents) {
-  background-color: white;
-  border-radius: 0.5rem;
-}
-
-.dark :deep(.table-of-contents) {
-  background-color: var(--color-gray-800);
-}
-
-.modal-content {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* CSS cho attribute buttons */
-.attribute-value-btn {
-  min-width: 80px;
-  max-width: fit-content;
-  transition: all 0.2s ease;
-}
-
-.attribute-value-btn:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.dark .attribute-value-btn:not(:disabled):hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.attribute-group {
-  border-bottom: 1px solid var(--color-gray-200);
-  padding-bottom: 1rem;
-}
-
-.dark .attribute-group {
-  border-bottom-color: var(--color-gray-700);
-}
-</style>
+<style src="~/assets/styles/components/product-detail.scss" scoped />
