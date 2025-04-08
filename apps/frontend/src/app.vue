@@ -1,5 +1,53 @@
 <script setup lang="ts">
-// Không cần định nghĩa layout ở đây vì Nuxt sẽ tự động sử dụng layout default
+import { useHead } from '@unhead/vue';
+import { ref, onMounted } from 'vue';
+import { useFeatureFlags } from './composables/useFeatureFlags';
+import { useComponentStyles } from './composables/useComponentStyles';
+import { useTheme } from './composables/useTheme';
+import { useDarkMode } from './composables/useDarkMode';
+
+const isLoading = ref(true);
+
+// Safety timeout to prevent infinite loading
+if (process.client) {
+  setTimeout(() => {
+    if (isLoading.value) {
+      console.warn('Loading timeout reached, forcing app to show');
+      isLoading.value = false;
+    }
+  }, 5000); // 5 seconds timeout
+}
+
+// Initialize theme and component styles
+const { initializeTheme } = useTheme();
+const { initializeStyles } = useComponentStyles();
+const { initializeDarkMode } = useDarkMode();
+
+console.log('Starting app initialization...');
+
+// Initialize theme and dark mode
+const initApp = async () => {
+  try {
+    console.log('Initializing theme...');
+    await initializeTheme();
+    console.log('Theme initialized successfully');
+    
+    if (process.client) {
+      console.log('Initializing dark mode...');
+      initializeDarkMode();
+      console.log('Dark mode initialized successfully');
+    }
+  } catch (error) {
+    console.error('Error during initialization:', error);
+    // Continue loading the app even if theme initialization fails
+    isLoading.value = false;
+  }
+};
+
+// Start initialization
+initApp();
+
+// Add font awesome
 useHead({
   link: [
     {
@@ -12,35 +60,24 @@ useHead({
   ]
 });
 
-import { ref, onMounted } from 'vue';
-import { useFeatureFlags } from './composables/useFeatureFlags';
-import { useComponentStyles } from './composables/useComponentStyles';
-import { useTheme } from './composables/useTheme';
-import { useDarkMode } from './composables/useDarkMode';
-
-const isLoading = ref(true);
-
-// Initialize theme and component styles
-const { initializeTheme } = useTheme();
-const { initializeStyles } = useComponentStyles();
-const { initializeDarkMode } = useDarkMode();
-
-// Initialize theme and dark mode immediately in setup
-await initializeTheme();
-if (process.client) {
-  initializeDarkMode();
-}
-
 onMounted(async () => {
+  console.log('Component mounted, starting additional initialization...');
   try {
     // Initialize component styles after mounting
+    console.log('Initializing component styles...');
     await initializeStyles();
+    console.log('Component styles initialized successfully');
     
     // Initialize feature flags
+    console.log('Fetching feature flags...');
     const { fetchFeatureFlags } = useFeatureFlags();
     await fetchFeatureFlags();
+    console.log('Feature flags initialized successfully');
+  } catch (error) {
+    console.error('Error during mounted initialization:', error);
   } finally {
     // Hide loading screen after everything is initialized
+    console.log('Initialization complete, hiding loading screen');
     isLoading.value = false;
   }
 });

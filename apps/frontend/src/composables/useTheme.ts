@@ -2,6 +2,11 @@ import { ref, watch, computed } from 'vue';
 import { useTrpc } from './useTrpc';
 import { useDark } from '@vueuse/core';
 import { PageType } from '@ew/shared';
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '../types/trpc';
+
+type RouterOutput = inferRouterOutputs<AppRouter>;
+type ThemeOutput = RouterOutput['theme']['getActiveTheme'];
 
 type ColorShades = {
   '50': string;
@@ -133,12 +138,23 @@ export function useTheme() {
   const trpc = useTrpc();
   const isDark = useDark();
   
-  const getActiveTheme = async (options?: { pageType?: PageType }) => {
+  const getActiveTheme = async (options?: { pageType?: PageType }): Promise<Theme | null> => {
+    console.log('Fetching active theme...', options);
     try {
-      return await trpc.theme.getActiveTheme.query(options);
+      const theme = await trpc.theme.getActiveTheme.query(options);
+      console.log('Theme fetched successfully:', theme);
+      return theme as Theme;
     } catch (error) {
       console.error('Failed to fetch active theme:', error);
-      return null;
+      // Return default theme to prevent blocking
+      return {
+        id: 0,
+        name: 'default',
+        isActive: true,
+        colors: defaultColors,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
     }
   };
 
