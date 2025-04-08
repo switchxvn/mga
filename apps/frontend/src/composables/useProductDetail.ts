@@ -15,19 +15,22 @@ export function useProductDetail() {
   const router = useRouter();
   const slug = computed(() => route.params.slug as string);
 
-  // Xác định locale từ URL path
+  // Xác định locale từ URL path và loại sản phẩm
   const currentLocale = computed(() => {
-    // Nếu URL bắt đầu bằng /san-pham/ thì là tiếng Việt
-    if (route.path.startsWith("/san-pham/")) {
+    // Nếu URL bắt đầu bằng /san-pham/ hoặc /ve/ thì là tiếng Việt
+    if (route.path.startsWith("/san-pham/") || route.path.startsWith("/tickets/")) {
       return "vi";
     }
-    // Nếu URL bắt đầu bằng /products/ thì là tiếng Anh
-    if (route.path.startsWith("/products/")) {
+    // Nếu URL bắt đầu bằng /products/ hoặc /tickets/ (en) thì là tiếng Anh
+    if (route.path.startsWith("/products/") || route.path.startsWith("/tickets/")) {
       return "en";
     }
     // Mặc định lấy từ useLocalization
     return locale.value;
   });
+
+  // Xác định loại route (product hay ticket)
+  const isTicketRoute = computed(() => route.path.includes("/tickets/"));
 
   // Sử dụng useAsyncData với tRPC
   const { data: productData, pending: isLoading, error, refresh } = useAsyncData<Product | null>(
@@ -44,8 +47,9 @@ export function useProductDetail() {
           // Nếu sản phẩm có translations và đang ở client side, chuyển hướng đến URL có slug
           const translation = result?.translations?.find(t => t.locale === currentLocale.value) || result?.translations?.[0];
           if (translation?.slug && process.client) {
-            const productSlug =
-              currentLocale.value === "vi"
+            const productSlug = isTicketRoute.value
+              ? `/tickets/${translation.slug}`
+              : currentLocale.value === "vi"
                 ? `/san-pham/${translation.slug}`
                 : `/products/${translation.slug}`;
             router.replace({ path: productSlug, query: route.query });
@@ -61,8 +65,9 @@ export function useProductDetail() {
           // Nếu sản phẩm có translations và đang ở client side, chuyển hướng đến URL có slug
           const translation = result?.translations?.find(t => t.locale === currentLocale.value) || result?.translations?.[0];
           if (translation?.slug && process.client) {
-            const productSlug =
-              currentLocale.value === "vi"
+            const productSlug = isTicketRoute.value
+              ? `/tickets/${slug.value}`
+              : currentLocale.value === "vi"
                 ? `/san-pham/${slug.value}`
                 : `/products/${slug.value}`;
             router.replace({ path: productSlug, query: route.query });

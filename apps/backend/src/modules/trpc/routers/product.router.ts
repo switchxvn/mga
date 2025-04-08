@@ -74,6 +74,7 @@ export const productRouter = router({
                 formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
               };
             }) || [],
+            variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
           };
         }),
         total: result.total,
@@ -112,6 +113,7 @@ export const productRouter = router({
               formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
             };
           }) || [],
+          variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
         };
       });
     }),
@@ -145,6 +147,7 @@ export const productRouter = router({
               formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
             };
           }) || [],
+          variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
         };
       });
     }),
@@ -178,6 +181,7 @@ export const productRouter = router({
               formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
             };
           }) || [],
+          variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
         };
       });
     }),
@@ -212,6 +216,7 @@ export const productRouter = router({
             formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
           };
         }) || [],
+        variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
       };
     }),
 

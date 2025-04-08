@@ -75,6 +75,17 @@ export interface Product {
   combos?: ProductCombo[];
   crossSellProducts?: Product[];
   priceRequests: PriceRequest[];
+  variants?: {
+    id: number;
+    sku: string;
+    price: number | null;
+    comparePrice: number | null;
+    formattedPrice: string;
+    stock: number;
+    attributeValues: {
+      [attributeId: number]: number;
+    };
+  }[];
   variantAttributes?: {
     attributes: {
       id: number;

@@ -54,7 +54,9 @@
     "viewDetails": "View Details",
     "learnMore": "Learn More",
     "new": "New",
-    "featured": "Featured"
+    "featured": "Featured",
+    "addToCart": "Add to Cart",
+    "price": "Price"
   },
   "validation": {
     "required": "This field is required",
@@ -84,6 +86,9 @@
     "sale": "On Sale",
     "viewAll": "View All",
     "addToCart": "Add to Cart",
+    "bookTicket": "Book Ticket",
+    "from": "From",
+    "noMatchingVariant": "No matching variant found for your selection",
     "contact": "Contact Us",
     "description": "PRODUCT DESCRIPTION",
     "videoReview": "VIDEO REVIEW",
@@ -285,5 +290,14 @@
     "system": "System Theme"
   },
   "mga_projects": "MGA PROJECTS",
-  "forklift_accessories": "FORKLIFT ACCESSORIES"
+  "forklift_accessories": "FORKLIFT ACCESSORIES",
+  "modals": {
+    "variantSelection": {
+      "title": "Select Ticket Information"
+    }
+  },
+  "tickets": {
+    "showing": "Showing",
+    "items": "tickets"
+  }
 } 

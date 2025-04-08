@@ -1,0 +1,913 @@
+<script setup lang="ts">
+import { computed, ref, h, nextTick, watch } from "vue";
+import { useLocalization } from "~/composables/useLocalization";
+import { useTrpc } from "~/composables/useTrpc";
+import { useRoute, useRouter } from "vue-router";
+import LazyImage from "~/components/ui/LazyImage.vue";
+import CrossSellProducts from "~/components/product/CrossSellProducts.vue";
+import TableOfContents from "~/components/common/TableOfContents.vue";
+import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
+import { formatFullProductContent } from "~/utils/contentFormatter";
+import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
+import { useHead } from '@unhead/vue';
+import { useAsyncData } from 'nuxt/app';
+import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
+import { useNotification } from "~/composables/useNotification";
+import AddToCartButton from "~/components/cart/AddToCartButton.vue";
+import Breadcrumb from "~/components/common/Breadcrumb.vue";
+import GlobalModal from "~/components/ui/GlobalModal.vue";
+import { unref } from 'vue';
+import { 
+  Check, 
+  Share, 
+  Facebook, 
+  Twitter, 
+  Linkedin, 
+  Mail, 
+  Link, 
+  Video,
+  AlertTriangle,
+  AlertCircle,
+  Tag,
+  LayoutGrid,
+  FileText,
+  Settings,
+  Ticket,
+  Calendar,
+  Clock,
+  MapPin,
+  Info,
+  ListOrdered,
+  Users,
+  CreditCard,
+  Shield,
+  ArrowRight
+} from 'lucide-vue-next';
+import { useProductVariants } from '~/composables/useProduct';
+import { formatPrice } from '@ew/shared';
+import type { Product } from '@ew/shared';
+import { useProductDetail } from '~/composables/useProductDetail';
+import { DatePicker } from 'v-calendar';
+import 'v-calendar/style.css';
+
+// Định nghĩa interface cho PriceRequest
+interface PriceRequest {
+  id: number;
+  productId: number;
+  productName: string;
+  variantId?: number;
+  variantName?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  message: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const { t, locale } = useLocalization();
+const route = useRoute();
+const router = useRouter();
+
+// Sử dụng composable useProductDetail
+const {
+  productData,
+  isLoading,
+  error,
+  refresh,
+  currentLocale,
+  productTitle,
+  productContent,
+  productShortDescription,
+  productContentId,
+  formattedProductContent,
+  hasVideoReview,
+  tabs: originalTabs,
+  shareUrl,
+  shareTitle,
+  shareDescription,
+  shareImage,
+  canonicalUrl,
+  activeTab,
+  isPriceRequestModalOpen,
+  selectedAttributes,
+  productAttributes,
+  matchingVariant,
+  variantPrice,
+  hasRequiredAttributes,
+  isAttributeValueAvailable,
+  minVariantPrice,
+  shouldShowFromPrice,
+  shouldShowPriceRequest,
+  canAddToCart: baseCanAddToCart,
+  displayPrice,
+  displayComparePrice,
+  getProductForCart,
+  handleSelectAttribute,
+  openPriceRequestModal,
+  closePriceRequestModal,
+  handlePriceRequestSuccess,
+  shareToFacebook,
+  shareToTwitter,
+  shareToLinkedIn,
+  shareViaEmail,
+  copyProductLink,
+  getTabIcon: originalGetTabIcon
+} = useProductDetail();
+
+// Add new refs for date selection
+const selectedDate = ref<Date | null>(null);
+const selectedQuantity = ref(1);
+
+const masks = {
+  input: 'DD/MM/YYYY',
+  data: 'YYYY-MM-DD'
+};
+
+// Fix disabled dates configuration
+const disabledDates = computed(() => {
+  const dates = [];
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  // Add all dates from the past up to yesterday
+  let currentDate = new Date(0); // Start from epoch
+  while (currentDate <= yesterday) {
+    dates.push(new Date(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return dates;
+});
+
+// Extend base canAddToCart with date validation for tickets
+const canAddToCart = computed(() => {
+  const baseCanAdd = baseCanAddToCart.value;
+  if (productData.value?.type === 'TICKET') {
+    return baseCanAdd && selectedDate.value !== null;
+  }
+  return baseCanAdd;
+});
+
+// Định nghĩa alias cho URL tiếng Việt (nếu cần)
+definePageMeta({
+  layout: "default",
+});
+
+// Thiết lập meta tags
+useHead({
+  title: unref(computed(() => productData.value?.metaTitle || productTitle.value || "Chi tiết vé")),
+  meta: [
+    {
+      name: "description",
+      content: unref(computed(() => productData.value?.metaDescription || productShortDescription.value || "")),
+    },
+    { 
+      name: "keywords", 
+      content: unref(computed(() => productData.value?.metaKeywords || "")),
+    },
+    // Open Graph
+    {
+      property: "og:title",
+      content: unref(computed(() => productData.value?.ogTitle || productTitle.value || "")),
+    },
+    {
+      property: "og:description",
+      content: unref(computed(() => 
+        productData.value?.ogDescription ||
+        productData.value?.metaDescription ||
+        productShortDescription.value ||
+        ""
+      )),
+    },
+    {
+      property: "og:image",
+      content: unref(computed(() => productData.value?.ogImage || productData.value?.thumbnail || "")),
+    },
+    { 
+      property: "og:url", 
+      content: unref(computed(() => canonicalUrl.value)),
+    },
+    { 
+      property: "og:type", 
+      content: "product",
+    },
+    // Twitter Card
+    { 
+      name: "twitter:card", 
+      content: "summary_large_image",
+    },  
+    {
+      name: "twitter:title",
+      content: unref(computed(() => productData.value?.ogTitle || productTitle.value || "")),
+    },
+    {
+      name: "twitter:description",
+      content: unref(computed(() => productData.value?.ogDescription || productShortDescription.value || "")),
+    },
+    {
+      name: "twitter:image",
+      content: unref(computed(() => productData.value?.ogImage || productData.value?.thumbnail || "")),
+    },
+  ],
+  link: [
+    { 
+      rel: "canonical", 
+      href: unref(computed(() => canonicalUrl.value)),
+    },
+  ],
+});
+
+// Theo dõi thay đổi của activeTab để cập nhật lại TableOfContents
+watch(activeTab, (newTab, oldTab) => {
+  if (newTab === "description") {
+    // Đợi DOM cập nhật xong
+    nextTick(() => {
+      // Đợi thêm một chút để đảm bảo transition đã hoàn thành
+      setTimeout(() => {
+        // Kích hoạt lại TableOfContents
+        const event = new Event("tab-changed");
+        window.dispatchEvent(event);
+
+        // Đảm bảo nội dung đã được render
+        const contentElement = document.querySelector(`#${productContentId.value}`);
+        if (contentElement) {
+          // Kích hoạt MutationObserver
+          const observer = new MutationObserver(() => {
+            window.dispatchEvent(new Event("tab-changed"));
+          });
+
+          observer.observe(contentElement, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+          });
+
+          // Cleanup sau 1 giây
+          setTimeout(() => {
+            observer.disconnect();
+          }, 1000);
+        }
+      }, 300);
+    });
+  }
+});
+
+const tabs = computed(() => [
+  {
+    id: 'description',
+    label: t('tickets.description') || 'Mô tả',
+  },
+  {
+    id: 'video',
+    label: t('tickets.videoReview') || 'Video review',
+    badge: hasVideoReview.value ? { label: 'New' } : undefined,
+  },
+]);
+
+const getTabIcon = (tabId: string) => {
+  switch (tabId) {
+    case 'description':
+      return FileText;
+    case 'video':
+      return Video;
+    default:
+      return null;
+  }
+};
+</script>
+
+<template>
+  <div class="ticket-detail min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Breadcrumb -->
+      <div class="mb-6">
+        <Breadcrumb
+          :items="[
+            { label: t('home'), to: '/' },
+            { label: t('tickets.title'), to: '/tickets' },
+            { label: productTitle },
+          ]"
+        />
+      </div>
+
+      <div v-if="isLoading" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <USkeleton class="mb-4 h-8 w-2/3" />
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <USkeleton class="h-96 w-full rounded-lg" />
+          <div>
+            <USkeleton class="mb-4 h-6 w-1/3" />
+            <USkeleton class="mb-4 h-6 w-1/4" />
+            <USkeleton class="mb-6 h-24 w-full" />
+            <USkeleton class="mb-4 h-10 w-full" />
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-else-if="error"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center"
+      >
+        <AlertCircle class="mx-auto mb-4 h-16 w-16 text-red-500" />
+        <h2 class="mb-2 text-2xl font-bold">{{ t("tickets.error") || "Lỗi" }}</h2>
+        <p class="mb-6 text-gray-600 dark:text-gray-400">
+          {{
+            error.message ||
+            t("tickets.errorDescription") ||
+            "Có lỗi xảy ra khi tải thông tin vé"
+          }}
+        </p>
+        <UButton @click="refresh" color="primary" class="mr-2">
+          {{ t("tickets.tryAgain") || "Thử lại" }}
+        </UButton>
+        <UButton to="/tickets" color="gray">
+          {{ t("tickets.backToTickets") || "Quay lại danh sách vé" }}
+        </UButton>
+      </div>
+
+      <div v-else-if="productData" class="ticket-content space-y-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <!-- Phần thông tin vé -->
+          <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+            <!-- Ticket Images -->
+            <div class="ticket-images bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <LazyImage
+                :src="productData.thumbnail || ''"
+                :alt="productTitle"
+                fallbackSrc="/images/default-image.jpg"
+                customClass="h-auto w-full rounded-lg"
+              />
+
+              <!-- Gallery slider -->
+              <div
+                v-if="productData.gallery && productData.gallery.length > 0"
+                class="mt-4 grid grid-cols-4 gap-2"
+              >
+                <LazyImage
+                  v-for="(image, index) in productData.gallery"
+                  :key="index"
+                  :src="image"
+                  :alt="`${productTitle} - ${index + 1}`"
+                  fallbackSrc="/images/default-image.jpg"
+                  customClass="h-20 w-full cursor-pointer rounded-md"
+                />
+              </div>
+
+              <!-- Thông tin bổ sung cho vé -->
+              <div class="mt-4 space-y-4">
+                <!-- Các lưu ý quan trọng -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 class="text-base font-medium text-gray-900 dark:text-white mb-2 flex items-center">
+                    <AlertCircle class="w-5 h-5 mr-2 text-amber-500" />
+                    {{ t("tickets.ticketNotes") || "Lưu ý quan trọng" }}
+                  </h3>
+                  <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("tickets.ticketNote1") || "Vé có giá trị trong ngày tham quan" }}
+                    </li>
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("tickets.ticketNote2") || "Vui lòng mang theo CMND/CCCD khi sử dụng vé" }}
+                    </li>
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("tickets.ticketNote3") || "Trẻ em dưới 3 tuổi được miễn phí vé vào cổng" }}
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Quy trình sử dụng vé -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 class="text-base font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                    <ListOrdered class="w-5 h-5 mr-2 text-primary-500" />
+                    {{ t("tickets.ticketProcess") || "Quy trình sử dụng vé" }}
+                  </h3>
+                  <div class="relative">
+                    <!-- Timeline line -->
+                    <div class="absolute left-2.5 top-0 h-full w-[2px] bg-gray-200 dark:bg-gray-700"></div>
+                    
+                    <ul class="relative space-y-6">
+                      <li class="flex items-start">
+                        <div class="flex-shrink-0 relative">
+                          <div class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary-500 bg-white dark:bg-gray-800 text-primary-600 text-sm font-medium">1</div>
+                        </div>
+                        <div class="ml-4 flex-grow">
+                          <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ t("tickets.ticketStep1") || "Đặt vé trực tuyến" }}
+                          </h4>
+                          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ t("tickets.ticketStep1Desc") || "Chọn loại vé và thanh toán" }}
+                          </p>
+                        </div>
+                      </li>
+
+                      <li class="flex items-start">
+                        <div class="flex-shrink-0 relative">
+                          <div class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary-500 bg-white dark:bg-gray-800 text-primary-600 text-sm font-medium">2</div>
+                        </div>
+                        <div class="ml-4 flex-grow">
+                          <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ t("tickets.ticketStep2") || "Nhận mã vé" }}
+                          </h4>
+                          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ t("tickets.ticketStep2Desc") || "Qua email hoặc tin nhắn SMS" }}
+                          </p>
+                        </div>
+                      </li>
+
+                      <li class="flex items-start">
+                        <div class="flex-shrink-0 relative">
+                          <div class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary-500 bg-white dark:bg-gray-800 text-primary-600 text-sm font-medium">3</div>
+                        </div>
+                        <div class="ml-4 flex-grow">
+                          <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ t("tickets.ticketStep3") || "Sử dụng vé" }}
+                          </h4>
+                          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ t("tickets.ticketStep3Desc") || "Xuất trình mã vé tại cổng" }}
+                          </p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Cam kết bảo mật -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 class="text-base font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                    <Shield class="w-5 h-5 mr-2 text-green-500" />
+                    {{ t("tickets.securityGuarantee") || "Cam kết bảo mật" }}
+                  </h3>
+                  <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("tickets.securityNote1") || "Thanh toán an toàn qua cổng thanh toán bảo mật" }}
+                    </li>
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("tickets.securityNote2") || "Thông tin cá nhân được bảo vệ theo tiêu chuẩn quốc tế" }}
+                    </li>
+                    <li class="flex items-start">
+                      <Check class="w-4 h-4 mr-2 text-green-500 mt-0.5 flex-shrink-0" />
+                      {{ t("tickets.securityNote3") || "Hoàn tiền 100% nếu không nhận được vé" }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ticket Info -->
+            <div class="ticket-info bg-white dark:bg-gray-800 rounded-lg p-6">
+              <!-- Ticket Type Badge -->
+              <div class="mb-4">
+                <UBadge color="purple" variant="solid" class="text-sm font-medium">
+                  <Ticket class="w-4 h-4 mr-1" />
+                  {{ t("tickets.ticketType") || "Vé" }}
+                </UBadge>
+              </div>
+
+              <div
+                v-if="productData.isNew || productData.isSale || productData.isFeatured"
+                class="mb-4 flex flex-wrap gap-2"
+              >
+                <UBadge v-if="productData.isNew" color="blue" variant="solid">{{ t("tickets.new") || "Mới" }}</UBadge>
+                <UBadge v-if="productData.isSale" color="red" variant="solid">{{ t("tickets.sale") || "Giảm giá" }}</UBadge>
+                <UBadge v-if="productData.isFeatured" color="amber" variant="solid">{{ t("tickets.featured") || "Nổi bật" }}</UBadge>
+              </div>
+
+              <h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+                {{ productTitle }}
+              </h1>
+
+              <div
+                v-if="productData.sku"
+                class="mb-4 text-sm text-gray-600 dark:text-gray-400"
+              >
+                SKU: {{ productData.sku }}
+              </div>
+
+              <!-- Hiển thị danh mục vé -->
+              <div
+                v-if="productData.categories && productData.categories.length > 0"
+                class="mb-5"
+              >
+                <div class="category-title text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <LayoutGrid class="inline-block mr-1 h-5 w-5 text-primary-500" />
+                  {{ t("tickets.categories") || "Danh mục:" }}
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <UBadge
+                    v-for="category in productData.categories"
+                    :key="category.id"
+                    size="lg"
+                    class="category-badge cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-800 transition-colors"
+                    @click="router.push(`/categories/${category.translations?.[0]?.slug || ''}`)"
+                  >
+                    <template #default>
+                      <div class="flex items-center gap-1">
+                        <Tag class="h-4 w-4" />
+                        <span class="text-sm font-medium">{{ category.translations?.[0]?.name || '' }}</span>
+                      </div>
+                    </template>
+                  </UBadge>
+                </div>
+              </div>
+
+              <!-- Ticket Specific Information -->
+              <div class="mb-6">
+                <div class="ticket-info bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="ticket-info-item">
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        <Calendar class="w-4 h-4 inline-block mr-1" />
+                        {{ t("tickets.ticketDate") || "Ngày sử dụng" }}
+                      </div>
+                      <div class="font-medium">
+                        {{ productData.specifications?.find(spec => spec.name === 'date')?.value || 'Liên hệ để biết thêm' }}
+                      </div>
+                    </div>
+                    <div class="ticket-info-item">
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        <Clock class="w-4 h-4 inline-block mr-1" />
+                        {{ t("tickets.ticketTime") || "Thời gian" }}
+                      </div>
+                      <div class="font-medium">
+                        {{ productData.specifications?.find(spec => spec.name === 'time')?.value || 'Liên hệ để biết thêm' }}
+                      </div>
+                    </div>
+                    <div class="ticket-info-item">
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        <MapPin class="w-4 h-4 inline-block mr-1" />
+                        {{ t("tickets.ticketLocation") || "Địa điểm" }}
+                      </div>
+                      <div class="font-medium">
+                        {{ productData.specifications?.find(spec => spec.name === 'location')?.value || 'Liên hệ để biết thêm' }}
+                      </div>
+                    </div>
+                    <div class="ticket-info-item">
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                        <Info class="w-4 h-4 inline-block mr-1" />
+                        {{ t("tickets.ticketValidity") || "Hiệu lực" }}
+                      </div>
+                      <div class="font-medium">
+                        {{ productData.specifications?.find(spec => spec.name === 'validity')?.value || 'Liên hệ để biết thêm' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Date Selection -->
+              <div class="mb-6">
+                <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ t("tickets.departureDate") || "Ngày sử dụng" }}
+                  <span class="text-red-500">*</span>
+                </div>
+                <div class="space-y-4">
+                  <DatePicker
+                    v-model="selectedDate"
+                    :min-date="new Date()"
+                    :masks="masks"
+                    :disabled-dates="disabledDates"
+                    class="w-full [&_.vc-highlight-base-start]:!bg-primary-500 [&_.vc-highlight-base-start]:!text-white [&_.vc-disabled]:!opacity-25 [&_.vc-disabled]:!cursor-not-allowed"
+                  >
+                    <template #default="{ inputValue, inputEvents }">
+                      <input
+                        :value="inputValue"
+                        v-on="inputEvents"
+                        :placeholder="t('tickets.selectDepartureDate') || 'Chọn ngày sử dụng'"
+                        class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none dark:bg-gray-800"
+                        readonly
+                      />
+                    </template>
+                  </DatePicker>
+                  <div v-if="selectedDate" class="text-sm text-gray-600 dark:text-gray-400">
+                    {{ t("tickets.selectedDate") || "Ngày đã chọn" }}: {{ selectedDate.toLocaleDateString(currentLocale) }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quantity Selection -->
+              <div class="mb-6">
+                <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ t("tickets.quantity") || "Số lượng vé" }}
+                  <span class="text-red-500">*</span>
+                </div>
+                <div class="flex items-center">
+                  <UButton
+                    color="gray"
+                    variant="soft"
+                    icon="i-heroicons-minus"
+                    @click="selectedQuantity = Math.max(1, selectedQuantity - 1)"
+                    :disabled="selectedQuantity <= 1"
+                  />
+                  <UInput
+                    v-model="selectedQuantity"
+                    type="number"
+                    min="1"
+                    class="mx-2 w-20 text-center"
+                  />
+                  <UButton
+                    color="gray"
+                    variant="soft"
+                    icon="i-heroicons-plus"
+                    @click="selectedQuantity++"
+                  />
+                </div>
+              </div>
+
+              <!-- Hiển thị giá -->
+              <div class="mb-6 flex items-center gap-3">
+                <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                  {{ displayPrice }}
+                </span>
+                <span
+                  v-if="displayComparePrice && matchingVariant"
+                  class="text-lg text-gray-500 line-through dark:text-gray-400"
+                >
+                  {{ displayComparePrice }}
+                </span>
+              </div>
+
+              <div
+                v-if="productShortDescription"
+                class="mb-6 text-gray-700 dark:text-gray-300"
+              >
+                {{ productShortDescription }}
+              </div>
+
+              <!-- Nút chia sẻ mạng xã hội -->
+              <div class="mb-6">
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {{ t("tickets.shareTicket") || "Chia sẻ vé:" }}
+                </div>
+                <div class="share-buttons flex flex-wrap gap-2">
+                  <div class="tooltip">
+                    <UButton
+                      color="blue"
+                      variant="soft"
+                      size="sm"
+                      @click="shareToFacebook"
+                      class="share-button"
+                    >
+                      <Facebook class="h-5 w-5" />
+                    </UButton>
+                    <span class="tooltip-text">{{
+                      t("tickets.shareOnFacebook") || "Chia sẻ lên Facebook"
+                    }}</span>
+                  </div>
+
+                  <div class="tooltip">
+                    <UButton
+                      color="sky"
+                      variant="soft"
+                      size="sm"
+                      @click="shareToTwitter"
+                      class="share-button"
+                    >
+                      <Twitter class="h-5 w-5" />
+                    </UButton>
+                    <span class="tooltip-text">{{
+                      t("tickets.shareOnTwitter") || "Chia sẻ lên Twitter"
+                    }}</span>
+                  </div>
+
+                  <div class="tooltip">
+                    <UButton
+                      color="blue"
+                      variant="soft"
+                      size="sm"
+                      @click="shareToLinkedIn"
+                      class="share-button"
+                    >
+                      <Linkedin class="h-5 w-5" />
+                    </UButton>
+                    <span class="tooltip-text">{{
+                      t("tickets.shareOnLinkedIn") || "Chia sẻ lên LinkedIn"
+                    }}</span>
+                  </div>
+
+                  <div class="tooltip">
+                    <UButton
+                      color="emerald"
+                      variant="soft"
+                      size="sm"
+                      @click="shareViaEmail"
+                      class="share-button"
+                    >
+                      <Mail class="h-5 w-5" />
+                    </UButton>
+                    <span class="tooltip-text">{{
+                      t("tickets.shareViaEmail") || "Chia sẻ qua Email"
+                    }}</span>
+                  </div>
+
+                  <div class="tooltip">
+                    <UButton
+                      color="gray"
+                      variant="soft"
+                      size="sm"
+                      @click="copyProductLink"
+                      class="share-button"
+                    >
+                      <Link class="h-5 w-5" />
+                    </UButton>
+                    <span class="tooltip-text">{{
+                      t("tickets.copyLink") || "Sao chép liên kết"
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Buttons -->
+              <div class="space-y-4">
+                <AddToCartButton
+                  v-if="canAddToCart && getProductForCart"
+                  :product="getProductForCart"
+                  :buttonText="t('tickets.addToCart') || 'Thêm vào giỏ hàng'"
+                  :showQuantity="false"
+                  :quantity="selectedQuantity"
+                  buttonClass="flex-1"
+                />
+
+                <UButton
+                  v-if="shouldShowPriceRequest"
+                  color="primary"
+                  size="lg"
+                  block
+                  icon="i-heroicons-currency-dollar"
+                  class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
+                  @click="openPriceRequestModal"
+                >
+                  {{ t("tickets.requestPrice") || "Yêu cầu báo giá" }}
+                </UButton>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phần mô tả vé và sidebar -->
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <!-- Phần mô tả vé và tabs -->
+          <div class="lg:col-span-2">
+            <!-- Table of Contents -->
+            <Transition name="fade" mode="out-in">
+              <TableOfContents
+                v-if="activeTab === 'description'"
+                :contentSelector="`#${productContentId}`"
+                :offset="100"
+                :collapsible="true"
+                :defaultCollapsed="false"
+                key="table-of-contents"
+                class="mb-6"
+              />
+            </Transition>
+
+            <!-- Ticket Description and Video Review Tabs -->
+            <div
+              v-if="productContent || productData.videoReview || productData.id"
+              class="ticket-tabs bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden"
+            >
+              <div class="border-b border-gray-200 dark:border-gray-700 px-6">
+                <div class="flex flex-wrap space-x-4 md:space-x-8">
+                  <button
+                    v-for="tab in tabs"
+                    :key="tab.id"
+                    @click="activeTab = tab.id"
+                    class="inline-flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm md:text-base uppercase tracking-wide"
+                    :class="[
+                      activeTab === tab.id
+                        ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
+                    ]"
+                  >
+                    <component 
+                      :is="getTabIcon(tab.id)" 
+                      class="h-5 w-5"
+                    />
+                    {{ tab.label }}
+                    <UBadge v-if="tab.badge" color="blue" variant="soft" size="xs">
+                      {{ tab.badge.label }}
+                    </UBadge>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tab Content -->
+              <div
+                class="tab-content p-6 bg-white dark:bg-gray-800 rounded-b-lg shadow-sm border-x border-b border-gray-200 dark:border-gray-700"
+              >
+                <transition name="tab-fade" mode="out-in">
+                  <!-- Description Tab Content -->
+                  <div
+                    v-if="activeTab === 'description'"
+                    :key="'description'"
+                    class="tab-content-inner"
+                  >
+                    <div
+                      :id="productContentId"
+                      class="prose prose-lg max-w-none dark:prose-invert ticket-content-wrapper"
+                      v-html="formattedProductContent"
+                    ></div>
+                  </div>
+
+                  <!-- Video Review Tab Content -->
+                  <div
+                    v-else-if="activeTab === 'video'"
+                    :key="'video'"
+                    class="tab-content-inner"
+                  >
+                    <div v-if="productData.videoReview" class="video-review-container">
+                      <h2
+                        v-if="productData.videoTitle"
+                        class="mb-4 text-2xl font-bold text-gray-900 dark:text-white"
+                      >
+                        {{ productData.videoTitle }}
+                      </h2>
+                      <div
+                        class="aspect-w-16 aspect-h-9 mb-6 overflow-hidden rounded-lg shadow-md"
+                      >
+                        <iframe
+                          class="h-full w-full"
+                          :src="productData.videoReview"
+                          frameborder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowfullscreen
+                        ></iframe>
+                      </div>
+                    </div>
+                    <div v-else class="empty-state flex h-64 items-center justify-center">
+                      <div class="text-center">
+                        <UIcon
+                          name="i-heroicons-video"
+                          class="mx-auto mb-4 h-16 w-16 text-gray-400"
+                        />
+                        <p class="text-gray-600 dark:text-gray-400">
+                          {{
+                            t("tickets.noVideoAvailable") ||
+                            "Chưa có video review cho vé này"
+                          }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </transition>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="lg:col-span-1">
+            <div class="sticky top-24">
+              <ProductDetailSidebar :product="productData" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Cross-Sell Products -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ t("tickets.relatedTickets") || "Vé bạn có thể thích" }}
+          </h2>
+          <CrossSellProducts
+            v-if="productData.id"
+            :productId="productData.id"
+            :limit="4"
+          />
+        </div>
+
+        <!-- Modal -->
+        <GlobalModal :show="isPriceRequestModalOpen" @close="closePriceRequestModal">
+          <div class="modal-content">
+            <PriceRequestModal
+              v-if="productData"
+              :is-open="isPriceRequestModalOpen"
+              :product-id="productData.id"
+              :product-name="productData.translations?.[0]?.title"
+              :variant-id="matchingVariant?.id"
+              :variant-name="matchingVariant?.sku"
+              @success="handlePriceRequestSuccess"
+              @close="closePriceRequestModal"
+            />
+          </div>
+        </GlobalModal>
+      </div>
+
+      <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
+        <AlertTriangle class="mx-auto mb-4 h-16 w-16 text-amber-500" />
+        <h2 class="mb-2 text-2xl font-bold">{{ t("tickets.notFound") || "Không tìm thấy vé" }}</h2>
+        <p class="mb-6 text-gray-600 dark:text-gray-400">
+          {{ t("tickets.notFoundDescription") || "Vé bạn đang tìm kiếm không tồn tại hoặc đã bị xóa" }}
+        </p>
+        <UButton to="/tickets" color="primary">
+          {{ t("tickets.backToTickets") || "Quay lại danh sách vé" }}
+        </UButton>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style src="~/assets/styles/components/product-detail.scss" scoped /> 

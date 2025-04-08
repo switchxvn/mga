@@ -73,7 +73,7 @@ export class ProductFrontendService {
       search,
       minPrice,
       maxPrice,
-      includeNullPrice,
+      includeNullPrice = false,
       categories,
       isFeatured,
       isNew,
@@ -83,49 +83,37 @@ export class ProductFrontendService {
       limit = 12,
     } = options || {};
 
-    // Build where conditions
-    const where: FindOptionsWhere<Product> = { published: true };
-    
-    // Add filters
-    if (minPrice !== undefined && maxPrice !== undefined) {
-      if (includeNullPrice) {
-        // Sử dụng queryBuilder để xử lý điều kiện OR với null
-        // Sẽ được xử lý bên dưới
-      } else {
-        where.price = Between(minPrice, maxPrice);
-      }
-    } else if (minPrice !== undefined) {
-      if (includeNullPrice) {
-        // Sẽ được xử lý bên dưới
-      } else {
-        where.price = Between(minPrice, 999999999);
-      }
-    } else if (maxPrice !== undefined) {
-      if (includeNullPrice) {
-        // Sẽ được xử lý bên dưới
-      } else {
-        where.price = Between(0, maxPrice);
-      }
-    }
-
-    if (isFeatured !== undefined) {
-      where.isFeatured = isFeatured;
-    }
-
-    if (isNew !== undefined) {
-      where.isNew = isNew;
-    }
-
-    if (isSale !== undefined) {
-      where.isSale = isSale;
-    }
-
-    // Build query
-    const queryBuilder = this.productRepository.createQueryBuilder('product')
+    // Create query builder
+    const queryBuilder = this.productRepository
+      .createQueryBuilder('product')
       .leftJoinAndSelect('product.translations', 'translations')
-      .where(where);
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.translations', 'variantTranslations')
+      .leftJoinAndSelect('variants.attributeValues', 'attributeValues')
+      .leftJoinAndSelect('attributeValues.attribute', 'attribute')
+      .leftJoinAndSelect('attribute.translations', 'attributeTranslations')
+      .leftJoinAndSelect('attributeValues.translations', 'attributeValueTranslations')
+      .where('product.published = :published', { published: true });
 
-    // Xử lý lọc giá với includeNullPrice
+    // Add locale condition
+    queryBuilder.andWhere('translations.locale = :locale', { locale });
+
+    // Add featured filter
+    if (isFeatured !== undefined) {
+      queryBuilder.andWhere('product.isFeatured = :isFeatured', { isFeatured });
+    }
+
+    // Add new filter
+    if (isNew !== undefined) {
+      queryBuilder.andWhere('product.isNew = :isNew', { isNew });
+    }
+
+    // Add sale filter
+    if (isSale !== undefined) {
+      queryBuilder.andWhere('product.isSale = :isSale', { isSale });
+    }
+
+    // Add price filter with includeNullPrice option
     if (includeNullPrice) {
       if (minPrice !== undefined && maxPrice !== undefined) {
         queryBuilder.andWhere('(product.price BETWEEN :minPrice AND :maxPrice OR product.price IS NULL)', {
@@ -138,6 +126,21 @@ export class ProductFrontendService {
         });
       } else if (maxPrice !== undefined) {
         queryBuilder.andWhere('(product.price <= :maxPrice OR product.price IS NULL)', {
+          maxPrice
+        });
+      }
+    } else {
+      if (minPrice !== undefined && maxPrice !== undefined) {
+        queryBuilder.andWhere('product.price BETWEEN :minPrice AND :maxPrice', {
+          minPrice,
+          maxPrice
+        });
+      } else if (minPrice !== undefined) {
+        queryBuilder.andWhere('product.price >= :minPrice', {
+          minPrice
+        });
+      } else if (maxPrice !== undefined) {
+        queryBuilder.andWhere('product.price <= :maxPrice', {
           maxPrice
         });
       }
@@ -207,7 +210,15 @@ export class ProductFrontendService {
   async findFeatured(locale: string = 'en', limit: number = 8): Promise<Product[]> {
     return this.productRepository.find({
       where: { published: true, isFeatured: true },
-      relations: ['translations'],
+      relations: [
+        'translations', 
+        'variants', 
+        'variants.translations',
+        'variants.attributeValues',
+        'variants.attributeValues.attribute',
+        'variants.attributeValues.attribute.translations',
+        'variants.attributeValues.translations'
+      ],
       take: limit,
     });
   }
@@ -215,7 +226,15 @@ export class ProductFrontendService {
   async findNew(locale: string = 'en', limit: number = 8): Promise<Product[]> {
     return this.productRepository.find({
       where: { published: true, isNew: true },
-      relations: ['translations'],
+      relations: [
+        'translations', 
+        'variants', 
+        'variants.translations',
+        'variants.attributeValues',
+        'variants.attributeValues.attribute',
+        'variants.attributeValues.attribute.translations',
+        'variants.attributeValues.translations'
+      ],
       take: limit,
       order: { createdAt: 'DESC' },
     });
@@ -224,7 +243,15 @@ export class ProductFrontendService {
   async findOnSale(locale: string = 'en', limit: number = 8): Promise<Product[]> {
     return this.productRepository.find({
       where: { published: true, isSale: true },
-      relations: ['translations'],
+      relations: [
+        'translations', 
+        'variants', 
+        'variants.translations',
+        'variants.attributeValues',
+        'variants.attributeValues.attribute',
+        'variants.attributeValues.attribute.translations',
+        'variants.attributeValues.translations'
+      ],
       take: limit,
     });
   }

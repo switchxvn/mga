@@ -3,69 +3,108 @@
   <section :class="[backgroundColor]" class="relative">
     <div :class="[currentSettings.width, currentSettings.margin]" class="px-4">
       <!-- Booking Card -->
-      <div :class="[
-        currentSettings.backgroundColor,
-        currentSettings.borderRadius,
-        currentSettings.cardShadow,
-        currentSettings.padding,
-        currentSettings.position,
-        currentSettings.zIndex
-      ]">
-        <h2 :class="[currentSettings.typography.heading, currentSettings.colors.heading]" class="mb-6 uppercase tracking-wide text-center">
-          Đặt vé tham quan
+      <div
+        :class="[
+          currentSettings.backgroundColor,
+          currentSettings.borderRadius,
+          currentSettings.cardShadow,
+          currentSettings.padding,
+          currentSettings.position,
+          currentSettings.zIndex,
+        ]"
+      >
+        <h2
+          :class="[currentSettings.typography.heading, currentSettings.colors.heading]"
+          class="mb-6 uppercase tracking-wide text-center"
+        >
+          {{ currentSettings.product?.translations[0]?.title || "Đặt vé tham quan" }}
         </h2>
 
         <!-- Booking Form -->
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Ticket Type -->
           <div class="space-y-2">
-            <label class="flex items-center gap-2" :class="currentSettings.colors.secondary">
+            <label
+              class="flex items-center gap-2"
+              :class="currentSettings.colors.secondary"
+            >
               <TicketIcon class="w-6 h-6" />
               LOẠI VÉ
             </label>
-            <div v-if="currentSettings?.tabs?.length" class="grid md:grid-cols-2 gap-4">
+            <div
+              v-if="currentSettings?.variants?.length"
+              class="grid md:grid-cols-2 gap-4"
+            >
               <button
-                v-for="tab in currentSettings.tabs"
-                :key="tab.id"
+                v-for="variant in currentSettings.variants"
+                :key="variant.id"
                 type="button"
-                @click="selectedTicket = tab.id"
+                @click="selectedVariant = variant.id"
                 :class="[
                   'p-4 rounded-lg border-2 transition-colors duration-200 text-left flex gap-4',
-                  selectedTicket === tab.id
+                  selectedVariant === variant.id
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
                 ]"
               >
                 <div class="flex-1">
-                  <div :class="currentSettings.typography.tabLabel" class="text-gray-800 dark:text-gray-200">
-                    {{ tab.label }}
+                  <div
+                    :class="currentSettings.typography.tabLabel"
+                    class="text-gray-800 dark:text-gray-200"
+                  >
+                    {{ variant.name }}
                   </div>
-                  <div :class="[currentSettings.typography.description, currentSettings.colors.secondary]" class="mt-1">
-                    {{ tab.description }}
+                  <div
+                    :class="[
+                      currentSettings.typography.description,
+                      currentSettings.colors.secondary,
+                    ]"
+                    class="mt-1"
+                  >
+                    {{ variant.description }}
                   </div>
                   <div class="flex items-center gap-2 mt-2">
-                    <span :class="[currentSettings.typography.price, currentSettings.colors.primary]">
-                      {{ formatPrice(tab.price) }}
+                    <span
+                      :class="[
+                        currentSettings.typography.price,
+                        currentSettings.colors.primary,
+                      ]"
+                    >
+                      {{ formatPrice(variant.price) }}
                     </span>
                   </div>
                 </div>
                 <div class="w-24 h-24 rounded-lg overflow-hidden">
-                  <img 
-                    :src="tab.image" 
-                    :alt="tab.label"
+                  <img
+                    :src="variant.image || currentSettings.product?.thumbnail"
+                    :alt="variant.name"
                     class="w-full h-full object-cover"
                   />
                 </div>
               </button>
             </div>
-            <div v-else class="text-center py-4" :class="currentSettings.colors.secondary">
+            <div
+              v-else-if="isLoading"
+              class="text-center py-4"
+              :class="currentSettings.colors.secondary"
+            >
               Đang tải thông tin vé...
+            </div>
+            <div
+              v-else
+              class="text-center py-4"
+              :class="currentSettings.colors.secondary"
+            >
+              Không có vé nào được tìm thấy
             </div>
           </div>
 
           <!-- Date Picker -->
           <div class="space-y-2">
-            <label :class="currentSettings.colors.secondary" class="flex items-center gap-2">
+            <label
+              :class="currentSettings.colors.secondary"
+              class="flex items-center gap-2"
+            >
               <CalendarIcon class="w-6 h-6" />
               {{ currentSettings.form.datePickerLabel }}
             </label>
@@ -88,69 +127,45 @@
           </div>
 
           <!-- Number of Guests -->
-          <div class="space-y-4">
-            <label :class="currentSettings.colors.secondary" class="flex items-center gap-2">
+          <div class="space-y-2">
+            <label
+              :class="currentSettings.colors.secondary"
+              class="flex items-center gap-2"
+            >
               <UsersIcon class="w-6 h-6" />
               {{ currentSettings.form.guestsLabel }}
             </label>
-            
-            <!-- Adult Count -->
-            <div class="flex items-center gap-4">
-              <div class="w-32">
-                <div :class="currentSettings.colors.secondary" class="font-medium mb-1">Người lớn</div>
-                <div :class="currentSettings.colors.secondary" class="text-sm">Từ 13 tuổi</div>
-              </div>
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="adultCount <= currentSettings.form.minGuests"
-                  @click="adultCount--"
-                >
-                  <MinusIcon class="w-5 h-5" />
-                </button>
-                <span class="w-12 text-center text-lg font-medium" :class="currentSettings.colors.heading">{{ adultCount }}</span>
-                <button
-                  type="button"
-                  class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="adultCount >= currentSettings.form.maxGuests"
-                  @click="adultCount++"
-                >
-                  <PlusIcon class="w-5 h-5" />
-                </button>
-              </div>
-            </div>
 
-            <!-- Child Count -->
-            <div class="flex items-center gap-4">
-              <div class="w-32">
-                <div :class="currentSettings.colors.secondary" class="font-medium mb-1">Trẻ em</div>
-                <div :class="currentSettings.colors.secondary" class="text-sm">4-12 tuổi</div>
-              </div>
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="childCount <= 0"
-                  @click="childCount--"
-                >
-                  <MinusIcon class="w-5 h-5" />
-                </button>
-                <span class="w-12 text-center text-lg font-medium" :class="currentSettings.colors.heading">{{ childCount }}</span>
-                <button
-                  type="button"
-                  class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="childCount >= currentSettings.form.maxGuests"
-                  @click="childCount++"
-                >
-                  <PlusIcon class="w-5 h-5" />
-                </button>
-              </div>
+            <!-- Quantity Selection -->
+            <div class="flex items-center">
+              <button
+                type="button"
+                class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="adultCount <= currentSettings.form.minGuests"
+                @click="adultCount--"
+              >
+                <MinusIcon class="w-5 h-5" />
+              </button>
+              <span
+                class="w-20 text-center text-lg font-medium"
+                :class="currentSettings.colors.heading"
+                >{{ adultCount }}</span
+              >
+              <button
+                type="button"
+                class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="adultCount >= currentSettings.form.maxGuests"
+                @click="adultCount++"
+              >
+                <PlusIcon class="w-5 h-5" />
+              </button>
             </div>
           </div>
 
           <!-- Total and Submit -->
-          <div class="flex items-center justify-between pt-4 border-t dark:border-gray-700">
+          <div
+            class="flex items-center justify-between pt-4 border-t dark:border-gray-700"
+          >
             <div :class="currentSettings.colors.secondary">
               <div class="text-sm">Tổng tiền</div>
               <div class="text-2xl font-semibold" :class="currentSettings.colors.primary">
@@ -164,7 +179,7 @@
               :class="[
                 currentSettings.form.buttonColor,
                 currentSettings.form.buttonTextColor,
-                'px-8 py-3 rounded-lg text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed'
+                'px-8 py-3 rounded-lg text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed',
               ]"
             >
               {{ currentSettings.form.buttonText }}
@@ -176,207 +191,172 @@
   </section>
 </template>
 
-<script lang="ts">
-export interface Tab {
-  id: string;
-  label: string;
-  price: number;
-  description: string;
-  image: string;
-}
-
-export interface Settings {
-  form: {
-    maxGuests: number;
-    minGuests: number;
-    buttonText: string;
-    buttonColor: string;
-    guestsLabel: string;
-    buttonTextColor: string;
-    datePickerLabel: string;
-  };
-  tabs: Tab[];
-  width: string;
-  colors: {
-    heading: string;
-    primary: string;
-    secondary: string;
-  };
-  layout: string;
-  margin: string;
-  zIndex: string;
-  padding: string;
-  position: string;
-  cardShadow: string;
-  typography: {
-    price: string;
-    heading: string;
-    tabLabel: string;
-    description: string;
-  };
-  borderRadius: string;
-  backgroundColor: string;
-  cardBackgroundColor: string;
-}
-
-interface APIResponse {
-  id: number;
-  themeId: number;
-  type: string;
-  componentName: string;
-  title: string;
-  order: number;
-  pageType: string;
-  settings: Settings;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export const defaultSettings: Settings = {
-  form: {
-    maxGuests: 10,
-    minGuests: 1,
-    buttonText: "Đặt vé ngay",
-    buttonColor: "bg-primary-600 hover:bg-primary-700",
-    guestsLabel: "Số khách",
-    buttonTextColor: "text-white",
-    datePickerLabel: "Ngày tham quan"
-  },
-  tabs: [
-    {
-      id: "cable_car",
-      label: "Vé cáp treo khứ hồi",
-      price: 500000,
-      description: "Vé cáp treo khứ hồi dành cho người lớn",
-      image: "https://s3cablecar.sgp1.digitaloceanspaces.com/tickets/cable_car.webp"
-    },
-    {
-      id: "cable_car_buffet",
-      label: "Vé cáp treo + Buffet",
-      price: 800000,
-      description: "Vé cáp treo khứ hồi kèm buffet trưa",
-      image: "https://s3cablecar.sgp1.digitaloceanspaces.com/tickets/buffet.jpg"
-    }
-  ],
-  width: "max-w-3xl",
-  colors: {
-    heading: "text-gray-900 dark:text-white",
-    primary: "text-primary-600 dark:text-primary-400",
-    secondary: "text-gray-600 dark:text-gray-400"
-  },
-  layout: "floating-card",
-  margin: "mx-auto",
-  zIndex: "z-10",
-  padding: "p-6",
-  position: "relative -mt-20",
-  cardShadow: "shadow-xl",
-  typography: {
-    price: "text-lg font-semibold",
-    heading: "text-2xl font-bold",
-    tabLabel: "text-base font-medium",
-    description: "text-sm"
-  },
-  borderRadius: "rounded-xl",
-  backgroundColor: "bg-white dark:bg-gray-800",
-  cardBackgroundColor: "bg-white dark:bg-gray-900"
-};
-</script>
-
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { 
+import { ref, computed, onMounted } from "vue";
+import {
   Ticket as TicketIcon,
   Calendar as CalendarIcon,
   Users as UsersIcon,
   Plus as PlusIcon,
   Minus as MinusIcon,
-} from 'lucide-vue-next';
-import { DatePicker } from 'v-calendar';
-import 'v-calendar/style.css';
+} from "lucide-vue-next";
+import { DatePicker } from "v-calendar";
+import "v-calendar/style.css";
+import { useTrpc } from "../../../composables/useTrpc";
+import { useLocalization } from "../../../composables/useLocalization";
+import { useProduct } from "@/composables/useProduct";
+import type { ProductVariant } from "@/composables/useProduct";
+import type { Settings } from "@/types/ticket";
+import { defaultSettings } from "@/types/ticket";
+import { useI18n } from "vue-i18n";
+import { createTrpcClient } from "@/utils/trpc";
+import type { Product, ProductTranslation } from '@ew/shared';
+import { useCreateBooking } from '@/composables/useCreateBooking';
 
-const props = withDefaults(defineProps<{
-  backgroundColor?: string;
-  settings?: Settings;
-}>(), {
-  backgroundColor: 'bg-gray-100 dark:bg-gray-900',
-  settings: () => defaultSettings
-});
+const props = withDefaults(
+  defineProps<{
+    backgroundColor?: string;
+    settings?: Settings;
+  }>(),
+  {
+    backgroundColor: "bg-gray-100 dark:bg-gray-900",
+    settings: () => defaultSettings,
+  }
+);
 
-const selectedTicket = ref('');
+const { locale } = useLocalization();
+const trpcClient = createTrpcClient(process.env.NUXT_PUBLIC_API_URL || '');
+
+const selectedVariant = ref<number | null>(null);
 const selectedDate = ref<Date | null>(null);
 const adultCount = ref(1);
-const childCount = ref(0);
 const currentSettings = ref<Settings>(props.settings);
+const isLoading = ref(false);
+const variants = ref<ProductVariant[]>([]);
+const attributes = ref<ProductAttribute[]>([]);
 
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
   }).format(price);
 };
 
 const calculateTotal = computed(() => {
-  if (!currentSettings.value?.tabs?.length) return formatPrice(0);
-  
-  const ticket = currentSettings.value.tabs.find(t => t.id === selectedTicket.value);
-  if (!ticket) return formatPrice(0);
-  
-  const total = ticket.price * (adultCount.value + childCount.value);
+  const variant = currentSettings.value.variants.find(
+    (v) => v.id === selectedVariant.value
+  );
+  if (!variant || variant.price === null) return formatPrice(0);
+
+  const total = variant.price * adultCount.value;
   return formatPrice(total);
 });
 
 const isFormValid = computed(() => {
-  if (!currentSettings.value?.tabs?.length) return false;
-  
+  if (!currentSettings.value?.variants?.length) return false;
+
   return (
-    selectedTicket.value && 
-    selectedDate.value && 
-    adultCount.value >= currentSettings.value.form.minGuests && 
-    (adultCount.value + childCount.value) <= currentSettings.value.form.maxGuests
+    selectedVariant.value !== null &&
+    selectedDate.value &&
+    adultCount.value >= currentSettings.value.form.minGuests &&
+    adultCount.value <= currentSettings.value.form.maxGuests
   );
 });
 
-const handleSubmit = () => {
-  if (!isFormValid.value || !currentSettings.value?.tabs?.length) return;
-  
-  const ticket = currentSettings.value.tabs.find(t => t.id === selectedTicket.value);
-  console.log('Booking details:', {
-    ticketType: ticket?.label,
-    price: ticket?.price,
+const handleSubmit = async () => {
+  const variant = currentSettings.value.variants.find(
+    (v) => v.id === selectedVariant.value
+  );
+  if (!variant || variant.price === null) {
+    console.error("Invalid variant or price");
+    return;
+  }
+
+  const bookingData = {
+    productId: Number(currentSettings.value.product?.id) || 0,
+    variantId: Number(selectedVariant.value) || 0,
     date: selectedDate.value,
-    adults: adultCount.value,
-    children: childCount.value,
-    totalAmount: ticket ? (
-      ticket.price * (adultCount.value + childCount.value)
-    ) : 0
-  });
+    adultCount: adultCount.value,
+    total: Number(variant.price * adultCount.value)
+  };
+
+  try {
+    const response = await createBooking(bookingData);
+    // Handle successful booking
+  } catch (error) {
+    console.error("Error creating booking:", error);
+  }
 };
 
 const fetchSettings = async () => {
   try {
-    const response = await fetch('/api/sections/home_page/ticket_booking');
-    if (!response.ok) throw new Error('Failed to fetch settings');
-    
-    const data: APIResponse = await response.json();
-    if (data?.settings) {
-      currentSettings.value = data.settings;
+    const theme = await trpcClient.theme.getActiveTheme.query();
+    const ticketSection = theme.sections?.find(
+      (section) => section.type === "ticket_booking"
+    );
+    if (ticketSection?.settings) {
+      currentSettings.value = {
+        ...currentSettings.value,
+        ...ticketSection.settings,
+      };
     }
   } catch (error) {
-    console.error('Error fetching settings:', error);
-    // Keep using the default settings
+    console.error("Error fetching settings:", error);
+  }
+};
+
+const fetchTicketProduct = async () => {
+  if (!currentSettings.value.product?.id) return;
+
+  try {
+    const product = await trpcClient.product.getAll.query({
+      search: "TICKET",
+      limit: 1,
+      locale: locale.value,
+    });
+
+    if (product) {
+      currentSettings.value.product = {
+        ...product,
+        translations: product.items[0].translations.map((t: ProductTranslation) => ({
+          ...t,
+          content: t.content || '',
+          shortDescription: t.shortDescription || '',
+        }))
+      };
+      variants.value = product.items[0].variants || [];
+      attributes.value = product.items[0].variantAttributes?.attributes || [];
+    }
+  } catch (error) {
+    console.error('Error fetching product:', error);
   }
 };
 
 onMounted(() => {
   fetchSettings();
+  fetchTicketProduct();
 });
 
 // Date picker configuration
 const masks = {
-  input: 'DD/MM/YYYY',
-  data: 'YYYY-MM-DD'
+  input: "DD/MM/YYYY",
+  data: "YYYY-MM-DD",
 };
+
+interface BookingData {
+  productId?: string;
+  variantId: number;
+  date: Date | null;
+  adultCount: number;
+  total: number;
+}
+
+interface BookingResponse {
+  id: number;
+  // Add other booking response fields as needed
+}
+
+const { mutate: createBooking } = useCreateBooking();
 </script>
 
 <style>
@@ -387,4 +367,4 @@ const masks = {
   --vc-font-semibold: 500;
   --vc-text-lg: 1.125rem;
 }
-</style> 
+</style>

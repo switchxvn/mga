@@ -19,6 +19,7 @@ export interface ProductFilter {
   page: number;
   limit?: number;
   locale?: string;
+  type?: string;
 }
 
 export interface PriceRange {
@@ -57,11 +58,15 @@ export interface SelectedAttributes {
 // Mở rộng interface ProductVariant
 export interface ProductVariant {
   id: number;
+  name: string;
+  description: string;
   sku: string;
   price: number | null;
   comparePrice: number | null;
   formattedPrice: string;
   stock: number;
+  thumbnail: string;
+  image: string;
   attributeValues: {
     [attributeId: number]: number; // attributeId -> valueId
   };
@@ -94,7 +99,8 @@ export function useProduct(initialFilters?: ProductFilter) {
     sortBy: initialFilters?.sortBy || 'newest',
     page: initialFilters?.page || 1,
     limit: initialFilters?.limit || 12,
-    locale: initialFilters?.locale || locale.value
+    locale: initialFilters?.locale || locale.value,
+    type: initialFilters?.type
   });
 
   // Products state
@@ -212,7 +218,8 @@ export function useProduct(initialFilters?: ProductFilter) {
         includeNullPrice: filters.value.includeNullPrice,
         sortBy: filters.value.sortBy,
         page: filters.value.page,
-        limit: filters.value.limit
+        limit: filters.value.limit,
+        type: filters.value.type
       };
 
       const result = await trpc.product.getAll.query(filterParams);
@@ -285,7 +292,8 @@ export function useProduct(initialFilters?: ProductFilter) {
       sortBy: 'newest',
       page: 1,
       limit: 12,
-      locale: locale.value
+      locale: locale.value,
+      type: undefined
     };
   };
 
