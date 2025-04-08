@@ -2,20 +2,15 @@
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useColorMode } from '@vueuse/core';
 import { useCssColorValue } from '~/composables/useColorUtils';
-import { useTrpc } from '~/composables/useTrpc';
 
-interface HeroVideo {
+interface Video {
   id: number;
   title: string;
   description?: string;
   videoUrl: string;
   thumbnailUrl?: string;
-  link?: string;
   isActive: boolean;
   order: number;
-  themeId?: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 interface VideoIntroConfig {
@@ -57,6 +52,7 @@ interface VideoIntroConfig {
     showArrows: boolean;
     maxVideos: number;
   };
+  videos: Video[];
 }
 
 const props = defineProps<{
@@ -66,24 +62,24 @@ const props = defineProps<{
 const colorMode = useColorMode();
 const isDark = computed(() => colorMode.value === 'dark');
 const { processColorValue } = useCssColorValue();
-const trpc = useTrpc();
 
 const currentSlideIndex = ref(0);
-const videos = ref<HeroVideo[]>([]);
-const isLoading = ref(true);
+const videos = ref<Video[]>([]);
+const isLoading = ref(false);
 const error = ref<Error | null>(null);
 const contentRef = ref<HTMLElement | null>(null);
 const showFade = ref(false);
 
-const fetchVideos = async () => {
+const fetchVideos = () => {
   try {
     isLoading.value = true;
-    const result = await trpc.hero.getHeroVideos.query({
-      themeId: props.config?.themeId
-    });
-    videos.value = result as HeroVideo[];
+    if (props.config?.videos) {
+      videos.value = props.config.videos.filter(video => video.isActive)
+        .sort((a, b) => a.order - b.order)
+        .slice(0, props.config.videoSettings.maxVideos);
+    }
   } catch (err) {
-    console.error('Error fetching videos:', err);
+    console.error('Error processing videos:', err);
     error.value = err as Error;
   } finally {
     isLoading.value = false;
@@ -102,25 +98,10 @@ const checkScroll = () => {
 
 onMounted(() => {
   fetchVideos();
-  if (props.config?.videoSettings.autoplay) {
-    startAutoplay();
-  }
   nextTick(() => {
     checkScroll();
   });
 });
-
-const startAutoplay = () => {
-  if (!props.config?.videoSettings.autoplay) return;
-  
-  setInterval(() => {
-    if (currentSlideIndex.value < videos.value.length - 1) {
-      currentSlideIndex.value++;
-    } else {
-      currentSlideIndex.value = 0;
-    }
-  }, props.config.videoSettings.interval);
-};
 
 const sectionClasses = computed(() => {
   const baseClasses = ['video-intro-with-text', 'py-16', 'transition-colors', 'duration-300'];
@@ -234,7 +215,7 @@ const handleImageError = (event: Event) => {
         <!-- Text Column -->
         <div 
           :style="{ 
-            width: '60%',
+            width: config.textColumnWidth || '60%',
             ...currentBorderStyles
           }" 
           class="prose dark:prose-invert max-w-none flex-shrink-0 bg-white dark:bg-gray-800 shadow-lg flex flex-col rounded-2xl relative max-h-[400px]"
@@ -266,7 +247,7 @@ const handleImageError = (event: Event) => {
 
         <!-- Video Column -->
         <div 
-          :style="{ width: '40%' }" 
+          :style="{ width: config.videoColumnWidth || '40%' }" 
           class="relative flex-shrink-0"
         >
           <div v-if="isLoading" class="flex justify-center items-center h-[400px] rounded-2xl bg-gray-100 dark:bg-gray-800">
@@ -275,6 +256,10 @@ const handleImageError = (event: Event) => {
 
           <div v-else-if="error" class="text-red-500 text-center p-8 h-[400px] flex items-center justify-center rounded-2xl bg-red-50 dark:bg-red-900/20">
             {{ error.message }}
+          </div>
+
+          <div v-else-if="videos.length === 0" class="h-[400px] rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <p class="text-gray-500 dark:text-gray-400">Không có video nào</p>
           </div>
 
           <div v-else class="h-[400px] rounded-2xl overflow-hidden">

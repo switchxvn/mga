@@ -59,6 +59,13 @@ interface NavbarProps {
         hoverColor: string;
         isTranslated: boolean;
       }[];
+      actions?: {
+        label: string;
+        href: string;
+        textColor: string;
+        hoverColor: string;
+        isTranslated: boolean;
+      }[];
     };
 
     // Update button settings
@@ -298,7 +305,7 @@ watch(locale, () => {
       >
         <div class="container mx-auto px-4">
           <div class="flex items-center h-12">
-            <!-- Current Time -->
+            <!-- Current Time and Actions -->
             <div class="w-[40%] flex items-center gap-2 justify-start">
               <Icon 
                 name="Clock" 
@@ -307,6 +314,29 @@ watch(locale, () => {
               <span class="text-sm font-medium text-white">
                 {{ formattedTime }}
               </span>
+              <template v-if="props.settings?.topMenu?.actions?.length">
+                <span class="text-white mx-2 font-bold">|</span>
+                <div class="flex items-center">
+                  <template v-for="(action, index) in props.settings.topMenu.actions" :key="action.label">
+                    <NuxtLink
+                      :to="action.href"
+                      class="text-[15px] font-bold transition-colors duration-300 hover:opacity-90"
+                      :style="{
+                        color: action.textColor,
+                        '&:hover': {
+                          color: action.hoverColor
+                        }
+                      }"
+                    >
+                      {{ action.label }}
+                    </NuxtLink>
+                    <span 
+                      v-if="index < props.settings.topMenu.actions.length - 1" 
+                      class="text-white mx-2 font-bold"
+                    >|</span>
+                  </template>
+                </div>
+              </template>
             </div>
             
             <!-- Center Hotline -->
