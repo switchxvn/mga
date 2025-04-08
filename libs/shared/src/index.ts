@@ -20,3 +20,4 @@ export * from './types/page-type';
 export * from './types/category.type';
 export * from './types/contact'; 
 export * from './lib/utils/price';
+export * from './lib/types/product.type';

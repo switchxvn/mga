@@ -6,6 +6,7 @@ import { useRoute, useRouter } from "vue-router";
 import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
+import { Ticket, Calendar, MapPin } from 'lucide-vue-next';
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -91,6 +92,11 @@ const {
   fetchPriceRange,
   fetchProducts
 } = useProduct(initialFilters);
+
+// Filter products by type
+const ticketProducts = computed(() => products.value.filter(product => product.type === 'TICKET'));
+const regularProducts = computed(() => products.value.filter(product => product.type !== 'TICKET'));
+const hasTickets = computed(() => ticketProducts.value.length > 0);
 
 // Sort options as computed property to ensure translations are updated
 const sortOptions = computed(() => [
@@ -261,13 +267,104 @@ watch(locale, async () => {
           </div>
 
           <template v-else>
-            <!-- Products Grid -->
-            <ProductGrid
-              :products="products"
-              :loading="false"
-              :locale="locale"
-              :columns="3"
-            />
+            <!-- Ticket Products Section (when available) -->
+            <div v-if="hasTickets" class="mb-12">
+              <div class="mb-6 border-l-4 border-purple-500 pl-4">
+                <div class="flex items-center gap-2">
+                  <Ticket class="h-5 w-5 text-purple-500" />
+                  <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                    {{ t('products.availableTickets') || 'Vé Sự Kiện Có Sẵn' }}
+                  </h2>
+                </div>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  {{ t('products.ticketsDescription') || 'Đặt vé sự kiện, hội thảo và tour du lịch' }}
+                </p>
+              </div>
+              
+              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                <div 
+                  v-for="ticket in ticketProducts" 
+                  :key="ticket.id" 
+                  class="ticket-card flex flex-col overflow-hidden rounded-lg border-2 border-purple-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-purple-900 dark:bg-gray-800"
+                >
+                  <NuxtLink :to="`/products/${ticket.translations?.[0]?.slug || ticket.id}`" class="block relative">
+                    <!-- Ticket badge -->
+                    <div class="absolute left-2 top-2 z-10">
+                      <UBadge color="purple" variant="solid" class="text-xs">
+                        <Ticket class="w-3 h-3 mr-1" />
+                        {{ t("products.ticketType") || "Vé" }}
+                      </UBadge>
+                    </div>
+                    
+                    <!-- Image -->
+                    <img
+                      :src="ticket.thumbnail || '/images/default-image.jpg'"
+                      :alt="ticket.translations?.[0]?.title || ''"
+                      class="h-48 w-full object-cover transition-transform duration-300 hover:scale-105"
+                      @error="($event.target as HTMLImageElement).src = '/images/default-image.jpg'"
+                    />
+                  </NuxtLink>
+                  
+                  <div class="flex flex-1 flex-col p-4">
+                    <NuxtLink :to="`/products/${ticket.translations?.[0]?.slug || ticket.id}`" class="block">
+                      <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">
+                        {{ ticket.translations?.[0]?.title || '' }}
+                      </h3>
+                    </NuxtLink>
+                    
+                    <!-- Ticket Details -->
+                    <div class="mb-3 space-y-1">
+                      <div v-if="ticket.specifications?.find(spec => spec.name === 'location')?.value" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <MapPin class="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span class="line-clamp-1">{{ ticket.specifications.find(spec => spec.name === 'location')?.value }}</span>
+                      </div>
+                      <div v-if="ticket.specifications?.find(spec => spec.name === 'date')?.value" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <Calendar class="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span>{{ ticket.specifications.find(spec => spec.name === 'date')?.value }}</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Price and Button -->
+                    <div class="mt-auto flex items-center justify-between">
+                      <div>
+                        <div v-if="ticket.price === null" class="text-lg font-semibold text-primary-600 dark:text-primary-400">
+                          {{ t('products.contactForPrice') || 'Liên hệ' }}
+                        </div>
+                        <div v-else class="text-lg font-semibold text-primary-600 dark:text-primary-400">
+                          {{ ticket.formattedPrice || formatPrice(ticket.price) }}
+                        </div>
+                      </div>
+                      
+                      <UButton 
+                        color="primary"
+                        variant="solid"
+                        size="sm"
+                        class="px-3 py-1"
+                        :to="`/products/${ticket.translations?.[0]?.slug || ticket.id}`"
+                      >
+                        {{ t('products.bookNow') || 'Đặt ngay' }}
+                      </UButton>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Regular Products Grid -->
+            <div v-if="regularProducts.length > 0">
+              <div v-if="hasTickets" class="mb-6 border-l-4 border-gray-500 pl-4">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                  {{ t('products.otherProducts') || 'Sản Phẩm Khác' }}
+                </h2>
+              </div>
+              
+              <ProductGrid
+                :products="regularProducts"
+                :loading="false"
+                :locale="locale"
+                :columns="3"
+              />
+            </div>
 
             <!-- Pagination -->
             <div v-if="totalProducts > 0" class="mt-8">
@@ -281,7 +378,7 @@ watch(locale, async () => {
             </div>
             
             <!-- No Results Message -->
-            <div v-else class="mt-8 text-center">
+            <div v-if="totalProducts === 0" class="mt-8 text-center">
               <div class="inline-flex items-center justify-center rounded-full bg-gray-100 p-6 dark:bg-gray-800">
                 <i class="i-heroicons-inbox-20-solid h-12 w-12 text-gray-400 dark:text-gray-500" />
               </div>
