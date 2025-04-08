@@ -1,5 +1,5 @@
 <template>
-  <section :class="[settings.colors.background, settings.padding.top, settings.padding.bottom]">
+  <section :class="[settings.colors.background, settings.padding.top, settings.padding.bottom]" class="relative">
     <div class="container mx-auto px-4">
       <!-- Section Header -->
       <div v-if="settings.showTitle" class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
@@ -24,100 +24,111 @@
       </div>
 
       <!-- Gallery Container -->
-      <div class="gallery-container" ref="galleryContainer">
-        <div class="gallery-wrapper" ref="galleryWrapper">
-          <div class="gallery-grid">
-            <!-- Row 1 -->
-            <div class="gallery-row">
-              <figure 
-                v-for="(item, index) in getRowItems(0)"
-                :key="item.id"
-                class="gallery-item"
-                :style="{ width: item.width }"
-              >
-                <a
-                  :href="item.image"
-                  @click.prevent="handleGalleryClick($event, getItemIndex(0, index))"
-                  target="_blank"
-                  rel="noreferrer"
+      <div class="gallery-outer-container relative">
+        <!-- Navigation Buttons -->
+        <button 
+          @click="handleScrollLeft" 
+          class="nav-button left-button"
+          :class="{ 'opacity-0': scrollPosition <= 0 }"
+        >
+          <ChevronLeft class="h-6 w-6" />
+          <span class="sr-only">Previous images</span>
+        </button>
+
+        <button 
+          @click="handleScrollRight" 
+          class="nav-button right-button"
+          :class="{ 'opacity-0': scrollPosition >= maxScroll }"
+        >
+          <ChevronRight class="h-6 w-6" />
+          <span class="sr-only">Next images</span>
+        </button>
+
+        <!-- Gallery Content -->
+        <div 
+          class="gallery-container cursor-grab active:cursor-grabbing" 
+          ref="galleryContainer"
+          @mousedown="startDragging"
+          @mouseleave="stopDragging"
+          @mouseup="stopDragging"
+          @mousemove="onDrag"
+        >
+          <div class="gallery-wrapper" ref="galleryWrapper">
+            <div class="gallery-grid">
+              <!-- Row 1 -->
+              <div class="gallery-row">
+                <figure 
+                  v-for="(item, index) in getRowItems(0)"
+                  :key="item.id"
+                  class="gallery-item"
+                  :style="{ width: item.width }"
                 >
-                  <NuxtImg
-                    :src="item.image"
-                    :alt="item.translations?.[0]?.title || ''"
-                    class="w-full h-full object-cover rounded-lg"
-                    loading="lazy"
-                  />
-                </a>
-              </figure>
-            </div>
-            
-            <!-- Row 2 -->
-            <div class="gallery-row">
-              <figure 
-                v-for="(item, index) in getRowItems(1)"
-                :key="item.id"
-                class="gallery-item"
-                :style="{ width: item.width }"
-              >
-                <a
-                  :href="item.image"
-                  @click.prevent="handleGalleryClick($event, getItemIndex(1, index))"
-                  target="_blank"
-                  rel="noreferrer"
+                  <a
+                    :href="item.image"
+                    @click.prevent="handleGalleryClick($event, getItemIndex(0, index))"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <NuxtImg
+                      :src="item.image"
+                      :alt="item.translations?.[0]?.title || ''"
+                      class="w-full h-full object-cover rounded-lg"
+                      loading="lazy"
+                    />
+                  </a>
+                </figure>
+              </div>
+              
+              <!-- Row 2 -->
+              <div class="gallery-row">
+                <figure 
+                  v-for="(item, index) in getRowItems(1)"
+                  :key="item.id"
+                  class="gallery-item"
+                  :style="{ width: item.width }"
                 >
-                  <NuxtImg
-                    :src="item.image"
-                    :alt="item.translations?.[0]?.title || ''"
-                    class="w-full h-full object-cover rounded-lg"
-                    loading="lazy"
-                  />
-                </a>
-              </figure>
-            </div>
-            
-            <!-- Row 3 -->
-            <div class="gallery-row">
-              <figure 
-                v-for="(item, index) in getRowItems(2)"
-                :key="item.id"
-                class="gallery-item"
-                :style="{ width: item.width }"
-              >
-                <a
-                  :href="item.image"
-                  @click.prevent="handleGalleryClick($event, getItemIndex(2, index))"
-                  target="_blank"
-                  rel="noreferrer"
+                  <a
+                    :href="item.image"
+                    @click.prevent="handleGalleryClick($event, getItemIndex(1, index))"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <NuxtImg
+                      :src="item.image"
+                      :alt="item.translations?.[0]?.title || ''"
+                      class="w-full h-full object-cover rounded-lg"
+                      loading="lazy"
+                    />
+                  </a>
+                </figure>
+              </div>
+              
+              <!-- Row 3 -->
+              <div class="gallery-row">
+                <figure 
+                  v-for="(item, index) in getRowItems(2)"
+                  :key="item.id"
+                  class="gallery-item"
+                  :style="{ width: item.width }"
                 >
-                  <NuxtImg
-                    :src="item.image"
-                    :alt="item.translations?.[0]?.title || ''"
-                    class="w-full h-full object-cover rounded-lg"
-                    loading="lazy"
-                  />
-                </a>
-              </figure>
+                  <a
+                    :href="item.image"
+                    @click.prevent="handleGalleryClick($event, getItemIndex(2, index))"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <NuxtImg
+                      :src="item.image"
+                      :alt="item.translations?.[0]?.title || ''"
+                      class="w-full h-full object-cover rounded-lg"
+                      loading="lazy"
+                    />
+                  </a>
+                </figure>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Navigation Buttons -->
-      <div class="flex justify-between items-center mt-4">
-        <button 
-          @click="scrollLeft" 
-          class="nav-button"
-          :disabled="scrollPosition <= 0"
-        >
-          <i class="fas fa-chevron-left"></i>
-        </button>
-        <button 
-          @click="scrollRight" 
-          class="nav-button"
-          :disabled="scrollPosition >= maxScroll"
-        >
-          <i class="fas fa-chevron-right"></i>
-        </button>
       </div>
 
       <!-- Load More Button -->
@@ -176,6 +187,7 @@ import { useTrpc } from '~/composables/useTrpc';
 import Masonry from 'masonry-layout';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
 interface GalleryTranslation {
   id: number;
@@ -266,6 +278,11 @@ const masonryContainer = ref<HTMLElement | null>(null);
 const scrollPosition = ref(0);
 const maxScroll = ref(0);
 
+// Add drag scroll functionality
+const isDragging = ref(false);
+const startX = ref(0);
+const dragScrollLeft = ref(0);
+
 // Get size class for items with fixed heights
 const getItemClass = (index: number) => {
   // Pattern repeats every 6 images
@@ -354,19 +371,81 @@ const template = `
 </figure>
 `;
 
-// Scroll methods
-const scrollLeft = () => {
-  if (galleryWrapper.value) {
-    scrollPosition.value = Math.max(0, scrollPosition.value - 300);
-    galleryWrapper.value.style.transform = `translateX(-${scrollPosition.value}px)`;
+// Helper function to get fixed width based on index
+const getItemWidth = (index: number) => {
+  // Pattern repeats every 6 images for consistent layout
+  const pattern = index % 6;
+  
+  switch (pattern) {
+    case 0: // Large landscape
+      return '500px';
+    case 1: // Portrait
+      return '300px';
+    case 2: // Square
+      return '300px';
+    case 3: // Wide landscape
+      return '600px';
+    case 4: // Small square
+      return '400px';
+    case 5: // Medium landscape
+      return '500px';
+    default:
+      return '400px';
   }
 };
 
-const scrollRight = () => {
-  if (galleryWrapper.value) {
-    scrollPosition.value = Math.min(maxScroll.value, scrollPosition.value + 300);
-    galleryWrapper.value.style.transform = `translateX(-${scrollPosition.value}px)`;
+// Scroll methods
+const handleScrollLeft = () => {
+  if (galleryContainer.value) {
+    // Scroll by viewport width instead of fixed pixels
+    const scrollAmount = galleryContainer.value.clientWidth;
+    const newPosition = Math.max(0, scrollPosition.value - scrollAmount);
+    galleryContainer.value.scrollTo({
+      left: newPosition,
+      behavior: 'smooth'
+    });
+    scrollPosition.value = newPosition;
   }
+};
+
+const handleScrollRight = () => {
+  if (galleryContainer.value) {
+    // Scroll by viewport width instead of fixed pixels
+    const scrollAmount = galleryContainer.value.clientWidth;
+    const newPosition = Math.min(maxScroll.value, scrollPosition.value + scrollAmount);
+    galleryContainer.value.scrollTo({
+      left: newPosition,
+      behavior: 'smooth'
+    });
+    scrollPosition.value = newPosition;
+  }
+};
+
+// Add drag scroll functionality
+const startDragging = (e: MouseEvent) => {
+  if (!galleryContainer.value) return;
+  isDragging.value = true;
+  startX.value = e.pageX - galleryContainer.value.offsetLeft;
+  dragScrollLeft.value = galleryContainer.value.scrollLeft;
+};
+
+const stopDragging = () => {
+  isDragging.value = false;
+};
+
+const onDrag = (e: MouseEvent) => {
+  if (!isDragging.value || !galleryContainer.value) return;
+  e.preventDefault();
+  const x = e.pageX - galleryContainer.value.offsetLeft;
+  const walk = (x - startX.value) * 2;
+  galleryContainer.value.scrollLeft = dragScrollLeft.value - walk;
+  scrollPosition.value = galleryContainer.value.scrollLeft;
+};
+
+// Update scroll position on scroll
+const onScroll = () => {
+  if (!galleryContainer.value) return;
+  scrollPosition.value = galleryContainer.value.scrollLeft;
 };
 
 // Update max scroll value
@@ -410,19 +489,33 @@ const fetchGalleries = async () => {
 };
 
 const loadMore = async () => {
-  if (isLoading.value || !hasMoreItems.value) return;
-  currentPage.value++;
-  await fetchGalleries();
+  // This function is now deprecated as we show all images in the horizontal scroll
+  return;
 };
 
 // Lifecycle hooks
 onMounted(() => {
   fetchGalleries();
   window.addEventListener('resize', updateMaxScroll);
+  
+  if (galleryContainer.value) {
+    galleryContainer.value.addEventListener('mousedown', startDragging);
+    galleryContainer.value.addEventListener('mouseleave', stopDragging);
+    galleryContainer.value.addEventListener('mouseup', stopDragging);
+    galleryContainer.value.addEventListener('mousemove', onDrag);
+    galleryContainer.value.addEventListener('scroll', onScroll);
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateMaxScroll);
+  if (galleryContainer.value) {
+    galleryContainer.value.removeEventListener('mousedown', startDragging);
+    galleryContainer.value.removeEventListener('mouseleave', stopDragging);
+    galleryContainer.value.removeEventListener('mouseup', stopDragging);
+    galleryContainer.value.removeEventListener('mousemove', onDrag);
+    galleryContainer.value.removeEventListener('scroll', onScroll);
+  }
   if (masonryInstance) {
     masonryInstance.destroy();
   }
@@ -435,22 +528,22 @@ const getRandomWidth = () => {
   return `${baseWidth}px`;
 };
 
+const getItemIndex = (rowIndex: number, indexInRow: number) => {
+  const itemsPerRow = Math.ceil(galleries.value.length / 3);
+  return rowIndex * itemsPerRow + indexInRow;
+};
+
 // Helper functions for row management
 const getRowItems = (rowIndex: number) => {
   const itemsPerRow = Math.ceil(galleries.value.length / 3);
   const start = rowIndex * itemsPerRow;
   const items = galleries.value.slice(start, start + itemsPerRow);
   
-  // Add random width to each item
-  return items.map(item => ({
+  // Add fixed width based on position in overall gallery
+  return items.map((item, indexInRow) => ({
     ...item,
-    width: getRandomWidth()
+    width: getItemWidth(start + indexInRow)
   }));
-};
-
-const getItemIndex = (rowIndex: number, indexInRow: number) => {
-  const itemsPerRow = Math.ceil(galleries.value.length / 3);
-  return rowIndex * itemsPerRow + indexInRow;
 };
 </script>
 
@@ -472,15 +565,33 @@ const getItemIndex = (rowIndex: number, indexInRow: number) => {
   }
 }
 
+.gallery-outer-container {
+  position: relative;
+  margin: 0 48px; // Space for navigation buttons
+}
+
 .gallery-container {
   position: relative;
-  overflow: hidden;
-  margin: 0 -8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  cursor: grab;
+  
+  &:active {
+    cursor: grabbing;
+  }
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .gallery-wrapper {
-  transition: transform 0.3s ease-in-out;
-  padding: 0 8px;
+  display: inline-flex;
+  min-width: min-content;
 }
 
 .gallery-grid {
@@ -533,27 +644,84 @@ const getItemIndex = (rowIndex: number, indexInRow: number) => {
   }
 }
 
+// Navigation buttons
 .nav-button {
-  @apply px-4 py-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-all duration-300;
+  @apply bg-white dark:bg-gray-800 
+         text-gray-700 dark:text-gray-200 
+         rounded-full shadow-lg
+         hover:bg-primary-50 dark:hover:bg-primary-900
+         transition-all duration-300 ease-in-out;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 10;
+  z-index: 20;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid theme('colors.gray.200');
+  opacity: 1;
   
-  &:first-child {
-    left: 1rem;
+  &.left-button {
+    left: -48px;
   }
   
-  &:last-child {
-    right: 1rem;
+  &.right-button {
+    right: -48px;
   }
   
-  &:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-  
-  &:hover:not(:disabled) {
+  &:hover {
     transform: translateY(-50%) scale(1.1);
+  }
+}
+
+// Media queries for responsive design
+@media (max-width: 768px) {
+  .gallery-outer-container {
+    margin: 0 36px;
+  }
+
+  .nav-button {
+    width: 36px;
+    height: 36px;
+    
+    &.left-button {
+      left: -36px;
+    }
+    
+    &.right-button {
+      right: -36px;
+    }
+    
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .gallery-outer-container {
+    margin: 0 32px;
+  }
+
+  .nav-button {
+    width: 32px;
+    height: 32px;
+    
+    &.left-button {
+      left: -32px;
+    }
+    
+    &.right-button {
+      right: -32px;
+    }
+    
+    svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 }
 
