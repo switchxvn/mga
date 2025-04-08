@@ -53,9 +53,8 @@
                       ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
                   ]"
-                  @click="selectProduct(product)"
                 >
-                  <div class="flex gap-4 items-center">
+                  <div class="flex gap-4 items-center" @click="selectProduct(product)">
                     <div class="w-32 h-20 rounded-lg overflow-hidden flex-shrink-0">
                       <img
                         :src="product.thumbnail"
@@ -74,6 +73,15 @@
                         {{ product.translations[0]?.shortDescription }}
                       </p>
                     </div>
+                  </div>
+                  <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <NuxtLink 
+                      :to="`/tickets/${product.translations[0]?.slug}`"
+                      class="flex items-center justify-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                    >
+                      Xem chi tiết
+                      <ArrowRight class="w-4 h-4" />
+                    </NuxtLink>
                   </div>
                 </div>
               </SwiperSlide>
@@ -215,6 +223,7 @@ import {
   Users as UsersIcon,
   Plus as PlusIcon,
   Minus as MinusIcon,
+  ArrowRight,
 } from "lucide-vue-next";
 import { DatePicker } from "v-calendar";
 import "v-calendar/style.css";
