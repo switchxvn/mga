@@ -308,6 +308,7 @@ type ComponentRegistry = Record<string, ComponentType>;
 // Register components using defineAsyncComponent
 const registeredComponents = {
   'HeroSection': defineAsyncComponent(() => import("../components/sections/home_page/HeroSection.vue")),
+  'HeroBannerSection': defineAsyncComponent(() => import("../components/sections/HeroBannerSection.vue")),
   'FeaturedProductsSection': defineAsyncComponent(() => import("../components/sections/home_page/FeaturedProductsSection.vue")),
   'ProductCategoriesSection': defineAsyncComponent(() => import("../components/sections/home_page/ProductCategoriesSection.vue")),
   'ServiceSection': defineAsyncComponent(() => import("../components/sections/home_page/ServiceSection.vue")),
@@ -343,6 +344,7 @@ const resolveComponent = (section: ThemeSection): ComponentType | null => {
   // Then try type mapping
   const typeToComponentName: Record<string, keyof typeof registeredComponents> = {
     'hero': 'HeroSection',
+    'hero_banner': 'HeroBannerSection',
     'featured_products': 'FeaturedProductsSection',
     'product_categories': 'ProductCategoriesSection',
     'services': 'ServiceSection',
