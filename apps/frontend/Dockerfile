@@ -20,10 +20,11 @@ ENV YARN_CACHE_FOLDER=/app/.yarn-cache
 ENV NX_SKIP_NX_CACHE_CREATION=true
 ENV NX_DAEMON=false
 ENV CYPRESS_INSTALL_BINARY=0
+ENV NODE_OPTIONS="--max_old_space_size=4096 --no-experimental-fetch"
 
 # Install dependencies
 RUN yarn config set ignore-engines true && \
-yarn install --frozen-lockfile
+    NODE_OPTIONS="--openssl-legacy-provider" yarn install --frozen-lockfile --network-timeout 300000
 
 # Copy application code
 COPY apps/frontend ./apps/frontend
@@ -65,10 +66,11 @@ ENV PORT=3000
 ENV NX_SKIP_NX_CACHE_CREATION=true
 ENV NX_DAEMON=false
 ENV CYPRESS_INSTALL_BINARY=0
+ENV NODE_OPTIONS="--no-experimental-fetch"
 
 # Install production-only deps
 RUN yarn config set ignore-engines true && \
-yarn install --production --frozen-lockfile
+    NODE_OPTIONS="--openssl-legacy-provider" yarn install --production --frozen-lockfile --network-timeout 300000
 
 # Copy built output from builder
 COPY --from=builder /app/apps/frontend/.output ./.output
