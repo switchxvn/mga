@@ -25,7 +25,6 @@ const error = ref<string | null>(null);
 const totalPosts = ref(0);
 const totalPages = ref(0);
 const categoryData = ref<any>(null);
-const currentPage = ref(1);
 const seoData = ref<any>(null);
 
 // Định nghĩa kiểu dữ liệu cho breadcrumb item
@@ -330,6 +329,13 @@ watch([pageTitle, pageDescription, seoData], () => {
     ]
   });
 }, { immediate: true });
+
+const currentPage = computed({
+  get: () => filters.page,
+  set: (value) => {
+    handlePageChange(value);
+  }
+});
 </script>
 
 <template>
@@ -396,21 +402,21 @@ watch([pageTitle, pageDescription, seoData], () => {
 
         <!-- Pagination -->
         <div v-if="totalPages > 1" class="mt-8 flex justify-center">
-          <nav class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <button
               v-for="page in totalPages"
               :key="page"
-              @click="currentPage = page"
+              @click="handlePageChange(page)"
               :class="[
                 'px-4 py-2 rounded-md',
-                currentPage === page
+                filters.page === page
                   ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               ]"
             >
               {{ page }}
             </button>
-          </nav>
+          </div>
         </div>
       </div>
 

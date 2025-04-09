@@ -210,7 +210,7 @@ const calculateVisibleItems = () => {
   if (!menuContainerRef.value || !processedMenuItems.value) return;
 
   const containerWidth = menuContainerRef.value.clientWidth;
-  const moreButtonWidth = 80; // Width reserved for more button with padding
+  const moreButtonWidth = 0; // Tăng width cho nút More để đảm bảo không bị vỡ
   let availableWidth = containerWidth - moreButtonWidth;
   let totalWidth = 0;
   
@@ -220,21 +220,33 @@ const calculateVisibleItems = () => {
   // Reset refs array
   menuItemsRefs.value = [];
 
-  // Calculate widths and distribute items
+  // Tính toán chi tiết hơn cho từng menu item
   processedMenuItems.value.forEach((item) => {
-    // Optimize width calculation with smaller padding
-    const estimatedWidth = (item.label.length * 10) + // Reduced text width multiplier
-                        (item.icon ? 24 : 0) + // Reduced icon width
-                        (item.children?.length ? 20 : 0) + // Reduced dropdown arrow space
-                        24; // Reduced padding (12px on each side)
+    // Tính toán width chi tiết hơn cho mỗi item
+    const estimatedWidth = 
+      (item.label.length * 10.5) + // 10.5px cho mỗi ký tự
+      40 + // Padding left/right (20px mỗi bên)
+      (item.icon ? 32 : 0) + // Icon width nếu có
+      (item.children?.length ? 24 : 0) + // Dropdown arrow width nếu có submenu
+      16; // Gap giữa các items
 
-    if (totalWidth + estimatedWidth <= availableWidth) {
+    // Thêm buffer 20px để đảm bảo không bị vỡ
+    const withBuffer = estimatedWidth;
+
+    if (totalWidth + withBuffer <= availableWidth) {
       visibleMenuItems.value.push(item);
-      totalWidth += estimatedWidth;
+      totalWidth += withBuffer;
     } else {
       hiddenMenuItems.value.push(item);
     }
   });
+
+  // Nếu chỉ còn 1 item visible và có nhiều items hidden, 
+  // chuyển luôn item cuối vào hidden để tránh trường hợp 1 item + nút more
+  if (visibleMenuItems.value.length === 1 && hiddenMenuItems.value.length > 0) {
+    hiddenMenuItems.value.unshift(visibleMenuItems.value[0]);
+    visibleMenuItems.value = [];
+  }
 };
 
 // Update the resize observer
@@ -422,7 +434,7 @@ watch(locale, () => {
                       >
                         <NuxtLink
                           :to="item.href"
-                          class="main-menu-item flex items-center space-x-1 whitespace-nowrap h-full px-3 font-bold"
+                          class="main-menu-item flex items-center space-x-2 whitespace-nowrap h-full px-4 font-bold"
                           :class="{ 
                             'menu-active': isMenuActive(item.href),
                             [props.settings?.navigation?.fontWeight || '']: true
