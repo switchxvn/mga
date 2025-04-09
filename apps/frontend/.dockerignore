@@ -1,0 +1,7 @@
+node_modules
+.yarn-cache
+dist
+.cache
+output
+*.log
+.env

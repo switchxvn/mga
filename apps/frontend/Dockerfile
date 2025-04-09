@@ -1,81 +1,80 @@
+# ----------------------------
 # Build stage
-FROM node:20-alpine AS builder
+# ----------------------------
+FROM node:20-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Create cache directory and set permissions
-RUN mkdir -p /app/.yarn-cache && \
-    chown -R node:node /app
+# Install system dependencies for native modules
+RUN apt-get update && apt-get install -y \
+curl python3 make g++ git \
+&& rm -rf /var/lib/apt/lists/*
 
-# Switch to non-root user
-USER node
+# Copy only essential files to install dependencies
+COPY package.json yarn.lock ./
+COPY nx.json tsconfig.base.json ./
 
-# Set yarn cache directory
+# Set environment to skip Nx daemon and Cypress binary install
 ENV YARN_CACHE_FOLDER=/app/.yarn-cache
+ENV NX_SKIP_NX_CACHE_CREATION=true
+ENV NX_DAEMON=false
+ENV CYPRESS_INSTALL_BINARY=0
 
-# Copy only necessary package files
-COPY --chown=node:node package.json yarn.lock ./
-COPY --chown=node:node nx.json tsconfig.base.json ./
-
-# Install dependencies with special handling for nx post-install
+# Install dependencies
 RUN yarn config set ignore-engines true && \
-    CYPRESS_INSTALL_BINARY=0 NX_SKIP_NX_CACHE_CREATION=true yarn install --frozen-lockfile && \
-    find /app/node_modules -name "nx" -type d -exec sh -c 'for i; do touch "$i/bin/post-install-skip"; done' _ {} \;
+yarn install --frozen-lockfile
 
-# Copy only frontend related files
-COPY --chown=node:node apps/frontend ./apps/frontend
-COPY --chown=node:node libs ./libs
+# Copy application code
+COPY apps/frontend ./apps/frontend
+COPY libs ./libs
 
 # Build argument for environment file
 ARG ENV_FILE=.env
 ENV ENV_FILE=${ENV_FILE}
 
 # Copy environment file
-COPY --chown=node:node apps/frontend/${ENV_FILE} apps/frontend/.env
+COPY apps/frontend/${ENV_FILE} apps/frontend/.env
 
-# Build only frontend application
+# Build only frontend app with Nuxt
 RUN mkdir -p apps/frontend/.output && \
-    cd apps/frontend && \
-    NODE_OPTIONS="--max-old-space-size=6096" npx nuxt build && \
-    ls -la .output/server || exit 1
+cd apps/frontend && \
+NODE_OPTIONS="--max-old-space-size=6096" npx nuxt build && \
+ls -la .output/server || exit 1
 
+# ----------------------------
 # Production stage
-FROM node:20-alpine AS runner
+# ----------------------------
+FROM node:20-slim AS runner
 
-# Set working directory
 WORKDIR /app
 
-# Create cache directory and set permissions
-RUN mkdir -p /app/.yarn-cache && \
-    chown -R node:node /app
-
-# Switch to non-root user
-USER node
-
-# Set yarn cache directory
-ENV YARN_CACHE_FOLDER=/app/.yarn-cache
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+curl \
+&& rm -rf /var/lib/apt/lists/*
 
 # Copy package files
-COPY --chown=node:node package.json yarn.lock ./
+COPY package.json yarn.lock ./
 
-# Install production dependencies only with nx cache creation skipped
-RUN yarn config set ignore-engines true && \
-    CYPRESS_INSTALL_BINARY=0 NX_SKIP_NX_CACHE_CREATION=true yarn install --production --frozen-lockfile
-
-# Copy built application
-COPY --chown=node:node --from=builder /app/apps/frontend/.output ./.output
-
-# Copy environment file
-COPY --chown=node:node --from=builder /app/apps/frontend/.env .env
-
-# Expose the port the app runs on
-EXPOSE 3000
-
-# Set production environment
+# Set environment
+ENV YARN_CACHE_FOLDER=/app/.yarn-cache
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV NX_SKIP_NX_CACHE_CREATION=true
+ENV NX_DAEMON=false
+ENV CYPRESS_INSTALL_BINARY=0
 
-# Start the application
-CMD ["node", ".output/server/index.mjs"] 
+# Install production-only deps
+RUN yarn config set ignore-engines true && \
+yarn install --production --frozen-lockfile
+
+# Copy built output from builder
+COPY --from=builder /app/apps/frontend/.output ./.output
+COPY --from=builder /app/apps/frontend/.env .env
+
+EXPOSE 3000
+
+# Start Nuxt app
+CMD ["node", ".output/server/index.mjs"]
