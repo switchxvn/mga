@@ -609,4 +609,8 @@ const handleImageError = (event: Event) => {
   width: 100%;
   height: 100%;
 }
+
+.yt-title {
+  font-family: var(--font-primary);
+}
 </style>

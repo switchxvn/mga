@@ -317,7 +317,7 @@ const gridStyles = computed(() => ({
 
 <style lang="scss" scoped>
 .feature-services-section {
-  font-family: var(--font-family-base, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+  font-family: var(--font-primary);
   background-color: v-bind('mergedConfig.background.light');
 
   // Add consistent font sizing

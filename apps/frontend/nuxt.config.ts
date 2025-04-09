@@ -222,7 +222,7 @@ export default defineNuxtConfig({
     '@nuxt/image',
   ],
 
-  // @ts-ignore - i18n module types
+  // @ts-expect-error - i18n module types
   i18n: './i18n.config.ts',
 
   vite: {

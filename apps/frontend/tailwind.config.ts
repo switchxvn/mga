@@ -12,6 +12,9 @@ export default {
     './app.vue',
   ],
   theme: {
+    fontFamily: {
+      sans: ['Inter', 'Inter var', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+    },
     container: {
       center: true,
       padding: {

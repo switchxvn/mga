@@ -93,32 +93,45 @@
         <form v-if="selectedProduct" @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Variants Selection -->
           <div
-            v-if="selectedProduct.variantAttributes?.attributes?.length"
+            v-if="indexedVariants.length"
             class="space-y-4"
           >
-            <div
-              v-for="attr in selectedProduct.variantAttributes.attributes"
-              :key="attr.id"
-              class="space-y-2"
-            >
+            <div class="space-y-2">
               <label class="block font-medium text-gray-700 dark:text-gray-300">
-                {{ attr.displayName }}
+                Loại vé
               </label>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <button
-                  v-for="value in attr.values"
-                  :key="value.id"
-                  type="button"
-                  @click="selectAttributeValue(attr.id, value.id)"
-                  :class="[
-                    'px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200',
-                    isAttributeValueSelected(attr.id, value.id)
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700',
-                  ]"
+              <div class="space-y-3">
+                <div 
+                  v-for="(variant, index) in indexedVariants" 
+                  :key="index"
+                  class="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-lg p-3"
                 >
-                  {{ value.displayValue }}
-                </button>
+                  <div class="flex flex-col">
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ getVariantName(variant) }}</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ formatPrice(getVariantPrice(variant)) }}</span>
+                  </div>
+                  <div class="flex items-center">
+                    <button
+                      type="button"
+                      class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="getVariantCount(variant) <= 0"
+                      @click="decreaseVariantCount(variant)"
+                    >
+                      <MinusIcon class="w-5 h-5" />
+                    </button>
+                    <span class="w-12 text-center text-lg font-medium" :class="currentSettings.colors.heading">
+                      {{ getVariantCount(variant) }}
+                    </span>
+                    <button
+                      type="button"
+                      class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="getVariantCount(variant) >= currentSettings.form.maxGuests"
+                      @click="increaseVariantCount(variant)"
+                    >
+                      <PlusIcon class="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -150,42 +163,6 @@
             </DatePicker>
           </div>
 
-          <!-- Number of Guests -->
-          <div class="space-y-2">
-            <label
-              :class="currentSettings.colors.secondary"
-              class="flex items-center gap-2"
-            >
-              <UsersIcon class="w-6 h-6" />
-              {{ currentSettings.form.guestsLabel || "Số lượng khách" }}
-            </label>
-
-            <!-- Quantity Selection -->
-            <div class="flex items-center">
-              <button
-                type="button"
-                class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="adultCount <= currentSettings.form.minGuests"
-                @click="adultCount--"
-              >
-                <MinusIcon class="w-5 h-5" />
-              </button>
-              <span
-                class="w-20 text-center text-lg font-medium"
-                :class="currentSettings.colors.heading"
-                >{{ adultCount }}</span
-              >
-              <button
-                type="button"
-                class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="adultCount >= currentSettings.form.maxGuests"
-                @click="adultCount++"
-              >
-                <PlusIcon class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
           <!-- Total and Submit -->
           <div
             class="flex items-center justify-between pt-4 border-t dark:border-gray-700"
@@ -194,6 +171,9 @@
               <div class="text-sm">Tổng tiền</div>
               <div class="text-2xl font-semibold" :class="currentSettings.colors.primary">
                 {{ calculateTotal }}
+              </div>
+              <div class="text-xs mt-1 text-gray-600 dark:text-gray-400">
+                {{ totalTickets }} vé
               </div>
             </div>
 
@@ -206,7 +186,7 @@
                 'px-8 py-3 rounded-lg text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed',
               ]"
             >
-              {{ currentSettings.form.buttonText || "Đặt vé" }}
+              {{ currentSettings.form.buttonText || "Đặt vé ngay" }}
             </button>
           </div>
         </form>
@@ -263,7 +243,9 @@ const selectedProduct = ref<Product | null>(null);
 const selectedDate = ref<Date | null>(null);
 const adultCount = ref(1);
 const currentSettings = ref<Settings>(props.settings);
-const selectedAttributes = ref<Record<number, number>>({});
+const selectedVariant = ref<any>(null);
+const indexedVariants = ref<any[]>([]);
+const variantCounts = ref<Record<number, number>>({});
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat("vi-VN", {
@@ -275,74 +257,81 @@ const formatPrice = (price: number) => {
 const calculateTotal = computed(() => {
   if (!selectedProduct.value) return formatPrice(0);
 
-  const variant = findMatchingVariant();
-  if (!variant || variant.price === null)
-    return formatPrice(selectedProduct.value.price * adultCount.value);
+  // Tính tổng dựa trên số lượng của mỗi variant
+  let total = 0;
+  Object.entries(variantCounts.value).forEach(([variantId, count]) => {
+    const variant = indexedVariants.value.find(v => v.id === Number(variantId));
+    if (variant && count > 0) {
+      total += getVariantPrice(variant) * count;
+    }
+  });
 
-  return formatPrice(variant.price * adultCount.value);
+  return formatPrice(total);
 });
 
 const isFormValid = computed(() => {
   if (!selectedProduct.value) return false;
 
-  const hasRequiredAttributes =
-    selectedProduct.value.variantAttributes?.attributes
-      ?.filter((attr) => attr.required)
-      .every((attr) => selectedAttributes.value[attr.id]) ?? true;
+  // Kiểm tra xem tổng số vé > 0 và có chọn ngày không
+  const totalTickets = Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
 
-  return (
-    selectedDate.value &&
-    adultCount.value >= currentSettings.value.form.minGuests &&
-    adultCount.value <= currentSettings.value.form.maxGuests &&
-    hasRequiredAttributes
-  );
+  return selectedDate.value && totalTickets > 0;
+});
+
+const totalTickets = computed(() => {
+  return Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
 });
 
 const selectProduct = (product: Product) => {
   selectedProduct.value = product;
-  selectedAttributes.value = {};
-
-  // Auto-select first values for each attribute
-  if (product.variantAttributes?.attributes) {
-    product.variantAttributes.attributes.forEach((attr) => {
-      if (attr.values.length > 0) {
-        selectedAttributes.value[attr.id] = attr.values[0].id;
-      }
+  variantCounts.value = {};
+  
+  // Khởi tạo variants có index
+  if (product.variants && product.variants.length > 0) {
+    indexedVariants.value = product.variants.map((variant, index) => ({
+      ...variant,
+      _index: index
+    }));
+    
+    // Khởi tạo số lượng mỗi variant là 0
+    indexedVariants.value.forEach(variant => {
+      variantCounts.value[variant.id] = 0;
     });
+  } else {
+    indexedVariants.value = [];
   }
 };
 
-const selectAttributeValue = (attributeId: number, valueId: number) => {
-  selectedAttributes.value[attributeId] = valueId;
-};
-
-const isAttributeValueSelected = (attributeId: number, valueId: number) => {
-  return selectedAttributes.value[attributeId] === valueId;
-};
-
-const findMatchingVariant = () => {
-  if (!selectedProduct.value?.variantAttributes?.variants) return null;
-
-  return selectedProduct.value.variantAttributes.variants.find((variant) => {
-    return Object.entries(variant.attributeValues).every(
-      ([attrId, valueId]) => selectedAttributes.value[Number(attrId)] === valueId
-    );
-  });
+const selectVariant = (variant: any) => {
+  selectedVariant.value = variant;
 };
 
 const handleSubmit = async () => {
   if (!selectedProduct.value) return;
 
-  const variant = findMatchingVariant();
-  const price = variant?.price ?? selectedProduct.value.price;
+  // Tạo danh sách các variant với số lượng tương ứng
+  const ticketItems = Object.entries(variantCounts.value)
+    .filter(([_, count]) => count > 0)
+    .map(([variantId, count]) => {
+      const variant = indexedVariants.value.find(v => v.id === Number(variantId));
+      return {
+        variantId: Number(variantId),
+        count,
+        price: getVariantPrice(variant),
+        name: getVariantName(variant)
+      };
+    });
 
+  // Tạo booking data
   const bookingData = {
     productId: selectedProduct.value.id,
-    variantId: variant?.id || 0,
     date: selectedDate.value,
-    adultCount: adultCount.value,
-    total: price * adultCount.value,
+    items: ticketItems,
+    total: ticketItems.reduce((sum, item) => sum + (item.price * item.count), 0)
   };
+
+  // TODO: Xử lý logic đặt vé
+  console.log('Booking data:', bookingData);
 };
 
 const transformToProduct = (item: any): Product => {
@@ -415,6 +404,34 @@ onMounted(() => {
 const masks = {
   input: "DD/MM/YYYY",
   data: "YYYY-MM-DD",
+};
+
+const getVariantName = (variant: any) => {
+  if (variant.translations && variant.translations.length > 0) {
+    return variant.translations[0]?.name || 'Vé mặc định';
+  }
+  return variant.name || 'Vé mặc định';
+};
+
+const getVariantPrice = (variant: any) => {
+  return variant.price || 0;
+};
+
+const getVariantCount = (variant: any): number => {
+  return variantCounts.value[variant.id] || 0;
+};
+
+const decreaseVariantCount = (variant: any) => {
+  if (variantCounts.value[variant.id] > 0) {
+    variantCounts.value[variant.id]--;
+  }
+};
+
+const increaseVariantCount = (variant: any) => {
+  const currentCount = variantCounts.value[variant.id] || 0;
+  if (currentCount < currentSettings.value.form.maxGuests) {
+    variantCounts.value[variant.id] = currentCount + 1;
+  }
 };
 </script>
 

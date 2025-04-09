@@ -350,7 +350,7 @@ $main-menu: (
 
 // Typography
 $typography: (
-  'font-family': ('Inter', system-ui, sans-serif),
+  'font-family': (var(--font-primary)),
   'base-size': 16px,
   'line-height': 1.5,
   'heading-weight': 700
