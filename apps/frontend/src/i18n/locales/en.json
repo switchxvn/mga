@@ -299,5 +299,13 @@
   "tickets": {
     "showing": "Showing",
     "items": "tickets"
+  },
+  "gallery": {
+    "title": "Photo Gallery",
+    "commonGallery": "Common Gallery",
+    "foodGallery": "Food Gallery",
+    "fetchError": "Failed to load gallery images",
+    "noImages": "No images available",
+    "tryAgain": "Try Again"
   }
 } 

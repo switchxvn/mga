@@ -37,6 +37,29 @@ export class PostFrontendService {
     return this.postRepository.find();
   }
 
+  /**
+   * Tìm bài viết theo danh sách ID
+   * @param ids Danh sách ID của bài viết
+   * @returns Danh sách bài viết
+   */
+  async findByIds(ids: number[]): Promise<Post[]> {
+    this.logger.log(`Finding posts by IDs: ${ids.join(', ')}`);
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+    
+    return this.postRepository.find({
+      where: {
+        id: In(ids),
+        published: true
+      },
+      relations: ['translations', 'author', 'author.profile', 'postTags', 'postTags.tag'],
+      order: {
+        createdAt: 'DESC'
+      }
+    });
+  }
+
   private async formatPostResponse(post: Post, locale?: string): Promise<IPost> {
     // Get current translation if locale is provided
     let currentTranslation = null;

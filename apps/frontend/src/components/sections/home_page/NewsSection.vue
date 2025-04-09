@@ -55,6 +55,24 @@ interface NewsConfig {
   gap?: string;
   maxItems?: number;
   isCompact?: boolean;
+  postIds?: number[];
+  showDate?: boolean;
+  showAuthor?: boolean;
+  showExcerpt?: boolean;
+  excerptLength?: number;
+  imageAspectRatio?: string;
+  overlayOpacity?: number;
+  backgroundGradient?: {
+    from: string;
+    to: string;
+    direction: string;
+  };
+  buttonText?: string;
+  buttonStyle?: string;
+  padding?: {
+    top: string;
+    bottom: string;
+  };
 }
 
 const props = withDefaults(defineProps<{
@@ -73,7 +91,25 @@ const props = withDefaults(defineProps<{
     showArrows: true,
     gap: '1rem',
     maxItems: 12,
-    isCompact: false
+    isCompact: false,
+    postIds: [],
+    showDate: true,
+    showAuthor: true,
+    showExcerpt: true,
+    excerptLength: 120,
+    imageAspectRatio: '16/9',
+    overlayOpacity: 0.5,
+    backgroundGradient: {
+      from: 'rgba(0,0,0,0.7)',
+      to: 'rgba(0,0,0,0)',
+      direction: 'to-t'
+    },
+    buttonText: 'Xem thêm',
+    buttonStyle: 'primary',
+    padding: {
+      top: '2rem',
+      bottom: '2rem'
+    }
   })
 });
 
@@ -114,7 +150,19 @@ async function fetchLatestPosts() {
   isLoading.value = true;
   error.value = null;
   try {
-    const result = await trpc.post.byLocale.query({ locale: locale.value });
+    let result;
+    
+    // Nếu có postIds, lấy bài viết theo ID
+    if (props.config.postIds && props.config.postIds.length > 0) {
+      result = await trpc.post.byIds.query({ 
+        ids: props.config.postIds,
+        locale: locale.value 
+      });
+    } else {
+      // Nếu không có postIds, lấy bài viết mới nhất
+      result = await trpc.post.byLocale.query({ locale: locale.value });
+    }
+    
     latestPosts.value = result.map((post: any) => {
       const translation = post.translations?.find(
         (t: { locale: string }) => t.locale === locale.value
@@ -149,10 +197,19 @@ fetchLatestPosts();
 watch(locale, () => {
   fetchLatestPosts();
 });
+
+// Watch for postIds changes
+watch(() => props.config.postIds, () => {
+  fetchLatestPosts();
+}, { deep: true });
 </script>
 
 <template>
-  <section class="latest-posts-section py-12 bg-gray-50 dark:bg-gray-900">
+  <section class="latest-posts-section py-12 bg-gray-50 dark:bg-gray-900" 
+           :style="{
+             paddingTop: config.padding?.top || '2rem',
+             paddingBottom: config.padding?.bottom || '2rem'
+           }">
     <div class="container mx-auto px-4">
       <h2 class="text-3xl font-bold mb-8 text-center">
         {{ config.title || t("home.latest_posts") }}
@@ -173,11 +230,27 @@ watch(locale, () => {
       <template v-else>
         <!-- Grid Layout -->
         <div v-if="config.layout === 'grid'"
-             class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+             class="grid gap-6"
+             :class="{
+               'grid-cols-1': true,
+               'sm:grid-cols-2': true,
+               'lg:grid-cols-3': true,
+               'xl:grid-cols-4': true
+             }"
+             :style="{ gap: config.gap || '1rem' }">
           <PostCard v-for="post in latestPosts"
                    :key="post.id"
                    :post="post"
-                   :compact="config.isCompact" />
+                   :compact="config.isCompact"
+                   :show-date="config.showDate"
+                   :show-author="config.showAuthor"
+                   :show-excerpt="config.showExcerpt"
+                   :excerpt-length="config.excerptLength"
+                   :image-aspect-ratio="config.imageAspectRatio"
+                   :overlay-opacity="config.overlayOpacity"
+                   :background-gradient="config.backgroundGradient"
+                   :button-text="config.buttonText"
+                   :button-style="config.buttonStyle" />
         </div>
 
         <!-- Slider Layout -->
@@ -188,7 +261,16 @@ watch(locale, () => {
                        :key="post.id"
                        class="h-full">
             <PostCard :post="post"
-                     :compact="config.isCompact" />
+                     :compact="config.isCompact"
+                     :show-date="config.showDate"
+                     :show-author="config.showAuthor"
+                     :show-excerpt="config.showExcerpt"
+                     :excerpt-length="config.excerptLength"
+                     :image-aspect-ratio="config.imageAspectRatio"
+                     :overlay-opacity="config.overlayOpacity"
+                     :background-gradient="config.backgroundGradient"
+                     :button-text="config.buttonText"
+                     :button-style="config.buttonStyle" />
           </SwiperSlide>
         </Swiper>
       </template>

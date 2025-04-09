@@ -46,6 +46,10 @@ export const ROUTE_NAMES = {
   CONTACT: {
     en: 'contact',
     vi: 'lien-he'
+  },
+  GALLERY: {
+    en: 'gallery',
+    vi: 'thu-vien-hinh-anh'
   }
 } as const;
 
@@ -97,6 +101,10 @@ export const ROUTE_PATHS = {
   CONTACT: {
     en: '/contact',
     vi: '/lien-he'
+  },
+  GALLERY: {
+    en: '/gallery',
+    vi: '/thu-vien-hinh-anh'
   }
 } as const;
 

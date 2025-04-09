@@ -85,6 +85,7 @@ export default defineNuxtConfig({
       const categoriesListRoute = routes.find(r => r.path === ROUTE_PATHS.CATEGORIES_LIST.en);
       const categoryDetailRoute = routes.find(r => r.path.startsWith(ROUTE_PATHS.CATEGORIES_LIST.en + '/'));
       const contactRoute = routes.find(r => r.path === ROUTE_PATHS.CONTACT.en);
+      const galleryRoute = routes.find(r => r.path === ROUTE_PATHS.GALLERY.en);
 
       if (postsListRoute) {
         routes.push({
@@ -160,6 +161,14 @@ export default defineNuxtConfig({
           path: ROUTE_PATHS.CONTACT.vi,
           file: contactRoute.file,
           meta: contactRoute.meta
+        });
+      }
+
+      if (galleryRoute) {
+        routes.push({
+          name: ROUTE_NAMES.GALLERY.vi,
+          path: ROUTE_PATHS.GALLERY.vi,
+          file: galleryRoute.file
         });
       }
     }

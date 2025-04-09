@@ -122,6 +122,34 @@ export const postRouter = router({
       }
     }),
 
+  byIds: publicProcedure
+    .input(z.object({ 
+      ids: z.array(z.number()),
+      locale: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        ctx.logger.log(`Fetching posts by IDs: ${input.ids.join(', ')}`);
+        const posts = await ctx.services.postService.findByIds(input.ids);
+        
+        // Lọc bài viết theo locale nếu cần
+        if (input.locale) {
+          return posts.filter(post => 
+            post.translations?.some(trans => trans.locale === input.locale)
+          );
+        }
+        
+        return posts;
+      } catch (error) {
+        ctx.logger.error(`Error fetching posts by IDs: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch posts by IDs',
+          cause: error,
+        });
+      }
+    }),
+
   bySlug: publicProcedure
     .input(z.object({ 
       slug: z.string(),

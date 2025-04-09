@@ -360,5 +360,13 @@
     "sortPriceDesc": "Giá: Cao đến thấp",
     "filters": "Bộ lọc",
     "searchingFor": "Đang tìm kiếm"
+  },
+  "gallery": {
+    "title": "Thư viện hình ảnh",
+    "commonGallery": "Hình ảnh chung",
+    "foodGallery": "Hình ảnh món ăn",
+    "fetchError": "Không thể tải hình ảnh",
+    "noImages": "Chưa có hình ảnh nào",
+    "tryAgain": "Thử lại"
   }
 } 

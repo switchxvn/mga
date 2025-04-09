@@ -7,6 +7,7 @@ import { useRoute, useRouter } from 'vue-router';
 import PostSidebar from "../../components/sidebar/PostSidebar.vue";
 import PostCard from "../../components/ui/card/PostCard.vue";
 import type { Post } from "@ew/shared";
+import type { CategoryTranslation } from "../../types/category-translation";
 
 const { t, locale } = useLocalization();
 const route = useRoute();
@@ -23,27 +24,28 @@ const isLoading = ref(false);
 const error = ref<string | null>(null);
 const totalPosts = ref(0);
 const totalPages = ref(0);
+const categoryData = ref<any>(null);
+const currentPage = ref(1);
 
-// SEO data
-const seoData = ref({
-  title: '',
-  description: '',
-  keywords: '',
-  ogTitle: '',
-  ogDescription: '',
-  ogImage: '',
-  canonicalUrl: '',
-});
+// Định nghĩa kiểu dữ liệu cho breadcrumb item
+interface BreadcrumbItem {
+  name: string;
+  path: string | null;
+}
 
-// Fetch SEO data
-const fetchSeoData = async () => {
+// Fetch category data by slug
+const fetchCategoryData = async (slug: string) => {
   try {
-    const seo = await trpc.seo.getSeoByPath.query('/posts');
-    if (seo) {
-      seoData.value = seo;
-    }
+    const category = await trpc.category.getBySlug.query({
+      slug,
+      locale: locale.value
+    });
+    categoryData.value = category;
+    return category;
   } catch (error) {
-    console.error('Error fetching SEO data:', error);
+    console.error('Error fetching category data:', error);
+    categoryData.value = null;
+    return null;
   }
 };
 
@@ -172,15 +174,23 @@ const updateQueryParams = () => {
 
 // Watch for locale changes
 watch(locale, () => {
-  fetchSeoData();
   fetchPosts();
 });
 
 // Watch for route query changes
-watch(() => route.query['danh-muc'], (newCategory) => {
+watch(() => route.query['danh-muc'], async (newCategory) => {
   if (newCategory !== filters.category) {
     filters.category = newCategory as string || undefined;
     filters.page = 1; // Reset to page 1 when category changes
+    
+    // Fetch category data if danh-muc exists
+    if (filters.category) {
+      await fetchCategoryData(filters.category);
+    } else {
+      categoryData.value = null;
+    }
+    
+    // Fetch posts
     fetchPosts();
   }
 });
@@ -213,8 +223,12 @@ const handleSortChange = (event: Event) => {
   fetchPosts();
 };
 
-onMounted(() => {
-  fetchSeoData();
+onMounted(async () => {
+  // Fetch category data if danh-muc exists
+  if (filters.category) {
+    await fetchCategoryData(filters.category);
+  }
+  
   fetchPosts();
 });
 
@@ -244,152 +258,116 @@ const getAuthorName = (author: Post['author']) => {
   }
   return author?.username || author?.email?.split('@')[0] || 'Không xác định';
 };
+
+// Computed property để lấy translation hiện tại của category
+const currentCategoryTranslation = computed<CategoryTranslation | null>(() => {
+  if (!categoryData.value || !categoryData.value.translations) return null;
+  return categoryData.value.translations.find((t: any) => t.locale === locale.value) || null;
+});
+
+// Computed property để lấy breadcrumb
+const breadcrumbs = computed<BreadcrumbItem[]>(() => {
+  const items: BreadcrumbItem[] = [
+    { name: t('common.home'), path: '/' },
+    { name: t('posts.title'), path: '/posts' }
+  ];
+  
+  if (categoryData.value && currentCategoryTranslation.value) {
+    items.push({
+      name: currentCategoryTranslation.value.name || '',
+      path: null // Không có path vì đang ở trang hiện tại
+    });
+  }
+  
+  return items;
+});
 </script>
 
 <template>
-  <div class="posts-page bg-gray-50 dark:bg-gray-900">
-    <div class="container mx-auto px-4 py-8">
-      <!-- Page Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
-          {{ seoData.title || t("posts.title") }}
-        </h1>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">
-          {{ seoData.description || t("posts.description") }}
-        </p>
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- Main Content -->
+      <div class="lg:w-2/3">
+        <!-- Breadcrumbs -->
+        <nav class="mb-6">
+          <ol class="flex items-center space-x-2 text-sm">
+            <li v-for="(item, index) in breadcrumbs" :key="index" class="flex items-center">
+              <NuxtLink
+                v-if="item.path"
+                :to="item.path"
+                class="text-gray-600 hover:text-primary-600"
+              >
+                {{ item.name }}
+              </NuxtLink>
+              <span v-else class="text-gray-900">{{ item.name }}</span>
+              <span v-if="index < breadcrumbs.length - 1" class="mx-2 text-gray-400">/</span>
+            </li>
+          </ol>
+        </nav>
+
+        <!-- Category Info -->
+        <div v-if="categoryData && currentCategoryTranslation" class="mb-8">
+          <h1 class="text-3xl font-bold mb-4">{{ currentCategoryTranslation.name }}</h1>
+          <p v-if="currentCategoryTranslation.description" class="text-gray-600 mb-4">
+            {{ currentCategoryTranslation.description }}
+          </p>
+          <div class="flex items-center gap-4 text-sm text-gray-500">
+            <span>{{ t('posts.totalPosts', { count: totalPosts }) }}</span>
+            <span v-if="categoryData.parent" class="flex items-center gap-2">
+              {{ t('posts.parentCategory') }}:
+              <NuxtLink
+                :to="`/posts?danh-muc=${categoryData.parent.slug}`"
+                class="text-primary-600 hover:text-primary-700"
+              >
+                {{ categoryData.parent.translations?.find((t: CategoryTranslation) => t.locale === locale)?.name || categoryData.parent.name }}
+              </NuxtLink>
+            </span>
+          </div>
+        </div>
+
+        <!-- Posts Grid -->
+        <div v-if="!isLoading && posts.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <PostCard
+            v-for="post in posts"
+            :key="post.id"
+            :post="post"
+            class="h-full"
+          />
+        </div>
+
+        <!-- Loading State -->
+        <div v-else-if="isLoading" class="flex justify-center items-center min-h-[400px]">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+        </div>
+
+        <!-- No Posts Found -->
+        <div v-else class="text-center py-12">
+          <p class="text-gray-600">{{ t('posts.noPostsFound') }}</p>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="mt-8 flex justify-center">
+          <nav class="flex items-center gap-2">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'px-4 py-2 rounded-md',
+                currentPage === page
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ]"
+            >
+              {{ page }}
+            </button>
+          </nav>
+        </div>
       </div>
 
-      <div class="flex flex-col gap-8 lg:flex-row">
-        <!-- Sidebar -->
-        <aside class="lg:w-1/4">
-          <PostSidebar 
-            :initial-filters="filters" 
-            @filter-change="handleFilterChange" 
-          />
-        </aside>
-
-        <!-- Main Content -->
-        <main class="lg:w-3/4">
-          <!-- Toolbar -->
-          <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ totalPosts }} {{ t('posts.itemCount', { count: totalPosts }) }}
-              </span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">
-                {{ t('posts.sortBy') }}:
-              </label>
-              <select
-                id="sort"
-                v-model="filters.sort"
-                @change="handleSortChange"
-                class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
-              >
-                <option
-                  v-for="option in sortOptions"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Loading State -->
-          <div v-if="isLoading" class="flex justify-center py-12">
-            <div
-              class="h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"
-            ></div>
-          </div>
-
-          <!-- Error State -->
-          <div
-            v-else-if="error"
-            class="rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-900/50 dark:text-red-400"
-          >
-            <p>{{ error }}</p>
-            <button
-              @click="fetchPosts"
-              class="mt-2 rounded-lg bg-red-500 px-4 py-2 font-semibold text-white transition-colors hover:bg-red-600"
-            >
-              {{ t('common.tryAgain') }}
-            </button>
-          </div>
-
-          <!-- Empty State -->
-          <div v-else-if="posts.length === 0" class="py-12 text-center">
-            <p class="text-gray-500 dark:text-gray-400">{{ t('posts.noPosts') }}</p>
-          </div>
-
-          <!-- Posts Grid -->
-          <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
-            <PostCard
-              v-for="post in sortedPosts"
-              :key="post.id"
-              :post="post"
-            />
-          </div>
-          
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="mt-8 flex justify-center">
-            <nav class="flex items-center gap-1">
-              <!-- Previous Page -->
-              <button
-                v-if="filters.page > 1"
-                @click="handlePageChange(filters.page - 1)"
-                class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
-                aria-label="Previous page"
-              >
-                <span class="sr-only">{{ t('pagination.previous') }}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-              </button>
-              
-              <!-- Page Numbers -->
-              <template v-for="page in totalPages" :key="page">
-                <!-- Show first page, last page, current page, and pages around current page -->
-                <button
-                  v-if="page === 1 || page === totalPages || (page >= filters.page - 1 && page <= filters.page + 1)"
-                  @click="handlePageChange(page)"
-                  :class="[
-                    page === filters.page
-                      ? 'bg-primary-500 text-white'
-                      : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
-                    'flex h-10 min-w-10 items-center justify-center rounded-lg px-3 text-sm font-medium'
-                  ]"
-                >
-                  {{ page }}
-                </button>
-                
-                <!-- Ellipsis for gaps -->
-                <span
-                  v-else-if="page === filters.page - 2 || page === filters.page + 2"
-                  class="flex h-10 w-10 items-center justify-center text-gray-500 dark:text-gray-400"
-                >
-                  ...
-                </span>
-              </template>
-              
-              <!-- Next Page -->
-              <button
-                v-if="filters.page < totalPages"
-                @click="handlePageChange(filters.page + 1)"
-                class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
-                aria-label="Next page"
-              >
-                <span class="sr-only">{{ t('pagination.next') }}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </nav>
-          </div>
-        </main>
+      <!-- Sidebar -->
+      <div class="lg:w-1/3">
+        <PostSidebar />
       </div>
     </div>
   </div>
