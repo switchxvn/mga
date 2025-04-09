@@ -347,7 +347,7 @@ watch(locale, () => {
                   class="nav-icon text-white w-7 h-7"
                 />
                 <span class="text-lg font-bold text-white">
-                  Hotline: 1900 1234
+                  Hotline: {{ props.settings?.phoneButton?.number || '1900 1234' }}
                 </span>
               </div>
             </div>

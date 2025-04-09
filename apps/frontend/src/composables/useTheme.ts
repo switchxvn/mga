@@ -136,7 +136,9 @@ let initialized = false;
 
 export function useTheme() {
   const trpc = useTrpc();
-  const isDark = useDark();
+  const isDark = useDark({
+    initialValue: 'light' // Set default to light mode
+  });
   
   const getActiveTheme = async (options?: { pageType?: PageType }): Promise<Theme | null> => {
     console.log('Fetching active theme...', options);
