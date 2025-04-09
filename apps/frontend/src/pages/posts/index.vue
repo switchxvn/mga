@@ -21,6 +21,8 @@ const trpc = useTrpc();
 const posts = ref<Post[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
+const totalPosts = ref(0);
+const totalPages = ref(0);
 
 // SEO data
 const seoData = ref({
@@ -51,6 +53,8 @@ const filters = reactive({
   categories: route.query.categories ? (route.query.categories as string).split(',').map(Number) : [],
   sort: (route.query.sort as string) || 'newest',
   category: route.query['danh-muc'] as string || undefined,
+  page: Number(route.query.page) || 1,
+  limit: Number(route.query.limit) || 12,
 });
 
 // Sort options as computed property to ensure translations are updated
@@ -78,14 +82,38 @@ const fetchPosts = async () => {
   isLoading.value = true;
   error.value = null;
   try {
+    console.log('Fetching posts with filters:', {
+      categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
+      locale: locale.value,
+      category: filters.category,
+      page: filters.page,
+      limit: filters.limit,
+      sortBy: filters.sort,
+    });
+    
     const result = await trpc.post.latest.query({
       filters: {
         categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
         locale: locale.value,
         category: filters.category,
+        page: filters.page,
+        limit: filters.limit,
+        sortBy: filters.sort,
       },
     });
-    posts.value = Array.isArray(result) ? result.map(transformPost) : [];
+    
+    console.log('API response:', result);
+    
+    if (result && result.posts) {
+      posts.value = Array.isArray(result.posts) ? result.posts.map(transformPost) : [];
+      totalPosts.value = result.total || 0;
+      totalPages.value = result.totalPages || 0;
+    } else {
+      // Fallback for backward compatibility
+      posts.value = Array.isArray(result) ? result.map(transformPost) : [];
+      totalPosts.value = posts.value.length;
+      totalPages.value = 1;
+    }
   } catch (err) {
     error.value = "Failed to fetch posts";
     console.error("Error fetching posts:", err);
@@ -101,11 +129,29 @@ const handleFilterChange = (newFilters: any) => {
   if (newFilters.categories !== undefined) filters.categories = newFilters.categories || [];
   if (newFilters.category !== undefined) filters.category = newFilters.category;
   
+  // Reset to page 1 when filters change
+  filters.page = 1;
+  
   // Update URL query params
   updateQueryParams();
   
   // Fetch posts with new filters
   fetchPosts();
+};
+
+// Handle page change
+const handlePageChange = (page: number) => {
+  console.log('Changing page to:', page);
+  filters.page = page;
+  
+  // Fetch posts first to ensure data is updated
+  fetchPosts();
+  
+  // Then update URL query params
+  updateQueryParams();
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 // Update URL query params
@@ -117,6 +163,8 @@ const updateQueryParams = () => {
   if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
   if (filters.sort && filters.sort !== 'newest') query.sort = filters.sort;
   if (filters.category) query['danh-muc'] = filters.category;
+  if (filters.page > 1) query.page = String(filters.page);
+  if (filters.limit !== 12) query.limit = String(filters.limit);
   
   // Update route
   router.replace({ query });
@@ -132,7 +180,20 @@ watch(locale, () => {
 watch(() => route.query['danh-muc'], (newCategory) => {
   if (newCategory !== filters.category) {
     filters.category = newCategory as string || undefined;
+    filters.page = 1; // Reset to page 1 when category changes
     fetchPosts();
+  }
+});
+
+// Watch for page changes in URL
+watch(() => route.query.page, (newPage) => {
+  if (newPage) {
+    const pageNum = Number(newPage);
+    if (!isNaN(pageNum) && pageNum !== filters.page) {
+      console.log('Page changed in URL to:', pageNum);
+      filters.page = pageNum;
+      fetchPosts();
+    }
   }
 });
 
@@ -140,40 +201,16 @@ watch(() => route.query['danh-muc'], (newCategory) => {
 const sortedPosts = computed(() => {
   if (!posts.value) return [];
 
-  const sorted = [...posts.value];
-  switch (filters.sort) {
-    case "oldest":
-      return sorted.sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
-    case "title_asc":
-      return sorted.sort((a, b) => {
-        const titleA =
-          a.translations?.find((t) => t.locale === locale.value)?.title || "";
-        const titleB =
-          b.translations?.find((t) => t.locale === locale.value)?.title || "";
-        return titleA.localeCompare(titleB);
-      });
-    case "title_desc":
-      return sorted.sort((a, b) => {
-        const titleA =
-          a.translations?.find((t) => t.locale === locale.value)?.title || "";
-        const titleB =
-          b.translations?.find((t) => t.locale === locale.value)?.title || "";
-        return titleB.localeCompare(titleA);
-      });
-    default:
-      // newest
-      return sorted.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-  }
+  // Không cần sắp xếp lại vì đã được sắp xếp từ server
+  return posts.value;
 });
 
 const handleSortChange = (event: Event) => {
   const target = event.target as HTMLSelectElement;
   filters.sort = target.value;
+  filters.page = 1; // Reset to page 1 when sort changes
   updateQueryParams();
+  fetchPosts();
 };
 
 onMounted(() => {
@@ -237,7 +274,7 @@ const getAuthorName = (author: Post['author']) => {
           <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ posts.length }} {{ t('posts.itemCount', { count: posts.length }) }}
+                {{ totalPosts }} {{ t('posts.itemCount', { count: totalPosts }) }}
               </span>
             </div>
 
@@ -295,6 +332,62 @@ const getAuthorName = (author: Post['author']) => {
               :key="post.id"
               :post="post"
             />
+          </div>
+          
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="mt-8 flex justify-center">
+            <nav class="flex items-center gap-1">
+              <!-- Previous Page -->
+              <button
+                v-if="filters.page > 1"
+                @click="handlePageChange(filters.page - 1)"
+                class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                aria-label="Previous page"
+              >
+                <span class="sr-only">{{ t('pagination.previous') }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              
+              <!-- Page Numbers -->
+              <template v-for="page in totalPages" :key="page">
+                <!-- Show first page, last page, current page, and pages around current page -->
+                <button
+                  v-if="page === 1 || page === totalPages || (page >= filters.page - 1 && page <= filters.page + 1)"
+                  @click="handlePageChange(page)"
+                  :class="[
+                    page === filters.page
+                      ? 'bg-primary-500 text-white'
+                      : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
+                    'flex h-10 min-w-10 items-center justify-center rounded-lg px-3 text-sm font-medium'
+                  ]"
+                >
+                  {{ page }}
+                </button>
+                
+                <!-- Ellipsis for gaps -->
+                <span
+                  v-else-if="page === filters.page - 2 || page === filters.page + 2"
+                  class="flex h-10 w-10 items-center justify-center text-gray-500 dark:text-gray-400"
+                >
+                  ...
+                </span>
+              </template>
+              
+              <!-- Next Page -->
+              <button
+                v-if="filters.page < totalPages"
+                @click="handlePageChange(filters.page + 1)"
+                class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                aria-label="Next page"
+              >
+                <span class="sr-only">{{ t('pagination.next') }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </nav>
           </div>
         </main>
       </div>

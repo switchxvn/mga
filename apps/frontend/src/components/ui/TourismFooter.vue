@@ -350,6 +350,12 @@ onMounted(async () => {
 .section-title {
   @apply text-2xl font-black tracking-wide mb-2 relative uppercase;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 0.85em; /* Even smaller base size */
+  font-weight: 900;
+  
+  @media (min-width: 768px) {
+    font-size: 1em; /* Even smaller desktop size */
+  }
 }
 
 .section-title::after {
@@ -362,15 +368,47 @@ onMounted(async () => {
 h3, h4, h5 {
   letter-spacing: 0.02em;
   @apply font-extrabold uppercase;
+  font-size: 0.85em; /* Even smaller base size */
+  font-weight: 900;
+  
+  @media (min-width: 768px) {
+    font-size: 1em; /* Even smaller desktop size */
+  }
 }
 
 .company-brand h3 {
   text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15);
+  font-size: 1.3em; /* Increase by 30% */
+  font-weight: 900; /* Increase by 20% */
 }
 
 .quick-link, .contact-link {
   @apply text-white/80 hover:text-white transform hover:translate-x-1 font-black;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  font-size: 0.9em; /* Even smaller base size */
+  font-weight: 950;
+  
+  @media (min-width: 768px) {
+    font-size: 1.1em; /* Even smaller desktop size */
+  }
+}
+
+.quick-link span, .contact-link span {
+  font-size: 0.9em; /* Even smaller base size */
+  font-weight: 950;
+  
+  @media (min-width: 768px) {
+    font-size: 1.1em; /* Even smaller desktop size */
+  }
+}
+
+.quick-link .u-icon, .contact-link .u-icon {
+  font-size: 0.9em; /* Even smaller base size */
+  font-weight: 950;
+  
+  @media (min-width: 768px) {
+    font-size: 1.1em; /* Even smaller desktop size */
+  }
 }
 
 .quick-link:hover, .contact-link:hover {
@@ -382,12 +420,63 @@ h3, h4, h5 {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.branch-card:hover {
-  background: rgba(185, 28, 28, 0.8);
+.branch-card h5 {
+  font-size: 0.85em; /* Even smaller base size */
+  font-weight: 900;
+  
+  @media (min-width: 768px) {
+    font-size: 1em; /* Even smaller desktop size */
+  }
+}
+
+.branch-card p {
+  font-size: 0.85em; /* Even smaller base size */
+  font-weight: 700;
+  
+  @media (min-width: 768px) {
+    font-size: 1em; /* Even smaller desktop size */
+  }
+}
+
+.company-details p {
+  font-size: 0.85em; /* Even smaller base size */
+  font-weight: 700;
+  
+  @media (min-width: 768px) {
+    font-size: 1em; /* Even smaller desktop size */
+  }
+}
+
+.copyright-section p {
+  font-size: 0.8em; /* Even smaller base size */
+  font-weight: 700;
+  
+  @media (min-width: 768px) {
+    font-size: 0.95em; /* Even smaller desktop size */
+  }
 }
 
 /* Remove old Facebook container styling */
 .facebook-container {
   @apply shadow-lg hover:shadow-xl transition-all duration-300;
+}
+
+/* Increase size for social icons */
+.social-icon-link .u-icon {
+  font-size: 0.85em; /* Even smaller base size */
+  
+  @media (min-width: 768px) {
+    font-size: 1em; /* Even smaller desktop size */
+  }
+}
+
+/* Increase size for certification text */
+.certification-item span {
+  font-size: 0.8em; /* Even smaller base size */
+  font-weight: 700;
+  
+  @media (min-width: 768px) {
+    font-size: 0.95em; /* Even smaller desktop size */
+  }
 }
 </style> 

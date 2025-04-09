@@ -58,6 +58,10 @@ export interface Settings {
   borderRadius: string;
   backgroundColor: string;
   cardBackgroundColor: string;
+  benefits?: {
+    freeTicket?: string;
+    freeShuttle?: string;
+  };
 }
 
 export interface APIResponse {
@@ -112,5 +116,9 @@ export const defaultSettings: Settings = {
   },
   borderRadius: "rounded-xl",
   backgroundColor: "bg-white dark:bg-gray-800",
-  cardBackgroundColor: "bg-white dark:bg-gray-900"
+  cardBackgroundColor: "bg-white dark:bg-gray-900",
+  benefits: {
+    freeTicket: "Miễn phí vé cho trẻ dưới 1.2m và người già trên 70 tuổi",
+    freeShuttle: "Miễn phí xe điện đưa rước ra vào nhà ga cáp treo"
+  }
 }; 

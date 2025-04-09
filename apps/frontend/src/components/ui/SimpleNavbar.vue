@@ -304,14 +304,14 @@ watch(locale, () => {
         }"
       >
         <div class="container mx-auto px-4">
-          <div class="flex items-center h-12">
+          <div class="flex items-center h-16">
             <!-- Current Time and Actions -->
             <div class="w-[40%] flex items-center gap-2 justify-start">
               <Icon 
                 name="Clock" 
                 class="nav-icon text-white w-6 h-6"
               />
-              <span class="text-sm font-medium text-white">
+              <span class="text-[18px] font-medium text-white">
                 {{ formattedTime }}
               </span>
               <template v-if="props.settings?.topMenu?.actions?.length">
@@ -320,7 +320,7 @@ watch(locale, () => {
                   <template v-for="(action, index) in props.settings.topMenu.actions" :key="action.label">
                     <NuxtLink
                       :to="action.href"
-                      class="text-[15px] font-bold transition-colors duration-300 hover:opacity-90"
+                      class="text-[18px] font-extrabold transition-colors duration-300 hover:opacity-90"
                       :style="{
                         color: action.textColor,
                         '&:hover': {
@@ -420,7 +420,7 @@ watch(locale, () => {
                       >
                         <NuxtLink
                           :to="item.href"
-                          class="main-menu-item flex items-center space-x-1 whitespace-nowrap h-full px-3"
+                          class="main-menu-item flex items-center space-x-1 whitespace-nowrap h-full px-3 font-bold"
                           :class="{ 
                             'menu-active': isMenuActive(item.href),
                             [props.settings?.navigation?.fontWeight || '']: true
@@ -437,7 +437,7 @@ watch(locale, () => {
                             }"
                           />
                           <span 
-                            class="text-[1.05rem] uppercase" 
+                            class="text-[1.15rem] uppercase" 
                             :style="{ 
                               color: isMenuActive(item.href) 
                                 ? 'rgb(var(--color-primary-500))'

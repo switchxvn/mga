@@ -17,21 +17,32 @@
           :class="[currentSettings.typography.heading, currentSettings.colors.heading]"
           class="mb-6 uppercase tracking-wide text-center"
         >
-          {{ selectedProduct?.translations ? getTranslationByLocale(selectedProduct.translations, 'title') : "Đặt vé tham quan" }}
+          {{
+            selectedProduct?.translations
+              ? getTranslationByLocale(selectedProduct.translations, "title")
+              : "Đặt vé tham quan"
+          }}
         </h2>
 
         <!-- Ticket Products Slider -->
         <div class="mb-8">
           <div v-if="isLoadingProducts" class="text-center py-8">
-            <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mx-auto"></div>
-            <div class="mt-4 text-gray-600 dark:text-gray-400">Đang tải danh sách vé...</div>
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mx-auto"
+            ></div>
+            <div class="mt-4 text-gray-600 dark:text-gray-400">
+              Đang tải danh sách vé...
+            </div>
           </div>
-          
+
           <template v-else>
-            <div v-if="products.length === 0" class="text-center py-8 text-gray-600 dark:text-gray-400">
+            <div
+              v-if="products.length === 0"
+              class="text-center py-8 text-gray-600 dark:text-gray-400"
+            >
               Không tìm thấy vé nào
             </div>
-            
+
             <Swiper
               v-else
               :modules="[SwiperNavigation, SwiperPagination]"
@@ -46,7 +57,7 @@
               class="ticket-swiper"
             >
               <SwiperSlide v-for="product in products" :key="product.id">
-                <div 
+                <div
                   class="p-3 rounded-lg border-2 transition-colors duration-200 cursor-pointer w-[360px] mx-auto"
                   :class="[
                     selectedProduct?.id === product.id
@@ -65,18 +76,25 @@
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2 mb-1.5">
                         <TicketIcon class="w-4 h-4 text-primary-500" />
-                        <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 truncate">
-                          {{ getTranslationByLocale(product.translations, 'title') }}
+                        <h3
+                          class="font-semibold text-base text-gray-900 dark:text-gray-100 truncate"
+                        >
+                          {{ getTranslationByLocale(product.translations, "title") }}
                         </h3>
                       </div>
                       <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                        {{ getTranslationByLocale(product.translations, 'shortDescription') }}
+                        {{
+                          getTranslationByLocale(product.translations, "shortDescription")
+                        }}
                       </p>
                     </div>
                   </div>
                   <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <NuxtLink 
-                      :to="`/tickets/${getTranslationByLocale(product.translations, 'slug')}`"
+                    <NuxtLink
+                      :to="`/tickets/${getTranslationByLocale(
+                        product.translations,
+                        'slug'
+                      )}`"
                       class="flex items-center justify-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                     >
                       Xem chi tiết
@@ -89,26 +107,54 @@
           </template>
         </div>
 
+        <!-- Benefits Information -->
+        <div
+          v-if="currentSettings.benefits"
+          class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800"
+        >
+          <div class="flex flex-col gap-3">
+            <div
+              v-if="currentSettings.benefits.freeTicket"
+              class="flex items-center gap-3"
+            >
+              <CheckCircleIcon class="w-6 h-6 text-green-500 flex-shrink-0" />
+              <span class="text-base font-bold text-gray-800 dark:text-gray-200">{{
+                currentSettings.benefits.freeTicket
+              }}</span>
+            </div>
+            <div
+              v-if="currentSettings.benefits.freeShuttle"
+              class="flex items-center gap-3"
+            >
+              <CheckCircleIcon class="w-6 h-6 text-green-500 flex-shrink-0" />
+              <span class="text-base font-bold text-gray-800 dark:text-gray-200">{{
+                currentSettings.benefits.freeShuttle
+              }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Booking Form -->
         <form v-if="selectedProduct" @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Variants Selection -->
-          <div
-            v-if="indexedVariants.length"
-            class="space-y-4"
-          >
+          <div v-if="indexedVariants.length" class="space-y-4">
             <div class="space-y-2">
               <label class="block font-medium text-gray-700 dark:text-gray-300">
                 Loại vé
               </label>
               <div class="space-y-3">
-                <div 
-                  v-for="(variant, index) in indexedVariants" 
+                <div
+                  v-for="(variant, index) in indexedVariants"
                   :key="index"
                   class="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-lg p-3"
                 >
                   <div class="flex flex-col">
-                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ getVariantName(variant) }}</span>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ formatPrice(getVariantPrice(variant)) }}</span>
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{{
+                      getVariantName(variant)
+                    }}</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">{{
+                      formatPrice(getVariantPrice(variant))
+                    }}</span>
                   </div>
                   <div class="flex items-center">
                     <button
@@ -119,13 +165,18 @@
                     >
                       <MinusIcon class="w-5 h-5" />
                     </button>
-                    <span class="w-12 text-center text-lg font-medium" :class="currentSettings.colors.heading">
+                    <span
+                      class="w-12 text-center text-lg font-medium"
+                      :class="currentSettings.colors.heading"
+                    >
                       {{ getVariantCount(variant) }}
                     </span>
                     <button
                       type="button"
                       class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      :disabled="getVariantCount(variant) >= currentSettings.form.maxGuests"
+                      :disabled="
+                        getVariantCount(variant) >= currentSettings.form.maxGuests
+                      "
                       @click="increaseVariantCount(variant)"
                     >
                       <PlusIcon class="w-5 h-5" />
@@ -149,7 +200,8 @@
               v-model="selectedDate"
               :min-date="new Date()"
               :masks="masks"
-              class="w-full [&_.vc-highlight-base-start]:!bg-primary-500 [&_.vc-highlight-base-start]:!text-white"
+              :disabled-dates="disabledDates"
+              class="w-full [&_.vc-highlight-base-start]:!bg-primary-500 [&_.vc-highlight-base-start]:!text-white [&_.vc-disabled]:!opacity-25 [&_.vc-disabled]:!cursor-not-allowed"
             >
               <template #default="{ inputValue, inputEvents }">
                 <input
@@ -196,34 +248,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { useProduct } from "@/composables/useProduct";
+import type { Settings } from "@/types/ticket";
+import { defaultSettings } from "@/types/ticket";
+import type { Product } from "@ew/shared";
+import { ProductType } from "@ew/shared";
 import {
-  Ticket as TicketIcon,
-  Calendar as CalendarIcon,
-  Users as UsersIcon,
-  Plus as PlusIcon,
-  Minus as MinusIcon,
   ArrowRight,
+  Calendar as CalendarIcon,
+  CheckCircle as CheckCircleIcon,
+  Minus as MinusIcon,
+  Plus as PlusIcon,
+  Ticket as TicketIcon,
 } from "lucide-vue-next";
-import { DatePicker } from "v-calendar";
-import "v-calendar/style.css";
-import { Swiper, SwiperSlide } from "swiper/vue";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
 import {
   Navigation as SwiperNavigation,
   Pagination as SwiperPagination,
 } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
-import { useTrpc } from "../../../composables/useTrpc";
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { DatePicker } from "v-calendar";
+import "v-calendar/style.css";
+import { computed, onMounted, ref } from "vue";
 import { useLocalization } from "../../../composables/useLocalization";
-import type { Settings } from "@/types/ticket";
-import { defaultSettings } from "@/types/ticket";
-import { useI18n } from "vue-i18n";
-import { createTrpcClient } from "@/utils/trpc";
-import type { Product } from "@ew/shared";
-import { useProduct } from "@/composables/useProduct";
-import { ProductType } from "@ew/shared";
 
 const props = withDefaults(
   defineProps<{
@@ -260,7 +309,7 @@ const calculateTotal = computed(() => {
   // Tính tổng dựa trên số lượng của mỗi variant
   let total = 0;
   Object.entries(variantCounts.value).forEach(([variantId, count]) => {
-    const variant = indexedVariants.value.find(v => v.id === Number(variantId));
+    const variant = indexedVariants.value.find((v) => v.id === Number(variantId));
     if (variant && count > 0) {
       total += getVariantPrice(variant) * count;
     }
@@ -273,7 +322,10 @@ const isFormValid = computed(() => {
   if (!selectedProduct.value) return false;
 
   // Kiểm tra xem tổng số vé > 0 và có chọn ngày không
-  const totalTickets = Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
+  const totalTickets = Object.values(variantCounts.value).reduce(
+    (sum, count) => sum + count,
+    0
+  );
 
   return selectedDate.value && totalTickets > 0;
 });
@@ -285,16 +337,16 @@ const totalTickets = computed(() => {
 const selectProduct = (product: Product) => {
   selectedProduct.value = product;
   variantCounts.value = {};
-  
+
   // Khởi tạo variants có index
   if (product.variants && product.variants.length > 0) {
     indexedVariants.value = product.variants.map((variant, index) => ({
       ...variant,
-      _index: index
+      _index: index,
     }));
-    
+
     // Khởi tạo số lượng mỗi variant là 0
-    indexedVariants.value.forEach(variant => {
+    indexedVariants.value.forEach((variant) => {
       variantCounts.value[variant.id] = 0;
     });
   } else {
@@ -313,12 +365,12 @@ const handleSubmit = async () => {
   const ticketItems = Object.entries(variantCounts.value)
     .filter(([_, count]) => count > 0)
     .map(([variantId, count]) => {
-      const variant = indexedVariants.value.find(v => v.id === Number(variantId));
+      const variant = indexedVariants.value.find((v) => v.id === Number(variantId));
       return {
         variantId: Number(variantId),
         count,
         price: getVariantPrice(variant),
-        name: getVariantName(variant)
+        name: getVariantName(variant),
       };
     });
 
@@ -327,11 +379,11 @@ const handleSubmit = async () => {
     productId: selectedProduct.value.id,
     date: selectedDate.value,
     items: ticketItems,
-    total: ticketItems.reduce((sum, item) => sum + (item.price * item.count), 0)
+    total: ticketItems.reduce((sum, item) => sum + item.price * item.count, 0),
   };
 
   // TODO: Xử lý logic đặt vé
-  console.log('Booking data:', bookingData);
+  console.log("Booking data:", bookingData);
 };
 
 const transformToProduct = (item: any): Product => {
@@ -387,7 +439,7 @@ const fetchTicketProducts = async () => {
     type: ProductType.TICKET,
     locale: locale.value,
   };
-  
+
   await fetchProducts();
 
   if (products.value.length) {
@@ -402,28 +454,45 @@ onMounted(() => {
 
 // Date picker configuration
 const masks = {
-  input: "DD/MM/YYYY",
-  data: "YYYY-MM-DD",
+  input: 'DD/MM/YYYY',
+  data: 'YYYY-MM-DD'
 };
 
-// Hàm trợ giúp lấy translation theo locale
-const getTranslationByLocale = (translations: any[], field: string = 'name') => {
-  if (!translations || translations.length === 0) {
-    return '';
+// Thêm computed property cho disabledDates
+const disabledDates = computed(() => {
+  const dates = [];
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  // Add all dates from the past up to yesterday
+  let currentDate = new Date(0); // Start from epoch
+  while (currentDate <= yesterday) {
+    dates.push(new Date(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
   }
   
+  return dates;
+});
+
+// Hàm trợ giúp lấy translation theo locale
+const getTranslationByLocale = (translations: any[], field: string = "name") => {
+  if (!translations || translations.length === 0) {
+    return "";
+  }
+
   // Tìm translation theo locale hiện tại
   const translation = translations.find((t: any) => t.locale === locale.value);
   // Nếu không tìm thấy, sử dụng translation đầu tiên
-  return translation?.[field] || translations[0]?.[field] || '';
+  return translation?.[field] || translations[0]?.[field] || "";
 };
 
 // Hàm lấy tên của variant theo locale
 const getVariantName = (variant: any) => {
   if (variant.translations && variant.translations.length > 0) {
-    return getTranslationByLocale(variant.translations, 'name') || 'Vé mặc định';
+    return getTranslationByLocale(variant.translations, "name") || "Vé mặc định";
   }
-  return variant.name || 'Vé mặc định';
+  return variant.name || "Vé mặc định";
 };
 
 const getVariantPrice = (variant: any) => {

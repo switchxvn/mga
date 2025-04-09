@@ -11,12 +11,15 @@ export const postRouter = router({
         categories: z.string().optional(),
         locale: z.string().optional(),
         category: z.string().optional(),
+        page: z.number().optional().default(1),
+        limit: z.number().optional().default(12),
+        sortBy: z.string().optional().default('newest'),
       }).optional()
     }))
     .query(async ({ input, ctx }) => {
       try {
         const { filters } = input || {};
-        const { locale, categories, categoryId, category } = filters || {};
+        const { locale, categories, categoryId, category, page = 1, limit = 12, sortBy = 'newest' } = filters || {};
 
         // Xử lý danh sách categories nếu có
         let categoryIds: number[] = [];
@@ -32,7 +35,7 @@ export const postRouter = router({
             categoryIds = [foundCategory.id];
           } else {
             // Nếu không tìm thấy category theo slug, trả về mảng rỗng
-            return [];
+            return { posts: [], total: 0, totalPages: 0 };
           }
         } else if (categories) {
           // Chuyển đổi chuỗi categories thành mảng số
@@ -42,19 +45,57 @@ export const postRouter = router({
           categoryIds = [categoryId];
         }
 
-        // Tìm posts theo locale và/hoặc categories
+        // Lấy tất cả bài viết phù hợp với điều kiện
+        let allPosts = [];
+        
         if (locale) {
           if (categoryIds.length > 0) {
-            return ctx.services.postService.findByLocaleAndCategories(locale, categoryIds);
+            allPosts = await ctx.services.postService.findByLocaleAndCategories(locale, categoryIds);
+          } else {
+            allPosts = await ctx.services.postService.findByLocale(locale);
           }
-          return ctx.services.postService.findByLocale(locale);
+        } else if (categoryIds.length > 0) {
+          allPosts = await ctx.services.postService.findByCategories(categoryIds);
+        } else {
+          allPosts = await ctx.services.postService.findPublished();
         }
 
-        if (categoryIds.length > 0) {
-          return ctx.services.postService.findByCategories(categoryIds);
+        // Sắp xếp bài viết theo sortBy
+        if (sortBy === 'oldest') {
+          allPosts.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        } else if (sortBy === 'title_asc') {
+          allPosts.sort((a, b) => {
+            const titleA = a.translations?.find(t => t.locale === locale)?.title || '';
+            const titleB = b.translations?.find(t => t.locale === locale)?.title || '';
+            return titleA.localeCompare(titleB);
+          });
+        } else if (sortBy === 'title_desc') {
+          allPosts.sort((a, b) => {
+            const titleA = a.translations?.find(t => t.locale === locale)?.title || '';
+            const titleB = b.translations?.find(t => t.locale === locale)?.title || '';
+            return titleB.localeCompare(titleA);
+          });
+        } else {
+          // newest (mặc định)
+          allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         }
 
-        return ctx.services.postService.findPublished();
+        // Tính toán phân trang
+        const total = allPosts.length;
+        const totalPages = Math.ceil(total / limit);
+        const startIndex = (page - 1) * limit;
+        const endIndex = Math.min(startIndex + limit, total);
+        
+        // Lấy bài viết cho trang hiện tại
+        const paginatedPosts = allPosts.slice(startIndex, endIndex);
+
+        return { 
+          posts: paginatedPosts, 
+          total, 
+          totalPages,
+          currentPage: page,
+          limit
+        };
       } catch (error) {
         console.error('Failed to fetch latest posts:', error);
         throw new TRPCError({
