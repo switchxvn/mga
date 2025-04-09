@@ -17,7 +17,7 @@
           :class="[currentSettings.typography.heading, currentSettings.colors.heading]"
           class="mb-6 uppercase tracking-wide text-center"
         >
-          {{ selectedProduct?.translations[0]?.title || "Đặt vé tham quan" }}
+          {{ selectedProduct?.translations ? getTranslationByLocale(selectedProduct.translations, 'title') : "Đặt vé tham quan" }}
         </h2>
 
         <!-- Ticket Products Slider -->
@@ -66,17 +66,17 @@
                       <div class="flex items-center gap-2 mb-1.5">
                         <TicketIcon class="w-4 h-4 text-primary-500" />
                         <h3 class="font-semibold text-base text-gray-900 dark:text-gray-100 truncate">
-                          {{ product.translations[0]?.title }}
+                          {{ getTranslationByLocale(product.translations, 'title') }}
                         </h3>
                       </div>
                       <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                        {{ product.translations[0]?.shortDescription }}
+                        {{ getTranslationByLocale(product.translations, 'shortDescription') }}
                       </p>
                     </div>
                   </div>
                   <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <NuxtLink 
-                      :to="`/tickets/${product.translations[0]?.slug}`"
+                      :to="`/tickets/${getTranslationByLocale(product.translations, 'slug')}`"
                       class="flex items-center justify-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                     >
                       Xem chi tiết
@@ -406,9 +406,22 @@ const masks = {
   data: "YYYY-MM-DD",
 };
 
+// Hàm trợ giúp lấy translation theo locale
+const getTranslationByLocale = (translations: any[], field: string = 'name') => {
+  if (!translations || translations.length === 0) {
+    return '';
+  }
+  
+  // Tìm translation theo locale hiện tại
+  const translation = translations.find((t: any) => t.locale === locale.value);
+  // Nếu không tìm thấy, sử dụng translation đầu tiên
+  return translation?.[field] || translations[0]?.[field] || '';
+};
+
+// Hàm lấy tên của variant theo locale
 const getVariantName = (variant: any) => {
   if (variant.translations && variant.translations.length > 0) {
-    return variant.translations[0]?.name || 'Vé mặc định';
+    return getTranslationByLocale(variant.translations, 'name') || 'Vé mặc định';
   }
   return variant.name || 'Vé mặc định';
 };
