@@ -18,8 +18,10 @@ ENV YARN_CACHE_FOLDER=/app/.yarn-cache
 COPY --chown=node:node package.json yarn.lock ./
 COPY --chown=node:node nx.json tsconfig.base.json ./
 
-# Install dependencies
-RUN yarn install --frozen-lockfile
+# Install dependencies with special handling for nx post-install
+RUN yarn config set ignore-engines true && \
+    CYPRESS_INSTALL_BINARY=0 NX_SKIP_NX_CACHE_CREATION=true yarn install --frozen-lockfile && \
+    find /app/node_modules -name "nx" -type d -exec sh -c 'for i; do touch "$i/bin/post-install-skip"; done' _ {} \;
 
 # Copy only frontend related files
 COPY --chown=node:node apps/frontend ./apps/frontend
@@ -57,8 +59,9 @@ ENV YARN_CACHE_FOLDER=/app/.yarn-cache
 # Copy package files
 COPY --chown=node:node package.json yarn.lock ./
 
-# Install production dependencies only
-RUN yarn install --production --frozen-lockfile
+# Install production dependencies only with nx cache creation skipped
+RUN yarn config set ignore-engines true && \
+    CYPRESS_INSTALL_BINARY=0 NX_SKIP_NX_CACHE_CREATION=true yarn install --production --frozen-lockfile
 
 # Copy built application
 COPY --chown=node:node --from=builder /app/apps/frontend/.output ./.output
