@@ -165,8 +165,8 @@ onMounted(async () => {
                   <div v-for="(branch, index) in activeFooter.branchInfo" 
                        :key="index" 
                        class="branch-card p-4 rounded-lg bg-white/10 hover:bg-white/15 transition-all duration-300 transform hover:-translate-y-1">
-                    <h5 class="text-lg font-semibold mb-2 text-white/90">{{ branch.title }}</h5>
-                    <p class="text-base text-white/70">{{ branch.address }}</p>
+                    <h5 class="text-lg font-semibold mb-2 text-white">{{ branch.title }}</h5>
+                    <p class="text-base text-white">{{ branch.address }}</p>
                   </div>
                 </div>
               </div>
@@ -423,6 +423,7 @@ h3, h4, h5 {
 .branch-card h5 {
   font-size: 0.85em;
   font-weight: 900;
+  @apply text-white;
   
   @media (min-width: 768px) {
     font-size: 1em;
@@ -430,11 +431,12 @@ h3, h4, h5 {
 }
 
 .branch-card p {
-  font-size: 0.85em; /* Even smaller base size */
+  font-size: 0.85em;
   font-weight: 700;
+  @apply text-white;
   
   @media (min-width: 768px) {
-    font-size: 1em; /* Even smaller desktop size */
+    font-size: 1em;
   }
 }
 

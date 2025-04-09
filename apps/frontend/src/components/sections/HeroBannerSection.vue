@@ -79,7 +79,7 @@ onMounted(() => {
       >
         <!-- Background Image -->
         <div 
-          class="absolute inset-0 bg-cover bg-center bg-no-repeat transform transition-transform duration-700 hover:scale-105"
+          class="absolute inset-0 bg-cover bg-top bg-no-repeat transform transition-transform duration-700 hover:scale-[1.02]"
           :style="{ backgroundImage: `url('${config.backgroundImage}')` }"
         ></div>
 
@@ -93,7 +93,7 @@ onMounted(() => {
 
         <!-- Additional Dark Overlay for better text contrast -->
         <div 
-          class="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
+          class="absolute inset-0 bg-black/30 backdrop-blur-[0.5px]"
           :style="{
             opacity: config.overlay.opacity || 1
           }"

@@ -9,9 +9,11 @@
           currentSettings.borderRadius,
           currentSettings.cardShadow,
           currentSettings.padding,
-          currentSettings.position,
+          'relative',
           currentSettings.zIndex,
+          'border-2 border-primary-500'
         ]"
+        style="margin-top: -7.5rem;"
       >
         <h2
           :class="[currentSettings.typography.heading, currentSettings.colors.heading]"
@@ -58,11 +60,11 @@
             >
               <SwiperSlide v-for="product in products" :key="product.id">
                 <div
-                  class="p-3 rounded-lg border-2 transition-colors duration-200 cursor-pointer w-[360px] mx-auto"
+                  class="p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer w-[360px] mx-auto hover:shadow-lg"
                   :class="[
                     selectedProduct?.id === product.id
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10 shadow-md'
+                      : 'border-primary-500/50 dark:border-primary-500/50 hover:border-primary-500 dark:hover:border-primary-500',
                   ]"
                 >
                   <div class="flex gap-4 items-center" @click="selectProduct(product)">

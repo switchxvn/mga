@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Bed, Bike, Car, Bus, BatteryCharging } from 'lucide-vue-next';
+import { Bed, Bike, Car, Bus, BatteryCharging, Truck, Building2, Zap } from 'lucide-vue-next';
 
 interface Service {
   title: string;
@@ -54,6 +54,9 @@ const iconMap = {
   Car,
   Bus,
   BatteryCharging,
+  Truck,
+  Building2,
+  Zap
 };
 
 // Get icon component by name
@@ -63,7 +66,7 @@ const getIconComponent = (iconName: string) => {
 
 // Computed properties for styling
 const containerClasses = computed(() => {
-  return `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${props.config.columns} gap-8 md:gap-12`;
+  return props.config.layout || 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8';
 });
 
 const iconClasses = computed(() => {
@@ -79,41 +82,45 @@ const services = computed(() => {
 <template>
   <section class="py-16 bg-gray-50/50 dark:bg-gray-900/50">
     <div class="container mx-auto px-4">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-          {{ section.title }}
-        </h2>
-        <div class="w-24 h-1 bg-primary-500 mx-auto rounded-full"></div>
-      </div>
-      
-      <div :class="containerClasses">
-        <div 
-          v-for="(service, index) in services" 
-          :key="index" 
-          class="group flex items-center space-x-6"
-        >
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-primary-800/50 p-8 lg:p-12">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            {{ section.title }}
+          </h2>
+          <div class="w-24 h-1 bg-primary-800 mx-auto rounded-full"></div>
+        </div>
+        
+        <div :class="containerClasses">
           <div 
-            v-if="props.config.showIcon && getIconComponent(service.icon)" 
-            class="relative flex-shrink-0"
+            v-for="(service, index) in services" 
+            :key="index" 
+            class="group bg-gray-50/50 dark:bg-gray-900/50 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 lg:p-6 border-2 border-primary-800/50 hover:border-primary-800"
           >
-            <!-- Outer circle with border -->
-            <div class="absolute inset-0 rounded-full border-2 border-primary-500 bg-white dark:bg-gray-800 transform transition-transform duration-300 group-hover:scale-105"></div>
-            <!-- Inner circle with lighter background -->
-            <div class="relative flex items-center justify-center w-20 h-20 rounded-full bg-white dark:bg-gray-800">
-              <component 
-                :is="getIconComponent(service.icon)" 
-                class="w-10 h-10 text-primary-500"
-              />
+            <div class="flex items-start space-x-4 lg:space-x-6">
+              <div 
+                v-if="props.config.showIcon && getIconComponent(service.icon)" 
+                class="relative flex-shrink-0"
+              >
+                <!-- Outer circle with border -->
+                <div class="absolute inset-0 rounded-full border-2 border-primary-800 bg-white dark:bg-gray-800 transform transition-transform duration-300 group-hover:scale-105"></div>
+                <!-- Inner circle with lighter background -->
+                <div class="relative flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-white dark:bg-gray-800">
+                  <component 
+                    :is="getIconComponent(service.icon)" 
+                    class="w-8 h-8 lg:w-10 lg:h-10 text-primary-800"
+                  />
+                </div>
+              </div>
+              <div class="flex flex-col items-start">
+                <h3 
+                  v-if="props.config.showTitle" 
+                  class="text-base lg:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1"
+                >
+                  {{ service.title }}
+                </h3>
+                <p class="text-sm lg:text-base text-gray-600 dark:text-gray-400">{{ service.price }}</p>
+              </div>
             </div>
-          </div>
-          <div class="flex flex-col items-start">
-            <h3 
-              v-if="props.config.showTitle" 
-              class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1"
-            >
-              {{ service.title }}
-            </h3>
-            <p class="text-base text-gray-600 dark:text-gray-400">{{ service.price }}</p>
           </div>
         </div>
       </div>
