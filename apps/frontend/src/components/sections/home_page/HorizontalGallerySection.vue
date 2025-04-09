@@ -1,6 +1,6 @@
 <template>
   <section :class="[settings.colors.background, settings.padding.top, settings.padding.bottom]" class="relative">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 py-16">
       <!-- Section Header -->
       <div v-if="settings.showTitle" class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
         <div class="container mx-auto px-4">
@@ -567,7 +567,8 @@ const getRowItems = (rowIndex: number) => {
 
 .gallery-outer-container {
   position: relative;
-  margin: 0 48px; // Space for navigation buttons
+  margin: 0;
+  overflow: hidden;
 }
 
 .gallery-container {
@@ -576,6 +577,7 @@ const getRowItems = (rowIndex: number) => {
   overflow-y: hidden;
   scroll-behavior: smooth;
   cursor: grab;
+  margin: 0 -48px;
   
   &:active {
     cursor: grabbing;
@@ -646,7 +648,8 @@ const getRowItems = (rowIndex: number) => {
 
 // Navigation buttons
 .nav-button {
-  @apply bg-white dark:bg-gray-800 
+  @apply bg-white/80 dark:bg-gray-800/80 
+         backdrop-blur-sm
          text-gray-700 dark:text-gray-200 
          rounded-full shadow-lg
          hover:bg-primary-50 dark:hover:bg-primary-900
@@ -661,14 +664,13 @@ const getRowItems = (rowIndex: number) => {
   align-items: center;
   justify-content: center;
   border: 2px solid theme('colors.gray.200');
-  opacity: 1;
   
   &.left-button {
-    left: -48px;
+    left: 0;
   }
   
   &.right-button {
-    right: -48px;
+    right: 0;
   }
   
   &:hover {
@@ -679,20 +681,42 @@ const getRowItems = (rowIndex: number) => {
 // Media queries for responsive design
 @media (max-width: 768px) {
   .gallery-outer-container {
-    margin: 0 36px;
+    padding: 0 36px;
+  }
+
+  .gallery-container {
+    margin: 0 -36px;
+    padding: 0 36px;
+  }
+
+  .gallery-grid {
+    flex-direction: row !important;
+    gap: 12px !important;
+  }
+
+  .gallery-row {
+    display: none !important;
+    
+    &:first-child {
+      display: flex !important;
+      gap: 12px;
+      
+      .gallery-item {
+        width: 280px !important;
+        min-width: 280px !important;
+        height: 200px !important;
+        
+        &:last-child {
+          width: 320px !important;
+          min-width: 320px !important;
+        }
+      }
+    }
   }
 
   .nav-button {
     width: 36px;
     height: 36px;
-    
-    &.left-button {
-      left: -36px;
-    }
-    
-    &.right-button {
-      right: -36px;
-    }
     
     svg {
       width: 20px;
@@ -703,20 +727,30 @@ const getRowItems = (rowIndex: number) => {
 
 @media (max-width: 640px) {
   .gallery-outer-container {
-    margin: 0 32px;
+    padding: 0 24px;
+  }
+
+  .gallery-container {
+    margin: 0 -24px;
+    padding: 0 24px;
+  }
+
+  .gallery-row:first-child {
+    .gallery-item {
+      width: 240px !important;
+      min-width: 240px !important;
+      height: 180px !important;
+      
+      &:last-child {
+        width: 280px !important;
+        min-width: 280px !important;
+      }
+    }
   }
 
   .nav-button {
     width: 32px;
     height: 32px;
-    
-    &.left-button {
-      left: -32px;
-    }
-    
-    &.right-button {
-      right: -32px;
-    }
     
     svg {
       width: 16px;
