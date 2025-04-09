@@ -306,21 +306,23 @@ watch(locale, () => {
         <div class="container mx-auto px-4">
           <div class="flex items-center h-16">
             <!-- Current Time and Actions -->
-            <div class="w-[40%] flex items-center gap-2 justify-start">
-              <Icon 
-                name="Clock" 
-                class="nav-icon text-white w-6 h-6"
-              />
-              <span class="text-[18px] font-medium text-white">
-                {{ formattedTime }}
-              </span>
+            <div class="w-[45%] flex items-center gap-2 justify-start">
+              <div class="flex items-center gap-2 min-w-[240px]">
+                <Icon 
+                  name="Clock" 
+                  class="nav-icon text-white w-6 h-6"
+                />
+                <span class="text-[18px] font-medium text-white whitespace-nowrap">
+                  {{ formattedTime }}
+                </span>
+              </div>
               <template v-if="props.settings?.topMenu?.actions?.length">
                 <span class="text-white mx-2 font-bold">|</span>
                 <div class="flex items-center">
                   <template v-for="(action, index) in props.settings.topMenu.actions" :key="action.label">
                     <NuxtLink
                       :to="action.href"
-                      class="text-[18px] font-extrabold transition-colors duration-300 hover:opacity-90"
+                      class="text-[18px] font-extrabold transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                       :style="{
                         color: action.textColor,
                         '&:hover': {
@@ -340,8 +342,8 @@ watch(locale, () => {
             </div>
             
             <!-- Center Hotline -->
-            <div class="w-[20%] flex justify-center">
-              <div class="flex items-center gap-3">
+            <div class="w-[25%] flex justify-center">
+              <div class="flex items-center gap-3 whitespace-nowrap">
                 <Icon 
                   name="Phone" 
                   class="nav-icon text-white w-7 h-7"
@@ -353,7 +355,7 @@ watch(locale, () => {
             </div>
 
             <!-- Right Actions -->
-            <div class="w-[40%] flex items-center justify-end">
+            <div class="w-[30%] flex items-center justify-end">
               <div class="flex items-center gap-2">
                 <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
                 <ThemeToggle mode="full" />
@@ -714,6 +716,11 @@ watch(locale, () => {
 <style lang="scss" scoped>
 .navbar-container {
   @apply relative z-50;
+
+  .fixed-time-width {
+    @apply inline-block;
+    width: 240px; // Fixed width to accommodate "23:59:59 - 31/12/2024" format
+  }
 
   .nav-icon {
     @apply flex-shrink-0;

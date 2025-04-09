@@ -222,7 +222,7 @@ useHead(() => {
             <!-- Post content -->
             <div class="post-detail__body">
               <div class="post-prose">
-                <p class="whitespace-pre-line">{{ postContent }}</p>
+                <div v-html="postContent"></div>
               </div>
             </div>
             
