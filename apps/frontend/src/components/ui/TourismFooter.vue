@@ -121,8 +121,8 @@ onMounted(async () => {
                     <NuxtLink :to="link.url" 
                              class="quick-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
                       <UIcon :name="link.icon || 'Link'" 
-                            class="w-6 h-6 text-white/70 group-hover:text-white transition-colors duration-300" />
-                      <span class="text-lg font-bold text-white/70 group-hover:text-white transition-colors duration-300">{{ link.label }}</span>
+                            class="w-6 h-6 text-white group-hover:text-white transition-colors duration-300" />
+                      <span class="text-lg font-bold text-white group-hover:text-white transition-colors duration-300">{{ link.label }}</span>
                     </NuxtLink>
                   </li>
                 </ul>
@@ -133,23 +133,23 @@ onMounted(async () => {
                 <h4 class="section-title">{{ address.title }}</h4>
                 <div class="space-y-4 mt-6">
                   <p class="flex items-start space-x-3 group p-3">
-                    <MapPin class="w-6 h-6 mt-1 flex-shrink-0 text-white/70" />
-                    <span class="text-lg font-bold text-white/70">{{ address.location }}</span>
+                    <MapPin class="w-6 h-6 mt-1 flex-shrink-0 text-white" />
+                    <span class="text-lg font-bold text-white">{{ address.location }}</span>
                   </p>
                   
                   <div v-for="(phone, phoneIndex) in address.phone" :key="'phone-'+phoneIndex">
                     <a :href="'tel:' + phone.number" 
                        class="contact-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
-                      <Phone class="w-6 h-6 text-white/70 group-hover:text-white transition-colors duration-300" />
-                      <span class="text-lg font-bold text-white/70 group-hover:text-white transition-colors duration-300">{{ phone.number }}</span>
+                      <Phone class="w-6 h-6 text-white group-hover:text-white transition-colors duration-300" />
+                      <span class="text-lg font-bold text-white group-hover:text-white transition-colors duration-300">{{ phone.number }}</span>
                     </a>
                   </div>
 
                   <div v-for="(email, emailIndex) in address.email" :key="'email-'+emailIndex">
                     <a :href="'mailto:' + email.address" 
                        class="contact-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
-                      <Mail class="w-6 h-6 text-white/70 group-hover:text-white transition-colors duration-300" />
-                      <span class="text-lg font-bold text-white/70 group-hover:text-white transition-colors duration-300">{{ email.address }}</span>
+                      <Mail class="w-6 h-6 text-white group-hover:text-white transition-colors duration-300" />
+                      <span class="text-lg font-bold text-white group-hover:text-white transition-colors duration-300">{{ email.address }}</span>
                     </a>
                   </div>
                 </div>
@@ -383,7 +383,7 @@ h3, h4, h5 {
 }
 
 .quick-link, .contact-link {
-  @apply text-white/80 hover:text-white transform hover:translate-x-1 font-black;
+  @apply text-white hover:text-white transform hover:translate-x-1 font-black;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
   font-size: 0.9em;
   font-weight: 950;
