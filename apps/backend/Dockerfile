@@ -23,6 +23,9 @@ ENV NODE_OPTIONS="--max_old_space_size=6096 --no-experimental-fetch"
 COPY package.json yarn.lock ./
 COPY nx.json tsconfig.base.json ./
 
+# Copy root ESLint config files
+COPY eslint.config.mjs ./
+
 # Install dependencies
 RUN yarn config set ignore-engines true && \
     yarn install --frozen-lockfile --network-timeout 300000
@@ -33,6 +36,9 @@ COPY libs ./libs
 
 # Copy remaining source code for the backend
 COPY apps/backend ./apps/backend
+
+# Copy other config files that might be referenced
+COPY .prettierrc .prettierignore ./
 
 # Build argument for environment file
 ARG ENV_FILE=.env
