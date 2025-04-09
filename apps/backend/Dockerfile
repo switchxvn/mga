@@ -1,67 +1,63 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
+
+# Install system dependencies for native modules
+RUN apt-get update && apt-get install -y \
+    curl python3 make g++ git \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create cache directory and set permissions
 RUN mkdir -p /app/.yarn-cache && \
     chown -R node:node /app
 
-# Install additional dependencies
-RUN apk add --no-cache python3 make g++ git curl
-
-# Switch to non-root user
-USER node
-
-# Set yarn cache directory and environment variables
+# Set environment variables
 ENV YARN_CACHE_FOLDER=/app/.yarn-cache
 ENV NX_SKIP_NX_CACHE_CREATION=true
 ENV NX_DAEMON=false
 ENV CYPRESS_INSTALL_BINARY=0
-ENV NODE_OPTIONS="--max_old_space_size=4096 --no-experimental-fetch"
+ENV NODE_OPTIONS="--max_old_space_size=6096 --no-experimental-fetch"
 
 # Copy package files
-COPY --chown=node:node package.json yarn.lock ./
-
-# Copy the nx workspace files
-COPY --chown=node:node nx.json tsconfig.base.json ./
+COPY package.json yarn.lock ./
+COPY nx.json tsconfig.base.json ./
 
 # Install dependencies
 RUN yarn config set ignore-engines true && \
-    NODE_OPTIONS="--openssl-legacy-provider" yarn install --frozen-lockfile --network-timeout 300000
+    yarn install --frozen-lockfile --network-timeout 300000
 
 # Copy TypeScript configs and source code for migrations
-COPY --chown=node:node tsconfig.json tsconfig.base.json ./
-COPY --chown=node:node libs ./libs
+COPY tsconfig.json tsconfig.base.json ./
+COPY libs ./libs
 
-# Copy remaining source code
-COPY --chown=node:node . .
+# Copy remaining source code for the backend
+COPY apps/backend ./apps/backend
 
 # Build argument for environment file
 ARG ENV_FILE=.env
 ENV ENV_FILE=${ENV_FILE}
 
 # Copy environment file
-COPY --chown=node:node apps/backend/${ENV_FILE} apps/backend/.env
+COPY apps/backend/${ENV_FILE} apps/backend/.env
 
 # Build the application and verify output
 RUN yarn nx build backend --prod && \
     ls -la dist/apps/backend || exit 1
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create cache directory and set permissions
 RUN mkdir -p /app/.yarn-cache && \
     chown -R node:node /app
-
-# Install additional dependencies
-RUN apk add --no-cache curl
-
-# Switch to non-root user
-USER node
 
 # Set environment variables
 ENV YARN_CACHE_FOLDER=/app/.yarn-cache
@@ -72,32 +68,21 @@ ENV CYPRESS_INSTALL_BINARY=0
 ENV NODE_OPTIONS="--no-experimental-fetch"
 
 # Copy package files
-COPY --chown=node:node package.json yarn.lock ./
-
-# Copy TypeScript configs and libs for migrations
-COPY --chown=node:node tsconfig.json tsconfig.base.json ./
-COPY --chown=node:node libs ./libs
+COPY package.json yarn.lock ./
 
 # Install production dependencies only
 RUN yarn config set ignore-engines true && \
-    NODE_OPTIONS="--openssl-legacy-provider" yarn install --production --frozen-lockfile --network-timeout 300000
+    yarn install --production --frozen-lockfile --network-timeout 300000
 
 # Copy built application
-COPY --chown=node:node --from=builder /app/dist/apps/backend/ ./dist/
+COPY --from=builder /app/dist/apps/backend/ ./dist/
 
 # Copy environment file
-COPY --chown=node:node --from=builder /app/apps/backend/.env .env
-
-# Switch back to root for entrypoint creation
-USER root
+COPY --from=builder /app/apps/backend/.env .env
 
 # Create entrypoint script
-COPY --chown=root:root scripts/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh && \
-    chown node:node /app/entrypoint.sh
-
-# Switch back to non-root user
-USER node
+COPY scripts/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 3333
