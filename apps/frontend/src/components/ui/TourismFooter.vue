@@ -350,11 +350,11 @@ onMounted(async () => {
 .section-title {
   @apply text-2xl font-black tracking-wide mb-2 relative uppercase;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-  font-size: 0.85em; /* Even smaller base size */
+  font-size: 1.6em; /* Tăng kích thước cho section title */
   font-weight: 900;
   
   @media (min-width: 768px) {
-    font-size: 1em; /* Even smaller desktop size */
+    font-size: 1.7em; /* Tăng kích thước cho desktop */
   }
 }
 
@@ -364,41 +364,41 @@ onMounted(async () => {
   transform: translateY(8px);
 }
 
-/* Enhance text contrast and readability */
+/* Giữ nguyên kích thước cho các heading khác */
 h3, h4, h5 {
   letter-spacing: 0.02em;
   @apply font-extrabold uppercase;
-  font-size: 0.85em; /* Even smaller base size */
+  font-size: 0.85em;
   font-weight: 900;
   
   @media (min-width: 768px) {
-    font-size: 1em; /* Even smaller desktop size */
+    font-size: 1em;
   }
 }
 
 .company-brand h3 {
   text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15);
-  font-size: 1.3em; /* Increase by 30% */
-  font-weight: 900; /* Increase by 20% */
+  font-size: 1.3em;
+  font-weight: 900;
 }
 
 .quick-link, .contact-link {
   @apply text-white/80 hover:text-white transform hover:translate-x-1 font-black;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-  font-size: 0.9em; /* Even smaller base size */
+  font-size: 0.9em;
   font-weight: 950;
   
   @media (min-width: 768px) {
-    font-size: 1.1em; /* Even smaller desktop size */
+    font-size: 1.1em;
   }
 }
 
 .quick-link span, .contact-link span {
-  font-size: 0.9em; /* Even smaller base size */
+  font-size: 0.9em;
   font-weight: 950;
   
   @media (min-width: 768px) {
-    font-size: 1.1em; /* Even smaller desktop size */
+    font-size: 1.1em;
   }
 }
 
@@ -421,11 +421,11 @@ h3, h4, h5 {
 }
 
 .branch-card h5 {
-  font-size: 0.85em; /* Even smaller base size */
+  font-size: 0.85em;
   font-weight: 900;
   
   @media (min-width: 768px) {
-    font-size: 1em; /* Even smaller desktop size */
+    font-size: 1em;
   }
 }
 

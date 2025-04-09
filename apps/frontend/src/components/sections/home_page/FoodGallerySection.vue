@@ -55,7 +55,7 @@
             
             <!-- Overlay -->
             <div v-if="settings.card.overlay.show"
-              class="absolute inset-0 transition-opacity duration-300"
+              class="absolute inset-0 transition-all duration-300 transform translate-y-full group-hover:translate-y-0"
               :class="[
                 settings.card.overlay.opacity,
                 'group-hover:opacity-100',

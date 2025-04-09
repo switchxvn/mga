@@ -439,7 +439,7 @@ watch(locale, () => {
                             }"
                           />
                           <span 
-                            class="text-[1.15rem] uppercase" 
+                            class="text-[1.25rem] uppercase font-black" 
                             :style="{ 
                               color: isMenuActive(item.href) 
                                 ? 'rgb(var(--color-primary-500))'
