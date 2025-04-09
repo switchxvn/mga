@@ -26,6 +26,7 @@ const totalPosts = ref(0);
 const totalPages = ref(0);
 const categoryData = ref<any>(null);
 const currentPage = ref(1);
+const seoData = ref<any>(null);
 
 // Định nghĩa kiểu dữ liệu cho breadcrumb item
 interface BreadcrumbItem {
@@ -45,6 +46,19 @@ const fetchCategoryData = async (slug: string) => {
   } catch (error) {
     console.error('Error fetching category data:', error);
     categoryData.value = null;
+    return null;
+  }
+};
+
+// Fetch SEO data
+const fetchSeoData = async () => {
+  try {
+    const seo = await trpc.seo.getSeoByPath.query('/posts');
+    seoData.value = seo;
+    return seo;
+  } catch (err) {
+    console.error('Error fetching SEO data:', err);
+    seoData.value = null;
     return null;
   }
 };
@@ -227,6 +241,9 @@ onMounted(async () => {
   // Fetch category data if danh-muc exists
   if (filters.category) {
     await fetchCategoryData(filters.category);
+  } else {
+    // Fetch SEO data if no category
+    await fetchSeoData();
   }
   
   fetchPosts();
@@ -281,6 +298,38 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   
   return items;
 });
+
+// Computed property để lấy title và description
+const pageTitle = computed(() => {
+  if (categoryData.value && currentCategoryTranslation.value) {
+    return currentCategoryTranslation.value.name;
+  }
+  return seoData.value?.title || t('posts.title');
+});
+
+const pageDescription = computed(() => {
+  if (categoryData.value && currentCategoryTranslation.value) {
+    return currentCategoryTranslation.value.description;
+  }
+  return seoData.value?.description || '';
+});
+
+// SEO meta tags
+watch([pageTitle, pageDescription, seoData], () => {
+  useHead({
+    title: pageTitle.value,
+    meta: [
+      { name: 'description', content: pageDescription.value },
+      { name: 'robots', content: seoData.value?.robotsTxt || 'index, follow' },
+      { property: 'og:title', content: seoData.value?.ogTitle || pageTitle.value },
+      { property: 'og:description', content: seoData.value?.ogDescription || pageDescription.value },
+      { property: 'og:image', content: seoData.value?.ogImage },
+      { property: 'og:url', content: seoData.value?.canonicalUrl || route.fullPath },
+      { name: 'keywords', content: seoData.value?.keywords },
+      { name: 'canonical', content: seoData.value?.canonicalUrl || route.fullPath }
+    ]
+  });
+}, { immediate: true });
 </script>
 
 <template>
@@ -306,14 +355,14 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
         </nav>
 
         <!-- Category Info -->
-        <div v-if="categoryData && currentCategoryTranslation" class="mb-8">
-          <h1 class="text-3xl font-bold mb-4">{{ currentCategoryTranslation.name }}</h1>
-          <p v-if="currentCategoryTranslation.description" class="text-gray-600 mb-4">
-            {{ currentCategoryTranslation.description }}
+        <div v-if="categoryData || seoData" class="mb-8">
+          <h1 class="text-3xl font-bold mb-4">{{ pageTitle }}</h1>
+          <p v-if="pageDescription" class="text-gray-600 mb-4">
+            {{ pageDescription }}
           </p>
           <div class="flex items-center gap-4 text-sm text-gray-500">
             <span>{{ t('posts.totalPosts', { count: totalPosts }) }}</span>
-            <span v-if="categoryData.parent" class="flex items-center gap-2">
+            <span v-if="categoryData?.parent" class="flex items-center gap-2">
               {{ t('posts.parentCategory') }}:
               <NuxtLink
                 :to="`/posts?danh-muc=${categoryData.parent.slug}`"

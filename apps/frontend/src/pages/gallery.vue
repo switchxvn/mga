@@ -66,7 +66,7 @@
             class="nav-button left-button"
             :class="{ 'opacity-0': scrollPosition <= 0 }"
           >
-            <UIcon name="i-heroicons-chevron-left" class="h-6 w-6" />
+            <ChevronLeft class="h-6 w-6" />
             <span class="sr-only">Previous images</span>
           </button>
 
@@ -75,7 +75,7 @@
             class="nav-button right-button"
             :class="{ 'opacity-0': scrollPosition >= maxScroll }"
           >
-            <UIcon name="i-heroicons-chevron-right" class="h-6 w-6" />
+            <ChevronRight class="h-6 w-6" />
             <span class="sr-only">Next images</span>
           </button>
 
@@ -211,6 +211,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
 // Define SEO metadata
 useHead({
@@ -238,7 +239,7 @@ interface Gallery {
 }
 
 // i18n
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // tRPC client
 const trpc = useTrpc();
@@ -285,27 +286,32 @@ const getItemWidth = (index: number) => {
 
 // Scroll methods
 const handleScrollLeft = () => {
-  if (galleryContainer.value) {
-    const scrollAmount = galleryContainer.value.clientWidth;
-    const newPosition = Math.max(0, scrollPosition.value - scrollAmount);
-    galleryContainer.value.scrollTo({
-      left: newPosition,
-      behavior: 'smooth'
-    });
-    scrollPosition.value = newPosition;
-  }
+  if (!galleryContainer.value) return;
+  const containerWidth = galleryContainer.value.clientWidth;
+  const newPosition = Math.max(0, scrollPosition.value - containerWidth);
+  galleryContainer.value.scrollTo({
+    left: newPosition,
+    behavior: 'smooth'
+  });
 };
 
 const handleScrollRight = () => {
-  if (galleryContainer.value) {
-    const scrollAmount = galleryContainer.value.clientWidth;
-    const newPosition = Math.min(maxScroll.value, scrollPosition.value + scrollAmount);
-    galleryContainer.value.scrollTo({
-      left: newPosition,
-      behavior: 'smooth'
-    });
-    scrollPosition.value = newPosition;
-  }
+  if (!galleryContainer.value || !galleryWrapper.value) return;
+  const containerWidth = galleryContainer.value.clientWidth;
+  const scrollWidth = galleryWrapper.value.scrollWidth;
+  const currentScroll = galleryContainer.value.scrollLeft;
+  
+  // Calculate the maximum scroll position
+  const maxScrollPosition = scrollWidth - containerWidth;
+  
+  // Calculate new scroll position
+  const newPosition = Math.min(maxScrollPosition, currentScroll + containerWidth);
+  
+  // Update scroll position
+  galleryContainer.value.scrollTo({
+    left: newPosition,
+    behavior: 'smooth'
+  });
 };
 
 // Add drag scroll functionality
@@ -331,15 +337,22 @@ const onDrag = (e: MouseEvent) => {
 
 // Update scroll position on scroll
 const onScroll = () => {
-  if (!galleryContainer.value) return;
+  if (!galleryContainer.value || !galleryWrapper.value) return;
+  const containerWidth = galleryContainer.value.clientWidth;
+  const scrollWidth = galleryWrapper.value.scrollWidth;
+  
   scrollPosition.value = galleryContainer.value.scrollLeft;
+  maxScroll.value = scrollWidth - containerWidth;
 };
 
 // Update max scroll value
 const updateMaxScroll = () => {
-  if (galleryWrapper.value && galleryContainer.value) {
-    maxScroll.value = galleryWrapper.value.scrollWidth - galleryContainer.value.clientWidth;
-  }
+  if (!galleryContainer.value || !galleryWrapper.value) return;
+  const containerWidth = galleryContainer.value.clientWidth;
+  const scrollWidth = galleryWrapper.value.scrollWidth;
+  
+  maxScroll.value = scrollWidth - containerWidth;
+  scrollPosition.value = galleryContainer.value.scrollLeft;
 };
 
 // Function to preload image dimensions
@@ -375,16 +388,14 @@ const initPhotoSwipe = async (index: number = 0) => {
     dataSource: items,
     index,
     pswpModule: PhotoSwipe,
-    showHideAnimationType: 'fade',
+    showHideAnimationType: 'fade' as const,
     showAnimationDuration: 300,
     hideAnimationDuration: 300,
     closeOnVerticalDrag: true,
-    // Disable image scaling behavior 
     allowPanToNext: true,
     allowMouseDrag: true,
     maxZoomLevel: 3,
-    // Use natural image size
-    scaleMode: 'fit'
+    scaleMode: 'fit' as const
   };
 
   const lightbox = new PhotoSwipe(options);
@@ -426,7 +437,6 @@ const fetchGalleries = async () => {
   try {
     isLoading.value = true;
     hasError.value = false;
-    const { locale } = useI18n();
     const result = await trpc.gallery.active.query({ 
       locale: locale.value,
       type: galleryType.value
@@ -452,18 +462,28 @@ const fetchGalleries = async () => {
   }
 };
 
-// Lifecycle hooks
+// Add ResizeObserver
+let resizeObserver: ResizeObserver;
+
 onMounted(() => {
   fetchGalleries();
-  window.addEventListener('resize', updateMaxScroll);
   
   if (galleryContainer.value) {
+    // Initialize ResizeObserver
+    resizeObserver = new ResizeObserver(() => {
+      updateMaxScroll();
+    });
+    resizeObserver.observe(galleryContainer.value);
+    
+    // Add scroll event listener
     galleryContainer.value.addEventListener('scroll', onScroll);
   }
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateMaxScroll);
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
   if (galleryContainer.value) {
     galleryContainer.value.removeEventListener('scroll', onScroll);
   }
@@ -493,6 +513,7 @@ onUnmounted(() => {
   margin: 0;
   overflow: hidden;
   min-height: 300px;
+  padding: 0 48px;
 }
 
 .gallery-container {
@@ -501,8 +522,9 @@ onUnmounted(() => {
   overflow-y: hidden;
   scroll-behavior: smooth;
   cursor: grab;
-  margin: 0 -48px;
-  padding: 0 48px;
+  margin: 0;
+  padding: 0;
+  width: 100%;
   
   &:active {
     cursor: grabbing;
@@ -519,28 +541,23 @@ onUnmounted(() => {
 .gallery-wrapper {
   display: inline-flex;
   min-width: min-content;
+  padding: 0 48px;
 }
 
 .gallery-grid {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding-right: 48px; // Add padding to ensure last items are reachable
 }
 
 .gallery-row {
   display: flex;
   gap: 16px;
   min-height: 250px;
-  overflow-x: auto;
-  scrollbar-width: none; // Hide scrollbar for Firefox
-  -ms-overflow-style: none; // Hide scrollbar for IE/Edge
-  
-  &::-webkit-scrollbar {
-    display: none; // Hide scrollbar for Chrome/Safari
-  }
   
   .gallery-item {
-    flex: none; // Don't grow or shrink
+    flex: none;
     height: 250px;
     position: relative;
     overflow: hidden;
@@ -554,19 +571,6 @@ onUnmounted(() => {
       img {
         transform: scale(1.05);
       }
-    }
-    
-    a {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease-in-out;
     }
   }
 }
@@ -589,6 +593,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border: 2px solid theme('colors.gray.200');
+  opacity: 1;
+  pointer-events: auto;
   
   &.left-button {
     left: 0;
@@ -600,6 +606,11 @@ onUnmounted(() => {
   
   &:hover {
     transform: translateY(-50%) scale(1.1);
+  }
+  
+  &.hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 

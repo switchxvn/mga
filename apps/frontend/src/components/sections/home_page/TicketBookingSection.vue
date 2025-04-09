@@ -1,6 +1,6 @@
 <!-- TicketBookingSection.vue -->
 <template>
-  <section :class="[backgroundColor]" class="relative">
+  <section :class="[backgroundColor]" class="relative pb-16">
     <div :class="[currentSettings.width, currentSettings.margin]" class="px-4">
       <!-- Booking Card -->
       <div

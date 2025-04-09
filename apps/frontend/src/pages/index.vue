@@ -327,7 +327,8 @@ const registeredComponents = {
   'FoodGallerySection': defineAsyncComponent(() => import("../components/sections/home_page/FoodGallerySection.vue")),
   'StyledNewsSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledNewsSection.vue")),
   'CustomerReviewsSection': defineAsyncComponent(() => import("../components/sections/home_page/CustomerReviewsSection.vue")),
-  'HorizontalGallerySection': defineAsyncComponent(() => import("../components/sections/home_page/HorizontalGallerySection.vue"))
+  'HorizontalGallerySection': defineAsyncComponent(() => import("../components/sections/home_page/HorizontalGallerySection.vue")),
+  'TravelServicesSection': defineAsyncComponent(() => import("../components/sections/home_page/TravelServicesSection.vue"))
 } as ComponentRegistry;
 
 // Modify the resolveComponent function
@@ -362,7 +363,8 @@ const resolveComponent = (section: ThemeSection): ComponentType | null => {
     'food_gallery': 'FoodGallerySection',
     'styled_news': 'StyledNewsSection',
     'customer_reviews': 'CustomerReviewsSection',
-    'horizontal_gallery': 'HorizontalGallerySection'
+    'horizontal_gallery': 'HorizontalGallerySection',
+    'travel_services': 'TravelServicesSection'
   };
 
   const componentName = typeToComponentName[section.type];
