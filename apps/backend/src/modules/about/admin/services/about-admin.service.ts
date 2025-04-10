@@ -33,14 +33,42 @@ export class AboutAdminService {
     return section;
   }
 
-  async createSection(data: Partial<AboutSection>): Promise<AboutSection> {
-    const section = this.sectionRepository.create(data);
-    return this.sectionRepository.save(section);
+  async createSection(data: Partial<AboutSection> & { translations?: Array<Partial<AboutSectionTranslation>> }): Promise<AboutSection> {
+    const { translations, ...sectionData } = data;
+    const section = this.sectionRepository.create(sectionData);
+    const savedSection = await this.sectionRepository.save(section);
+
+    if (translations?.length) {
+      const sectionTranslations = translations.map(translation => 
+        this.sectionTranslationRepository.create({
+          ...translation,
+          sectionId: savedSection.id
+        })
+      );
+      await this.sectionTranslationRepository.save(sectionTranslations);
+    }
+
+    return this.findSectionById(savedSection.id);
   }
 
-  async updateSection(id: number, data: Partial<AboutSection>): Promise<AboutSection> {
+  async updateSection(id: number, data: Partial<AboutSection> & { translations?: Array<Partial<AboutSectionTranslation>> }): Promise<AboutSection> {
+    const { translations, ...sectionData } = data;
     const section = await this.findSectionById(id);
-    Object.assign(section, data);
+
+    if (translations?.length) {
+      // Delete existing translations
+      await this.sectionTranslationRepository.delete({ sectionId: id });
+      // Create new translations
+      const sectionTranslations = translations.map(translation => 
+        this.sectionTranslationRepository.create({
+          ...translation,
+          sectionId: id
+        })
+      );
+      await this.sectionTranslationRepository.save(sectionTranslations);
+    }
+
+    Object.assign(section, sectionData);
     return this.sectionRepository.save(section);
   }
 
@@ -49,7 +77,7 @@ export class AboutAdminService {
     await this.sectionRepository.remove(section);
   }
 
-  async updateSectionsOrder(sections: { id: number; order: number }[]): Promise<void> {
+  async updateSectionsOrder(sections: Array<{ id: number; order: number }>): Promise<void> {
     await Promise.all(
       sections.map(({ id, order }) =>
         this.sectionRepository.update(id, { order })
