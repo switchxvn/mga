@@ -61,54 +61,21 @@ export class AboutRouter {
 
 // Định nghĩa router cho trang giới thiệu
 export const aboutRouter = router({
-  getActivePage: publicProcedure
+  getActiveSections: publicProcedure
     .input(z.string().optional())
-    .query(async ({ ctx, input: languageCode }) => {
-      try {
-        if (languageCode) {
-          return await ctx.services.aboutFrontendService.getActivePageTranslation(languageCode);
-        }
-
-        return await ctx.services.aboutFrontendService.getActivePage({
-          relations: {
-            translations: true,
-            sections: {
-              translations: true,
-            },
-            teamMembers: {
-              translations: true,
-            },
-            milestones: {
-              translations: true,
-            },
-          },
-        });
-      } catch (error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch active about page',
-          cause: error,
-        });
-      }
+    .query(async ({ ctx, input }) => {
+      const locale = input || 'en';
+      return ctx.services.aboutFrontendService.getActiveSections(locale);
     }),
 
-  getActivePageWithoutTranslations: publicProcedure
-    .query(async ({ ctx }) => {
-      try {
-        return await ctx.services.aboutFrontendService.getActivePage({
-          relations: {
-            sections: true,
-            teamMembers: true,
-            milestones: true
-          }
-        });
-      } catch (error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch active about page without translations',
-          cause: error,
-        });
-      }
+  getSectionById: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      locale: z.string().optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      const { id, locale = 'en' } = input;
+      return ctx.services.aboutFrontendService.getSectionById(id, locale);
     }),
 
   // Admin procedures
@@ -155,11 +122,6 @@ export const aboutRouter = router({
     }),
 
   // Frontend routes
-  getActiveSections: publicProcedure
-    .query(async ({ ctx }) => {
-      return ctx.services.aboutFrontendService.getActiveSections();
-    }),
-
   getActiveTeamMembers: publicProcedure
     .query(async ({ ctx }) => {
       return ctx.services.aboutFrontendService.getActiveTeamMembers();

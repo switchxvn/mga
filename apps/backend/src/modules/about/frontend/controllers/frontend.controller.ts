@@ -1,32 +1,21 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { AboutFrontendService } from '../services/about-frontend.service';
+import { AboutSection } from '../../entities/about-section.entity';
 
 @Controller('about')
 export class AboutFrontendController {
   constructor(private readonly aboutFrontendService: AboutFrontendService) {}
 
-  @Get()
-  getActivePage() {
-    return this.aboutFrontendService.getActivePage();
-  }
-
   @Get('sections')
-  getActiveSections() {
-    return this.aboutFrontendService.getActiveSections();
+  async getActiveSections(@Query('locale') locale: string = 'en'): Promise<AboutSection[]> {
+    return this.aboutFrontendService.getActiveSections(locale);
   }
 
-  @Get('team-members')
-  getActiveTeamMembers() {
-    return this.aboutFrontendService.getActiveTeamMembers();
-  }
-
-  @Get('milestones')
-  getActiveMilestones() {
-    return this.aboutFrontendService.getActiveMilestones();
-  }
-
-  @Get(':id')
-  getPageById(@Param('id') id: number) {
-    return this.aboutFrontendService.getPageById(id);
+  @Get('sections/:id')
+  async getSectionById(
+    @Param('id') id: number,
+    @Query('locale') locale: string = 'en'
+  ): Promise<AboutSection | null> {
+    return this.aboutFrontendService.getSectionById(id, locale);
   }
 } 

@@ -1,114 +1,59 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AboutPage } from '../../entities/about-page.entity';
 import { AboutSection } from '../../entities/about-section.entity';
-import { AboutTeamMember } from '../../entities/about-team-member.entity';
-import { AboutMilestone } from '../../entities/about-milestone.entity';
+import { AboutSectionTranslation } from '../../entities/about-section-translation.entity';
 
 @Injectable()
 export class AboutAdminService {
   constructor(
-    @InjectRepository(AboutPage)
-    private aboutPageRepository: Repository<AboutPage>,
     @InjectRepository(AboutSection)
-    private aboutSectionRepository: Repository<AboutSection>,
-    @InjectRepository(AboutTeamMember)
-    private aboutTeamMemberRepository: Repository<AboutTeamMember>,
-    @InjectRepository(AboutMilestone)
-    private aboutMilestoneRepository: Repository<AboutMilestone>,
+    private readonly sectionRepository: Repository<AboutSection>,
+    @InjectRepository(AboutSectionTranslation)
+    private readonly sectionTranslationRepository: Repository<AboutSectionTranslation>
   ) {}
 
-  async findAllPages() {
-    return this.aboutPageRepository.find({
-      order: { createdAt: 'DESC' },
+  async findAllSections(): Promise<AboutSection[]> {
+    return this.sectionRepository.find({
+      relations: ['translations'],
+      order: { order: 'ASC' }
     });
   }
 
-  async findPageById(id: number) {
-    return this.aboutPageRepository.findOne({
+  async findSectionById(id: number): Promise<AboutSection> {
+    const section = await this.sectionRepository.findOne({
       where: { id },
-      relations: ['sections', 'teamMembers', 'milestones'],
+      relations: ['translations']
     });
+
+    if (!section) {
+      throw new NotFoundException(`Section with ID ${id} not found`);
+    }
+
+    return section;
   }
 
-  async createPage(data: Partial<AboutPage>) {
-    const page = this.aboutPageRepository.create(data);
-    return this.aboutPageRepository.save(page);
+  async createSection(data: Partial<AboutSection>): Promise<AboutSection> {
+    const section = this.sectionRepository.create(data);
+    return this.sectionRepository.save(section);
   }
 
-  async updatePage(id: number, data: Partial<AboutPage>) {
-    await this.aboutPageRepository.update(id, data);
-    return this.findPageById(id);
+  async updateSection(id: number, data: Partial<AboutSection>): Promise<AboutSection> {
+    const section = await this.findSectionById(id);
+    Object.assign(section, data);
+    return this.sectionRepository.save(section);
   }
 
-  async deletePage(id: number) {
-    return this.aboutPageRepository.delete(id);
+  async deleteSection(id: number): Promise<void> {
+    const section = await this.findSectionById(id);
+    await this.sectionRepository.remove(section);
   }
 
-  // Section methods
-  async findSectionById(id: number) {
-    return this.aboutSectionRepository.findOne({
-      where: { id },
-      relations: ['aboutPage'],
-    });
-  }
-
-  async createSection(data: Partial<AboutSection>) {
-    const section = this.aboutSectionRepository.create(data);
-    return this.aboutSectionRepository.save(section);
-  }
-
-  async updateSection(id: number, data: Partial<AboutSection>) {
-    await this.aboutSectionRepository.update(id, data);
-    return this.findSectionById(id);
-  }
-
-  async deleteSection(id: number) {
-    return this.aboutSectionRepository.delete(id);
-  }
-
-  // Team member methods
-  async findTeamMemberById(id: number) {
-    return this.aboutTeamMemberRepository.findOne({
-      where: { id },
-      relations: ['aboutPage'],
-    });
-  }
-
-  async createTeamMember(data: Partial<AboutTeamMember>) {
-    const member = this.aboutTeamMemberRepository.create(data);
-    return this.aboutTeamMemberRepository.save(member);
-  }
-
-  async updateTeamMember(id: number, data: Partial<AboutTeamMember>) {
-    await this.aboutTeamMemberRepository.update(id, data);
-    return this.findTeamMemberById(id);
-  }
-
-  async deleteTeamMember(id: number) {
-    return this.aboutTeamMemberRepository.delete(id);
-  }
-
-  // Milestone methods
-  async findMilestoneById(id: number) {
-    return this.aboutMilestoneRepository.findOne({
-      where: { id },
-      relations: ['aboutPage'],
-    });
-  }
-
-  async createMilestone(data: Partial<AboutMilestone>) {
-    const milestone = this.aboutMilestoneRepository.create(data);
-    return this.aboutMilestoneRepository.save(milestone);
-  }
-
-  async updateMilestone(id: number, data: Partial<AboutMilestone>) {
-    await this.aboutMilestoneRepository.update(id, data);
-    return this.findMilestoneById(id);
-  }
-
-  async deleteMilestone(id: number) {
-    return this.aboutMilestoneRepository.delete(id);
+  async updateSectionsOrder(sections: { id: number; order: number }[]): Promise<void> {
+    await Promise.all(
+      sections.map(({ id, order }) =>
+        this.sectionRepository.update(id, { order })
+      )
+    );
   }
 } 

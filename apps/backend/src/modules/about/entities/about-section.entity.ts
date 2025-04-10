@@ -1,46 +1,92 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { AboutPage } from './about-page.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { AboutSectionTranslation } from './about-section-translation.entity';
+
+export enum AboutSectionType {
+  HERO = 'hero',
+  CONTENT = 'content',
+  TEAM = 'team',
+  MILESTONE = 'milestone',
+  STATS = 'stats',
+  GALLERY = 'gallery'
+}
 
 @Entity('about_sections')
 export class AboutSection {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
-  @Column({ name: 'about_page_id' })
-  aboutPageId: number;
+  @Column({
+    type: 'enum',
+    enum: AboutSectionType,
+    default: AboutSectionType.CONTENT
+  })
+  type!: AboutSectionType;
 
-  @Column()
-  title: string;
+  @Column({ length: 100 })
+  componentName!: string;
 
-  @Column({ type: 'text', nullable: true })
-  content: string;
+  @Column({ type: 'int', default: 0 })
+  order!: number;
 
-  @Column({ name: 'image_url', nullable: true })
-  imageUrl: string;
+  @Column({ type: 'jsonb', default: {
+    // Common settings
+    layout: 'default',
+    backgroundColor: '',
+    textColor: '',
+    padding: '4rem 0',
+    
+    // Hero section
+    heroHeight: '500px',
+    heroBackgroundImage: '',
+    heroOverlayOpacity: 0.5,
+    
+    // Content section
+    contentLayout: 'text-image', // text-image | image-text | text-only
+    imageUrl: '',
+    imagePosition: 'right',
+    imageWidth: '50%',
+    
+    // Team section
+    teamLayout: 'grid',
+    teamColumns: 3,
+    teamMembers: [], // Array of { name, position, imageUrl, bio, socialLinks }
+    
+    // Milestone section
+    milestoneLayout: 'timeline',
+    milestones: [], // Array of { year, title, description, imageUrl }
+    
+    // Stats section
+    statsLayout: 'grid',
+    statsColumns: 4,
+    stats: [], // Array of { value, label, icon }
+    
+    // Gallery section
+    galleryLayout: 'grid',
+    galleryColumns: 3,
+    galleryImages: [], // Array of { url, caption }
+    
+    // Animation
+    animation: {
+      enabled: true,
+      type: 'fade-up',
+      duration: 1000,
+      delay: 0
+    }
+  }})
+  settings!: Record<string, any>;
 
-  @Column({ name: 'video_url', nullable: true })
-  videoUrl: string;
-
-  @Column({ name: 'section_type', default: 'text' })
-  sectionType: string;
-
-  @Column({ default: 0 })
-  order: number;
-
-  @Column({ name: 'is_active', default: true })
-  isActive: boolean;
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
-  @ManyToOne(() => AboutPage, aboutPage => aboutPage.sections, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'about_page_id' })
-  aboutPage: AboutPage;
-
-  @OneToMany(() => AboutSectionTranslation, translation => translation.aboutSection, { cascade: true })
-  translations: AboutSectionTranslation[];
+  @OneToMany(() => AboutSectionTranslation, translation => translation.section, { 
+    cascade: true,
+    eager: true 
+  })
+  translations!: AboutSectionTranslation[];
 } 
