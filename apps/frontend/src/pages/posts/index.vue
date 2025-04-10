@@ -38,7 +38,7 @@ const shouldResetSidebar = ref(false);
 // Filter state với tất cả các query parameters có thể có
 const filters = reactive({
   search: route.query.search as string || '',
-  categories: route.query.categories ? (route.query.categories as string).split(',').map(Number) : [],
+  categories: route.query.categories ? (route.query.categories as string).split(',') : [],
   sort: (route.query.sort as string) || 'newest',
   category: route.query['danh-muc'] as string || undefined,
   page: Number(route.query.page || 1),
@@ -47,14 +47,6 @@ const filters = reactive({
   ...Object.fromEntries(
     Object.entries(route.query).filter(([key]) => !['search', 'categories', 'sort', 'danh-muc', 'page', 'limit'].includes(key))
   )
-} as {
-  search: string;
-  categories: number[];
-  sort: string;
-  category: string | undefined;
-  page: number;
-  limit: number;
-  [key: string]: any; // Thêm index signature để cho phép truy cập bằng key động
 });
 
 // Đảm bảo page được đồng bộ với URL khi SSR
@@ -97,48 +89,81 @@ const fetchSeoData = async () => {
 };
 
 const fetchPosts = async () => {
-  isLoading.value = true;
-  error.value = null;
   try {
-    // Kết hợp cả category ID từ danh-muc và categories từ filter
-    let categoryIds: number[] = [];
-    
-    // Thêm category ID từ danh-muc nếu có
-    if (categoryData.value) {
-      categoryIds.push(categoryData.value.id);
-    }
-    
-    // Thêm categories từ filter nếu có
-    if (filters.categories && filters.categories.length > 0) {
-      categoryIds = [...new Set([...categoryIds, ...filters.categories])];
+    isLoading.value = true;
+    error.value = null;
+
+    // Build query params
+    const queryParams: any = {
+      locale: locale.value,
+      page: filters.page,
+      limit: filters.limit,
+      sort: filters.sort
+    };
+
+    // Add search if exists
+    if (filters.search) {
+      queryParams.search = filters.search;
     }
 
-    // Lấy page từ URL thay vì từ filters
-    const pageFromUrl = Number(route.query.page || 1);
-    
-    const result = await trpc.post.latest.query({
-      filters: {
-        categories: categoryIds.length > 0 ? categoryIds.join(',') : undefined,
-        locale: locale.value,
-        search: filters.search,
-        page: pageFromUrl, // Sử dụng page từ URL
-        limit: filters.limit,
-        sortBy: filters.sort,
-      },
-    });
-    
-    if (result && result.posts) {
-      posts.value = Array.isArray(result.posts) ? result.posts.map(transformPost) : [];
-      totalPosts.value = result.total || 0;
-      totalPages.value = result.totalPages || 0;
-    } else {
-      posts.value = Array.isArray(result) ? result.map(transformPost) : [];
-      totalPosts.value = posts.value.length;
-      totalPages.value = 1;
+    // Add categories if exists
+    if (filters.categories && filters.categories.length > 0) {
+      queryParams.categories = filters.categories.join(',');
     }
+
+    // Add tags if exists
+    if (filters.tags && filters.tags.length > 0) {
+      queryParams.tags = filters.tags.join(',');
+    }
+
+    // Add category if exists
+    if (filters.category) {
+      queryParams.category = filters.category;
+    }
+
+    // Add all other query params
+    Object.entries(filters).forEach(([key, value]) => {
+      if (!['search', 'categories', 'tags', 'sort', 'danh-muc', 'page', 'limit'].includes(key) && value) {
+        queryParams[key] = value;
+      }
+    });
+
+    console.log('Fetching posts with params:', queryParams);
+
+    // Fetch posts
+    const result = await trpc.post.byLocale.query(queryParams);
+    posts.value = Array.isArray(result) ? result.map(transformPost) : [];
+    totalPosts.value = result.length;
+    totalPages.value = Math.ceil(result.length / filters.limit);
+
+    // Fetch category data if category filter is active
+    if (filters.category) {
+      try {
+        categoryData.value = await trpc.category.getBySlug.query({
+          slug: filters.category,
+          locale: locale.value
+        });
+      } catch (error) {
+        console.error('Failed to fetch category data:', error);
+      }
+    } else {
+      categoryData.value = null;
+    }
+
+    // Fetch SEO data if no category filter
+    if (!filters.category) {
+      try {
+        seoData.value = await trpc.seo.getSeoByPath.query('/posts');
+      } catch (error) {
+        console.error('Failed to fetch SEO data:', error);
+      }
+    } else {
+      seoData.value = null;
+    }
+
   } catch (err) {
-    error.value = "Failed to fetch posts";
-    console.error("Error fetching posts:", err);
+    console.error('Failed to fetch posts:', err);
+    error.value = t('posts.fetchError');
   } finally {
     isLoading.value = false;
   }
@@ -149,7 +174,7 @@ watch(() => route.query, async (newQuery) => {
   // Cập nhật tất cả các query parameters vào filters
   Object.entries(newQuery).forEach(([key, value]) => {
     if (key === 'categories' && value) {
-      filters.categories = (value as string).split(',').map(Number);
+      filters.categories = (value as string).split(',');
     } else if (key === 'page' || key === 'limit') {
       filters[key] = Number(value) || 1;
     } else if (key === 'danh-muc') {
@@ -201,21 +226,16 @@ const transformPost = (post: any): Post => {
   };
 };
 
-// Handle filter changes from sidebar
+// Handle filter change from sidebar
 const handleFilterChange = (newFilters: any) => {
+  console.log('Filter change from sidebar:', newFilters);
+  
   // Update filters
-  filters.search = newFilters.search ?? filters.search;
-  filters.categories = newFilters.categories ?? [];
-  
-  // Reset shouldResetSidebar after filters are updated
-  shouldResetSidebar.value = false;
-  
-  // Reset to page 1 when filters change
+  filters.search = newFilters.search || '';
+  filters.categories = newFilters.categories || [];
+  filters.tags = newFilters.tags || [];
   filters.page = 1;
-  
-  // Update URL query params
-  updateQueryParams();
-  
+
   // Fetch posts with new filters
   fetchPosts();
 };
@@ -308,7 +328,7 @@ onMounted(() => {
   // Initialize filters from route query
   filters.category = route.query['danh-muc'] as string || undefined;
   filters.search = route.query.search as string || '';
-  filters.categories = route.query.categories ? (route.query.categories as string).split(',').map(Number) : [];
+  filters.categories = route.query.categories ? (route.query.categories as string).split(',') : [];
   filters.sort = (route.query.sort as string) || 'newest';
   
   // Đảm bảo giữ nguyên giá trị page từ URL

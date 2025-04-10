@@ -167,6 +167,7 @@ export class PostFrontendService {
 
   async findByLocale(locale: string, filters?: {
     categories?: number[];
+    categorySlugs?: string[];
     search?: string;
   }): Promise<IPost[]> {
     this.logger.debug(`Finding posts for locale: ${locale}`);
@@ -185,6 +186,15 @@ export class PostFrontendService {
         qb.innerJoin('post.categories', 'category', 'category.id IN (:...categoryIds)', { 
           categoryIds: filters.categories 
         });
+      }
+
+      // Thêm điều kiện categorySlugs nếu có
+      if (filters?.categorySlugs?.length) {
+        qb.innerJoin('post.categories', 'category')
+          .innerJoin('category.translations', 'categoryTranslations', 'categoryTranslations.locale = :locale', { locale })
+          .andWhere('categoryTranslations.slug IN (:...categorySlugs)', { 
+            categorySlugs: filters.categorySlugs 
+          });
       }
 
       console.log('filters', filters);

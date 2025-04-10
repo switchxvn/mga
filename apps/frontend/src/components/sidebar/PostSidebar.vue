@@ -35,7 +35,7 @@
   const props = defineProps<{
     initialFilters?: {
       search?: string;
-      categories?: number[];
+      categories?: string[];
       tags?: string[];
       page?: number;
     };
@@ -132,10 +132,10 @@
   };
 
   // Toggle category selection
-  const toggleCategory = (categoryId: number) => {
-    const index = filters.categories.indexOf(categoryId);
+  const toggleCategory = (categorySlug: string) => {
+    const index = filters.categories.indexOf(categorySlug);
     if (index === -1) {
-      filters.categories.push(categoryId);
+      filters.categories.push(categorySlug);
     } else {
       filters.categories.splice(index, 1);
     }
@@ -152,15 +152,16 @@
       search: filters.search,
       categories: filters.categories,
       tags: filters.tags,
-      page: filters.page
+      page: 1
     });
+    
+    filters.page = 1;
     
     emit('filter-change', {
       search: filters.search,
       categories: filters.categories.length > 0 ? filters.categories : undefined,
       tags: filters.tags.length > 0 ? filters.tags : undefined,
-      // Không emit page để tránh reset page khi thay đổi filter
-      // pages: filters.page
+      page: 1
     });
 
     // Update URL query params
@@ -176,10 +177,7 @@
     if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
     if (filters.tags && filters.tags.length > 0) query.tags = filters.tags.join(',');
     
-    // Giữ nguyên tham số page từ URL hiện tại
-    if (route.query.page) {
-      query.page = route.query.page as string;
-    }
+    query.page = '1';
     
     // Update route
     router.replace({ query });
@@ -271,7 +269,7 @@
       }
 
       if (route.query.categories) {
-        filters.categories = (route.query.categories as string).split(',').map(Number);
+        filters.categories = (route.query.categories as string).split(',');
       }
 
       if (route.query.tags) {
@@ -362,8 +360,8 @@
                   class="flex items-center"
                 >
                   <UCheckbox
-                    :model-value="filters.categories.includes(category.id)"
-                    @update:model-value="toggleCategory(category.id)"
+                    :model-value="filters.categories.includes(category.translations[0]?.slug || '')"
+                    @update:model-value="toggleCategory(category.translations[0]?.slug || '')"
                     :name="`category-${category.id}`"
                     color="primary"
                   />

@@ -24,7 +24,7 @@ export const postRouter = router({
 
         // Chuẩn bị filters cho service
         const serviceFilters = {
-          categories: categories ? categories.split(',').map(Number) : undefined,
+          categorySlugs: categories ? categories.split(',') : undefined,
           search
         };
 

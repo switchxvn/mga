@@ -1,5 +1,5 @@
 import { computed, ref, watch, unref } from 'vue';
-import type { Product, ProductTranslation } from '@ew/shared';
+import type { Product, ProductTranslation, ProductType, LocaleType } from '@ew/shared/types';
 import { useLocalization } from './useLocalization';
 import { getLocalizedRoute } from '../utils/routes';
 import { useTrpc } from './useTrpc';
@@ -10,16 +10,16 @@ export interface ProductFilter {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
-  categories?: number[];
+  includeNullPrice?: boolean;
+  categories?: string[];
   isFeatured?: boolean;
   isNew?: boolean;
   isSale?: boolean;
-  includeNullPrice?: boolean;
-  sortBy?: ProductSortBy;
-  page: number;
+  sortBy?: 'newest' | 'oldest' | 'price_asc' | 'price_desc';
+  page?: number;
   limit?: number;
-  locale?: string;
-  type?: string;
+  locale?: LocaleType;
+  type?: ProductType;
 }
 
 export interface PriceRange {
@@ -91,11 +91,11 @@ export function useProduct(initialFilters?: ProductFilter) {
     search: initialFilters?.search || '',
     minPrice: initialFilters?.minPrice,
     maxPrice: initialFilters?.maxPrice,
+    includeNullPrice: true,
     categories: initialFilters?.categories || [],
     isFeatured: initialFilters?.isFeatured,
     isNew: initialFilters?.isNew,
     isSale: initialFilters?.isSale,
-    includeNullPrice: true,
     sortBy: initialFilters?.sortBy || 'newest',
     page: initialFilters?.page || 1,
     limit: initialFilters?.limit || 12,
@@ -264,12 +264,12 @@ export function useProduct(initialFilters?: ProductFilter) {
   /**
    * Toggle category selection
    */
-  const toggleCategory = (categoryId: number) => {
+  const toggleCategory = (categorySlug: string) => {
     const categories = filters.value.categories || [];
-    const index = categories.indexOf(categoryId);
+    const index = categories.indexOf(categorySlug);
     
     if (index === -1) {
-      filters.value.categories = [...categories, categoryId];
+      filters.value.categories = [...categories, categorySlug];
     } else {
       categories.splice(index, 1);
       filters.value.categories = categories;
@@ -292,7 +292,7 @@ export function useProduct(initialFilters?: ProductFilter) {
       sortBy: 'newest',
       page: 1,
       limit: 12,
-      locale: locale.value,
+      locale: locale.value as LocaleType,
       type: undefined
     };
   };
