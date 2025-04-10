@@ -36,17 +36,19 @@ const seoData = ref<any>(null);
 const shouldResetSidebar = ref(false);
 
 // Filter state với tất cả các query parameters có thể có
-const filters = reactive({
+const filters = reactive<{
+  search: string;
+  categories: string[];
+  sort: string;
+  page: number;
+  limit: number;
+  tags?: string[];
+}>({
   search: route.query.search as string || '',
   categories: route.query.categories ? (route.query.categories as string).split(',') : [],
   sort: (route.query.sort as string) || 'newest',
-  category: route.query['danh-muc'] as string || undefined,
   page: Number(route.query.page || 1),
   limit: Number(route.query.limit) || 12,
-  // Thêm tất cả các query parameters khác vào đây
-  ...Object.fromEntries(
-    Object.entries(route.query).filter(([key]) => !['search', 'categories', 'sort', 'danh-muc', 'page', 'limit'].includes(key))
-  )
 });
 
 // Đảm bảo page được đồng bộ với URL khi SSR
@@ -132,9 +134,9 @@ const fetchPosts = async () => {
 
     // Fetch posts
     const result = await trpc.post.byLocale.query(queryParams);
-    posts.value = Array.isArray(result) ? result.map(transformPost) : [];
-    totalPosts.value = result.length;
-    totalPages.value = Math.ceil(result.length / filters.limit);
+    posts.value = Array.isArray(result.items) ? result.items.map(transformPost) : [];
+    totalPosts.value = result.total;
+    totalPages.value = result.totalPages;
 
     // Fetch category data if category filter is active
     if (filters.category) {
@@ -234,7 +236,7 @@ const handleFilterChange = (newFilters: any) => {
   filters.search = newFilters.search || '';
   filters.categories = newFilters.categories || [];
   filters.tags = newFilters.tags || [];
-  filters.page = 1;
+  filters.page = newFilters.page || 1;
 
   // Fetch posts with new filters
   fetchPosts();
@@ -268,7 +270,6 @@ const resetAllFilters = () => {
   // Reset main filters
   filters.search = '';
   filters.categories = [];
-  filters.category = undefined;
   filters.page = 1;
   filters.sort = 'newest';
   

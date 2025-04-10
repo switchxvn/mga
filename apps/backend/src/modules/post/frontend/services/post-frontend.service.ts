@@ -169,10 +169,23 @@ export class PostFrontendService {
     categories?: number[];
     categorySlugs?: string[];
     search?: string;
-  }): Promise<IPost[]> {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+  }): Promise<{
+    items: IPost[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     this.logger.debug(`Finding posts for locale: ${locale}`);
 
     try {
+      const page = filters?.page || 1;
+      const limit = filters?.limit || 12;
+      const skip = (page - 1) * limit;
+
       const qb = this.postRepository.createQueryBuilder('post')
         .innerJoinAndSelect('post.translations', 'translations', 'translations.locale = :locale', { locale })
         .leftJoinAndSelect('post.author', 'author')
@@ -197,8 +210,6 @@ export class PostFrontendService {
           });
       }
 
-      console.log('filters', filters);
-
       // Thêm điều kiện tìm kiếm nếu có
       if (filters?.search?.trim()) {
         qb.andWhere('translations.title ILIKE :search', { 
@@ -206,18 +217,41 @@ export class PostFrontendService {
         });
       }
 
-      qb.orderBy('post.createdAt', 'DESC');
+      // Xử lý sắp xếp
+      if (filters?.sortBy) {
+        const [field, order] = filters.sortBy.split(':');
+        if (field && order) {
+          qb.orderBy(`post.${field}`, order.toUpperCase() as 'ASC' | 'DESC');
+        } else {
+          qb.orderBy('post.createdAt', 'DESC');
+        }
+      } else {
+        qb.orderBy('post.createdAt', 'DESC');
+      }
 
-      const posts = await qb.getMany();
+      // Đếm tổng số bài viết
+      const total = await qb.getCount();
+      
+      // Lấy bài viết với phân trang
+      const posts = await qb
+        .skip(skip)
+        .take(limit)
+        .getMany();
 
-      this.logger.debug(`Found ${posts.length} published posts for locale ${locale}`);
+      this.logger.debug(`Found ${posts.length} published posts for locale ${locale} (page ${page}, limit ${limit})`);
 
       // Format each post
       const formattedPosts = await Promise.all(
         posts.map(post => this.formatPostResponse(post, locale))
       );
 
-      return formattedPosts;
+      return {
+        items: formattedPosts,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
     } catch (error) {
       this.logger.error(`Error finding posts by locale ${locale}:`, error);
       throw error;

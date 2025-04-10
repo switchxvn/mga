@@ -25,37 +25,21 @@ export const postRouter = router({
         // Chuẩn bị filters cho service
         const serviceFilters = {
           categorySlugs: categories ? categories.split(',') : undefined,
-          search
+          search,
+          page,
+          limit,
+          sortBy
         };
 
-        // Lấy tất cả bài viết với các filter
-        const posts = await ctx.services.postService.findByLocale(locale, serviceFilters);
-
-        // Sắp xếp bài viết
-        if (sortBy) {
-          const [field, order] = sortBy.split(':');
-          posts.sort((a, b) => {
-            const valueA = a[field];
-            const valueB = b[field];
-            return order === 'desc' ? valueB - valueA : valueA - valueB;
-          });
-        }
-
-        // Tính toán phân trang
-        const total = posts.length;
-        const totalPages = Math.ceil(total / limit);
-        const startIndex = (page - 1) * limit;
-        const endIndex = Math.min(startIndex + limit, total);
-        
-        // Lấy bài viết cho trang hiện tại
-        const paginatedPosts = posts.slice(startIndex, endIndex);
+        // Lấy bài viết với phân trang
+        const result = await ctx.services.postService.findByLocale(locale, serviceFilters);
 
         return { 
-          posts: paginatedPosts, 
-          total, 
-          totalPages,
-          currentPage: page,
-          limit
+          posts: result.items, 
+          total: result.total, 
+          totalPages: result.totalPages,
+          currentPage: result.page,
+          limit: result.limit
         };
       } catch (error) {
         console.error('Failed to fetch latest posts:', error);
@@ -68,11 +52,33 @@ export const postRouter = router({
     }),
 
   byLocale: publicProcedure
-    .input(z.object({ locale: z.string() }))
+    .input(z.object({ 
+      locale: z.string(),
+      page: z.number().optional().default(1),
+      limit: z.number().optional().default(12),
+      search: z.string().optional(),
+      categories: z.string().optional(),
+      sort: z.string().optional().default('newest'),
+      category: z.string().optional(),
+      tags: z.string().optional()
+    }))
     .query(async ({ ctx, input }) => {
       try {
-        const posts = await ctx.services.postService.findByLocale(input.locale);
-        return posts;
+        const { locale, page, limit, search, categories, sort, category, tags } = input;
+        
+        // Chuẩn bị filters cho service
+        const serviceFilters = {
+          categorySlugs: category ? [category] : categories ? categories.split(',') : undefined,
+          search,
+          page,
+          limit,
+          sortBy: sort
+        };
+
+        // Lấy bài viết với phân trang
+        const result = await ctx.services.postService.findByLocale(locale, serviceFilters);
+        
+        return result;
       } catch (error) {
         console.error(`Failed to fetch posts by locale ${input.locale}:`, error);
         throw new TRPCError({

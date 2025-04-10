@@ -148,20 +148,11 @@
 
   // Apply filters
   const applyFilters = () => {
-    console.log('Emitting filters:', {
-      search: filters.search,
-      categories: filters.categories,
-      tags: filters.tags,
-      page: 1
-    });
-    
-    filters.page = 1;
-    
     emit('filter-change', {
       search: filters.search,
       categories: filters.categories.length > 0 ? filters.categories : undefined,
       tags: filters.tags.length > 0 ? filters.tags : undefined,
-      page: 1
+      page: filters.page
     });
 
     // Update URL query params
@@ -177,7 +168,7 @@
     if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
     if (filters.tags && filters.tags.length > 0) query.tags = filters.tags.join(',');
     
-    query.page = '1';
+    query.page = filters.page.toString();
     
     // Update route
     router.replace({ query });
