@@ -16,7 +16,7 @@ export class AboutFrontendService {
   async getActiveSections(locale: string): Promise<AboutSection[]> {
     return this.sectionRepository.find({
       where: {
-        isActive: true
+        is_active: true
       },
       relations: {
         translations: true
@@ -31,7 +31,7 @@ export class AboutFrontendService {
     return this.sectionRepository.findOne({
       where: {
         id,
-        isActive: true
+        is_active: true
       },
       relations: {
         translations: true
