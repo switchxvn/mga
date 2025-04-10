@@ -43,7 +43,7 @@ const breadcrumbClass = computed(() => {
           <svg 
             v-if="showHomeIcon"
             xmlns="http://www.w3.org/2000/svg" 
-            class="breadcrumb__home-icon h-5 w-5" 
+            class="breadcrumb__home-icon h-6 w-6" 
             width="16" 
             height="16" 
             viewBox="0 0 24 24" 
@@ -71,7 +71,7 @@ const breadcrumbClass = computed(() => {
             :class="{ 'breadcrumb__item--active': index === items.length - 1 }"
           >
             <template v-if="index === items.length - 1 || !item.to">
-              <span class="breadcrumb__text text-primary-600 dark:text-primary-400 font-medium">{{ item.label }}</span>
+              <span class="breadcrumb__text text-primary-700 dark:text-primary-300 font-semibold">{{ item.label }}</span>
             </template>
             <template v-else>
               <NuxtLink :to="item.to" class="breadcrumb__link text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors">
@@ -109,34 +109,38 @@ const breadcrumbClass = computed(() => {
 }
 
 .breadcrumb__list {
-  @apply list-none p-0 m-0;
+  @apply list-none p-0 m-0 text-base;
 }
 
 .breadcrumb__item {
-  @apply inline-flex items-center;
+  @apply inline-flex items-center text-base;
 }
 
 .breadcrumb__item--active {
-  @apply font-medium;
+  @apply font-medium text-base;
 }
 
 .breadcrumb__link {
-  @apply no-underline hover:text-primary-600 dark:hover:text-primary-400 transition-colors;
+  @apply no-underline hover:text-primary-600 dark:hover:text-primary-400 transition-colors text-base;
 }
 
 .breadcrumb__home-icon {
-  @apply flex-shrink-0;
+  @apply flex-shrink-0 h-6 w-6;
 }
 
 .breadcrumb__separator-icon {
-  @apply text-gray-400 dark:text-gray-600;
+  @apply text-gray-400 dark:text-gray-600 text-base;
 }
 
 .breadcrumb__text {
-  @apply text-primary-600 dark:text-primary-400 font-medium;
+  @apply text-primary-700 dark:text-primary-300 font-semibold text-base;
 }
 
 .breadcrumb__link--home {
-  @apply text-gray-600 dark:text-gray-400;
+  @apply text-gray-600 dark:text-gray-400 text-base;
+}
+
+.breadcrumb__home-text {
+  @apply text-base;
 }
 </style>

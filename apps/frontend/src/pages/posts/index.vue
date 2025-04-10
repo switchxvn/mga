@@ -285,7 +285,6 @@ const currentCategoryTranslation = computed<CategoryTranslation | null>(() => {
 // Computed property để lấy breadcrumb
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   const items: BreadcrumbItem[] = [
-    { label: t('common.home'), to: '/' },
     { label: t('posts.title'), to: '/posts' }
   ];
   
@@ -340,94 +339,96 @@ const currentPage = computed({
 </script>
 
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="flex flex-col lg:flex-row gap-8">
-      <!-- Main Content -->
-      <div class="lg:w-2/3">
-        <!-- Breadcrumbs -->
-        <div class="mb-6">
-          <Breadcrumb
-            :items="breadcrumbs"
-            variant="default"
-            class="text-sm md:text-base"
-          />
-        </div>
+  <div class="bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Breadcrumbs -->
+      <div class="mb-6 w-full">
+        <Breadcrumb
+          :items="breadcrumbs"
+          variant="default"
+          class="text-sm md:text-base"
+        />
+      </div>
 
-        <!-- Category Info -->
-        <div v-if="categoryData || seoData" class="mb-12">
-          <div class="space-y-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-primary-500 leading-tight">
-              {{ pageTitle }}
-            </h1>
-            <p v-if="pageDescription" class="text-lg md:text-xl text-gray-600 leading-relaxed max-w-3xl">
-              {{ pageDescription }}
-            </p>
-            <div class="flex items-center gap-4 text-sm text-gray-500 border-t border-gray-200 pt-4 mt-2">
-              <span class="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                {{ t('posts.totalPosts', { count: totalPosts }) }}
-              </span>
-              <span v-if="categoryData?.parent" class="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-                {{ t('posts.parentCategory') }}:
-                <NuxtLink
-                  :to="`/posts?danh-muc=${categoryData.parent.slug}`"
-                  class="text-primary-600 hover:text-primary-700 ml-1 font-medium transition-colors duration-200"
-                >
-                  {{ categoryData.parent.translations?.find((t: CategoryTranslation) => t.locale === locale)?.name || categoryData.parent.name }}
-                </NuxtLink>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Posts Grid -->
-        <div v-if="!isLoading && posts.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PostCard
-            v-for="post in sortedPosts"
-            :key="`post-${post.id}`"
-            :post="post"
-            class="h-full"
-          />
-        </div>
-
-        <!-- Loading State -->
-        <div v-else-if="isLoading" class="flex justify-center items-center min-h-[400px]">
-          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-        </div>
-
-        <!-- No Posts Found -->
-        <div v-else class="text-center py-12">
-          <p class="text-gray-600">{{ t('posts.noPostsFound') }}</p>
-        </div>
-
-        <!-- Pagination -->
-        <div v-if="totalPages > 1" class="mt-8 flex justify-center">
-          <div class="flex items-center gap-2">
-            <button
-              v-for="page in totalPages"
-              :key="`page-${page}`"
-              @click="handlePageChange(page)"
-              :class="[
-                'px-4 py-2 rounded-md',
-                filters.page === page
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              ]"
-            >
-              {{ page }}
-            </button>
+      <!-- Category Info -->
+      <div v-if="categoryData || seoData" class="mb-12">
+        <div class="space-y-4">
+          <h1 class="text-4xl md:text-5xl font-bold text-primary-500 leading-tight">
+            {{ pageTitle }}
+          </h1>
+          <p v-if="pageDescription" class="text-lg md:text-xl text-gray-600 leading-relaxed max-w-3xl">
+            {{ pageDescription }}
+          </p>
+          <div class="flex items-center gap-4 text-sm text-gray-500 border-t border-gray-200 pt-4 mt-2">
+            <span class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              {{ t('posts.totalPosts', { count: totalPosts }) }}
+            </span>
+            <span v-if="categoryData?.parent" class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              {{ t('posts.parentCategory') }}:
+              <NuxtLink
+                :to="`/posts?danh-muc=${categoryData.parent.slug}`"
+                class="text-primary-600 hover:text-primary-700 ml-1 font-medium transition-colors duration-200"
+              >
+                {{ categoryData.parent.translations?.find((t: CategoryTranslation) => t.locale === locale)?.name || categoryData.parent.name }}
+              </NuxtLink>
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- Sidebar -->
-      <div class="lg:w-1/3">
-        <PostSidebar />
+      <!-- Main Content with Sidebar -->
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Main Content -->
+        <div class="flex-1 lg:max-w-[calc(100%-352px)]">
+          <div v-if="!isLoading && posts.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PostCard
+              v-for="post in sortedPosts"
+              :key="`post-${post.id}`"
+              :post="post"
+              class="h-full"
+            />
+          </div>
+
+          <!-- Loading State -->
+          <div v-else-if="isLoading" class="flex justify-center items-center min-h-[400px]">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+          </div>
+
+          <!-- No Posts Found -->
+          <div v-else class="text-center py-12">
+            <p class="text-gray-600">{{ t('posts.noPostsFound') }}</p>
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="mt-8 flex justify-center">
+            <div class="flex items-center gap-2">
+              <button
+                v-for="page in totalPages"
+                :key="`page-${page}`"
+                @click="handlePageChange(page)"
+                :class="[
+                  'px-4 py-2 rounded-md',
+                  filters.page === page
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ]"
+              >
+                {{ page }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:w-[320px] flex-shrink-0">
+          <PostSidebar />
+        </div>
       </div>
     </div>
   </div>

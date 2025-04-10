@@ -8,6 +8,8 @@ import type { Post } from '@ew/shared';
 import { usePopularPosts } from '~/composables/usePopularPosts';
 import { usePost } from '~/composables/usePost';
 import { formatDate } from '~/utils/date';
+import PopularPostsSection from '../common/PopularPostsSection.vue';
+import SubscribeSection from '../common/SubscribeSection.vue';
 import {
   TrendingUp,
   Star,
@@ -86,8 +88,8 @@ async function fetchCategories() {
   try {
     loading.value.categories = true;
     // Chỉ lấy danh mục có type là NEWS
-    const result = await trpc.category.byType.query(CategoryType.NEWS);
-    categories.value = result;
+    const result = await trpc.category.byType.query({ type: CategoryType.NEWS });
+    categories.value = result as unknown as Category[];
   } catch (error) {
     console.error('Failed to fetch categories:', error);
   } finally {
@@ -284,7 +286,7 @@ onMounted(() => {
                   color="primary"
                 />
                 <label :for="`category-${category.id}`" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
-                  {{ category.name }}
+                  {{ category.translations[0]?.name }}
                   <span class="text-xs text-gray-500">({{ category.posts?.length || 0 }})</span>
                 </label>
               </div>
@@ -311,100 +313,12 @@ onMounted(() => {
       <hr class="border-gray-200 dark:border-gray-700 mx-4">
 
       <!-- Popular Posts -->
-      <div>
-        <div
-          @click="toggleSection('popularPosts')"
-          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-        >
-          <div class="flex items-center gap-2.5">
-            <TrendingUp class="h-5 w-5 text-primary-500" />
-            <h3 class="font-medium text-gray-900 dark:text-white">
-              {{ t("sidebar.popularPosts") }}
-            </h3>
-          </div>
-          <component
-            :is="expandedSections.popularPosts ? ChevronUp : ChevronDown"
-            class="h-5 w-5 text-gray-500"
-          />
-        </div>
-
-        <div v-if="expandedSections.popularPosts" class="px-4 pb-4">
-          <div v-if="loadingPopular" class="flex justify-center py-4">
-            <div
-              class="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"
-            ></div>
-          </div>
-
-          <div
-            v-else-if="popularPosts.length === 0"
-            class="py-2 text-sm text-gray-500 text-center"
-          >
-            {{ t("sidebar.noPopularPosts") }}
-          </div>
-
-          <ul v-else class="space-y-4">
-            <li
-              v-for="(post, index) in popularPosts"
-              :key="post.id"
-              class="border-b border-gray-100 dark:border-gray-700 last:border-0 pb-4 last:pb-0"
-            >
-              <NuxtLink :to="getPostUrl(post)" class="group flex items-start gap-3">
-                <div
-                  class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/50 dark:text-primary-400 font-medium text-xs"
-                >
-                  {{ index + 1 }}
-                </div>
-
-                <div class="flex-grow min-w-0 text-left">
-                  <h4
-                    class="line-clamp-2 text-sm font-medium text-gray-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400"
-                  >
-                    {{ getTranslationByLocale(post)?.title }}
-                  </h4>
-                  <p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                    <Calendar :size="14" />
-                    {{ formatDate(post.createdAt) }}
-                  </p>
-                </div>
-              </NuxtLink>
-            </li>
-          </ul>
-        </div>
-      </div>
+      <PopularPostsSection :limit="5" />
 
       <hr class="border-gray-200 dark:border-gray-700 mx-4">
 
       <!-- Subscribe -->
-      <div>
-        <div
-          @click="toggleSection('subscribe')"
-          class="flex cursor-pointer items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-        >
-          <div class="flex items-center gap-2.5">
-            <Bell class="h-5 w-5 text-primary-500" />
-            <h3 class="font-medium text-gray-900 dark:text-white">
-              {{ t("sidebar.subscribe") }}
-            </h3>
-          </div>
-          <component
-            :is="expandedSections.subscribe ? ChevronUp : ChevronDown"
-            class="h-5 w-5 text-gray-500"
-          />
-        </div>
-
-        <div v-if="expandedSections.subscribe" class="px-4 pb-4">
-          <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            {{ t("sidebar.subscribeDescription") }}
-          </p>
-
-          <form class="space-y-3">
-            <UInput type="email" :placeholder="t('sidebar.emailPlaceholder')" size="md" />
-            <UButton type="submit" color="primary" variant="solid" size="md" block>
-              {{ t("sidebar.subscribeButton") }}
-            </UButton>
-          </form>
-        </div>
-      </div>
+      <SubscribeSection />
     </div>
   </div>
 </template>
