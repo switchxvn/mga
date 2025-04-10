@@ -173,9 +173,9 @@ useHead(() => {
       </div>
       
       <!-- Post content with sidebar -->
-      <div v-else-if="post" class="post-detail__content">
+      <div v-else-if="post" class="post-detail__content flex flex-col lg:flex-row gap-8">
         <!-- Main content -->
-        <div class="post-detail__main">
+        <div class="post-detail__main flex-1 lg:max-w-[calc(100%-352px)]">
           <article class="post-detail__article">
             <!-- Featured image -->
             <div class="post-detail__featured-image">
@@ -252,7 +252,7 @@ useHead(() => {
         </div>
         
         <!-- Sidebar -->
-        <div class="post-detail__sidebar">
+        <div class="post-detail__sidebar lg:w-[320px] flex-shrink-0">
           <PostDetailSidebar 
             :postId="postId" 
           />
