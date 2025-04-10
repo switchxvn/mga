@@ -286,9 +286,9 @@ onMounted(() => {
               </template>
             </UInput>
           </div>
-          <div v-if="filters.search" class="mt-2 text-xs text-gray-500">
+          <div v-if="filters.search" class="mt-2 text-sm text-gray-500">
             {{ t("posts.searchingFor") }}:
-            <span class="font-medium">{{ filters.search }}</span>
+            <span class="font-medium text-base">{{ filters.search }}</span>
           </div>
         </div>
       </div>
@@ -303,7 +303,7 @@ onMounted(() => {
         >
           <div class="flex items-center gap-2.5">
             <Filter class="h-5 w-5 text-primary-500" />
-            <h3 class="font-medium text-gray-900 dark:text-white">
+            <h3 class="font-medium text-gray-900 dark:text-white text-lg">
               {{ t("sidebar.filters") }}
             </h3>
           </div>
@@ -316,7 +316,7 @@ onMounted(() => {
         <div v-if="expandedSections.filter" class="px-4 pb-4">
           <!-- Categories Filter -->
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label class="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
               {{ t("sidebar.filterByCategory") }}
             </label>
             <div v-if="loading.categories" class="flex justify-center py-2">
@@ -342,9 +342,9 @@ onMounted(() => {
                   :name="`category-${category.id}`"
                   color="primary"
                 />
-                <label :for="`category-${category.id}`" class="ml-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                <label :for="`category-${category.id}`" class="ml-2 cursor-pointer text-base text-gray-700 dark:text-gray-300">
                   {{ category.translations[0]?.name }}
-                  <span class="text-xs text-gray-500">({{ category.posts?.length || 0 }})</span>
+                  <span class="text-sm text-gray-500">({{ category.posts?.length || 0 }})</span>
                 </label>
               </div>
             </div>

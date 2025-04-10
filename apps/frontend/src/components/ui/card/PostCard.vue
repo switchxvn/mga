@@ -148,7 +148,7 @@ watch(locale, () => {
 
 /* Cố định chiều cao cho hình ảnh */
 .image-container {
-  height: 200px;
+  height: 240px;
   width: 100%;
   overflow: hidden;
 }
@@ -162,15 +162,15 @@ watch(locale, () => {
 
 /* Cố định chiều cao cho tiêu đề */
 .title-container {
-  height: 48px; /* Chiều cao cho 2 dòng */
+  height: 72px;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   text-overflow: ellipsis;
-  font-size: 1.125rem;
+  font-size: 1.5rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   color: inherit;
 }
 
@@ -180,14 +180,13 @@ watch(locale, () => {
 
 /* Cố định chiều cao cho mô tả */
 .description-container {
-  height: 72px; /* Chiều cao cho 3 dòng */
-  overflow: hidden;
+  @apply text-sm text-gray-600 dark:text-gray-300 mt-2;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 0.75rem;
-  color: #4b5563;
+  line-height: 1.5;
 }
 
 .dark .description-container {

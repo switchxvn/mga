@@ -248,7 +248,7 @@ useHead(() => {
           </article>
           
           <!-- Related posts -->
-          <RelatedPosts v-if="post && !loading" :postId="postId" :limit="3" class="mt-8" />
+          <RelatedPosts v-if="post && !loading" :postId="postId" :limit="6" class="mt-8" />
         </div>
         
         <!-- Sidebar -->

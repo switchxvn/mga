@@ -6,6 +6,7 @@ import { useLocalization } from "../../composables/useLocalization";
 import { useRoute, useRouter } from 'vue-router';
 import PostSidebar from "../../components/sidebar/PostSidebar.vue";
 import PostCard from "../../components/ui/card/PostCard.vue";
+import PostCardSkeleton from "../../components/ui/skeleton/PostCardSkeleton.vue";
 import type { Post } from "@ew/shared";
 import type { CategoryTranslation } from "../../types/category-translation";
 import Breadcrumb from "../../components/common/Breadcrumb.vue";
@@ -419,9 +420,9 @@ const currentPage = computed({
             />
           </div>
 
-          <!-- Loading State -->
-          <div v-else-if="isLoading" class="flex justify-center items-center min-h-[400px]">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+          <!-- Skeleton Loading State -->
+          <div v-else-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PostCardSkeleton v-for="n in 6" :key="`skeleton-${n}`" />
           </div>
 
           <!-- No Posts Found -->

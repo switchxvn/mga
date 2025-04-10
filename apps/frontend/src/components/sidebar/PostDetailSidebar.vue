@@ -164,7 +164,7 @@ onMounted(() => {
 }
 
 .post-sidebar__title {
-  @apply text-lg font-semibold mb-4 pb-2 border-b border-gray-200 flex items-center text-gray-800;
+  @apply text-xl font-semibold mb-4 pb-2 border-b border-gray-200 flex items-center text-gray-800;
 }
 
 .post-sidebar__loading {
@@ -176,7 +176,7 @@ onMounted(() => {
 }
 
 .post-sidebar__empty {
-  @apply text-gray-500 py-2 text-center italic;
+  @apply text-gray-500 py-2 text-center italic text-base;
 }
 
 .post-sidebar__featured-categories {
@@ -205,7 +205,7 @@ onMounted(() => {
 }
 
 .post-sidebar__featured-category-title {
-  @apply text-sm font-medium text-gray-800 mb-0.5 transition-colors duration-200;
+  @apply text-base font-medium text-gray-800 mb-0.5 transition-colors duration-200;
 }
 
 .dark .post-sidebar__featured-category-title {
@@ -213,7 +213,7 @@ onMounted(() => {
 }
 
 .post-sidebar__featured-category-description {
-  @apply text-xs text-gray-500 line-clamp-2;
+  @apply text-sm text-gray-500 line-clamp-2;
 }
 
 .dark .post-sidebar__featured-category-description {
@@ -225,6 +225,6 @@ onMounted(() => {
 }
 
 .post-sidebar__category {
-  @apply px-3 py-1 text-sm bg-gray-50 rounded-full hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200;
+  @apply px-3 py-1.5 text-base bg-gray-50 rounded-full hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200;
 }
 </style>
