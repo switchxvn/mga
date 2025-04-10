@@ -19,6 +19,10 @@ const router = useRouter();
 // Định nghĩa alias cho URL tiếng Việt và meta
 definePageMeta({
   layout: "default",
+  validate: (route) => {
+    // Cho phép tất cả các query parameters
+    return true;
+  }
 });
 
 const trpc = useTrpc();
@@ -31,11 +35,37 @@ const categoryData = ref<any>(null);
 const seoData = ref<any>(null);
 const shouldResetSidebar = ref(false);
 
-// Định nghĩa kiểu dữ liệu cho breadcrumb item
-interface BreadcrumbItem {
-  label: string;
-  to?: string;
-}
+// Filter state với tất cả các query parameters có thể có
+const filters = reactive({
+  search: route.query.search as string || '',
+  categories: route.query.categories ? (route.query.categories as string).split(',').map(Number) : [],
+  sort: (route.query.sort as string) || 'newest',
+  category: route.query['danh-muc'] as string || undefined,
+  page: Number(route.query.page || 1),
+  limit: Number(route.query.limit) || 12,
+  // Thêm tất cả các query parameters khác vào đây
+  ...Object.fromEntries(
+    Object.entries(route.query).filter(([key]) => !['search', 'categories', 'sort', 'danh-muc', 'page', 'limit'].includes(key))
+  )
+} as {
+  search: string;
+  categories: number[];
+  sort: string;
+  category: string | undefined;
+  page: number;
+  limit: number;
+  [key: string]: any; // Thêm index signature để cho phép truy cập bằng key động
+});
+
+// Đảm bảo page được đồng bộ với URL khi SSR
+const currentPage = computed(() => Number(route.query.page || 1));
+
+// Watch currentPage để cập nhật filters.page
+watch(currentPage, (newPage) => {
+  if (newPage !== filters.page) {
+    filters.page = newPage;
+  }
+});
 
 // Fetch category data by slug
 const fetchCategoryData = async (slug: string) => {
@@ -66,15 +96,89 @@ const fetchSeoData = async () => {
   }
 };
 
-// Filter state
-const filters = reactive({
-  search: route.query.search as string || '',
-  categories: route.query.categories ? (route.query.categories as string).split(',').map(Number) : [],
-  sort: (route.query.sort as string) || 'newest',
-  category: route.query['danh-muc'] as string || undefined,
-  page: Number(route.query.page) || 1,
-  limit: Number(route.query.limit) || 12,
-});
+const fetchPosts = async () => {
+  isLoading.value = true;
+  error.value = null;
+  try {
+    // Kết hợp cả category ID từ danh-muc và categories từ filter
+    let categoryIds: number[] = [];
+    
+    // Thêm category ID từ danh-muc nếu có
+    if (categoryData.value) {
+      categoryIds.push(categoryData.value.id);
+    }
+    
+    // Thêm categories từ filter nếu có
+    if (filters.categories && filters.categories.length > 0) {
+      categoryIds = [...new Set([...categoryIds, ...filters.categories])];
+    }
+
+    // Lấy page từ URL thay vì từ filters
+    const pageFromUrl = Number(route.query.page || 1);
+    
+    const result = await trpc.post.latest.query({
+      filters: {
+        categories: categoryIds.length > 0 ? categoryIds.join(',') : undefined,
+        locale: locale.value,
+        search: filters.search,
+        page: pageFromUrl, // Sử dụng page từ URL
+        limit: filters.limit,
+        sortBy: filters.sort,
+      },
+    });
+    
+    if (result && result.posts) {
+      posts.value = Array.isArray(result.posts) ? result.posts.map(transformPost) : [];
+      totalPosts.value = result.total || 0;
+      totalPages.value = result.totalPages || 0;
+    } else {
+      posts.value = Array.isArray(result) ? result.map(transformPost) : [];
+      totalPosts.value = posts.value.length;
+      totalPages.value = 1;
+    }
+  } catch (err) {
+    error.value = "Failed to fetch posts";
+    console.error("Error fetching posts:", err);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Watch for route query changes
+watch(() => route.query, async (newQuery) => {
+  // Cập nhật tất cả các query parameters vào filters
+  Object.entries(newQuery).forEach(([key, value]) => {
+    if (key === 'categories' && value) {
+      filters.categories = (value as string).split(',').map(Number);
+    } else if (key === 'page' || key === 'limit') {
+      filters[key] = Number(value) || 1;
+    } else if (key === 'danh-muc') {
+      filters.category = value as string;
+    } else if (['search', 'sort'].includes(key)) {
+      filters[key] = value as string;
+    } else {
+      // Lưu các query parameters khác
+      filters[key] = value as string;
+    }
+  });
+
+  // Fetch category data if danh-muc exists
+  if (filters.category) {
+    await fetchCategoryData(filters.category);
+  } else {
+    categoryData.value = null;
+    await fetchSeoData();
+  }
+  
+  // Fetch posts after category data is loaded
+  await fetchPosts();
+}, { immediate: true });
+
+// Định nghĩa kiểu dữ liệu cho breadcrumb item
+interface BreadcrumbItem {
+  label: string;
+  to?: string;
+}
 
 // Sort options as computed property to ensure translations are updated
 const sortOptions = computed(() => [
@@ -97,58 +201,11 @@ const transformPost = (post: any): Post => {
   };
 };
 
-const fetchPosts = async () => {
-  isLoading.value = true;
-  error.value = null;
-  try {
-    console.log('Fetching posts with filters:', {
-      categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
-      locale: locale.value,
-      category: filters.category,
-      search: filters.search,
-      page: filters.page,
-      limit: filters.limit,
-      sortBy: filters.sort,
-    });
-    
-    const result = await trpc.post.latest.query({
-      filters: {
-        categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
-        locale: locale.value,
-        category: filters.category,
-        search: filters.search,
-        page: filters.page,
-        limit: filters.limit,
-        sortBy: filters.sort,
-      },
-    });
-    
-    console.log('API response:', result);
-    
-    if (result && result.posts) {
-      posts.value = Array.isArray(result.posts) ? result.posts.map(transformPost) : [];
-      totalPosts.value = result.total || 0;
-      totalPages.value = result.totalPages || 0;
-    } else {
-      // Fallback for backward compatibility
-      posts.value = Array.isArray(result) ? result.map(transformPost) : [];
-      totalPosts.value = posts.value.length;
-      totalPages.value = 1;
-    }
-  } catch (err) {
-    error.value = "Failed to fetch posts";
-    console.error("Error fetching posts:", err);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 // Handle filter changes from sidebar
 const handleFilterChange = (newFilters: any) => {
   // Update filters
   filters.search = newFilters.search ?? filters.search;
   filters.categories = newFilters.categories ?? [];
-  filters.category = newFilters.category;
   
   // Reset shouldResetSidebar after filters are updated
   shouldResetSidebar.value = false;
@@ -161,6 +218,26 @@ const handleFilterChange = (newFilters: any) => {
   
   // Fetch posts with new filters
   fetchPosts();
+};
+
+// Update URL query params
+const updateQueryParams = () => {
+  const query: Record<string, string> = {};
+  
+  if (filters.search) query.search = filters.search;
+  if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
+  if (filters.sort && filters.sort !== 'newest') query.sort = filters.sort;
+  if (filters.category) query['danh-muc'] = filters.category;
+  
+  // Giữ nguyên tham số page từ URL hiện tại
+  if (route.query.page) {
+    query.page = route.query.page as string;
+  }
+  
+  if (filters.limit !== 12) query.limit = String(filters.limit);
+  
+  // Sử dụng replace thay vì push để tránh thêm vào history
+  router.replace({ query });
 };
 
 // Reset all filters
@@ -183,32 +260,16 @@ const resetAllFilters = () => {
 // Handle page change
 const handlePageChange = (page: number) => {
   console.log('Changing page to:', page);
-  filters.page = page;
   
-  // Fetch posts first to ensure data is updated
+  // Cập nhật URL trước
+  const query = { ...route.query, page: String(page) };
+  router.replace({ query });
+  
+  // Fetch posts sau khi URL đã được cập nhật
   fetchPosts();
-  
-  // Then update URL query params
-  updateQueryParams();
   
   // Scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-// Update URL query params
-const updateQueryParams = () => {
-  // Build query params object
-  const query: Record<string, string> = {};
-  
-  if (filters.search) query.search = filters.search;
-  if (filters.categories && filters.categories.length > 0) query.categories = filters.categories.join(',');
-  if (filters.sort && filters.sort !== 'newest') query.sort = filters.sort;
-  if (filters.category) query['danh-muc'] = filters.category;
-  if (filters.page > 1) query.page = String(filters.page);
-  if (filters.limit !== 12) query.limit = String(filters.limit);
-  
-  // Update route
-  router.replace({ query });
 };
 
 // Watch for locale changes
@@ -216,35 +277,16 @@ watch(locale, () => {
   fetchPosts();
 });
 
-// Watch for route query changes
-watch(() => route.query['danh-muc'], async (newCategory) => {
-  if (newCategory !== filters.category) {
-    filters.category = newCategory as string || undefined;
-    filters.page = 1; // Reset to page 1 when category changes
-    
-    // Fetch category data if danh-muc exists
-    if (filters.category) {
-      await fetchCategoryData(filters.category);
-    } else {
-      categoryData.value = null;
-    }
-    
-    // Fetch posts
-    fetchPosts();
-  }
-});
-
 // Watch for page changes in URL
 watch(() => route.query.page, (newPage) => {
   if (newPage) {
     const pageNum = Number(newPage);
-    if (!isNaN(pageNum) && pageNum !== filters.page) {
+    if (!isNaN(pageNum)) {
       console.log('Page changed in URL to:', pageNum);
-      filters.page = pageNum;
       fetchPosts();
     }
   }
-});
+}, { immediate: true });
 
 // Sort posts
 const sortedPosts = computed(() => {
@@ -262,16 +304,29 @@ const handleSortChange = (event: Event) => {
   fetchPosts();
 };
 
-onMounted(async () => {
-  // Fetch category data if danh-muc exists
-  if (filters.category) {
-    await fetchCategoryData(filters.category);
-  } else {
-    // Fetch SEO data if no category
-    await fetchSeoData();
-  }
+onMounted(() => {
+  // Initialize filters from route query
+  filters.category = route.query['danh-muc'] as string || undefined;
+  filters.search = route.query.search as string || '';
+  filters.categories = route.query.categories ? (route.query.categories as string).split(',').map(Number) : [];
+  filters.sort = (route.query.sort as string) || 'newest';
   
-  fetchPosts();
+  // Đảm bảo giữ nguyên giá trị page từ URL
+  filters.page = currentPage.value;
+  
+  filters.limit = Number(route.query.limit) || 12;
+
+  // Fetch category data if danh-muc exists
+  (async () => {
+    if (filters.category) {
+      await fetchCategoryData(filters.category);
+    } else {
+      // Fetch SEO data if no category
+      await fetchSeoData();
+    }
+    
+    await fetchPosts();
+  })();
 });
 
 /**
@@ -354,13 +409,6 @@ watch([pageTitle, pageDescription, seoData], () => {
     ]
   });
 }, { immediate: true });
-
-const currentPage = computed({
-  get: () => filters.page,
-  set: (value) => {
-    handlePageChange(value);
-  }
-});
 </script>
 
 <template>
@@ -381,9 +429,11 @@ const currentPage = computed({
           <h1 class="text-4xl md:text-5xl font-bold text-primary-500 leading-tight">
             {{ pageTitle }}
           </h1>
-          <p v-if="pageDescription" class="text-lg md:text-xl text-gray-600 leading-relaxed max-w-3xl">
-            {{ pageDescription }}
-          </p>
+          <div v-if="pageDescription" class="text-lg md:text-xl text-gray-600 leading-relaxed w-full">
+            <p class="first-letter-styled">
+              {{ pageDescription }}
+            </p>
+          </div>
           <div class="flex items-center gap-4 text-sm text-gray-500 border-t border-gray-200 pt-4 mt-2">
             <span class="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -454,7 +504,7 @@ const currentPage = computed({
                 @click="handlePageChange(page)"
                 :class="[
                   'px-4 py-2 rounded-md',
-                  filters.page === page
+                  Number(route.query.page || 1) === page
                     ? 'bg-primary-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 ]"
@@ -477,3 +527,24 @@ const currentPage = computed({
     </div>
   </div>
 </template>
+
+<style scoped>
+.first-letter-styled {
+  display: block;
+}
+
+.first-letter-styled::first-letter {
+  font-size: 3.5em;
+  font-weight: 700;
+  @apply text-primary-500;
+  float: left;
+  padding-right: 0.2em;
+  line-height: 0.85;
+  margin-top: -0.1em;
+}
+
+.first-letter-styled p {
+  margin: 0;
+  padding: 0;
+}
+</style>

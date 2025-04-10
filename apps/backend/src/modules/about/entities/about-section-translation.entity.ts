@@ -17,19 +17,19 @@ export class AboutSectionTranslation {
   @Column({ name: 'section_id' })
   sectionId!: number;
 
-  @Column({ length: 2 })
+  @Column({ name: 'locale', length: 2 })
   locale!: string;
 
-  @Column()
+  @Column({ name: 'title' })
   title!: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'subtitle', type: 'text', nullable: true })
   subtitle?: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'content', type: 'text', nullable: true })
   content?: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'data', type: 'jsonb', nullable: true })
   data?: Record<string, any>;
 
   @CreateDateColumn({ name: 'created_at' })

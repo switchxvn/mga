@@ -5,6 +5,7 @@ import { SeedCommand } from './seed.command';
 import { CountryPhoneCodeSeeder } from '../seeders/country-phone-code.seeder';
 import { ServiceSeeder } from '../seeders/service.seeder';
 import { TicketProductSeeder } from '../seeders/ticket-product.seeder';
+import { AboutSectionSeeder } from '../seeders/about-section.seeder';
 import { Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from '../../../../apps/backend/src/modules/product/entities/product.entity';
@@ -18,6 +19,8 @@ import { ProductAttributeValueTranslation } from '../../../../apps/backend/src/m
 import { CountryPhoneCode } from '../../../../apps/backend/src/modules/common/entities/country-phone-code.entity';
 import { Service } from '../../../../apps/backend/src/modules/service/entities/service.entity';
 import { ServiceTranslation } from '../../../../apps/backend/src/modules/service/entities/service-translation.entity';
+import { AboutSection } from '../../../../apps/backend/src/modules/about/entities/about-section.entity';
+import { AboutSectionTranslation } from '../../../../apps/backend/src/modules/about/entities/about-section-translation.entity';
 
 @Module({
   imports: [
@@ -34,9 +37,17 @@ import { ServiceTranslation } from '../../../../apps/backend/src/modules/service
       CountryPhoneCode,
       Service,
       ServiceTranslation,
+      AboutSection,
+      AboutSectionTranslation,
     ]),
   ],
-  providers: [SeedCommand, CountryPhoneCodeSeeder, ServiceSeeder, TicketProductSeeder],
+  providers: [
+    SeedCommand, 
+    CountryPhoneCodeSeeder, 
+    ServiceSeeder, 
+    TicketProductSeeder,
+    AboutSectionSeeder
+  ],
 })
 class SeedModule {}
 

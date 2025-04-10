@@ -22,13 +22,13 @@ export class AboutSection {
   })
   type!: AboutSectionType;
 
-  @Column({ length: 100 })
+  @Column({ name: 'component_name', length: 100 })
   componentName!: string;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ name: 'order', type: 'int', default: 0 })
   order!: number;
 
-  @Column({ type: 'jsonb', default: {
+  @Column({ name: 'settings', type: 'jsonb', default: {
     // Common settings
     layout: 'default',
     backgroundColor: '',

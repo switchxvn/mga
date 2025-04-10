@@ -2,6 +2,7 @@ import { Command, CommandRunner, Option } from 'nest-commander';
 import { CountryPhoneCodeSeeder } from '../seeders/country-phone-code.seeder';
 import { ServiceSeeder } from '../seeders/service.seeder';
 import { TicketProductSeeder } from '../seeders/ticket-product.seeder';
+import { AboutSectionSeeder } from '../seeders/about-section.seeder';
 import { Logger } from '@nestjs/common';
 
 interface SeedCommandOptions {
@@ -21,7 +22,8 @@ export class SeedCommand extends CommandRunner {
   constructor(
     private readonly countryPhoneCodeSeeder: CountryPhoneCodeSeeder,
     private readonly serviceSeeder: ServiceSeeder,
-    private readonly ticketProductSeeder: TicketProductSeeder
+    private readonly ticketProductSeeder: TicketProductSeeder,
+    private readonly aboutSectionSeeder: AboutSectionSeeder
   ) {
     super();
     this.logger.log('SeedCommand constructor called');
@@ -36,12 +38,10 @@ export class SeedCommand extends CommandRunner {
       this.logger.log(`Passed params: ${JSON.stringify(passedParams)}`);
       this.logger.log(`Options: ${JSON.stringify(options)}`);
       
-      // Nếu có tham số seeder, chỉ chạy seeder đó
       if (options?.seeder) {
         this.logger.log(`Running specific seeder: ${options.seeder}`);
         await this.runSpecificSeeder(options.seeder);
       } else {
-        // Nếu không có tham số, chạy tất cả các seeders
         this.logger.log('Running all seeders');
         await this.runAllSeeders();
       }
@@ -57,7 +57,7 @@ export class SeedCommand extends CommandRunner {
 
   @Option({
     flags: '-s, --seeder [seederName]',
-    description: 'Specific seeder to run (country-phone-code, service, ticket-product)',
+    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about)',
   })
   parseSeeder(val: string): string {
     this.logger.log(`parseSeeder called with value: ${val}`);
@@ -82,9 +82,14 @@ export class SeedCommand extends CommandRunner {
         await this.ticketProductSeeder.seed();
         this.logger.log('Ticket products seeded successfully');
         break;
+      case 'about':
+        this.logger.log('Seeding about sections...');
+        await this.aboutSectionSeeder.seed();
+        this.logger.log('About sections seeded successfully');
+        break;
       default:
         this.logger.error(`Unknown seeder: ${seederName}`);
-        this.logger.log('Available seeders: country-phone-code, service, ticket-product');
+        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about');
         process.exit(1);
     }
   }
@@ -101,5 +106,9 @@ export class SeedCommand extends CommandRunner {
     this.logger.log('Seeding ticket products...');
     await this.ticketProductSeeder.seed();
     this.logger.log('Ticket products seeded successfully');
+
+    this.logger.log('Seeding about sections...');
+    await this.aboutSectionSeeder.seed();
+    this.logger.log('About sections seeded successfully');
   }
 } 
