@@ -286,7 +286,6 @@ const getTabIcon = (tabId: string) => {
       <div class="mb-6">
         <Breadcrumb
           :items="[
-            { label: t('home'), to: '/' },
             { label: t('tickets.title'), to: '/tickets' },
             { label: productTitle },
           ]"

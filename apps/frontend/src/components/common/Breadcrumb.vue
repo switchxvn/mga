@@ -65,7 +65,7 @@ const breadcrumbClass = computed(() => {
           <span class="breadcrumb__separator-icon">{{ separator }}</span>
         </li>
         
-        <template v-for="(item, index) in items" :key="index">
+        <template v-for="(item, index) in items" :key="`${item.to}-${item.label}`">
           <li 
             class="breadcrumb__item"
             :class="{ 'breadcrumb__item--active': index === items.length - 1 }"
@@ -91,7 +91,3 @@ const breadcrumbClass = computed(() => {
     </ol>
   </nav>
 </template>
-
-<style lang="scss" scoped>
-// Styles được di chuyển sang file riêng: assets/styles/components/_breadcrumb.scss
-</style> 

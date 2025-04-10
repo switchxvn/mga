@@ -361,22 +361,34 @@ const currentPage = computed({
         </nav>
 
         <!-- Category Info -->
-        <div v-if="categoryData || seoData" class="mb-8">
-          <h1 class="text-3xl font-bold mb-4">{{ pageTitle }}</h1>
-          <p v-if="pageDescription" class="text-gray-600 mb-4">
-            {{ pageDescription }}
-          </p>
-          <div class="flex items-center gap-4 text-sm text-gray-500">
-            <span>{{ t('posts.totalPosts', { count: totalPosts }) }}</span>
-            <span v-if="categoryData?.parent" class="flex items-center gap-2">
-              {{ t('posts.parentCategory') }}:
-              <NuxtLink
-                :to="`/posts?danh-muc=${categoryData.parent.slug}`"
-                class="text-primary-600 hover:text-primary-700"
-              >
-                {{ categoryData.parent.translations?.find((t: CategoryTranslation) => t.locale === locale)?.name || categoryData.parent.name }}
-              </NuxtLink>
-            </span>
+        <div v-if="categoryData || seoData" class="mb-12">
+          <div class="space-y-4">
+            <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent leading-tight">
+              {{ pageTitle }}
+            </h1>
+            <p v-if="pageDescription" class="text-lg md:text-xl text-gray-600 leading-relaxed max-w-3xl">
+              {{ pageDescription }}
+            </p>
+            <div class="flex items-center gap-4 text-sm text-gray-500 border-t border-gray-200 pt-4 mt-2">
+              <span class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                {{ t('posts.totalPosts', { count: totalPosts }) }}
+              </span>
+              <span v-if="categoryData?.parent" class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                {{ t('posts.parentCategory') }}:
+                <NuxtLink
+                  :to="`/posts?danh-muc=${categoryData.parent.slug}`"
+                  class="text-primary-600 hover:text-primary-700 ml-1 font-medium transition-colors duration-200"
+                >
+                  {{ categoryData.parent.translations?.find((t: CategoryTranslation) => t.locale === locale)?.name || categoryData.parent.name }}
+                </NuxtLink>
+              </span>
+            </div>
           </div>
         </div>
 

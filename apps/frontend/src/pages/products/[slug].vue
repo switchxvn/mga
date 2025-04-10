@@ -258,7 +258,6 @@ watch(activeTab, (newTab, oldTab) => {
       <div class="mb-6">
         <Breadcrumb
           :items="[
-            { label: t('home'), to: '/' },
             { label: t('products.title'), to: '/products' },
             { label: productTitle },
           ]"
