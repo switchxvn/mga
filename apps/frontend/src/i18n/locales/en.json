@@ -249,7 +249,8 @@
     "itemCount": "posts",
     "sortBy": "Sort by",
     "noPosts": "No posts found",
-    "resetFilters": "Reset Filters"
+    "resetFilters": "Reset Filters",
+    "totalPosts": "{count} posts"
   },
   "news": {
     "viewAll": "View All News"

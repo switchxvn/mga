@@ -248,7 +248,8 @@
     "itemCount": "bài viết",
     "sortBy": "Sắp xếp theo",
     "noPosts": "Chưa có bài viết nào",
-    "resetFilters": "Đặt lại bộ lọc"
+    "resetFilters": "Đặt lại bộ lọc",
+    "totalPosts": "{count} bài viết"
   },
   "news": {
     "viewAll": "Xem tất cả tin tức"

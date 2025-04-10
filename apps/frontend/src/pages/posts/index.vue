@@ -8,6 +8,7 @@ import PostSidebar from "../../components/sidebar/PostSidebar.vue";
 import PostCard from "../../components/ui/card/PostCard.vue";
 import type { Post } from "@ew/shared";
 import type { CategoryTranslation } from "../../types/category-translation";
+import Breadcrumb from "../../components/common/Breadcrumb.vue";
 
 const { t, locale } = useLocalization();
 const route = useRoute();
@@ -29,8 +30,8 @@ const seoData = ref<any>(null);
 
 // Định nghĩa kiểu dữ liệu cho breadcrumb item
 interface BreadcrumbItem {
-  name: string;
-  path: string | null;
+  label: string;
+  to?: string;
 }
 
 // Fetch category data by slug
@@ -284,14 +285,14 @@ const currentCategoryTranslation = computed<CategoryTranslation | null>(() => {
 // Computed property để lấy breadcrumb
 const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   const items: BreadcrumbItem[] = [
-    { name: t('common.home'), path: '/' },
-    { name: t('posts.title'), path: '/posts' }
+    { label: t('common.home'), to: '/' },
+    { label: t('posts.title'), to: '/posts' }
   ];
   
   if (categoryData.value && currentCategoryTranslation.value) {
     items.push({
-      name: currentCategoryTranslation.value.name || '',
-      path: null // Không có path vì đang ở trang hiện tại
+      label: currentCategoryTranslation.value.name || '',
+      to: undefined
     });
   }
   
@@ -344,26 +345,18 @@ const currentPage = computed({
       <!-- Main Content -->
       <div class="lg:w-2/3">
         <!-- Breadcrumbs -->
-        <nav class="mb-6">
-          <ol class="flex items-center space-x-2 text-sm">
-            <li v-for="(item, index) in breadcrumbs" :key="index" class="flex items-center">
-              <NuxtLink
-                v-if="item.path"
-                :to="item.path"
-                class="text-gray-600 hover:text-primary-600"
-              >
-                {{ item.name }}
-              </NuxtLink>
-              <span v-else class="text-gray-900">{{ item.name }}</span>
-              <span v-if="index < breadcrumbs.length - 1" class="mx-2 text-gray-400">/</span>
-            </li>
-          </ol>
-        </nav>
+        <div class="mb-6">
+          <Breadcrumb
+            :items="breadcrumbs"
+            variant="default"
+            class="text-sm md:text-base"
+          />
+        </div>
 
         <!-- Category Info -->
         <div v-if="categoryData || seoData" class="mb-12">
           <div class="space-y-4">
-            <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent leading-tight">
+            <h1 class="text-4xl md:text-5xl font-bold text-primary-500 leading-tight">
               {{ pageTitle }}
             </h1>
             <p v-if="pageDescription" class="text-lg md:text-xl text-gray-600 leading-relaxed max-w-3xl">
@@ -395,8 +388,8 @@ const currentPage = computed({
         <!-- Posts Grid -->
         <div v-if="!isLoading && posts.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <PostCard
-            v-for="post in posts"
-            :key="post.id"
+            v-for="post in sortedPosts"
+            :key="`post-${post.id}`"
             :post="post"
             class="h-full"
           />
@@ -417,7 +410,7 @@ const currentPage = computed({
           <div class="flex items-center gap-2">
             <button
               v-for="page in totalPages"
-              :key="page"
+              :key="`page-${page}`"
               @click="handlePageChange(page)"
               :class="[
                 'px-4 py-2 rounded-md',

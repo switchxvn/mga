@@ -289,6 +289,8 @@ const getTabIcon = (tabId: string) => {
             { label: t('tickets.title'), to: '/tickets' },
             { label: productTitle },
           ]"
+          variant="transparent"
+          class="text-sm md:text-base"
         />
       </div>
 
