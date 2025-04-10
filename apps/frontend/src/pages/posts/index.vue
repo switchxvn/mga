@@ -43,6 +43,8 @@ const filters = reactive<{
   page: number;
   limit: number;
   tags?: string[];
+  category?: string;
+  [key: string]: any; // Thêm index signature để cho phép truy cập động
 }>({
   search: route.query.search as string || '',
   categories: route.query.categories ? (route.query.categories as string).split(',') : [],
@@ -87,6 +89,21 @@ const fetchSeoData = async () => {
     console.error('Error fetching SEO data:', err);
     seoData.value = null;
     return null;
+  }
+};
+
+// Hàm mới để xử lý việc lấy thông tin category dựa trên filters
+const handleCategoryData = async () => {
+  // Nếu có nhiều categories hoặc không có category nào
+  if (filters.categories.length > 1 || filters.categories.length === 0) {
+    categoryData.value = null;
+    await fetchSeoData();
+    return;
+  }
+  
+  // Nếu chỉ có một category
+  if (filters.categories.length === 1) {
+    await fetchCategoryData(filters.categories[0]);
   }
 };
 
@@ -138,30 +155,8 @@ const fetchPosts = async () => {
     totalPosts.value = result.total;
     totalPages.value = result.totalPages;
 
-    // Fetch category data if category filter is active
-    if (filters.category) {
-      try {
-        categoryData.value = await trpc.category.getBySlug.query({
-          slug: filters.category,
-          locale: locale.value
-        });
-      } catch (error) {
-        console.error('Failed to fetch category data:', error);
-      }
-    } else {
-      categoryData.value = null;
-    }
-
-    // Fetch SEO data if no category filter
-    if (!filters.category) {
-      try {
-        seoData.value = await trpc.seo.getSeoByPath.query('/posts');
-      } catch (error) {
-        console.error('Failed to fetch SEO data:', error);
-      }
-    } else {
-      seoData.value = null;
-    }
+    // Xử lý thông tin category dựa trên filters
+    await handleCategoryData();
 
   } catch (err) {
     console.error('Failed to fetch posts:', err);
@@ -189,13 +184,8 @@ watch(() => route.query, async (newQuery) => {
     }
   });
 
-  // Fetch category data if danh-muc exists
-  if (filters.category) {
-    await fetchCategoryData(filters.category);
-  } else {
-    categoryData.value = null;
-    await fetchSeoData();
-  }
+  // Xử lý thông tin category dựa trên filters
+  await handleCategoryData();
   
   // Fetch posts after category data is loaded
   await fetchPosts();
@@ -337,17 +327,10 @@ onMounted(() => {
   
   filters.limit = Number(route.query.limit) || 12;
 
-  // Fetch category data if danh-muc exists
-  (async () => {
-    if (filters.category) {
-      await fetchCategoryData(filters.category);
-    } else {
-      // Fetch SEO data if no category
-      await fetchSeoData();
-    }
-    
-    await fetchPosts();
-  })();
+  // Xử lý thông tin category và fetch posts
+  handleCategoryData().then(() => {
+    fetchPosts();
+  });
 });
 
 /**
