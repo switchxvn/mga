@@ -23,6 +23,33 @@ interface PostTranslation {
   updatedAt: string;
 }
 
+interface Author {
+  id: number;
+  email: string;
+  username: string;
+  isEmailVerified: boolean;
+  isActive: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  profile?: {
+    id: number;
+    firstName: string | null;
+    lastName: string | null;
+    phoneNumber: string | null;
+    phoneCode: string | null;
+    address?: {
+      city: string | null;
+      state: string | null;
+      street: string | null;
+      country: string | null;
+      zipCode: string | null;
+    };
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
 interface Post {
   id: number;
   title?: string;
@@ -32,13 +59,21 @@ interface Post {
   updatedAt: string;
   authorId: number;
   published: boolean;
-  author?: any;
+  author?: Author;
   ogImage?: string;
   slug?: string;
   metaDescription?: string;
   shortDescription?: string;
   categories?: any[];
   translations?: PostTranslation[];
+}
+
+interface PaginatedResponse<T> {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  items: T[];
 }
 
 interface Props {
@@ -152,28 +187,72 @@ async function fetchLatestPosts() {
   error.value = null;
   try {
     const result = await trpc.post.byLocale.query({ locale: locale.value });
-    latestPosts.value = result.map((post: any) => {
-      const translation = post.translations?.find(
-        (t: { locale: string }) => t.locale === locale.value
-      );
+    
+    // Kiểm tra và xử lý response
+    if (!result) {
+      latestPosts.value = [];
+      return;
+    }
 
-      const mappedTranslations = post.translations?.map((t: any) => ({
-        ...t,
-        slug: t.slug || undefined
-      }));
+    // Kiểm tra cấu trúc response mới (PaginatedResponse)
+    if ('items' in result && Array.isArray(result.items)) {
+      latestPosts.value = result.items.map((post: any) => {
+        const translation = post.translations?.find(
+          (t: { locale: string }) => t.locale === locale.value
+        );
 
-      return {
-        ...post,
-        id: Number(post.id),
-        title: translation?.title || post.title,
-        content: translation?.content || post.content,
-        author: post.author || {},
-        translations: mappedTranslations
-      } as Post;
-    }).slice(0, props.config.maxItems);
+        const mappedTranslations = post.translations?.map((t: any) => ({
+          ...t,
+          slug: t.slug || undefined
+        }));
+
+        return {
+          ...post,
+          id: Number(post.id),
+          title: translation?.title || post.title,
+          content: translation?.content || post.content,
+          author: post.author ? {
+            ...post.author,
+            id: Number(post.author.id),
+            lastLoginAt: post.author.lastLoginAt || null
+          } : undefined,
+          translations: mappedTranslations
+        } as Post;
+      }).slice(0, props.config.maxItems);
+    } 
+    // Kiểm tra cấu trúc response cũ (Array)
+    else if (Array.isArray(result)) {
+      latestPosts.value = result.map((post: any) => {
+        const translation = post.translations?.find(
+          (t: { locale: string }) => t.locale === locale.value
+        );
+
+        const mappedTranslations = post.translations?.map((t: any) => ({
+          ...t,
+          slug: t.slug || undefined
+        }));
+
+        return {
+          ...post,
+          id: Number(post.id),
+          title: translation?.title || post.title,
+          content: translation?.content || post.content,
+          author: post.author ? {
+            ...post.author,
+            id: Number(post.author.id),
+            lastLoginAt: post.author.lastLoginAt || null
+          } : undefined,
+          translations: mappedTranslations
+        } as Post;
+      }).slice(0, props.config.maxItems);
+    } else {
+      console.error('Unexpected response format:', result);
+      latestPosts.value = [];
+    }
   } catch (err: any) {
     console.error("Failed to fetch latest posts:", err);
     error.value = err.message || localT('errors.failed_to_load_posts');
+    latestPosts.value = [];
   } finally {
     isLoading.value = false;
   }

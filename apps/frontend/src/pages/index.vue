@@ -380,8 +380,7 @@ const resolveComponent = (section: ThemeSection): ComponentType | null => {
 onMounted(async () => {
   theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
   try {
-    // Fetch posts only, theme is handled by useTheme
-    await fetchLatestPosts();
+   
 
     // Debug theme sections
     console.log('Theme sections:', theme.value?.sections);
@@ -413,7 +412,6 @@ onMounted(async () => {
 // Watch for locale changes to update theme and posts
 watch(locale, async () => {
   theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
-  fetchLatestPosts();
 });
 
 // Cấu hình Swiper cho posts dựa trên theme
@@ -467,44 +465,6 @@ const getPostsSwiperOptions = (theme: Theme | null) => {
 };
 
 const postsSwiperOptions = computed(() => getPostsSwiperOptions(theme.value));
-
-async function fetchLatestPosts() {
-  isLoading.value = true;
-  error.value = null;
-  try {
-    // Gọi tRPC endpoint để lấy danh sách bài viết theo locale hiện tại
-    const result = await trpc.post.byLocale.query({ locale: locale.value });
-
-    // Chuyển đổi dữ liệu để phù hợp với kiểu Post
-    latestPosts.value = result.map((post: any) => {
-      // Tìm bản dịch cho locale hiện tại
-      const translation = post.translations?.find(
-        (t: { locale: string }) => t.locale === locale.value
-      );
-
-      // Chuyển đổi translations để phù hợp với PostTranslation
-      const mappedTranslations = post.translations?.map((t: any) => ({
-        ...t,
-        slug: t.slug || undefined
-      }));
-
-      return {
-        ...post,
-        id: Number(post.id),
-        // Sử dụng title và content từ bản dịch nếu có, nếu không sử dụng giá trị mặc định
-        title: translation?.title || post.title,
-        content: translation?.content || post.content,
-        author: post.author || {},
-        translations: mappedTranslations
-      } as Post;
-    }).slice(0, 20); // Lấy tối đa 20 bài viết
-  } catch (err: any) {
-    console.error("Failed to fetch latest posts:", err);
-    error.value = err.message || "Đã xảy ra lỗi khi tải bài viết";
-  } finally {
-    isLoading.value = false;
-  }
-}
 
 const getAuthorName = (author: any) => {
   if (author?.profile) {
