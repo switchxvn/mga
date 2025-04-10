@@ -249,7 +249,9 @@
     "sortBy": "Sắp xếp theo",
     "noPosts": "Chưa có bài viết nào",
     "resetFilters": "Đặt lại bộ lọc",
-    "totalPosts": "{count} bài viết"
+    "totalPosts": "{count} bài viết",
+    "noPostsFound": "Không tìm thấy bài viết",
+    "noPostsFoundDescription": "Chúng tôi không tìm thấy bài viết nào phù hợp với tiêu chí của bạn. Vui lòng thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm."
   },
   "news": {
     "viewAll": "Xem tất cả tin tức"

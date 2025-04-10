@@ -11,6 +11,7 @@ export const postRouter = router({
         categories: z.string().optional(),
         locale: z.string().optional(),
         category: z.string().optional(),
+        search: z.string().optional(),
         page: z.number().optional().default(1),
         limit: z.number().optional().default(12),
         sortBy: z.string().optional().default('newest'),
@@ -19,75 +20,35 @@ export const postRouter = router({
     .query(async ({ input, ctx }) => {
       try {
         const { filters } = input || {};
-        const { locale, categories, categoryId, category, page = 1, limit = 12, sortBy = 'newest' } = filters || {};
+        const { locale = 'vi', categories, search, page = 1, limit = 12, sortBy = 'newest' } = filters || {};
 
-        // Xử lý danh sách categories nếu có
-        let categoryIds: number[] = [];
-        
-        // Nếu có category slug, ưu tiên tìm category theo slug
-        if (category) {
-          const allCategories = await ctx.services.categoryFrontendService.findAll();
-          const foundCategory = allCategories.find(cat => 
-            cat.translations?.some(trans => trans.slug === category)
-          );
-          
-          if (foundCategory) {
-            categoryIds = [foundCategory.id];
-          } else {
-            // Nếu không tìm thấy category theo slug, trả về mảng rỗng
-            return { posts: [], total: 0, totalPages: 0 };
-          }
-        } else if (categories) {
-          // Chuyển đổi chuỗi categories thành mảng số
-          categoryIds = categories.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
-        } else if (categoryId) {
-          // Hỗ trợ ngược cho categoryId cũ
-          categoryIds = [categoryId];
-        }
+        // Chuẩn bị filters cho service
+        const serviceFilters = {
+          categories: categories ? categories.split(',').map(Number) : undefined,
+          search
+        };
 
-        // Lấy tất cả bài viết phù hợp với điều kiện
-        let allPosts = [];
-        
-        if (locale) {
-          if (categoryIds.length > 0) {
-            allPosts = await ctx.services.postService.findByLocaleAndCategories(locale, categoryIds);
-          } else {
-            allPosts = await ctx.services.postService.findByLocale(locale);
-          }
-        } else if (categoryIds.length > 0) {
-          allPosts = await ctx.services.postService.findByCategories(categoryIds);
-        } else {
-          allPosts = await ctx.services.postService.findPublished();
-        }
+        // Lấy tất cả bài viết với các filter
+        const posts = await ctx.services.postService.findByLocale(locale, serviceFilters);
 
-        // Sắp xếp bài viết theo sortBy
-        if (sortBy === 'oldest') {
-          allPosts.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        } else if (sortBy === 'title_asc') {
-          allPosts.sort((a, b) => {
-            const titleA = a.translations?.find(t => t.locale === locale)?.title || '';
-            const titleB = b.translations?.find(t => t.locale === locale)?.title || '';
-            return titleA.localeCompare(titleB);
+        // Sắp xếp bài viết
+        if (sortBy) {
+          const [field, order] = sortBy.split(':');
+          posts.sort((a, b) => {
+            const valueA = a[field];
+            const valueB = b[field];
+            return order === 'desc' ? valueB - valueA : valueA - valueB;
           });
-        } else if (sortBy === 'title_desc') {
-          allPosts.sort((a, b) => {
-            const titleA = a.translations?.find(t => t.locale === locale)?.title || '';
-            const titleB = b.translations?.find(t => t.locale === locale)?.title || '';
-            return titleB.localeCompare(titleA);
-          });
-        } else {
-          // newest (mặc định)
-          allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         }
 
         // Tính toán phân trang
-        const total = allPosts.length;
+        const total = posts.length;
         const totalPages = Math.ceil(total / limit);
         const startIndex = (page - 1) * limit;
         const endIndex = Math.min(startIndex + limit, total);
         
         // Lấy bài viết cho trang hiện tại
-        const paginatedPosts = allPosts.slice(startIndex, endIndex);
+        const paginatedPosts = posts.slice(startIndex, endIndex);
 
         return { 
           posts: paginatedPosts, 

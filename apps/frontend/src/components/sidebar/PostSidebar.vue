@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch, reactive, computed } from 'vue';
+import { onMounted, ref, watch, reactive, computed, nextTick } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import { useCategory, type Category } from '~/composables/useCategory';
 import { useI18n } from 'vue-i18n';
@@ -38,6 +38,7 @@ const props = defineProps<{
     categories?: number[];
     tags?: string[];
   };
+  shouldReset?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -114,6 +115,7 @@ async function loadFeaturedCategories() {
 
 // Handle search input
 const handleSearchInput = () => {
+  console.log('Search input changed:', filters.search);
   isSearching.value = true;
 
   if (searchTimeout.value) {
@@ -121,6 +123,7 @@ const handleSearchInput = () => {
   }
 
   searchTimeout.value = setTimeout(() => {
+    console.log('Applying filters with search:', filters.search);
     applyFilters();
     isSearching.value = false;
   }, 500);
@@ -143,6 +146,12 @@ const toggleSection = (section: keyof typeof expandedSections.value) => {
 
 // Apply filters
 const applyFilters = () => {
+  console.log('Emitting filters:', {
+    search: filters.search,
+    categories: filters.categories,
+    tags: filters.tags
+  });
+  
   emit('filter-change', {
     search: filters.search,
     categories: filters.categories.length > 0 ? filters.categories : undefined,
@@ -168,11 +177,51 @@ const updateQueryParams = () => {
 
 // Reset filters
 const resetFilters = () => {
+  // Reset all filter values
   filters.search = '';
   filters.categories = [];
   filters.tags = [];
 
-  applyFilters();
+  // Reset UI state
+  expandedSections.value = {
+    filter: true,
+    popularPosts: true,
+    featuredCategories: true,
+    subscribe: true
+  };
+
+  // Clear search timeout if exists
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value);
+    searchTimeout.value = null;
+  }
+
+  // Reset loading states
+  loading.value = {
+    categories: false,
+    featuredCategories: false,
+    popularPosts: false,
+    searching: false
+  };
+
+  // Force update the search input
+  nextTick(() => {
+    const searchInput = document.querySelector('.search-input input') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.value = '';
+    }
+  });
+
+  // Emit filter change with empty values
+  emit('filter-change', {
+    search: '',
+    categories: undefined,
+    tags: undefined,
+    category: undefined
+  });
+
+  // Update URL query params
+  router.replace({ query: {} });
 };
 
 // Watch for changes and apply filters
@@ -181,9 +230,17 @@ watch([() => filters.categories, () => filters.tags], () => {
 }, { deep: true });
 
 // Watch for search changes
-watch(() => filters.search, () => {
+watch(() => filters.search, (newValue) => {
+  console.log('Search value changed:', newValue);
   handleSearchInput();
-});
+}, { immediate: true });
+
+// Watch for external reset trigger
+watch(() => props.shouldReset, (shouldReset) => {
+  if (shouldReset) {
+    resetFilters();
+  }
+}, { immediate: true });
 
 onMounted(() => {
   // Initialize from URL if not provided in props

@@ -250,7 +250,9 @@
     "sortBy": "Sort by",
     "noPosts": "No posts found",
     "resetFilters": "Reset Filters",
-    "totalPosts": "{count} posts"
+    "totalPosts": "{count} posts",
+    "noPostsFound": "No posts found",
+    "noPostsFoundDescription": "We couldn't find any posts matching your criteria. Try adjusting your filters or search terms."
   },
   "news": {
     "viewAll": "View All News"

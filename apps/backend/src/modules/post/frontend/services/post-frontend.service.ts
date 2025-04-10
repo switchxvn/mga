@@ -165,28 +165,46 @@ export class PostFrontendService {
     };
   }
 
-  async findByLocale(locale: string): Promise<IPost[]> {
+  async findByLocale(locale: string, filters?: {
+    categories?: number[];
+    search?: string;
+  }): Promise<IPost[]> {
     this.logger.debug(`Finding posts for locale: ${locale}`);
 
     try {
-      const posts = await this.postRepository.find({
-        where: { published: true },
-        relations: ['translations', 'author', 'author.profile', 'postTags', 'postTags.tag'],
-        order: { createdAt: 'DESC' }
-      });
+      const qb = this.postRepository.createQueryBuilder('post')
+        .innerJoinAndSelect('post.translations', 'translations', 'translations.locale = :locale', { locale })
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoinAndSelect('author.profile', 'profile')
+        .leftJoinAndSelect('post.postTags', 'postTags')
+        .leftJoinAndSelect('postTags.tag', 'tag')
+        .where('post.published = :published', { published: true });
 
-      this.logger.debug(`Found ${posts.length} published posts before filtering by locale`);
+      // Thêm điều kiện categories nếu có
+      if (filters?.categories?.length) {
+        qb.innerJoin('post.categories', 'category', 'category.id IN (:...categoryIds)', { 
+          categoryIds: filters.categories 
+        });
+      }
 
-      // Filter posts that have translations in the requested locale
-      const postsWithTranslations = posts.filter(post => {
-        return post.translations?.some(translation => translation.locale === locale);
-      });
+      console.log('filters', filters);
 
-      this.logger.debug(`Found ${postsWithTranslations.length} posts with translations in locale ${locale}`);
+      // Thêm điều kiện tìm kiếm nếu có
+      if (filters?.search?.trim()) {
+        qb.andWhere('translations.title ILIKE :search', { 
+          search: `%${filters.search.trim()}%` 
+        });
+      }
+
+      qb.orderBy('post.createdAt', 'DESC');
+
+      const posts = await qb.getMany();
+
+      this.logger.debug(`Found ${posts.length} published posts for locale ${locale}`);
 
       // Format each post
       const formattedPosts = await Promise.all(
-        postsWithTranslations.map(post => this.formatPostResponse(post, locale))
+        posts.map(post => this.formatPostResponse(post, locale))
       );
 
       return formattedPosts;
@@ -449,33 +467,35 @@ export class PostFrontendService {
     }
   }
 
-  async findByLocaleAndCategories(locale: string, categoryIds: number[]): Promise<IPost[]> {
+  async findByLocaleAndCategories(locale: string, categoryIds: number[], search?: string): Promise<IPost[]> {
     this.logger.debug(`Finding posts for locale: ${locale} and categories: ${categoryIds.join(',')}`);
 
     try {
-      const posts = await this.postRepository.createQueryBuilder('post')
+      const qb = this.postRepository.createQueryBuilder('post')
         .innerJoin('post.categories', 'category', 'category.id IN (:...categoryIds)', { categoryIds })
-        .innerJoinAndSelect('post.translations', 'translations')
+        .innerJoinAndSelect('post.translations', 'translations', 'translations.locale = :locale', { locale })
         .leftJoinAndSelect('post.author', 'author')
         .leftJoinAndSelect('author.profile', 'profile')
         .leftJoinAndSelect('post.postTags', 'postTags')
         .leftJoinAndSelect('postTags.tag', 'tag')
-        .where('post.published = :published', { published: true })
-        .orderBy('post.createdAt', 'DESC')
-        .getMany();
+        .where('post.published = :published', { published: true });
+
+      console.log('search', search);
+      // Thêm điều kiện tìm kiếm nếu có
+      if (search && search.trim()) {
+        console.log('search', search);
+        qb.andWhere('translations.title ILIKE :search', { search: `%${search.trim()}%` });
+      }
+
+      qb.orderBy('post.createdAt', 'DESC');
+
+      const posts = await qb.getMany();
 
       this.logger.debug(`Found ${posts.length} published posts with categories ${categoryIds.join(',')}`);
 
-      // Filter posts that have translations in the requested locale
-      const postsWithTranslations = posts.filter(post => {
-        return post.translations?.some(translation => translation.locale === locale);
-      });
-
-      this.logger.debug(`Found ${postsWithTranslations.length} posts with translations in locale ${locale}`);
-
       // Format each post
       const formattedPosts = await Promise.all(
-        postsWithTranslations.map(post => this.formatPostResponse(post, locale))
+        posts.map(post => this.formatPostResponse(post, locale))
       );
 
       return formattedPosts;
@@ -510,6 +530,111 @@ export class PostFrontendService {
       return formattedPosts;
     } catch (error) {
       this.logger.error(`Error finding posts by categories ${categoryIds.join(',')}:`, error);
+      throw error;
+    }
+  }
+
+  async findLatestPosts(params: {
+    locale?: string;
+    categories?: string;
+    categoryId?: number;
+    category?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+  }): Promise<{
+    posts: IPost[];
+    total: number;
+    totalPages: number;
+    currentPage: number;
+    limit: number;
+  }> {
+    try {
+      const { 
+        locale, 
+        categories, 
+        categoryId, 
+        category, 
+        search, 
+        page = 1, 
+        limit = 12, 
+        sortBy = 'newest' 
+      } = params;
+
+      // Xác định điều kiện tìm kiếm cơ bản
+      const whereConditions: any = { published: true };
+      
+      // Xác định relations cần thiết
+      const relations = ['translations', 'author', 'author.profile', 'postTags', 'postTags.tag'];
+      
+      // Xác định thứ tự sắp xếp
+      let order: any = { createdAt: 'DESC' };
+      if (sortBy) {
+        const [field, direction] = sortBy.split(':');
+        order = { [field]: direction.toUpperCase() };
+      }
+
+      // Lấy tất cả bài viết phù hợp với điều kiện cơ bản
+      const allPosts = await this.postRepository.find({
+        where: whereConditions,
+        relations: relations,
+        order: order
+      });
+
+      // Lọc theo locale nếu có
+      let filteredPosts = allPosts;
+      if (locale) {
+        filteredPosts = allPosts.filter(post => 
+          post.translations?.some(trans => trans.locale === locale)
+        );
+      }
+
+      // Lọc theo categories nếu có
+      if (categories) {
+        const categoryIds = categories.split(',').map(Number);
+        filteredPosts = filteredPosts.filter(post => 
+          post.categories?.some(cat => categoryIds.includes(cat.id))
+        );
+      }
+
+      // Lọc theo tìm kiếm nếu có
+      if (search) {
+        filteredPosts = filteredPosts.filter(post => {
+          const translation = post.translations?.find(t => t.locale === locale) || post.translations?.[0];
+          if (!translation) return false;
+          
+          return (
+            translation.title.toLowerCase().includes(search.toLowerCase()) ||
+            (translation.shortDescription && translation.shortDescription.toLowerCase().includes(search.toLowerCase())) ||
+            (translation.content && translation.content.toLowerCase().includes(search.toLowerCase()))
+          );
+        });
+      }
+
+      // Tính toán phân trang
+      const total = filteredPosts.length;
+      const totalPages = Math.ceil(total / limit);
+      const startIndex = (page - 1) * limit;
+      const endIndex = Math.min(startIndex + limit, total);
+      
+      // Lấy bài viết cho trang hiện tại
+      const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+
+      // Format kết quả
+      const formattedPosts = await Promise.all(
+        paginatedPosts.map(post => this.formatPostResponse(post, locale))
+      );
+
+      return { 
+        posts: formattedPosts, 
+        total, 
+        totalPages,
+        currentPage: page,
+        limit
+      };
+    } catch (error) {
+      this.logger.error('Error in findLatestPosts:', error);
       throw error;
     }
   }

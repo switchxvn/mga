@@ -9,6 +9,7 @@ import PostCard from "../../components/ui/card/PostCard.vue";
 import type { Post } from "@ew/shared";
 import type { CategoryTranslation } from "../../types/category-translation";
 import Breadcrumb from "../../components/common/Breadcrumb.vue";
+import { SearchX, FilterX } from 'lucide-vue-next';
 
 const { t, locale } = useLocalization();
 const route = useRoute();
@@ -27,6 +28,7 @@ const totalPosts = ref(0);
 const totalPages = ref(0);
 const categoryData = ref<any>(null);
 const seoData = ref<any>(null);
+const shouldResetSidebar = ref(false);
 
 // Định nghĩa kiểu dữ liệu cho breadcrumb item
 interface BreadcrumbItem {
@@ -102,6 +104,7 @@ const fetchPosts = async () => {
       categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
       locale: locale.value,
       category: filters.category,
+      search: filters.search,
       page: filters.page,
       limit: filters.limit,
       sortBy: filters.sort,
@@ -112,6 +115,7 @@ const fetchPosts = async () => {
         categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
         locale: locale.value,
         category: filters.category,
+        search: filters.search,
         page: filters.page,
         limit: filters.limit,
         sortBy: filters.sort,
@@ -141,9 +145,12 @@ const fetchPosts = async () => {
 // Handle filter changes from sidebar
 const handleFilterChange = (newFilters: any) => {
   // Update filters
-  if (newFilters.search !== undefined) filters.search = newFilters.search;
-  if (newFilters.categories !== undefined) filters.categories = newFilters.categories || [];
-  if (newFilters.category !== undefined) filters.category = newFilters.category;
+  filters.search = newFilters.search ?? filters.search;
+  filters.categories = newFilters.categories ?? [];
+  filters.category = newFilters.category;
+  
+  // Reset shouldResetSidebar after filters are updated
+  shouldResetSidebar.value = false;
   
   // Reset to page 1 when filters change
   filters.page = 1;
@@ -152,6 +159,23 @@ const handleFilterChange = (newFilters: any) => {
   updateQueryParams();
   
   // Fetch posts with new filters
+  fetchPosts();
+};
+
+// Reset all filters
+const resetAllFilters = () => {
+  // Set shouldResetSidebar to true to trigger sidebar reset
+  shouldResetSidebar.value = true;
+  
+  // Reset main filters
+  filters.search = '';
+  filters.categories = [];
+  filters.category = undefined;
+  filters.page = 1;
+  filters.sort = 'newest';
+  
+  // Update URL and fetch posts
+  updateQueryParams();
   fetchPosts();
 };
 
@@ -401,8 +425,23 @@ const currentPage = computed({
           </div>
 
           <!-- No Posts Found -->
-          <div v-else class="text-center py-12">
-            <p class="text-gray-600">{{ t('posts.noPostsFound') }}</p>
+          <div v-else class="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <div class="bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-4">
+              <SearchX class="w-12 h-12 text-gray-400 dark:text-gray-500" />
+            </div>
+            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+              {{ t('posts.noPostsFound') }}
+            </h3>
+            <p class="text-gray-600 dark:text-gray-400 max-w-md mb-6">
+              {{ t('posts.noPostsFoundDescription') }}
+            </p>
+            <button 
+              @click="resetAllFilters"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-colors duration-200"
+            >
+              <FilterX class="w-4 h-4" />
+              {{ t('posts.resetFilters') }}
+            </button>
           </div>
 
           <!-- Pagination -->
@@ -427,7 +466,11 @@ const currentPage = computed({
 
         <!-- Sidebar -->
         <div class="lg:w-[320px] flex-shrink-0">
-          <PostSidebar />
+          <PostSidebar 
+            :initial-filters="filters"
+            :should-reset="shouldResetSidebar"
+            @filter-change="handleFilterChange"
+          />
         </div>
       </div>
     </div>
