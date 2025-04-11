@@ -221,7 +221,7 @@ useHead(() => {
             
             <!-- Post content -->
             <div class="post-detail__body">
-              <div class="post-prose">
+              <div class="post-prose first-letter-styled">
                 <div v-html="postContent"></div>
               </div>
             </div>
@@ -310,6 +310,21 @@ useHead(() => {
 
 .prose blockquote {
   @apply pl-4 border-l-4 border-gray-300 italic my-4 text-gray-600;
+}
+
+/* Sử dụng :deep() để CSS có thể xuyên qua v-html */
+.post-prose :deep(p:first-of-type) {
+  display: block;
+}
+
+.post-prose :deep(p:first-of-type::first-letter) {
+  font-size: 3.5em;
+  font-weight: 700;
+  @apply text-primary-500;
+  float: left;
+  padding-right: 0.2em;
+  line-height: 0.85;
+  margin-top: 0.05em;
 }
 
 .post-detail__short-description {

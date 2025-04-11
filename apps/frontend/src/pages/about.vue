@@ -2,6 +2,58 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useLocalization } from "../composables/useLocalization";
 import { useTrpc } from '~/composables/useTrpc';
+import { defineAsyncComponent, markRaw } from 'vue';
+import type { Component } from 'vue';
+
+// Định nghĩa type cho components
+type ComponentType = Component;
+type ComponentRegistry = Record<string, ComponentType>;
+
+// Register components using defineAsyncComponent
+const registeredComponents = {
+  // About components
+  'AboutHeroSection': defineAsyncComponent(() => import("../components/sections/about/AboutHeroSection.vue")),
+  'AboutMilestoneSection': defineAsyncComponent(() => import("../components/sections/about/AboutMilestoneSection.vue")),
+  'AboutTeamSection': defineAsyncComponent(() => import("../components/sections/about/AboutTeamSection.vue")),
+  
+  // Tourism components
+  'TourismHeroSection': defineAsyncComponent(() => import("../components/sections/about/tourism/TourismHeroSection.vue")),
+  'TourismFeaturesSection': defineAsyncComponent(() => import("../components/sections/about/tourism/TourismFeaturesSection.vue")),
+  'TourismCulturalSection': defineAsyncComponent(() => import("../components/sections/about/tourism/TourismCulturalSection.vue")),
+} as ComponentRegistry;
+
+// Resolve component function
+const resolveComponent = (section: any): ComponentType | null => {
+  if (!section?.type && !section?.componentName) {
+    console.warn('Invalid section configuration');
+    return null;
+  }
+
+  // First try componentName if specified
+  if (section.componentName && registeredComponents[section.componentName]) {
+    return markRaw(registeredComponents[section.componentName]);
+  }
+
+  // Then try type mapping
+  const typeToComponentName: Record<string, keyof typeof registeredComponents> = {
+    'hero': 'AboutHeroSection',
+    'milestone': 'AboutMilestoneSection',
+    'team': 'AboutTeamSection',
+    
+    // Tourism section types mapping
+    'tourism_hero': 'TourismHeroSection',
+    'tourism_features': 'TourismFeaturesSection', 
+    'tourism_cultural': 'TourismCulturalSection'
+  };
+
+  const componentName = typeToComponentName[section.type];
+  if (componentName && registeredComponents[componentName]) {
+    return markRaw(registeredComponents[componentName]);
+  }
+
+  console.warn(`No component found for section type: ${section.type}`);
+  return null;
+};
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -104,172 +156,26 @@ watch(locale, () => {
     </div>
 
     <template v-else>
-      <!-- Hero Section - Full Width -->
-      <div
-        v-if="heroSection"
-        class="w-full bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 py-16"
-        :style="{
-          backgroundImage: heroSection.settings?.heroBackgroundImage ? `url(${heroSection.settings.heroBackgroundImage})` : '',
-          height: heroSection.settings?.heroHeight || '500px',
-          position: 'relative'
-        }"
-      >
-        <div 
-          v-if="heroSection.settings?.heroBackgroundImage"
-          class="absolute inset-0 bg-black"
-          :style="{ opacity: heroSection.settings?.heroOverlayOpacity || 0.5 }"
-        ></div>
-        <div class="container mx-auto px-4 text-center relative z-10">
-          <h1 class="text-4xl md:text-5xl font-bold mb-4">
-            {{ heroSection.title }}
-          </h1>
-          <p
-            v-if="heroSection.subtitle"
-            class="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto"
-          >
-            {{ heroSection.subtitle }}
-          </p>
-        </div>
-      </div>
-
-      <!-- Content Sections -->
-      <div class="container mx-auto px-4 py-16">
-        <div class="space-y-16">
-          <div
-            v-for="section in translatedSections.filter(s => s.type === 'content')"
-            :key="section.id"
-            class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8"
-          >
-            <h2 class="text-2xl font-semibold mb-6">
-              {{ section.title }}
-            </h2>
-
-            <div class="flex flex-col md:flex-row gap-8" :class="{
-              'md:flex-row-reverse': section.settings?.contentLayout === 'image-text',
-              'md:flex-row': section.settings?.contentLayout === 'text-image'
-            }">
-              <!-- Text Content -->
-              <div class="flex-1" v-if="section.content || section.settings?.contentLayout !== 'image-only'">
-                <div
-                  class="prose dark:prose-invert max-w-none"
-                  v-html="section.content"
-                ></div>
-              </div>
-
-              <!-- Media Content -->
-              <div 
-                v-if="section.settings?.imageUrl || section.settings?.contentLayout !== 'text-only'" 
-                class="flex-1"
-                :style="{ width: section.settings?.imageWidth || '50%' }"
-              >
-                <img
-                  v-if="section.settings?.imageUrl"
-                  :src="section.settings.imageUrl"
-                  :alt="section.title"
-                  class="rounded-lg w-full h-auto object-cover"
-                />
-              </div>
+      <template v-for="(section, index) in translatedSections" :key="index">
+        <ClientOnly>
+          <component
+            v-if="section.isActive"
+            :is="resolveComponent(section)"
+            :settings="section.settings"
+            :translations="{
+              title: section.title,
+              subtitle: section.subtitle,
+              content: section.content,
+              data: section.data
+            }"
+          />
+          <template #fallback>
+            <div class="p-4 text-center">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Team Members Section - Full Width Background -->
-      <div
-        v-if="teamMembers.length > 0"
-        class="w-full bg-gray-50 dark:bg-gray-900/50 py-16"
-      >
-        <div class="container mx-auto px-4">
-          <h2 class="text-3xl font-bold text-center mb-10">
-            {{ t("about.team.title") }}
-          </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div
-              v-for="member in teamMembers"
-              :key="member.id || member.name"
-              class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center"
-            >
-              <img
-                v-if="member.imageUrl"
-                :src="member.imageUrl"
-                :alt="member.name"
-                class="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
-              />
-              <h3 class="text-xl font-semibold mb-2">{{ member.name }}</h3>
-              <p class="text-primary mb-3">
-                {{ member.position }}
-              </p>
-              <p v-if="member.bio" class="text-muted-foreground text-sm mb-4">
-                {{ member.bio }}
-              </p>
-
-              <!-- Social Links -->
-              <div v-if="member.socialLinks" class="flex justify-center space-x-4">
-                <a
-                  v-for="(url, platform) in member.socialLinks"
-                  :key="platform"
-                  :href="url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <i :class="'fab fa-' + platform"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Milestones Section -->
-      <div v-if="milestones.length > 0" class="container mx-auto px-4 py-16">
-        <h2 class="text-3xl font-bold text-center mb-10">
-          {{ t("about.milestones.title") }}
-        </h2>
-        <div class="relative">
-          <!-- Timeline Line -->
-          <div
-            class="absolute left-1/2 transform -translate-x-1/2 h-full w-0.5 bg-primary"
-          ></div>
-
-          <!-- Milestone Items -->
-          <div class="space-y-12">
-            <div
-              v-for="(milestone, index) in milestones"
-              :key="milestone.id || index"
-              class="relative flex items-center"
-              :class="{ 'flex-row-reverse': index % 2 === 0 }"
-            >
-              <!-- Year Bubble -->
-              <div
-                class="absolute left-1/2 transform -translate-x-1/2 w-8 h-8 bg-primary rounded-full flex items-center justify-center"
-              >
-                <span class="text-primary-foreground text-sm font-bold">{{
-                  milestone.year
-                }}</span>
-              </div>
-
-              <!-- Content -->
-              <div class="w-5/12" :class="{ 'ml-auto': index % 2 === 0 }">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                  <h3 class="text-xl font-semibold mb-2">
-                    {{ milestone.title }}
-                  </h3>
-                  <p v-if="milestone.description" class="text-muted-foreground">
-                    {{ milestone.description }}
-                  </p>
-                  <img
-                    v-if="milestone.imageUrl"
-                    :src="milestone.imageUrl"
-                    :alt="milestone.title"
-                    class="mt-4 rounded-lg w-full h-auto"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+          </template>
+        </ClientOnly>
+      </template>
     </template>
   </div>
 </template>

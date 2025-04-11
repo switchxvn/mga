@@ -6,6 +6,7 @@ import { CountryPhoneCodeSeeder } from '../seeders/country-phone-code.seeder';
 import { ServiceSeeder } from '../seeders/service.seeder';
 import { TicketProductSeeder } from '../seeders/ticket-product.seeder';
 import { AboutSectionSeeder } from '../seeders/about-section.seeder';
+import { TourismAboutSectionSeeder } from '../seeders/tourism-about-section.seeder';
 import { Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from '../../../../apps/backend/src/modules/product/entities/product.entity';
@@ -46,7 +47,8 @@ import { AboutSectionTranslation } from '../../../../apps/backend/src/modules/ab
     CountryPhoneCodeSeeder, 
     ServiceSeeder, 
     TicketProductSeeder,
-    AboutSectionSeeder
+    AboutSectionSeeder,
+    TourismAboutSectionSeeder
   ],
 })
 class SeedModule {}

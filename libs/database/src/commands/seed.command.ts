@@ -3,6 +3,7 @@ import { CountryPhoneCodeSeeder } from '../seeders/country-phone-code.seeder';
 import { ServiceSeeder } from '../seeders/service.seeder';
 import { TicketProductSeeder } from '../seeders/ticket-product.seeder';
 import { AboutSectionSeeder } from '../seeders/about-section.seeder';
+import { TourismAboutSectionSeeder } from '../seeders/tourism-about-section.seeder';
 import { Logger } from '@nestjs/common';
 
 interface SeedCommandOptions {
@@ -23,7 +24,8 @@ export class SeedCommand extends CommandRunner {
     private readonly countryPhoneCodeSeeder: CountryPhoneCodeSeeder,
     private readonly serviceSeeder: ServiceSeeder,
     private readonly ticketProductSeeder: TicketProductSeeder,
-    private readonly aboutSectionSeeder: AboutSectionSeeder
+    private readonly aboutSectionSeeder: AboutSectionSeeder,
+    private readonly tourismAboutSectionSeeder: TourismAboutSectionSeeder
   ) {
     super();
     this.logger.log('SeedCommand constructor called');
@@ -87,6 +89,11 @@ export class SeedCommand extends CommandRunner {
         await this.aboutSectionSeeder.seed();
         this.logger.log('About sections seeded successfully');
         break;
+      case 'tourism-about':
+        this.logger.log('Seeding tourism about sections...');
+        await this.tourismAboutSectionSeeder.seed();
+        this.logger.log('Tourism about sections seeded successfully');
+        break;
       default:
         this.logger.error(`Unknown seeder: ${seederName}`);
         this.logger.log('Available seeders: country-phone-code, service, ticket-product, about');
@@ -110,5 +117,9 @@ export class SeedCommand extends CommandRunner {
     this.logger.log('Seeding about sections...');
     await this.aboutSectionSeeder.seed();
     this.logger.log('About sections seeded successfully');
+
+    this.logger.log('Seeding tourism about sections...');
+    await this.tourismAboutSectionSeeder.seed();
+    this.logger.log('Tourism about sections seeded successfully');
   }
 } 
