@@ -54,8 +54,14 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
           :data-aos-duration="settings.animation?.duration"
           :data-aos-delay="settings.animation?.delay"
         >
-          <h2 class="text-4xl font-bold mb-4">{{ translations.title }}</h2>
-          <p v-if="translations.subtitle" class="text-xl mb-6 text-gray-600">
+          <div class="title-wrapper relative mb-8">
+            <h2 class="text-4xl md:text-5xl font-bold relative z-10 leading-tight text-primary-600 hover:text-primary-700 transition-colors duration-300">
+              {{ translations.title }}
+            </h2>
+            <div class="absolute -left-3 top-0 w-12 h-12 bg-primary-500/10 rounded-full -z-1 transition-transform duration-300 title-accent"></div>
+          </div>
+          <p v-if="translations.subtitle" 
+            class="text-xl md:text-2xl mb-8 text-gray-600 font-medium leading-relaxed">
             {{ translations.subtitle }}
           </p>
           <div v-if="translations.content" 
@@ -93,6 +99,19 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
 </template>
 
 <style scoped>
+.title-wrapper {
+  display: inline-block;
+}
+
+.title-wrapper:hover .title-accent {
+  transform: scale(1.5) translate(5px, -5px);
+  opacity: 0.15;
+}
+
+.-z-1 {
+  z-index: -1;
+}
+
 .prose-content :deep(.prose) {
   max-width: 100%;
 }
