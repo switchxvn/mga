@@ -4,6 +4,12 @@ import { useLocalization } from '~/composables/useLocalization';
 
 const { t } = useLocalization();
 
+interface GalleryItem {
+  image: string;
+  title: string;
+  link: string;
+}
+
 interface Props {
   settings?: {
     backgroundColor?: string;
@@ -15,11 +21,7 @@ interface Props {
       duration: number;
       delay: number;
     };
-    gallery?: {
-      image: string;
-      title: string;
-      category: string;
-    }[];
+    gallery?: GalleryItem[];
   };
   translations?: {
     title?: string;
@@ -45,7 +47,8 @@ const props = withDefaults(defineProps<Props>(), {
   translations: () => ({})
 });
 
-const locations = [
+// Default locations data
+const defaultLocations: GalleryItem[] = [
   {
     image: '/images/tourism/bo-ba-chua-xu.jpg',
     title: 'Bộ Bà Chùa Xứ',
@@ -88,6 +91,11 @@ const locations = [
   }
 ];
 
+// Use computed to combine props data with default data
+const locations = computed(() => {
+  return props.settings?.gallery?.length ? props.settings.gallery : defaultLocations;
+});
+
 const containerClasses = computed(() => [
   props.settings?.backgroundColor,
   props.settings?.textColor,
@@ -103,10 +111,10 @@ const containerClasses = computed(() => [
         <h2 class="text-4xl font-extrabold mb-4 text-primary-600 uppercase" v-if="translations?.title">
           {{ translations.title }}
         </h2>
-        <p class="text-xl text-gray-600 dark:text-gray-400" v-if="translations?.subtitle">
+        <p class="text-2xl font-bold text-gray-600 dark:text-gray-400" v-if="translations?.subtitle">
           {{ translations.subtitle }}
         </p>
-        <div class="mt-6 max-w-3xl mx-auto" v-if="translations?.content" v-html="translations.content">
+        <div class="mt-6 max-w-3xl mx-auto text-xl font-bold" v-if="translations?.content" v-html="translations.content">
         </div>
       </div>
 
@@ -127,11 +135,11 @@ const containerClasses = computed(() => [
 
           <!-- Content -->
           <div class="p-4">
-            <h3 class="text-lg font-semibold mb-2">{{ location.title }}</h3>
-            <NuxtLink :to="location.link" 
+            <h3 class="text-2xl font-extrabold mb-2 text-primary-600 hover:text-primary-700 transition-colors duration-300">{{ location.title }}</h3>
+            <!-- <NuxtLink :to="location.link" 
                       class="inline-block px-4 py-2 border border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-300 rounded">
               {{ t('common.details') }}
-            </NuxtLink>
+            </NuxtLink> -->
           </div>
         </div>
       </div>

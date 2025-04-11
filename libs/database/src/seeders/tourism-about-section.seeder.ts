@@ -79,44 +79,24 @@ export class TourismAboutSectionSeeder {
           },
           features: [
             {
-              title: 'Bộ Bà Chùa Xứ',
-              image: '/images/tourism/feature-1.jpg',
-              link: '/features/chua-xu'
+              title: 'Lăng Thoại Ngọc Hầu',
+              image: 'https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/lang-thoai-ngoc-hau.jpg',
+              link: '/bai-viet/kham-pha-lang-thoai-ngoc-hau-tuyet-tac-kien-truc-giua-long-nui-sam'
             },
             {
               title: 'Đền Phật Ngọc',
-              image: '/images/tourism/feature-2.jpg',
-              link: '/features/den-phat-ngoc'
+              image: 'https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/den-phat-ngoc.jpg',
+              link: '/bai-viet/phat-ngoc-hoa-binh-the-gioi-tren-dinh-nui-sam'
             },
             {
               title: 'Nhà Ga Cáp Treo',
-              image: '/images/tourism/feature-3.jpg',
-              link: '/features/nha-ga'
+              image: 'https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/nha-ga-cap-treo.jpg',
+              link: '/bai-viet/nha-ga-cap-treo-nui-sam'
             },
             {
-              title: 'Bãi Giữ Xe Rộng Rãi',
-              image: '/images/tourism/feature-4.jpg',
-              link: '/features/bai-giu-xe'
-            },
-            {
-              title: 'Chùa Một Cột',
-              image: '/images/tourism/feature-5.jpg',
-              link: '/features/chua-mot-cot'
-            },
-            {
-              title: 'Phật Thiên Thủ Thiên Nhãn',
-              image: '/images/tourism/feature-6.jpg',
-              link: '/features/phat-thien-thu'
-            },
-            {
-              title: 'Điện Phật Dược sư',
-              image: '/images/tourism/feature-7.jpg',
-              link: '/features/dien-phat-duoc-su'
-            },
-            {
-              title: 'Đài Vọng Cảnh',
-              image: '/images/tourism/feature-8.jpg',
-              link: '/features/dai-vong-canh'
+              title: 'Rừng tràm Trà Sư',
+              image: 'https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/rung-tram-tra-su.jpg',
+              link: '/bai-viet/cam-nang-du-lich-rung-tram-tra-su'
             }
           ]
         }
@@ -274,42 +254,42 @@ export class TourismAboutSectionSeeder {
           },
           gallery: [
             {
-              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-1.jpg",
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/be-ba-chua-xu.jpg",
               "title": "Bệ Bà Chúa Xứ",
               "category": "spiritual"
             },
             {
-              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-2.jpg",
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/den-phat-ngoc-hoa-binh.jpg",
               "title": "Đền Phật Ngọc Hoà Bình Thế Giới",
               "category": "spiritual"
             },
             {
-              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-3.jpg",
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/nha-ga-cap-treo-nui-sam.jpg",
               "title": "Nhà Ga Cáp Treo",
               "category": "infrastructure"
             },
             {
-              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-4.jpg",
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/bai-giu-xe.jpg",
               "title": "Bãi Giữ Xe Rộng Rãi",
               "category": "facility"
             },
             {
-              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-5.jpg",
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/chua-mot-cot.jpg",
               "title": "Chùa Một Cột",
               "category": "spiritual"
             },
             {
-              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-6.jpg",
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/phat-thien-thu.jpg",
               "title": "Phật Thiên Thủ Thiên Nhãn",
               "category": "spiritual"
             },
             {
-              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-7.jpg",
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/dien-phat-duoc-su.jpg",
               "title": "Điện Phật Dược Sư",
               "category": "spiritual"
             },
             {
-              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-8.jpg",
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/dai-vong-canh.jpg",
               "title": "Đài Vọng Cảnh",
               "category": "viewpoint"
             }

@@ -53,6 +53,7 @@
     "success": "Thành công",
     "required": "Bắt buộc",
     "viewDetails": "Xem chi tiết",
+    "details": "Chi tiết",
     "learnMore": "Tìm hiểu thêm",
     "new": "Mới",
     "featured": "Nổi bật",
@@ -368,6 +369,7 @@
     "title": "Thư viện hình ảnh",
     "commonGallery": "Hình ảnh chung",
     "foodGallery": "Hình ảnh món ăn",
+    "tourismGallery": "Hình ảnh du lịch",
     "fetchError": "Không thể tải hình ảnh",
     "noImages": "Chưa có hình ảnh nào",
     "tryAgain": "Thử lại"

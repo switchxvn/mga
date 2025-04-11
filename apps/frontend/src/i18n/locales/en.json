@@ -52,6 +52,7 @@
     "success": "Success",
     "required": "Required",
     "viewDetails": "View Details",
+    "details": "Details",
     "learnMore": "Learn More",
     "new": "New",
     "featured": "Featured",
@@ -307,6 +308,7 @@
     "title": "Photo Gallery",
     "commonGallery": "Common Gallery",
     "foodGallery": "Food Gallery",
+    "tourismGallery": "Tourism Gallery",
     "fetchError": "Failed to load gallery images",
     "noImages": "No images available",
     "tryAgain": "Try Again"
