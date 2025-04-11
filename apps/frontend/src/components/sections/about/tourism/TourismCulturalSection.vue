@@ -58,7 +58,6 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
             <h2 class="text-4xl md:text-5xl font-bold relative z-10 leading-tight text-primary-600 hover:text-primary-700 transition-colors duration-300">
               {{ translations.title }}
             </h2>
-            <div class="absolute -left-3 top-0 w-12 h-12 bg-primary-500/10 rounded-full -z-1 transition-transform duration-300 title-accent"></div>
           </div>
           <p v-if="translations.subtitle" 
             class="text-xl md:text-2xl mb-8 text-gray-600 font-medium leading-relaxed">
@@ -77,7 +76,7 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
         ]">
           <div v-for="(image, index) in settings.images" 
             :key="imageKeys[index]"
-            class="relative overflow-hidden rounded-lg shadow-lg"
+            class="relative overflow-hidden rounded-lg shadow-lg group"
             :class="{
               'mt-8 aspect-[3/4]': index === 0,
               '-mt-4 mb-4 aspect-[3/5]': index === 1
@@ -89,8 +88,9 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
             <img 
               :src="image" 
               :alt="`Cultural image ${index + 1}`"
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
             />
+            <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
           </div>
         </div>
       </div>
@@ -119,16 +119,18 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
 .prose-content :deep(.prose p) {
   margin-bottom: 1.5em;
   line-height: 1.8;
+  font-weight: 500;
 }
 
 .prose-content :deep(.prose strong) {
   color: inherit;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .prose-content :deep(.prose em) {
   color: inherit;
   font-style: italic;
+  font-weight: 500;
 }
 
 .prose-content :deep(.prose a) {
@@ -143,20 +145,23 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
   text-decoration-thickness: 2px;
 }
 
-.prose-content :deep(.prose ul) {
+.prose-content :deep(.prose li) {
+  margin: 0.5em 0;
+  font-weight: 600;
+}
+
+.prose-content :deep(.prose ul), 
+.prose-content :deep(.prose ol) {
   list-style-type: disc;
   padding-left: 1.5em;
   margin: 1.5em 0;
+  font-weight: 600;
 }
 
-.prose-content :deep(.prose ol) {
-  list-style-type: decimal;
-  padding-left: 1.5em;
-  margin: 1.5em 0;
-}
-
-.prose-content :deep(.prose li) {
-  margin: 0.5em 0;
+.prose-content :deep(.prose ul li::marker),
+.prose-content :deep(.prose ol li::marker) {
+  color: currentColor;
+  font-weight: 700;
 }
 
 .prose-content :deep(.prose h3) {

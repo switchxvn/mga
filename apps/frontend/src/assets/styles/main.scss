@@ -54,37 +54,116 @@
   .text-card-foreground {
     color: rgb(var(--card-foreground));
   }
-
-  /* Primary background colors */
-  .bg-primary-100 {
-    background-color: rgb(var(--primary-100));
-  }
-  .bg-primary-200 {
-    background-color: rgb(var(--primary-200));
-  }
-  .bg-primary-300 {
-    background-color: rgb(var(--primary-300));
-  }
-  .bg-primary-400 {
-    background-color: rgb(var(--primary-400));
-  }
-  .bg-primary-500 {
-    background-color: rgb(var(--primary-500));
-  }
-  .bg-primary-600 {
-    background-color: rgb(var(--primary-600));
-  }
-  .bg-primary-700 {
-    background-color: rgb(var(--primary-700));
-  }
-  .bg-primary-800 {
-    background-color: rgb(var(--primary-800));
-  }
-  .bg-primary-900 {
-    background-color: rgb(var(--primary-900));
-  }
 }
 
+
+
+/* Primary background colors */
+.bg-primary-100 {
+  background-color: rgb(var(--primary-100));
+}
+.bg-primary-200 {
+  background-color: rgb(var(--primary-200));
+}
+.bg-primary-300 {
+  background-color: rgb(var(--primary-300));
+}
+.bg-primary-400 {
+  background-color: rgb(var(--primary-400));
+}
+.bg-primary-500 {
+  background-color: rgb(var(--primary-500));
+}
+.bg-primary-600 {
+  background-color: rgb(var(--primary-600));
+}
+.bg-primary-700 {
+  background-color: rgb(var(--primary-700));
+}
+.bg-primary-800 {
+  background-color: rgb(var(--primary-800));
+}
+.bg-primary-900 {
+  background-color: rgb(var(--primary-900));
+}
+
+.bg-yellow-100 {
+  background-color: rgb(var(--yellow-100));
+}
+.bg-yellow-200 {
+  background-color: rgb(var(--yellow-200));
+}
+
+.bg-yellow-300 {
+  background-color: rgb(var(--yellow-300));
+}
+.bg-yellow-400 {
+  background-color: rgb(var(--yellow-400));
+}
+
+.bg-yellow-500 {
+  background-color: rgb(var(--yellow-500));
+}
+
+.bg-yellow-600 {
+  background-color: rgb(var(--yellow-600));
+}
+
+.bg-yellow-700 {
+  background-color: rgb(var(--yellow-700));
+}
+
+.bg-yellow-800 {
+  background-color: rgb(var(--yellow-800));
+}
+
+.bg-yellow-900 {
+  background-color: rgb(var(--yellow-900));
+}
+
+.bg-yellow-950 {
+  background-color: rgb(var(--yellow-950));
+}
+
+.text-yellow-100 {
+  color: rgb(var(--yellow-100));
+}
+
+.text-yellow-200 {
+  color: rgb(var(--yellow-200));
+} 
+
+.text-yellow-300 {
+  color: rgb(var(--yellow-300));
+}
+
+.text-yellow-400 {
+  color: rgb(var(--yellow-400));
+}
+
+.text-yellow-500 {
+  color: rgb(var(--yellow-500));
+}
+
+.text-yellow-600 {
+  color: rgb(var(--yellow-600));
+}
+
+.text-yellow-700 {
+  color: rgb(var(--yellow-700));
+}
+
+.text-yellow-800 {
+  color: rgb(var(--yellow-800));
+}
+
+.text-yellow-900 {
+  color: rgb(var(--yellow-900));
+}
+
+.text-yellow-950 {
+  color: rgb(var(--yellow-950));
+}
 /* Custom styles for Nuxt UI inputs */
 .u-input-leading {
   padding-right: 0.75rem !important;

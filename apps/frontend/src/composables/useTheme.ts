@@ -25,6 +25,7 @@ type ColorMode = {
   primary: ColorShades;
   secondary: ColorShades;
   tertiary: ColorShades;
+  yellow?: ColorShades;
 };
 
 interface ThemeColors {
@@ -89,6 +90,18 @@ const defaultColors: ThemeColors = {
       '700': '#334155',
       '800': '#1e293b',
       '900': '#0f172a'
+    },
+    yellow: {
+      '50': '#fffde7',
+      '100': '#fff9c4',
+      '200': '#fff59d',
+      '300': '#fff176',
+      '400': '#ffee58',
+      '500': '#ffeb3b',
+      '600': '#fdd835',
+      '700': '#fbc02d',
+      '800': '#f9a825',
+      '900': '#f57f17'
     }
   },
   dark: {
@@ -127,6 +140,18 @@ const defaultColors: ThemeColors = {
       '700': '#334155',
       '800': '#1e293b',
       '900': '#0f172a'
+    },
+    yellow: {
+      '50': '#fffde7',
+      '100': '#fff9c4',
+      '200': '#fff59d',
+      '300': '#fff176',
+      '400': '#ffee58',
+      '500': '#ffeb3b',
+      '600': '#fdd835',
+      '700': '#fbc02d',
+      '800': '#f9a825',
+      '900': '#f57f17'
     }
   }
 };
@@ -179,7 +204,11 @@ export function useTheme() {
       // Update primary colors
       Object.entries(currentColors.primary).forEach(([shade, color]) => {
         const rgb = hexToRgb(color);
-        if (rgb) document.documentElement.style.setProperty(`--color-primary-${shade}`, rgb);
+        if (rgb) {
+          document.documentElement.style.setProperty(`--color-primary-${shade}`, rgb);
+          // Thêm biến CSS trực tiếp cho Tailwind
+          document.documentElement.style.setProperty(`--primary-${shade}`, rgb);
+        }
       });
 
       // Update secondary colors
@@ -193,6 +222,20 @@ export function useTheme() {
         const rgb = hexToRgb(color);
         if (rgb) document.documentElement.style.setProperty(`--color-tertiary-${shade}`, rgb);
       });
+
+      // Update yellow colors if available
+      if (currentColors.yellow) {
+        Object.entries(currentColors.yellow).forEach(([shade, color]) => {
+          const rgb = hexToRgb(color);
+          if (rgb) {
+            document.documentElement.style.setProperty(`--color-yellow-${shade}`, rgb);
+            // Thêm biến CSS trực tiếp cho Tailwind
+            document.documentElement.style.setProperty(`--yellow-${shade}`, rgb);
+          }
+        });
+        // Cập nhật biến yellow mặc định
+        document.documentElement.style.setProperty('--yellow', currentColors.yellow['500']);
+      }
 
       // Update semantic colors based on theme colors
       const updateSemanticColor = (name: string, color: string) => {
@@ -216,10 +259,10 @@ export function useTheme() {
       updateSemanticColor('primary', currentColors.primary['500']);
       updateSemanticColor('primary-foreground', isDark.value ? currentColors.secondary['900'] : '#ffffff');
       
+      
       // Secondary
       updateSemanticColor('secondary', currentColors.secondary['200']);
       updateSemanticColor('secondary-foreground', currentColors.secondary['900']);
-      
       // Muted
       updateSemanticColor('muted', isDark.value ? currentColors.secondary['800'] : currentColors.secondary['100']);
       updateSemanticColor('muted-foreground', isDark.value ? currentColors.secondary['400'] : currentColors.secondary['500']);
@@ -237,6 +280,7 @@ export function useTheme() {
       updateSemanticColor('primary-hex', currentColors.primary['500']);
       updateSemanticColor('primary-hex-dark', currentColors.primary['600']);
       updateSemanticColor('primary-hex-light', currentColors.primary['400']);
+
     } catch (error) {
       console.error('Error updating CSS variables:', error);
     }

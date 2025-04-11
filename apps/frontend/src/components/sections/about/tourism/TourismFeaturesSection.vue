@@ -159,8 +159,8 @@ const handleImageError = (event: Event) => {
     <div class="container mx-auto px-4">
       <!-- Section Header -->
       <div class="text-center mb-12">
-        <h2 class="text-4xl font-bold mb-4">{{ translations.title }}</h2>
-        <p v-if="translations.subtitle" class="text-xl mb-4 text-gray-600">
+        <h2 class="text-4xl font-extrabold mb-4 text-primary-600 uppercase">{{ translations.title }}</h2>
+        <p v-if="translations.subtitle" class="text-xl mb-4 text-gray-600 font-bold">
           {{ translations.subtitle }}
         </p>
         <div v-if="translations.content" 

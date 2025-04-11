@@ -12,7 +12,8 @@ export enum AboutSectionType {
   CULTURAL = 'cultural',
   TOURISM_HERO = 'tourism_hero',
   TOURISM_FEATURES = 'tourism_features',
-  TOURISM_CULTURAL = 'tourism_cultural'
+  TOURISM_CULTURAL = 'tourism_cultural',
+  TOURISM_GALLERY = 'tourism_gallery'
 }
 
 @Entity('about_sections')

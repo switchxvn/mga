@@ -147,7 +147,7 @@ export class TourismAboutSectionSeeder {
         order: 3,
         settings: {
           layout: 'split',
-          backgroundColor: 'bg-gray-50',
+          backgroundColor: 'bg-yellow-600',
           textColor: 'text-gray-900',
           padding: '4rem 0',
           animation: {
@@ -252,6 +252,89 @@ export class TourismAboutSectionSeeder {
             
             <h3>Beautiful Landscapes</h3>
             <p>Notably, the <a href="/facilities/cable-car">modern cable car system</a> allows visitors to admire the panoramic view of the mysterious That Son region from above, creating unforgettable experiences...</p>`,
+        }
+      });
+
+      // 5. Tourism Gallery Section
+      this.logger.log('Creating tourism gallery section...');
+      const gallerySection = await this.createSection({
+        type: AboutSectionType.TOURISM_GALLERY,
+        componentName: 'TourismGallerySection',
+        order: 5,
+        settings: {
+          layout: 'grid',
+          backgroundColor: 'bg-gray-50',
+          textColor: 'text-gray-900',
+          padding: '4rem 0',
+          animation: {
+            enabled: true,
+            type: 'fade-up',
+            duration: 1000,
+            delay: 200
+          },
+          gallery: [
+            {
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-1.jpg",
+              "title": "Bệ Bà Chúa Xứ",
+              "category": "spiritual"
+            },
+            {
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-2.jpg",
+              "title": "Đền Phật Ngọc Hoà Bình Thế Giới",
+              "category": "spiritual"
+            },
+            {
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-3.jpg",
+              "title": "Nhà Ga Cáp Treo",
+              "category": "infrastructure"
+            },
+            {
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-4.jpg",
+              "title": "Bãi Giữ Xe Rộng Rãi",
+              "category": "facility"
+            },
+            {
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-5.jpg",
+              "title": "Chùa Một Cột",
+              "category": "spiritual"
+            },
+            {
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-6.jpg",
+              "title": "Phật Thiên Thủ Thiên Nhãn",
+              "category": "spiritual"
+            },
+            {
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-7.jpg",
+              "title": "Điện Phật Dược Sư",
+              "category": "spiritual"
+            },
+            {
+              "image": "https://s3cablecar.sgp1.digitaloceanspaces.com/tourism/gallery-8.jpg",
+              "title": "Đài Vọng Cảnh",
+              "category": "viewpoint"
+            }
+          ]          
+        }
+      }, {
+        vi: {
+          title: 'Thư viện hình ảnh',
+          subtitle: 'Những khoảnh khắc đáng nhớ',
+          content: `
+            <p>Khám phá vẻ đẹp của khu du lịch Cáp treo Núi Sam qua những hình ảnh ấn tượng. Từ cảnh quan thiên nhiên tuyệt đẹp đến những công trình kiến trúc tâm linh độc đáo, mỗi bức ảnh là một câu chuyện về vùng đất này.</p>
+          `,
+          data: {
+            description: 'Bộ sưu tập hình ảnh đặc sắc về khu du lịch Cáp treo Núi Sam'
+          }
+        },
+        en: {
+          title: 'Photo Gallery',
+          subtitle: 'Memorable Moments',
+          content: `
+            <p>Explore the beauty of Sam Mountain Cable Car Tourist Area through impressive images. From beautiful natural landscapes to unique spiritual architectural works, each photo tells a story about this land.</p>
+          `,
+          data: {
+            description: 'A collection of distinctive images of Sam Mountain Cable Car Tourist Area'
+          }
         }
       });
 

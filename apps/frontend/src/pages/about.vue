@@ -20,6 +20,7 @@ const registeredComponents = {
   'TourismHeroSection': defineAsyncComponent(() => import("../components/sections/about/tourism/TourismHeroSection.vue")),
   'TourismFeaturesSection': defineAsyncComponent(() => import("../components/sections/about/tourism/TourismFeaturesSection.vue")),
   'TourismCulturalSection': defineAsyncComponent(() => import("../components/sections/about/tourism/TourismCulturalSection.vue")),
+  'TourismGallerySection': defineAsyncComponent(() => import("../components/sections/about/tourism/TourismGallerySection.vue")),
 } as ComponentRegistry;
 
 // Resolve component function
@@ -43,7 +44,8 @@ const resolveComponent = (section: any): ComponentType | null => {
     // Tourism section types mapping
     'tourism_hero': 'TourismHeroSection',
     'tourism_features': 'TourismFeaturesSection', 
-    'tourism_cultural': 'TourismCulturalSection'
+    'tourism_cultural': 'TourismCulturalSection',
+    'tourism_gallery': 'TourismGallerySection'
   };
 
   const componentName = typeToComponentName[section.type];

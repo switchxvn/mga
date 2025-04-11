@@ -25,14 +25,18 @@
             variant="soft"
             :color="galleryType === 'common' ? 'primary' : 'gray'"
             @click="setGalleryType('common')"
+            class="text-xl font-semibold uppercase tracking-wide"
           >
+            <Image class="w-6 h-6 mr-2" />
             {{ t('gallery.commonGallery') }}
           </UButton>
           <UButton
             variant="soft"
             :color="galleryType === 'food' ? 'primary' : 'gray'"
             @click="setGalleryType('food')"
+            class="text-xl font-semibold uppercase tracking-wide"
           >
+            <Utensils class="w-6 h-6 mr-2" />
             {{ t('gallery.foodGallery') }}
           </UButton>
         </div>
@@ -211,7 +215,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, Image, Utensils } from 'lucide-vue-next';
 
 // Define SEO metadata
 useHead({
