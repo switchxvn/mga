@@ -19,6 +19,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     /^\/bai-viet\/[^\/]+$/,  // Trang chi tiết bài viết: /bai-viet/slug
     /^\/san-pham\/[^\/]+$/,  // Trang chi tiết sản phẩm: /san-pham/slug
     /^\/dich-vu\/[^\/]+$/,  // Trang chi tiết dịch vụ: /dich-vu/slug
+    /^\/tickets\/[^\/]+$/,  // Trang chi tiết vé: /tickets/slug
     // Thêm các mẫu URL khác nếu cần
   ];
   

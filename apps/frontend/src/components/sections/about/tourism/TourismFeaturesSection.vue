@@ -8,6 +8,7 @@ import 'swiper/css/pagination';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
 import LazyImage from '@/components/ui/LazyImage.vue';
+import { watch } from 'vue';
 
 interface Feature {
   id: number;
@@ -44,6 +45,17 @@ const props = withDefaults(defineProps<Props>(), {
   settings: () => ({ features: [] }),
   translations: () => ({ title: '' })
 });
+
+// Add debugging
+console.log('Tourism Features Props:', {
+  features: props.settings.features,
+  translations: props.translations
+});
+
+// Watch for changes in features
+watch(() => props.settings.features, (newFeatures) => {
+  console.log('Features updated:', newFeatures);
+}, { deep: true });
 
 // Swiper options
 const swiperOptions = {
@@ -118,6 +130,10 @@ const initPhotoSwipe = async (index: number) => {
   const lightbox = new PhotoSwipe(options);
   lightbox.init();
 };
+
+const handleImageError = (event: Event) => {
+  console.error('Image failed to load:', (event.target as HTMLImageElement).src);
+};
 </script>
 
 <template>
@@ -150,22 +166,23 @@ const initPhotoSwipe = async (index: number) => {
 
       <!-- Features Slider -->
       <div class="relative tourism-features-slider">
-        <Swiper v-bind="swiperOptions" class="!pb-12">
+        <Swiper v-bind="swiperOptions" class="!pb-12 min-h-[300px]">
           <SwiperSlide 
             v-for="(feature, index) in settings.features" 
             :key="feature.id"
             class="h-full"
           >
             <div 
-              class="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+              class="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
               @click="initPhotoSwipe(index)"
             >
-              <div class="aspect-w-4 aspect-h-3">
+              <div class="aspect-w-4">
                 <LazyImage 
                   :src="feature.image" 
                   :alt="feature.title"
                   fallback-src="/images/default-image.jpg"
                   class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                  @error="handleImageError"
                 />
               </div>
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
@@ -224,17 +241,21 @@ const initPhotoSwipe = async (index: number) => {
 <style scoped>
 .aspect-w-4 {
   position: relative;
-  padding-bottom: 75%; /* 4:3 Aspect Ratio */
+  width: 100%;
+}
+
+.aspect-w-4::before {
+  content: '';
+  display: block;
+  padding-top: 75%; /* 4:3 Aspect Ratio */
 }
 
 .aspect-h-3 {
   position: absolute;
   top: 0;
+  left: 0;
   right: 0;
   bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
 }
 
 /* Swiper custom styles */

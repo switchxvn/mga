@@ -13,14 +13,15 @@
       :alt="alt"
       class="w-full h-full object-cover"
       :class="[customClass]"
+      @error="handleFallbackError"
     />
     
     <!-- Main image (hidden when error occurs) -->
     <img
       v-else
       ref="imgRef"
-      data-src=""
-      src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+      :data-src="src"
+      :src="src"
       :alt="alt"
       class="w-full h-full object-cover transition-opacity duration-300"
       :class="{ 'opacity-0': isLoading, 'opacity-100': !isLoading, [customClass]: !!customClass }"
@@ -67,44 +68,53 @@ export default {
   },
   mounted() {
     this.setupLazyLoading();
+    console.log('LazyImage mounted:', {
+      src: this.src,
+      fallbackSrc: this.fallbackSrc
+    });
   },
   methods: {
     handleError() {
-      // Đánh dấu là đã có lỗi và không cố gắng tải lại ảnh
+      console.error('Image failed to load:', this.src);
       this.hasError = true;
       this.isLoading = false;
-      console.log('Image error, loading fallback:', this.fallbackSrc);
+    },
+    handleFallbackError() {
+      console.error('Fallback image failed to load:', this.fallbackSrc);
+      this.isLoading = false;
     },
     handleLoad() {
+      console.log('Image loaded successfully:', this.src);
       this.isLoading = false;
     },
     setupLazyLoading() {
-      // Nếu đã có lỗi, không cần thiết lập lazy loading
       if (this.hasError) return;
       
-      // Kiểm tra nếu trình duyệt hỗ trợ Intersection Observer
       if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting && this.$refs.imgRef && !this.hasError) {
-              // Khi phần tử hiển thị trong viewport, tải ảnh
-              this.$refs.imgRef.src = this.src;
-              // Ngừng theo dõi phần tử này
+              const img = this.$refs.imgRef;
+              if (img.dataset.src) {
+                img.src = img.dataset.src;
+              }
               observer.unobserve(entry.target);
             }
           });
         }, {
-          rootMargin: '50px', // Tải trước khi phần tử cách viewport 50px
-          threshold: 0.1 // Khi 10% phần tử hiển thị
+          rootMargin: '50px',
+          threshold: 0.1
         });
         
         if (this.$refs.imgRef) {
           observer.observe(this.$refs.imgRef);
         }
       } else {
-        // Fallback cho trình duyệt không hỗ trợ Intersection Observer
         if (this.$refs.imgRef && !this.hasError) {
-          this.$refs.imgRef.src = this.src;
+          const img = this.$refs.imgRef;
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+          }
         }
       }
     }
@@ -116,5 +126,6 @@ export default {
 .lazy-image-container {
   overflow: hidden;
   position: relative;
+  min-height: 100px;
 }
 </style> 
