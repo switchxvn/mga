@@ -1,6 +1,8 @@
 <!-- Tourism features section -->
 <script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
+import type { Swiper as SwiperType } from 'swiper';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -8,7 +10,6 @@ import 'swiper/css/pagination';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
 import LazyImage from '@/components/ui/LazyImage.vue';
-import { watch } from 'vue';
 
 interface Feature {
   id: number;
@@ -46,45 +47,53 @@ const props = withDefaults(defineProps<Props>(), {
   translations: () => ({ title: '' })
 });
 
-// Add debugging
-console.log('Tourism Features Props:', {
-  features: props.settings.features,
-  translations: props.translations
-});
+const swiperInstance = ref<SwiperType>();
 
-// Watch for changes in features
-watch(() => props.settings.features, (newFeatures) => {
-  console.log('Features updated:', newFeatures);
-}, { deep: true });
+const onSwiper = (swiper: SwiperType) => {
+  swiperInstance.value = swiper;
+};
 
-// Swiper options
+const onSlideChange = () => {
+  console.log('slide change');
+};
+
 const swiperOptions = {
   modules: [Navigation, Pagination, Autoplay],
   slidesPerView: 1,
   spaceBetween: 24,
-  loop: true,
+  loop: false,
+  navigation: {
+    nextEl: '.tourism-swiper-next',
+    prevEl: '.tourism-swiper-prev',
+    enabled: true
+  },
+  pagination: {
+    el: '.tourism-swiper-pagination',
+    clickable: true,
+    enabled: true,
+    type: 'bullets'
+  },
   autoplay: {
     delay: 3000,
     disableOnInteraction: false,
     pauseOnMouseEnter: true
   },
-  navigation: {
-    nextEl: '.tourism-swiper-next',
-    prevEl: '.tourism-swiper-prev'
-  },
-  pagination: {
-    el: '.tourism-swiper-pagination',
-    clickable: true
-  },
   breakpoints: {
-    640: {
-      slidesPerView: 2
+    0: { 
+      slidesPerView: 1,
+      slidesPerGroup: 1 
     },
-    1024: {
-      slidesPerView: 3
+    640: { 
+      slidesPerView: 2,
+      slidesPerGroup: 2
     },
-    1280: {
-      slidesPerView: 4
+    1024: { 
+      slidesPerView: 3,
+      slidesPerGroup: 3
+    },
+    1280: { 
+      slidesPerView: 4,
+      slidesPerGroup: 4
     }
   }
 };
@@ -166,7 +175,12 @@ const handleImageError = (event: Event) => {
 
       <!-- Features Slider -->
       <div class="relative tourism-features-slider">
-        <Swiper v-bind="swiperOptions" class="!pb-12 min-h-[300px]">
+        <Swiper
+          v-bind="swiperOptions"
+          @swiper="onSwiper"
+          @slideChange="onSlideChange"
+          class="!pb-12"
+        >
           <SwiperSlide 
             v-for="(feature, index) in settings.features" 
             :key="feature.id"
@@ -194,9 +208,9 @@ const handleImageError = (event: Event) => {
         </Swiper>
 
         <!-- Navigation -->
-        <div class="tourism-swiper-prev swiper-button-prev !z-10"></div>
-        <div class="tourism-swiper-next swiper-button-next !z-10"></div>
-        <div class="tourism-swiper-pagination !absolute !bottom-0 !z-10"></div>
+        <button class="tourism-swiper-prev swiper-button-prev !z-10" type="button" aria-label="Previous slide"></button>
+        <button class="tourism-swiper-next swiper-button-next !z-10" type="button" aria-label="Next slide"></button>
+        <div class="tourism-swiper-pagination !absolute !bottom-0 !z-10 !w-full flex justify-center"></div>
       </div>
     </div>
 
@@ -242,33 +256,42 @@ const handleImageError = (event: Event) => {
 .aspect-w-4 {
   position: relative;
   width: 100%;
+  height: 200px;
 }
 
 .aspect-w-4::before {
-  content: '';
-  display: block;
-  padding-top: 75%; /* 4:3 Aspect Ratio */
-}
-
-.aspect-h-3 {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  display: none;
 }
 
 /* Swiper custom styles */
 .tourism-features-slider {
+  :deep(.swiper) {
+    height: 200px;
+    padding-bottom: 2rem;
+  }
+
+  :deep(.swiper-slide) {
+    height: 200px !important;
+    
+    img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+  }
+
   :deep(.swiper-button-next),
   :deep(.swiper-button-prev) {
-    @apply !text-white bg-primary-600/90 hover:bg-primary-600 transition-all duration-200 !w-10 !h-10 !opacity-0;
-    margin-top: -20px;
+    @apply !text-white bg-primary-600/90 hover:bg-primary-600 transition-all duration-200 !w-8 !h-8;
+    margin-top: -16px;
+    opacity: 0;
+    cursor: pointer;
   }
 
   :deep(.swiper-button-next)::after,
   :deep(.swiper-button-prev)::after {
-    @apply !text-base;
+    @apply !text-sm;
+    font-size: 1rem !important;
   }
 
   :deep(.swiper-button-next) {
@@ -282,20 +305,32 @@ const handleImageError = (event: Event) => {
   &:hover {
     :deep(.swiper-button-next),
     :deep(.swiper-button-prev) {
-      @apply !opacity-90;
+      opacity: 0.9;
     }
   }
 
   :deep(.swiper-pagination) {
     @apply !bottom-0;
+    position: absolute;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 20px;
   }
 
   :deep(.swiper-pagination-bullet) {
-    @apply !w-2 !h-2 bg-gray-300 dark:bg-gray-600 transition-all duration-200 !mx-1 rounded-full;
+    @apply !w-3 !h-3 bg-gray-300 dark:bg-gray-600 transition-all duration-200 rounded-full;
+    opacity: 0.5;
+    cursor: pointer;
+    margin: 0 4px !important;
   }
 
   :deep(.swiper-pagination-bullet-active) {
     @apply !bg-primary-600 dark:!bg-primary-400;
+    opacity: 1;
+    transform: scale(1.1);
   }
 }
 
@@ -316,7 +351,7 @@ const handleImageError = (event: Event) => {
 }
 
 @media (max-width: 640px) {
-  .tourism-features-slider {
+  .tourism-features-slider {    
     :deep(.swiper-button-next),
     :deep(.swiper-button-prev) {
       @apply !hidden;
