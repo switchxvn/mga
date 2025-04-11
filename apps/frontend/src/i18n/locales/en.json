@@ -57,7 +57,8 @@
     "new": "New",
     "featured": "Featured",
     "addToCart": "Add to Cart",
-    "price": "Price"
+    "price": "Price",
+    "viewAll": "View All"
   },
   "validation": {
     "required": "This field is required",
@@ -313,6 +314,28 @@
     "imageGallery": "Image Gallery",
     "fetchError": "Failed to load gallery images",
     "noImages": "No images available",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "viewAll": "View All",
+    "loadMore": "Load More",
+    "noMoreImages": "No more images to load",
+    "loadingImages": "Loading images...",
+    "imageCount": "{count} images",
+    "imageDetails": "Image Details",
+    "imageCaption": "Image Caption",
+    "imageDescription": "Image Description",
+    "imageDate": "Date",
+    "imageLocation": "Location",
+    "imageCategory": "Category",
+    "imageTags": "Tags",
+    "shareImage": "Share Image",
+    "downloadImage": "Download Image",
+    "reportImage": "Report Image",
+    "closeGallery": "Close Gallery",
+    "previousImage": "Previous Image",
+    "nextImage": "Next Image",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "resetZoom": "Reset Zoom",
+    "fullscreen": "Toggle Fullscreen"
   }
 } 

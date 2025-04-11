@@ -58,7 +58,8 @@
     "new": "Mới",
     "featured": "Nổi bật",
     "addToCart": "Thêm vào giỏ hàng",
-    "price": "Giá"
+    "price": "Giá",
+    "viewAll": "Xem tất cả"
   },
   "validation": {
     "required": "Trường này là bắt buộc",
@@ -374,6 +375,28 @@
     "imageGallery": "Thư viện hình ảnh",
     "fetchError": "Không thể tải hình ảnh",
     "noImages": "Chưa có hình ảnh nào",
-    "tryAgain": "Thử lại"
+    "tryAgain": "Thử lại",
+    "viewAll": "Xem tất cả",
+    "loadMore": "Xem thêm",
+    "noMoreImages": "Không còn hình ảnh để tải",
+    "loadingImages": "Đang tải hình ảnh...",
+    "imageCount": "{count} hình ảnh",
+    "imageDetails": "Chi tiết hình ảnh",
+    "imageCaption": "Chú thích hình ảnh",
+    "imageDescription": "Mô tả hình ảnh",
+    "imageDate": "Ngày",
+    "imageLocation": "Địa điểm",
+    "imageCategory": "Danh mục",
+    "imageTags": "Thẻ",
+    "shareImage": "Chia sẻ hình ảnh",
+    "downloadImage": "Tải hình ảnh",
+    "reportImage": "Báo cáo hình ảnh",
+    "closeGallery": "Đóng thư viện",
+    "previousImage": "Hình trước",
+    "nextImage": "Hình sau",
+    "zoomIn": "Phóng to",
+    "zoomOut": "Thu nhỏ",
+    "resetZoom": "Đặt lại kích thước",
+    "fullscreen": "Toàn màn hình"
   }
 } 

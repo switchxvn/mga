@@ -149,7 +149,7 @@ const handleImageError = (event: Event) => {
   <section 
     :class="[
       'w-full py-16',
-      settings.backgroundColor || 'bg-white',
+      settings.backgroundColor || 'bg-gray-50',
       settings.textColor || 'text-gray-900'
     ]"
     :data-aos="settings.animation?.enabled ? settings.animation.type : null"

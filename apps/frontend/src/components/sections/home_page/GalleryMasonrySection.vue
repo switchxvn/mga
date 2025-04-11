@@ -6,7 +6,7 @@
       <div v-if="settings.showTitle" class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
         <div class="container mx-auto px-4">
           <div class="flex items-center justify-between gap-4 py-3">
-            <div class="w-32 hidden sm:block"><!-- Spacer to help with centering --></div>
+            <div class="w-32 hidden sm:block"><!-- Spacer --></div>
             <div class="category-header flex-1 text-center">
               <h2 
                 class="inline-flex items-center px-4 py-2 mobile-title"
@@ -19,7 +19,15 @@
                 {{ section.title }}
               </h2>
             </div>
-            <div class="w-32"><!-- Spacer to help with centering --></div>
+            <div class="w-32 flex justify-end">
+              <NuxtLink
+                to="/gallery"
+                class="mobile-view-all inline-flex items-center justify-center px-4 py-2 text-xs sm:text-lg font-semibold uppercase tracking-wider text-white hover:text-primary-100 transition-colors duration-200 whitespace-nowrap"
+              >
+                {{ t("common.viewAll") }}
+                <ArrowRight class="ml-1 h-3 w-3 sm:h-5 sm:w-5" aria-hidden="true" />
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
@@ -160,6 +168,11 @@ const defaultSettings = {
   loadMoreButton: {
     show: true,
     text: 'Xem thêm',
+    style: 'primary'
+  },
+  viewAllButton: {
+    show: true,
+    text: 'Xem tất cả',
     style: 'primary'
   },
   useUppercase: true

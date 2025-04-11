@@ -143,7 +143,7 @@ watch(locale, () => {
 </script>
 
 <template>
-  <div class="about w-full">
+  <div class="about w-full bg-gray-50">
     <div v-if="isLoading" class="container mx-auto py-10 px-4">
       <div
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"

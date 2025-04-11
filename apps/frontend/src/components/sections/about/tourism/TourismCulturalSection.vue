@@ -34,7 +34,7 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
 <template>
   <section 
     :class="[
-      'w-full py-16 bg-white',
+      'w-full py-16 bg-gray-50',
       settings.textColor || 'text-gray-900'
     ]"
     :data-aos="settings.animation?.enabled ? settings.animation.type : null"

@@ -18,7 +18,15 @@
                 {{ section.title }}
               </h2>
             </div>
-            <div class="w-32"><!-- Spacer --></div>
+            <div class="w-32 flex justify-end">
+              <NuxtLink
+                to="/gallery"
+                class="mobile-view-all inline-flex items-center justify-center px-4 py-2 text-xs sm:text-lg font-semibold uppercase tracking-wider text-white hover:text-primary-100 transition-colors duration-200 whitespace-nowrap"
+              >
+                {{ t("common.viewAll") }}
+                <ArrowRight class="ml-1 h-3 w-3 sm:h-5 sm:w-5" aria-hidden="true" />
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
@@ -184,10 +192,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
+import { useI18n } from 'vue-i18n';
 import Masonry from 'masonry-layout';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-vue-next';
 
 interface GalleryTranslation {
   id: number;
@@ -240,6 +249,11 @@ const defaultSettings = {
     text: 'Xem thêm',
     style: 'primary'
   },
+  viewAllButton: {
+    show: true,
+    text: 'Xem tất cả',
+    style: 'primary'
+  },
   useUppercase: true,
   swiperSettings: {
     autoplay: true,
@@ -256,6 +270,7 @@ const settings = computed(() => ({
 
 // tRPC client
 const trpc = useTrpc();
+const { t } = useI18n();
 
 // State
 const galleries = ref<Gallery[]>([]);
