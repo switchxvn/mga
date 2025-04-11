@@ -34,8 +34,7 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
 <template>
   <section 
     :class="[
-      'w-full py-16',
-      settings.backgroundColor || 'bg-gray-50',
+      'w-full py-16 bg-white',
       settings.textColor || 'text-gray-900'
     ]"
     :data-aos="settings.animation?.enabled ? settings.animation.type : null"
@@ -43,54 +42,61 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
     :data-aos-delay="settings.animation?.delay"
   >
     <div class="container mx-auto px-4">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <!-- Text Content -->
-        <div 
-          :class="[
-            'prose-content',
-            settings.imagePosition === 'left' ? 'order-2 lg:order-2' : 'order-2 lg:order-1'
-          ]"
-          data-aos="fade-up"
-          :data-aos-duration="settings.animation?.duration"
-          :data-aos-delay="settings.animation?.delay"
-        >
-          <div class="title-wrapper relative mb-8">
-            <h2 class="text-4xl md:text-5xl font-bold relative z-10 leading-tight text-primary-600 hover:text-primary-700 transition-colors duration-300">
-              {{ translations.title }}
-            </h2>
-          </div>
-          <p v-if="translations.subtitle" 
-            class="text-xl md:text-2xl mb-8 text-gray-600 font-medium leading-relaxed">
-            {{ translations.subtitle }}
-          </p>
-          <div v-if="translations.content" 
-            class="prose prose-lg prose-stone dark:prose-invert max-w-none"
-            v-html="translations.content">
-          </div>
-        </div>
-
-        <!-- Images -->
-        <div :class="[
-          'grid grid-cols-2 gap-4',
-          settings.imagePosition === 'left' ? 'order-1 lg:order-1' : 'order-1 lg:order-2'
-        ]">
-          <div v-for="(image, index) in settings.images" 
-            :key="imageKeys[index]"
-            class="relative overflow-hidden rounded-lg shadow-lg group"
-            :class="{
-              'mt-8 aspect-[3/4]': index === 0,
-              '-mt-4 mb-4 aspect-[3/5]': index === 1
-            }"
-            :data-aos="settings.imagePosition === 'left' ? 'fade-right' : 'fade-left'"
-            :data-aos-duration="1000"
-            :data-aos-delay="index * 200 + 200"
+      <div 
+        :class="[
+          'rounded-3xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 border border-gray-200',
+          settings.backgroundColor || 'bg-gray-50'
+        ]"
+      >
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <!-- Text Content -->
+          <div 
+            :class="[
+              'prose-content',
+              settings.imagePosition === 'left' ? 'order-2 lg:order-2' : 'order-2 lg:order-1'
+            ]"
+            data-aos="fade-up"
+            :data-aos-duration="settings.animation?.duration"
+            :data-aos-delay="settings.animation?.delay"
           >
-            <img 
-              :src="image" 
-              :alt="`Cultural image ${index + 1}`"
-              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            />
-            <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            <div class="title-wrapper relative mb-8">
+              <h2 class="text-4xl md:text-5xl font-bold relative z-10 leading-tight text-primary-600 hover:text-primary-700 transition-colors duration-300">
+                {{ translations.title }}
+              </h2>
+            </div>
+            <p v-if="translations.subtitle" 
+              class="text-xl md:text-2xl mb-8 text-gray-600 font-medium leading-relaxed">
+              {{ translations.subtitle }}
+            </p>
+            <div v-if="translations.content" 
+              class="prose prose-lg prose-stone dark:prose-invert max-w-none"
+              v-html="translations.content">
+            </div>
+          </div>
+
+          <!-- Images -->
+          <div :class="[
+            'grid grid-cols-2 gap-4',
+            settings.imagePosition === 'left' ? 'order-1 lg:order-1' : 'order-1 lg:order-2'
+          ]">
+            <div v-for="(image, index) in settings.images" 
+              :key="imageKeys[index]"
+              class="relative overflow-hidden rounded-lg shadow-lg group"
+              :class="{
+                'mt-8 aspect-[3/4]': index === 0,
+                '-mt-4 mb-4 aspect-[3/5]': index === 1
+              }"
+              :data-aos="settings.imagePosition === 'left' ? 'fade-right' : 'fade-left'"
+              :data-aos-duration="1000"
+              :data-aos-delay="index * 200 + 200"
+            >
+              <img 
+                :src="image" 
+                :alt="`Cultural image ${index + 1}`"
+                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              />
+              <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            </div>
           </div>
         </div>
       </div>

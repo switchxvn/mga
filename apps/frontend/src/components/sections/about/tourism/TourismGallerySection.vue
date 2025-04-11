@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onUnmounted } from 'vue';
 import { useLocalization } from '~/composables/useLocalization';
+import PhotoSwipe from 'photoswipe';
+import 'photoswipe/dist/photoswipe.css';
 
 const { t } = useLocalization();
 
@@ -101,6 +103,78 @@ const containerClasses = computed(() => [
   props.settings?.textColor,
   props.settings?.padding
 ]);
+
+// PhotoSwipe
+let pswpInstance: PhotoSwipe | null = null;
+
+const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      });
+    };
+    img.src = url;
+  });
+};
+
+const initPhotoSwipe = async (index: number = 0) => {
+  const items = await Promise.all(
+    locations.value.map(async (item) => {
+      const dimensions = await getImageDimensions(item.image);
+      return {
+        src: item.image,
+        w: dimensions.width,
+        h: dimensions.height,
+        originalSrc: item.image,
+        title: item.title
+      };
+    })
+  );
+
+  const options = {
+    index,
+    bgOpacity: 0.9,
+    padding: { top: 20, bottom: 20, left: 20, right: 20 },
+    showHideOpacity: true,
+    allowPanToNext: true,
+    wheelToZoom: false,
+    pinchToClose: true,
+    maxZoomLevel: 4,
+    imageClickAction: false,
+    tapAction: false,
+    doubleTapAction: false,
+    errorMsg: 'Không thể tải ảnh',
+    pswpModule: PhotoSwipe
+  };
+
+  pswpInstance = new PhotoSwipe({
+    dataSource: items,
+    ...options
+  });
+
+  // Set zoom levels for maintaining aspect ratio
+  pswpInstance.on('firstUpdate', () => {
+    const slide = pswpInstance?.currSlide;
+    if (slide) {
+      slide.zoomLevels.initial = 1;
+      slide.zoomLevels.secondary = 2;
+      slide.zoomLevels.max = 4;
+    }
+  });
+
+  pswpInstance.init();
+};
+
+// Cleanup on component unmount
+onUnmounted(() => {
+  if (pswpInstance) {
+    pswpInstance.destroy();
+    pswpInstance = null;
+  }
+});
 </script>
 
 <template>
@@ -127,7 +201,7 @@ const containerClasses = computed(() => [
              :data-aos-delay="(settings?.animation?.delay ?? 200) * index">
           
           <!-- Image Container -->
-          <div class="relative aspect-ratio-4-3 overflow-hidden">
+          <div class="relative aspect-ratio-4-3 overflow-hidden cursor-pointer" @click="initPhotoSwipe(index)">
             <img :src="location.image" 
                  :alt="location.title"
                  class="w-full h-full object-cover transition-transform duration-300 hover:scale-110" />
@@ -136,10 +210,6 @@ const containerClasses = computed(() => [
           <!-- Content -->
           <div class="p-4">
             <h3 class="text-2xl font-extrabold mb-2 text-primary-600 hover:text-primary-700 transition-colors duration-300">{{ location.title }}</h3>
-            <!-- <NuxtLink :to="location.link" 
-                      class="inline-block px-4 py-2 border border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-300 rounded">
-              {{ t('common.details') }}
-            </NuxtLink> -->
           </div>
         </div>
       </div>
@@ -150,5 +220,35 @@ const containerClasses = computed(() => [
 <style scoped>
 .aspect-ratio-4-3 {
   aspect-ratio: 4/3;
+}
+
+/* PhotoSwipe customization */
+:deep(.pswp__bg) {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+:deep(.pswp__top-bar) {
+  background: none !important;
+}
+
+:deep(.pswp__counter) {
+  color: white;
+}
+
+:deep(.pswp__button) {
+  background: none !important;
+}
+
+:deep(.pswp__button--arrow--left:before),
+:deep(.pswp__button--arrow--right:before) {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+:deep(.pswp__img) {
+  object-fit: contain !important;
+}
+
+:deep(.pswp__zoom-wrap) {
+  transform-origin: center !important;
 }
 </style> 
