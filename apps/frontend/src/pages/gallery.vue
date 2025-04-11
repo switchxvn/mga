@@ -1,174 +1,261 @@
 <template>
   <div class="bg-white dark:bg-gray-900 min-h-screen">
     <div class="container mx-auto px-4 py-16">
-      <!-- Page Header -->
-      <div class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
-        <div class="container mx-auto px-4">
-          <div class="flex items-center justify-between gap-4 py-3">
-            <div class="w-32 hidden sm:block"><!-- Spacer --></div>
-            <div class="category-header flex-1 text-center">
-              <h1 
-                class="inline-flex items-center px-4 py-2 mobile-title text-2xl sm:text-3xl font-bold text-white uppercase"
-              >
-                {{ t('gallery.title') }}
-              </h1>
+
+      <!-- Video Gallery Section -->
+      <div class="mb-16">
+        <div class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
+          <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between gap-4 py-3">
+              <div class="w-32 hidden sm:block"><!-- Spacer --></div>
+              <div class="category-header flex-1 text-center">
+                <h2 
+                  class="inline-flex items-center px-4 py-2 mobile-title text-xl sm:text-2xl font-bold text-white uppercase"
+                >
+                  {{ t('gallery.videoGallery') }}
+                </h2>
+              </div>
+              <div class="w-32"><!-- Spacer --></div>
             </div>
-            <div class="w-32"><!-- Spacer --></div>
           </div>
         </div>
-      </div>
+        
+        <!-- Video Gallery Container -->
+        <div class="video-gallery-container">
+          <!-- Loading State -->
+          <div v-if="isVideoLoading" class="flex justify-center items-center py-16">
+            <UIcon name="i-heroicons-arrow-path" class="text-primary-500 animate-spin w-10 h-10" />
+          </div>
 
-      <!-- Filter Controls -->
-      <div class="mb-8">
-        <div class="flex flex-wrap gap-4 justify-center">
-          <UButton
-            variant="soft"
-            :color="galleryType === 'common' ? 'primary' : 'gray'"
-            @click="setGalleryType('common')"
-            class="text-xl font-semibold uppercase tracking-wide"
-          >
-            <Image class="w-6 h-6 mr-2" />
-            {{ t('gallery.commonGallery') }}
-          </UButton>
-          <UButton
-            variant="soft"
-            :color="galleryType === 'food' ? 'primary' : 'gray'"
-            @click="setGalleryType('food')"
-            class="text-xl font-semibold uppercase tracking-wide"
-          >
-            <Utensils class="w-6 h-6 mr-2" />
-            {{ t('gallery.foodGallery') }}
-          </UButton>
-        </div>
-      </div>
+          <!-- Error State -->
+          <div v-else-if="hasVideoError" class="text-center py-16">
+            <p class="text-red-500 mb-4">{{ t('gallery.fetchVideoError') }}</p>
+            <UButton @click="fetchVideos" color="primary">
+              {{ t('common.tryAgain') }}
+            </UButton>
+          </div>
 
-      <!-- Gallery Container -->
-      <div class="gallery-outer-container relative">
-        <!-- Loading State -->
-        <div v-if="isLoading" class="flex justify-center items-center py-16">
-          <UIcon name="i-heroicons-arrow-path" class="text-primary-500 animate-spin w-10 h-10" />
-        </div>
+          <!-- Empty State -->
+          <div v-else-if="videos.length === 0" class="text-center py-16">
+            <p class="text-gray-500 dark:text-gray-400">{{ t('gallery.noVideos') }}</p>
+          </div>
 
-        <!-- Error State -->
-        <div v-else-if="hasError" class="text-center py-16">
-          <p class="text-red-500 mb-4">{{ t('gallery.fetchError') }}</p>
-          <UButton @click="fetchGalleries" color="primary">
-            {{ t('common.tryAgain') }}
-          </UButton>
-        </div>
-
-        <!-- Empty State -->
-        <div v-else-if="galleries.length === 0" class="text-center py-16">
-          <p class="text-gray-500 dark:text-gray-400">{{ t('gallery.noImages') }}</p>
-        </div>
-
-        <!-- Gallery Content -->
-        <template v-else>
-          <!-- Navigation Buttons -->
-          <button 
-            @click="handleScrollLeft" 
-            class="nav-button left-button"
-            :class="{ 'opacity-0': scrollPosition <= 0 }"
-          >
-            <ChevronLeft class="h-6 w-6" />
-            <span class="sr-only">Previous images</span>
-          </button>
-
-          <button 
-            @click="handleScrollRight" 
-            class="nav-button right-button"
-            :class="{ 'opacity-0': scrollPosition >= maxScroll }"
-          >
-            <ChevronRight class="h-6 w-6" />
-            <span class="sr-only">Next images</span>
-          </button>
-
-          <!-- Gallery Content -->
-          <div 
-            class="gallery-container cursor-grab active:cursor-grabbing" 
-            ref="galleryContainer"
-            @mousedown="startDragging"
-            @mouseleave="stopDragging"
-            @mouseup="stopDragging"
-            @mousemove="onDrag"
-          >
-            <div class="gallery-wrapper" ref="galleryWrapper">
-              <div class="gallery-grid">
-                <!-- Row 1 -->
-                <div class="gallery-row">
-                  <figure 
-                    v-for="(item, itemIndex) in getRowItems(0)"
-                    :key="`row0-${item.id}-${itemIndex}`"
-                    class="gallery-item"
-                    :style="{ width: item.width }"
-                  >
-                    <a
-                      :href="item.image"
-                      @click.prevent="handleGalleryClick($event, getItemIndex(0, itemIndex))"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <NuxtImg
-                        :src="item.image"
-                        :alt="item.translations?.[0]?.title || ''"
-                        class="w-full h-full object-cover rounded-lg"
-                        loading="lazy"
-                      />
-                    </a>
-                  </figure>
-                </div>
-                
-                <!-- Row 2 -->
-                <div class="gallery-row">
-                  <figure 
-                    v-for="(item, itemIndex) in getRowItems(1)"
-                    :key="`row1-${item.id}-${itemIndex}`"
-                    class="gallery-item"
-                    :style="{ width: item.width }"
-                  >
-                    <a
-                      :href="item.image"
-                      @click.prevent="handleGalleryClick($event, getItemIndex(1, itemIndex))"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <NuxtImg
-                        :src="item.image"
-                        :alt="item.translations?.[0]?.title || ''"
-                        class="w-full h-full object-cover rounded-lg"
-                        loading="lazy"
-                      />
-                    </a>
-                  </figure>
-                </div>
-                
-                <!-- Row 3 -->
-                <div class="gallery-row">
-                  <figure 
-                    v-for="(item, itemIndex) in getRowItems(2)"
-                    :key="`row2-${item.id}-${itemIndex}`"
-                    class="gallery-item"
-                    :style="{ width: item.width }"
-                  >
-                    <a
-                      :href="item.image"
-                      @click.prevent="handleGalleryClick($event, getItemIndex(2, itemIndex))"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <NuxtImg
-                        :src="item.image"
-                        :alt="item.translations?.[0]?.title || ''"
-                        class="w-full h-full object-cover rounded-lg"
-                        loading="lazy"
-                      />
-                    </a>
-                  </figure>
+          <!-- Video Gallery Content -->
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div
+              v-for="video in videos"
+              :key="video.id"
+              class="video-card group relative h-[480px] bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <div class="relative h-[280px] overflow-hidden">
+                <!-- YouTube iframe -->
+                <iframe
+                  v-if="getVideoId(video.videoUrl)"
+                  :src="getEmbedUrl(video.videoUrl)"
+                  class="w-full h-full object-cover"
+                  :title="video.title"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+                <!-- Fallback for non-YouTube videos or invalid URLs -->
+                <img
+                  v-else
+                  :src="video.thumbnailUrl"
+                  :alt="video.title"
+                  class="w-full h-full object-cover"
+                  @error="handleImageError"
+                />
+              </div>
+              <!-- Video Info Section -->
+              <div class="p-6 flex flex-col h-[200px]">
+                <div class="flex-1">
+                  <!-- Title -->
+                  <h3 class="text-xl font-semibold mb-3 line-clamp-2 text-gray-900 dark:text-gray-100">
+                    {{ video.title }}
+                  </h3>
+                  
+                  <!-- Description -->
+                  <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
+                    {{ video.description }}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </template>
+        </div>
+      </div>
+
+      <!-- Image Gallery Section -->
+      <div class="mb-16">
+        <div class="mb-8 bg-primary-600 dark:bg-primary-500 rounded-lg">
+          <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between gap-4 py-3">
+              <div class="w-32 hidden sm:block"><!-- Spacer --></div>
+              <div class="category-header flex-1 text-center">
+                <h2 
+                  class="inline-flex items-center px-4 py-2 mobile-title text-xl sm:text-2xl font-bold text-white uppercase"
+                >
+                  {{ t('gallery.imageGallery') }}
+                </h2>
+              </div>
+              <div class="w-32"><!-- Spacer --></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="mb-8">
+          <div class="flex flex-wrap gap-4 justify-center">
+            <UButton
+              variant="soft"
+              :color="galleryType === 'common' ? 'primary' : 'gray'"
+              @click="setGalleryType('common')"
+              class="text-xl font-semibold uppercase tracking-wide"
+            >
+              <Image class="w-6 h-6 mr-2" />
+              {{ t('gallery.commonGallery') }}
+            </UButton>
+            <UButton
+              variant="soft"
+              :color="galleryType === 'food' ? 'primary' : 'gray'"
+              @click="setGalleryType('food')"
+              class="text-xl font-semibold uppercase tracking-wide"
+            >
+              <Utensils class="w-6 h-6 mr-2" />
+              {{ t('gallery.foodGallery') }}
+            </UButton>
+          </div>
+        </div>
+
+        <!-- Gallery Container -->
+        <div class="gallery-outer-container relative">
+          <!-- Loading State -->
+          <div v-if="isLoading" class="flex justify-center items-center py-16">
+            <UIcon name="i-heroicons-arrow-path" class="text-primary-500 animate-spin w-10 h-10" />
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="hasError" class="text-center py-16">
+            <p class="text-red-500 mb-4">{{ t('gallery.fetchError') }}</p>
+            <UButton @click="fetchGalleries" color="primary">
+              {{ t('common.tryAgain') }}
+            </UButton>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="galleries.length === 0" class="text-center py-16">
+            <p class="text-gray-500 dark:text-gray-400">{{ t('gallery.noImages') }}</p>
+          </div>
+
+          <!-- Gallery Content -->
+          <template v-else>
+            <!-- Navigation Buttons -->
+            <button 
+              @click="handleScrollLeft" 
+              class="nav-button left-button"
+              :class="{ 'opacity-0': scrollPosition <= 0 }"
+            >
+              <ChevronLeft class="h-6 w-6" />
+              <span class="sr-only">Previous images</span>
+            </button>
+
+            <button 
+              @click="handleScrollRight" 
+              class="nav-button right-button"
+              :class="{ 'opacity-0': scrollPosition >= maxScroll }"
+            >
+              <ChevronRight class="h-6 w-6" />
+              <span class="sr-only">Next images</span>
+            </button>
+
+            <!-- Gallery Content -->
+            <div 
+              class="gallery-container cursor-grab active:cursor-grabbing" 
+              ref="galleryContainer"
+              @mousedown="startDragging"
+              @mouseleave="stopDragging"
+              @mouseup="stopDragging"
+              @mousemove="onDrag"
+            >
+              <div class="gallery-wrapper" ref="galleryWrapper">
+                <div class="gallery-grid">
+                  <!-- Row 1 -->
+                  <div class="gallery-row">
+                    <figure 
+                      v-for="(item, itemIndex) in getRowItems(0)"
+                      :key="`row0-${item.id}-${itemIndex}`"
+                      class="gallery-item"
+                      :style="{ width: item.width }"
+                    >
+                      <a
+                        :href="item.image"
+                        @click.prevent="handleGalleryClick($event, getItemIndex(0, itemIndex))"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <NuxtImg
+                          :src="item.image"
+                          :alt="item.translations?.[0]?.title || ''"
+                          class="w-full h-full object-cover rounded-lg"
+                          loading="lazy"
+                        />
+                      </a>
+                    </figure>
+                  </div>
+                  
+                  <!-- Row 2 -->
+                  <div class="gallery-row">
+                    <figure 
+                      v-for="(item, itemIndex) in getRowItems(1)"
+                      :key="`row1-${item.id}-${itemIndex}`"
+                      class="gallery-item"
+                      :style="{ width: item.width }"
+                    >
+                      <a
+                        :href="item.image"
+                        @click.prevent="handleGalleryClick($event, getItemIndex(1, itemIndex))"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <NuxtImg
+                          :src="item.image"
+                          :alt="item.translations?.[0]?.title || ''"
+                          class="w-full h-full object-cover rounded-lg"
+                          loading="lazy"
+                        />
+                      </a>
+                    </figure>
+                  </div>
+                  
+                  <!-- Row 3 -->
+                  <div class="gallery-row">
+                    <figure 
+                      v-for="(item, itemIndex) in getRowItems(2)"
+                      :key="`row2-${item.id}-${itemIndex}`"
+                      class="gallery-item"
+                      :style="{ width: item.width }"
+                    >
+                      <a
+                        :href="item.image"
+                        @click.prevent="handleGalleryClick($event, getItemIndex(2, itemIndex))"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <NuxtImg
+                          :src="item.image"
+                          :alt="item.translations?.[0]?.title || ''"
+                          class="w-full h-full object-cover rounded-lg"
+                          loading="lazy"
+                        />
+                      </a>
+                    </figure>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -215,7 +302,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
-import { ChevronLeft, ChevronRight, Image, Utensils } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, Image, Utensils, PlayCircle } from 'lucide-vue-next';
 
 // Define SEO metadata
 useHead({
@@ -242,6 +329,16 @@ interface Gallery {
   width?: string;
 }
 
+interface VideoIntro {
+  id: number;
+  title: string;
+  description: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  isActive: boolean;
+  order: number;
+}
+
 // i18n
 const { t, locale } = useI18n();
 
@@ -250,8 +347,11 @@ const trpc = useTrpc();
 
 // State
 const galleries = ref<Gallery[]>([]);
+const videos = ref<VideoIntro[]>([]);
 const isLoading = ref(false);
+const isVideoLoading = ref(false);
 const hasError = ref(false);
+const hasVideoError = ref(false);
 const galleryType = ref<'common' | 'food'>('common');
 
 // Refs for DOM elements
@@ -436,6 +536,48 @@ const setGalleryType = (type: 'common' | 'food') => {
   fetchGalleries();
 };
 
+// Helper function to get YouTube video ID
+const getVideoId = (url: string): string | null => {
+  if (!url) return null;
+  
+  try {
+    let videoId: string | null = null;
+    
+    if (url.includes('youtube.com')) {
+      videoId = url.split('v=')[1]?.split('&')[0] || null;
+    } else if (url.includes('youtu.be')) {
+      videoId = url.split('/').pop() || null;
+    }
+    
+    return videoId;
+  } catch (error) {
+    console.error('Error extracting video ID:', error);
+    return null;
+  }
+};
+
+// Get embed URL for YouTube videos
+const getEmbedUrl = (url: string): string => {
+  const videoId = getVideoId(url);
+  if (!videoId) return '';
+  
+  // Add parameters for better performance and user experience
+  const params = new URLSearchParams({
+    autoplay: '0',
+    rel: '0', // Don't show related videos
+    modestbranding: '1', // Minimal YouTube branding
+    enablejsapi: '1'
+  });
+  
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+};
+
+// Handle image error
+const handleImageError = (event: Event) => {
+  const imgElement = event.target as HTMLImageElement;
+  imgElement.src = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400&auto=format&fit=crop";
+};
+
 // Fetch galleries
 const fetchGalleries = async () => {
   try {
@@ -466,11 +608,34 @@ const fetchGalleries = async () => {
   }
 };
 
+// Fetch videos
+const fetchVideos = async () => {
+  try {
+    isVideoLoading.value = true;
+    hasVideoError.value = false;
+    const result = await trpc.hero.getHeroVideos.query({});
+    videos.value = result as VideoIntro[];
+  } catch (error) {
+    console.error('Error fetching videos:', error);
+    useToast().add({
+      id: 'video-error',
+      title: t('common.error'),
+      description: t('gallery.fetchVideoError'),
+      color: 'red'
+    });
+    videos.value = [];
+    hasVideoError.value = true;
+  } finally {
+    isVideoLoading.value = false;
+  }
+};
+
 // Add ResizeObserver
 let resizeObserver: ResizeObserver;
 
 onMounted(() => {
   fetchGalleries();
+  fetchVideos();
   
   if (galleryContainer.value) {
     // Initialize ResizeObserver
@@ -576,6 +741,26 @@ onUnmounted(() => {
         transform: scale(1.05);
       }
     }
+  }
+}
+
+// Video gallery styles
+.video-gallery-container {
+  padding: 0 24px;
+}
+
+.video-card {
+  @apply transform transition-all duration-300;
+  
+  &:hover {
+    @apply -translate-y-1;
+  }
+  
+  iframe {
+    aspect-ratio: 16/9;
+    width: 100%;
+    height: 100%;
+    border-radius: 0.5rem;
   }
 }
 

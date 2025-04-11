@@ -370,6 +370,8 @@
     "commonGallery": "Hình ảnh chung",
     "foodGallery": "Hình ảnh món ăn",
     "tourismGallery": "Hình ảnh du lịch",
+    "videoGallery": "Thư viện video",
+    "imageGallery": "Thư viện hình ảnh",
     "fetchError": "Không thể tải hình ảnh",
     "noImages": "Chưa có hình ảnh nào",
     "tryAgain": "Thử lại"

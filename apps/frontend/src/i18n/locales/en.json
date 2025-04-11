@@ -309,6 +309,8 @@
     "commonGallery": "Common Gallery",
     "foodGallery": "Food Gallery",
     "tourismGallery": "Tourism Gallery",
+    "videoGallery": "Video Gallery",
+    "imageGallery": "Image Gallery",
     "fetchError": "Failed to load gallery images",
     "noImages": "No images available",
     "tryAgain": "Try Again"
