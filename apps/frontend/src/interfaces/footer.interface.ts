@@ -63,6 +63,13 @@ export interface CopyrightStyle {
   };
 }
 
+export interface FooterSettings {
+  verticalImage?: {
+    url: string;
+    alt: string;
+  };
+}
+
 export interface Footer {
   id: number;
   name: string;
@@ -85,6 +92,7 @@ export interface Footer {
   }>;
   mapUrl?: string;
   fanpageUrl?: string;
+  settings?: FooterSettings;
   companyInfo: {
     name: string;
     tax_number?: string;

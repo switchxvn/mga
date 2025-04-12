@@ -4,8 +4,12 @@ import { useFooter } from '~/composables/useFooter';
 import { useColorMode } from '@vueuse/core';
 import { Link, MapPin, Phone, Mail } from 'lucide-vue-next';
 import type { Footer } from '~/interfaces/footer.interface';
+import PhotoSwipe from 'photoswipe';
+import 'photoswipe/style.css';
 
 const isDev = ref(process.env.NODE_ENV === 'development');
+const isImageModalOpen = ref(false);
+const selectedImage = ref<{ url: string; alt: string } | null>(null);
 
 const {
   activeFooter,
@@ -68,6 +72,25 @@ const reloadFacebookPlugin = () => {
   }
 };
 
+// Hàm mở PhotoSwipe
+const openPhotoSwipe = (imageUrl: string, imageAlt: string) => {
+  // Tạo một image object để lấy kích thước thật của ảnh
+  const img = new Image();
+  img.onload = () => {
+    const pswp = new PhotoSwipe({
+      dataSource: [{
+        src: imageUrl,
+        alt: imageAlt,
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      }],
+      pswpModule: PhotoSwipe
+    });
+    pswp.init();
+  };
+  img.src = imageUrl;
+};
+
 onMounted(async () => {
   try {
     await fetchActiveFooter();
@@ -97,6 +120,23 @@ onMounted(async () => {
                   <p v-if="activeFooter.companyInfo.tax_number">{{ activeFooter.companyInfo.tax_number }}</p>
                   <p v-if="activeFooter.companyInfo.business_license">{{ activeFooter.companyInfo.business_license }}</p>
                 </div>
+              </div>
+
+              <!-- Vertical Company Image -->
+              <div v-if="activeFooter.settings?.verticalImage" class="vertical-image-container mt-6">
+                <img 
+                  :src="activeFooter.settings.verticalImage.url" 
+                  :alt="activeFooter.settings.verticalImage.alt"
+                  class="w-full h-auto rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer"
+                  @click="() => {
+                    if (activeFooter?.settings?.verticalImage) {
+                      openPhotoSwipe(
+                        activeFooter.settings.verticalImage.url,
+                        activeFooter.settings.verticalImage.alt
+                      );
+                    }
+                  }"
+                />
               </div>
 
               <!-- Certifications with enhanced styling -->
@@ -269,6 +309,28 @@ onMounted(async () => {
       <strong class="font-bold">Error:</strong>
       <span class="block sm:inline"> {{ error }}</span>
     </div>
+
+    <!-- Image Modal -->
+    <UModal v-model="isImageModalOpen" :ui="{ 
+      wrapper: 'flex min-h-screen items-center justify-center',
+      container: 'w-screen h-screen flex items-center justify-center',
+      base: 'relative overflow-hidden',
+      background: 'bg-black/90',
+      rounded: 'rounded-none',
+      padding: 'p-0',
+      width: 'max-w-full',
+      height: 'max-h-full',
+      close: 'absolute top-4 right-4 text-white hover:text-gray-300 z-50'
+    }">
+      <div class="relative w-full h-full flex items-center justify-center p-4">
+        <img 
+          v-if="selectedImage"
+          :src="selectedImage.url" 
+          :alt="selectedImage.alt"
+          class="max-w-full max-h-full object-contain"
+        />
+      </div>
+    </UModal>
   </div>
 </template>
 

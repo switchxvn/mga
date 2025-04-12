@@ -33,6 +33,7 @@ export const footerRouter = router({
         logoAlt: footer.logoAlt,
         isActive: footer.isActive,
         branchInfo: footer.branchInfo,
+        settings: footer.settings,
         createdAt: footer.createdAt,
         updatedAt: footer.updatedAt,
       };

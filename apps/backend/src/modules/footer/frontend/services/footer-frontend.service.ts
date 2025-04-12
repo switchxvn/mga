@@ -48,6 +48,7 @@ export class FooterFrontendService {
         createdAt: footer.createdAt,
         updatedAt: footer.updatedAt,
         componentName: footer.componentName,
+        settings: footer.settings,
       };
     } catch (error) {
       console.log(error);
