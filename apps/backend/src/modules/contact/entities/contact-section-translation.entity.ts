@@ -14,16 +14,13 @@ export class ContactSectionTranslation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'section_id' })
-  sectionId: number;
-
-  @Column({ length: 2 })
+  @Column({ length: 10 })
   locale: string;
 
-  @Column()
+  @Column({ length: 255 })
   title: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ length: 255, nullable: true })
   subtitle: string;
 
   @Column({ type: 'text', nullable: true })
@@ -35,6 +32,9 @@ export class ContactSectionTranslation {
   @ManyToOne(() => ContactSection, section => section.translations)
   @JoinColumn({ name: 'section_id' })
   section: ContactSection;
+
+  @Column({ name: 'section_id' })
+  sectionId: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

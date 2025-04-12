@@ -47,6 +47,8 @@ import { ThemeFrontendService } from '../theme/frontend/services/theme-frontend.
 import { UserService } from '../user/services/user.service';
 import { TRPCContext, createContext } from './context';
 import { ITrpcServices } from './interfaces/trpc-services.interface';
+import { ContactSectionAdminService } from '../contact/admin/services/contact-section-admin.service';
+import { ContactSectionFrontendService } from '../contact/frontend/services/contact-section-frontend.service';
 
 const t = initTRPC.context<TRPCContext>().create();
 
@@ -104,6 +106,8 @@ export class TrpcService {
     private readonly contactAdminService: ContactAdminService,
     private readonly contactFrontendService: ContactFrontendService,
     private readonly galleryFrontendService: GalleryFrontendService,
+    private readonly contactSectionAdminService: ContactSectionAdminService,
+    private readonly contactSectionFrontendService: ContactSectionFrontendService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -165,6 +169,8 @@ export class TrpcService {
       contactAdminService: this.contactAdminService,
       contactFrontendService: this.contactFrontendService,
       galleryFrontendService: this.galleryFrontendService,
+      contactSectionAdminService: this.contactSectionAdminService,
+      contactSectionFrontendService: this.contactSectionFrontendService,
     };
   }
-} 
+}   

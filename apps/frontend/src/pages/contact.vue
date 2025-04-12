@@ -1,198 +1,154 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTrpc } from '~/composables/useTrpc'
-import { PageType } from '@ew/shared'
 import { useI18n } from 'vue-i18n'
+import { defineAsyncComponent, markRaw } from 'vue'
+import type { Component } from 'vue'
 
-interface Translation {
-  locale: string
-  content: Record<string, any>
-}
+// Define component types
+type ComponentType = Component
+type ComponentRegistry = Record<string, ComponentType>
 
-interface ThemeSection {
-  pageType: PageType
-  type: string
-  title: string
-  order: number
-  isActive: boolean
-  id: number
-  settings: Record<string, any>
-  themeId: number
-  componentName?: string
-  translations?: Translation[]
-}
+// Register components using defineAsyncComponent
+const registeredComponents = {
+  'ContactHeroSection': defineAsyncComponent(() => import("../components/sections/contact/ContactHeroSection.vue")),
+  'ContactFormSection': defineAsyncComponent(() => import("../components/sections/contact/ContactFormSection.vue")),
+  'ContactBranchSection': defineAsyncComponent(() => import("../components/sections/contact/ContactBranchSection.vue")),
+  'ContactFaqSection': defineAsyncComponent(() => import("../components/sections/contact/ContactFaqSection.vue")),
+  'ContactMapSection': defineAsyncComponent(() => import("../components/sections/contact/ContactMapSection.vue")),
+} as ComponentRegistry
 
-interface ThemeResponse {
-  name: string
-  sections: ThemeSection[]
-  colors: {
-    light: Record<string, any>
-    dark: Record<string, any>
+// Resolve component function
+const resolveComponent = (section: any): ComponentType | null => {
+  if (!section?.type && !section?.componentName) {
+    console.warn('Invalid section configuration')
+    return null
   }
-  componentStyleConfigs: Record<string, any>[]
+
+  // First try componentName if specified
+  if (section.componentName && registeredComponents[section.componentName]) {
+    return markRaw(registeredComponents[section.componentName])
+  }
+
+  // Then try type mapping
+  const typeToComponentName: Record<string, keyof typeof registeredComponents> = {
+    'hero': 'ContactHeroSection',
+    'contact_form': 'ContactFormSection',
+    'branch_contact': 'ContactBranchSection',
+    'faq': 'ContactFaqSection',
+    'map': 'ContactMapSection'
+  }
+
+  const componentName = typeToComponentName[section.type]
+  if (componentName && registeredComponents[componentName]) {
+    return markRaw(registeredComponents[componentName])
+  }
+
+  console.warn(`No component found for section type: ${section.type}`)
+  return null
 }
 
 const trpc = useTrpc()
 const { locale } = useI18n()
 
-// Fetch contact data
-const { data: contactData, pending, error, refresh } = useAsyncData<ThemeResponse>(
-  'contact-data',
-  async () => {
-    try {
-      const response = await trpc.theme.getActiveTheme.query({
-        pageType: PageType.CONTACT_PAGE
-      })
-      return response as ThemeResponse
-    } catch (err: any) {
-      console.error('Error fetching contact data:', err)
-      throw new Error(err.message || 'Có lỗi xảy ra, vui lòng thử lại sau')
-    }
-  }
-)
+// State management
+const sections = ref<any[]>([])
+const isLoading = ref(true)
+const error = ref<string | null>(null)
 
-// Process sections
-const sections = computed(() => {
-  if (!contactData.value?.sections) return []
-  
-  return contactData.value.sections
-    .filter((section: ThemeSection) => section.isActive)
-    .sort((a: ThemeSection, b: ThemeSection) => a.order - b.order)
-})
-
-// Extract settings and translations
-const settings = computed(() => {
-  if (!contactData.value) return null
-  
-  const result = {
-    showHero: false,
-    showContactForm: false,
-    showBranches: false,
-    showFaq: false,
-    showMap: false,
-    showSocialMedia: false
-  }
-  
-  sections.value.forEach((section: ThemeSection) => {
-    switch (section.type) {
-      case 'hero':
-        result.showHero = true
-        break
-      case 'contact_form':
-        result.showContactForm = true
-        break
-      case 'branch_contact':
-        result.showBranches = true
-        break
-      case 'faq':
-        result.showFaq = true
-        break
-      case 'map':
-        result.showMap = true
-        break
-      case 'social_media':
-        result.showSocialMedia = true
-        break
-    }
-  })
-  
-  return result
-})
-
-const translations = computed(() => {
-  if (!contactData.value) return {}
-  
-  const result: Record<string, any> = {}
-  
-  sections.value.forEach((section: ThemeSection) => {
-    const translation = section.translations?.find(
-      (t: Translation) => t.locale === locale.value
-    )
-    
-    if (translation) {
-      result[section.type] = translation.content
-    }
-  })
-  
-  return result
-})
-
-const branches = computed(() => {
-  if (!contactData.value) return []
-  
-  const branchSection = sections.value.find(
-    (section: ThemeSection) => section.type === 'branch_contact'
-  )
-  
-  if (branchSection?.settings.branches) {
-    return branchSection.settings.branches
-  }
-  
-  return []
-})
-
-// Handle refresh button click
-const handleRefresh = () => {
-  refresh()
+// Helper function to get translation by locale
+const getTranslation = (translations: any[] | undefined, fallback: any) => {
+  if (!translations || !Array.isArray(translations) || translations.length === 0) return fallback
+  const translation = translations.find(t => t?.locale === locale.value)
+  return translation || translations.find(t => t?.locale === 'en') || fallback
 }
+
+// Computed properties for translated content
+const translatedSections = computed(() => {
+  if (!sections.value) return []
+  
+  return sections.value.map(section => {
+    if (!section) return null
+    const translation = getTranslation(section.translations, {})
+    return {
+      ...section,
+      title: translation?.title || section.title,
+      subtitle: translation?.subtitle || '',
+      content: translation?.content || '',
+      data: translation?.data || {}
+    }
+  }).filter(Boolean)
+})
+
+// Fetch data using tRPC
+const fetchData = async () => {
+  try {
+    console.log('Fetching contact sections with locale:', locale.value)
+    isLoading.value = true
+    error.value = null
+
+    const data = await trpc.contactSection.getActiveSections.query(locale.value)
+
+    if (!data || data.length === 0) {
+      error.value = 'No active contact sections found'
+      return
+    }
+
+    sections.value = data
+
+  } catch (e) {
+    console.error('Error fetching contact sections:', e)
+    error.value = 'Failed to load contact sections'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Watch for locale changes and refetch data
+watch(locale, () => {
+  fetchData()
+})
+
+// Initial fetch
+fetchData()
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <!-- Loading state -->
-    <div v-if="pending" class="flex items-center justify-center min-h-[50vh]">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  <div class="contact w-full bg-gray-50">
+    <div v-if="isLoading" class="container mx-auto py-10 px-4">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"
+      ></div>
+      <p class="mt-4">Loading...</p>
     </div>
 
-    <!-- Error state -->
-    <div v-else-if="error" class="flex items-center justify-center min-h-[50vh]">
-      <div class="text-center">
-        <h2 class="text-2xl font-bold text-red-600 mb-4">{{ error.message }}</h2>
-        <button
-          @click="handleRefresh"
-          class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
-        >
-          Thử lại
-        </button>
+    <div v-else-if="error" class="container mx-auto py-10 px-4">
+      <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+        <p class="text-red-600 dark:text-red-400">{{ error }}</p>
       </div>
     </div>
 
-    <!-- Content -->
-    <div v-else>
-      <!-- Hero Section -->
-      <ContactHeroSection
-        v-if="settings?.showHero"
-        :settings="contactData?.sections.find((s: ThemeSection) => s.type === 'hero')?.settings || {}"
-        :translations="translations?.hero || {}"
-      />
-
-      <!-- Contact Form Section -->
-      <ContactFormSection
-        v-if="settings?.showContactForm"
-        :settings="contactData?.sections.find((s: ThemeSection) => s.type === 'contact_form')?.settings || {}"
-        :translations="translations?.contact_form || {}"
-      />
-
-      <!-- Branch Section -->
-      <ContactBranchSection
-        v-if="settings?.showBranches && branches.length"
-        :settings="contactData?.sections.find((s: ThemeSection) => s.type === 'branch_contact')?.settings || {}"
-        :translations="translations?.branch_contact || {}"
-      />
-
-      <!-- FAQ Section -->
-      <ContactFaqSection
-        v-if="settings?.showFaq"
-        :settings="contactData?.sections.find((s: ThemeSection) => s.type === 'faq')?.settings || {}"
-        :translations="translations?.faq || {}"
-      />
-
-      <!-- Map Section -->
-      <ContactMapSection
-        v-if="settings?.showMap"
-        :settings="contactData?.sections.find((s: ThemeSection) => s.type === 'map')?.settings || {}"
-        :translations="translations?.map || {}"
-      />
-    </div>
+    <template v-else>
+      <template v-for="(section, index) in translatedSections" :key="index">
+        <ClientOnly>
+          <component
+            v-if="section.isActive"
+            :is="resolveComponent(section)"
+            :settings="section.settings"
+            :translations="{
+              title: section.title,
+              subtitle: section.subtitle,
+              content: section.content,
+              data: section.data
+            }"
+          />
+          <template #fallback>
+            <div class="p-4 text-center">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            </div>
+          </template>
+        </ClientOnly>
+      </template>
+    </template>
   </div>
 </template> 

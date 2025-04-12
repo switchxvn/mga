@@ -24,7 +24,7 @@ import { contactRouter } from './routers/contact.router';
 import { galleryRouter } from './routers/gallery.router';
 //Admin
 import { adminMenuItemsRouter } from './routers/admin/menu-items.router';
-
+import { contactSectionRouter } from './routers/contact-section.router';
 @Injectable()
 export class TrpcRouter {
   constructor(
@@ -56,6 +56,7 @@ export class TrpcRouter {
       customerLogo: customerLogoRouter,
       contact: contactRouter,
       gallery: galleryRouter,
+      contactSection: contactSectionRouter,
       admin: this.trpc.createRouter({
         menuItems: adminMenuItemsRouter,
       }),

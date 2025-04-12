@@ -40,6 +40,9 @@ import { AuthAdminService } from '../../auth/admin/services/auth-admin.service';
 import { ContactAdminService } from '../../contact/admin/services/contact-admin.service';
 import { ContactFrontendService } from '../../contact/frontend/services/contact-frontend.service';
 import { GalleryFrontendService } from '../../gallery/frontend/services/gallery-frontend.service';
+import { ContactSectionAdminService } from '../../contact/admin/services/contact-section-admin.service';
+import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
+
 export interface ITrpcServices {
   userService: UserService;
   postService: PostFrontendService;
@@ -83,4 +86,6 @@ export interface ITrpcServices {
   contactAdminService: ContactAdminService;
   contactFrontendService: ContactFrontendService;
   galleryFrontendService: GalleryFrontendService;
+  contactSectionAdminService: ContactSectionAdminService;
+  contactSectionFrontendService: ContactSectionFrontendService;
 } 

@@ -7,6 +7,7 @@ import { ServiceSeeder } from '../seeders/service.seeder';
 import { TicketProductSeeder } from '../seeders/ticket-product.seeder';
 import { AboutSectionSeeder } from '../seeders/about-section.seeder';
 import { TourismAboutSectionSeeder } from '../seeders/tourism-about-section.seeder';
+import { ContactSectionSeeder } from '../seeders/contact-section.seeder';
 import { Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from '../../../../apps/backend/src/modules/product/entities/product.entity';
@@ -22,6 +23,8 @@ import { Service } from '../../../../apps/backend/src/modules/service/entities/s
 import { ServiceTranslation } from '../../../../apps/backend/src/modules/service/entities/service-translation.entity';
 import { AboutSection } from '../../../../apps/backend/src/modules/about/entities/about-section.entity';
 import { AboutSectionTranslation } from '../../../../apps/backend/src/modules/about/entities/about-section-translation.entity';
+import { ContactSection } from '../../../../apps/backend/src/modules/contact/entities/contact-section.entity';
+import { ContactSectionTranslation } from '../../../../apps/backend/src/modules/contact/entities/contact-section-translation.entity';
 
 @Module({
   imports: [
@@ -40,6 +43,8 @@ import { AboutSectionTranslation } from '../../../../apps/backend/src/modules/ab
       ServiceTranslation,
       AboutSection,
       AboutSectionTranslation,
+      ContactSection,
+      ContactSectionTranslation,
     ]),
   ],
   providers: [
@@ -48,7 +53,8 @@ import { AboutSectionTranslation } from '../../../../apps/backend/src/modules/ab
     ServiceSeeder, 
     TicketProductSeeder,
     AboutSectionSeeder,
-    TourismAboutSectionSeeder
+    TourismAboutSectionSeeder,
+    ContactSectionSeeder
   ],
 })
 class SeedModule {}
