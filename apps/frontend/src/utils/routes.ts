@@ -112,12 +112,14 @@ export const ROUTE_PATHS = {
   },
   TICKET_PRICING: {
     en: '/ticket-pricing',
-    vi: '/ve-va-gia'
+    vi: '/bang-gia-ve'
   }
 } as const;
 
 export type LocaleType = 'en' | 'vi';
 type RouteType = keyof typeof ROUTE_PATHS;
+
+type RoutePath = typeof ROUTE_PATHS[RouteType][LocaleType];
 
 /**
  * Get localized route path
@@ -126,7 +128,7 @@ type RouteType = keyof typeof ROUTE_PATHS;
  * @param params - Route parameters (e.g., slug)
  */
 export function getLocalizedRoute(routeType: RouteType, locale: LocaleType, params?: Record<string, string>): string {
-  let path = ROUTE_PATHS[routeType][locale];
+  let path = ROUTE_PATHS[routeType][locale] as string;
   
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
