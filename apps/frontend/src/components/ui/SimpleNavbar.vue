@@ -72,7 +72,10 @@ interface NavbarProps {
     bookingButton?: {
       text: string;
       href: string;
-      phoneNumber: string;
+      phoneNumbers: {
+        label: string;
+        number: string;
+      }[];
       backgroundColor?: string;
       textColor?: string;
     };
@@ -80,7 +83,12 @@ interface NavbarProps {
     // Add phone button settings
     phoneButton?: {
       text: string;
-      number: string;
+      numbers: {
+        label: string;
+        number: string;
+        textColor?: string;
+        backgroundColor?: string;
+      }[];
       backgroundColor?: string;
       textColor?: string;
     };
@@ -110,13 +118,25 @@ const props = withDefaults(defineProps<NavbarProps>(), {
     bookingButton: {
       text: "Đặt vé ngay",
       href: "/booking",
-      phoneNumber: "1900 1234",
+      phoneNumbers: [
+        {
+          label: "Hotline",
+          number: "1900 1234"
+        }
+      ],
       backgroundColor: "rgb(var(--color-primary-500))",
       textColor: "#ffffff"
     },
     phoneButton: {
       text: "Hotline",
-      number: "1900 1234",
+      numbers: [
+        {
+          label: "Hotline",
+          number: "1900 1234",
+          textColor: "#ffffff",
+          backgroundColor: "rgb(var(--color-primary-500))"
+        }
+      ],
       backgroundColor: "rgb(var(--color-primary-500))",
       textColor: "#ffffff"
     }
@@ -257,6 +277,11 @@ const moreMenuRef = ref<HTMLElement | null>(null);
 
 const { getIconComponent } = useIcon();
 
+// Hàm để gọi điện thoại
+const callPhone = (phoneNumber: string) => {
+  window.location.href = `tel:${phoneNumber.replace(/\s+/g, '')}`;
+};
+
 onMounted(() => {
   const init = async () => {
     try {
@@ -355,14 +380,27 @@ watch(locale, () => {
             
             <!-- Center Hotline -->
             <div class="w-[25%] flex justify-center">
-              <div class="flex items-center gap-3 whitespace-nowrap">
+              <div class="flex items-center gap-3">
                 <Icon 
                   name="Phone" 
                   class="nav-icon text-white w-7 h-7"
                 />
-                <span class="text-lg font-bold text-white">
-                  Hotline: {{ props.settings?.phoneButton?.number || '1900 1234' }}
-                </span>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg font-bold text-white">
+                    {{ props.settings?.phoneButton?.text || 'Hotline' }}:
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <template v-for="(phone, index) in props.settings?.phoneButton?.numbers" :key="index">
+                      <button 
+                        class="text-lg font-bold text-white hover:underline transition-all duration-300"
+                        @click="callPhone(phone.number)"
+                      >
+                        {{ phone.number }}
+                      </button>
+                      <span v-if="index < (props.settings?.phoneButton?.numbers?.length || 0) - 1" class="text-white">-</span>
+                    </template>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -585,9 +623,16 @@ watch(locale, () => {
                   <span class="text-lg font-bold whitespace-nowrap">
                     {{ props.settings?.bookingButton?.text || 'Đặt vé ngay' }}
                   </span>
-                  <span class="text-sm opacity-90">
-                    {{ props.settings?.bookingButton?.phoneNumber || '1900 1234' }}
-                  </span>
+                  <div class="flex flex-col">
+                    <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
+                      <button 
+                        class="text-sm opacity-90 hover:underline transition-all duration-300"
+                        @click.stop="callPhone(phone.number)"
+                      >
+                        {{ phone.number }}
+                      </button>
+                    </template>
+                  </div>
                 </div>
               </NuxtLink>
 
