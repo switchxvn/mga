@@ -49,6 +49,8 @@ import { TRPCContext, createContext } from './context';
 import { ITrpcServices } from './interfaces/trpc-services.interface';
 import { ContactSectionAdminService } from '../contact/admin/services/contact-section-admin.service';
 import { ContactSectionFrontendService } from '../contact/frontend/services/contact-section-frontend.service';
+import { TicketPricingSectionAdminService } from '../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
+import { TicketPricingSectionFrontendService } from '../ticket-pricing/frontend/services/ticket-pricing-section-frontend.service';
 
 const t = initTRPC.context<TRPCContext>().create();
 
@@ -108,6 +110,8 @@ export class TrpcService {
     private readonly galleryFrontendService: GalleryFrontendService,
     private readonly contactSectionAdminService: ContactSectionAdminService,
     private readonly contactSectionFrontendService: ContactSectionFrontendService,
+    private readonly ticketPricingSectionAdminService: TicketPricingSectionAdminService,
+    private readonly ticketPricingSectionFrontendService: TicketPricingSectionFrontendService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -171,6 +175,8 @@ export class TrpcService {
       galleryFrontendService: this.galleryFrontendService,
       contactSectionAdminService: this.contactSectionAdminService,
       contactSectionFrontendService: this.contactSectionFrontendService,
+      ticketPricingSectionAdminService: this.ticketPricingSectionAdminService,
+      ticketPricingSectionFrontendService: this.ticketPricingSectionFrontendService,
     };
   }
 }   

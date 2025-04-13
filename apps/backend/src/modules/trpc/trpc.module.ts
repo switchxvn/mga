@@ -25,6 +25,7 @@ import { AboutModule } from '../about/about.module';
 import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
 import { ContactModule } from '../contact/contact.module';
 import { GalleryModule } from '../gallery/gallery.module';
+import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
  * 
@@ -64,6 +65,7 @@ import { GalleryModule } from '../gallery/gallery.module';
     CustomerLogoModule,
     ContactModule,
     GalleryModule,
+    TicketPricingModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

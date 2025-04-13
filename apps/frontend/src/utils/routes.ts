@@ -50,6 +50,10 @@ export const ROUTE_NAMES = {
   GALLERY: {
     en: 'gallery',
     vi: 'thu-vien-hinh-anh'
+  },
+  TICKET_PRICING: {
+    en: 'ticket-pricing',
+    vi: 'bang-gia-ve'
   }
 } as const;
 
@@ -105,6 +109,10 @@ export const ROUTE_PATHS = {
   GALLERY: {
     en: '/gallery',
     vi: '/thu-vien-hinh-anh'
+  },
+  TICKET_PRICING: {
+    en: '/ticket-pricing',
+    vi: '/ve-va-gia'
   }
 } as const;
 
