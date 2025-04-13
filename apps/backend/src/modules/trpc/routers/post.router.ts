@@ -389,4 +389,62 @@ export const postRouter = router({
         });
       }
     }),
+
+  byIdsAndCategories: publicProcedure
+    .input(z.object({
+      postIds: z.array(z.number()).optional(),
+      categoryIds: z.array(z.number()).optional(),
+      locale: z.string().optional(),
+      limit: z.number().optional().default(12),
+      page: z.number().optional().default(1),
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        const { postIds, categoryIds, locale, limit, page } = input;
+        
+        // Nếu có postIds, ưu tiên lấy theo postIds
+        if (postIds && postIds.length > 0) {
+          const posts = await ctx.services.postService.findByIds(postIds);
+          return {
+            items: posts,
+            total: posts.length,
+            totalPages: 1,
+            page: 1,
+            limit: posts.length
+          };
+        }
+        
+        // Nếu có categoryIds, lấy theo categoryIds
+        if (categoryIds && categoryIds.length > 0) {
+          // Gọi hàm findByCategories với mảng categoryIds
+          const posts = await ctx.services.postService.findByCategories(categoryIds);
+          
+          // Áp dụng phân trang thủ công
+          const startIndex = (page - 1) * limit;
+          const endIndex = startIndex + limit;
+          const paginatedPosts = posts.slice(startIndex, endIndex);
+          
+          return {
+            items: paginatedPosts,
+            total: posts.length,
+            totalPages: Math.ceil(posts.length / limit),
+            page,
+            limit
+          };
+        }
+        
+        // Nếu không có cả hai, trả về lỗi
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Either postIds or categoryIds must be provided',
+        });
+      } catch (error) {
+        console.error('Failed to fetch posts by IDs and categories:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch posts by IDs and categories',
+          cause: error,
+        });
+      }
+    }),
 }); 

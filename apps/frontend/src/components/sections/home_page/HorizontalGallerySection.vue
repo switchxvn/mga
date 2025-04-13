@@ -334,19 +334,47 @@ const initMasonry = () => {
   }
 };
 
+// Function to preload image dimensions
+const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height });
+    };
+    img.onerror = () => {
+      resolve({ width: 800, height: 600 }); // Default fallback size
+    };
+    img.src = url;
+  });
+};
+
 // Initialize PhotoSwipe
-const initPhotoSwipe = (index: number = 0) => {
-  const items = galleries.value.map(item => ({
-    src: item.image,
-    width: 1200,
-    height: 800,
-    alt: item.translations?.[0]?.title || ''
-  }));
+const initPhotoSwipe = async (index: number = 0) => {
+  // Prepare items with actual dimensions
+  const itemPromises = galleries.value.map(async (item) => {
+    const dimensions = await getImageDimensions(item.image);
+    return {
+      src: item.image,
+      w: dimensions.width,
+      h: dimensions.height,
+      alt: item.translations?.[0]?.title || ''
+    };
+  });
+
+  const items = await Promise.all(itemPromises);
 
   const options = {
     dataSource: items,
     index,
-    pswpModule: PhotoSwipe
+    pswpModule: PhotoSwipe,
+    showHideAnimationType: 'fade' as const,
+    showAnimationDuration: 300,
+    hideAnimationDuration: 300,
+    closeOnVerticalDrag: true,
+    allowPanToNext: true,
+    allowMouseDrag: true,
+    maxZoomLevel: 3,
+    scaleMode: 'fit' as const
   };
 
   const lightbox = new PhotoSwipe(options);

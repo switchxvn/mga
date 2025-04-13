@@ -477,26 +477,16 @@ const getAuthorName = (author: any) => {
   return author?.username || author?.email?.split("@")[0] || "Ẩn danh";
 };
 
-const getSectionConfig = (type: string) => {
-  const currentTheme = theme.value;
-  if (!currentTheme?.sections) return undefined;
-  
-  const section = currentTheme.sections.find((section: ThemeSection) => section.type === type);
+const getSectionConfig = (section: ThemeSection) => {
   if (!section) return undefined;
 
   return {
     ...section.settings,
     title: section.title,
     isActive: section.isActive,
-    themeId: currentTheme.id,
+    themeId: theme.value?.id,
   };
 };
-
-const sliderConfig = computed(() => getSectionConfig("hero") as SliderConfig | undefined);
-const productsConfig = computed(() => getSectionConfig("featured_products") as ProductsConfig | undefined);
-const servicesConfig = computed(() => getSectionConfig("services") as ServicesConfig | undefined);
-const categoriesConfig = computed(() => getSectionConfig("product_categories") as CategoriesConfig | undefined);
-const companyIntroConfig = computed(() => getSectionConfig("company_intro") as CompanyIntroConfig | undefined);
 </script>
 
 <template>
@@ -519,7 +509,7 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
               v-if="section.isActive"
               :is="resolveComponent(section)"
               :section="section"
-              :config="getSectionConfig(section.type)"
+              :config="getSectionConfig(section)"
             />
             <template #fallback>
               <div class="p-4 text-center">

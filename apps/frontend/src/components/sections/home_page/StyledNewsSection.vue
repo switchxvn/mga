@@ -11,6 +11,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import PostCard from '~/components/ui/card/PostCard.vue';
+import type { Post } from '@ew/shared';
 
 interface PostTranslation {
   id: number;
@@ -50,24 +51,6 @@ interface Author {
   };
 }
 
-interface Post {
-  id: number;
-  title?: string;
-  content?: string;
-  thumbnail?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  authorId: number;
-  published: boolean;
-  author?: Author;
-  ogImage?: string;
-  slug?: string;
-  metaDescription?: string;
-  shortDescription?: string;
-  categories?: any[];
-  translations?: PostTranslation[];
-}
-
 interface PaginatedResponse<T> {
   page: number;
   limit: number;
@@ -77,6 +60,16 @@ interface PaginatedResponse<T> {
 }
 
 interface Props {
+  section: {
+    id: number;
+    type: string;
+    title: string;
+    order: number;
+    pageType: string;
+    componentName?: string;
+    settings: Record<string, any>;
+    isActive: boolean;
+  };
   config: {
     title: string;
     layout: 'grid' | 'slider';
@@ -109,10 +102,21 @@ interface Props {
       content: string;
       container: string;
     };
+    postIds?: number[];
+    categoryIds?: number[];
   };
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  section: () => ({
+    id: 0,
+    type: '',
+    title: '',
+    order: 0,
+    pageType: '',
+    settings: {},
+    isActive: true
+  }),
   config: () => ({
     title: 'Tin tức mới nhất',
     layout: 'grid',
@@ -156,16 +160,19 @@ const isLoading = ref(false);
 const error = ref<string | null>(null);
 const latestPosts = ref<Post[]>([]);
 
+// Tạo ID duy nhất cho mỗi section
+const sectionId = computed(() => `news-section-${props.section.id}`);
+
 const swiperOptions = computed(() => ({
   modules: [Navigation, Pagination, Autoplay],
   slidesPerView: 1,
   spaceBetween: 24,
   navigation: {
-    nextEl: '.news-swiper-next',
-    prevEl: '.news-swiper-prev',
+    nextEl: `.${sectionId.value}-next`,
+    prevEl: `.${sectionId.value}-prev`,
   },
   pagination: {
-    el: '.news-swiper-pagination',
+    el: `.${sectionId.value}-pagination`,
     clickable: true,
   },
   breakpoints: {
@@ -186,7 +193,20 @@ async function fetchLatestPosts() {
   isLoading.value = true;
   error.value = null;
   try {
-    const result = await trpc.post.byLocale.query({ locale: locale.value });
+    let result;
+    
+    // Ưu tiên lấy theo postIds hoặc categoryIds nếu có
+    if (props.config.postIds?.length || props.config.categoryIds?.length) {
+      result = await trpc.post.byIdsAndCategories.query({
+        postIds: props.config.postIds,
+        categoryIds: props.config.categoryIds,
+        locale: locale.value,
+        limit: props.config.maxItems
+      });
+    } else {
+      // Nếu không có, lấy bài viết mới nhất
+      result = await trpc.post.byLocale.query({ locale: locale.value });
+    }
     
     // Kiểm tra và xử lý response
     if (!result) {
@@ -196,55 +216,11 @@ async function fetchLatestPosts() {
 
     // Kiểm tra cấu trúc response mới (PaginatedResponse)
     if ('items' in result && Array.isArray(result.items)) {
-      latestPosts.value = result.items.map((post: any) => {
-        const translation = post.translations?.find(
-          (t: { locale: string }) => t.locale === locale.value
-        );
-
-        const mappedTranslations = post.translations?.map((t: any) => ({
-          ...t,
-          slug: t.slug || undefined
-        }));
-
-        return {
-          ...post,
-          id: Number(post.id),
-          title: translation?.title || post.title,
-          content: translation?.content || post.content,
-          author: post.author ? {
-            ...post.author,
-            id: Number(post.author.id),
-            lastLoginAt: post.author.lastLoginAt || null
-          } : undefined,
-          translations: mappedTranslations
-        } as Post;
-      }).slice(0, props.config.maxItems);
+      latestPosts.value = result.items.slice(0, props.config.maxItems) as Post[];
     } 
     // Kiểm tra cấu trúc response cũ (Array)
     else if (Array.isArray(result)) {
-      latestPosts.value = result.map((post: any) => {
-        const translation = post.translations?.find(
-          (t: { locale: string }) => t.locale === locale.value
-        );
-
-        const mappedTranslations = post.translations?.map((t: any) => ({
-          ...t,
-          slug: t.slug || undefined
-        }));
-
-        return {
-          ...post,
-          id: Number(post.id),
-          title: translation?.title || post.title,
-          content: translation?.content || post.content,
-          author: post.author ? {
-            ...post.author,
-            id: Number(post.author.id),
-            lastLoginAt: post.author.lastLoginAt || null
-          } : undefined,
-          translations: mappedTranslations
-        } as Post;
-      }).slice(0, props.config.maxItems);
+      latestPosts.value = result.slice(0, props.config.maxItems) as Post[];
     } else {
       console.error('Unexpected response format:', result);
       latestPosts.value = [];
@@ -341,11 +317,13 @@ watch(locale, () => {
           </div>
 
           <!-- Navigation -->
-          <div class="news-swiper-prev swiper-button-prev !z-10"></div>
-          <div class="news-swiper-next swiper-button-next !z-10"></div>
+          <div :class="[`${sectionId}-prev`, 'swiper-button-prev', '!z-10']"></div>
+          <div :class="[`${sectionId}-next`, 'swiper-button-next', '!z-10']"></div>
           
           <!-- Pagination -->
-          <div class="news-swiper-pagination mt-6"></div>
+          <div class="flex justify-center w-full">
+            <div :class="[`${sectionId}-pagination`, 'mt-6', 'flex justify-center']"></div>
+          </div>
         </div>
       </template>
     </div>
@@ -426,8 +404,8 @@ watch(locale, () => {
       }
     }
 
-    .news-swiper-next,
-    .news-swiper-prev {
+    .swiper-button-next,
+    .swiper-button-prev {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
@@ -470,34 +448,35 @@ watch(locale, () => {
       }
     }
 
-    .news-swiper-prev {
+    .swiper-button-prev {
       left: 0;
     }
 
-    .news-swiper-next {
+    .swiper-button-next {
       right: 0;
     }
 
-    .news-swiper-pagination {
+    .swiper-pagination {
       position: relative;
       bottom: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 12px;
       margin-top: 1rem;
+      width: 100%;
       
       .swiper-pagination-bullet {
         width: 8px;
         height: 8px;
         margin: 0;
-        background-color: var(--primary);
-        opacity: 0.3;
+        background-color: rgb(var(--gray-400));
+        opacity: 1;
         transition: all 0.3s ease;
         
         &-active {
-          opacity: 1;
           transform: scale(1.2);
+          background-color: rgb(var(--primary-500));
         }
       }
     }
