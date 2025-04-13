@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { ChevronUp, ChevronDown } from 'lucide-vue-next';
 
 interface Props {
   settings: Record<string, any>;
@@ -34,6 +35,14 @@ const padding = computed(() => {
 
 const faqLayout = computed(() => {
   return props.settings.faqLayout || 'accordion';
+});
+
+const cardBackgroundColor = computed(() => {
+  return props.settings.cardBackgroundColor || 'bg-white dark:bg-gray-800';
+});
+
+const contentBackgroundColor = computed(() => {
+  return props.settings.contentBackgroundColor || 'bg-white dark:bg-gray-800';
 });
 
 // For accordion layout
@@ -78,25 +87,25 @@ const isItemOpen = (index: number) => {
           <div 
             v-for="(faq, index) in faqs" 
             :key="index"
-            class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+            class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200"
+            :class="cardBackgroundColor"
           >
             <button 
               class="w-full flex justify-between items-center p-4 text-left font-medium"
-              :class="isItemOpen(index) ? 'bg-gray-50 dark:bg-gray-800' : ''"
+              :class="isItemOpen(index) ? contentBackgroundColor : ''"
               @click="toggleItem(index)"
             >
               <span>{{ faq.question }}</span>
               <span class="ml-4">
-                <UIcon 
-                  :name="isItemOpen(index) ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" 
-                  class="w-5 h-5"
-                />
+                <ChevronUp v-if="isItemOpen(index)" class="w-5 h-5" />
+                <ChevronDown v-else class="w-5 h-5" />
               </span>
             </button>
             
             <div 
               v-if="isItemOpen(index)"
               class="p-4 border-t border-gray-200 dark:border-gray-700"
+              :class="contentBackgroundColor"
             >
               <p>{{ faq.answer }}</p>
             </div>
@@ -108,7 +117,8 @@ const isItemOpen = (index: number) => {
           <div 
             v-for="(faq, index) in faqs" 
             :key="index"
-            class="border border-gray-200 dark:border-gray-700 rounded-lg p-6"
+            class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-200"
+            :class="cardBackgroundColor"
           >
             <h3 class="text-lg font-medium mb-2">{{ faq.question }}</h3>
             <p>{{ faq.answer }}</p>

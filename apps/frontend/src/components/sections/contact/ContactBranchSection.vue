@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { Phone, Mail, MapPin, Building } from 'lucide-vue-next';
 
 interface Props {
   settings: Record<string, any>;
@@ -17,7 +18,7 @@ const branches = computed(() => {
 });
 
 const backgroundColor = computed(() => {
-  return props.settings.backgroundColor || 'bg-white dark:bg-gray-800';
+  return props.settings.backgroundColor || 'bg-gray-50 dark:bg-gray-900';
 });
 
 const textColor = computed(() => {
@@ -33,25 +34,38 @@ const branchLayout = computed(() => {
 });
 
 const branchColumns = computed(() => {
-  return props.settings.branchColumns || 3;
+  return props.settings.branchColumns || 2;
 });
 
-const getIconName = (type: string) => {
-  const typeLower = type.toLowerCase();
-  
-  switch (typeLower) {
-    case 'phone':
-      return 'i-heroicons-phone';
-    case 'email':
-      return 'i-heroicons-envelope';
-    case 'address':
-      return 'i-heroicons-map-pin';
-    case 'hours':
-      return 'i-heroicons-clock';
-    default:
-      return 'i-heroicons-information-circle';
-  }
-};
+// Transform branches data to match the new UI structure
+const formattedBranches = computed(() => {
+  return branches.value.map(branch => {
+    const contacts = [];
+    
+    if (branch.phone) {
+      contacts.push({
+        label: 'Phone',
+        value: branch.phone,
+        type: 'phone'
+      });
+    }
+    
+    if (branch.email) {
+      contacts.push({
+        label: 'Email',
+        value: branch.email,
+        type: 'email'
+      });
+    }
+    
+    return {
+      name: branch.name,
+      address: branch.address,
+      mapUrl: branch.mapUrl,
+      contacts
+    };
+  });
+});
 </script>
 
 <template>
@@ -62,7 +76,9 @@ const getIconName = (type: string) => {
   >
     <div class="container mx-auto px-4">
       <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold mb-4">{{ translations.title }}</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4" style="color: rgb(255, 0, 0)">
+          {{ translations.title }}
+        </h2>
         
         <p v-if="translations.subtitle" class="text-xl mb-4">
           {{ translations.subtitle }}
@@ -74,149 +90,168 @@ const getIconName = (type: string) => {
       </div>
       
       <!-- Grid Layout -->
-      <div v-if="branchLayout === 'grid'" class="max-w-6xl mx-auto">
+      <div v-if="branchLayout === 'grid'" class="max-w-5xl mx-auto">
         <div 
           class="grid gap-8"
           :class="{
-            'grid-cols-2': branchColumns === 2,
-            'grid-cols-3': branchColumns === 3,
-            'grid-cols-4': branchColumns === 4,
-            'grid-cols-1': branchColumns === 1
+            'grid-cols-1': branchColumns === 1,
+            'grid-cols-1 md:grid-cols-2': branchColumns === 2,
+            'grid-cols-1 md:grid-cols-3': branchColumns === 3,
+            'grid-cols-1 md:grid-cols-4': branchColumns === 4
           }"
         >
-          <div 
-            v-for="(branch, index) in branches" 
+          <UCard
+            v-for="(branch, index) in formattedBranches" 
             :key="index"
-            class="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6"
+            class="transition-transform duration-300 hover:scale-105"
           >
-            <h3 class="text-xl font-bold mb-4">{{ branch.name }}</h3>
-            
+            <!-- Branch Header -->
+            <div class="flex items-start gap-4 mb-6">
+              <div class="rounded-full bg-primary-50 dark:bg-primary-900/50 p-3">
+                <Building class="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              </div>
+              <div>
+                <h3 class="text-xl font-extrabold mb-1" style="color: rgb(255, 0, 0)">
+                  {{ branch.name }}
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400 flex items-start gap-2 address-container">
+                  <MapPin class="w-5 h-5 text-gray-400 shrink-0 mt-1" />
+                  <span class="address-text">{{ branch.address }}</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Contact Information -->
             <div class="space-y-4">
-              <div v-if="branch.address" class="flex items-start">
-                <UIcon 
-                  name="i-heroicons-map-pin"
-                  class="w-5 h-5 mr-3 mt-1 text-primary-500"
-                />
-                <span>{{ branch.address }}</span>
+              <div 
+                v-for="(contact, contactIndex) in branch.contacts" 
+                :key="contactIndex"
+                class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+              >
+                <div class="rounded-full bg-white dark:bg-gray-700 p-2">
+                  <Phone v-if="contact.type === 'phone'" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  <Mail v-if="contact.type === 'email'" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-extrabold mb-1" style="color: rgb(255, 0, 0)">
+                    {{ contact.label }}
+                  </p>
+                  <a
+                    :href="contact.type === 'phone' ? `tel:${contact.value}` : `mailto:${contact.value}`"
+                    class="text-base font-semibold text-gray-900 dark:text-white hover:underline hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                  >
+                    {{ contact.value }}
+                  </a>
+                </div>
               </div>
               
-              <div v-if="branch.phone" class="flex items-center">
-                <UIcon 
-                  name="i-heroicons-phone"
-                  class="w-5 h-5 mr-3 text-primary-500"
-                />
-                <a 
-                  :href="`tel:${branch.phone}`"
-                  class="hover:text-primary-500 transition-colors"
-                >
-                  {{ branch.phone }}
-                </a>
-              </div>
-              
-              <div v-if="branch.email" class="flex items-center">
-                <UIcon 
-                  name="i-heroicons-envelope"
-                  class="w-5 h-5 mr-3 text-primary-500"
-                />
-                <a 
-                  :href="`mailto:${branch.email}`"
-                  class="hover:text-primary-500 transition-colors"
-                >
-                  {{ branch.email }}
-                </a>
-              </div>
-              
-              <div v-if="branch.hours" class="flex items-start">
-                <UIcon 
-                  name="i-heroicons-clock"
-                  class="w-5 h-5 mr-3 mt-1 text-primary-500"
-                />
-                <div>
-                  <div v-for="(hours, day) in branch.hours" :key="day">
-                    <span class="font-medium">{{ day }}:</span> {{ hours }}
+              <!-- Hours Information -->
+              <div v-if="branches[index].hours" class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <div class="rounded-full bg-white dark:bg-gray-700 p-2">
+                  <UIcon name="i-heroicons-clock" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-extrabold mb-1" style="color: rgb(255, 0, 0)">
+                    Business Hours
+                  </p>
+                  <div>
+                    <div v-for="(hours, day) in branches[index].hours" :key="day" class="text-base font-semibold text-gray-900 dark:text-white">
+                      <span class="font-medium">{{ day }}:</span> {{ hours }}
+                    </div>
                   </div>
                 </div>
               </div>
+              
+              <!-- Map Link -->
+              <div v-if="branch.mapUrl" class="mt-4">
+                <a 
+                  :href="branch.mapUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center text-primary-500 hover:text-primary-600"
+                >
+                  <UIcon 
+                    name="i-heroicons-map"
+                    class="w-5 h-5 mr-2"
+                  />
+                  <span>View on Map</span>
+                </a>
+              </div>
             </div>
-            
-            <div v-if="branch.mapUrl" class="mt-6">
-              <a 
-                :href="branch.mapUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center text-primary-500 hover:text-primary-600"
-              >
-                <UIcon 
-                  name="i-heroicons-map"
-                  class="w-5 h-5 mr-2"
-                />
-                <span>View on Map</span>
-              </a>
-            </div>
-          </div>
+          </UCard>
         </div>
       </div>
       
       <!-- List Layout -->
       <div v-else class="max-w-4xl mx-auto">
         <div class="space-y-8">
-          <div 
-            v-for="(branch, index) in branches" 
+          <UCard
+            v-for="(branch, index) in formattedBranches" 
             :key="index"
-            class="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6"
+            class="transition-transform duration-300 hover:scale-105"
           >
-            <h3 class="text-xl font-bold mb-4">{{ branch.name }}</h3>
+            <!-- Branch Header -->
+            <div class="flex items-start gap-4 mb-6">
+              <div class="rounded-full bg-primary-50 dark:bg-primary-900/50 p-3">
+                <Building class="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              </div>
+              <div>
+                <h3 class="text-xl font-extrabold mb-1" style="color: rgb(255, 0, 0)">
+                  {{ branch.name }}
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400 flex items-start gap-2 address-container">
+                  <MapPin class="w-5 h-5 text-gray-400 shrink-0 mt-1" />
+                  <span class="address-text">{{ branch.address }}</span>
+                </p>
+              </div>
+            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Contact Information -->
               <div class="space-y-4">
-                <div v-if="branch.address" class="flex items-start">
-                  <UIcon 
-                    name="i-heroicons-map-pin"
-                    class="w-5 h-5 mr-3 mt-1 text-primary-500"
-                  />
-                  <span>{{ branch.address }}</span>
-                </div>
-                
-                <div v-if="branch.phone" class="flex items-center">
-                  <UIcon 
-                    name="i-heroicons-phone"
-                    class="w-5 h-5 mr-3 text-primary-500"
-                  />
-                  <a 
-                    :href="`tel:${branch.phone}`"
-                    class="hover:text-primary-500 transition-colors"
-                  >
-                    {{ branch.phone }}
-                  </a>
-                </div>
-                
-                <div v-if="branch.email" class="flex items-center">
-                  <UIcon 
-                    name="i-heroicons-envelope"
-                    class="w-5 h-5 mr-3 text-primary-500"
-                  />
-                  <a 
-                    :href="`mailto:${branch.email}`"
-                    class="hover:text-primary-500 transition-colors"
-                  >
-                    {{ branch.email }}
-                  </a>
+                <div 
+                  v-for="(contact, contactIndex) in branch.contacts" 
+                  :key="contactIndex"
+                  class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                >
+                  <div class="rounded-full bg-white dark:bg-gray-700 p-2">
+                    <Phone v-if="contact.type === 'phone'" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                    <Mail v-if="contact.type === 'email'" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm font-extrabold mb-1" style="color: rgb(255, 0, 0)">
+                      {{ contact.label }}
+                    </p>
+                    <a
+                      :href="contact.type === 'phone' ? `tel:${contact.value}` : `mailto:${contact.value}`"
+                      class="text-base font-semibold text-gray-900 dark:text-white hover:underline hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                    >
+                      {{ contact.value }}
+                    </a>
+                  </div>
                 </div>
               </div>
               
+              <!-- Hours and Map -->
               <div class="space-y-4">
-                <div v-if="branch.hours" class="flex items-start">
-                  <UIcon 
-                    name="i-heroicons-clock"
-                    class="w-5 h-5 mr-3 mt-1 text-primary-500"
-                  />
-                  <div>
-                    <div v-for="(hours, day) in branch.hours" :key="day">
-                      <span class="font-medium">{{ day }}:</span> {{ hours }}
+                <!-- Hours Information -->
+                <div v-if="branches[index].hours" class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                  <div class="rounded-full bg-white dark:bg-gray-700 p-2">
+                    <UIcon name="i-heroicons-clock" class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm font-extrabold mb-1" style="color: rgb(255, 0, 0)">
+                      Business Hours
+                    </p>
+                    <div>
+                      <div v-for="(hours, day) in branches[index].hours" :key="day" class="text-base font-semibold text-gray-900 dark:text-white">
+                        <span class="font-medium">{{ day }}:</span> {{ hours }}
+                      </div>
                     </div>
                   </div>
                 </div>
                 
+                <!-- Map Link -->
                 <div v-if="branch.mapUrl" class="mt-4">
                   <a 
                     :href="branch.mapUrl"
@@ -233,9 +268,31 @@ const getIconName = (type: string) => {
                 </div>
               </div>
             </div>
-          </div>
+          </UCard>
         </div>
       </div>
     </div>
   </section>
-</template> 
+</template>
+
+<style scoped>
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.address-container {
+  min-height: 4.5rem; /* Chiều cao cho 3 dòng text */
+  max-height: 4.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.address-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5rem;
+}
+</style> 

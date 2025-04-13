@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { z } from 'zod';
 import type { Form, FormError, FormSubmitEvent } from '@nuxt/ui/dist/runtime/types';
 import { useToast } from '~/composables/useToast';
@@ -126,6 +126,42 @@ const textColor = computed(() => {
 const padding = computed(() => {
   return props.settings.padding || '4rem 0';
 });
+
+const titleSize = computed(() => {
+  return props.settings.titleSize || 'text-4xl md:text-5xl';
+});
+
+const titleWeight = computed(() => {
+  return props.settings.titleWeight || 'font-extrabold';
+});
+
+const subtitleSize = computed(() => {
+  return props.settings.subtitleSize || 'text-2xl md:text-3xl';
+});
+
+const contentSize = computed(() => {
+  return props.settings.contentSize || 'text-xl';
+});
+
+const formLabelSize = computed(() => {
+  return props.settings.formLabelSize || 'text-base';
+});
+
+const formLabelWeight = computed(() => {
+  return props.settings.formLabelWeight || 'font-semibold';
+});
+
+const titleColor = computed(() => {
+  return props.settings.titleColor || 'text-primary-600 dark:text-primary-400';
+});
+
+const subtitleColor = computed(() => {
+  return props.settings.subtitleColor || 'text-gray-700 dark:text-gray-300';
+});
+
+const contentColor = computed(() => {
+  return props.settings.contentColor || 'text-gray-600 dark:text-gray-400';
+});
 </script>
 
 <template>
@@ -135,14 +171,14 @@ const padding = computed(() => {
     :style="{ padding }"
   >
     <div class="container mx-auto px-4">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold mb-4">{{ translations.title }}</h2>
+      <div class="text-center mb-16">
+        <h2 :class="[titleSize, titleWeight, titleColor, 'mb-6 leading-tight']">{{ translations.title }}</h2>
         
-        <p v-if="translations.subtitle" class="text-xl mb-4">
+        <p v-if="translations.subtitle" :class="[subtitleSize, subtitleColor, 'mb-6 font-medium']">
           {{ translations.subtitle }}
         </p>
         
-        <p v-if="translations.content" class="text-lg max-w-3xl mx-auto">
+        <p v-if="translations.content" :class="[contentSize, contentColor, 'max-w-3xl mx-auto leading-relaxed']">
           {{ translations.content }}
         </p>
       </div>
@@ -160,6 +196,7 @@ const padding = computed(() => {
             :label="t('priceRequest.fullName')"
             name="name"
             required
+            :class="[formLabelSize, formLabelWeight]"
           >
             <UInput
               v-model="state.name"
@@ -169,8 +206,8 @@ const padding = computed(() => {
               variant="outline"
               size="lg"
               :ui="{
-                base: 'h-[42px] text-base',
-                input: 'h-[42px] text-base'
+                base: 'h-[48px] text-base',
+                input: 'h-[48px] text-base'
               }"
             />
           </UFormGroup>
@@ -179,6 +216,7 @@ const padding = computed(() => {
             :label="t('auth.email')"
             name="email"
             required
+            :class="[formLabelSize, formLabelWeight]"
           >
             <UInput
               v-model="state.email"
@@ -188,8 +226,8 @@ const padding = computed(() => {
               variant="outline"
               size="lg"
               :ui="{
-                base: 'h-[42px] text-base',
-                input: 'h-[42px] text-base'
+                base: 'h-[48px] text-base',
+                input: 'h-[48px] text-base'
               }"
             />
           </UFormGroup>
@@ -199,6 +237,7 @@ const padding = computed(() => {
             name="phone"
             required
             :error="!phoneValid ? phoneErrorMessage : undefined"
+            :class="[formLabelSize, formLabelWeight]"
           >
             <div class="phone-input-wrapper">
               <PhoneInput
@@ -216,6 +255,7 @@ const padding = computed(() => {
             :label="t('priceRequest.message')"
             name="message"
             required
+            :class="[formLabelSize, formLabelWeight]"
           >
             <UTextarea
               v-model="state.message"
@@ -236,7 +276,7 @@ const padding = computed(() => {
               type="submit"
               color="primary"
               :loading="isLoading"
-              class="w-full md:w-auto h-[42px] text-base font-medium px-8"
+              class="w-full md:w-auto h-[48px] text-lg font-semibold px-10"
               variant="solid"
             >
               {{ isLoading ? t('common.loading') : t('common.submit') }}
@@ -253,11 +293,11 @@ const padding = computed(() => {
   @apply relative;
 
   .phone-code-selector button {
-    @apply h-[42px] text-base border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 transition-colors duration-200;
+    @apply h-[48px] text-base border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 transition-colors duration-200;
   }
 
   .u-input {
-    @apply h-[42px] text-base;
+    @apply h-[48px] text-base;
   }
 
   &.error {
@@ -288,16 +328,16 @@ const padding = computed(() => {
 }
 
 :deep(.form-group) {
-  @apply mb-6;
+  @apply mb-8;
 }
 
 :deep(.form-label) {
-  @apply mb-2 text-sm font-medium text-gray-700 dark:text-gray-200;
+  @apply mb-3 text-gray-700 dark:text-gray-200;
 }
 
 :deep(.u-input),
 :deep(.u-textarea) {
-  @apply relative block w-full appearance-none rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-500 focus:z-10 focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm;
+  @apply relative block w-full appearance-none rounded-md border border-gray-300 dark:border-gray-600 px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 focus:z-10 focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm shadow-sm;
 }
 
 :deep(.u-input.error),
@@ -311,6 +351,6 @@ const padding = computed(() => {
 }
 
 :deep(.error-message) {
-  @apply mt-1 text-sm text-red-500;
+  @apply mt-2 text-sm text-red-500 font-medium;
 }
 </style> 

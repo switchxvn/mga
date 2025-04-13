@@ -16,25 +16,8 @@ const mapHeight = computed(() => {
   return props.settings.mapHeight || '450px';
 });
 
-const mapLocation = computed(() => {
-  return props.settings.mapLocation || { lat: 10.87717, lng: 106.699738 };
-});
-
-const mapZoom = computed(() => {
-  return props.settings.mapZoom || 15;
-});
-
-const mapMarkerTitle = computed(() => {
-  return props.settings.mapMarkerTitle || 'XE NẴNG MGA';
-});
-
-const mapMarkerContent = computed(() => {
-  return props.settings.mapMarkerContent || 'Our office location';
-});
-
 const mapUrl = computed(() => {
-  const { lat, lng } = mapLocation.value;
-  return `https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d62690.194726882335!2d${lng}!3d${lat}!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752643a6346cdb%3A0xcae53b6254821669!2sXE%20N%C3%82NG%20MGA!5e0!3m2!1sen!2sus!4v1743313705151!5m2!1sen!2sus`;
+  return props.settings.mapUrl || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3920.634577287642!2d105.07654807592712!3d10.685446160863476!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x310a215d98a63f69%3A0xc8274e4e878f281!2zQ8OhcCB0cmVvIE7DumkgU2Ft!5e0!3m2!1svi!2s!4v1744503351826!5m2!1svi!2s';
 });
 
 const backgroundColor = computed(() => {
@@ -46,7 +29,7 @@ const textColor = computed(() => {
 });
 
 const padding = computed(() => {
-  return props.settings.padding || '0';
+  return props.settings.padding || '4rem 0';
 });
 </script>
 
