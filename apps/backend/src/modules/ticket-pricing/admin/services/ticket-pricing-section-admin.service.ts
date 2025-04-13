@@ -31,19 +31,24 @@ export class TicketPricingSectionAdminService {
     const { translations, ...sectionData } = data;
     
     const section = this.sectionRepository.create(sectionData);
-    await this.sectionRepository.save(section);
+    const savedSection = await this.sectionRepository.save(section);
+    
+    // Đảm bảo savedSection là một đối tượng đơn lẻ, không phải mảng
+    const sectionId = Array.isArray(savedSection) 
+      ? (savedSection as TicketPricingSection[])[0].id 
+      : (savedSection as TicketPricingSection).id;
 
     if (translations && translations.length > 0) {
       const translationEntities = translations.map(translation => 
         this.translationRepository.create({
           ...translation,
-          sectionId: section.id,
+          sectionId: sectionId,
         })
       );
       await this.translationRepository.save(translationEntities);
     }
 
-    return this.findSectionById(section.id);
+    return this.findSectionById(sectionId);
   }
 
   async updateSection(id: number, data: any) {
