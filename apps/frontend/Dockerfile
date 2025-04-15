@@ -15,16 +15,18 @@ curl python3 make g++ git \
 COPY package.json yarn.lock ./
 COPY nx.json tsconfig.base.json ./
 
-# Set environment to skip Nx daemon and Cypress binary install
-ENV YARN_CACHE_FOLDER=/app/.yarn-cache
-ENV NX_SKIP_NX_CACHE_CREATION=true
-ENV NX_DAEMON=false
-ENV CYPRESS_INSTALL_BINARY=0
-ENV NODE_OPTIONS="--max_old_space_size=4096 --no-experimental-fetch"
+# Set environment variables with optimized settings
+ENV YARN_CACHE_FOLDER=/app/.yarn-cache \
+    NX_SKIP_NX_CACHE_CREATION=true \
+    NX_DAEMON=false \
+    CYPRESS_INSTALL_BINARY=0 \
+    NODE_OPTIONS="--max_old_space_size=4096 --no-experimental-fetch" \
+    YARN_NETWORK_TIMEOUT=300000
 
-# Install dependencies
-RUN yarn config set ignore-engines true && \
-    NODE_OPTIONS="--openssl-legacy-provider" yarn install --frozen-lockfile --network-timeout 300000
+# Install dependencies with optimized settings
+RUN yarn config set ignore-engines true \
+    && yarn config set network-timeout 300000 \
+    && yarn install --frozen-lockfile --prefer-offline --network-concurrent 1
 
 # Copy application code
 COPY apps/frontend ./apps/frontend
@@ -38,10 +40,10 @@ ENV ENV_FILE=${ENV_FILE}
 COPY apps/frontend/${ENV_FILE} apps/frontend/.env
 
 # Build only frontend app with Nuxt
-RUN mkdir -p apps/frontend/.output && \
-cd apps/frontend && \
-NODE_OPTIONS="--max-old-space-size=6096" npx nuxt build && \
-ls -la .output/server || exit 1
+RUN mkdir -p apps/frontend/.output \
+    && cd apps/frontend \
+    && NODE_OPTIONS="--max-old-space-size=4096" npx nuxt build \
+    && ls -la .output/server || exit 1
 
 # ----------------------------
 # Production stage
@@ -58,19 +60,21 @@ curl \
 # Copy package files
 COPY package.json yarn.lock ./
 
-# Set environment
-ENV YARN_CACHE_FOLDER=/app/.yarn-cache
-ENV NODE_ENV=production
-ENV HOST=0.0.0.0
-ENV PORT=3000
-ENV NX_SKIP_NX_CACHE_CREATION=true
-ENV NX_DAEMON=false
-ENV CYPRESS_INSTALL_BINARY=0
-ENV NODE_OPTIONS="--no-experimental-fetch"
+# Set environment with optimized settings
+ENV YARN_CACHE_FOLDER=/app/.yarn-cache \
+    NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=3000 \
+    NX_SKIP_NX_CACHE_CREATION=true \
+    NX_DAEMON=false \
+    CYPRESS_INSTALL_BINARY=0 \
+    NODE_OPTIONS="--max-old-space-size=4096 --no-experimental-fetch" \
+    YARN_NETWORK_TIMEOUT=300000
 
-# Install production-only deps
-RUN yarn config set ignore-engines true && \
-    NODE_OPTIONS="--openssl-legacy-provider" yarn install --production --frozen-lockfile --network-timeout 300000
+# Install production dependencies with optimized settings
+RUN yarn config set ignore-engines true \
+    && yarn config set network-timeout 300000 \
+    && yarn install --production --frozen-lockfile --prefer-offline --network-concurrent 1
 
 # Copy built output from builder
 COPY --from=builder /app/apps/frontend/.output ./.output
