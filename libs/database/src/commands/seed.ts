@@ -25,6 +25,11 @@ import { AboutSection } from '../../../../apps/backend/src/modules/about/entitie
 import { AboutSectionTranslation } from '../../../../apps/backend/src/modules/about/entities/about-section-translation.entity';
 import { ContactSection } from '../../../../apps/backend/src/modules/contact/entities/contact-section.entity';
 import { ContactSectionTranslation } from '../../../../apps/backend/src/modules/contact/entities/contact-section-translation.entity';
+import { FoodMenuSeeder } from '../seeders/food-menu.seeder';
+import { FoodCategory } from '../../../../apps/backend/src/modules/food-menu/entities/food-category.entity';
+import { FoodCategoryTranslation } from '../../../../apps/backend/src/modules/food-menu/entities/food-category-translation.entity';
+import { FoodItem } from '../../../../apps/backend/src/modules/food-menu/entities/food-item.entity';
+import { FoodItemTranslation } from '../../../../apps/backend/src/modules/food-menu/entities/food-item-translation.entity';
 
 @Module({
   imports: [
@@ -45,6 +50,10 @@ import { ContactSectionTranslation } from '../../../../apps/backend/src/modules/
       AboutSectionTranslation,
       ContactSection,
       ContactSectionTranslation,
+      FoodCategory,
+      FoodCategoryTranslation,
+      FoodItem,
+      FoodItemTranslation,
     ]),
   ],
   providers: [
@@ -54,7 +63,8 @@ import { ContactSectionTranslation } from '../../../../apps/backend/src/modules/
     TicketProductSeeder,
     AboutSectionSeeder,
     TourismAboutSectionSeeder,
-    ContactSectionSeeder
+    ContactSectionSeeder,
+    FoodMenuSeeder,
   ],
 })
 class SeedModule {}

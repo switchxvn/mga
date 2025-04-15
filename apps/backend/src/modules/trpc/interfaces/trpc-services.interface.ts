@@ -44,6 +44,8 @@ import { ContactSectionAdminService } from '../../contact/admin/services/contact
 import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
 import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
 import { TicketPricingSectionFrontendService } from '../../ticket-pricing/frontend/services/ticket-pricing-section-frontend.service';
+import { FoodMenuFrontendService } from '../../food-menu/frontend/services/food-menu-frontend.service';
+import { FoodMenuAdminService } from '../../food-menu/admin/services/food-menu-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -92,4 +94,6 @@ export interface ITrpcServices {
   contactSectionFrontendService: ContactSectionFrontendService;
   ticketPricingSectionAdminService: TicketPricingSectionAdminService;
   ticketPricingSectionFrontendService: TicketPricingSectionFrontendService;
+  foodMenuFrontendService: FoodMenuFrontendService;
+  foodMenuAdminService: FoodMenuAdminService;
 } 

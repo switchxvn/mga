@@ -51,6 +51,8 @@ import { ContactSectionAdminService } from '../contact/admin/services/contact-se
 import { ContactSectionFrontendService } from '../contact/frontend/services/contact-section-frontend.service';
 import { TicketPricingSectionAdminService } from '../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
 import { TicketPricingSectionFrontendService } from '../ticket-pricing/frontend/services/ticket-pricing-section-frontend.service';
+import { FoodMenuFrontendService } from '../food-menu/frontend/services/food-menu-frontend.service';
+import { FoodMenuAdminService } from '../food-menu/admin/services/food-menu-admin.service';
 
 const t = initTRPC.context<TRPCContext>().create();
 
@@ -112,6 +114,8 @@ export class TrpcService {
     private readonly contactSectionFrontendService: ContactSectionFrontendService,
     private readonly ticketPricingSectionAdminService: TicketPricingSectionAdminService,
     private readonly ticketPricingSectionFrontendService: TicketPricingSectionFrontendService,
+    private readonly foodMenuFrontendService: FoodMenuFrontendService,
+    private readonly foodMenuAdminService: FoodMenuAdminService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -177,6 +181,8 @@ export class TrpcService {
       contactSectionFrontendService: this.contactSectionFrontendService,
       ticketPricingSectionAdminService: this.ticketPricingSectionAdminService,
       ticketPricingSectionFrontendService: this.ticketPricingSectionFrontendService,
+      foodMenuFrontendService: this.foodMenuFrontendService,
+      foodMenuAdminService: this.foodMenuAdminService,
     };
   }
 }   

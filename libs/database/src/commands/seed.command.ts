@@ -6,6 +6,7 @@ import { AboutSectionSeeder } from '../seeders/about-section.seeder';
 import { TourismAboutSectionSeeder } from '../seeders/tourism-about-section.seeder';
 import { Logger } from '@nestjs/common';
 import { ContactSectionSeeder } from '../seeders/contact-section.seeder';
+import { FoodMenuSeeder } from '../seeders/food-menu.seeder';
 
 interface SeedCommandOptions {
   seeder?: string;
@@ -27,7 +28,8 @@ export class SeedCommand extends CommandRunner {
     private readonly ticketProductSeeder: TicketProductSeeder,
     private readonly aboutSectionSeeder: AboutSectionSeeder,
     private readonly tourismAboutSectionSeeder: TourismAboutSectionSeeder,
-    private readonly contactSectionSeeder: ContactSectionSeeder
+    private readonly contactSectionSeeder: ContactSectionSeeder,
+    private readonly foodMenuSeeder: FoodMenuSeeder
   ) {
     super();
     this.logger.log('SeedCommand constructor called');
@@ -101,9 +103,14 @@ export class SeedCommand extends CommandRunner {
         await this.contactSectionSeeder.seed();
         this.logger.log('Contact sections seeded successfully');
         break;
+      case 'food-menu':
+        this.logger.log('Seeding food menu...');
+        await this.foodMenuSeeder.seed();
+        this.logger.log('Food menu seeded successfully');
+        break;
       default:
         this.logger.error(`Unknown seeder: ${seederName}`);
-        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about');
+        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, food-menu');
         process.exit(1);
     }
   }
@@ -128,5 +135,9 @@ export class SeedCommand extends CommandRunner {
     this.logger.log('Seeding tourism about sections...');
     await this.tourismAboutSectionSeeder.seed();
     this.logger.log('Tourism about sections seeded successfully');
+
+    this.logger.log('Seeding food menu...');
+    await this.foodMenuSeeder.seed();
+    this.logger.log('Food menu seeded successfully');
   }
 } 
