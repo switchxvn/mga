@@ -337,5 +337,20 @@
     "zoomOut": "Zoom Out",
     "resetZoom": "Reset Zoom",
     "fullscreen": "Toggle Fullscreen"
+  },
+  "menu": {
+    "title": "Our Menu",
+    "description": "Explore our delicious selection of dishes",
+    "all": "All Dishes",
+    "ingredients": "Ingredients",
+    "allergens": "Allergens",
+    "noItems": "No menu items available",
+    "categories": "Categories",
+    "featured": "Featured Dishes",
+    "new": "New Dishes",
+    "price": "Price",
+    "contactForPrice": "Contact for Price",
+    "viewDetails": "View Details",
+    "flipToSeeMore": "Flip to see more details"
   }
 } 

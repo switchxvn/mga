@@ -398,5 +398,20 @@
     "zoomOut": "Thu nhỏ",
     "resetZoom": "Đặt lại kích thước",
     "fullscreen": "Toàn màn hình"
+  },
+  "menu": {
+    "title": "Thực Đơn",
+    "description": "Khám phá các món ăn ngon của chúng tôi",
+    "all": "Tất Cả Món",
+    "ingredients": "Nguyên Liệu",
+    "allergens": "Dị Ứng",
+    "noItems": "Chưa có món ăn nào",
+    "categories": "Danh Mục",
+    "featured": "Món Nổi Bật",
+    "new": "Món Mới",
+    "price": "Giá",
+    "contactForPrice": "Liên Hệ Để Biết Giá",
+    "viewDetails": "Xem Chi Tiết",
+    "flipToSeeMore": "Lật để xem thêm chi tiết"
   }
 } 
