@@ -88,7 +88,7 @@ export default defineNuxtConfig({
       const galleryRoute = routes.find(r => r.path === ROUTE_PATHS.GALLERY.en);
       const aboutRoute = routes.find(r => r.path === ROUTE_PATHS.ABOUT.en);
       const ticketPricingRoute = routes.find(r => r.path === ROUTE_PATHS.TICKET_PRICING.en);
-
+      const menuRoute = routes.find(r => r.path === ROUTE_PATHS.MENU.en);
       if (postsListRoute) {
         routes.push({
           name: ROUTE_NAMES.POSTS_LIST.vi,
@@ -187,6 +187,14 @@ export default defineNuxtConfig({
           name: ROUTE_NAMES.TICKET_PRICING.vi,
           path: ROUTE_PATHS.TICKET_PRICING.vi,
           file: ticketPricingRoute.file
+        });
+      }
+
+      if (menuRoute) {
+        routes.push({
+          name: ROUTE_NAMES.MENU.vi,
+          path: ROUTE_PATHS.MENU.vi,
+          file: menuRoute.file
         });
       }
     }

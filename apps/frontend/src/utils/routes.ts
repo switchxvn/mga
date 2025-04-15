@@ -54,6 +54,10 @@ export const ROUTE_NAMES = {
   TICKET_PRICING: {
     en: 'ticket-pricing',
     vi: 'bang-gia-ve'
+  },
+  MENU: {
+    en: 'menu',
+    vi: 'thuc-don'
   }
 } as const;
 
@@ -113,6 +117,10 @@ export const ROUTE_PATHS = {
   TICKET_PRICING: {
     en: '/ticket-pricing',
     vi: '/bang-gia-ve'
+  },
+  MENU: {
+    en: '/menu',
+    vi: '/thuc-don'
   }
 } as const;
 
