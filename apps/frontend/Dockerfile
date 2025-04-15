@@ -1,7 +1,7 @@
 # ----------------------------
 # Build stage
 # ----------------------------
-FROM node:20-slim AS builder
+FROM node:20 AS builder
 
 # Set working directory
 WORKDIR /app
@@ -46,7 +46,7 @@ ls -la .output/server || exit 1
 # ----------------------------
 # Production stage
 # ----------------------------
-FROM node:20-slim AS runner
+FROM node:20 AS runner
 
 WORKDIR /app
 
