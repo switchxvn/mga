@@ -3,7 +3,7 @@ import { onMounted, watch } from 'vue'
 import { useLocalization } from '../composables/useLocalization'
 import { useFoodMenu } from '../composables/useFoodMenu'
 import { Menu } from 'lucide-vue-next'
-import LazyImage from '../components/LazyImage.vue'
+import FoodMenuItem from '../../components/menu/FoodMenuItem.vue'
 
 const { t, locale } = useLocalization()
 const {
@@ -73,27 +73,14 @@ watch(locale, () => {
         </div>
 
         <!-- Menu Items Grid -->
-        <div v-if="items.length" class="food-menu__grid">
-          <div
+        <div v-if="items.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <FoodMenuItem
             v-for="item in items"
             :key="item.id"
-            class="food-menu__item"
-          >
-            <div class="food-menu__item-image-wrapper">
-              <div class="food-menu__item-image-border">
-                <LazyImage
-                  :src="item.image?.url"
-                  :alt="item.name"
-                  class="food-menu__item-image"
-                  default-src="/images/default-food.jpg"
-                />
-              </div>
-            </div>
-            <h3 class="food-menu__item-title">{{ item.name }}</h3>
-            <p class="food-menu__item-price">
-              {{ item.price ? `${new Intl.NumberFormat(locale, { style: 'currency', currency: 'VND' }).format(item.price)}` : t('menu.contactForPrice') }}
-            </p>
-          </div>
+            :imageUrl="item.image?.url || '/images/default-food.jpg'"
+            :name="item.name"
+            :price="item.price || 0"
+          />
         </div>
 
         <!-- No Items State -->

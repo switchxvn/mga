@@ -81,6 +81,15 @@
   src: url('/fonts/inter/Inter Web/Inter.var.woff2') format('woff2');
 }
 
+
+/* VNI-Thuphap Font Family */
+@font-face {
+  font-family: 'VNI-Thuphap';
+  src: url('/fonts/calligraphy/VNI-Thuphap2.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 /* Define font variable for consistent usage across the application */
 :root {
   --font-primary: 'Inter', 'Inter var', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
