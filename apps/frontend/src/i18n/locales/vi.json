@@ -364,7 +364,9 @@
     "sortPriceAsc": "Giá: Thấp đến cao",
     "sortPriceDesc": "Giá: Cao đến thấp",
     "filters": "Bộ lọc",
-    "searchingFor": "Đang tìm kiếm"
+    "searchingFor": "Đang tìm kiếm",
+    "total": "Tổng tiền",
+    "ticketCount": "vé"
   },
   "gallery": {
     "title": "Thư viện hình ảnh",

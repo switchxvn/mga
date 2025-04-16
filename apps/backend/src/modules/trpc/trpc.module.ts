@@ -27,6 +27,7 @@ import { ContactModule } from '../contact/contact.module';
 import { GalleryModule } from '../gallery/gallery.module';
 import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
 import { FoodMenuModule } from '../food-menu/food-menu.module';
+import { PaymentModule } from '../payment/payment.module';
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
  * 
@@ -86,6 +87,7 @@ import { FoodMenuModule } from '../food-menu/food-menu.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    PaymentModule,
   ],
   providers: [
     TrpcService,

@@ -46,6 +46,8 @@ import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/ser
 import { TicketPricingSectionFrontendService } from '../../ticket-pricing/frontend/services/ticket-pricing-section-frontend.service';
 import { FoodMenuFrontendService } from '../../food-menu/frontend/services/food-menu-frontend.service';
 import { FoodMenuAdminService } from '../../food-menu/admin/services/food-menu-admin.service';
+import { PaymentFrontendService } from '../../payment/frontend/services/payment-frontend.service';
+import { PaymentAdminService } from '../../payment/admin/services/payment-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -96,4 +98,6 @@ export interface ITrpcServices {
   ticketPricingSectionFrontendService: TicketPricingSectionFrontendService;
   foodMenuFrontendService: FoodMenuFrontendService;
   foodMenuAdminService: FoodMenuAdminService;
+  paymentFrontendService: PaymentFrontendService;
+  paymentAdminService: PaymentAdminService;
 } 

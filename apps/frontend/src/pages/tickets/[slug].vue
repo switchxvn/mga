@@ -41,7 +41,9 @@ import {
   Users,
   CreditCard,
   Shield,
-  ArrowRight
+  ArrowRight,
+  Minus,
+  Plus
 } from 'lucide-vue-next';
 import { useProductVariants } from '~/composables/useProduct';
 import { formatPrice } from '@ew/shared';
@@ -119,6 +121,9 @@ const {
 // Add new refs for date selection
 const selectedDate = ref<Date | null>(null);
 const selectedQuantity = ref(1);
+const selectedVariant = ref<any>(null);
+const indexedVariants = ref<any[]>([]);
+const variantCounts = ref<Record<number, number>>({});
 
 const masks = {
   input: 'DD/MM/YYYY',
@@ -142,11 +147,78 @@ const disabledDates = computed(() => {
   return dates;
 });
 
+// Initialize variants when product data changes
+watch(() => productData.value, (newProduct) => {
+  if (newProduct?.variants && newProduct.variants.length > 0) {
+    indexedVariants.value = newProduct.variants.map((variant, index) => ({
+      ...variant,
+      _index: index,
+    }));
+
+    // Initialize count for each variant to 0
+    indexedVariants.value.forEach((variant) => {
+      variantCounts.value[variant.id] = 0;
+    });
+  } else {
+    indexedVariants.value = [];
+  }
+}, { immediate: true });
+
+// Get variant name by locale
+const getVariantName = (variant: any) => {
+  if (variant.translations && variant.translations.length > 0) {
+    return variant.translations.find((t: any) => t.locale === currentLocale.value)?.name || 
+           variant.translations[0]?.name || 
+           "Vé mặc định";
+  }
+  return variant.name || "Vé mặc định";
+};
+
+const getVariantPrice = (variant: any) => {
+  return variant.price || 0;
+};
+
+const getVariantCount = (variant: any): number => {
+  return variantCounts.value[variant.id] || 0;
+};
+
+const decreaseVariantCount = (variant: any) => {
+  if (variantCounts.value[variant.id] > 0) {
+    variantCounts.value[variant.id]--;
+  }
+};
+
+const increaseVariantCount = (variant: any) => {
+  const currentCount = variantCounts.value[variant.id] || 0;
+  if (currentCount < 10) { // Maximum 10 tickets per variant
+    variantCounts.value[variant.id] = currentCount + 1;
+  }
+};
+
+// Calculate total price based on selected variants
+const calculateTotal = computed(() => {
+  if (!productData.value) return formatPrice(0);
+
+  let total = 0;
+  Object.entries(variantCounts.value).forEach(([variantId, count]) => {
+    const variant = indexedVariants.value.find((v) => v.id === Number(variantId));
+    if (variant && count > 0) {
+      total += getVariantPrice(variant) * count;
+    }
+  });
+
+  return formatPrice(total);
+});
+
+const totalTickets = computed(() => {
+  return Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
+});
+
 // Extend base canAddToCart with date validation for tickets
 const canAddToCart = computed(() => {
   const baseCanAdd = baseCanAddToCart.value;
   if (productData.value?.type === 'TICKET') {
-    return baseCanAdd && selectedDate.value !== null;
+    return baseCanAdd && selectedDate.value !== null && totalTickets.value > 0;
   }
   return baseCanAdd;
 });
@@ -561,9 +633,58 @@ const getTabIcon = (tabId: string) => {
                 </div>
               </div>
 
+              <!-- Variants Selection -->
+              <div v-if="indexedVariants.length" class="mb-6">
+                <div class="space-y-2">
+                  <label class="block font-medium text-gray-700 dark:text-gray-300">
+                    {{ t("tickets.ticketType") || "Loại vé" }}
+                  </label>
+                  <div class="space-y-3">
+                    <div
+                      v-for="(variant, index) in indexedVariants"
+                      :key="index"
+                      class="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-lg p-3"
+                    >
+                      <div class="flex flex-col">
+                        <span class="font-medium text-gray-900 dark:text-gray-100">{{
+                          getVariantName(variant)
+                        }}</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">{{
+                          formatPrice(getVariantPrice(variant))
+                        }}</span>
+                      </div>
+                      <div class="flex items-center">
+                        <button
+                          type="button"
+                          class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          :disabled="getVariantCount(variant) <= 0"
+                          @click="decreaseVariantCount(variant)"
+                        >
+                          <Minus class="w-5 h-5" />
+                        </button>
+                        <span
+                          class="w-12 text-center text-lg font-medium text-gray-900 dark:text-gray-100"
+                        >
+                          {{ getVariantCount(variant) }}
+                        </span>
+                        <button
+                          type="button"
+                          class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          :disabled="getVariantCount(variant) >= 10"
+                          @click="increaseVariantCount(variant)"
+                        >
+                          <Plus class="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Date Selection -->
               <div class="mb-6">
-                <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Calendar class="w-5 h-5" />
                   {{ t("tickets.departureDate") || "Ngày sử dụng" }}
                   <span class="text-red-500">*</span>
                 </div>
@@ -591,160 +712,41 @@ const getTabIcon = (tabId: string) => {
                 </div>
               </div>
 
-              <!-- Quantity Selection -->
-              <div class="mb-6">
-                <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {{ t("tickets.quantity") || "Số lượng vé" }}
-                  <span class="text-red-500">*</span>
+              <!-- Total and Add to Cart -->
+              <div class="flex items-center justify-between pt-4 border-t dark:border-gray-700">
+                <div class="text-gray-700 dark:text-gray-300">
+                  <div class="text-sm">{{ t("tickets.total") || "Tổng tiền" }}</div>
+                  <div class="text-2xl font-semibold text-primary-600 dark:text-primary-400">
+                    {{ calculateTotal }}
+                  </div>
+                  <div class="text-xs mt-1 text-gray-600 dark:text-gray-400">
+                    {{ totalTickets }} {{ t("tickets.ticketCount") || "vé" }}
+                  </div>
                 </div>
-                <div class="flex items-center">
+
+                <!-- Buttons -->
+                <div class="space-y-4">
+                  <AddToCartButton
+                    v-if="canAddToCart && getProductForCart"
+                    :product="getProductForCart"
+                    :buttonText="t('tickets.addToCart') || 'Thêm vào giỏ hàng'"
+                    :showQuantity="false"
+                    :quantity="totalTickets"
+                    buttonClass="flex-1"
+                  />
+
                   <UButton
-                    color="gray"
-                    variant="soft"
-                    icon="i-heroicons-minus"
-                    @click="selectedQuantity = Math.max(1, selectedQuantity - 1)"
-                    :disabled="selectedQuantity <= 1"
-                  />
-                  <UInput
-                    v-model="selectedQuantity"
-                    type="number"
-                    min="1"
-                    class="mx-2 w-20 text-center"
-                  />
-                  <UButton
-                    color="gray"
-                    variant="soft"
-                    icon="i-heroicons-plus"
-                    @click="selectedQuantity++"
-                  />
+                    v-if="shouldShowPriceRequest"
+                    color="primary"
+                    size="lg"
+                    block
+                    icon="i-heroicons-currency-dollar"
+                    class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
+                    @click="openPriceRequestModal"
+                  >
+                    {{ t("tickets.requestPrice") || "Yêu cầu báo giá" }}
+                  </UButton>
                 </div>
-              </div>
-
-              <!-- Hiển thị giá -->
-              <div class="mb-6 flex items-center gap-3">
-                <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                  {{ displayPrice }}
-                </span>
-                <span
-                  v-if="displayComparePrice && matchingVariant"
-                  class="text-lg text-gray-500 line-through dark:text-gray-400"
-                >
-                  {{ displayComparePrice }}
-                </span>
-              </div>
-
-              <div
-                v-if="productShortDescription"
-                class="mb-6 text-gray-700 dark:text-gray-300"
-              >
-                {{ productShortDescription }}
-              </div>
-
-              <!-- Nút chia sẻ mạng xã hội -->
-              <div class="mb-6">
-                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {{ t("tickets.shareTicket") || "Chia sẻ vé:" }}
-                </div>
-                <div class="share-buttons flex flex-wrap gap-2">
-                  <div class="tooltip">
-                    <UButton
-                      color="blue"
-                      variant="soft"
-                      size="sm"
-                      @click="shareToFacebook"
-                      class="share-button"
-                    >
-                      <Facebook class="h-5 w-5" />
-                    </UButton>
-                    <span class="tooltip-text">{{
-                      t("tickets.shareOnFacebook") || "Chia sẻ lên Facebook"
-                    }}</span>
-                  </div>
-
-                  <div class="tooltip">
-                    <UButton
-                      color="sky"
-                      variant="soft"
-                      size="sm"
-                      @click="shareToTwitter"
-                      class="share-button"
-                    >
-                      <Twitter class="h-5 w-5" />
-                    </UButton>
-                    <span class="tooltip-text">{{
-                      t("tickets.shareOnTwitter") || "Chia sẻ lên Twitter"
-                    }}</span>
-                  </div>
-
-                  <div class="tooltip">
-                    <UButton
-                      color="blue"
-                      variant="soft"
-                      size="sm"
-                      @click="shareToLinkedIn"
-                      class="share-button"
-                    >
-                      <Linkedin class="h-5 w-5" />
-                    </UButton>
-                    <span class="tooltip-text">{{
-                      t("tickets.shareOnLinkedIn") || "Chia sẻ lên LinkedIn"
-                    }}</span>
-                  </div>
-
-                  <div class="tooltip">
-                    <UButton
-                      color="emerald"
-                      variant="soft"
-                      size="sm"
-                      @click="shareViaEmail"
-                      class="share-button"
-                    >
-                      <Mail class="h-5 w-5" />
-                    </UButton>
-                    <span class="tooltip-text">{{
-                      t("tickets.shareViaEmail") || "Chia sẻ qua Email"
-                    }}</span>
-                  </div>
-
-                  <div class="tooltip">
-                    <UButton
-                      color="gray"
-                      variant="soft"
-                      size="sm"
-                      @click="copyProductLink"
-                      class="share-button"
-                    >
-                      <Link class="h-5 w-5" />
-                    </UButton>
-                    <span class="tooltip-text">{{
-                      t("tickets.copyLink") || "Sao chép liên kết"
-                    }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Buttons -->
-              <div class="space-y-4">
-                <AddToCartButton
-                  v-if="canAddToCart && getProductForCart"
-                  :product="getProductForCart"
-                  :buttonText="t('tickets.addToCart') || 'Thêm vào giỏ hàng'"
-                  :showQuantity="false"
-                  :quantity="selectedQuantity"
-                  buttonClass="flex-1"
-                />
-
-                <UButton
-                  v-if="shouldShowPriceRequest"
-                  color="primary"
-                  size="lg"
-                  block
-                  icon="i-heroicons-currency-dollar"
-                  class="mb-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium py-3 text-base"
-                  @click="openPriceRequestModal"
-                >
-                  {{ t("tickets.requestPrice") || "Yêu cầu báo giá" }}
-                </UButton>
               </div>
             </div>
           </div>
