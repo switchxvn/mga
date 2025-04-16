@@ -472,7 +472,7 @@ watch(locale, () => {
                       >
                         <NuxtLink
                           :to="item.href"
-                          class="main-menu-item flex items-center space-x-2 whitespace-nowrap h-full px-4 font-bold"
+                          class="main-menu-item flex items-center space-x-2 whitespace-nowrap h-full px-4"
                           :class="{ 
                             'menu-active': isMenuActive(item.href),
                             [props.settings?.navigation?.fontWeight || '']: true
