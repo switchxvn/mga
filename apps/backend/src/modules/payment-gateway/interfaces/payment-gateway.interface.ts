@@ -20,9 +20,9 @@ export interface CreatePaymentRequest {
 }
 
 export interface PaymentResponse {
-  payment_url?: string;
-  qr_code?: string;
-  metadata?: Record<string, any>;
+  payment_url: string;
+  qr_code: string;
+  metadata: Record<string, string>;
 }
 
 export interface PayOSWebhookData {
@@ -38,16 +38,18 @@ export interface PayOSWebhookData {
 }
 
 export interface PayOSPaymentLinkResponse {
-  code: number;
-  desc: string;
-  data: {
-    checkoutUrl: string;
-    qrCode: string;
-    orderCode: string;
-    status: string;
-    amount: string;
-    description: string;
-  };
+  bin: string;
+  accountNumber: string;
+  accountName: string;
+  amount: number;
+  description: string;
+  orderCode: number;
+  currency: string;
+  paymentLinkId: string;
+  status: string;
+  expiredAt: number;
+  checkoutUrl: string;
+  qrCode: string;
 }
 
 export interface PaymentGatewayInterface {

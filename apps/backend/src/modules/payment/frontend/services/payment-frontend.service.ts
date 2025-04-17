@@ -55,7 +55,7 @@ export class PaymentFrontendService {
     await this.paymentTransactionRepository.update(transaction.id, {
       payment_url: paymentInfo.payment_url,
       qr_code: paymentInfo.qr_code,
-      metadata: paymentInfo.metadata
+      metadata: paymentInfo.metadata as any
     });
 
     return {

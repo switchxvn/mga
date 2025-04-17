@@ -19,6 +19,8 @@ export class PayOSService implements PaymentGatewayInterface {
   private payos: any;
   private readonly logger = new Logger(PayOSService.name);
   private checksumKey: string;
+  private clientId: string;
+  private apiKey: string;
 
   constructor(
     @InjectRepository(PaymentMethod)
@@ -42,7 +44,15 @@ export class PayOSService implements PaymentGatewayInterface {
       }
 
       this.checksumKey = checksumKey;
+      this.clientId = clientId;
+      this.apiKey = apiKey;
       this.payos = new PayOS(clientId, apiKey, checksumKey);
+
+      this.logger.debug('PayOS initialized with config:', {
+        clientId,
+        apiKey: '***' + apiKey.slice(-4),
+        checksumKey: '***' + checksumKey.slice(-4)
+      });
     } catch (error) {
       this.logger.error(`Failed to initialize PayOS: ${error.message}`, error.stack);
       throw new PaymentException('Failed to initialize payment gateway');
@@ -61,16 +71,23 @@ export class PayOSService implements PaymentGatewayInterface {
 
       const paymentLink = await this.createPaymentLink(request);
       
-      if (!paymentLink?.data?.checkoutUrl) {
-        this.logger.error('Invalid PayOS response:', paymentLink);
-        throw new PaymentException('Invalid response from PayOS');
+      this.logger.debug('PayOS createPayment response:', paymentLink);
+
+      if (!paymentLink?.checkoutUrl) {
+        this.logger.error('Invalid PayOS Response Format:', paymentLink);
+        throw new PaymentException('Invalid response format from PayOS');
       }
 
       return {
-        payment_url: paymentLink.data.checkoutUrl,
-        qr_code: paymentLink.data.qrCode,
+        payment_url: paymentLink.checkoutUrl,
+        qr_code: paymentLink.qrCode,
         metadata: {
-          orderCode: paymentLink.data.orderCode,
+          orderCode: String(paymentLink.orderCode),
+          paymentLinkId: paymentLink.paymentLinkId,
+          status: paymentLink.status,
+          accountNumber: paymentLink.accountNumber,
+          accountName: paymentLink.accountName,
+          bin: paymentLink.bin
         },
       };
     } catch (error) {
@@ -79,40 +96,30 @@ export class PayOSService implements PaymentGatewayInterface {
     }
   }
 
-  async verifyPayment(webhookData: any, signature: string): Promise<boolean> {
-    try {
-      if (!this.payos) {
-        await this.initializePayOS();
-      }
-
-      const isValidSignature = this.payos.validateWebhookSignature(webhookData, signature);
-      if (!isValidSignature) {
-        throw new PaymentException('Invalid webhook signature');
-      }
-
-      const paymentStatus = webhookData.data.payment.status;
-      return paymentStatus === 'PAID';
-    } catch (error) {
-      this.logger.error(`Failed to verify payment: ${error.message}`, error.stack);
-      throw new PaymentException(error.message);
-    }
-  }
-
   private generateSignature(data: Record<string, any>): string {
-    // Sort keys alphabetically
-    const sortedKeys = Object.keys(data).sort();
-    
-    // Create signature string
-    const signatureString = sortedKeys
-      .filter(key => data[key] !== undefined && data[key] !== null && key !== 'signature')
-      .map(key => `${key}=${data[key]}`)
-      .join('&');
+    try {
+      // According to PayOS docs, signature must be generated from these fields in alphabetical order
+      const signatureString = [
+        `amount=${data.amount}`,
+        `cancelUrl=${data.cancelUrl}`,
+        `description=${data.description}`,
+        `orderCode=${data.orderCode}`,
+        `returnUrl=${data.returnUrl}`
+      ].join('&');
 
-    // Generate HMAC SHA256
-    return crypto
-      .createHmac('sha256', this.checksumKey)
-      .update(signatureString)
-      .digest('hex');
+      this.logger.debug('Generating signature for string:', signatureString);
+
+      const signature = crypto
+        .createHmac('sha256', this.checksumKey)
+        .update(signatureString)
+        .digest('hex');
+
+      this.logger.debug('Generated signature:', signature);
+      return signature;
+    } catch (error) {
+      this.logger.error('Failed to generate signature:', error);
+      throw new PaymentException('Failed to generate signature');
+    }
   }
 
   private async createPaymentLink(request: CreatePaymentRequest): Promise<PayOSPaymentLinkResponse> {
@@ -134,31 +141,80 @@ export class PayOSService implements PaymentGatewayInterface {
         description: request.description || `Payment for order ${orderCode}`,
         cancelUrl: request.cancel_url,
         returnUrl: request.return_url,
+        // Optional buyer information
+        ...(request.buyer_name && { buyerName: request.buyer_name }),
+        ...(request.buyer_email && { buyerEmail: request.buyer_email }),
+        ...(request.buyer_phone && { buyerPhone: request.buyer_phone }),
+        ...(request.buyer_address && { buyerAddress: request.buyer_address }),
+        // Optional items
+        ...(request.items && { items: request.items }),
+        // Optional expiry (24 hours from now)
+        expiredAt: Math.floor(Date.now() / 1000) + 24 * 60 * 60
       };
+
+      this.logger.debug('PayOS payment request data:', {
+        ...paymentData,
+        clientId: this.clientId,
+        apiKey: '***' + this.apiKey.slice(-4)
+      });
 
       // Generate signature
       const signature = this.generateSignature(paymentData);
 
       // Create payment link with PayOS
       try {
+        const headers = {
+          'x-client-id': this.clientId,
+          'x-api-key': this.apiKey,
+          'Content-Type': 'application/json'
+        };
+
+        this.logger.debug('PayOS API request:', {
+          data: { ...paymentData, signature },
+          headers: { ...headers, 'x-api-key': '***' + this.apiKey.slice(-4) }
+        });
+
         const response = await this.payos.createPaymentLink({
           ...paymentData,
           signature,
         });
 
-        this.logger.debug('PayOS Response:', response);
+        this.logger.debug('PayOS API response:', response);
 
-        if (!response?.data) {
-          throw new PaymentException('Invalid response format from PayOS');
+        if (!response || typeof response !== 'object') {
+          throw new PaymentException('Invalid response from PayOS');
         }
 
         return response;
       } catch (error) {
-        this.logger.error('PayOS API Error:', error);
+        this.logger.error('PayOS API Error:', {
+          error: error.message,
+          stack: error.stack,
+          response: error.response?.data
+        });
         throw new PaymentException(error.message || 'Failed to create payment link');
       }
     } catch (error) {
       this.logger.error(`Failed to create payment link: ${error.message}`, error.stack);
+      throw new PaymentException(error.message);
+    }
+  }
+
+  async verifyPayment(webhookData: any, signature: string): Promise<boolean> {
+    try {
+      if (!this.payos) {
+        await this.initializePayOS();
+      }
+
+      const isValidSignature = this.payos.validateWebhookSignature(webhookData, signature);
+      if (!isValidSignature) {
+        throw new PaymentException('Invalid webhook signature');
+      }
+
+      const paymentStatus = webhookData.data.payment.status;
+      return paymentStatus === 'PAID';
+    } catch (error) {
+      this.logger.error(`Failed to verify payment: ${error.message}`, error.stack);
       throw new PaymentException(error.message);
     }
   }
