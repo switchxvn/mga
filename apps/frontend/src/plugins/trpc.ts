@@ -14,10 +14,7 @@ export default defineNuxtPlugin(() => {
         url: '/api/trpc',
         headers() {
           const token = localStorage.getItem('accessToken');
-          return {
-            Authorization: token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json',
-          };
+          return token ? { Authorization: `Bearer ${token}` } : {};
         },
       }),
     ],

@@ -51,6 +51,7 @@ import type { Product } from '@ew/shared';
 import { useProductDetail } from '~/composables/useProductDetail';
 import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
+import { useTicketBooking } from '~/composables/useTicketBooking';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -348,6 +349,45 @@ const getTabIcon = (tabId: string) => {
     default:
       return null;
   }
+};
+
+// Add to script setup
+const { saveBookingData } = useTicketBooking();
+
+// Update handleSubmit method
+const handleSubmit = async () => {
+  if (!productData.value || !selectedDate.value) return;
+
+  // Get active variants (quantity > 0)
+  const activeVariants = Object.entries(variantCounts.value)
+    .filter(([_, count]) => count > 0)
+    .map(([variantId, count]) => {
+      const variant = indexedVariants.value.find(v => v.id === Number(variantId));
+      return {
+        id: Number(variantId),
+        name: getVariantName(variant),
+        quantity: count,
+        unitPrice: getVariantPrice(variant),
+        totalPrice: getVariantPrice(variant) * count
+      };
+    });
+
+  if (activeVariants.length === 0) return;
+
+  // Calculate total amount
+  const totalAmount = activeVariants.reduce((sum, variant) => sum + variant.totalPrice, 0);
+
+  // Save booking data
+  saveBookingData({
+    productId: productData.value.id,
+    productName: productTitle.value,
+    date: selectedDate.value,
+    variants: activeVariants,
+    totalAmount
+  });
+
+  // Navigate to checkout
+  router.push('/checkout/ticket');
 };
 </script>
 

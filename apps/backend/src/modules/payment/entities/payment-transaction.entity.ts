@@ -20,7 +20,7 @@ export class PaymentTransaction {
 
   @ManyToOne(() => PaymentMethod, method => method.transactions)
   @JoinColumn({ name: 'payment_method_id' })
-  payment_method: PaymentMethod;
+  paymentMethod: PaymentMethod;
 
   @Column({ unique: true })
   order_id: string;

@@ -275,6 +275,8 @@ import { DatePicker } from "v-calendar";
 import "v-calendar/style.css";
 import { computed, onMounted, ref } from "vue";
 import { useLocalization } from "../../../composables/useLocalization";
+import { useTicketBooking } from '~/composables/useTicketBooking';
+import { useRouter } from 'vue-router';
 
 const props = withDefaults(
   defineProps<{
@@ -289,6 +291,8 @@ const props = withDefaults(
 
 const { locale } = useLocalization();
 const { products, isLoadingProducts, filters, fetchProducts } = useProduct();
+const router = useRouter();
+const { saveBookingData } = useTicketBooking();
 
 const selectedProduct = ref<Product | null>(null);
 const selectedDate = ref<Date | null>(null);
@@ -361,31 +365,38 @@ const selectVariant = (variant: any) => {
 };
 
 const handleSubmit = async () => {
-  if (!selectedProduct.value) return;
+  if (!selectedProduct.value || !selectedDate.value) return;
 
-  // Tạo danh sách các variant với số lượng tương ứng
-  const ticketItems = Object.entries(variantCounts.value)
+  // Get active variants (quantity > 0)
+  const activeVariants = Object.entries(variantCounts.value)
     .filter(([_, count]) => count > 0)
     .map(([variantId, count]) => {
-      const variant = indexedVariants.value.find((v) => v.id === Number(variantId));
+      const variant = indexedVariants.value.find(v => v.id === Number(variantId));
       return {
-        variantId: Number(variantId),
-        count,
-        price: getVariantPrice(variant),
+        id: Number(variantId),
         name: getVariantName(variant),
+        quantity: count,
+        unitPrice: getVariantPrice(variant),
+        totalPrice: getVariantPrice(variant) * count
       };
     });
 
-  // Tạo booking data
-  const bookingData = {
-    productId: selectedProduct.value.id,
-    date: selectedDate.value,
-    items: ticketItems,
-    total: ticketItems.reduce((sum, item) => sum + item.price * item.count, 0),
-  };
+  if (activeVariants.length === 0) return;
 
-  // TODO: Xử lý logic đặt vé
-  console.log("Booking data:", bookingData);
+  // Calculate total amount
+  const totalAmount = activeVariants.reduce((sum, variant) => sum + variant.totalPrice, 0);
+
+  // Save booking data
+  saveBookingData({
+    productId: selectedProduct.value.id,
+    productName: getTranslationByLocale(selectedProduct.value.translations, "title"),
+    date: selectedDate.value,
+    variants: activeVariants,
+    totalAmount
+  });
+
+  // Navigate to checkout
+  router.push('/checkout/ticket');
 };
 
 const transformToProduct = (item: any): Product => {

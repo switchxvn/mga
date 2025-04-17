@@ -23,6 +23,8 @@ import { HeroService } from '../hero/admin/services/hero.service';
 import { HeroVideoService } from '../hero/services/hero-video.service';
 import { LanguageAdminService } from '../language/admin/services/language-admin.service';
 import { LanguageFrontendService } from '../language/frontend/services/language-frontend.service';
+import { OrderAdminService } from '../order/admin/services/order-admin.service';
+import { OrderFrontendService } from '../order/frontend/services/order-frontend.service';
 import { PostAdminService } from '../post/admin/services/post-admin.service';
 import { PostFrontendService } from '../post/frontend/services/post-frontend.service';
 import { PriceRequestService } from '../price-request/services/price-request.service';
@@ -120,6 +122,8 @@ export class TrpcService {
     private readonly foodMenuAdminService: FoodMenuAdminService,
     private readonly paymentFrontendService: PaymentFrontendService,
     private readonly paymentAdminService: PaymentAdminService,
+    private readonly orderFrontendService: OrderFrontendService,
+    private readonly orderAdminService: OrderAdminService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -189,6 +193,8 @@ export class TrpcService {
       foodMenuAdminService: this.foodMenuAdminService,
       paymentFrontendService: this.paymentFrontendService,
       paymentAdminService: this.paymentAdminService,
+      orderFrontendService: this.orderFrontendService,
+      orderAdminService: this.orderAdminService,
     };
   }
 }   

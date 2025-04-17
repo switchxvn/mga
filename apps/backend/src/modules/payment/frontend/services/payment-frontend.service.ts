@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaymentMethod } from '../../entities/payment-method.entity';
@@ -6,6 +6,7 @@ import { PaymentTransaction } from '../../entities/payment-transaction.entity';
 import { PaymentGatewayService } from '../../../payment-gateway/payment-gateway.service';
 import { CreatePaymentDto } from '../../dto/create-payment.dto';
 import { PaymentStatus } from '../../entities/payment-transaction.entity';
+import { PAYMENT_GATEWAY_TOKEN } from '../../../payment-gateway/payment-gateway.module';
 
 @Injectable()
 export class PaymentFrontendService {
@@ -14,6 +15,7 @@ export class PaymentFrontendService {
     private readonly paymentMethodRepository: Repository<PaymentMethod>,
     @InjectRepository(PaymentTransaction)
     private readonly paymentTransactionRepository: Repository<PaymentTransaction>,
+    @Inject(PAYMENT_GATEWAY_TOKEN)
     private readonly paymentGatewayService: PaymentGatewayService
   ) {}
 

@@ -415,5 +415,25 @@
     "contactForPrice": "Liên Hệ Để Biết Giá",
     "viewDetails": "Xem Chi Tiết",
     "flipToSeeMore": "Lật để xem thêm chi tiết"
+  },
+  "checkout": {
+    "title": "Thanh toán",
+    "subtitle": "Hoàn tất đặt vé",
+    "bookingSummary": "Thông tin đặt vé",
+    "product": "Sản phẩm",
+    "date": "Ngày",
+    "total": "Tổng tiền",
+    "contactInformation": "Thông tin liên hệ",
+    "fullName": "Họ và tên",
+    "fullNamePlaceholder": "Nhập họ và tên của bạn",
+    "phoneNumber": "Số điện thoại",
+    "phonePlaceholder": "Nhập số điện thoại của bạn",
+    "email": "Email",
+    "emailPlaceholder": "Nhập email của bạn (không bắt buộc)",
+    "paymentMethod": "Phương thức thanh toán",
+    "proceedToPayment": "Tiến hành thanh toán",
+    "noBookingData": "Không tìm thấy thông tin đặt vé",
+    "errorFetchingPaymentMethods": "Lỗi khi tải phương thức thanh toán",
+    "errorProcessing": "Lỗi khi xử lý thanh toán"
   }
 } 

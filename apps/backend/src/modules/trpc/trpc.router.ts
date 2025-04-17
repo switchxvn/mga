@@ -28,6 +28,8 @@ import { adminFoodMenuRouter } from './routers/admin/food-menu.router';
 import { adminMenuItemsRouter } from './routers/admin/menu-items.router';
 import { contactSectionRouter } from './routers/contact-section.router';
 import { ticketPricingSectionRouter } from './routers/ticket-pricing-section.router';
+import { paymentRouter } from './routers/payment.router';
+import { orderRouter } from './routers/order.router';
 
 @Injectable()
 export class TrpcRouter {
@@ -63,6 +65,8 @@ export class TrpcRouter {
       contactSection: contactSectionRouter,
       ticketPricingSection: ticketPricingSectionRouter,
       foodMenu: foodMenuRouter,
+      payment: paymentRouter,
+      order: orderRouter,
       admin: this.trpc.createRouter({
         menuItems: adminMenuItemsRouter,
         foodMenu: adminFoodMenuRouter,

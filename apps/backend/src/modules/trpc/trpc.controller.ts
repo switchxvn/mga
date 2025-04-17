@@ -16,6 +16,15 @@ export class TrpcController {
   @All('*')
   async handleRequest(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     try {
+      // Handle CORS preflight
+      if (req.method === 'OPTIONS') {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.header('Access-Control-Max-Age', '86400'); // 24 hours
+        return res.status(204).send();
+      }
+
       // Log request details
       this.logger.debug(`Processing tRPC request: ${req.url}`);
       this.logger.debug(`Request path: ${req.url}`);
@@ -35,7 +44,10 @@ export class TrpcController {
       // Create Request object for fetchRequestHandler
       const request = new Request(url, {
         method: req.method,
-        headers: new Headers(req.headers as Record<string, string>),
+        headers: new Headers({
+          ...req.headers as Record<string, string>,
+          'Content-Type': 'application/json',
+        }),
         body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
       });
 
@@ -82,10 +94,10 @@ export class TrpcController {
       try {
         // Parse and re-stringify to ensure valid JSON
         const parsedBody = JSON.parse(responseBody);
-        res.send(JSON.stringify(parsedBody));
+        return res.send(parsedBody);
       } catch {
         // If parsing fails, send raw response
-        res.send(responseBody);
+        return res.send(responseBody);
       }
     } catch (error) {
       this.logger.error(`Error handling tRPC request: ${error instanceof Error ? error.message : String(error)}`);
@@ -93,7 +105,7 @@ export class TrpcController {
         this.logger.error(error.stack);
       }
       
-      res.status(500).send({
+      return res.status(500).send({
         message: 'Internal Server Error in tRPC handler',
         error: error instanceof Error ? error.message : String(error),
       });

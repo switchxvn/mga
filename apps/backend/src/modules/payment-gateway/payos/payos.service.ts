@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import PayOS = require('@payos/node');
 import {
   CreatePaymentRequest,
@@ -9,22 +11,47 @@ import {
   PayOSPaymentLinkResponse,
 } from '../interfaces/payment-gateway.interface';
 import { PaymentException } from '../exceptions/payment.exception';
+import { PaymentMethod } from '../../payment/entities/payment-method.entity';
 
 @Injectable()
 export class PayOSService implements PaymentGatewayInterface {
-  private readonly payos: any;
+  private payos: any;
   private readonly logger = new Logger(PayOSService.name);
 
-  constructor(private readonly configService: ConfigService) {
-    this.payos = new PayOS(
-      this.configService.get('PAYOS_CLIENT_ID'),
-      this.configService.get('PAYOS_API_KEY'),
-      this.configService.get('PAYOS_CHECKSUM_KEY'),
-    );
+  constructor(
+    @InjectRepository(PaymentMethod)
+    private readonly paymentMethodRepository: Repository<PaymentMethod>
+  ) {}
+
+  private async initializePayOS(): Promise<void> {
+    try {
+      const payosMethod = await this.paymentMethodRepository.findOne({
+        where: { code: 'PAYOS', is_active: true }
+      });
+
+      if (!payosMethod || !payosMethod.config) {
+        throw new PaymentException('PayOS configuration not found or inactive');
+      }
+
+      const { clientId, apiKey, checksumKey } = payosMethod.config;
+
+      if (!clientId || !apiKey || !checksumKey) {
+        throw new PaymentException('Invalid PayOS configuration');
+      }
+
+      this.payos = new PayOS(clientId, apiKey, checksumKey);
+    } catch (error) {
+      this.logger.error(`Failed to initialize PayOS: ${error.message}`, error.stack);
+      throw new PaymentException('Failed to initialize payment gateway');
+    }
   }
 
   async createPayment(request: CreatePaymentRequest): Promise<PaymentResponse> {
     try {
+      if (!this.payos) {
+        await this.initializePayOS();
+      }
+
       if (request.amount < 1000) {
         throw new PaymentException('Amount must be at least 1000 VND');
       }
@@ -46,6 +73,10 @@ export class PayOSService implements PaymentGatewayInterface {
 
   async verifyPayment(webhookData: any, signature: string): Promise<boolean> {
     try {
+      if (!this.payos) {
+        await this.initializePayOS();
+      }
+
       const isValidSignature = this.payos.validateWebhookSignature(webhookData, signature);
       if (!isValidSignature) {
         throw new PaymentException('Invalid webhook signature');

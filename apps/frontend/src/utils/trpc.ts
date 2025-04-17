@@ -22,10 +22,7 @@ export const createTrpcClient = (baseUrl: string) => {
         url: `${baseUrl}/api/trpc`,
         headers() {
           const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-          return {
-            Authorization: token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json',
-          };
+          return token ? { Authorization: `Bearer ${token}` } : {};
         },
       }),
     ],

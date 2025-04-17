@@ -48,6 +48,8 @@ import { FoodMenuFrontendService } from '../../food-menu/frontend/services/food-
 import { FoodMenuAdminService } from '../../food-menu/admin/services/food-menu-admin.service';
 import { PaymentFrontendService } from '../../payment/frontend/services/payment-frontend.service';
 import { PaymentAdminService } from '../../payment/admin/services/payment-admin.service';
+import { OrderFrontendService } from '../../order/frontend/services/order-frontend.service';
+import { OrderAdminService } from '../../order/admin/services/order-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -100,4 +102,6 @@ export interface ITrpcServices {
   foodMenuAdminService: FoodMenuAdminService;
   paymentFrontendService: PaymentFrontendService;
   paymentAdminService: PaymentAdminService;
+  orderFrontendService: OrderFrontendService;
+  orderAdminService: OrderAdminService;
 } 

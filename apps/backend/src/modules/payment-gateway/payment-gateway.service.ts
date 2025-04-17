@@ -1,8 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentGatewayInterface, CreatePaymentRequest, PaymentResponse } from './interfaces/payment-gateway.interface';
+import { PayOSService } from './payos/payos.service';
+import { CreatePaymentRequest, PaymentResponse } from './interfaces/payment-gateway.interface';
 
 @Injectable()
-export abstract class PaymentGatewayService implements PaymentGatewayInterface {
-  abstract createPayment(request: CreatePaymentRequest): Promise<PaymentResponse>;
-  abstract verifyPayment(payload: any): Promise<boolean>;
+export class PaymentGatewayService {
+  constructor(private readonly payosService: PayOSService) {}
+
+  async createPayment(request: CreatePaymentRequest): Promise<PaymentResponse> {
+    return this.payosService.createPayment(request);
+  }
+
+  async verifyPayment(webhookData: any, signature: string): Promise<boolean> {
+    return this.payosService.verifyPayment(webhookData, signature);
+  }
 } 

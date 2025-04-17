@@ -392,5 +392,25 @@
     "contactForPrice": "Contact for Price",
     "viewDetails": "View Details",
     "flipToSeeMore": "Flip to see more details"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "subtitle": "Complete your booking",
+    "bookingSummary": "Booking Summary",
+    "product": "Product",
+    "date": "Date",
+    "total": "Total",
+    "contactInformation": "Contact Information",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "phoneNumber": "Phone Number",
+    "phonePlaceholder": "Enter your phone number",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email (optional)",
+    "paymentMethod": "Payment Method",
+    "proceedToPayment": "Proceed to Payment",
+    "noBookingData": "No booking data found",
+    "errorFetchingPaymentMethods": "Error fetching payment methods",
+    "errorProcessing": "Error processing checkout"
   }
 } 
