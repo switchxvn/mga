@@ -37,7 +37,7 @@ const orderId = route.query.order_id;
           </div>
 
           <div class="flex justify-center gap-4 mt-8">
-            <UButton to="/tickets" color="gray">
+            <UButton to="/ticket-pricing" color="gray">
               {{ t('checkout.backToTickets') }}
             </UButton>
             <UButton to="/checkout/ticket" color="primary">

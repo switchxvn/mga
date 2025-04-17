@@ -6,6 +6,7 @@ import { OrderItem } from '../../entities/order-item.entity';
 import { PaymentGatewayInterface, CreatePaymentRequest, PaymentItem } from '../../../payment-gateway/interfaces/payment-gateway.interface';
 import { PAYMENT_GATEWAY_TOKEN } from '../../../payment-gateway/payment-gateway.module';
 import { Address } from '../../entities/order.entity';
+import { PaymentFrontendService } from '../../../payment/frontend/services/payment-frontend.service';
 
 @Injectable()
 export class OrderFrontendService {
@@ -15,7 +16,8 @@ export class OrderFrontendService {
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
     @Inject(PAYMENT_GATEWAY_TOKEN)
-    private readonly paymentGateway: PaymentGatewayInterface
+    private readonly paymentGateway: PaymentGatewayInterface,
+    private readonly paymentFrontendService: PaymentFrontendService
   ) {}
 
   async findOrderById(id: number): Promise<Order> {
@@ -68,6 +70,9 @@ export class OrderFrontendService {
       paymentMethod: string;
       notes?: string;
       totalAmount: number;
+      payment_method_id: number;
+      return_url: string;
+      cancel_url: string;
     },
     items: Partial<OrderItem>[],
     paymentRequest: Omit<CreatePaymentRequest, 'order_id' | 'amount'>
@@ -102,7 +107,17 @@ export class OrderFrontendService {
       email: orderData.email
     };
 
-    // Initialize payment
+    // Create payment transaction
+    const paymentTransaction = await this.paymentFrontendService.createPayment({
+      payment_method_id: orderInput.payment_method_id,
+      order_id: order.id.toString(),
+      amount: Math.round(Number(orderData.totalAmount)),
+      description: `Payment for order #${order.id}`,
+      return_url: orderInput.return_url,
+      cancel_url: orderInput.cancel_url
+    });
+
+    // Initialize payment with gateway
     const payment = await this.paymentGateway.createPayment({
       order_id: order.id.toString(),
       amount: Math.round(Number(orderData.totalAmount)),
@@ -112,6 +127,8 @@ export class OrderFrontendService {
       buyer_phone: buyerInfo.phone,
       buyer_email: buyerInfo.email,
       buyer_address: orderData.shippingAddress?.address,
+      return_url: orderInput.return_url,
+      cancel_url: orderInput.cancel_url,
       ...paymentRequest
     });
 
@@ -120,7 +137,7 @@ export class OrderFrontendService {
         ...order,
         items: orderItems
       },
-      payment
+      payment: paymentTransaction
     };
   }
 } 

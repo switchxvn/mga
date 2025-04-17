@@ -5,11 +5,13 @@ import { OrderItem } from './entities/order-item.entity';
 import { OrderFrontendService } from './frontend/services/order-frontend.service';
 import { OrderAdminService } from './admin/services/order-admin.service';
 import { PaymentGatewayModule } from '../payment-gateway/payment-gateway.module';
+import { PaymentModule } from '../payment/payment.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem]),
-    PaymentGatewayModule
+    PaymentGatewayModule,
+    PaymentModule
   ],
   providers: [
     OrderFrontendService,

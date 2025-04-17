@@ -34,6 +34,7 @@ const createOrderSchema = z.object({
   shippingAddress: addressSchema.optional(),
   billingAddress: addressSchema.optional(),
   paymentMethod: z.string(),
+  payment_method_id: z.number(),
   notes: z.string().optional(),
   items: z.array(orderItemSchema).min(1),
   totalAmount: z.number(),
@@ -89,7 +90,10 @@ export const orderRouter = router({
           billingAddress: orderData.billingAddress,
           paymentMethod: orderData.paymentMethod,
           notes: orderData.notes,
-          totalAmount: orderData.totalAmount
+          totalAmount: orderData.totalAmount,
+          payment_method_id: orderData.payment_method_id,
+          return_url: returnUrl,
+          cancel_url: cancelUrl
         },
         mappedItems,
         {

@@ -114,6 +114,7 @@ const handleSubmit = async () => {
       phoneNumber: formData.value.phoneNumber,
       email: formData.value.email || undefined,
       paymentMethod: paymentMethods.value.find(m => m.id === formData.value.paymentMethodId)?.code || '',
+      payment_method_id: formData.value.paymentMethodId,
       items: bookingData.value.variants.map(variant => ({
         productId: bookingData.value!.productId,
         quantity: Number(variant.quantity),
