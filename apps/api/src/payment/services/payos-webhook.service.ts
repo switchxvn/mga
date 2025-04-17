@@ -24,6 +24,12 @@ export class PayOSWebhookService {
 
   async processWebhook(webhookData: PayOSWebhookDto): Promise<void> {
     try {
+      // Skip processing if description is VQRIO123
+      if (webhookData.data.description === 'VQRIO123') {
+        this.logger.debug('Skipping webhook processing for VQRIO123');
+        return;
+      }
+
       // Get PayOS payment method config
       const payosMethod = await this.paymentMethodRepository.findOne({
         where: { code: 'PAYOS', is_active: true }
@@ -57,7 +63,7 @@ export class PayOSWebhookService {
       });
 
       if (!paymentTransaction) {
-        throw new PayOSException('Payment transaction not found', HttpStatus.NOT_FOUND);
+        return;
       }
 
       // Update order payment status
