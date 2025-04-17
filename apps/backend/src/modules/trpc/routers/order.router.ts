@@ -93,7 +93,6 @@ export const orderRouter = router({
         },
         mappedItems,
         {
-          description: `Payment for order`,
           return_url: returnUrl,
           cancel_url: cancelUrl
         }

@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Order } from '../../entities/order.entity';
 import { OrderItem } from '../../entities/order-item.entity';
 import { PaymentGatewayInterface, CreatePaymentRequest, PaymentItem } from '../../../payment-gateway/interfaces/payment-gateway.interface';
@@ -40,7 +40,13 @@ export class OrderFrontendService {
 
   async createOrderItems(items: Partial<OrderItem>[]): Promise<OrderItem[]> {
     const orderItems = this.orderItemRepository.create(items);
-    return this.orderItemRepository.save(orderItems);
+    await this.orderItemRepository.save(orderItems);
+    
+    // Reload items with product translations
+    return this.orderItemRepository.find({
+      where: { id: In(orderItems.map(item => item.id)) },
+      relations: ['product', 'product.translations']
+    });
   }
 
   private getProductName(product: any, locale: string = 'en'): string {
@@ -100,6 +106,7 @@ export class OrderFrontendService {
     const payment = await this.paymentGateway.createPayment({
       order_id: order.id.toString(),
       amount: Math.round(Number(orderData.totalAmount)),
+      description: `Payment for order #${order.id}`,
       items: paymentItems,
       buyer_name: buyerInfo.fullName,
       buyer_phone: buyerInfo.phone,
