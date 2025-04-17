@@ -434,6 +434,11 @@
     "proceedToPayment": "Tiến hành thanh toán",
     "noBookingData": "Không tìm thấy thông tin đặt vé",
     "errorFetchingPaymentMethods": "Lỗi khi tải phương thức thanh toán",
-    "errorProcessing": "Lỗi khi xử lý thanh toán"
+    "errorProcessing": "Lỗi khi xử lý thanh toán",
+    "orderCancelled": "Đã hủy đơn hàng",
+    "orderCancelledMessage": "Đơn hàng của bạn đã bị hủy. Bạn có thể thử lại hoặc quay lại trang vé.",
+    "orderId": "Mã đơn hàng",
+    "backToTickets": "Quay lại trang vé",
+    "tryAgain": "Thử lại"
   }
 } 

@@ -89,6 +89,10 @@ const fetchPaymentMethods = async () => {
   try {
     const methods = await trpc.payment.getActivePaymentMethods.query();
     paymentMethods.value = methods;
+    // Set first payment method as default if available
+    if (methods.length > 0) {
+      formData.value.paymentMethodId = methods[0].id;
+    }
   } catch (error) {
     console.error('Error fetching payment methods:', error);
     notification.error(t('checkout.errorFetchingPaymentMethods'));

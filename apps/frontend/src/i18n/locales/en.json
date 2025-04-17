@@ -411,6 +411,11 @@
     "proceedToPayment": "Proceed to Payment",
     "noBookingData": "No booking data found",
     "errorFetchingPaymentMethods": "Error fetching payment methods",
-    "errorProcessing": "Error processing checkout"
+    "errorProcessing": "Error processing checkout",
+    "orderCancelled": "Order Cancelled",
+    "orderCancelledMessage": "Your order has been cancelled. You can try again or return to the tickets page.",
+    "orderId": "Order ID",
+    "backToTickets": "Back to Tickets",
+    "tryAgain": "Try Again"
   }
 } 
