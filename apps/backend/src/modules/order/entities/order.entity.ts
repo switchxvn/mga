@@ -34,13 +34,13 @@ export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId?: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 10, name: 'phone_code' })
   phoneCode: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 10, name: 'phone_number' })
   phoneNumber: string;
 
   @Column({ nullable: true })
@@ -57,22 +57,23 @@ export class Order {
   })
   status: OrderStatus;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_amount' })
   totalAmount: number;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'jsonb', nullable: true, name: 'shipping_address' })
   shippingAddress?: Address;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'jsonb', nullable: true, name: 'billing_address' })
   billingAddress?: Address;
 
-  @Column()
+  @Column({ nullable: true, name: 'payment_method' })
   paymentMethod: string;
 
   @Column({
     type: 'enum',
     enum: PaymentStatus,
-    default: PaymentStatus.PENDING
+    default: PaymentStatus.PENDING,
+    name: 'payment_status'
   })
   paymentStatus: PaymentStatus;
 
@@ -82,9 +83,9 @@ export class Order {
   @OneToMany(() => OrderItem, item => item.order)
   items: OrderItem[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 } 

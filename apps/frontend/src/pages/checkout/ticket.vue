@@ -108,16 +108,16 @@ const handleSubmit = async () => {
     const { order, payment } = await trpc.order.createOrder.mutate({
       phoneCode: formData.value.phoneCode,
       phoneNumber: formData.value.phoneNumber,
-      email: formData.value.email,
+      email: formData.value.email || undefined,
       paymentMethod: paymentMethods.value.find(m => m.id === formData.value.paymentMethodId)?.code || '',
       items: bookingData.value.variants.map(variant => ({
         productId: bookingData.value!.productId,
-        quantity: variant.quantity,
-        unitPrice: variant.unitPrice,
-        totalPrice: variant.totalPrice,
-        productType: ProductType.TICKET
+        quantity: Number(variant.quantity),
+        unitPrice: Number(variant.unitPrice),
+        totalPrice: Number(variant.totalPrice),
+        productType: 'ticket'
       })),
-      totalAmount: bookingData.value.totalAmount,
+      totalAmount: Number(bookingData.value.totalAmount),
       returnUrl: `${window.location.origin}/checkout/success`,
       cancelUrl: `${window.location.origin}/checkout/cancel`
     });
