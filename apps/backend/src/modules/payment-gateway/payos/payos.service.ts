@@ -130,9 +130,6 @@ export class PayOSService implements PaymentGatewayInterface {
         throw new PaymentException('Invalid order code');
       }
       
-      // Create unique orderCode by adding timestamp suffix
-      const timestamp = Date.now();
-      const orderCode = Number(`${baseOrderCode}${timestamp.toString().slice(-6)}`);
 
       const amount = Math.round(request.amount);
       if (amount < 1000) {
@@ -141,9 +138,9 @@ export class PayOSService implements PaymentGatewayInterface {
 
       // Prepare payment data according to PayOS requirements
       const paymentData = {
-        orderCode,
+        orderCode: baseOrderCode,
         amount,
-        description: request.description || `Payment for order ${orderCode}`,
+        description: request.description || `Payment for order ${baseOrderCode}`,
         cancelUrl: request.cancel_url,
         returnUrl: request.return_url,
         // Optional buyer information

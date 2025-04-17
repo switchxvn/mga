@@ -93,20 +93,6 @@ export class OrderFrontendService {
       }))
     );
 
-    // Map order items to PayOS items format
-    const paymentItems: PaymentItem[] = orderItems.map(item => ({
-      name: this.getProductName(item.product),
-      quantity: item.quantity,
-      price: Number(item.unitPrice)
-    }));
-
-    // Get buyer information from shipping address or order input
-    const buyerInfo = orderData.shippingAddress || {
-      fullName: '',
-      phone: orderData.phoneNumber,
-      email: orderData.email
-    };
-
     // Create payment transaction
     const paymentTransaction = await this.paymentFrontendService.createPayment({
       payment_method_id: orderInput.payment_method_id,
@@ -115,21 +101,6 @@ export class OrderFrontendService {
       description: `Payment for order #${order.id}`,
       return_url: orderInput.return_url,
       cancel_url: orderInput.cancel_url
-    });
-
-    // Initialize payment with gateway
-    const payment = await this.paymentGateway.createPayment({
-      order_id: order.id.toString(),
-      amount: Math.round(Number(orderData.totalAmount)),
-      description: `Payment for order #${order.id}`,
-      items: paymentItems,
-      buyer_name: buyerInfo.fullName,
-      buyer_phone: buyerInfo.phone,
-      buyer_email: buyerInfo.email,
-      buyer_address: orderData.shippingAddress?.address,
-      return_url: orderInput.return_url,
-      cancel_url: orderInput.cancel_url,
-      ...paymentRequest
     });
 
     return {

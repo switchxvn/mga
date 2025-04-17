@@ -68,7 +68,7 @@ export class PaymentFrontendService {
   async getTransactionByOrderId(orderId: string) {
     return this.paymentTransactionRepository.findOne({
       where: { order_id: orderId },
-      relations: ['payment_method']
+      relations: ['paymentMethod']
     });
   }
 
