@@ -121,6 +121,9 @@
     "sortPriceDesc": "Giá: Cao đến thấp",
     "showing": "Hiển thị",
     "items": "sản phẩm",
+    "of": "trong số",
+    "noResults": "Không tìm thấy sản phẩm nào",
+    "tryAdjustingFilters": "Vui lòng thử điều chỉnh bộ lọc của bạn",
     "filters": "Bộ lọc",
     "searchingFor": "Đang tìm kiếm",
     "error": "Lỗi",
@@ -184,7 +187,9 @@
     "departureDatePast": "Không thể chọn ngày trong quá khứ",
     "selectedDate": "Ngày đã chọn",
     "availableSlots": "Số vé còn lại",
-    "noMatchingVariant": "Không tìm thấy phiên bản phù hợp với lựa chọn của bạn"
+    "noMatchingVariant": "Không tìm thấy phiên bản phù hợp với lựa chọn của bạn",
+    "viewDetail": "Xem chi tiết",
+    "physicalType": "Sản phẩm"
   },
   "priceRequest": {
     "title": "Yêu cầu báo giá",

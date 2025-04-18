@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { publicProcedure, router, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { ProductType } from '../../product/entities/product.entity';
 
 export const productRouter = router({
   getAll: publicProcedure
@@ -19,6 +20,7 @@ export const productRouter = router({
         sortBy: z.enum(['price_asc', 'price_desc', 'newest', 'oldest']).optional(),
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(50).default(12),
+        type: z.nativeEnum(ProductType).optional(),
       }).optional(),
     )
     .query(async ({ ctx, input }) => {
@@ -51,6 +53,7 @@ export const productRouter = router({
         sortBy: input?.sortBy,
         page: input?.page,
         limit: input?.limit,
+        type: input?.type,
       });
 
       return {

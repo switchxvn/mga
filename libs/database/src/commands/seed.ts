@@ -30,6 +30,8 @@ import { FoodCategory } from '../../../../apps/backend/src/modules/food-menu/ent
 import { FoodCategoryTranslation } from '../../../../apps/backend/src/modules/food-menu/entities/food-category-translation.entity';
 import { FoodItem } from '../../../../apps/backend/src/modules/food-menu/entities/food-item.entity';
 import { FoodItemTranslation } from '../../../../apps/backend/src/modules/food-menu/entities/food-item-translation.entity';
+import { MailConfigSeeder } from '../seeders/mail-config.seeder';
+import { MailConfig } from '../../../../apps/backend/src/modules/mail/entities/mail-config.entity';
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { FoodItemTranslation } from '../../../../apps/backend/src/modules/food-m
       FoodCategoryTranslation,
       FoodItem,
       FoodItemTranslation,
+      MailConfig,
     ]),
   ],
   providers: [
@@ -65,6 +68,7 @@ import { FoodItemTranslation } from '../../../../apps/backend/src/modules/food-m
     TourismAboutSectionSeeder,
     ContactSectionSeeder,
     FoodMenuSeeder,
+    MailConfigSeeder,
   ],
 })
 class SeedModule {}

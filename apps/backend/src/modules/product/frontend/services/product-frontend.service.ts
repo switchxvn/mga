@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, Like, FindOptionsWhere, In, IsNull, Not } from 'typeorm';
-import { Product } from '../../entities/product.entity';
+import { Repository, Between, Like, FindOptionsWhere, In, IsNull, Not, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Product, ProductType } from '../../entities/product.entity';
 import { ProductTranslation } from '../../entities/product-translation.entity';
 import { ProductVariant } from '../../entities/product-variant.entity';
 import { ProductVariantTranslation } from '../../entities/product-variant-translation.entity';
@@ -18,6 +18,7 @@ export interface ProductFilterOptions {
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'oldest';
   page?: number;
   limit?: number;
+  type?: ProductType;
 }
 
 export interface PaginatedProducts {
@@ -68,12 +69,12 @@ export class ProductFrontendService {
     private readonly productVariantTranslationRepository: Repository<ProductVariantTranslation>,
   ) {}
 
-  async findAll(locale: string = 'en', options?: ProductFilterOptions): Promise<PaginatedProducts> {
+  async findAll(locale: string = 'en', options: ProductFilterOptions = {}): Promise<PaginatedProducts> {
     const {
       search,
       minPrice,
       maxPrice,
-      includeNullPrice = false,
+      includeNullPrice = true,
       categories,
       isFeatured,
       isNew,
@@ -81,7 +82,9 @@ export class ProductFrontendService {
       sortBy = 'newest',
       page = 1,
       limit = 12,
-    } = options || {};
+      type
+    } = options;
+      console.log('Type filter added:', type);
 
     // Create query builder
     const queryBuilder = this.productRepository
@@ -92,59 +95,22 @@ export class ProductFrontendService {
       .leftJoinAndSelect('variants.attributeValues', 'attributeValues')
       .leftJoinAndSelect('attributeValues.attribute', 'attribute')
       .leftJoinAndSelect('attribute.translations', 'attributeTranslations')
-      .leftJoinAndSelect('attributeValues.translations', 'attributeValueTranslations')
-      .where('product.published = :published', { published: true });
+      .leftJoinAndSelect('attributeValues.translations', 'attributeValueTranslations');
+
+    // Add base conditions
+    queryBuilder.where('product.published = :published', { published: true });
+
+    // Add type filter - ensure this is added before other conditions
+    if (type) {
+
+      queryBuilder.andWhere('product.product_type = :type', { type });
+      console.log('Type filter added:', type);
+      console.log('SQL Query:', queryBuilder.getSql());
+      console.log('Parameters:', queryBuilder.getParameters());
+    }
 
     // Add locale condition
     queryBuilder.andWhere('translations.locale = :locale', { locale });
-
-    // Add featured filter
-    if (isFeatured !== undefined) {
-      queryBuilder.andWhere('product.isFeatured = :isFeatured', { isFeatured });
-    }
-
-    // Add new filter
-    if (isNew !== undefined) {
-      queryBuilder.andWhere('product.isNew = :isNew', { isNew });
-    }
-
-    // Add sale filter
-    if (isSale !== undefined) {
-      queryBuilder.andWhere('product.isSale = :isSale', { isSale });
-    }
-
-    // Add price filter with includeNullPrice option
-    if (includeNullPrice) {
-      if (minPrice !== undefined && maxPrice !== undefined) {
-        queryBuilder.andWhere('(product.price BETWEEN :minPrice AND :maxPrice OR product.price IS NULL)', {
-          minPrice,
-          maxPrice
-        });
-      } else if (minPrice !== undefined) {
-        queryBuilder.andWhere('(product.price >= :minPrice OR product.price IS NULL)', {
-          minPrice
-        });
-      } else if (maxPrice !== undefined) {
-        queryBuilder.andWhere('(product.price <= :maxPrice OR product.price IS NULL)', {
-          maxPrice
-        });
-      }
-    } else {
-      if (minPrice !== undefined && maxPrice !== undefined) {
-        queryBuilder.andWhere('product.price BETWEEN :minPrice AND :maxPrice', {
-          minPrice,
-          maxPrice
-        });
-      } else if (minPrice !== undefined) {
-        queryBuilder.andWhere('product.price >= :minPrice', {
-          minPrice
-        });
-      } else if (maxPrice !== undefined) {
-        queryBuilder.andWhere('product.price <= :maxPrice', {
-          maxPrice
-        });
-      }
-    }
 
     // Add search condition
     if (search) {
@@ -154,10 +120,48 @@ export class ProductFrontendService {
       );
     }
 
+    // Add price filter with includeNullPrice option
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      if (includeNullPrice) {
+        const priceConditions = [];
+        if (minPrice !== undefined) {
+          priceConditions.push('product.price >= :minPrice');
+        }
+        if (maxPrice !== undefined) {
+          priceConditions.push('product.price <= :maxPrice');
+        }
+        queryBuilder.andWhere(
+          `(${priceConditions.join(' AND ')} OR product.price IS NULL)`,
+          { minPrice, maxPrice }
+        );
+      } else {
+        if (minPrice !== undefined) {
+          queryBuilder.andWhere('product.price >= :minPrice', { minPrice });
+        }
+        if (maxPrice !== undefined) {
+          queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice });
+        }
+      }
+    } else if (!includeNullPrice) {
+      queryBuilder.andWhere('product.price IS NOT NULL');
+    }
+
     // Add category filter
-    if (categories && categories.length > 0) {
-      queryBuilder.innerJoin('product.categories', 'category')
+    if (categories?.length) {
+      queryBuilder
+        .innerJoin('product.categories', 'category')
         .andWhere('category.id IN (:...categoryIds)', { categoryIds: categories });
+    }
+
+    // Add feature flags
+    if (typeof isFeatured === 'boolean') {
+      queryBuilder.andWhere('product.isFeatured = :isFeatured', { isFeatured });
+    }
+    if (typeof isNew === 'boolean') {
+      queryBuilder.andWhere('product.isNew = :isNew', { isNew });
+    }
+    if (typeof isSale === 'boolean') {
+      queryBuilder.andWhere('product.isSale = :isSale', { isSale });
     }
 
     // Add sorting
@@ -174,7 +178,6 @@ export class ProductFrontendService {
       case 'newest':
       default:
         queryBuilder.orderBy('product.createdAt', 'DESC');
-        break;
     }
 
     // Add pagination
@@ -183,27 +186,13 @@ export class ProductFrontendService {
 
     // Execute query
     const [items, total] = await queryBuilder.getManyAndCount();
-    
-    // Add logging for debugging
-    console.log('Pagination debug:', {
-      total,
-      limit,
-      page,
-      calculatedTotalPages: Math.ceil(total / limit)
-    });
-    
-    // Ensure limit is a positive number
-    const validLimit = Math.max(1, limit);
-    
-    // Calculate total pages, ensuring at least 1 page if there are items
-    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / validLimit)) : 0;
 
     return {
       items,
       total,
       page,
-      limit: validLimit,
-      totalPages,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 

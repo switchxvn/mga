@@ -185,7 +185,12 @@
     "selectedDate": "Selected Date",
     "availableSlots": "Available Tickets",
     "noAvailableSlots": "No tickets available for this date",
-    "limitedSlots": "Only {count} tickets left"
+    "limitedSlots": "Only {count} tickets left",
+    "of": "of",
+    "noResults": "No products found",
+    "tryAdjustingFilters": "Please try adjusting your filters",
+    "viewDetail": "View details",
+    "physicalType": "Product"
   },
   "priceRequest": {
     "title": "Request Price Quote",
