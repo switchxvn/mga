@@ -1,8 +1,8 @@
 export enum ProductType {
-  PHYSICAL = 'PHYSICAL', // Sản phẩm vật lý
-  VOUCHER = 'VOUCHER', // Voucher
-  TICKET = 'TICKET', // Vé
-  DIGITAL = 'DIGITAL', // Sản phẩm số
-  SERVICE = 'SERVICE', // Dịch vụ
-  SUBSCRIPTION = 'SUBSCRIPTION', // Đăng ký định kỳ
+  PHYSICAL = 'physical', // Sản phẩm vật lý
+  VOUCHER = 'voucher', // Voucher
+  TICKET = 'ticket', // Vé
+  DIGITAL = 'digital', // Sản phẩm số
+  SERVICE = 'service', // Dịch vụ
+  SUBSCRIPTION = 'subscription', // Đăng ký định kỳ
 } 

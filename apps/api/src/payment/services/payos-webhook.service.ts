@@ -1,18 +1,18 @@
-import { Injectable, Logger, HttpStatus } from '@nestjs/common';
-import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
-import { PayOSException } from '../exceptions/payos.exception';
-import { OrderAdminService } from '../../../../backend/src/modules/order/admin/services/order-admin.service';
-import { PaymentFrontendService } from '../../../../backend/src/modules/payment/frontend/services/payment-frontend.service';
-import { PaymentStatus } from '../../../../backend/src/modules/order/entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { PaymentMethod } from '../../../../backend/src/modules/payment/entities/payment-method.entity';
-import { MailService } from '../../../../backend/src/modules/mail/services/mail.service';
+import * as crypto from 'crypto';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { ProductTranslation } from '../../../../backend/src/modules/product/entities/product-translation.entity';
+import * as QRCode from 'qrcode';
+import { Repository } from 'typeorm';
+import { MailService } from '../../../../backend/src/modules/mail/services/mail.service';
+import { OrderAdminService } from '../../../../backend/src/modules/order/admin/services/order-admin.service';
+import { PaymentStatus } from '../../../../backend/src/modules/order/entities/order.entity';
+import { PaymentMethod } from '../../../../backend/src/modules/payment/entities/payment-method.entity';
+import { PaymentFrontendService } from '../../../../backend/src/modules/payment/frontend/services/payment-frontend.service';
+import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
+import { PayOSException } from '../exceptions/payos.exception';
 
 @Injectable()
 export class PayOSWebhookService {
@@ -26,6 +26,23 @@ export class PayOSWebhookService {
     @InjectRepository(PaymentMethod)
     private readonly paymentMethodRepository: Repository<PaymentMethod>
   ) {}
+
+  private async generateQRCodeDataURL(text: string): Promise<string> {
+    try {
+      return await QRCode.toDataURL(text, {
+        type: 'image/png',
+        width: 200,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      });
+    } catch (error) {
+      this.logger.error('Error generating QR code:', error);
+      throw new PayOSException('Failed to generate QR code', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   async processWebhook(webhookData: PayOSWebhookDto): Promise<void> {
     try {
@@ -91,51 +108,103 @@ export class PayOSWebhookService {
       // Send email notification if payment is successful
       if (webhookData.success && order) {
         try {
-          // Get the first ticket from the order
-          const firstTicket = order.items[0];
-          if (!firstTicket) {
+          if (!order.items?.length) {
             this.logger.warn('No items found in order', { orderId });
             return;
           }
 
-          // Get product translations
-          const productTranslation = firstTicket.product?.translations?.[0] as ProductTranslation;
-
-          // Format event date and time
-          const eventDateTime = new Date(firstTicket.createdAt);
-          const eventDate = format(eventDateTime, 'dd/MM/yyyy', { locale: vi });
-          const eventTime = format(eventDateTime, 'HH:mm', { locale: vi });
-
-          // Prepare email data
-          const emailData = {
-            customerName: order.customerName || 'Quý khách',
-            eventName: productTranslation?.title || 'Sự kiện',
-            eventDate: eventDate,
-            eventTime: eventTime,
-            eventLocation: productTranslation?.content || 'Địa điểm sự kiện',
-            ticketType: 'Vé thường',
-            ticketNumber: firstTicket.qrCode,
-            ticketPrice: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(firstTicket.unitPrice),
-            qrCodeUrl: firstTicket.qrCode || 'https://example.com/qr-placeholder.png',
-            venueAddress: this.configService.get('VENUE_ADDRESS', 'Địa chỉ venue'),
-            supportEmail: this.configService.get('SUPPORT_EMAIL', 'support@yourdomain.com'),
-            supportPhone: this.configService.get('SUPPORT_PHONE', '1900 xxxx')
-          };
-
-          // Send email
-          await this.mailService.sendMail({
-            to: order.email,
-            subject: `Vé điện tử cho ${emailData.eventName}`,
-            template: {
-              id: 'TICKET_QR_CODE_VI',
-              data: emailData
+          // Group items by product for better organization
+          const itemsByProduct = order.items.reduce((acc, item) => {
+            const productId = item.productSnapshot?.id;
+            if (!productId) return acc;
+            
+            if (!acc[productId]) {
+              acc[productId] = [];
             }
-          });
+            acc[productId].push(item);
+            return acc;
+          }, {} as Record<string, typeof order.items>);
 
-          this.logger.log('Successfully sent ticket confirmation email', {
-            orderId,
-            customerEmail: order.email
-          });
+          // Process each product group
+          for (const [productId, items] of Object.entries(itemsByProduct)) {
+            const productSnapshot = items[0]?.productSnapshot;
+            if (!productSnapshot) {
+              this.logger.warn('No product snapshot found for item', { orderId, productId });
+              continue;
+            }
+
+            // Get product translations from snapshot
+            const productTranslation = productSnapshot.translations?.[0];
+            if (!productTranslation) {
+              this.logger.warn('No translations found in product snapshot', { 
+                orderId, 
+                productId,
+                productSnapshot: JSON.stringify(productSnapshot)
+              });
+              continue;
+            }
+            
+            // Format event date
+            const eventDateTime = items[0].createdAt || new Date();
+            const eventDate = format(eventDateTime, 'dd/MM/yyyy', { locale: vi });
+
+            // Generate QR codes and prepare ticket info for each item
+            const tickets = await Promise.all(items.map(async (item) => {
+              const qrCodeData = `${item.qrCode}`;
+              const qrCodeUrl = await this.generateQRCodeDataURL(qrCodeData);
+
+              // Get variant name from snapshot
+              let variantName = 'Vé Thường';
+              if (item.productSnapshot?.variant?.name) {
+                variantName = item.productSnapshot.variant.name;
+              } else if (item.productSnapshot?.translations?.[0]?.title) {
+                variantName = item.productSnapshot.translations[0].title;
+              }
+
+              return {
+                ticketNumber: variantName,
+                ticketPrice: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unitPrice),
+                qrCodeUrl: qrCodeUrl
+              };
+            }));
+
+            // Prepare email data
+            const emailData = {
+              customerName: order.customerName || 'Quý khách',
+              eventName: productTranslation.title || 'Vé tham quan',
+              eventDate: eventDate,
+              tickets
+            };
+
+            console.log('emailData', emailData);
+
+            try {
+              // Send email
+              await this.mailService.sendMail({
+                to: order.email,
+                subject: `Vé điện tử cho ${emailData.eventName}`,
+                template: {
+                  id: 'TICKET_QR_CODE_VI',
+                  data: emailData
+                }
+              });
+
+              this.logger.log('Successfully sent ticket confirmation email', {
+                orderId,
+                customerEmail: order.email,
+                productId,
+                ticketCount: tickets.length
+              });
+            } catch (error) {
+              this.logger.error('Error sending ticket confirmation email:', error);
+              // Log more details about the error
+              this.logger.error('Email data that failed:', {
+                orderId,
+                productId,
+                emailData: JSON.stringify(emailData)
+              });
+            }
+          }
         } catch (error) {
           this.logger.error('Error sending ticket confirmation email:', error);
           // Don't throw the error to prevent webhook processing failure

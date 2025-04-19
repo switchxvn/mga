@@ -8,6 +8,21 @@ export enum ProductType {
   TICKET = 'ticket'
 }
 
+export interface ProductSnapshot {
+  id: number;
+  title: string;
+  variant?: {
+    id: number;
+    name: string;
+    price: number;
+  };
+  translations: {
+    locale: string;
+    title: string;
+    description?: string;
+  }[];
+}
+
 @Entity('order_items')
 export class OrderItem {
   @PrimaryGeneratedColumn()
@@ -65,6 +80,13 @@ export class OrderItem {
     nullable: true
   })
   qrCode: string;
+
+  @Column({
+    name: 'product_snapshot',
+    type: 'jsonb',
+    nullable: true
+  })
+  productSnapshot: ProductSnapshot;
 
   @ManyToOne(() => Order, order => order.items)
   @JoinColumn({ name: 'order_id' })

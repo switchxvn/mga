@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order, OrderStatus, PaymentStatus } from '../../entities/order.entity';
 import { OrderItem } from '../../entities/order-item.entity';
+import { Product } from '../../../product/entities/product.entity';
 
 @Injectable()
 export class OrderAdminService {
@@ -10,7 +11,9 @@ export class OrderAdminService {
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderItem)
-    private readonly orderItemRepository: Repository<OrderItem>
+    private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>
   ) {}
 
   async findAllOrders(options: {
@@ -64,9 +67,22 @@ export class OrderAdminService {
     return this.findOrderById(id);
   }
 
-  async updatePaymentStatus(id: number, paymentStatus: PaymentStatus): Promise<Order> {
-    await this.orderRepository.update(id, { paymentStatus });
-    return this.findOrderById(id);
+  async updatePaymentStatus(id: number, status: PaymentStatus): Promise<Order | null> {
+    const order = await this.orderRepository.findOne({
+      where: { id },
+      relations: [
+        'items', 
+        'items.product',
+        'items.product.translations'
+      ]
+    });
+
+    if (!order) {
+      return null;
+    }
+
+    order.paymentStatus = status;
+    return this.orderRepository.save(order);
   }
 
   async updateOrderItemUsageStatus(orderItemId: number, isUsed: boolean): Promise<OrderItem> {
@@ -79,5 +95,12 @@ export class OrderAdminService {
 
   async deleteOrder(id: number): Promise<void> {
     await this.orderRepository.delete(id);
+  }
+
+  async getProductWithTranslations(productId: number) {
+    return this.productRepository.findOne({
+      where: { id: productId },
+      relations: ['translations']
+    });
   }
 } 

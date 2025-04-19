@@ -7,10 +7,11 @@ import { OrderAdminService } from './admin/services/order-admin.service';
 import { PaymentGatewayModule } from '../payment-gateway/payment-gateway.module';
 import { PaymentModule } from '../payment/payment.module';
 import { MailModule } from '../mail/mail.module';
+import { Product } from '../product/entities/product.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem]),
+    TypeOrmModule.forFeature([Order, OrderItem, Product]),
     PaymentGatewayModule,
     forwardRef(() => PaymentModule),
     MailModule

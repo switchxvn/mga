@@ -6,6 +6,7 @@ import { TRPCError } from '@trpc/server';
 import { OrderStatus, PaymentStatus } from '../../order/entities/order.entity';
 import { ProductType } from '../../order/entities/order-item.entity';
 import { randomUUID } from 'crypto';
+import { ProductSnapshot } from '../../order/entities/order-item.entity';
 
 const addressSchema = z.object({
   fullName: z.string(),
@@ -20,6 +21,7 @@ const addressSchema = z.object({
 
 const orderItemSchema = z.object({
   productId: z.number(),
+  variantId: z.number().optional(),
   quantity: z.number().min(1),
   unitPrice: z.number(),
   totalPrice: z.number(),
@@ -74,11 +76,50 @@ export const orderRouter = router({
       const { returnUrl, cancelUrl, items, ...orderData } = input;
 
       const isDigitalProduct = items.every(item => item.productType !== ProductType.PHYSICAL);
-      const mappedItems = items.map(item => ({
-        ...item,
-        productCode: isDigitalProduct ? randomUUID() : null,
-        qrCode: item.productType === ProductType.TICKET ? randomUUID() : null,
-      }));
+      
+      // Get products with their variants and translations
+      const products = await Promise.all(
+        items.map(item => 
+          ctx.services.productFrontendService.findById(item.productId)
+        )
+      );
+
+      const mappedItems = items.map((item, index) => {
+        const product = products[index];
+        if (!product) throw new TRPCError({ 
+          code: 'NOT_FOUND',
+          message: `Product with ID ${item.productId} not found`
+        });
+
+        const productSnapshot: ProductSnapshot = {
+          id: product.id,
+          title: product.translations.find(t => t.locale === 'vi')?.title || product.translations[0]?.title || '',
+          translations: product.translations
+            .filter(t => t.locale === 'vi')
+            .map(t => ({
+              locale: t.locale,
+              title: t.title,
+              description: t.shortDescription
+            })),
+        };
+
+        // Find matching variant
+        const variant = product.variants?.find(v => v.id === item.variantId);
+        if (variant) {
+          productSnapshot.variant = {
+            id: variant.id,
+            name: variant.translations.find(t => t.locale === 'vi')?.name || variant.translations[0]?.name || '',
+            price: variant.price
+          };
+        }
+
+        return {
+          ...item,
+          productCode: isDigitalProduct ? randomUUID() : null,
+          qrCode: item.productType === ProductType.TICKET ? randomUUID() : null,
+          productSnapshot
+        };
+      });
 
       const result = await ctx.services.orderFrontendService.createOrderWithPayment(
         {

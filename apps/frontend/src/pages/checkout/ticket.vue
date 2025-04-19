@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { formatPrice, ProductType } from '@ew/shared';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useTicketBooking } from '~/composables/useTicketBooking';
-import { useLocalization } from '~/composables/useLocalization';
-import { useTrpc } from '~/composables/useTrpc';
-import { useNotification } from '~/composables/useNotification';
 import PhoneInput from '~/components/form/PhoneInput.vue';
-import { ProductType } from '@ew/shared';
-import { formatPrice } from '@ew/shared';
+import { useLocalization } from '~/composables/useLocalization';
+import { useNotification } from '~/composables/useNotification';
+import { useTicketBooking } from '~/composables/useTicketBooking';
+import { useTrpc } from '~/composables/useTrpc';
 
 const router = useRouter();
 const { t } = useLocalization();
@@ -95,7 +94,7 @@ const fetchPaymentMethods = async () => {
     }
   } catch (error) {
     console.error('Error fetching payment methods:', error);
-    notification.error(t('checkout.errorFetchingPaymentMethods'));
+    notification.error({ title: t('checkout.errorFetchingPaymentMethods') });
   } finally {
     isLoadingPaymentMethods.value = false;
   }
@@ -104,7 +103,7 @@ const fetchPaymentMethods = async () => {
 const handleSubmit = async () => {
   if (!validateForm()) return;
   if (!bookingData.value) {
-    notification.error(t('checkout.noBookingData'));
+    notification.error({ title: t('checkout.noBookingData') });
     return;
   }
 
@@ -117,10 +116,11 @@ const handleSubmit = async () => {
       payment_method_id: formData.value.paymentMethodId,
       items: bookingData.value.variants.map(variant => ({
         productId: bookingData.value!.productId,
+        variantId: variant.id,
         quantity: Number(variant.quantity),
         unitPrice: Number(variant.unitPrice),
         totalPrice: Number(variant.totalPrice),
-        productType: 'ticket'
+        productType: ProductType.TICKET
       })),
       totalAmount: Number(bookingData.value.totalAmount),
       returnUrl: `${window.location.origin}/checkout/success`,
@@ -138,7 +138,7 @@ const handleSubmit = async () => {
     }
   } catch (error) {
     console.error('Error processing checkout:', error);
-    notification.error(t('checkout.errorProcessing'));
+    notification.error({ title: t('checkout.errorProcessing') });
   }
 };
 

@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MailConfig } from '../entities/mail-config.entity';
 import { MailTemplate } from '../entities/mail-template.entity';
+import * as Handlebars from 'handlebars';
 
 @Injectable()
 export class MailService implements MailServiceInterface, OnModuleInit {
@@ -69,26 +70,28 @@ export class MailService implements MailServiceInterface, OnModuleInit {
           throw new Error(`Email template ${options.template.id} not found or not active`);
         }
 
-        // Replace variables in subject and html
-        let subject = template.subject;
-        let html = template.html;
+        // Compile templates with Handlebars
+        const subjectTemplate = Handlebars.compile(template.subject);
+        const htmlTemplate = Handlebars.compile(template.html);
 
-        Object.entries(options.template.data).forEach(([key, value]) => {
-          const regex = new RegExp(`{{${key}}}`, 'g');
-          subject = subject.replace(regex, value as string);
-          html = html.replace(regex, value as string);
+        // Apply data to templates
+        options.subject = subjectTemplate(options.template.data);
+        options.html = htmlTemplate(options.template.data);
+
+        console.log('Compiled email template:', {
+          subject: options.subject,
+          data: options.template.data
         });
-
-        options.subject = subject;
-        options.html = html;
       }
 
       const info = await this.transporter.sendMail(options);
+      console.log('Email sent successfully:', info);
       return {
         success: true,
         messageId: info.messageId,
       };
     } catch (error) {
+      console.error('Error sending email:', error);
       return {
         success: false,
         error: error.message,
