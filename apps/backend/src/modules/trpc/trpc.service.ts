@@ -59,6 +59,8 @@ import { PaymentFrontendService } from '../payment/frontend/services/payment-fro
 import { PaymentAdminService } from '../payment/admin/services/payment-admin.service';
 import { UploadFrontendService } from '../upload/frontend/services/upload-frontend.service';
 import { UploadAdminService } from '../upload/admin/services/upload-admin.service';
+import { OrderTicketSectionAdminService } from '../order-ticket/admin/services/order-ticket-section-admin.service';
+import { OrderTicketSectionFrontendService } from '../order-ticket/frontend/services/order-ticket-section-frontend.service';
 
 const t = initTRPC.context<TRPCContext>().create();
 
@@ -128,6 +130,8 @@ export class TrpcService {
     private readonly orderAdminService: OrderAdminService,
     private readonly uploadFrontendService: UploadFrontendService,
     private readonly uploadAdminService: UploadAdminService,
+    private readonly orderTicketSectionAdminService: OrderTicketSectionAdminService,
+    private readonly orderTicketSectionFrontendService: OrderTicketSectionFrontendService,
   ) {}
 
   public createRouter<TProcRouterRecord extends Record<string, any>>(procedures: TProcRouterRecord) {
@@ -201,6 +205,8 @@ export class TrpcService {
       orderAdminService: this.orderAdminService,
       uploadFrontendService: this.uploadFrontendService,
       uploadAdminService: this.uploadAdminService,
+      orderTicketSectionAdminService: this.orderTicketSectionAdminService,
+      orderTicketSectionFrontendService: this.orderTicketSectionFrontendService,
     };
   }
 }   

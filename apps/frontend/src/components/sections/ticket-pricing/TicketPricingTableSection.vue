@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTrpc } from '@/composables/useTrpc'
 
 interface PricingTier {
   id: number
@@ -9,6 +11,7 @@ interface PricingTier {
   interval: string
   features: string[]
   isPopular?: boolean
+  isCallHotline?: boolean
 }
 
 interface Props {
@@ -38,6 +41,8 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
+const trpc = useTrpc()
 
 const sectionClasses = computed(() => {
   return [
@@ -83,6 +88,21 @@ const featureClasses = computed(() => {
     props.settings?.colors?.feature || 'text-gray-600 dark:text-gray-400',
   ].join(' ')
 })
+
+const handleTicketAction = async (tier: PricingTier) => {
+  if (tier.isCallHotline) {
+    try {
+      const hotlineSetting = await trpc.settings.getPublicSettingByKey.query('hotline')
+      if (hotlineSetting?.value) {
+        window.location.href = `tel:${hotlineSetting.value}`
+      }
+    } catch (error) {
+      console.error('Error fetching hotline:', error)
+    }
+  } else {
+    router.push('/order-ticket')
+  }
+}
 </script>
 
 <template>
@@ -192,10 +212,12 @@ const featureClasses = computed(() => {
                           ? 'text-white bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500' 
                           : 'text-red-700 bg-red-50 hover:bg-red-100 focus:ring-2 focus:ring-offset-2 focus:ring-red-400'
                       ]"
+                      @click="handleTicketAction(tier)"
                     >
-                      <span>Đặt ngay</span>
+                      <span>{{ tier.isCallHotline ? 'Gọi ngay' : 'Đặt ngay' }}</span>
                       <svg class="ml-2 -mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        <path v-if="tier.isCallHotline" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                       </svg>
                     </button>
                   </td>

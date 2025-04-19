@@ -28,6 +28,7 @@ import { adminFoodMenuRouter } from './routers/admin/food-menu.router';
 import { adminMenuItemsRouter } from './routers/admin/menu-items.router';
 import { contactSectionRouter } from './routers/contact-section.router';
 import { ticketPricingSectionRouter } from './routers/ticket-pricing-section.router';
+import { orderTicketSectionRouter } from './routers/order-ticket-section.router';
 import { paymentRouter } from './routers/payment.router';
 import { orderRouter } from './routers/order.router';
 import { uploadRouter } from './routers/upload.router';
@@ -65,6 +66,7 @@ export class TrpcRouter {
       gallery: galleryRouter,
       contactSection: contactSectionRouter,
       ticketPricingSection: ticketPricingSectionRouter,
+      orderTicketSection: orderTicketSectionRouter,
       foodMenu: foodMenuRouter,
       payment: paymentRouter,
       order: orderRouter,

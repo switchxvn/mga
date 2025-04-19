@@ -67,6 +67,7 @@ NETWORK_NAME="app-network"
 echo "Cleaning up existing containers..."
 stop_container "cable-car-frontend"
 stop_container "cable-car-backend"
+stop_container "cable-car-api"
 stop_container "cable-car-nginx"
 
 # Clean up network after containers are stopped
@@ -91,6 +92,7 @@ docker network create $NETWORK_NAME
 echo "Pulling latest images..."
 docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:latest
 docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
 docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
 
 # Start backend
@@ -108,6 +110,22 @@ docker run -d \
 
 # Wait for backend to be ready
 wait_for_container "cable-car-backend"
+
+# Start api
+echo "Starting api..."
+docker run -d \
+    --platform linux/amd64 \
+    --name cable-car-api \
+    --network app-network \
+    --network-alias api \
+    -p 4000:4000 \
+    --env-file apps/api/.env.production \
+    -e NODE_ENV=production \
+    --restart unless-stopped \
+    $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
+
+# Wait for api to be ready
+wait_for_container "cable-car-api"
 
 # Start frontend
 echo "Starting frontend..."
@@ -145,6 +163,7 @@ echo "Deployment completed successfully!"
 echo "Services:"
 echo "- Frontend: http://localhost:3000"
 echo "- Backend: http://localhost:3333"
+echo "- API: http://localhost:4000"
 echo "- Nginx: http://localhost (80) and https://localhost (443)"
 
 # Show running containers and their networks

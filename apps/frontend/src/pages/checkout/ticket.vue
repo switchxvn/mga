@@ -157,11 +157,12 @@ onMounted(() => {
     <div class="container mx-auto px-4 lg:px-8">
       <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <div class="text-center mb-10">
-          <h1 class="text-4xl font-bold text-gray-900 dark:text-white">
+        <div class="text-center mb-12 space-y-3">
+          <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
             {{ t('checkout.title') }}
           </h1>
-          <p class="mt-3 text-lg text-gray-600 dark:text-gray-400">
+          <div class="w-24 h-1 bg-primary-500 mx-auto rounded-full"></div>
+          <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             {{ t('checkout.subtitle') }}
           </p>
         </div>
@@ -266,7 +267,7 @@ onMounted(() => {
 
               <!-- Payment Method -->
               <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6">
                   {{ t('checkout.paymentMethod') }}
                 </h2>
                 <div v-if="isLoadingPaymentMethods" class="flex justify-center py-8">

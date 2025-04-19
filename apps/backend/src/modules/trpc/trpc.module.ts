@@ -26,6 +26,7 @@ import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
 import { ContactModule } from '../contact/contact.module';
 import { GalleryModule } from '../gallery/gallery.module';
 import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
+import { OrderTicketModule } from '../order-ticket/order-ticket.module';
 import { FoodMenuModule } from '../food-menu/food-menu.module';
 import { PaymentModule } from '../payment/payment.module';
 import { OrderModule } from '../order/order.module';
@@ -70,6 +71,7 @@ import { UploadModule } from '../upload/upload.module';
     ContactModule,
     GalleryModule,
     TicketPricingModule,
+    OrderTicketModule,
     FoodMenuModule,
     OrderModule,
     UploadModule,

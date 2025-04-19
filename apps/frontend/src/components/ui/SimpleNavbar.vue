@@ -340,7 +340,7 @@ watch(locale, () => {
           color: isDark ? props.settings?.darkMode?.textColor : '#ffffff'
         }"
       >
-        <div class="container mx-auto px-4">
+        <div class="w-full px-8">
           <div class="flex items-center h-16">
             <!-- Current Time and Actions -->
             <div class="w-[45%] flex items-center gap-2 justify-start">

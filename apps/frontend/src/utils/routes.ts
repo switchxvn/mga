@@ -58,6 +58,10 @@ export const ROUTE_NAMES = {
   MENU: {
     en: 'menu',
     vi: 'thuc-don'
+  },
+  ORDER_TICKET: {
+    en: 'order-ticket',
+    vi: 'dat-ve'
   }
 } as const;
 
@@ -121,7 +125,11 @@ export const ROUTE_PATHS = {
   MENU: {
     en: '/menu',
     vi: '/thuc-don'
-  }
+  },
+  ORDER_TICKET: {
+    en: '/order-ticket',
+    vi: '/dat-ve'
+  } 
 } as const;
 
 export type LocaleType = 'en' | 'vi';

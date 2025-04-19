@@ -44,6 +44,8 @@ import { ContactSectionAdminService } from '../../contact/admin/services/contact
 import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
 import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
 import { TicketPricingSectionFrontendService } from '../../ticket-pricing/frontend/services/ticket-pricing-section-frontend.service';
+import { OrderTicketSectionAdminService } from '../../order-ticket/admin/services/order-ticket-section-admin.service';
+import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/services/order-ticket-section-frontend.service';
 import { FoodMenuFrontendService } from '../../food-menu/frontend/services/food-menu-frontend.service';
 import { FoodMenuAdminService } from '../../food-menu/admin/services/food-menu-admin.service';
 import { PaymentFrontendService } from '../../payment/frontend/services/payment-frontend.service';
@@ -100,6 +102,8 @@ export interface ITrpcServices {
   contactSectionFrontendService: ContactSectionFrontendService;
   ticketPricingSectionAdminService: TicketPricingSectionAdminService;
   ticketPricingSectionFrontendService: TicketPricingSectionFrontendService;
+  orderTicketSectionAdminService: OrderTicketSectionAdminService;
+  orderTicketSectionFrontendService: OrderTicketSectionFrontendService;
   foodMenuFrontendService: FoodMenuFrontendService;
   foodMenuAdminService: FoodMenuAdminService;
   paymentFrontendService: PaymentFrontendService;

@@ -10,6 +10,7 @@ import { FoodMenuSeeder } from '../seeders/food-menu.seeder';
 import { MailConfigSeeder } from '../seeders/mail-config.seeder';
 import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
 import { UploadConfigSeeder } from '../seeders/upload-config.seeder';
+import { OrderTicketSectionSeeder } from '../seeders/order-ticket-section.seeder';
 
 interface SeedCommandOptions {
   seeder?: string;
@@ -35,7 +36,8 @@ export class SeedCommand extends CommandRunner {
     private readonly foodMenuSeeder: FoodMenuSeeder,
     private readonly mailConfigSeeder: MailConfigSeeder,
     private readonly mailTemplateSeeder: MailTemplateSeeder,
-    private readonly uploadConfigSeeder: UploadConfigSeeder
+    private readonly uploadConfigSeeder: UploadConfigSeeder,
+    private readonly orderTicketSectionSeeder: OrderTicketSectionSeeder
   ) {
     super();
     this.logger.log('SeedCommand constructor called');
@@ -69,7 +71,7 @@ export class SeedCommand extends CommandRunner {
 
   @Option({
     flags: '-s, --seeder [seederName]',
-    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, mail-config, mail-template, upload-config)',
+    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, mail-config, mail-template, upload-config, order-ticket)',
   })
   parseSeeder(val: string): string {
     this.logger.log(`parseSeeder called with value: ${val}`);
@@ -129,9 +131,14 @@ export class SeedCommand extends CommandRunner {
         await this.uploadConfigSeeder.seed();
         this.logger.log('Upload configuration seeded successfully');
         break;
+      case 'order-ticket':
+        this.logger.log('Seeding order ticket sections...');
+        await this.orderTicketSectionSeeder.seed();
+        this.logger.log('Order ticket sections seeded successfully');
+        break;
       default:
         this.logger.error(`Unknown seeder: ${seederName}`);
-        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, food-menu, mail-config, mail-template, upload-config');
+        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, food-menu, mail-config, mail-template, upload-config, order-ticket');
         process.exit(1);
     }
   }
@@ -172,5 +179,9 @@ export class SeedCommand extends CommandRunner {
     this.logger.log('Seeding food menu...');
     await this.foodMenuSeeder.seed();
     this.logger.log('Food menu seeded successfully');
+
+    this.logger.log('Seeding order ticket sections...');
+    await this.orderTicketSectionSeeder.seed();
+    this.logger.log('Order ticket sections seeded successfully');
   }
 } 

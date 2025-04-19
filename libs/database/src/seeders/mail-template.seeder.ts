@@ -13,8 +13,7 @@ export class MailTemplateSeeder {
   ) {}
 
   async seed(): Promise<void> {
-    this.logger.log('Starting mail template seeding...');
-
+    this.logger.log('Starting mail template seeding...')
     try {
       const templates = [
         {

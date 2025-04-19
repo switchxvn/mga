@@ -50,6 +50,11 @@ if [ ! -f "$PROJECT_ROOT/apps/backend/.env.production" ]; then
     exit 1
 fi
 
+if [ ! -f "$PROJECT_ROOT/apps/api/.env.production" ]; then
+    echo "Error: API production environment file not found at apps/api/.env.production"
+    exit 1
+fi
+
 # Build and push frontend
 echo "Building frontend image..."
 docker build --platform linux/amd64 \
@@ -73,6 +78,18 @@ docker build --platform linux/amd64 \
 echo "Pushing backend image..."
 docker push $REGISTRY/$GITHUB_USERNAME/cable-car-backend:$VERSION
 docker push $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest
+
+# Build and push api
+echo "Building api image..."
+docker build --platform linux/amd64 \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-api:$VERSION \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest \
+    --build-arg ENV_FILE=.env.production \
+    -f apps/api/Dockerfile .
+
+echo "Pushing api image..."
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-api:$VERSION
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
 
 # Build and push nginx
 echo "Building nginx image..."

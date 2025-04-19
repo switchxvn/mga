@@ -37,6 +37,9 @@ import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
 import { UploadConfigSeeder } from '../seeders/upload-config.seeder';
 import { Upload } from '../../../../apps/backend/src/modules/upload/entities/upload.entity';
 import { UploadConfig } from '../../../../apps/backend/src/modules/upload/entities/upload-config.entity';
+import { OrderTicketSectionSeeder } from '../seeders/order-ticket-section.seeder';
+import { OrderTicketSection } from '../../../../apps/backend/src/modules/order-ticket/entities/order-ticket-section.entity';
+import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modules/order-ticket/entities/order-ticket-section-translation.entity';
 
 @Module({
   imports: [
@@ -65,6 +68,8 @@ import { UploadConfig } from '../../../../apps/backend/src/modules/upload/entiti
       MailTemplate,
       Upload,
       UploadConfig,
+      OrderTicketSection,
+      OrderTicketSectionTranslation,
     ]),
   ],
   providers: [
@@ -79,6 +84,7 @@ import { UploadConfig } from '../../../../apps/backend/src/modules/upload/entiti
     MailConfigSeeder,
     MailTemplateSeeder,
     UploadConfigSeeder,
+    OrderTicketSectionSeeder,
   ],
 })
 class SeedModule {}

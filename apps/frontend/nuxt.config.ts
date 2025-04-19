@@ -89,6 +89,7 @@ export default defineNuxtConfig({
       const aboutRoute = routes.find(r => r.path === ROUTE_PATHS.ABOUT.en);
       const ticketPricingRoute = routes.find(r => r.path === ROUTE_PATHS.TICKET_PRICING.en);
       const menuRoute = routes.find(r => r.path === ROUTE_PATHS.MENU.en);
+      const orderTicketRoute = routes.find(r => r.path === ROUTE_PATHS.ORDER_TICKET.en);
       if (postsListRoute) {
         routes.push({
           name: ROUTE_NAMES.POSTS_LIST.vi,
@@ -195,6 +196,14 @@ export default defineNuxtConfig({
           name: ROUTE_NAMES.MENU.vi,
           path: ROUTE_PATHS.MENU.vi,
           file: menuRoute.file
+        });
+      }
+
+      if (orderTicketRoute) {
+        routes.push({
+          name: ROUTE_NAMES.ORDER_TICKET.vi,
+          path: ROUTE_PATHS.ORDER_TICKET.vi,
+          file: orderTicketRoute.file
         });
       }
     }
