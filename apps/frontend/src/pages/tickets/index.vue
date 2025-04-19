@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
-import { useLocalization } from "../../composables/useLocalization";
-import { useTrpc } from "../../composables/useTrpc";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import TicketSidebar from "../../components/sidebar/TicketSidebar.vue";
-import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
-import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
 import TicketCard from "../../components/cards/TicketCard.vue";
-import type { ProductType } from '@ew/shared';
+import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
+import TicketSidebar from "../../components/sidebar/TicketSidebar.vue";
+import { useLocalization } from "../../composables/useLocalization";
+import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
+import { useTrpc } from "../../composables/useTrpc";
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -192,7 +191,7 @@ watch(locale, async () => {
     page: 1,
     limit: 12,
     locale: locale.value,
-    type: ProductType.TICKET // Keep the type filter
+    type: 'TICKET' // Keep the type filter
   };
 
   // Clear URL query params
