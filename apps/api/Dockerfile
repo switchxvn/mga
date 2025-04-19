@@ -48,9 +48,9 @@ COPY tsconfig.json ./
 COPY eslint.config.mjs ./
 COPY .prettierrc .prettierignore ./
 
-# Copy source code
+# Copy source code including backend
 COPY libs ./libs
-COPY apps/api ./apps/api
+COPY apps ./apps
 
 # Build argument for environment file
 ARG ENV_FILE=.env
@@ -78,11 +78,13 @@ ENV NODE_ENV=production
 # Copy package files for production dependencies
 COPY package.json yarn.lock ./
 
-# Copy node_modules from deps stage and filter out dev dependencies
+# Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built application
 COPY --from=builder /app/dist/apps/api ./dist
+# Copy the entire apps directory to ensure shared modules are available
+COPY --from=builder /app/apps ./apps
 
 # Copy environment file
 COPY --from=builder /app/apps/api/.env .env
