@@ -7,7 +7,7 @@ import TicketSidebar from "../../components/sidebar/TicketSidebar.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
 import TicketCard from "../../components/cards/TicketCard.vue";
-import { ProductType } from '@ew/shared/types';
+import type { ProductType } from '@ew/shared';
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
