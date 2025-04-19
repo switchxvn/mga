@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
-import { useLocalization } from "../../composables/useLocalization";
-import { useTrpc } from "../../composables/useTrpc";
+import { ProductType, type Product } from '@ew/shared';
+import { Calendar, MapPin, Ticket } from 'lucide-vue-next';
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
+import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
+import { useLocalization } from "../../composables/useLocalization";
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
-import { Ticket, Calendar, MapPin } from 'lucide-vue-next';
-import Pagination from "../../components/Pagination.vue";
-import { ProductType, type Product, type ProductSpecification } from '@ew/shared/types';
+import { useTrpc } from "../../composables/useTrpc";
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
