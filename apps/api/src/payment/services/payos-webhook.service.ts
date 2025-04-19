@@ -6,12 +6,12 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import * as QRCode from 'qrcode';
 import { Repository } from 'typeorm';
-import { MailService } from '../../../../backend/src/modules/mail/services/mail.service';
-import { OrderAdminService } from '../../../../backend/src/modules/order/admin/services/order-admin.service';
-import { PaymentStatus } from '../../../../backend/src/modules/order/entities/order.entity';
-import { PaymentMethod } from '../../../../backend/src/modules/payment/entities/payment-method.entity';
-import { PaymentFrontendService } from '../../../../backend/src/modules/payment/frontend/services/payment-frontend.service';
-import { UploadFrontendService } from '../../../../backend/src/modules/upload/frontend/services/upload-frontend.service';
+import { MailService } from '../../../../../apps/backend/src/modules/mail/services/mail.service';
+import { OrderAdminService } from '../../../../../apps/backend/src/modules/order/admin/services/order-admin.service';
+import { PaymentStatus } from '../../../../../apps/backend/src/modules/order/entities/order.entity';
+import { PaymentMethod } from '../../../../../apps/backend/src/modules/payment/entities/payment-method.entity';
+import { PaymentFrontendService } from '../../../../../apps/backend/src/modules/payment/frontend/services/payment-frontend.service';
+import { UploadFrontendService } from '../../../../../apps/backend/src/modules/upload/frontend/services/upload-frontend.service';
 import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
 import { PayOSException } from '../exceptions/payos.exception';
 import fetch from 'node-fetch';
@@ -202,6 +202,11 @@ export class PayOSWebhookService {
             const eventDate = format(eventDateTime, 'dd/MM/yyyy', { locale: vi });
 
             // Generate QR codes and prepare ticket info for each item
+            if (!Array.isArray(items)) {
+              this.logger.error('Items is not an array', { items });
+              return;
+            }
+            
             const tickets = await Promise.all(items.map(async (item) => {
               const qrCodeData = `${item.qrCode}`;
               const qrCodeUrl = await this.generateAndUploadQRCode(qrCodeData, orderId);
