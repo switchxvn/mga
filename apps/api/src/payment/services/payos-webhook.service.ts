@@ -11,8 +11,11 @@ import { OrderAdminService } from '../../../../backend/src/modules/order/admin/s
 import { PaymentStatus } from '../../../../backend/src/modules/order/entities/order.entity';
 import { PaymentMethod } from '../../../../backend/src/modules/payment/entities/payment-method.entity';
 import { PaymentFrontendService } from '../../../../backend/src/modules/payment/frontend/services/payment-frontend.service';
+import { UploadFrontendService } from '../../../../backend/src/modules/upload/frontend/services/upload-frontend.service';
 import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
 import { PayOSException } from '../exceptions/payos.exception';
+import fetch from 'node-fetch';
+import { Readable } from 'stream';
 
 @Injectable()
 export class PayOSWebhookService {
@@ -23,14 +26,16 @@ export class PayOSWebhookService {
     private readonly orderAdminService: OrderAdminService,
     private readonly paymentFrontendService: PaymentFrontendService,
     private readonly mailService: MailService,
+    private readonly uploadFrontendService: UploadFrontendService,
     @InjectRepository(PaymentMethod)
     private readonly paymentMethodRepository: Repository<PaymentMethod>
   ) {}
 
-  private async generateQRCodeDataURL(text: string): Promise<string> {
+  private async generateAndUploadQRCode(text: string, orderId: number): Promise<string> {
     try {
-      return await QRCode.toDataURL(text, {
-        type: 'image/png',
+      // Generate QR code as buffer
+      const qrBuffer = await QRCode.toBuffer(text, {
+        type: 'png',
         width: 200,
         margin: 1,
         color: {
@@ -38,9 +43,57 @@ export class PayOSWebhookService {
           light: '#ffffff'
         }
       });
+
+      // Create filename
+      const filename = `qr-${orderId}-${Date.now()}.png`;
+
+      // Get presigned URL for upload
+      const result = await this.uploadFrontendService.getPresignedUrl({
+        filename,
+        mimeType: 'image/png',
+        size: qrBuffer.length,
+      });
+
+      // Create readable stream from buffer
+      const stream = new Readable();
+      stream.push(qrBuffer);
+      stream.push(null);
+
+      // Upload using node-fetch with stream
+      const response = await fetch(result.presignedUrl, {
+        method: 'PUT',
+        body: stream,
+        headers: {
+          'Content-Type': 'image/png',
+          'Content-Length': qrBuffer.length.toString(),
+          'x-amz-acl': 'public-read',
+        },
+      });
+
+      if (!response.ok) {
+        this.logger.error('Failed to upload QR code', {
+          statusCode: response.status,
+          statusText: response.statusText,
+          orderId,
+          filename
+        });
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      this.logger.debug('Successfully uploaded QR code', {
+        filename,
+        url: result.url,
+        size: qrBuffer.length
+      });
+
+      return result.url;
     } catch (error) {
-      this.logger.error('Error generating QR code:', error);
-      throw new PayOSException('Failed to generate QR code', HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.error('Error in generateAndUploadQRCode:', {
+        error: error.message,
+        orderId,
+        stack: error.stack
+      });
+      throw new PayOSException('Failed to generate and upload QR code', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -151,7 +204,7 @@ export class PayOSWebhookService {
             // Generate QR codes and prepare ticket info for each item
             const tickets = await Promise.all(items.map(async (item) => {
               const qrCodeData = `${item.qrCode}`;
-              const qrCodeUrl = await this.generateQRCodeDataURL(qrCodeData);
+              const qrCodeUrl = await this.generateAndUploadQRCode(qrCodeData, orderId);
 
               // Get variant name from snapshot
               let variantName = 'Vé Thường';

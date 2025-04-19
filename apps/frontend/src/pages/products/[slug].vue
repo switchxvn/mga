@@ -45,6 +45,7 @@ import type { Product } from '@ew/shared';
 import { useProductDetail } from '~/composables/useProductDetail';
 import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
+import { ProductType } from '@ew/shared/types';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -140,7 +141,7 @@ const disabledDates = computed(() => {
 // Extend base canAddToCart with date validation for tickets
 const canAddToCart = computed(() => {
   const baseCanAdd = baseCanAddToCart.value;
-  if (productData.value?.type === 'TICKET') {
+  if (productData.value?.type === ProductType.TICKET) {
     return baseCanAdd && selectedDate.value !== null;
   }
   return baseCanAdd;
@@ -327,7 +328,7 @@ watch(activeTab, (newTab, oldTab) => {
               </div>
 
               <!-- Thông tin bổ sung cho vé -->
-              <div v-if="productData.type === 'TICKET'" class="mt-4 space-y-4">
+              <div v-if="productData.type === ProductType.TICKET" class="mt-4 space-y-4">
                 <!-- Các lưu ý quan trọng -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <h3 class="text-base font-medium text-gray-900 dark:text-white mb-2 flex items-center">
@@ -411,7 +412,7 @@ watch(activeTab, (newTab, oldTab) => {
             <!-- Product Info -->
             <div class="product-info bg-white dark:bg-gray-800 rounded-lg p-6">
               <!-- Ticket Type Badge -->
-              <div v-if="productData.type === 'TICKET'" class="mb-4">
+              <div v-if="productData.type === ProductType.TICKET" class="mb-4">
                 <UBadge color="purple" variant="solid" class="text-sm font-medium">
                   <Ticket class="w-4 h-4 mr-1" />
                   {{ t("products.ticketType") || "Vé" }}
@@ -470,7 +471,7 @@ watch(activeTab, (newTab, oldTab) => {
               </div>
 
               <!-- Product Variants -->
-              <div v-if="productData?.type === 'TICKET'" class="mb-6">
+              <div v-if="productData?.type === ProductType.TICKET" class="mb-6">
                 <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {{ t("products.departureDate") }}
                   <span class="text-red-500">*</span>
@@ -564,7 +565,7 @@ watch(activeTab, (newTab, oldTab) => {
               </div>
 
               <!-- Ticket Specific Information -->
-              <div v-if="productData.type === 'TICKET'" class="mb-6">
+              <div v-if="productData.type === ProductType.TICKET" class="mb-6">
                 <div class="ticket-info bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <div class="grid grid-cols-2 gap-4">
                     <div class="ticket-info-item">

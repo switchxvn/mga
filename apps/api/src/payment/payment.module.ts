@@ -6,13 +6,17 @@ import { PayOSWebhookService } from './services/payos-webhook.service';
 import { OrderModule } from '../../../backend/src/modules/order/order.module';
 import { PaymentModule as BackendPaymentModule } from '../../../backend/src/modules/payment/payment.module';
 import { PaymentMethod } from '../../../backend/src/modules/payment/entities/payment-method.entity';
+import { UploadModule } from '../../../backend/src/modules/upload/upload.module';
+import { MailModule } from '../../../backend/src/modules/mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([PaymentMethod]),
     OrderModule,
-    BackendPaymentModule
+    BackendPaymentModule,
+    UploadModule,
+    MailModule,
   ],
   controllers: [PayOSWebhookController],
   providers: [PayOSWebhookService],

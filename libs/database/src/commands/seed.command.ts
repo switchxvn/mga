@@ -9,6 +9,7 @@ import { ContactSectionSeeder } from '../seeders/contact-section.seeder';
 import { FoodMenuSeeder } from '../seeders/food-menu.seeder';
 import { MailConfigSeeder } from '../seeders/mail-config.seeder';
 import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
+import { UploadConfigSeeder } from '../seeders/upload-config.seeder';
 
 interface SeedCommandOptions {
   seeder?: string;
@@ -33,7 +34,8 @@ export class SeedCommand extends CommandRunner {
     private readonly contactSectionSeeder: ContactSectionSeeder,
     private readonly foodMenuSeeder: FoodMenuSeeder,
     private readonly mailConfigSeeder: MailConfigSeeder,
-    private readonly mailTemplateSeeder: MailTemplateSeeder
+    private readonly mailTemplateSeeder: MailTemplateSeeder,
+    private readonly uploadConfigSeeder: UploadConfigSeeder
   ) {
     super();
     this.logger.log('SeedCommand constructor called');
@@ -67,7 +69,7 @@ export class SeedCommand extends CommandRunner {
 
   @Option({
     flags: '-s, --seeder [seederName]',
-    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, mail-config, mail-template)',
+    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, mail-config, mail-template, upload-config)',
   })
   parseSeeder(val: string): string {
     this.logger.log(`parseSeeder called with value: ${val}`);
@@ -122,14 +124,23 @@ export class SeedCommand extends CommandRunner {
         await this.mailTemplateSeeder.seed();
         this.logger.log('Mail templates seeded successfully');
         break;
+      case 'upload-config':
+        this.logger.log('Seeding upload configuration...');
+        await this.uploadConfigSeeder.seed();
+        this.logger.log('Upload configuration seeded successfully');
+        break;
       default:
         this.logger.error(`Unknown seeder: ${seederName}`);
-        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, food-menu, mail-config, mail-template');
+        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, food-menu, mail-config, mail-template, upload-config');
         process.exit(1);
     }
   }
 
   private async runAllSeeders(): Promise<void> {
+    this.logger.log('Seeding upload configuration...');
+    await this.uploadConfigSeeder.seed();
+    this.logger.log('Upload configuration seeded successfully');
+
     this.logger.log('Seeding mail configuration...');
     await this.mailConfigSeeder.seed();
     this.logger.log('Mail configuration seeded successfully');

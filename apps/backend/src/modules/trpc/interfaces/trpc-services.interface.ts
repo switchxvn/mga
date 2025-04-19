@@ -50,6 +50,8 @@ import { PaymentFrontendService } from '../../payment/frontend/services/payment-
 import { PaymentAdminService } from '../../payment/admin/services/payment-admin.service';
 import { OrderFrontendService } from '../../order/frontend/services/order-frontend.service';
 import { OrderAdminService } from '../../order/admin/services/order-admin.service';
+import { UploadFrontendService } from '../../upload/frontend/services/upload-frontend.service';
+import { UploadAdminService } from '../../upload/admin/services/upload-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -104,4 +106,6 @@ export interface ITrpcServices {
   paymentAdminService: PaymentAdminService;
   orderFrontendService: OrderFrontendService;
   orderAdminService: OrderAdminService;
+  uploadFrontendService: UploadFrontendService;
+  uploadAdminService: UploadAdminService;
 } 

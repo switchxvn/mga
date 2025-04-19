@@ -11,6 +11,10 @@ export { MailConfig } from './mail/entities/mail-config.entity';
 export { MailLog } from './mail/entities/mail-log.entity';
 export { MailTemplate } from './mail/entities/mail-template.entity';
 
+// Upload
+export { Upload } from './upload/entities/upload.entity';
+export { UploadConfig } from './upload/entities/upload-config.entity';
+
 // Product
 export { Product } from './product/entities/product.entity';
 export { ProductTranslation } from './product/entities/product-translation.entity';

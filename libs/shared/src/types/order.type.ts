@@ -12,9 +12,9 @@ export enum PaymentStatus {
 }
 
 export enum ProductType {
-  PHYSICAL = 'physical',
-  DIGITAL = 'digital',
-  TICKET = 'ticket'
+  PHYSICAL = 'PHYSICAL',
+  DIGITAL = 'DIGITAL',
+  TICKET = 'TICKET'
 }
 
 export interface Address {

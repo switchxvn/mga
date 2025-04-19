@@ -34,6 +34,9 @@ import { MailConfigSeeder } from '../seeders/mail-config.seeder';
 import { MailConfig } from '../../../../apps/backend/src/modules/mail/entities/mail-config.entity';
 import { MailTemplate } from '../../../../apps/backend/src/modules/mail/entities/mail-template.entity';
 import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
+import { UploadConfigSeeder } from '../seeders/upload-config.seeder';
+import { Upload } from '../../../../apps/backend/src/modules/upload/entities/upload.entity';
+import { UploadConfig } from '../../../../apps/backend/src/modules/upload/entities/upload-config.entity';
 
 @Module({
   imports: [
@@ -60,6 +63,8 @@ import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
       FoodItemTranslation,
       MailConfig,
       MailTemplate,
+      Upload,
+      UploadConfig,
     ]),
   ],
   providers: [
@@ -73,6 +78,7 @@ import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
     FoodMenuSeeder,
     MailConfigSeeder,
     MailTemplateSeeder,
+    UploadConfigSeeder,
   ],
 })
 class SeedModule {}

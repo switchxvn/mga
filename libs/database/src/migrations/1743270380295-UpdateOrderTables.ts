@@ -35,8 +35,8 @@ export class UpdateOrderTables1743270380295 implements MigrationInterface {
             new TableColumn({
                 name: "product_type",
                 type: "enum",
-                enum: ["physical", "digital", "ticket"],
-                default: "'physical'",
+                enum: ["PHYSICAL", "DIGITAL", "TICKET"],
+                default: "'PHYSICAL'",
             }),
             new TableColumn({
                 name: "is_used",

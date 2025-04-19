@@ -3,9 +3,9 @@ import { Order } from './order.entity';
 import { Product } from '../../product/entities/product.entity';
 
 export enum ProductType {
-  PHYSICAL = 'physical',
-  DIGITAL = 'digital',
-  TICKET = 'ticket'
+  PHYSICAL = 'PHYSICAL',
+  DIGITAL = 'DIGITAL',
+  TICKET = 'TICKET'
 }
 
 export interface ProductSnapshot {

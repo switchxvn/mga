@@ -7,6 +7,7 @@ import TicketSidebar from "../../components/sidebar/TicketSidebar.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
 import TicketCard from "../../components/cards/TicketCard.vue";
+import { ProductType } from '@ew/shared/types';
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -191,7 +192,7 @@ watch(locale, async () => {
     page: 1,
     limit: 12,
     locale: locale.value,
-    type: 'TICKET' // Keep the type filter
+    type: ProductType.TICKET // Keep the type filter
   };
 
   // Clear URL query params

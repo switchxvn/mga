@@ -8,6 +8,7 @@ import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
 import { Ticket, Calendar, MapPin } from 'lucide-vue-next';
 import Pagination from "../../components/Pagination.vue";
+import { ProductType, type Product, type ProductSpecification } from '@ew/shared/types';
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -73,7 +74,7 @@ const initialFilters = ref<ProductFilter>({
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
   includeNullPrice: route.query.includeNullPrice === "true",
   categories: route.query.categories
-    ? String(route.query.categories).split(",").map(Number)
+    ? String(route.query.categories).split(",")
     : undefined,
   isFeatured: route.query.isFeatured === "true" ? true : undefined,
   isNew: route.query.isNew === "true" ? true : undefined,
@@ -81,7 +82,7 @@ const initialFilters = ref<ProductFilter>({
   sortBy: (route.query.sortBy as ProductSortBy) || "newest",
   page: Number(route.query.page) || 1,
   limit: Number(route.query.limit) || 12,
-  type: (route.query.type as string) || "PHYSICAL",
+  type: (route.query.type as ProductType) || ProductType.PHYSICAL,
 });
 
 // Current page
@@ -102,8 +103,8 @@ const {
 const hasProducts = computed(() => products.value.length > 0);
 
 // Filter products by type
-const ticketProducts = computed(() => products.value.filter(product => product.type === 'TICKET'));
-const regularProducts = computed(() => products.value.filter(product => product.type !== 'TICKET'));
+const ticketProducts = computed(() => products.value.filter((product: Product) => product.type === ProductType.TICKET));
+const regularProducts = computed(() => products.value.filter((product: Product) => product.type !== ProductType.TICKET));
 const hasTickets = computed(() => ticketProducts.value.length > 0);
 
 // Sort options as computed property to ensure translations are updated
@@ -173,7 +174,7 @@ const updateQueryParams = () => {
   if (filters.value.isSale) query.isSale = "true";
   if (filters.value.sortBy && filters.value.sortBy !== "newest") query.sortBy = filters.value.sortBy;
   if (filters.value.page && filters.value.page > 1) query.page = String(filters.value.page);
-  if (filters.value.limit !== 12) query.limit = String(filters.value.limit);
+  if (filters.value.limit && filters.value.limit !== 12) query.limit = String(filters.value.limit);
   if (filters.value.type) query.type = filters.value.type;
 
   // Update route
@@ -211,7 +212,7 @@ watch(locale, async () => {
     sortBy: 'newest',
     page: 1,
     limit: 12,
-    type: 'PHYSICAL',
+    type: ProductType.PHYSICAL,
   };
 
   // Clear URL query params

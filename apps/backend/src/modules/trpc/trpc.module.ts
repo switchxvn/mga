@@ -29,6 +29,7 @@ import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
 import { FoodMenuModule } from '../food-menu/food-menu.module';
 import { PaymentModule } from '../payment/payment.module';
 import { OrderModule } from '../order/order.module';
+import { UploadModule } from '../upload/upload.module';
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
  * 
@@ -71,6 +72,7 @@ import { OrderModule } from '../order/order.module';
     TicketPricingModule,
     FoodMenuModule,
     OrderModule,
+    UploadModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

@@ -30,6 +30,7 @@ import { contactSectionRouter } from './routers/contact-section.router';
 import { ticketPricingSectionRouter } from './routers/ticket-pricing-section.router';
 import { paymentRouter } from './routers/payment.router';
 import { orderRouter } from './routers/order.router';
+import { uploadRouter } from './routers/upload.router';
 
 @Injectable()
 export class TrpcRouter {
@@ -67,6 +68,7 @@ export class TrpcRouter {
       foodMenu: foodMenuRouter,
       payment: paymentRouter,
       order: orderRouter,
+      upload: uploadRouter,
       admin: this.trpc.createRouter({
         menuItems: adminMenuItemsRouter,
         foodMenu: adminFoodMenuRouter,
