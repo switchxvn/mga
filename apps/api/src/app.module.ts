@@ -22,6 +22,11 @@ import * as entities from '../../../apps/backend/src/modules/entities';
         entities: Object.values(entities),
         synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
         logging: configService.get('NODE_ENV') === 'development',
+        extra: configService.get('NODE_ENV') === 'production' ? {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        } : {},
       }),
     }),
     PaymentModule,
