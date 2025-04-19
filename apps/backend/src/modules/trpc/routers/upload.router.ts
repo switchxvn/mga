@@ -13,13 +13,21 @@ export const uploadRouter = router({
   // Frontend routes
   getPresignedUrl: publicProcedure
     .input(z.object({
-      filename: z.string(),
-      mimeType: z.string(),
-      size: z.number(),
+      filename: z.string().min(1),
+      mimeType: z.string().min(1),
+      size: z.number().positive(),
+      folder: z.string().optional(),
       uploadBy: z.string().uuid().optional(),
-    }))
+    }).strict())
     .mutation(async ({ ctx, input }) => {
-      return ctx.services.uploadFrontendService.getPresignedUrl(input);
+      // Ensure all required fields are present with correct types
+      const serviceInput = {
+        filename: input.filename,
+        mimeType: input.mimeType,
+        size: input.size,
+        folder: input.folder
+      };
+      return ctx.services.uploadFrontendService.getPresignedUrl(serviceInput);
     }),
 
   getUploadById: publicProcedure
@@ -39,11 +47,16 @@ export const uploadRouter = router({
   admin: router({
     getAllUploads: adminProcedure
       .input(z.object({
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(100).default(10),
-      }))
+        page: z.number().int().min(1),
+        pageSize: z.number().int().min(1).max(100),
+      }).strict())
       .query(async ({ ctx, input }) => {
-        return ctx.services.uploadAdminService.findAllUploads(input);
+        // Transform input to ensure all fields are present
+        const options = {
+          page: input.page,
+          pageSize: input.pageSize
+        };
+        return ctx.services.uploadAdminService.findAllUploads(options);
       }),
 
     getUploadById: adminProcedure

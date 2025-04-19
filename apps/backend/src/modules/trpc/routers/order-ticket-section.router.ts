@@ -148,11 +148,16 @@ export const orderTicketSectionRouter = router({
         z.object({
           id: z.number().int().positive(),
           order: z.number().int().min(0),
-        })
+        }).strict()
       ).min(1))
       .mutation(async ({ ctx, input }) => {
         try {
-          return await ctx.services.orderTicketSectionAdminService.updateSectionsOrder(input);
+          // Transform input to ensure all fields are present
+          const orderData = input.map(item => ({
+            id: item.id,
+            order: item.order
+          }));
+          return await ctx.services.orderTicketSectionAdminService.updateSectionsOrder(orderData);
         } catch (error) {
           console.error('Error in updateSectionsOrder:', error);
           throw new TRPCError({
