@@ -7,6 +7,7 @@ import { PaymentGatewayInterface, CreatePaymentRequest, PaymentItem } from '../.
 import { PAYMENT_GATEWAY_TOKEN } from '../../../payment-gateway/payment-gateway.module';
 import { Address } from '../../entities/order.entity';
 import { PaymentFrontendService } from '../../../payment/frontend/services/payment-frontend.service';
+import { MailService } from '../../../mail/services/mail.service';
 
 @Injectable()
 export class OrderFrontendService {
@@ -17,7 +18,8 @@ export class OrderFrontendService {
     private readonly orderItemRepository: Repository<OrderItem>,
     @Inject(PAYMENT_GATEWAY_TOKEN)
     private readonly paymentGateway: PaymentGatewayInterface,
-    private readonly paymentFrontendService: PaymentFrontendService
+    private readonly paymentFrontendService: PaymentFrontendService,
+    private readonly mailService: MailService,
   ) {}
 
   async findOrderById(id: number): Promise<Order> {

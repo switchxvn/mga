@@ -1,29 +1,9 @@
-export interface SendMailOptions {
-  to: string | string[];
-  from?: string;
-  subject: string;
-  text?: string;
-  html?: string;
-  template?: {
-    id: string;
-    data: Record<string, any>;
-  };
-  attachments?: Array<{
-    filename: string;
-    content: string | Buffer;
-    contentType?: string;
-  }>;
-}
-
-export interface MailResponse {
-  success: boolean;
-  messageId?: string;
-  error?: string;
-}
+import { TemplateMailOptions, MailResponse } from '../types/mail.types';
 
 export interface MailServiceInterface {
-  sendMail(options: SendMailOptions): Promise<MailResponse>;
+  sendMail(options: TemplateMailOptions): Promise<MailResponse>;
   verifyConfiguration(): Promise<boolean>;
+  sendOrderConfirmation(email: string, orderDetails: any): Promise<void>;
 }
 
 export interface MailgunConfig {

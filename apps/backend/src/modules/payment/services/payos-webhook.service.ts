@@ -1,18 +1,17 @@
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
-import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
-import { PayOSException } from '../exceptions/payos.exception';
-import { OrderAdminService } from '../../../../backend/src/modules/order/admin/services/order-admin.service';
-import { PaymentFrontendService } from '../../../../backend/src/modules/payment/frontend/services/payment-frontend.service';
-import { PaymentStatus } from '../../../../backend/src/modules/order/entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaymentMethod } from '../../../../backend/src/modules/payment/entities/payment-method.entity';
-import { MailService } from '../../../../backend/src/modules/mail/services/mail.service';
+import * as crypto from 'crypto';
+import { PayOSException } from '../exceptions/payos.exception';
+import { OrderAdminService } from '../../order/admin/services/order-admin.service';
+import { PaymentFrontendService } from '../frontend/services/payment-frontend.service';
+import { PaymentStatus } from '../../order/entities/order.entity';
+import { PaymentMethod } from '../entities/payment-method.entity';
+import { MailService } from '../../mail/services/mail.service';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { ProductTranslation } from '../../../../backend/src/modules/product/entities/product-translation.entity';
+import { ProductTranslation } from '../../product/entities/product-translation.entity';
 
 @Injectable()
 export class PayOSWebhookService {
@@ -27,7 +26,7 @@ export class PayOSWebhookService {
     private readonly paymentMethodRepository: Repository<PaymentMethod>
   ) {}
 
-  async processWebhook(webhookData: PayOSWebhookDto): Promise<void> {
+  async processWebhook(webhookData: any): Promise<void> {
     try {
       // Skip processing if description is VQRIO123
       if (webhookData.data.description === 'VQRIO123') {
@@ -134,7 +133,7 @@ export class PayOSWebhookService {
 
           this.logger.log('Successfully sent ticket confirmation email', {
             orderId,
-            customerEmail: order.email
+            customerEmail:  order.email
           });
         } catch (error) {
           this.logger.error('Error sending ticket confirmation email:', error);
@@ -182,7 +181,7 @@ export class PayOSWebhookService {
       .join('&');
   }
 
-  private async verifySignature(webhookData: PayOSWebhookDto, checksumKey: string): Promise<boolean> {
+  private async verifySignature(webhookData: any, checksumKey: string): Promise<boolean> {
     try {
       const sortedDataByKey = this.sortObjDataByKey(webhookData.data);
       const dataQueryStr = this.convertObjToQueryStr(sortedDataByKey);

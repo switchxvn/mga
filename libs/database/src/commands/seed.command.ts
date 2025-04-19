@@ -8,6 +8,7 @@ import { Logger } from '@nestjs/common';
 import { ContactSectionSeeder } from '../seeders/contact-section.seeder';
 import { FoodMenuSeeder } from '../seeders/food-menu.seeder';
 import { MailConfigSeeder } from '../seeders/mail-config.seeder';
+import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
 
 interface SeedCommandOptions {
   seeder?: string;
@@ -31,7 +32,8 @@ export class SeedCommand extends CommandRunner {
     private readonly tourismAboutSectionSeeder: TourismAboutSectionSeeder,
     private readonly contactSectionSeeder: ContactSectionSeeder,
     private readonly foodMenuSeeder: FoodMenuSeeder,
-    private readonly mailConfigSeeder: MailConfigSeeder
+    private readonly mailConfigSeeder: MailConfigSeeder,
+    private readonly mailTemplateSeeder: MailTemplateSeeder
   ) {
     super();
     this.logger.log('SeedCommand constructor called');
@@ -65,7 +67,7 @@ export class SeedCommand extends CommandRunner {
 
   @Option({
     flags: '-s, --seeder [seederName]',
-    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, mail-config)',
+    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, mail-config, mail-template)',
   })
   parseSeeder(val: string): string {
     this.logger.log(`parseSeeder called with value: ${val}`);
@@ -115,9 +117,14 @@ export class SeedCommand extends CommandRunner {
         await this.mailConfigSeeder.seed();
         this.logger.log('Mail configuration seeded successfully');
         break;
+      case 'mail-template':
+        this.logger.log('Seeding mail templates...');
+        await this.mailTemplateSeeder.seed();
+        this.logger.log('Mail templates seeded successfully');
+        break;
       default:
         this.logger.error(`Unknown seeder: ${seederName}`);
-        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, food-menu, mail-config');
+        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, food-menu, mail-config, mail-template');
         process.exit(1);
     }
   }
@@ -126,6 +133,10 @@ export class SeedCommand extends CommandRunner {
     this.logger.log('Seeding mail configuration...');
     await this.mailConfigSeeder.seed();
     this.logger.log('Mail configuration seeded successfully');
+
+    this.logger.log('Seeding mail templates...');
+    await this.mailTemplateSeeder.seed();
+    this.logger.log('Mail templates seeded successfully');
 
     this.logger.log('Seeding country phone codes...');
     await this.countryPhoneCodeSeeder.seed();

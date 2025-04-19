@@ -83,8 +83,7 @@ const imageKeys = props.settings.images.map((_, index) => `cultural-image-${inde
               :key="imageKeys[index]"
               class="relative overflow-hidden rounded-lg shadow-lg group"
               :class="{
-                'mt-8 aspect-[3/4]': index === 0,
-                '-mt-4 mb-4 aspect-[3/5]': index === 1
+                'aspect-[2/3]': index === 0 || index === 1
               }"
               :data-aos="settings.imagePosition === 'left' ? 'fade-right' : 'fade-left'"
               :data-aos-duration="1000"

@@ -46,6 +46,9 @@ export class Order {
   @Column({ nullable: true })
   email?: string;
 
+  @Column({ name: 'customer_name', nullable: true })
+  customerName?: string;
+
   @ManyToOne(() => CountryPhoneCode)
   @JoinColumn({ name: 'phone_code', referencedColumnName: 'phoneCode' })
   countryPhoneCode: CountryPhoneCode;

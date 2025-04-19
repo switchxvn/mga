@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeepPartial } from 'typeorm';
-import * as FormData from 'form-data';
-import Mailgun from 'mailgun.js';
+import * as nodemailer from 'nodemailer';
+import { Address } from 'nodemailer/lib/mailer';
+import { Readable } from 'stream';
 import { MailConfig } from '../entities/mail-config.entity';
 import { MailLog } from '../entities/mail-log.entity';
 import { MailServiceInterface } from '../interfaces/mail.interface';
@@ -10,11 +11,10 @@ import { MailResponse, TemplateMailOptions } from '../types/mail.types';
 import { MailStatus } from '../entities/mail-log.entity';
 
 @Injectable()
-export class MailgunService implements MailServiceInterface {
-  private mailgun: any;
-  private domain: string;
+export class GmailService implements MailServiceInterface {
+  private transporter: nodemailer.Transporter;
   private defaultFrom: string;
-  private readonly logger = new Logger(MailgunService.name);
+  private readonly logger = new Logger(GmailService.name);
 
   constructor(
     @InjectRepository(MailConfig)
@@ -23,7 +23,7 @@ export class MailgunService implements MailServiceInterface {
     private readonly mailLogRepository: Repository<MailLog>,
   ) {}
 
-  private getEmailString(email: any): string {
+  private getEmailString(email: string | Address | (string | Address)[]): string {
     if (Array.isArray(email)) {
       return email.map(e => typeof e === 'string' ? e : e.address).join(', ');
     }
@@ -34,57 +34,65 @@ export class MailgunService implements MailServiceInterface {
     if (!content) return '';
     if (typeof content === 'string') return content;
     if (Buffer.isBuffer(content)) return content.toString('utf-8');
+    if (content instanceof Readable) return '';
     return String(content);
   }
 
-  private async initializeMailgun(): Promise<void> {
+  private async initializeGmail(): Promise<void> {
     try {
-      const mailgunConfig = await this.mailConfigRepository.findOne({
-        where: { code: 'MAILGUN', isActive: true }
+      const gmailConfig = await this.mailConfigRepository.findOne({
+        where: { code: 'GMAIL', isActive: true }
       });
 
-      if (!mailgunConfig || !mailgunConfig.config) {
-        throw new Error('Mailgun configuration not found or inactive');
+      if (!gmailConfig || !gmailConfig.config) {
+        throw new Error('Gmail configuration not found or inactive');
       }
 
-      const { apiKey, domain, host, from } = mailgunConfig.config;
+      const { host, port, auth, from, secure } = gmailConfig.config;
 
-      if (!apiKey || !domain) {
-        throw new Error('Invalid Mailgun configuration');
+      if (!host || !port || !auth) {
+        throw new Error('Invalid Gmail configuration');
       }
 
-      const mg = new Mailgun(FormData as any);
-      this.mailgun = mg.client({ username: 'api', key: apiKey, url: host });
-      this.domain = domain;
-      this.defaultFrom = from || `noreply@${domain}`;
+      this.transporter = nodemailer.createTransport({
+        host,
+        port,
+        auth,
+        secure: secure || true,
+      });
 
-      this.logger.debug('Mailgun initialized with config:', {
-        domain: this.domain,
+      this.defaultFrom = from || auth.user;
+
+      this.logger.debug('Gmail SMTP initialized with config:', {
+        host,
+        port,
         from: this.defaultFrom,
       });
     } catch (error) {
-      this.logger.error(`Failed to initialize Mailgun: ${error.message}`, error.stack);
+      this.logger.error(`Failed to initialize Gmail SMTP: ${error.message}`, error.stack);
       throw new Error('Failed to initialize mail service');
     }
   }
 
   async verifyConfiguration(): Promise<boolean> {
     try {
-      if (!this.mailgun) {
-        await this.initializeMailgun();
+      if (!this.transporter) {
+        await this.initializeGmail();
       }
+      
+      await this.transporter.verify();
       return true;
     } catch (error) {
-      this.logger.error(`Failed to verify Mailgun configuration: ${error.message}`, error.stack);
+      this.logger.error(`Failed to verify Gmail SMTP configuration: ${error.message}`, error.stack);
       return false;
     }
   }
 
   async sendMail(options: TemplateMailOptions): Promise<MailResponse> {
-    let currentMailLog: MailLog | null = null;
+    let mailLog;
     try {
-      if (!this.mailgun) {
-        await this.initializeMailgun();
+      if (!this.transporter) {
+        await this.initializeGmail();
       }
 
       const mailLogData: DeepPartial<MailLog> = {
@@ -97,7 +105,7 @@ export class MailgunService implements MailServiceInterface {
         status: MailStatus.PENDING,
       };
 
-      currentMailLog = await this.mailLogRepository.save(
+      mailLog = await this.mailLogRepository.save(
         this.mailLogRepository.create(mailLogData)
       );
 
@@ -107,25 +115,25 @@ export class MailgunService implements MailServiceInterface {
         subject: options.subject,
         ...(options.text && { text: options.text }),
         ...(options.html && { html: options.html }),
-        ...(options.attachments && { attachment: options.attachments }),
+        ...(options.attachments && { attachments: options.attachments }),
       };
 
-      const response = await this.mailgun.messages.create(this.domain, mailData);
+      const response = await this.transporter.sendMail(mailData);
 
-      await this.mailLogRepository.update(currentMailLog.id, {
+      await this.mailLogRepository.update(mailLog.id, {
         status: MailStatus.SENT,
-        providerMessageId: response.id,
+        providerMessageId: response.messageId,
       });
 
       return {
         success: true,
-        messageId: response.id,
+        messageId: response.messageId,
       };
     } catch (error) {
       this.logger.error(`Failed to send email: ${error.message}`, error.stack);
 
-      if (currentMailLog) {
-        await this.mailLogRepository.update(currentMailLog.id, {
+      if (mailLog) {
+        await this.mailLogRepository.update(mailLog.id, {
           status: MailStatus.FAILED,
           error: error.message,
         });
@@ -139,6 +147,10 @@ export class MailgunService implements MailServiceInterface {
   }
 
   async sendOrderConfirmation(email: string, orderDetails: any): Promise<void> {
+    if (!this.transporter) {
+      await this.initializeGmail();
+    }
+
     const mailOptions: TemplateMailOptions = {
       to: email,
       subject: 'Order Confirmation',

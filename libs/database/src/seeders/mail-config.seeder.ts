@@ -44,6 +44,21 @@ export class MailConfigSeeder {
             secure: false
           },
           is_active: true // Set Mailtrap as default active provider for development
+        },
+        {
+          name: 'Gmail',
+          code: 'GMAIL',
+          config: {
+            host: 'smtp.gmail.com',
+            port: 465,
+            auth: {
+              user: 'your_gmail@gmail.com',
+              pass: 'your_gmail_app_password' // Use App Password generated from Google Account
+            },
+            from: 'your_gmail@gmail.com',
+            secure: true // Use SSL
+          },
+          is_active: false
         }
       ];
 
