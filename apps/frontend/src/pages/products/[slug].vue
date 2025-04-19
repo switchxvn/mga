@@ -1,51 +1,39 @@
 <script setup lang="ts">
-import { computed, ref, h, nextTick, watch } from "vue";
-import { useLocalization } from "~/composables/useLocalization";
-import { useTrpc } from "~/composables/useTrpc";
-import { useRoute, useRouter } from "vue-router";
-import LazyImage from "~/components/ui/LazyImage.vue";
-import CrossSellProducts from "~/components/product/CrossSellProducts.vue";
-import TableOfContents from "~/components/common/TableOfContents.vue";
-import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
-import { formatFullProductContent } from "~/utils/contentFormatter";
-import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
+import { ProductType } from '@ew/shared';
 import { useHead } from '@unhead/vue';
-import { useAsyncData } from 'nuxt/app';
-import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
-import { useNotification } from "~/composables/useNotification";
-import AddToCartButton from "~/components/cart/AddToCartButton.vue";
-import Breadcrumb from "~/components/common/Breadcrumb.vue";
-import GlobalModal from "~/components/ui/GlobalModal.vue";
-import { unref } from 'vue';
-import { 
-  Check, 
-  Share, 
-  Facebook, 
-  Twitter, 
-  Linkedin, 
-  Mail, 
-  Link, 
-  Video,
-  AlertTriangle,
+import {
   AlertCircle,
-  Tag,
-  LayoutGrid,
-  FileText,
-  Settings,
-  Ticket,
+  AlertTriangle,
   Calendar,
+  Check,
   Clock,
-  MapPin,
+  Facebook,
   Info,
-  ListOrdered
+  LayoutGrid,
+  Link,
+  Linkedin,
+  ListOrdered,
+  Mail,
+  MapPin,
+  Tag,
+  Ticket,
+  Twitter
 } from 'lucide-vue-next';
-import { useProductVariants } from '~/composables/useProduct';
-import { formatPrice } from '@ew/shared';
-import type { Product } from '@ew/shared';
-import { useProductDetail } from '~/composables/useProductDetail';
 import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
-import { ProductType } from '@ew/shared/types';
+import { computed, nextTick, ref, unref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import AddToCartButton from "~/components/cart/AddToCartButton.vue";
+import Breadcrumb from "~/components/common/Breadcrumb.vue";
+import TableOfContents from "~/components/common/TableOfContents.vue";
+import CrossSellProducts from "~/components/product/CrossSellProducts.vue";
+import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
+import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
+import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
+import GlobalModal from "~/components/ui/GlobalModal.vue";
+import LazyImage from "~/components/ui/LazyImage.vue";
+import { useLocalization } from "~/composables/useLocalization";
+import { useProductDetail } from '~/composables/useProductDetail';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
