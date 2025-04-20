@@ -25,43 +25,30 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
 
-  const trpc = useTrpc();
-  
-  try {
-    const seo = await trpc.seo.getSeoByPath.query(to.path || '/');
-    if (!seo) return;
+  const { data: seo } = await useAsyncData(
+    `seo-${to.path}`,
+    () => useTrpc().seo.getSeoByPath.query(to.path || '/'),
+    {
+      server: true, // Ensure this runs on server
+      lazy: false   // Don't defer the data fetching
+    }
+  );
 
-    const head = {
-      title: seo.title,
-      meta: [
-        { name: 'description', content: seo.description },
-        // Open Graph
-        { property: 'og:title', content: seo.ogTitle || seo.title },
-        { property: 'og:description', content: seo.ogDescription || seo.description },
-        { property: 'og:image', content: seo.ogImage },
-        // Keywords
-        { name: 'keywords', content: seo.keywords },
-        // Robots
-        { name: 'robots', content: seo.robotsTxt },
-      ].filter(meta => meta.content), // Remove meta tags with undefined content
-      link: seo.canonicalUrl ? [
-        { rel: 'canonical', href: seo.canonicalUrl }
-      ] : []
-    };
+  if (!seo.value) return;
 
-    // Set SEO tags using both methods for maximum compatibility
-    useHead(head);
-    useSeoMeta({
-      title: seo.title,
-      description: seo.description,
-      ogTitle: seo.ogTitle || seo.title,
-      ogDescription: seo.ogDescription || seo.description,
-      ogImage: seo.ogImage,
-      keywords: seo.keywords,
-      robots: seo.robotsTxt,
-      ...(seo.canonicalUrl ? { canonical: seo.canonicalUrl } : {})
-    });
-  } catch (err) {
-    console.error('Error updating SEO tags:', err);
-  }
+  useHead({
+    title: seo.value.title,
+    meta: [
+      { name: 'description', content: seo.value.description },
+      { name: 'keywords', content: seo.value.keywords },
+      { property: 'og:title', content: seo.value.ogTitle || seo.value.title },
+      { property: 'og:description', content: seo.value.ogDescription || seo.value.description },
+      { property: 'og:image', content: seo.value.ogImage },
+      { property: 'og:type', content: 'website' },
+      { name: 'robots', content: seo.value.robotsTxt }
+    ],
+    ...(seo.value.canonicalUrl ? {
+      link: [{ rel: 'canonical', href: seo.value.canonicalUrl }]
+    } : {})
+  });
 }); 
