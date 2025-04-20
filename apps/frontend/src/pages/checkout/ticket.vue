@@ -145,7 +145,7 @@ const handleSubmit = async () => {
 // Lifecycle
 onMounted(() => {
   if (!bookingData.value) {
-    router.push('/tickets');
+    router.push('/ticket-pricing');
     return;
   }
   fetchPaymentMethods();

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentModule } from './payment/payment.module';
@@ -32,4 +32,6 @@ import * as entities from '../../../apps/backend/src/modules/entities';
     PaymentModule,
   ],
 })
-export class AppModule {} 
+export class AppModule implements NestModule {
+  configure() {}
+} 
