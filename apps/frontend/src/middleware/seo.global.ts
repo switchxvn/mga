@@ -6,47 +6,60 @@ type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Bỏ qua các tài nguyên tĩnh
+  // Skip for static resources
   if (to.path.match(/\.(svg|png|jpg|jpeg|gif|css|js|ico|woff|woff2|ttf|eot|json|xml)$/i)) {
     return;
   }
   
-  // Bỏ qua các trang chi tiết vì chúng đã có SEO riêng
-  // Kiểm tra các mẫu URL của trang chi tiết
+  // Skip detail pages as they have their own SEO
   const detailPagePatterns = [
-    /^\/posts\/[^\/]+$/,  // Trang chi tiết bài viết: /posts/slug
-    /^\/products\/[^\/]+$/,  // Trang chi tiết sản phẩm: /products/slug
-    /^\/bai-viet\/[^\/]+$/,  // Trang chi tiết bài viết: /bai-viet/slug
-    /^\/san-pham\/[^\/]+$/,  // Trang chi tiết sản phẩm: /san-pham/slug
-    /^\/dich-vu\/[^\/]+$/,  // Trang chi tiết dịch vụ: /dich-vu/slug
-    /^\/tickets\/[^\/]+$/,  // Trang chi tiết vé: /tickets/slug
-    // Thêm các mẫu URL khác nếu cần
+    /^\/posts\/[^\/]+$/,
+    /^\/products\/[^\/]+$/,
+    /^\/bai-viet\/[^\/]+$/,
+    /^\/san-pham\/[^\/]+$/,
+    /^\/dich-vu\/[^\/]+$/,
+    /^\/tickets\/[^\/]+$/,
   ];
   
-  // Nếu URL hiện tại khớp với bất kỳ mẫu nào, bỏ qua việc gọi API SEO
   if (detailPagePatterns.some(pattern => pattern.test(to.path))) {
     return;
   }
-  
+
   const trpc = useTrpc();
   
   try {
     const seo = await trpc.seo.getSeoByPath.query(to.path || '/');
     if (!seo) return;
 
+    const head = {
+      title: seo.title,
+      meta: [
+        { name: 'description', content: seo.description },
+        // Open Graph
+        { property: 'og:title', content: seo.ogTitle || seo.title },
+        { property: 'og:description', content: seo.ogDescription || seo.description },
+        { property: 'og:image', content: seo.ogImage },
+        // Keywords
+        { name: 'keywords', content: seo.keywords },
+        // Robots
+        { name: 'robots', content: seo.robotsTxt },
+      ].filter(meta => meta.content), // Remove meta tags with undefined content
+      link: seo.canonicalUrl ? [
+        { rel: 'canonical', href: seo.canonicalUrl }
+      ] : []
+    };
+
+    // Set SEO tags using both methods for maximum compatibility
+    useHead(head);
     useSeoMeta({
-      title: seo.title || undefined,
-      description: seo.description || undefined,
-      // Open Graph
-      ogTitle: seo.ogTitle || seo.title || undefined,
-      ogDescription: seo.ogDescription || seo.description || undefined,
-      ogImage: seo.ogImage || undefined,
-      // Keywords
-      keywords: seo.keywords || undefined,
-      // Robots
-      robots: seo.robotsTxt || undefined,
-      // Canonical
-      ...(seo.canonicalUrl ? { canonical: seo.canonicalUrl } : {}),
+      title: seo.title,
+      description: seo.description,
+      ogTitle: seo.ogTitle || seo.title,
+      ogDescription: seo.ogDescription || seo.description,
+      ogImage: seo.ogImage,
+      keywords: seo.keywords,
+      robots: seo.robotsTxt,
+      ...(seo.canonicalUrl ? { canonical: seo.canonicalUrl } : {})
     });
   } catch (err) {
     console.error('Error updating SEO tags:', err);
