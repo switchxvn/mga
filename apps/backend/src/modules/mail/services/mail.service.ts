@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailServiceInterface } from '../interfaces/mail.interface';
 import { TemplateMailOptions, MailResponse } from '../types/mail.types';
@@ -10,7 +10,7 @@ import { MailTemplate } from '../entities/mail-template.entity';
 import * as Handlebars from 'handlebars';
 
 @Injectable()
-export class MailService implements MailServiceInterface, OnModuleInit {
+export class MailService implements MailServiceInterface {
   private transporter: nodemailer.Transporter | null = null;
   private readonly logger = new Logger(MailService.name);
 
@@ -22,55 +22,7 @@ export class MailService implements MailServiceInterface, OnModuleInit {
     private readonly mailTemplateRepository: Repository<MailTemplate>
   ) {}
 
-  async onModuleInit() {
-    await this.initializeTransporter();
-  }
-
-  private async initializeTransporter() {
-    try {
-      const mailConfig = await this.mailConfigRepository.findOne({
-        where: { code: 'MAILTRAP', isActive: true }
-      });
-
-      if (!mailConfig) {
-        this.logger.warn('No active mail configuration found. Email functionality will be disabled.');
-        return;
-      }
-
-      this.transporter = nodemailer.createTransport({
-        host: mailConfig.config.host,
-        port: mailConfig.config.port,
-        secure: mailConfig.config.secure || false,
-        auth: {
-          user: mailConfig.config.auth?.user,
-          pass: mailConfig.config.auth?.pass,
-        },
-        connectionTimeout: 10000, // 10 seconds
-        greetingTimeout: 10000, // 10 seconds
-        socketTimeout: 10000, // 10 seconds
-      });
-
-      try {
-        await this.transporter.verify();
-        this.logger.log('SMTP connection verified successfully');
-      } catch (error) {
-        this.logger.warn('SMTP connection verification failed. Email functionality will be disabled:', error);
-        this.transporter = null;
-      }
-    } catch (error) {
-      this.logger.warn('Failed to initialize mail transporter. Email functionality will be disabled:', error);
-    }
-  }
-
   async sendMail(options: TemplateMailOptions): Promise<MailResponse> {
-    if (!this.transporter) {
-      this.logger.warn('Mail transporter not initialized. Skipping email send.');
-      return {
-        success: false,
-        error: 'Mail service not configured',
-      };
-    }
-
     const maxRetries = 3;
     let currentTry = 0;
 
@@ -81,7 +33,27 @@ export class MailService implements MailServiceInterface, OnModuleInit {
         });
 
         if (!mailConfig) {
-          throw new Error('Mail configuration not found or not active');
+          this.logger.warn('No active mail configuration found. Skipping email send.');
+          return {
+            success: false,
+            error: 'Mail service not configured',
+          };
+        }
+
+        // Initialize transporter if not already initialized
+        if (!this.transporter) {
+          this.transporter = nodemailer.createTransport({
+            host: mailConfig.config.host,
+            port: mailConfig.config.port,
+            secure: mailConfig.config.secure || false,
+            auth: {
+              user: mailConfig.config.auth?.user,
+              pass: mailConfig.config.auth?.pass,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 10000,
+          });
         }
 
         // Use from address from config if not provided in options
@@ -131,6 +103,9 @@ export class MailService implements MailServiceInterface, OnModuleInit {
           subject: options.subject
         });
         
+        // Reset transporter on error to force re-initialization on next try
+        this.transporter = null;
+        
         if (currentTry === maxRetries) {
           return {
             success: false,
@@ -152,12 +127,26 @@ export class MailService implements MailServiceInterface, OnModuleInit {
   }
 
   async verifyConfiguration(): Promise<boolean> {
-    if (!this.transporter) {
-      return false;
-    }
-
     try {
-      await this.transporter.verify();
+      const mailConfig = await this.mailConfigRepository.findOne({
+        where: { code: 'MAILTRAP', isActive: true }
+      });
+
+      if (!mailConfig) {
+        return false;
+      }
+
+      const tempTransporter = nodemailer.createTransport({
+        host: mailConfig.config.host,
+        port: mailConfig.config.port,
+        secure: mailConfig.config.secure || false,
+        auth: {
+          user: mailConfig.config.auth?.user,
+          pass: mailConfig.config.auth?.pass,
+        }
+      });
+
+      await tempTransporter.verify();
       return true;
     } catch (error) {
       this.logger.error('Configuration verification failed:', error);
