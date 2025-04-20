@@ -1,11 +1,15 @@
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
 import { useTrpc } from '../composables/useTrpc';
+import { defineNuxtRouteMiddleware } from 'nuxt/app';
+import { useAsyncData } from 'nuxt/app';
+import { useHead } from '@unhead/vue';
+import type { RouteLocationNormalized } from 'vue-router';
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
 
-export default defineNuxtRouteMiddleware(async (to) => {
+export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => {
   // Skip for static resources
   if (to.path.match(/\.(svg|png|jpg|jpeg|gif|css|js|ico|woff|woff2|ttf|eot|json|xml)$/i)) {
     return;
@@ -26,12 +30,31 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   try {
+    // Initialize tRPC client
+    const trpc = useTrpc();
+    if (!trpc) {
+      console.error('tRPC client not initialized');
+      return;
+    }
+
+    // Force refresh cache on each navigation
     const { data: seo } = await useAsyncData(
       `seo-${to.path}`,
-      () => useTrpc().seo.getSeoByPath.query(to.path || '/'),
+      async () => {
+        try {
+          console.log('Fetching SEO data for path:', to.path);
+          const result = await trpc.seo.getSeoByPath.query(to.path || '/');
+          console.log('SEO data result:', result);
+          return result;
+        } catch (err) {
+          console.error('Error in tRPC query:', err);
+          return null;
+        }
+      },
       {
-        server: true,
+        server: false, // Run on client-side to ensure fresh data
         lazy: false,
+        immediate: true,
         default: () => ({
           title: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
           description: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
@@ -45,7 +68,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
       }
     );
 
-    if (!seo.value) return;
+    if (!seo.value) {
+      console.warn('No SEO data returned for path:', to.path);
+      return;
+    }
 
     useHead({
       title: seo.value.title,
