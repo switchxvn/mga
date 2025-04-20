@@ -157,7 +157,8 @@ export class PayOSWebhookService {
               customerName: order.customerName || 'Quý khách',
               eventName: productTranslation.title || 'Vé tham quan',
               eventDate: eventDate,
-              tickets
+              tickets,
+              orderCode: order.orderCode
             };
 
             try {

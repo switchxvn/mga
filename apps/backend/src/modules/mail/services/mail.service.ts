@@ -1,17 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailServiceInterface } from '../interfaces/mail.interface';
 import { TemplateMailOptions, MailResponse } from '../types/mail.types';
-import * as nodemailer from 'nodemailer';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MailConfig } from '../entities/mail-config.entity';
 import { MailTemplate } from '../entities/mail-template.entity';
 import * as Handlebars from 'handlebars';
+import { MAIL_SERVICE } from '../mail.constants';
 
 @Injectable()
 export class MailService implements MailServiceInterface {
-  private transporter: nodemailer.Transporter | null = null;
   private readonly logger = new Logger(MailService.name);
 
   constructor(
@@ -19,7 +18,8 @@ export class MailService implements MailServiceInterface {
     @InjectRepository(MailConfig)
     private readonly mailConfigRepository: Repository<MailConfig>,
     @InjectRepository(MailTemplate)
-    private readonly mailTemplateRepository: Repository<MailTemplate>
+    private readonly mailTemplateRepository: Repository<MailTemplate>,
+    @Inject(MAIL_SERVICE) private readonly mailProvider: MailServiceInterface
   ) {}
 
   async sendMail(options: TemplateMailOptions): Promise<MailResponse> {
@@ -38,22 +38,6 @@ export class MailService implements MailServiceInterface {
             success: false,
             error: 'Mail service not configured',
           };
-        }
-
-        // Initialize transporter if not already initialized
-        if (!this.transporter) {
-          this.transporter = nodemailer.createTransport({
-            host: mailConfig.config.host,
-            port: mailConfig.config.port,
-            secure: mailConfig.config.secure || false,
-            auth: {
-              user: mailConfig.config.auth?.user,
-              pass: mailConfig.config.auth?.pass,
-            },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 10000,
-          });
         }
 
         // Use from address from config if not provided in options
@@ -85,16 +69,17 @@ export class MailService implements MailServiceInterface {
           });
         }
 
-        const info = await this.transporter.sendMail(options);
-        this.logger.log('Email sent successfully:', {
-          messageId: info.messageId,
-          to: options.to
-        });
+        const result = await this.mailProvider.sendMail(options);
+        
+        if (result.success) {
+          this.logger.log('Email sent successfully:', {
+            messageId: result.messageId,
+            to: options.to
+          });
+          return result;
+        }
 
-        return {
-          success: true,
-          messageId: info.messageId,
-        };
+        throw new Error(result.error || 'Unknown error occurred');
       } catch (error) {
         currentTry++;
         this.logger.error(`Error sending email (attempt ${currentTry}/${maxRetries}):`, {
@@ -102,9 +87,6 @@ export class MailService implements MailServiceInterface {
           to: options.to,
           subject: options.subject
         });
-        
-        // Reset transporter on error to force re-initialization on next try
-        this.transporter = null;
         
         if (currentTry === maxRetries) {
           return {
@@ -122,50 +104,15 @@ export class MailService implements MailServiceInterface {
 
     return {
       success: false,
-      error: 'Maximum retry attempts reached',
+      error: 'Max retries exceeded',
     };
   }
 
   async verifyConfiguration(): Promise<boolean> {
-    try {
-      const mailConfig = await this.mailConfigRepository.findOne({
-        where: { code: 'MAILTRAP', isActive: true }
-      });
-
-      if (!mailConfig) {
-        return false;
-      }
-
-      const tempTransporter = nodemailer.createTransport({
-        host: mailConfig.config.host,
-        port: mailConfig.config.port,
-        secure: mailConfig.config.secure || false,
-        auth: {
-          user: mailConfig.config.auth?.user,
-          pass: mailConfig.config.auth?.pass,
-        }
-      });
-
-      await tempTransporter.verify();
-      return true;
-    } catch (error) {
-      this.logger.error('Configuration verification failed:', error);
-      return false;
-    }
+    return this.mailProvider.verifyConfiguration();
   }
 
   async sendOrderConfirmation(email: string, orderDetails: any): Promise<void> {
-    const mailOptions: TemplateMailOptions = {
-      to: email,
-      subject: 'Order Confirmation',
-      html: `
-        <h1>Thank you for your order!</h1>
-        <p>Your order has been confirmed and is being processed.</p>
-        <h2>Order Details:</h2>
-        <pre>${JSON.stringify(orderDetails, null, 2)}</pre>
-      `,
-    };
-
-    await this.sendMail(mailOptions);
+    return this.mailProvider.sendOrderConfirmation(email, orderDetails);
   }
 } 

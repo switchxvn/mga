@@ -21,6 +21,8 @@ export class MailConfig {
     apiKey?: string;
     domain?: string;
     region?: string;
+    apiToken?: string;
+    fromName?: string;
 
     // Mailtrap specific
     port?: number;

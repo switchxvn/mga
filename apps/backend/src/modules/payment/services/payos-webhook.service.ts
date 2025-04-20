@@ -109,8 +109,8 @@ export class PayOSWebhookService {
 
           // Prepare email data
           const emailData = {
-            customerName: updatedOrder.customerName || 'Quý khách',
-            eventName: productTranslation?.title || 'Sự kiện',
+            customerName: order.customerName || 'Quý khách',
+            eventName: productTranslation.title || 'Vé tham quan',
             eventDate: eventDate,
             eventTime: eventTime,
             eventLocation: productTranslation?.content || 'Địa điểm sự kiện',
@@ -120,7 +120,8 @@ export class PayOSWebhookService {
             qrCodeUrl: firstTicket.imageQrCode || this.configService.get('DEFAULT_QR_IMAGE', 'https://example.com/qr-placeholder.png'),
             venueAddress: this.configService.get('VENUE_ADDRESS', 'Địa chỉ venue'),
             supportEmail: this.configService.get('SUPPORT_EMAIL', 'support@yourdomain.com'),
-            supportPhone: this.configService.get('SUPPORT_PHONE', '1900 xxxx')
+            supportPhone: this.configService.get('SUPPORT_PHONE', '1900 xxxx'),
+            orderCode: order.orderCode
           };
 
           // Send email

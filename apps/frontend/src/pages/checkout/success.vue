@@ -249,14 +249,12 @@ onMounted(() => {
           <!-- Action Buttons -->
           <div class="flex justify-center gap-4 mt-8">
             <UButton 
-              :to="hasTicketItems ? '/tickets' : '/products'" 
+              :to="hasTicketItems ? '/ticket-pricing' : '/products'" 
               color="gray"
             >
               {{ hasTicketItems ? t('checkout.backToTickets') : t('checkout.backToProducts') }}
             </UButton>
-            <UButton to="/account/orders" color="primary">
-              {{ t('checkout.viewOrders') }}
-            </UButton>
+           
           </div>
         </div>
       </div>
