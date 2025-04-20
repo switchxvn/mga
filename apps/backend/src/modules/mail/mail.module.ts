@@ -3,9 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailConfig } from './entities/mail-config.entity';
 import { MailLog } from './entities/mail-log.entity';
 import { MailTemplate } from './entities/mail-template.entity';
-import { MailgunService } from './mailgun/mailgun.service';
 import { MailtrapService } from './mailtrap/mailtrap.service';
 import { MailService } from './services/mail.service';
+import { MAIL_SERVICE } from './mail.constants';
 
 @Global()
 @Module({
@@ -13,8 +13,10 @@ import { MailService } from './services/mail.service';
     TypeOrmModule.forFeature([MailConfig, MailLog, MailTemplate]),
   ],
   providers: [
-    MailgunService,
-    MailtrapService,
+    {
+      provide: MAIL_SERVICE,
+      useClass: MailtrapService,
+    },
     MailService,
   ],
   exports: [MailService],
