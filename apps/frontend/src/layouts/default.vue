@@ -194,13 +194,7 @@ async function handleLogout() {
         @logout="handleLogout"
       />
     </template>
-    <template v-else>
-      <CombinedNavbar 
-        :user="user" 
-        :isLoading="isLoading" 
-        @logout="handleLogout" 
-      />
-    </template>
+  
     
     <!-- Main content -->
     <main class="flex-grow">

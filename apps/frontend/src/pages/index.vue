@@ -13,6 +13,7 @@ import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import type { Component } from 'vue';
 import { defineAsyncComponent, markRaw } from 'vue';
 import { useTheme } from '../composables/useTheme';
+import MaintenancePage from '../components/MaintenancePage.vue';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface PostTranslation {
@@ -502,28 +503,7 @@ const getSectionConfig = (section: ThemeSection) => {
       </div>
     </template>
     <template v-else>
-      <template v-if="theme?.sections">
-        <template v-for="(section, index) in theme.sections" :key="`section-${section.id}-${index}`">
-          <ClientOnly>
-            <component
-              v-if="section.isActive"
-              :is="resolveComponent(section)"
-              :section="section"
-              :config="getSectionConfig(section)"
-            />
-            <template #fallback>
-              <div class="p-4 text-center">
-                <ULoader />
-              </div>
-            </template>
-          </ClientOnly>
-        </template>
-      </template>
-      <template v-else>
-        <div class="container mx-auto px-4 py-12 text-center">
-          No sections configured
-        </div>
-      </template>
+      <MaintenancePage />
     </template>
   </div>
 </template>
