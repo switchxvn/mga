@@ -34,6 +34,9 @@ export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'order_code', type: 'varchar', length: 50, unique: true })
+  orderCode: string;
+
   @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId?: string;
 

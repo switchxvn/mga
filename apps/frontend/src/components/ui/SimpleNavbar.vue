@@ -1,6 +1,6 @@
 <!-- Simple Navbar without Logo and Hotline sections -->
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, watch, nextTick, onMounted, onUnmounted, computed } from 'vue';
 import { useNow, useDateFormat, onClickOutside } from '@vueuse/core';
 import { useFeatureFlags } from '~/composables/useFeatureFlags';
 import { useLocalization } from '~/composables/useLocalization';
@@ -10,16 +10,39 @@ import { useNavMenu } from '~/composables/useNavMenu';
 import { useNavbarSettings } from '~/composables/useNavbarSettings';
 import { useNavbarFeatures } from '~/composables/useNavbarFeatures';
 import { useDarkMode } from '~/composables/useDarkMode';
-import Icon from './Icon.vue';
-import ThemeToggle from '~/components/common/ThemeToggle.vue';
-import LanguageSwitcher from '~/components/common/LanguageSwitcher.vue';
-import CartIcon from '~/components/cart/CartIcon.vue';
-import MegaMenu from '~/components/menu/MegaMenu.vue';
-import MobileMegaMenu from '~/components/menu/MobileMegaMenu.vue';
 import { useIcon } from '~/composables/useIcon';
-import type { Icon as LucideIcon } from 'lucide-vue-next';
 import { useCssColorValue } from '~/composables/useColorUtils';
 import { Phone } from 'lucide-vue-next';
+import type { MenuItem, TopMenuItem } from '~/types/navbar';
+import { defineAsyncComponent, markRaw } from 'vue';
+import type { Component } from 'vue';
+
+// Register components using defineAsyncComponent
+const registeredComponents = {
+  'LanguageSwitcher': defineAsyncComponent(() => import('~/components/common/LanguageSwitcher.vue')),
+  'ThemeToggle': defineAsyncComponent(() => import('~/components/common/ThemeToggle.vue')),
+  'CartIcon': defineAsyncComponent(() => import('~/components/cart/CartIcon.vue')),
+  'MegaMenu': defineAsyncComponent(() => import('~/components/menu/MegaMenu.vue')),
+  'MobileMegaMenu': defineAsyncComponent(() => import('~/components/menu/MobileMegaMenu.vue')),
+  'Icon': defineAsyncComponent(() => import('~/components/ui/Icon.vue')),
+  'CurrentDateTime': defineAsyncComponent(() => import('~/components/common/CurrentDateTime.vue'))
+} as Record<string, Component>;
+
+// Function to resolve component
+const resolveComponent = (item: TopMenuItem): Component | null => {
+  if (!item?.type || !item?.component) {
+    console.warn('Invalid component configuration');
+    return null;
+  }
+
+  const componentName = item.component.split('/').pop()?.replace('.vue', '');
+  if (componentName && registeredComponents[componentName]) {
+    return markRaw(registeredComponents[componentName]);
+  }
+
+  console.warn(`No component found for: ${item.component}`);
+  return null;
+};
 
 // Props cho component
 interface NavbarProps {
@@ -50,22 +73,23 @@ interface NavbarProps {
       activeTextColor?: string;
     };
 
-    // Top menu settings
+    // Top menu settings with new column structure
     topMenu?: {
-      links: {
-        label: string;
-        href: string;
-        textColor: string;
-        hoverColor: string;
-        isTranslated: boolean;
-      }[];
-      actions?: {
-        label: string;
-        href: string;
-        textColor: string;
-        hoverColor: string;
-        isTranslated: boolean;
-      }[];
+      leftColumn?: {
+        items: TopMenuItem[];
+        width?: string;
+        alignment?: 'start' | 'center' | 'end';
+      };
+      centerColumn?: {
+        items: TopMenuItem[];
+        width?: string;
+        alignment?: 'start' | 'center' | 'end';
+      };
+      rightColumn?: {
+        items: TopMenuItem[];
+        width?: string;
+        alignment?: 'start' | 'center' | 'end';
+      };
     };
 
     // Update button settings
@@ -93,6 +117,21 @@ interface NavbarProps {
       textColor?: string;
     };
   };
+}
+
+// Define types for top menu items
+interface TopMenuItem {
+  type: 'component' | 'link' | 'text' | 'divider';
+  component?: string;
+  settings?: Record<string, any>;
+  href?: string;
+  label?: string;
+  content?: string;
+  textColor?: string;
+  hoverColor?: string;
+  isTranslated?: boolean;
+  icon?: string;
+  color?: string;
 }
 
 const props = withDefaults(defineProps<NavbarProps>(), {
@@ -152,7 +191,7 @@ const isCartEnabled = ref<boolean | null>(null);
 const isLoadingFeatureFlag = ref(true);
 
 // Localization
-const { locale } = useLocalization();
+const { locale, t } = useLocalization();
 
 // Navbar
 const {
@@ -184,7 +223,6 @@ const {
 // Settings
 const navbarSettings = useNavbarSettings(props.settings);
 const { settings, menuBackgroundColor, textColor, borderColor, navigationTextColor, navigationActiveTextColor } = navbarSettings;
-const { processColorValue } = useCssColorValue();
 
 // Time
 const now = useNow();
@@ -195,28 +233,6 @@ const { checkCartFeatureFlag } = useNavbarFeatures();
 
 // Logo
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
-
-// Update MenuItem interface to match API response
-interface MenuItemTranslation {
-  locale: string;
-  label: string;
-}
-
-interface MenuItem {
-  id: number;
-  href: string;
-  label: string;
-  defaultLocale: string;
-  icon?: string | null;
-  order: number;
-  level: number;
-  isActive: boolean;
-  parentId: number | null;
-  translations: MenuItemTranslation[];
-  children?: MenuItem[];
-  createdAt: string;
-  updatedAt: string;
-}
 
 // Add these refs and computed properties
 const menuContainerRef = ref<HTMLElement | null>(null);
@@ -230,7 +246,7 @@ const calculateVisibleItems = () => {
   if (!menuContainerRef.value || !processedMenuItems.value) return;
 
   const containerWidth = menuContainerRef.value.clientWidth;
-  const moreButtonWidth = 0; // Tăng width cho nút More để đảm bảo không bị vỡ
+  const moreButtonWidth = 0;
   let availableWidth = containerWidth - moreButtonWidth;
   let totalWidth = 0;
   
@@ -240,17 +256,14 @@ const calculateVisibleItems = () => {
   // Reset refs array
   menuItemsRefs.value = [];
 
-  // Tính toán chi tiết hơn cho từng menu item
-  processedMenuItems.value.forEach((item) => {
-    // Tính toán width chi tiết hơn cho mỗi item
+  processedMenuItems.value.forEach((item: MenuItem) => {
     const estimatedWidth = 
-      (item.label.length * 10.5) + // 10.5px cho mỗi ký tự
-      40 + // Padding left/right (20px mỗi bên)
-      (item.icon ? 32 : 0) + // Icon width nếu có
-      (item.children?.length ? 24 : 0) + // Dropdown arrow width nếu có submenu
-      16; // Gap giữa các items
+      (item.label.length * 10.5) +
+      40 +
+      (item.icon ? 32 : 0) +
+      (item.children?.length ? 24 : 0) +
+      16;
 
-    // Thêm buffer 20px để đảm bảo không bị vỡ
     const withBuffer = estimatedWidth;
 
     if (totalWidth + withBuffer <= availableWidth) {
@@ -261,8 +274,6 @@ const calculateVisibleItems = () => {
     }
   });
 
-  // Nếu chỉ còn 1 item visible và có nhiều items hidden, 
-  // chuyển luôn item cuối vào hidden để tránh trường hợp 1 item + nút more
   if (visibleMenuItems.value.length === 1 && hiddenMenuItems.value.length > 0) {
     hiddenMenuItems.value.unshift(visibleMenuItems.value[0]);
     visibleMenuItems.value = [];
@@ -342,74 +353,202 @@ watch(locale, () => {
       >
         <div class="w-full px-8">
           <div class="flex items-center h-16">
-            <!-- Current Time and Actions -->
-            <div class="w-[45%] flex items-center gap-2 justify-start">
-              <div class="flex items-center gap-2 min-w-[240px]">
-                <Icon 
-                  name="Clock" 
-                  class="nav-icon text-white w-6 h-6"
+            <!-- Left Column -->
+            <div 
+              class="flex items-center gap-4" 
+              :style="{
+                width: props.settings?.topMenu?.leftColumn?.width || '30%',
+                justifyContent: props.settings?.topMenu?.leftColumn?.alignment === 'center' ? 'center' : 
+                              props.settings?.topMenu?.leftColumn?.alignment === 'end' ? 'flex-end' : 'flex-start'
+              }"
+            >
+              <template v-for="(item, index) in props.settings?.topMenu?.leftColumn?.items" :key="index">
+                <!-- Component Type -->
+                <component
+                  v-if="item.type === 'component' && item.component"
+                  :is="resolveComponent(item)"
+                  v-bind="item.settings || {}"
                 />
-                <span class="text-[18px] font-medium text-white whitespace-nowrap">
-                  {{ formattedTime }}
-                </span>
-              </div>
-              <template v-if="props.settings?.topMenu?.actions?.length">
-                <span class="text-white mx-2 font-bold">|</span>
-                <div class="flex items-center">
-                  <template v-for="(action, index) in props.settings.topMenu.actions" :key="action.label">
-                    <NuxtLink
-                      :to="action.href"
-                      class="text-[18px] font-extrabold transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
-                      :style="{
-                        color: action.textColor,
-                        '&:hover': {
-                          color: action.hoverColor
-                        }
-                      }"
-                    >
-                      {{ action.label }}
-                    </NuxtLink>
-                    <span 
-                      v-if="index < props.settings.topMenu.actions.length - 1" 
-                      class="text-white mx-2 font-bold"
-                    >|</span>
-                  </template>
+                
+                <!-- Text Type with Icon -->
+                <div
+                  v-else-if="item.type === 'text'"
+                  class="flex items-center gap-2"
+                >
+                  <Icon
+                    v-if="item.icon"
+                    :name="item.icon"
+                    class="nav-icon w-5 h-5"
+                    :style="{ color: item.textColor }"
+                  />
+                  <span
+                    class="text-[18px] font-medium whitespace-nowrap"
+                    :style="{ color: item.textColor }"
+                  >
+                    {{ item.isTranslated ? t(item.content ?? '') : item.content }}
+                  </span>
                 </div>
+
+                <!-- Link Type with Icon -->
+                <NuxtLink
+                  v-else-if="item.type === 'link'"
+                  :to="item.href"
+                  class="flex items-center gap-2 text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  :style="{
+                    color: item.textColor,
+                    '&:hover': {
+                      color: item.hoverColor
+                    }
+                  }"
+                >
+                  <Icon
+                    v-if="item.icon"
+                    :name="item.icon"
+                    class="nav-icon w-5 h-5"
+                    :style="{ color: item.textColor }"
+                  />
+                  {{ item.isTranslated ? t(item.label ?? '') : item.label }}
+                </NuxtLink>
+
+                <!-- Divider -->
+                <div
+                  v-else-if="item.type === 'divider'"
+                  class="h-6 w-[2px] mx-2"
+                  :style="{ backgroundColor: item.color || '#ffffff' }"
+                ></div>
               </template>
             </div>
             
-            <!-- Center Hotline -->
-            <div class="w-[25%] flex justify-center">
-              <div class="flex items-center gap-3">
-                <Icon 
-                  name="Phone" 
-                  class="nav-icon text-white w-7 h-7"
+            <!-- Center Column -->
+            <div 
+              class="flex items-center gap-4" 
+              :style="{
+                width: props.settings?.topMenu?.centerColumn?.width || '40%',
+                justifyContent: props.settings?.topMenu?.centerColumn?.alignment === 'start' ? 'flex-start' : 
+                              props.settings?.topMenu?.centerColumn?.alignment === 'end' ? 'flex-end' : 'center'
+              }"
+            >
+              <template v-for="(item, index) in props.settings?.topMenu?.centerColumn?.items" :key="index">
+                <!-- Component Type -->
+                <component
+                  v-if="item.type === 'component' && item.component"
+                  :is="resolveComponent(item)"
+                  v-bind="item.settings || {}"
                 />
-                <div class="flex items-center gap-2">
-                  <span class="text-lg font-bold text-white">
-                    {{ props.settings?.phoneButton?.text || 'Hotline' }}:
+                
+                <!-- Text Type with Icon -->
+                <div
+                  v-else-if="item.type === 'text'"
+                  class="flex items-center gap-2"
+                >
+                  <Icon
+                    v-if="item.icon"
+                    :name="item.icon"
+                    class="nav-icon w-5 h-5"
+                    :style="{ color: item.textColor }"
+                  />
+                  <span
+                    class="text-[18px] font-medium whitespace-nowrap"
+                    :style="{ color: item.textColor }"
+                  >
+                    {{ item.isTranslated ? t(item.content ?? '') : item.content }}
                   </span>
-                  <div class="flex items-center gap-2">
-                    <template v-for="(phone, index) in props.settings?.phoneButton?.numbers" :key="index">
-                      <button 
-                        class="text-lg font-bold text-white hover:underline transition-all duration-300"
-                        @click="callPhone(phone.number)"
-                      >
-                        {{ phone.number }}
-                      </button>
-                      <span v-if="index < (props.settings?.phoneButton?.numbers?.length || 0) - 1" class="text-white">-</span>
-                    </template>
-                  </div>
                 </div>
-              </div>
+
+                <!-- Link Type with Icon -->
+                <NuxtLink
+                  v-else-if="item.type === 'link'"
+                  :to="item.href"
+                  class="flex items-center gap-2 text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  :style="{
+                    color: item.textColor,
+                    '&:hover': {
+                      color: item.hoverColor
+                    }
+                  }"
+                >
+                  <Icon
+                    v-if="item.icon"
+                    :name="item.icon"
+                    class="nav-icon w-5 h-5"
+                    :style="{ color: item.textColor }"
+                  />
+                  {{ item.isTranslated ? t(item.label ?? '') : item.label }}
+                </NuxtLink>
+
+                <!-- Divider -->
+                <div
+                  v-else-if="item.type === 'divider'"
+                  class="h-6 w-[2px] mx-2"
+                  :style="{ backgroundColor: item.color || '#ffffff' }"
+                ></div>
+              </template>
             </div>
 
-            <!-- Right Actions -->
-            <div class="w-[30%] flex items-center justify-end">
-              <div class="flex items-center gap-2">
-                <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
-                <ThemeToggle mode="full" />
-              </div>
+            <!-- Right Column -->
+            <div 
+              class="flex items-center gap-4" 
+              :style="{
+                width: props.settings?.topMenu?.rightColumn?.width || '30%',
+                justifyContent: props.settings?.topMenu?.rightColumn?.alignment === 'center' ? 'center' : 
+                              props.settings?.topMenu?.rightColumn?.alignment === 'start' ? 'flex-start' : 'flex-end'
+              }"
+            >
+              <template v-for="(item, index) in props.settings?.topMenu?.rightColumn?.items" :key="index">
+                <!-- Component Type -->
+                <component
+                  v-if="item.type === 'component' && item.component"
+                  :is="resolveComponent(item)"
+                  v-bind="item.settings || {}"
+                />
+                
+                <!-- Text Type with Icon -->
+                <div
+                  v-else-if="item.type === 'text'"
+                  class="flex items-center gap-2"
+                >
+                  <Icon
+                    v-if="item.icon"
+                    :name="item.icon"
+                    class="nav-icon w-5 h-5"
+                    :style="{ color: item.textColor }"
+                  />
+                  <span
+                    class="text-[18px] font-medium whitespace-nowrap"
+                    :style="{ color: item.textColor }"
+                  >
+                    {{ item.isTranslated ? t(item.content ?? '') : item.content }}
+                  </span>
+                </div>
+
+                <!-- Link Type with Icon -->
+                <NuxtLink
+                  v-else-if="item.type === 'link'"
+                  :to="item.href"
+                  class="flex items-center gap-2 text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  :style="{
+                    color: item.textColor,
+                    '&:hover': {
+                      color: item.hoverColor
+                    }
+                  }"
+                >
+                  <Icon
+                    v-if="item.icon"
+                    :name="item.icon"
+                    class="nav-icon w-5 h-5"
+                    :style="{ color: item.textColor }"
+                  />
+                  {{ item.isTranslated ? t(item.label ?? '') : item.label }}
+                </NuxtLink>
+
+                <!-- Divider -->
+                <div
+                  v-else-if="item.type === 'divider'"
+                  class="h-6 w-[2px] mx-2"
+                  :style="{ backgroundColor: item.color || '#ffffff' }"
+                ></div>
+              </template>
             </div>
           </div>
         </div>
@@ -467,7 +606,7 @@ watch(locale, () => {
                         class="relative group h-full flex items-center"
                         :data-menu-id="item.id"
                         :ref="el => { if (el) menuItemsRefs[itemIndex] = el as HTMLElement }"
-                        @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(item.id); } }"
+                        @mouseenter="(e) => { if (item.children?.length) { showMegaMenu(Number(item.id)); } }"
                         @mouseleave="item.children?.length ? hideMegaMenu() : null"
                       >
                         <NuxtLink
@@ -496,7 +635,7 @@ watch(locale, () => {
                                 : props.settings?.navigation?.textColor
                             }"
                           >
-                            {{ item.label }}
+                            {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                           </span>
                           <Icon
                             v-if="item.children?.length"
@@ -530,7 +669,7 @@ watch(locale, () => {
                         ref="moreMenuRef"
                       >
                         <button 
-                          class="flex items-center space-x-1 py-5 px-4 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md"
+                          class="flex items-center space-x-1 py-5 px-4 hover:bg-white/30 dark:hover:bg-neutral-800 rounded-md"
                           :style="{ color: props.settings?.navigation?.textColor }"
                           @click="showMoreMenu = !showMoreMenu"
                         >
@@ -568,7 +707,7 @@ watch(locale, () => {
                                   :name="item.icon"
                                   class="nav-icon w-5 h-5"
                                 />
-                                <span>{{ item.label }}</span>
+                                <span>{{ item.isTranslated ? t(item.label ?? '') : item.label }}</span>
                                 <Icon
                                   v-if="item.children?.length"
                                   name="ChevronRight"
@@ -621,7 +760,7 @@ watch(locale, () => {
                 </div>
                 <div class="flex flex-col items-start">
                   <span class="text-lg font-bold whitespace-nowrap">
-                    {{ props.settings?.bookingButton?.text || 'Đặt vé ngay' }}
+                    {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
                   </span>
                   <div class="flex flex-col">
                     <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
@@ -629,7 +768,7 @@ watch(locale, () => {
                         class="text-sm opacity-90 hover:underline transition-all duration-300"
                         @click.stop="callPhone(phone.number)"
                       >
-                        {{ phone.number }}
+                        {{ t(phone.label) }}: {{ phone.number }}
                       </button>
                     </template>
                   </div>
@@ -641,7 +780,7 @@ watch(locale, () => {
               
               <!-- Mobile Menu Button -->
               <button
-                class="lg:hidden flex items-center justify-center w-10 h-10 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
+                class="lg:hidden flex items-center justify-center w-10 h-10 hover:bg-white/30 dark:hover:bg-neutral-800 rounded-full"
                 @click="toggleMobileMenu"
                 aria-label="Toggle Menu"
               >
@@ -722,7 +861,7 @@ watch(locale, () => {
                       :name="item.icon"
                       class="nav-icon w-6 h-6"
                     />
-                    {{ item.label }}
+                    {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                   </NuxtLink>
                   <button
                     class="p-2 -m-2"
@@ -749,7 +888,7 @@ watch(locale, () => {
                     :name="item.icon"
                     class="nav-icon w-6 h-6"
                   />
-                  {{ item.label }}
+                  {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                 </NuxtLink>
 
                 <!-- Mobile Mega Menu Content -->

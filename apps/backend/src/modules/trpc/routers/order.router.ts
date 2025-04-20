@@ -7,6 +7,7 @@ import { OrderStatus, PaymentStatus } from '../../order/entities/order.entity';
 import { ProductType } from '../../order/entities/order-item.entity';
 import { randomUUID } from 'crypto';
 import { ProductSnapshot } from '../../order/entities/order-item.entity';
+import { generateOrderCode } from '../../order/utils/order-code.util';
 
 const addressSchema = z.object({
   fullName: z.string(),
@@ -64,6 +65,19 @@ export const orderRouter = router({
       return order;
     }),
 
+  getOrderByCode: publicProcedure
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
+      const order = await ctx.services.orderFrontendService.findOrderByCode(input);
+      if (!order) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Order not found',
+        });
+      }
+      return order;
+    }),
+
   getUserOrders: publicProcedure
     .input(z.string().uuid())
     .query(async ({ ctx, input }) => {
@@ -83,6 +97,14 @@ export const orderRouter = router({
           ctx.services.productFrontendService.findById(item.productId)
         )
       );
+
+      // Generate unique order code
+      const orderCode = generateOrderCode();
+
+      // Get payment description template from settings
+      const paymentDescriptionTemplate = await ctx.services.settingsService.findByKey('payment_description_template');
+      const paymentDescription = (paymentDescriptionTemplate?.value || 'Thanh toán đơn hàng {order_code}')
+        .replace('{order_code}', orderCode);
 
       const mappedItems = items.map((item, index) => {
         const product = products[index];
@@ -123,6 +145,7 @@ export const orderRouter = router({
 
       const result = await ctx.services.orderFrontendService.createOrderWithPayment(
         {
+          orderCode,
           phoneCode: orderData.phoneCode,
           phoneNumber: orderData.phoneNumber,
           email: orderData.email,
@@ -134,10 +157,12 @@ export const orderRouter = router({
           totalAmount: orderData.totalAmount,
           payment_method_id: orderData.payment_method_id,
           return_url: returnUrl,
-          cancel_url: cancelUrl
+          cancel_url: cancelUrl,
+          payment_description: paymentDescription
         },
         mappedItems,
         {
+          order_code: orderCode,
           return_url: returnUrl,
           cancel_url: cancelUrl
         }

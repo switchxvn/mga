@@ -5,7 +5,7 @@ export interface PaymentItem {
 }
 
 export interface CreatePaymentRequest {
-  order_id: string;
+  order_code: string;
   amount: number;
   description?: string;
   return_url: string;

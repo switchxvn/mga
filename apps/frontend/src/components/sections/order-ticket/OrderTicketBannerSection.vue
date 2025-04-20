@@ -127,23 +127,38 @@ const modules = [Autoplay, Pagination, Navigation, EffectFade];
 // Swiper options
 const swiperOptions = computed(() => ({
   modules,
+  slidesPerView: 1,
+  slidesPerGroup: 1,
   effect: props.settings?.swiperOptions?.effect || 'fade',
   loop: props.settings?.swiperOptions?.loop ?? true,
+  loopPreventsSliding: false,
+  loopAddBlankSlides: true,
+  speed: 800,
+  allowTouchMove: true,
+  watchOverflow: true,
+  navigation: {
+    nextEl: '.order-ticket-swiper-next',
+    prevEl: '.order-ticket-swiper-prev',
+    enabled: true
+  },
+  pagination: {
+    el: '.order-ticket-swiper-pagination',
+    clickable: true,
+    enabled: true
+  },
   autoplay: props.settings?.swiperOptions?.autoplay ? {
     delay: props.settings?.swiperOptions?.delay || 5000,
-    disableOnInteraction: false
-  } : false,
-  pagination: {
-    clickable: true,
-    dynamicBullets: true
-  },
-  navigation: true
+    disableOnInteraction: false,
+    pauseOnMouseEnter: true,
+    stopOnLastSlide: false,
+    waitForTransition: false
+  } : false
 }));
 </script>
 
 <template>
   <section :class="[containerClasses, heightClasses]" class="relative overflow-hidden">
-    <Swiper v-bind="swiperOptions" class="h-full">
+    <Swiper v-bind="swiperOptions" class="h-full order-ticket-swiper">
       <SwiperSlide v-for="(slide, index) in settings?.slides" :key="index" class="h-full">
         <!-- Background Image -->
         <div class="absolute inset-0">
@@ -153,6 +168,7 @@ const swiperOptions = computed(() => ({
             class="w-full h-full object-cover"
           />
           <div 
+            v-if="(settings?.overlayOpacity ?? 0) > 0"
             class="absolute inset-0 bg-black"
             :class="overlayClasses"
             :style="overlayStyle"
@@ -178,7 +194,8 @@ const swiperOptions = computed(() => ({
                  v-html="slide.content">
             </div>
 
-            <a :href="slide.buttonLink || settings?.defaultButtonLink"
+            <a v-if="slide.buttonText || settings?.defaultButtonText"
+               :href="slide.buttonLink || settings?.defaultButtonLink"
                class="inline-block bg-primary-500 hover:bg-primary-600 text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
               {{ slide.buttonText || settings?.defaultButtonText }}
             </a>
@@ -186,10 +203,15 @@ const swiperOptions = computed(() => ({
         </div>
       </SwiperSlide>
     </Swiper>
+
+    <!-- Navigation -->
+    <div class="order-ticket-swiper-prev swiper-button-prev !z-10 !hidden md:!flex"></div>
+    <div class="order-ticket-swiper-next swiper-button-next !z-10 !hidden md:!flex"></div>
+    <div class="order-ticket-swiper-pagination !absolute !bottom-4 md:!bottom-8 !left-1/2 !-translate-x-1/2 !z-10 !w-auto"></div>
   </section>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .prose :deep(a) {
   @apply text-primary-300 hover:text-primary-200;
 }
@@ -203,21 +225,28 @@ const swiperOptions = computed(() => ({
 }
 
 /* Swiper custom styles */
-:deep(.swiper-pagination-bullet) {
-  @apply bg-white/70 w-3 h-3;
-}
-
-:deep(.swiper-pagination-bullet-active) {
-  @apply bg-primary-500;
-}
-
-:deep(.swiper-button-prev),
-:deep(.swiper-button-next) {
-  @apply text-white/70 hover:text-white transition-colors duration-300;
-}
-
-:deep(.swiper-button-prev)::after,
-:deep(.swiper-button-next)::after {
-  @apply text-3xl;
+.order-ticket-swiper {
+  height: 100%;
+  
+  :deep(.swiper-button-next),
+  :deep(.swiper-button-prev) {
+    @apply w-8 h-8 md:w-12 md:h-12 text-white/70 hover:text-white transition-colors duration-300 cursor-pointer;
+    
+    &::after {
+      @apply text-base md:text-xl;
+    }
+    
+    &.swiper-button-disabled {
+      @apply opacity-50 pointer-events-none;
+    }
+  }
+  
+  :deep(.swiper-pagination-bullet) {
+    @apply w-2 h-2 md:w-3 md:h-3 bg-white/70 cursor-pointer;
+    
+    &.swiper-pagination-bullet-active {
+      @apply bg-primary-500;
+    }
+  }
 }
 </style> 

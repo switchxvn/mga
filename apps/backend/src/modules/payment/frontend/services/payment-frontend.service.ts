@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaymentMethod } from '../../entities/payment-method.entity';
@@ -7,6 +7,7 @@ import { PaymentGatewayService } from '../../../payment-gateway/payment-gateway.
 import { CreatePaymentDto } from '../../dto/create-payment.dto';
 import { PaymentStatus } from '../../entities/payment-transaction.entity';
 import { PAYMENT_GATEWAY_TOKEN } from '../../../payment-gateway/payment-gateway.module';
+import { OrderFrontendService } from '../../../order/frontend/services/order-frontend.service';
 
 @Injectable()
 export class PaymentFrontendService {
@@ -16,7 +17,9 @@ export class PaymentFrontendService {
     @InjectRepository(PaymentTransaction)
     private readonly paymentTransactionRepository: Repository<PaymentTransaction>,
     @Inject(PAYMENT_GATEWAY_TOKEN)
-    private readonly paymentGatewayService: PaymentGatewayService
+    private readonly paymentGatewayService: PaymentGatewayService,
+    @Inject(forwardRef(() => OrderFrontendService))
+    private readonly orderFrontendService: OrderFrontendService
   ) {}
 
   async getActivePaymentMethods() {
@@ -37,14 +40,21 @@ export class PaymentFrontendService {
     // Create transaction record
     const transaction = this.paymentTransactionRepository.create({
       ...createPaymentDto,
-      status: PaymentStatus.PENDING
+      status: PaymentStatus.PENDING,
     });
 
     await this.paymentTransactionRepository.save(transaction);
 
+    // Get order to get orderCode for PayOS
+    const orderId = transaction.order_id;
+    const order = await this.orderFrontendService.findOrderById(orderId);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
     // Get payment info from gateway
     const paymentInfo = await this.paymentGatewayService.createPayment({
-      order_id: transaction.order_id,
+      order_code: order.orderCode,
       amount: transaction.amount,
       description: transaction.description,
       return_url: createPaymentDto.return_url,
@@ -65,17 +75,29 @@ export class PaymentFrontendService {
     };
   }
 
-  async getTransactionByOrderId(orderId: string) {
+  async getTransactionByOrderId(orderId: number) {
     return this.paymentTransactionRepository.findOne({
       where: { order_id: orderId },
       relations: ['paymentMethod']
     });
   }
 
+  async getTransactionByOrderCode(orderCode: string) {
+    // First find the order by code
+    const order = await this.orderFrontendService.findOrderByCode(orderCode);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Then find the transaction by order id
+    return this.getTransactionByOrderId(order.id);
+  }
+
   async handlePaymentWebhook(payload: any) {
     const { order_id, status } = payload;
-
-    const transaction = await this.getTransactionByOrderId(order_id);
+    
+    // Find transaction by order code
+    const transaction = await this.getTransactionByOrderCode(order_id);
     if (!transaction) {
       throw new Error('Transaction not found');
     }
@@ -102,6 +124,6 @@ export class PaymentFrontendService {
       metadata: { ...transaction.metadata, webhook_payload: payload }
     });
 
-    return this.getTransactionByOrderId(order_id);
+    return this.getTransactionByOrderId(transaction.order_id);
   }
 } 

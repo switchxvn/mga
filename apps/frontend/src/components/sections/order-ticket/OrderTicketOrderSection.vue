@@ -6,7 +6,7 @@ import { useTicketBooking } from '~/composables/useTicketBooking';
 import { useProduct } from '~/composables/useProduct';
 import type { ProductVariant } from '~/composables/useProduct';
 import { ProductType } from '@ew/shared';
-import type { Product } from '@ew/shared/types';
+import type { Product } from '@ew/shared';
 import {
   Calendar as CalendarIcon,
   CheckCircle as CheckCircleIcon,
@@ -212,33 +212,15 @@ watch(locale, () => {
 <template>
   <section 
     id="ticket-order"
-    class="order-section py-16 md:py-24"
+    class="relative pb-16"
     :class="settings?.backgroundColor || 'bg-gray-200'"
   >
     <div class="container mx-auto px-4">
-      <div class="max-w-3xl mx-auto">
-        <!-- Section Header -->
-        <div class="text-center mb-12">
-          <div class="flex items-center justify-center gap-4 mb-6">
-            <div class="w-3 h-3 rounded-full bg-red-500"></div>
-            <div class="h-[2px] w-24 bg-red-500"></div>
-            <h2 
-              class="text-3xl md:text-4xl font-bold text-red-500 px-4"
-              :class="settings?.textColor"
-            >
-              {{ translations.title }}
-            </h2>
-            <div class="h-[2px] w-24 bg-red-500"></div>
-            <div class="w-3 h-3 rounded-full bg-red-500"></div>
-          </div>
-          <p 
-            class="text-lg max-w-2xl mx-auto"
-            :class="settings?.textColor ? `${settings.textColor}/80` : 'text-gray-600'"
-          >
-            {{ translations.subtitle }}
-          </p>
-        </div>
-
+      <!-- Booking Card -->
+      <div
+        class="relative border-2 border-primary-500 bg-white rounded-xl shadow-lg p-6 z-10 max-w-3xl mx-auto"
+        style="margin-top: -7.5rem;"
+      >
         <!-- Ticket Cards -->
         <div class="mb-8">
           <div v-if="isLoadingProducts" class="text-center py-8">
@@ -289,26 +271,26 @@ watch(locale, () => {
                       </p>
                     </div>
                   </div>
-
-                  <!-- Benefits Section -->
-                  <div class="bg-green-50 p-4 border-t border-green-100">
-                    <div class="space-y-2">
-                      <div class="flex items-center gap-2 text-green-700">
-                        <CheckCircleIcon class="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span class="text-sm font-medium">Miễn phí vé cho trẻ dưới 1.2m và người già trên 70 tuổi</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-green-700">
-                        <CheckCircleIcon class="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span class="text-sm font-medium">Miễn phí xe điện đưa rước ra vào nhà ga cáp treo</span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </SwiperSlide>
             </Swiper>
 
+            <!-- Benefits Section -->
+            <div class="bg-green-50 p-4 border-t border-green-100">
+              <div class="space-y-2">
+                <div class="flex items-center gap-2 text-green-700">
+                  <CheckCircleIcon class="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span class="text-sm font-medium">Miễn phí vé cho trẻ dưới 1.2m và người già trên 70 tuổi</span>
+                </div>
+                <div class="flex items-center gap-2 text-green-700">
+                  <CheckCircleIcon class="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span class="text-sm font-medium">Miễn phí xe điện đưa rước ra vào nhà ga cáp treo</span>
+                </div>
+              </div>
+            </div>
+
             <!-- Booking Form -->
-            <form v-if="selectedProduct" @submit.prevent="handleSubmit" class="space-y-6 bg-white rounded-xl p-6 shadow-lg mt-8">
+            <form v-if="selectedProduct" @submit.prevent="handleSubmit" class="space-y-6">
               <!-- Ticket Types Selection -->
               <div v-if="selectedProduct.variants?.length" class="space-y-4">
                 <div class="space-y-2">
@@ -417,6 +399,25 @@ watch(locale, () => {
 </template>
 
 <style>
+.ticket-swiper {
+  --swiper-navigation-size: 24px;
+  --swiper-navigation-top-offset: 50%;
+  --swiper-navigation-color: theme('colors.primary.500');
+  --swiper-theme-color: theme('colors.primary.500');
+  padding: 1rem;
+  margin: -1rem;
+  position: relative;
+}
+
+.ticket-swiper :deep(.swiper-button-prev),
+.ticket-swiper :deep(.swiper-button-next) {
+  color: theme("colors.primary.500");
+}
+
+.ticket-swiper :deep(.swiper-pagination-bullet-active) {
+  background-color: theme("colors.primary.500");
+}
+
 .vc-container {
   --vc-font-family: inherit;
   --vc-rounded-full: 9999px;
@@ -424,87 +425,4 @@ watch(locale, () => {
   --vc-font-semibold: 500;
   --vc-text-lg: 1.125rem;
 }
-
-.ticket-swiper {
-  --swiper-navigation-size: 24px;
-  --swiper-navigation-top-offset: 50%;
-  --swiper-navigation-color: theme('colors.primary.500');
-  --swiper-theme-color: theme('colors.primary.500');
-  padding: 2.5rem;
-  margin: -2.5rem;
-  position: relative;
-}
-
-.ticket-swiper :deep(.swiper-button-prev),
-.ticket-swiper :deep(.swiper-button-next) {
-  position: absolute;
-  top: var(--swiper-navigation-top-offset, 50%);
-  width: 64px;
-  height: 64px;
-  margin-top: calc(0px - 32px);
-  z-index: 10;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: scale(1);
-  background-color: white;
-  border: 2px solid theme('colors.primary.500');
-}
-
-.ticket-swiper :deep(.swiper-button-prev) {
-  left: 0;
-}
-
-.ticket-swiper :deep(.swiper-button-next) {
-  right: 0;
-}
-
-.ticket-swiper :deep(.swiper-button-prev:hover),
-.ticket-swiper :deep(.swiper-button-next:hover) {
-  background-color: theme('colors.primary.500');
-  color: white;
-  transform: scale(1.15);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.ticket-swiper :deep(.swiper-button-prev:after),
-.ticket-swiper :deep(.swiper-button-next:after) {
-  font-size: calc(var(--swiper-navigation-size) * 1);
-  font-weight: bold;
-}
-
-.ticket-swiper :deep(.swiper-button-prev:before),
-.ticket-swiper :deep(.swiper-button-next:before) {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  bottom: -8px;
-  border-radius: 9999px;
-  border: 1px solid theme('colors.primary.100');
-  z-index: -1;
-}
-
-.ticket-swiper :deep(.swiper-button-disabled) {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-  pointer-events: none !important;
-}
-
-.ticket-swiper :deep(.swiper-pagination-bullet) {
-  width: 10px;
-  height: 10px;
-  background-color: theme('colors.gray.300');
-  opacity: 1;
-  transition: all 0.3s ease;
-}
-
-.ticket-swiper :deep(.swiper-pagination-bullet-active) {
-  background-color: theme('colors.primary.500');
-  transform: scale(1.2);
-}
-</style> 
+</style>

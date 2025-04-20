@@ -22,8 +22,8 @@ export class PaymentTransaction {
   @JoinColumn({ name: 'payment_method_id' })
   paymentMethod: PaymentMethod;
 
-  @Column({ unique: true })
-  order_id: string;
+  @Column()
+  order_id: number;
 
   @Column('decimal', { precision: 10, scale: 2 })
   amount: number;

@@ -124,12 +124,11 @@ export class PayOSService implements PaymentGatewayInterface {
 
   private async createPaymentLink(request: CreatePaymentRequest): Promise<PayOSPaymentLinkResponse> {
     try {
-      // Generate a unique orderCode by combining order_id with timestamp
-      const baseOrderCode = Number(request.order_id);
-      if (isNaN(baseOrderCode) || baseOrderCode <= 0 || baseOrderCode > Number.MAX_SAFE_INTEGER) {
+      // Convert order_code to number and validate
+      const orderCode = Number(request.order_code);
+      if (isNaN(orderCode) || orderCode <= 0 || orderCode > Number.MAX_SAFE_INTEGER) {
         throw new PaymentException('Invalid order code');
       }
-      
 
       const amount = Math.round(request.amount);
       if (amount < 1000) {
@@ -138,9 +137,9 @@ export class PayOSService implements PaymentGatewayInterface {
 
       // Prepare payment data according to PayOS requirements
       const paymentData = {
-        orderCode: baseOrderCode,
+        orderCode,
         amount,
-        description: request.description || `Payment for order ${baseOrderCode}`,
+        description: request.description || `Payment for order ${orderCode}`,
         cancelUrl: request.cancel_url,
         returnUrl: request.return_url,
         // Optional buyer information

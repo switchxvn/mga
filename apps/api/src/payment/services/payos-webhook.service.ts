@@ -4,18 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import * as QRCode from 'qrcode';
 import { Repository } from 'typeorm';
 import { MailService } from '../../../../../apps/backend/src/modules/mail/services/mail.service';
 import { OrderAdminService } from '../../../../../apps/backend/src/modules/order/admin/services/order-admin.service';
 import { PaymentStatus } from '../../../../../apps/backend/src/modules/order/entities/order.entity';
 import { PaymentMethod } from '../../../../../apps/backend/src/modules/payment/entities/payment-method.entity';
 import { PaymentFrontendService } from '../../../../../apps/backend/src/modules/payment/frontend/services/payment-frontend.service';
-import { UploadFrontendService } from '../../../../../apps/backend/src/modules/upload/frontend/services/upload-frontend.service';
 import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
 import { PayOSException } from '../exceptions/payos.exception';
-import fetch from 'node-fetch';
-import { Readable } from 'stream';
 
 @Injectable()
 export class PayOSWebhookService {
@@ -26,76 +22,9 @@ export class PayOSWebhookService {
     private readonly orderAdminService: OrderAdminService,
     private readonly paymentFrontendService: PaymentFrontendService,
     private readonly mailService: MailService,
-    private readonly uploadFrontendService: UploadFrontendService,
     @InjectRepository(PaymentMethod)
     private readonly paymentMethodRepository: Repository<PaymentMethod>
   ) {}
-
-  private async generateAndUploadQRCode(text: string, orderId: number): Promise<string> {
-    try {
-      // Generate QR code as buffer
-      const qrBuffer = await QRCode.toBuffer(text, {
-        type: 'png',
-        width: 200,
-        margin: 1,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
-      });
-
-      // Create filename
-      const filename = `qr-${orderId}-${Date.now()}.png`;
-
-      // Get presigned URL for upload
-      const result = await this.uploadFrontendService.getPresignedUrl({
-        filename,
-        mimeType: 'image/png',
-        size: qrBuffer.length,
-      });
-
-      // Create readable stream from buffer
-      const stream = new Readable();
-      stream.push(qrBuffer);
-      stream.push(null);
-
-      // Upload using node-fetch with stream
-      const response = await fetch(result.presignedUrl, {
-        method: 'PUT',
-        body: stream,
-        headers: {
-          'Content-Type': 'image/png',
-          'Content-Length': qrBuffer.length.toString(),
-          'x-amz-acl': 'public-read',
-        },
-      });
-
-      if (!response.ok) {
-        this.logger.error('Failed to upload QR code', {
-          statusCode: response.status,
-          statusText: response.statusText,
-          orderId,
-          filename
-        });
-        throw new Error(`Upload failed: ${response.statusText}`);
-      }
-
-      this.logger.debug('Successfully uploaded QR code', {
-        filename,
-        url: result.url,
-        size: qrBuffer.length
-      });
-
-      return result.url;
-    } catch (error) {
-      this.logger.error('Error in generateAndUploadQRCode:', {
-        error: error.message,
-        orderId,
-        stack: error.stack
-      });
-      throw new PayOSException('Failed to generate and upload QR code', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
 
   async processWebhook(webhookData: PayOSWebhookDto): Promise<void> {
     try {
@@ -201,16 +130,13 @@ export class PayOSWebhookService {
             const eventDateTime = items[0].createdAt || new Date();
             const eventDate = format(eventDateTime, 'dd/MM/yyyy', { locale: vi });
 
-            // Generate QR codes and prepare ticket info for each item
+            // Prepare ticket info using pre-generated QR codes
             if (!Array.isArray(items)) {
               this.logger.error('Items is not an array', { items });
               return;
             }
             
-            const tickets = await Promise.all(items.map(async (item) => {
-              const qrCodeData = `${item.qrCode}`;
-              const qrCodeUrl = await this.generateAndUploadQRCode(qrCodeData, orderId);
-
+            const tickets = items.map((item) => {
               // Get variant name from snapshot
               let variantName = 'Vé Thường';
               if (item.productSnapshot?.variant?.name) {
@@ -222,9 +148,9 @@ export class PayOSWebhookService {
               return {
                 ticketNumber: variantName,
                 ticketPrice: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unitPrice),
-                qrCodeUrl: qrCodeUrl
+                qrCodeUrl: item.imageQrCode // Use the pre-generated QR code image URL
               };
-            }));
+            });
 
             // Prepare email data
             const emailData = {
@@ -233,8 +159,6 @@ export class PayOSWebhookService {
               eventDate: eventDate,
               tickets
             };
-
-            console.log('emailData', emailData);
 
             try {
               // Send email
@@ -255,7 +179,6 @@ export class PayOSWebhookService {
               });
             } catch (error) {
               this.logger.error('Error sending ticket confirmation email:', error);
-              // Log more details about the error
               this.logger.error('Email data that failed:', {
                 orderId,
                 productId,
@@ -265,7 +188,6 @@ export class PayOSWebhookService {
           }
         } catch (error) {
           this.logger.error('Error sending ticket confirmation email:', error);
-          // Don't throw the error to prevent webhook processing failure
         }
       }
 

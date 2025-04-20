@@ -84,6 +84,24 @@ export class ThemeSection {
     showHotline: false,
     mobileMenuBreakpoint: 'md',
     borderColor: '',
+    // Top menu settings with new column structure
+    topMenu: {
+      leftColumn: {
+        items: [],
+        width: '30%',
+        alignment: 'start'
+      },
+      centerColumn: {
+        items: [],
+        width: '40%',
+        alignment: 'center'
+      },
+      rightColumn: {
+        items: [],
+        width: '30%',
+        alignment: 'end'
+      }
+    },
     // Product categories section settings
     colors: {
       title: 'text-gray-900 dark:text-white',

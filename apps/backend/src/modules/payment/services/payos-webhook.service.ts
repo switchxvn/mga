@@ -12,6 +12,7 @@ import { MailService } from '../../mail/services/mail.service';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { ProductTranslation } from '../../product/entities/product-translation.entity';
+import { OrderFrontendService } from '../../order/frontend/services/order-frontend.service';
 
 @Injectable()
 export class PayOSWebhookService {
@@ -23,7 +24,8 @@ export class PayOSWebhookService {
     private readonly paymentFrontendService: PaymentFrontendService,
     private readonly mailService: MailService,
     @InjectRepository(PaymentMethod)
-    private readonly paymentMethodRepository: Repository<PaymentMethod>
+    private readonly paymentMethodRepository: Repository<PaymentMethod>,
+    private readonly orderFrontendService: OrderFrontendService
   ) {}
 
   async processWebhook(webhookData: any): Promise<void> {
@@ -55,7 +57,7 @@ export class PayOSWebhookService {
 
       // Update payment transaction status
       const paymentTransaction = await this.paymentFrontendService.handlePaymentWebhook({
-        order_id: webhookData.data.orderCode.toString(),
+        order_id: webhookData.data.orderCode,
         status: webhookData.success ? 'PAID' : 'FAILED',
         metadata: {
           amount: webhookData.data.amount,
@@ -71,9 +73,9 @@ export class PayOSWebhookService {
       }
 
       // Update order payment status
-      const orderId = Number(paymentTransaction.order_id);
-      if (isNaN(orderId)) {
-        throw new PayOSException('Invalid order ID', HttpStatus.BAD_REQUEST);
+      const order = await this.orderFrontendService.findOrderByCode(webhookData.data.orderCode);
+      if (!order) {
+        throw new PayOSException('Order not found', HttpStatus.BAD_REQUEST);
       }
 
       // Map PayOS status to order payment status
@@ -85,15 +87,15 @@ export class PayOSWebhookService {
       }
 
       // Update order status
-      const order = await this.orderAdminService.updatePaymentStatus(orderId, orderPaymentStatus);
+      const updatedOrder = await this.orderAdminService.updatePaymentStatus(order.id, orderPaymentStatus);
 
       // Send email notification if payment is successful
-      if (webhookData.success && order) {
+      if (webhookData.success && updatedOrder) {
         try {
           // Get the first ticket from the order
-          const firstTicket = order.items[0];
+          const firstTicket = updatedOrder.items[0];
           if (!firstTicket) {
-            this.logger.warn('No items found in order', { orderId });
+            this.logger.warn('No items found in order', { orderId: updatedOrder.id });
             return;
           }
 
@@ -107,7 +109,7 @@ export class PayOSWebhookService {
 
           // Prepare email data
           const emailData = {
-            customerName: order.customerName || 'Quý khách',
+            customerName: updatedOrder.customerName || 'Quý khách',
             eventName: productTranslation?.title || 'Sự kiện',
             eventDate: eventDate,
             eventTime: eventTime,
@@ -123,7 +125,7 @@ export class PayOSWebhookService {
 
           // Send email
           await this.mailService.sendMail({
-            to: order.email,
+            to: updatedOrder.email,
             subject: `Vé điện tử cho ${emailData.eventName}`,
             template: {
               id: 'TICKET_QR_CODE_VI',
@@ -132,8 +134,8 @@ export class PayOSWebhookService {
           });
 
           this.logger.log('Successfully sent ticket confirmation email', {
-            orderId,
-            customerEmail:  order.email
+            orderId: updatedOrder.id,
+            customerEmail: updatedOrder.email
           });
         } catch (error) {
           this.logger.error('Error sending ticket confirmation email:', error);
@@ -142,7 +144,7 @@ export class PayOSWebhookService {
       }
 
       this.logger.log('Successfully processed PayOS webhook', {
-        orderId,
+        orderId: updatedOrder.id,
         paymentStatus: orderPaymentStatus,
         transactionId: paymentTransaction.id
       });

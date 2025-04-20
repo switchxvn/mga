@@ -53,7 +53,7 @@ COPY libs ./libs
 COPY apps/backend ./apps/backend
 
 # Build argument for environment file
-ARG ENV_FILE=.env
+ARG ENV_FILE=.env.production
 ENV ENV_FILE=${ENV_FILE}
 
 # Copy environment file

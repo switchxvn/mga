@@ -6,8 +6,8 @@ export class CreatePaymentDto {
   payment_method_id: number;
 
   @IsNotEmpty()
-  @IsString()
-  order_id: string;
+  @IsNumber()
+  order_id: number;
 
   @IsNotEmpty()
   @IsNumber()

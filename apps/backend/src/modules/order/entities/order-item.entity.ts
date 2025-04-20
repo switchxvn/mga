@@ -82,6 +82,13 @@ export class OrderItem {
   qrCode: string;
 
   @Column({
+    name: 'image_qr_code',
+    nullable: true,
+    comment: 'URL of the QR code image stored in S3'
+  })
+  imageQrCode: string;
+
+  @Column({
     name: 'product_snapshot',
     type: 'jsonb',
     nullable: true

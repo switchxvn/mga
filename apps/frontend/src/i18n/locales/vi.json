@@ -59,7 +59,14 @@
     "featured": "Nổi bật",
     "addToCart": "Thêm vào giỏ hàng",
     "price": "Giá",
-    "viewAll": "Xem tất cả"
+    "viewAll": "Xem tất cả",
+    "home": "Trang chủ",
+    "about": "Về chúng tôi",
+    "contact": "Liên hệ",
+    "services": "Dịch vụ",
+    "products": "Sản phẩm",
+    "blog": "Blog",
+    "cableCar": "Liên hệ cáp treo"
   },
   "validation": {
     "required": "Trường này là bắt buộc",
@@ -444,6 +451,42 @@
     "orderCancelledMessage": "Đơn hàng của bạn đã bị hủy. Bạn có thể thử lại hoặc quay lại trang vé.",
     "orderId": "Mã đơn hàng",
     "backToTickets": "Quay lại trang vé",
-    "tryAgain": "Thử lại"
+    "tryAgain": "Thử lại",
+    "orderSuccess": "Đặt vé thành công!",
+    "orderSuccessMessage": "Cảm ơn bạn đã đặt vé. Vé của bạn đã được xử lý thành công.",
+    "orderStatus": "Trạng thái đơn hàng",
+    "paymentStatus": "Trạng thái thanh toán",
+    "totalAmount": "Tổng tiền",
+    "viewOrders": "Xem đơn hàng của tôi",
+    "qrCodeTitle": "Mã QR vé của bạn",
+    "qrCodeDescription": "Xuất trình mã QR này tại cổng vào",
+    "qrCodeNote": "Vui lòng lưu hoặc chụp màn hình mã QR này",
+    "downloadQR": "Tải mã QR",
+    "ticketDetails": "Chi tiết vé",
+    "ticketId": "Mã vé",
+    "ticketType": "Loại vé",
+    "ticketDate": "Ngày sử dụng",
+    "ticketQuantity": "Số lượng",
+    "ticketValidity": "Có giá trị đến",
+    "loadingOrder": "Đang tải thông tin đơn hàng...",
+    "error": "Lỗi đơn hàng",
+    "errorFetchingOrder": "Không thể tải thông tin đơn hàng",
+    "noOrderCode": "Không tìm thấy mã đơn hàng",
+    "paymentFailed": "Thanh toán thất bại",
+    "orderCancelled": "Đơn hàng đã bị hủy",
+    "orderDetails": "Chi tiết đơn hàng",
+    "backToProducts": "Quay lại trang sản phẩm",
+    "ticketSuccessMessage": "Cảm ơn bạn đã đặt vé. Vé của bạn đã được xử lý thành công.",
+    "variant": "Phiên bản",
+    "printTicket": "In vé",
+    "qrReminder": {
+      "title": "Không cần lo lắng về việc lưu giữ mã QR!",
+      "description": "Mã QR vé của bạn sẽ được gửi qua:",
+      "channels": {
+        "email": "Email",
+        "zalo": "Zalo",
+        "sms": "SMS"
+      }
+    }
   }
 } 

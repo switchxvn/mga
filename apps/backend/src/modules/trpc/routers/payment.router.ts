@@ -20,7 +20,7 @@ export class PaymentRouter {
 
 const createPaymentSchema = z.object({
   payment_method_id: z.number(),
-  order_id: z.string().min(1),
+  order_id: z.number(),
   amount: z.number().min(1000),
   description: z.string().optional(),
   return_url: z.string().url(),
@@ -49,7 +49,7 @@ export const paymentRouter = router({
     }),
 
   getTransactionByOrderId: publicProcedure
-    .input(z.string())
+    .input(z.number())
     .query(async ({ ctx, input }) => {
       const transaction = await ctx.services.paymentFrontendService.getTransactionByOrderId(input);
       if (!transaction) {

@@ -58,7 +58,14 @@
     "featured": "Featured",
     "addToCart": "Add to Cart",
     "price": "Price",
-    "viewAll": "View All"
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "services": "Services",
+    "products": "Products",
+    "blog": "Blog",
+    "viewAll": "View All",
+    "cableCar": "Cable Car Contact"
   },
   "validation": {
     "required": "This field is required",
@@ -421,6 +428,43 @@
     "orderCancelledMessage": "Your order has been cancelled. You can try again or return to the tickets page.",
     "orderId": "Order ID",
     "backToTickets": "Back to Tickets",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "orderSuccess": "Booking Successful!",
+    "orderSuccessMessage": "Thank you for your booking. Your tickets have been successfully processed.",
+    "orderStatus": "Order Status",
+    "paymentStatus": "Payment Status",
+    "totalAmount": "Total Amount",
+    "viewOrders": "View My Orders",
+    "qrCodeTitle": "Your QR Ticket",
+    "qrCodeDescription": "Show this QR code at the entrance",
+    "qrCodeNote": "Please save or take a screenshot of this QR code",
+    "downloadQR": "Download QR Code",
+    "ticketDetails": "Ticket Details",
+    "ticketId": "Ticket ID",
+    "ticketType": "Ticket Type",
+    "ticketDate": "Visit Date",
+    "ticketQuantity": "Quantity",
+    "ticketValidity": "Valid Until",
+    "loadingOrder": "Loading your order details...",
+    "error": "Order Error",
+    "errorFetchingOrder": "Could not fetch your order details",
+    "noOrderCode": "No order code found",
+    "paymentFailed": "Payment failed",
+    "orderCancelled": "Order was cancelled",
+    "orderDetails": "Order Details",
+    "backToProducts": "Back to Products",
+    "ticketSuccessMessage": "Thank you for your order. Your tickets have been successfully processed.",
+    "ticketSuccess": "Ticket Successful!",
+    "variant": "Variant",
+    "printTicket": "Print Ticket",
+    "qrReminder": {
+      "title": "Don't worry about saving the QR code!",
+      "description": "Your ticket QR code will be sent via:",
+      "channels": {
+        "email": "Email",
+        "zalo": "Zalo",
+        "sms": "SMS"
+      }
+    }
   }
 } 
