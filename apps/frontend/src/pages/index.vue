@@ -503,7 +503,23 @@ const getSectionConfig = (section: ThemeSection) => {
       </div>
     </template>
     <template v-else>
-      <MaintenancePage />
+      <template v-if="theme?.sections">
+        <template v-for="(section, index) in theme.sections" :key="`section-${section.id}-${index}`">
+          <ClientOnly>
+            <component
+              v-if="section.isActive"
+              :is="resolveComponent(section)"
+              :section="section"
+              :config="getSectionConfig(section)"
+            />
+            <template #fallback>
+              <div class="p-4 text-center">
+                <ULoader />
+              </div>
+            </template>
+          </ClientOnly>
+        </template>
+      </template>
     </template>
   </div>
 </template>

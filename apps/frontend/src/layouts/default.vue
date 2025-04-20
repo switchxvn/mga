@@ -14,6 +14,7 @@ import FloatingPhoneSupport from '~/components/ui/FloatingPhoneSupport.vue';
 import FloatingZaloSupport from '~/components/ui/FloatingZaloSupport.vue';
 import FloatingMessengerSupport from '~/components/ui/FloatingMessengerSupport.vue';
 import SimpleNavbar from '~/components/ui/SimpleNavbar.vue';
+import MaintenancePage from '~/components/MaintenancePage.vue';
 
 const router = useRouter();
 const trpc = useTrpc();
@@ -24,6 +25,7 @@ const isLoading = ref(true);
 const isDarkMode = ref(false);
 const theme = ref<any>({ sections: [] }); // Initialize with empty sections
 const footer = ref<any>(null);
+const isMaintenanceMode = ref(false);
 
 // Register available components
 const components = {
@@ -125,21 +127,6 @@ onMounted(async () => {
     // Kiểm tra dark mode
     checkDarkMode();
     
-    // Theo dõi thay đổi của dark mode
-    if (process.client) {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.attributeName === 'class') {
-            checkDarkMode();
-          }
-        });
-      });
-      
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class']
-      });
-    }
   } catch (error) {
     console.error('Error in layout setup:', error);
   } finally {
@@ -181,36 +168,42 @@ async function handleLogout() {
 
 <template>
   <div class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <template v-if="theme?.sections">
-      <component 
-        v-for="section in theme.sections" 
-        :key="section.id"
-        v-show="section.isActive"
-        :is="resolveComponent(section)"
-        :settings="section.settings"
-        :user="user"
-        :isLoading="isLoading"
-        @logout="handleLogout"
-      />
+    <template v-if="isLoading">
+      <div class="flex justify-center items-center min-h-screen">
+        <ULoader size="lg" />
+      </div>
     </template>
-  
-    
-    <!-- Main content -->
-    <main class="flex-grow">
-      <slot />
-    </main>
-    
-    <!-- Footer -->
-    <component
-      v-if="footer"
-      :is="resolveFooterComponent(footer.componentName)"
-      v-bind="footer"
-    />
-    <BackToTop />
-    <FloatingPhoneSupport />
-    <FloatingZaloSupport />
-    <FloatingMessengerSupport />
+    <template v-else>
+      <!-- Header -->
+      <template v-if="theme?.sections">
+        <component 
+          v-for="section in theme.sections" 
+          :key="section.id"
+          v-show="section.isActive"
+          :is="resolveComponent(section)"
+          :settings="section.settings"
+          :user="user"
+          :isLoading="isLoading"
+          @logout="handleLogout"
+        />
+      </template>
+      
+      <!-- Main content -->
+      <main class="flex-grow">
+        <slot />
+      </main>
+      
+      <!-- Footer -->
+      <component
+        v-if="footer"
+        :is="resolveFooterComponent(footer.componentName)"
+        v-bind="footer"
+      />
+      <BackToTop />
+      <FloatingPhoneSupport />
+      <FloatingZaloSupport />
+      <FloatingMessengerSupport />
+    </template>
   </div>
 </template>
 
