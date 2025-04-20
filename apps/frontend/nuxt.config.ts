@@ -214,7 +214,11 @@ export default defineNuxtConfig({
     typeCheck: false,
     shim: false,
     tsConfig: {
-      extends: './nuxt.tsconfig.json'
+      extends: './nuxt.tsconfig.json',
+      compilerOptions: {
+        module: 'esnext',
+        target: 'esnext',
+      }
     },
   },
 
@@ -331,7 +335,17 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      script: []
+      titleTemplate: '%s | Cáp Treo Núi Sam',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'robots', content: 'index, follow' },
+        { property: 'og:type', content: 'website' },
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      ]
     },
     pageTransition: { name: 'page', mode: 'out-in' }
   },

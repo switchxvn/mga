@@ -17,7 +17,13 @@
     "nx:frontend": "nx run frontend:serve --verbose",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run typecheck:frontend:watch\"",
     "dev:daemon": "npx nx daemon",
-    "cleanup": "powershell -ExecutionPolicy Bypass -File cleanup.ps1"
+    "cleanup": "powershell -ExecutionPolicy Bypass -File cleanup.ps1",
+    "build:frontend": "cd apps/frontend && npm run build",
+    "build:backend": "nx run backend:build:production",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start:frontend": "cd apps/frontend && node .output/server/index.mjs",
+    "start:backend": "nx run backend:serve:production",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
   },
   "private": true,
   "dependencies": {

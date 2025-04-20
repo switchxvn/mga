@@ -2,11 +2,22 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
 import { useTrpc } from '../composables/useTrpc';
 import { defineNuxtRouteMiddleware, useAsyncData, useRuntimeConfig } from 'nuxt/app';
-import { useHead } from '@unhead/vue';
+import { useHead, useSeoMeta } from '@unhead/vue';
 import type { RouteLocationNormalized } from 'vue-router';
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
+
+const defaultSeo = {
+  title: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
+  description: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
+  keywords: 'Cáp Treo Núi Sam, Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
+  ogTitle: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
+  ogDescription: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
+  ogImage: '',
+  robotsTxt: 'index, follow',
+  canonicalUrl: ''
+} as const;
 
 export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => {
   // Skip for static resources
@@ -36,77 +47,51 @@ export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => 
       return;
     }
 
-    const { data: seo } = await useAsyncData(
-      `seo-${to.path}`, // Use path in key to force re-fetch on path change
-      async () => {
-        try {
-          const isServer = process.server;
-          const config = useRuntimeConfig();
-          console.log(`[SEO Middleware] Environment:`, {
-            isServer,
-            apiBase: config.public.apiBase,
-            path: to.path
-          });
-          
-          console.log('[SEO Middleware] Fetching SEO data...');
-          const result = await trpc.seo.getSeoByPath.query(to.path || '/');
-          console.log('[SEO Middleware] SEO data result:', result);
-          return result;
-        } catch (err) {
-          console.error('[SEO Middleware] Error in tRPC query:', err);
-          return null;
-        }
-      },
+    // Use useAsyncData with SSR-specific options
+    const { data: seoData } = await useAsyncData(
+      `seo-${to.path}`,
+      () => trpc.seo.getSeoByPath.query(to.path || '/'),
       {
-        server: true, // Enable SSR fetch
-        lazy: false, // Don't delay the initial render
-        immediate: true, // Fetch immediately when possible
-        default: () => ({
-          title: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-          description: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-          keywords: 'Cáp Treo Núi Sam, Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-          ogTitle: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-          ogDescription: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-          ogImage: '',
-          robotsTxt: 'index, follow',
-          canonicalUrl: ''
-        })
+        server: true,
+        lazy: false,
+        immediate: true,
+        transform: (result) => result || defaultSeo
       }
     );
 
-    if (!seo.value) {
-      console.warn('No SEO data returned for path:', to.path);
-      return;
-    }
+    // Ensure we have SEO data
+    const seo = seoData.value || defaultSeo;
 
-    useHead({
-      title: seo.value.title,
-      meta: [
-        { name: 'description', content: seo.value.description },
-        { name: 'keywords', content: seo.value.keywords },
-        { property: 'og:title', content: seo.value.ogTitle || seo.value.title },
-        { property: 'og:description', content: seo.value.ogDescription || seo.value.description },
-        { property: 'og:image', content: seo.value.ogImage },
-        { property: 'og:type', content: 'website' },
-        { name: 'robots', content: seo.value.robotsTxt }
-      ],
-      ...(seo.value.canonicalUrl ? {
-        link: [{ rel: 'canonical', href: seo.value.canonicalUrl }]
-      } : {})
+    // Use useSeoMeta for better SEO handling
+    useSeoMeta({
+      title: () => seo.title,
+      ogTitle: () => seo.ogTitle || seo.title,
+      description: () => seo.description,
+      ogDescription: () => seo.ogDescription || seo.description,
+      ogImage: () => seo.ogImage,
+      keywords: () => seo.keywords,
+      robots: () => seo.robotsTxt,
     });
+
+    // Set canonical URL if available
+    if (seo.canonicalUrl) {
+      useHead({
+        link: [
+          { rel: 'canonical', href: seo.canonicalUrl }
+        ]
+      });
+    }
   } catch (error) {
     console.error('Error fetching SEO data:', error);
-    // Set default SEO if API fails
-    useHead({
-      title: 'Default Title',
-      meta: [
-        { name: 'description', content: 'Default Description' },
-        { name: 'keywords', content: 'default, keywords' },
-        { property: 'og:title', content: 'Default Title' },
-        { property: 'og:description', content: 'Default Description' },
-        { property: 'og:type', content: 'website' },
-        { name: 'robots', content: 'index, follow' }
-      ]
+    
+    // Set default SEO values on error
+    useSeoMeta({
+      title: () => defaultSeo.title,
+      ogTitle: () => defaultSeo.ogTitle,
+      description: () => defaultSeo.description,
+      ogDescription: () => defaultSeo.ogDescription,
+      keywords: () => defaultSeo.keywords,
+      robots: 'index, follow'
     });
   }
 }); 

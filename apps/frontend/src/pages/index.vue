@@ -4,7 +4,10 @@ import { useLocalization } from "../composables/useLocalization";
 import { useTrpc } from "../composables/useTrpc";
 import { computed, onMounted, ref, watch } from "../composables/useVueComposables";
 // Import Swiper
+import type { Seo } from '@ew/shared';
 import { PageType } from '@ew/shared';
+import { useHead } from '@unhead/vue';
+import { useAsyncData } from 'nuxt/app';
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/navigation";
@@ -13,7 +16,6 @@ import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import type { Component } from 'vue';
 import { defineAsyncComponent, markRaw } from 'vue';
 import { useTheme } from '../composables/useTheme';
-import MaintenancePage from '../components/MaintenancePage.vue';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface PostTranslation {
@@ -488,6 +490,32 @@ const getSectionConfig = (section: ThemeSection) => {
     themeId: theme.value?.id,
   };
 };
+
+const seoData = ref<Seo | null>(null);
+
+useAsyncData('home-seo', () => 
+  useTrpc().seo.getSeoByPath.query('/'),
+  {
+    server: true,
+    lazy: false,
+    transform: (data) => {
+      seoData.value = data as Seo;
+      return data;
+    }
+  }
+);
+
+useHead({
+  title: computed(() => seoData.value?.title || 'Trang Chủ'),
+  meta: computed(() => [
+    { name: 'title', content: seoData.value?.title || 'Trang Chủ' },
+    { property: 'og:title', content: seoData.value?.ogTitle || seoData.value?.title || 'Trang Chủ' },
+    { name: 'description', content: seoData.value?.description },
+    { property: 'og:description', content: seoData.value?.ogDescription || seoData.value?.description },
+    { property: 'og:image', content: seoData.value?.ogImage },
+    { name: 'keywords', content: seoData.value?.keywords }
+  ])
+});
 </script>
 
 <template>

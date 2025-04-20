@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "build": "nuxt build",
+    "start": "node .output/server/index.mjs"
+  },
   "dependencies": {
     "@nuxtjs/i18n": "^9.0.0-rc.2",
     "@tanstack/vue-query": "^5.66.9",
@@ -13,7 +17,6 @@
     "sass": "^1.85.1"
   },
   "resolutions": {
-  "estree-walker": "2.0.2"
-}
-
+    "estree-walker": "2.0.2"
+  }
 }

@@ -804,23 +804,67 @@ watch(locale, () => {
           @click.stop
         >
           <!-- Mobile Menu Header -->
-          <div class="mobile-menu-header flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 class="text-lg font-semibold">Menu</h2>
+          <div class="mobile-menu-header flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+            <NuxtLink to="/" class="flex-shrink-0" @click="isMobileMenuOpen = false">
+              <img
+                v-if="currentLogoUrl"
+                :src="currentLogoUrl"
+                :alt="logo?.altText || 'Logo'"
+                class="h-10 w-auto object-contain"
+              />
+            </NuxtLink>
             <button
-              class="p-2 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400"
+              class="p-2 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
               @click="isMobileMenuOpen = false"
               aria-label="Close Menu"
             >
-              <Icon name="X" class="nav-icon w-6 h-6" />
+              <Icon name="X" class="nav-icon w-7 h-7" />
             </button>
           </div>
 
-          <div class="px-4 py-3 space-y-1 bg-white dark:bg-neutral-900">
+          <!-- Mobile Call Button -->
+          <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-3">
+                <div class="relative">
+                  <div class="animate-ring absolute -inset-1 rounded-full border-2 border-primary-500 opacity-75"></div>
+                  <div class="relative flex items-center justify-center rounded-full bg-primary-500 w-10 h-10">
+                    <Phone class="text-white" :size="20" :stroke-width="2.5" aria-hidden="true" />
+                  </div>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-lg font-bold text-neutral-900 dark:text-white">
+                    {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
+                  </span>
+                  <div class="flex flex-col">
+                    <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
+                      <button 
+                        class="text-base text-primary-600 dark:text-primary-400 font-medium hover:underline transition-all duration-300 text-left"
+                        @click="callPhone(phone.number)"
+                      >
+                        {{ t(phone.label) }}: {{ phone.number }}
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+              <NuxtLink
+                :to="props.settings?.bookingButton?.href || '/booking'"
+                class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-full transition-all duration-300"
+                @click="isMobileMenuOpen = false"
+              >
+                <Icon name="Calendar" class="w-5 h-5" />
+                {{ t('Đặt vé ngay') }}
+              </NuxtLink>
+            </div>
+          </div>
+
+          <div class="px-6 py-4 space-y-4">
             <!-- Cart Icon for Mobile -->
-            <div v-if="props.settings?.showCart && isCartEnabled" class="mb-4">
+            <div v-if="props.settings?.showCart && isCartEnabled">
               <NuxtLink 
                 to="/cart" 
-                class="flex items-center gap-3 px-3 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
+                class="flex items-center gap-3 px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                 @click="isMobileMenuOpen = false"
               >
                 <Icon name="ShoppingCart" class="nav-icon w-6 h-6" />
@@ -829,7 +873,7 @@ watch(locale, () => {
             </div>
 
             <!-- Language Switcher and Theme Toggle in Mobile Menu -->
-            <div class="flex flex-col space-y-2 px-3 py-2 mb-4">
+            <div class="flex flex-col space-y-3">
               <div v-if="props.settings?.showLanguageSwitcher" class="w-full">
                 <LanguageSwitcher />
               </div>
@@ -839,7 +883,7 @@ watch(locale, () => {
             </div>
 
             <!-- Mobile Menu Items with Mega Menu -->
-            <div class="space-y-1">
+            <div class="space-y-1 mt-4">
               <div
                 v-for="item in processedMenuItems"
                 :key="item.id"
@@ -848,12 +892,12 @@ watch(locale, () => {
                 <!-- Menu Item with Mega Menu -->
                 <div
                   v-if="item.children && item.children.length > 0"
-                  class="mobile-main-menu-item flex items-center justify-between px-3 py-2 text-base font-semibold uppercase rounded-md"
+                  class="mobile-main-menu-item flex items-center justify-between px-4 py-3 text-base font-semibold uppercase rounded-lg"
                   :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 >
                   <NuxtLink
                     :to="item.href"
-                    class="flex-1 flex items-center gap-2"
+                    class="flex-1 flex items-center gap-3"
                     @click="isMobileMenuOpen = false"
                   >
                     <Icon
@@ -864,12 +908,12 @@ watch(locale, () => {
                     {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                   </NuxtLink>
                   <button
-                    class="p-2 -m-2"
+                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
                     @click.stop="toggleMobileMegaMenu(item.id)"
                   >
                     <Icon
                       name="ChevronRight"
-                      class="nav-icon w-5 h-5 transition-transform duration-300"
+                      class="nav-icon w-6 h-6 transition-transform duration-300"
                       :class="{ 'rotate-90': activeMobileMegaMenu === item.id }"
                     />
                   </button>
@@ -879,7 +923,7 @@ watch(locale, () => {
                 <NuxtLink
                   v-else
                   :to="item.href"
-                  class="mobile-main-menu-item flex items-center gap-2 px-3 py-2 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-md transition-colors duration-300"
+                  class="mobile-main-menu-item flex items-center gap-3 px-4 py-3 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors duration-300"
                   :class="{ 'text-primary-600 dark:text-primary-400': isMenuActive(item.href) }"
                   @click="isMobileMenuOpen = false"
                 >
@@ -892,7 +936,14 @@ watch(locale, () => {
                 </NuxtLink>
 
                 <!-- Mobile Mega Menu Content -->
-                <Transition name="slide-fade">
+                <Transition
+                  enter-active-class="transition duration-300 ease-out"
+                  enter-from-class="transform -translate-y-4 opacity-0"
+                  enter-to-class="transform translate-y-0 opacity-100"
+                  leave-active-class="transition duration-200 ease-in"
+                  leave-from-class="transform translate-y-0 opacity-100"
+                  leave-to-class="transform -translate-y-4 opacity-0"
+                >
                   <MobileMegaMenu
                     v-if="item.children && item.children.length > 0 && activeMobileMegaMenu === item.id"
                     :item="item"
@@ -1009,10 +1060,11 @@ watch(locale, () => {
   }
 
   .mobile-menu-overlay {
-    @apply fixed inset-0 bg-black/50 z-50;
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50;
 
     .mobile-menu-content {
-      @apply fixed top-0 right-0 h-full w-full max-w-sm overflow-y-auto;
+      @apply fixed top-0 right-0 h-full w-full max-w-[90%] sm:max-w-[400px] overflow-y-auto shadow-xl;
+      animation: slideInRight 0.3s ease-out;
     }
   }
 
@@ -1020,11 +1072,11 @@ watch(locale, () => {
     @apply relative;
 
     &:hover {
-      @apply bg-neutral-100 dark:bg-neutral-800;
+      @apply bg-neutral-50 dark:bg-neutral-800;
     }
 
     &.mobile-menu-active {
-      @apply text-primary-500;
+      @apply text-primary-500 bg-primary-50 dark:bg-primary-900/20;
     }
   }
 
@@ -1076,5 +1128,14 @@ watch(locale, () => {
 .slide-fade-leave-to {
   opacity: 0;
   transform: translateX(20px);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 </style> 
