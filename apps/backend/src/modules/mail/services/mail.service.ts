@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailServiceInterface } from '../interfaces/mail.interface';
 import { TemplateMailOptions, MailResponse } from '../types/mail.types';
@@ -12,6 +12,7 @@ import * as Handlebars from 'handlebars';
 @Injectable()
 export class MailService implements MailServiceInterface, OnModuleInit {
   private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(MailService.name);
 
   constructor(
     private configService: ConfigService,
@@ -42,61 +43,100 @@ export class MailService implements MailServiceInterface, OnModuleInit {
         user: mailConfig.config.auth?.user,
         pass: mailConfig.config.auth?.pass,
       },
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000, // 10 seconds
+      socketTimeout: 10000, // 10 seconds
     });
+
+    try {
+      await this.transporter.verify();
+      this.logger.log('SMTP connection verified successfully');
+    } catch (error) {
+      this.logger.error('SMTP connection verification failed:', error);
+      throw error;
+    }
   }
 
   async sendMail(options: TemplateMailOptions): Promise<MailResponse> {
-    try {
-      const mailConfig = await this.mailConfigRepository.findOne({
-        where: { code: 'GMAIL', isActive: true }
-      });
+    const maxRetries = 3;
+    let currentTry = 0;
 
-      if (!mailConfig) {
-        throw new Error('Gmail configuration not found or not active');
-      }
-
-      // Use from address from config if not provided in options
-      if (!options.from && mailConfig.config.from) {
-        options.from = mailConfig.config.from;
-      }
-
-      // Handle template if provided
-      if (options.template) {
-        const template = await this.mailTemplateRepository.findOne({
-          where: { code: options.template.id, is_active: true }
+    while (currentTry < maxRetries) {
+      try {
+        const mailConfig = await this.mailConfigRepository.findOne({
+          where: { code: 'GMAIL', isActive: true }
         });
 
-        if (!template) {
-          throw new Error(`Email template ${options.template.id} not found or not active`);
+        if (!mailConfig) {
+          throw new Error('Gmail configuration not found or not active');
         }
 
-        // Compile templates with Handlebars
-        const subjectTemplate = Handlebars.compile(template.subject);
-        const htmlTemplate = Handlebars.compile(template.html);
+        // Use from address from config if not provided in options
+        if (!options.from && mailConfig.config.from) {
+          options.from = mailConfig.config.from;
+        }
 
-        // Apply data to templates
-        options.subject = subjectTemplate(options.template.data);
-        options.html = htmlTemplate(options.template.data);
+        // Handle template if provided
+        if (options.template) {
+          const template = await this.mailTemplateRepository.findOne({
+            where: { code: options.template.id, is_active: true }
+          });
 
-        console.log('Compiled email template:', {
-          subject: options.subject,
-          data: options.template.data
+          if (!template) {
+            throw new Error(`Email template ${options.template.id} not found or not active`);
+          }
+
+          // Compile templates with Handlebars
+          const subjectTemplate = Handlebars.compile(template.subject);
+          const htmlTemplate = Handlebars.compile(template.html);
+
+          // Apply data to templates
+          options.subject = subjectTemplate(options.template.data);
+          options.html = htmlTemplate(options.template.data);
+
+          this.logger.debug('Compiled email template:', {
+            subject: options.subject,
+            templateId: options.template.id
+          });
+        }
+
+        const info = await this.transporter.sendMail(options);
+        this.logger.log('Email sent successfully:', {
+          messageId: info.messageId,
+          to: options.to
         });
-      }
 
-      const info = await this.transporter.sendMail(options);
-      console.log('Email sent successfully:', info);
-      return {
-        success: true,
-        messageId: info.messageId,
-      };
-    } catch (error) {
-      console.error('Error sending email:', error);
-      return {
-        success: false,
-        error: error.message,
-      };
+        return {
+          success: true,
+          messageId: info.messageId,
+        };
+      } catch (error) {
+        currentTry++;
+        this.logger.error(`Error sending email (attempt ${currentTry}/${maxRetries}):`, {
+          error: error.message,
+          to: options.to,
+          subject: options.subject
+        });
+        
+        if (currentTry === maxRetries) {
+          return {
+            success: false,
+            error: error.message,
+          };
+        }
+        
+        // Wait before retrying (exponential backoff)
+        const retryDelay = Math.pow(2, currentTry) * 1000;
+        this.logger.log(`Retrying in ${retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
     }
+
+    // This should never be reached due to the return statements above
+    return {
+      success: false,
+      error: 'Maximum retry attempts reached',
+    };
   }
 
   async verifyConfiguration(): Promise<boolean> {
@@ -104,6 +144,7 @@ export class MailService implements MailServiceInterface, OnModuleInit {
       await this.transporter.verify();
       return true;
     } catch (error) {
+      this.logger.error('Configuration verification failed:', error);
       return false;
     }
   }
