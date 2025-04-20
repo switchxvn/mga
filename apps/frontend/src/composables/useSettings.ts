@@ -38,6 +38,8 @@ export interface Settings {
     menuBackgroundColor?: string;
   };
   menuBackgroundColor?: string;
+  hotline: string;
+  operatingHours: string;
 }
 
 /**
@@ -79,6 +81,8 @@ export function useSettings() {
       menuBackgroundColor: '#171717',
     },
     menuBackgroundColor: '#ffffff',
+    hotline: '',
+    operatingHours: '',
   });
   
   /**

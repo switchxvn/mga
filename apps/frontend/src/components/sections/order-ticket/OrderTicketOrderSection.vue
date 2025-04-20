@@ -219,7 +219,7 @@ watch(locale, () => {
       <!-- Booking Card -->
       <div
         class="relative border-2 border-primary-500 bg-white rounded-xl shadow-lg p-6 z-10 max-w-3xl mx-auto"
-        style="margin-top: -7.5rem;"
+        style="margin-top: -23.5rem;"
       >
         <!-- Ticket Cards -->
         <div class="mb-8">

@@ -568,7 +568,7 @@ watch(locale, () => {
         <div class="w-full px-8 h-full">
           <div class="flex items-center h-full relative">
             <!-- Logo - Left column -->
-            <div class="w-[13%] flex justify-start">
+            <div class="w-[15%] flex justify-start">
               <NuxtLink to="/" class="flex-shrink-0 mr-8 py-3">
                 <div 
                   class="flex items-center justify-center"
@@ -591,7 +591,7 @@ watch(locale, () => {
             </div>
 
             <!-- Navigation Menu - Center column -->
-            <nav class="w-[74%] hidden lg:flex h-full">
+            <nav class="w-[70%] hidden lg:flex h-full">
               <div class="flex items-center justify-between w-full h-full" ref="menuContainerRef">
                 <div class="flex items-center justify-between w-full h-full">
                   <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
@@ -737,35 +737,35 @@ watch(locale, () => {
             </nav>
 
             <!-- Right Actions - Right column -->
-            <div class="w-[13%] flex items-center justify-end gap-4">
+            <div class="w-[15%] flex items-center justify-end gap-4">
               <!-- Combined Book Now Button -->
               <NuxtLink
                 :to="props.settings?.bookingButton?.href || '/booking'"
-                class="hidden lg:flex items-center gap-4 px-6 py-3 rounded-full transition-all duration-300 hover:opacity-90"
+                class="hidden lg:flex items-center gap-1 lg:gap-4 px-2 lg:px-6 py-1 lg:py-3 min-h-[40px] lg:min-h-[60px] rounded-full transition-all duration-300 hover:opacity-90"
                 :style="{
                   backgroundColor: props.settings?.bookingButton?.backgroundColor || 'rgb(var(--color-primary-500))',
                   color: props.settings?.bookingButton?.textColor || '#ffffff'
                 }"
               >
                 <div class="relative">
-                  <div class="animate-ring absolute -inset-1 rounded-full border-2 opacity-75 border-white"></div>
-                  <div class="relative flex items-center justify-center rounded-full bg-white/20 w-10 h-10">
+                  <div class="animate-ring absolute -inset-0.5 lg:-inset-1 rounded-full border border-white lg:border-2 opacity-75"></div>
+                  <div class="relative flex items-center justify-center rounded-full bg-white/20 w-5 lg:w-10 h-5 lg:h-10">
                     <Phone
                       class="text-white"
-                      :size="24"
+                      :size="14"
                       :stroke-width="2.5"
                       aria-hidden="true"
                     />
                   </div>
                 </div>
-                <div class="flex flex-col items-start">
-                  <span class="text-lg font-bold whitespace-nowrap">
+                <div class="flex flex-col items-start py-0.5">
+                  <span class="text-xs lg:text-lg font-bold leading-none lg:leading-normal whitespace-nowrap">
                     {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
                   </span>
                   <div class="flex flex-col">
                     <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
                       <button 
-                        class="text-sm opacity-90 hover:underline transition-all duration-300"
+                        class="text-[10px] lg:text-sm leading-tight lg:leading-normal opacity-90 hover:underline transition-all duration-300"
                         @click.stop="callPhone(phone.number)"
                       >
                         {{ t(phone.label) }}: {{ phone.number }}
