@@ -1,8 +1,7 @@
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
 import { useTrpc } from '../composables/useTrpc';
-import { defineNuxtRouteMiddleware } from 'nuxt/app';
-import { useAsyncData } from 'nuxt/app';
+import { defineNuxtRouteMiddleware, useAsyncData, useRuntimeConfig } from 'nuxt/app';
 import { useHead } from '@unhead/vue';
 import type { RouteLocationNormalized } from 'vue-router';
 
@@ -37,24 +36,31 @@ export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => 
       return;
     }
 
-    // Force refresh cache on each navigation
     const { data: seo } = await useAsyncData(
-      `seo-${to.path}`,
+      `seo-${to.path}`, // Use path in key to force re-fetch on path change
       async () => {
         try {
-          console.log('Fetching SEO data for path:', to.path);
+          const isServer = process.server;
+          const config = useRuntimeConfig();
+          console.log(`[SEO Middleware] Environment:`, {
+            isServer,
+            apiBase: config.public.apiBase,
+            path: to.path
+          });
+          
+          console.log('[SEO Middleware] Fetching SEO data...');
           const result = await trpc.seo.getSeoByPath.query(to.path || '/');
-          console.log('SEO data result:', result);
+          console.log('[SEO Middleware] SEO data result:', result);
           return result;
         } catch (err) {
-          console.error('Error in tRPC query:', err);
+          console.error('[SEO Middleware] Error in tRPC query:', err);
           return null;
         }
       },
       {
-        server: false, // Run on client-side to ensure fresh data
-        lazy: false,
-        immediate: true,
+        server: true, // Enable SSR fetch
+        lazy: false, // Don't delay the initial render
+        immediate: true, // Fetch immediately when possible
         default: () => ({
           title: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
           description: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
