@@ -117,7 +117,7 @@ export class PayOSWebhookService {
             ticketType: 'Vé thường',
             ticketNumber: firstTicket.qrCode,
             ticketPrice: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(firstTicket.unitPrice),
-            qrCodeUrl: firstTicket.qrCode || 'https://example.com/qr-placeholder.png',
+            qrCodeUrl: firstTicket.imageQrCode || this.configService.get('DEFAULT_QR_IMAGE', 'https://example.com/qr-placeholder.png'),
             venueAddress: this.configService.get('VENUE_ADDRESS', 'Địa chỉ venue'),
             supportEmail: this.configService.get('SUPPORT_EMAIL', 'support@yourdomain.com'),
             supportPhone: this.configService.get('SUPPORT_PHONE', '1900 xxxx')
