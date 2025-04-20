@@ -11,7 +11,7 @@ import * as Handlebars from 'handlebars';
 
 @Injectable()
 export class MailService implements MailServiceInterface, OnModuleInit {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null = null;
   private readonly logger = new Logger(MailService.name);
 
   constructor(
@@ -27,48 +27,61 @@ export class MailService implements MailServiceInterface, OnModuleInit {
   }
 
   private async initializeTransporter() {
-    const mailConfig = await this.mailConfigRepository.findOne({
-      where: { code: 'GMAIL', isActive: true }
-    });
-
-    if (!mailConfig) {
-      throw new Error('Gmail configuration not found or not active');
-    }
-
-    this.transporter = nodemailer.createTransport({
-      host: mailConfig.config.host,
-      port: mailConfig.config.port,
-      secure: mailConfig.config.secure,
-      auth: {
-        user: mailConfig.config.auth?.user,
-        pass: mailConfig.config.auth?.pass,
-      },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000, // 10 seconds
-      socketTimeout: 10000, // 10 seconds
-    });
-
     try {
-      await this.transporter.verify();
-      this.logger.log('SMTP connection verified successfully');
+      const mailConfig = await this.mailConfigRepository.findOne({
+        where: { code: 'MAILTRAP', isActive: true }
+      });
+
+      if (!mailConfig) {
+        this.logger.warn('No active mail configuration found. Email functionality will be disabled.');
+        return;
+      }
+
+      this.transporter = nodemailer.createTransport({
+        host: mailConfig.config.host,
+        port: mailConfig.config.port,
+        secure: mailConfig.config.secure || false,
+        auth: {
+          user: mailConfig.config.auth?.user,
+          pass: mailConfig.config.auth?.pass,
+        },
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000, // 10 seconds
+        socketTimeout: 10000, // 10 seconds
+      });
+
+      try {
+        await this.transporter.verify();
+        this.logger.log('SMTP connection verified successfully');
+      } catch (error) {
+        this.logger.warn('SMTP connection verification failed. Email functionality will be disabled:', error);
+        this.transporter = null;
+      }
     } catch (error) {
-      this.logger.error('SMTP connection verification failed:', error);
-      throw error;
+      this.logger.warn('Failed to initialize mail transporter. Email functionality will be disabled:', error);
     }
   }
 
   async sendMail(options: TemplateMailOptions): Promise<MailResponse> {
+    if (!this.transporter) {
+      this.logger.warn('Mail transporter not initialized. Skipping email send.');
+      return {
+        success: false,
+        error: 'Mail service not configured',
+      };
+    }
+
     const maxRetries = 3;
     let currentTry = 0;
 
     while (currentTry < maxRetries) {
       try {
         const mailConfig = await this.mailConfigRepository.findOne({
-          where: { code: 'GMAIL', isActive: true }
+          where: { code: 'MAILTRAP', isActive: true }
         });
 
         if (!mailConfig) {
-          throw new Error('Gmail configuration not found or not active');
+          throw new Error('Mail configuration not found or not active');
         }
 
         // Use from address from config if not provided in options
@@ -132,7 +145,6 @@ export class MailService implements MailServiceInterface, OnModuleInit {
       }
     }
 
-    // This should never be reached due to the return statements above
     return {
       success: false,
       error: 'Maximum retry attempts reached',
@@ -140,6 +152,10 @@ export class MailService implements MailServiceInterface, OnModuleInit {
   }
 
   async verifyConfiguration(): Promise<boolean> {
+    if (!this.transporter) {
+      return false;
+    }
+
     try {
       await this.transporter.verify();
       return true;
