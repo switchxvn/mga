@@ -18,7 +18,6 @@ const aboutSectionSchema = z.object({
   })).optional(),
 });
 
-type AboutSectionInput = z.infer<typeof aboutSectionSchema>;
 export const aboutRouter = router({
   // Frontend routes
   getActiveSections: publicProcedure
