@@ -1,37 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TrpcService } from './trpc.service';
-import { themeRouter } from './routers/theme.router';
-import { authRouter } from './routers/auth.router';
-import { postRouter } from './routers/post.router';
-import { userRouter } from './routers/user.router';
-import { profileRouter } from './routers/profile.router';
-import { settingsRouter } from './routers/settings.router';
-import { seoRouter } from './routers/seo.router';
-import { footerRouter } from './routers/footer.router';
-import { categoryRouter } from './routers/category.router';
-import { serviceRouter } from './routers/service.router';
-import { productRouter } from './routers/product.router';
-import { priceRequestRouter } from './routers/price-request.router';
-import { featureFlagsRouter } from './routers/feature-flags.router';
-import { heroRouter } from './routers/hero.router';
 import { CommonRouter } from './routers/common.router';
-import { componentStyleConfigRouter } from './routers/component-style-config.router';
-import { languageRouter } from './routers/language.router';
-import { aboutRouter } from './routers/about.router';
-import { logoRouter } from './routers/logo.router';
-import { customerLogoRouter } from './routers/customer-logo.router';
-import { contactRouter } from './routers/contact.router';
-import { galleryRouter } from './routers/gallery.router';
-import { foodMenuRouter } from './routers/food-menu.router';
-import { adminFoodMenuRouter } from './routers/admin/food-menu.router';
-//Admin
-import { adminMenuItemsRouter } from './routers/admin/menu-items.router';
-import { contactSectionRouter } from './routers/contact-section.router';
-import { ticketPricingSectionRouter } from './routers/ticket-pricing-section.router';
-import { orderTicketSectionRouter } from './routers/order-ticket-section.router';
-import { paymentRouter } from './routers/payment.router';
-import { orderRouter } from './routers/order.router';
-import { uploadRouter } from './routers/upload.router';
+import * as routers from './routers';
 
 @Injectable()
 export class TrpcRouter {
@@ -42,38 +12,38 @@ export class TrpcRouter {
 
   public getRouter() {
     return this.trpc.createRouter({
-      theme: themeRouter,
-      auth: authRouter,
-      post: postRouter,
-      user: userRouter,
-      profile: profileRouter,
-      settings: settingsRouter,
-      seo: seoRouter,
-      footer: footerRouter,
-      category: categoryRouter,
-      service: serviceRouter,
-      product: productRouter,
-      priceRequest: priceRequestRouter,
-      featureFlags: featureFlagsRouter,
-      hero: heroRouter,
-      componentStyleConfig: componentStyleConfigRouter,
+      theme: routers.themeRouter,
+      auth: routers.authRouter,
+      post: routers.postRouter,
+      user: routers.userRouter,
+      profile: routers.profileRouter,
+      settings: routers.settingsRouter,
+      seo: routers.seoRouter,
+      footer: routers.footerRouter,
+      category: routers.categoryRouter,
+      service: routers.serviceRouter,
+      product: routers.productRouter,
+      priceRequest: routers.priceRequestRouter,
+      featureFlags: routers.featureFlagsRouter,
+      hero: routers.heroRouter,
+      componentStyleConfig: routers.componentStyleConfigRouter,
       common: this.commonRouter.router,
-      language: languageRouter,
-      about: aboutRouter,
-      logo: logoRouter,
-      customerLogo: customerLogoRouter,
-      contact: contactRouter,
-      gallery: galleryRouter,
-      contactSection: contactSectionRouter,
-      ticketPricingSection: ticketPricingSectionRouter,
-      orderTicketSection: orderTicketSectionRouter,
-      foodMenu: foodMenuRouter,
-      payment: paymentRouter,
-      order: orderRouter,
-      upload: uploadRouter,
+      language: routers.languageRouter,
+      about: routers.aboutRouter,
+      logo: routers.logoRouter,
+      customerLogo: routers.customerLogoRouter,
+      contact: routers.contactRouter,
+      gallery: routers.galleryRouter,
+      contactSection: routers.contactSectionRouter,
+      ticketPricingSection: routers.ticketPricingSectionRouter,
+      orderTicketSection: routers.orderTicketSectionRouter,
+      foodMenu: routers.foodMenuRouter,
+      payment: routers.paymentRouter,
+      order: routers.orderRouter,
+      upload: routers.uploadRouter,
       admin: this.trpc.createRouter({
-        menuItems: adminMenuItemsRouter,
-        foodMenu: adminFoodMenuRouter,
+        menuItems: routers.adminMenuItemsRouter,
+        foodMenu: routers.adminFoodMenuRouter,
       }),
     });
   }

@@ -2,7 +2,6 @@ import { router } from '../trpc';
 import { authRouter } from './auth.router';
 import { postRouter } from './post.router';
 import { userRouter } from './user.router';
-import { exampleRouter } from './example';
 import { settingsRouter } from './settings.router';
 import { seoRouter } from './seo.router';
 import { categoryRouter } from './category.router';
@@ -19,11 +18,56 @@ import { componentStyleConfigRouter } from './component-style-config.router';
 import { logoRouter } from './logo.router';
 import { customerLogoRouter } from './customer-logo.router';
 import { contactRouter } from './contact.router';
+import { aboutRouter } from './about.router';
+import { galleryRouter } from './gallery.router';
+import { foodMenuRouter } from './food-menu.router';
+import { contactSectionRouter } from './contact-section.router';
+import { ticketPricingSectionRouter } from './ticket-pricing-section.router';
+import { orderTicketSectionRouter } from './order-ticket-section.router';
+import { paymentRouter } from './payment.router';
+import { orderRouter } from './order.router';
+import { uploadRouter } from './upload.router';
+import { adminMenuItemsRouter } from './admin/menu-items.router';
+import { adminFoodMenuRouter } from './admin/food-menu.router';
+
+// Re-export all routers
+export {
+  authRouter,
+  postRouter,
+  userRouter,
+  settingsRouter,
+  seoRouter,
+  categoryRouter,
+  serviceRouter,
+  featureFlagsRouter,
+  productRouter,
+  priceRequestRouter,
+  profileRouter,
+  footerRouter,
+  heroRouter,
+  themeRouter,
+  languageRouter,
+  componentStyleConfigRouter,
+  logoRouter,
+  customerLogoRouter,
+  contactRouter,
+  aboutRouter,
+  galleryRouter,
+  foodMenuRouter,
+  contactSectionRouter,
+  ticketPricingSectionRouter,
+  orderTicketSectionRouter,
+  paymentRouter,
+  orderRouter,
+  uploadRouter,
+  adminMenuItemsRouter,
+  adminFoodMenuRouter,
+};
+
 export const appRouter = (commonRouter) => router({
   auth: authRouter,
   post: postRouter,
   user: userRouter,
-  example: exampleRouter,
   settings: settingsRouter,
   seo: seoRouter,
   category: categoryRouter,
@@ -41,6 +85,19 @@ export const appRouter = (commonRouter) => router({
   logo: logoRouter,
   customerLogo: customerLogoRouter,
   contact: contactRouter,
+  about: aboutRouter,
+  gallery: galleryRouter,
+  foodMenu: foodMenuRouter,
+  contactSection: contactSectionRouter,
+  ticketPricingSection: ticketPricingSectionRouter,
+  orderTicketSection: orderTicketSectionRouter,
+  payment: paymentRouter,
+  order: orderRouter,
+  upload: uploadRouter,
+  admin: router({
+    menuItems: adminMenuItemsRouter,
+    foodMenu: adminFoodMenuRouter,
+  }),
 });
 
 export type AppRouter = ReturnType<typeof appRouter>; 

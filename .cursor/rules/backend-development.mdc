@@ -1,0 +1,66 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Backend Development Guidelines
+
+## NestJS Best Practices
+
+### Module Organization
+- One module per domain/feature
+- Register new modules in `app.module.ts`
+- Register new entities in [entities.ts](mdc:apps/backend/src/modules/entities.ts)
+- Register shared types/enums in `@shared` library
+
+### Entity Design
+- Use camelCase for entity class names
+- Use snake_case for database column names
+- Follow TypeORM conventions for entity decorators
+- Keep entities focused and single-purpose
+
+### Service Pattern
+- Separate admin and frontend services
+- Use dependency injection
+- Follow SOLID principles
+- Keep services focused on business logic
+
+### Error Handling
+- Use NestJS exception filters
+- Implement proper error logging
+- Return appropriate HTTP status codes
+- Use custom exception classes for domain-specific errors
+
+### tRPC Integration
+- Register new routes in appropriate router files
+- Protect admin routes in `admin/` directory
+- Register services in `trpc.service.ts`
+- Define interfaces in `trpc-services.interface.ts`
+
+### Code Style
+- Use TypeScript strict mode
+- Document public methods with JSDoc
+- Follow naming conventions:
+  - PascalCase for classes
+  - camelCase for methods and properties
+  - kebab-case for files
+- Avoid using `any` type
+
+### Testing
+- Write unit tests for services
+- Write e2e tests for API endpoints
+- Use proper mocking techniques
+- Follow AAA pattern (Arrange-Act-Assert)
+
+### Database
+- Use TypeORM migrations for schema changes
+- Follow migration naming conventions
+- Test migrations before deployment
+- Keep migrations reversible
+
+## Code Quality
+- Keep functions small and focused
+- Use early returns to reduce nesting
+- Implement proper validation
+- Use dependency injection
+- Follow SOLID principles

@@ -1,0 +1,86 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Frontend Development Guidelines
+
+## Nuxt 3 Best Practices
+
+### Component Organization
+- Use Composition API with `<script setup>`
+- Keep components small and focused
+- Extract reusable logic to composables
+- Follow component naming conventions:
+  - PascalCase for component names
+  - kebab-case for filenames
+
+### TypeScript Usage
+- Enable strict type checking
+- Avoid `any` type usage
+- Define proper interfaces and types
+- Use type inference when possible
+- Reference [useLocalization.ts](mdc:apps/frontend/src/composables/useLocalization.ts) for type examples
+
+### Styling
+- Use Tailwind CSS for styling
+- Extract common styles to `@styles` directory
+- Follow mobile-first approach
+- Use proper responsive design patterns
+
+### Internationalization
+- Use `useLocalization` composable for translations
+- Store translations in `i18n/locales/*.json`
+- Follow translation key structure
+- Avoid hardcoded strings
+
+### State Management
+- Use composables for local state
+- Extract complex logic from components
+- Follow reactive patterns
+- Use proper TypeScript types
+
+### Performance
+- Implement proper SSR strategies
+- Use lazy loading when appropriate
+- Optimize image loading
+- Follow Nuxt 3 best practices
+
+### Code Quality
+- Keep functions small and focused
+- Use early returns
+- Implement proper error handling
+- Follow SOLID principles where applicable
+
+### Component Guidelines
+- Prefer functional components
+- Use proper prop validation
+- Implement proper event handling
+- Follow Vue 3 lifecycle hooks
+
+### SEO Optimization
+- Use proper meta tags
+- Implement SSR for important content
+- Follow accessibility guidelines
+- Use semantic HTML
+
+### Testing
+- Write unit tests for components
+- Test composables thoroughly
+- Use Vue Test Utils
+- Follow testing best practices
+
+## Common Components
+Reuse existing components for:
+- Pagination
+- Sliders
+- Filters
+- Cards
+- Form elements
+- Modal dialogs
+
+## Error Handling
+- Implement proper error boundaries
+- Use try-catch blocks appropriately
+- Show user-friendly error messages
+- Log errors properly
