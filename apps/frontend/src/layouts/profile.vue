@@ -1,95 +1,79 @@
 <script setup lang="ts">
-// Auto-imported by Nuxt 3;
-import { useColorMode } from '@vueuse/core';
-import { computed } from '../composables/useVueComposables';
-import { ref } from '../composables/useVueComposables';
+import { useRoute } from 'vue-router';
+import {
+  UserCircle,
+  Settings,
+  CreditCard,
+  ShoppingBag,
+  Heart,
+  Bell
+} from 'lucide-vue-next';
 
-const colorMode = useColorMode();
+const route = useRoute();
 
-const toggleTheme = () => {
-  colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
-};
-
-const isDarkMode = computed(() => colorMode.value === 'dark');
-
-const navigation = [
-  { name: 'Profile', href: '/profile' },
-  { name: 'Account', href: '/profile/account' },
-  { name: 'Password', href: '/profile/password' },
-  { name: 'Notifications', href: '/profile/notifications' },
-  { name: 'Billing', href: '/profile/billing' },
+const navigationItems = [
+  { name: 'Thông tin cá nhân', href: '/dashboard', icon: UserCircle },
+  { name: 'Đơn hàng của tôi', href: '/dashboard/orders', icon: ShoppingBag },
+  { name: 'Sản phẩm yêu thích', href: '/dashboard/wishlist', icon: Heart },
+  { name: 'Thông báo', href: '/dashboard/notifications', icon: Bell },
+  { name: 'Phương thức thanh toán', href: '/dashboard/payment', icon: CreditCard },
+  { name: 'Cài đặt', href: '/dashboard/settings', icon: Settings },
 ];
 
-const currentPath = ref('/profile'); // In real app, get this from router
+const isActiveRoute = (path: string) => {
+  return route.path === path;
+};
 </script>
 
 <template>
-  <div class="min-h-screen bg-background">
-    <!-- Header -->
-    <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div class="container flex h-14 items-center justify-between">
-        <a href="/" class="flex items-center space-x-2">
-          <span class="font-bold">Your Logo</span>
-        </a>
-        <nav class="flex items-center space-x-4">
-          <button @click="toggleTheme" class="px-2 hover:bg-accent hover:text-accent-foreground rounded-md">
-            <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-              <circle cx="12" cy="12" r="4"/>
-              <path d="M12 2v2"/>
-              <path d="M12 20v2"/>
-              <path d="m4.93 4.93 1.41 1.41"/>
-              <path d="m17.66 17.66 1.41 1.41"/>
-              <path d="M2 12h2"/>
-              <path d="M20 12h2"/>
-              <path d="m6.34 17.66-1.41 1.41"/>
-              <path d="m19.07 4.93-1.41 1.41"/>
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-            </svg>
-          </button>
-          <a href="/" class="hover:bg-accent hover:text-accent-foreground rounded-md px-4 py-2">Back to Home</a>
-        </nav>
-      </div>
-    </header>
+  <div>
+    <!-- Auth Guard -->
+    <AuthGuard>
+      <div class="min-h-screen bg-gray-50 dark:bg-neutral-900">
+        <!-- Dashboard Header -->
+        <DashboardHeader />
 
-    <!-- Main Content -->
-    <main class="container grid flex-1 gap-12 md:grid-cols-[200px_1fr] py-6">
-      <aside class="hidden w-[200px] flex-col md:flex">
-        <nav class="grid items-start gap-2">
-          <a
-            v-for="item in navigation"
-            :key="item.href"
-            :href="item.href"
-            :class="[
-              'flex items-center rounded-lg px-3 py-2 text-sm font-medium',
-              currentPath === item.href
-                ? 'bg-accent text-accent-foreground'
-                : 'hover:bg-accent hover:text-accent-foreground'
-            ]"
-          >
-            {{ item.name }}
-          </a>
-        </nav>
-      </aside>
-      <div class="flex-1">
-        <div class="space-y-6">
-          <slot />
-        </div>
-      </div>
-    </main>
+        <!-- Main Content -->
+        <main class="py-8">
+          <div class="mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex gap-8">
+              <!-- Sidebar Navigation -->
+              <aside class="w-64 flex-shrink-0">
+                <nav class="space-y-1 bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-4">
+                  <NuxtLink
+                    v-for="item in navigationItems"
+                    :key="item.name"
+                    :to="item.href"
+                    :class="[
+                      isActiveRoute(item.href)
+                        ? 'bg-primary-50 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700',
+                      'group flex items-center px-3 py-2 text-sm font-medium rounded-md'
+                    ]"
+                  >
+                    <component
+                      :is="item.icon"
+                      :class="[
+                        isActiveRoute(item.href)
+                          ? 'text-primary-600 dark:text-primary-400'
+                          : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400',
+                        'flex-shrink-0 -ml-1 mr-3 h-6 w-6'
+                      ]"
+                      aria-hidden="true"
+                    />
+                    {{ item.name }}
+                  </NuxtLink>
+                </nav>
+              </aside>
 
-    <!-- Footer -->
-    <footer class="border-t bg-background">
-      <div class="container flex h-14 items-center justify-between">
-        <p class="text-sm text-muted-foreground">
-          © 2024 Your Company. All rights reserved.
-        </p>
-        <nav class="flex items-center space-x-4">
-          <a href="/terms" class="text-sm text-muted-foreground hover:text-foreground">Terms</a>
-          <a href="/privacy" class="text-sm text-muted-foreground hover:text-foreground">Privacy</a>
-        </nav>
+              <!-- Page Content -->
+              <div class="flex-1">
+                <slot />
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
-    </footer>
+    </AuthGuard>
   </div>
 </template> 

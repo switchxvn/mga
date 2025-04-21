@@ -27,7 +27,7 @@ The project follows an Nx monorepo structure with the following organization:
   - `admin/`: Protected admin routes
   - `index.ts`: Route exports
 - `interfaces/`: Service interfaces
-- `trpc.service.ts`: Service registration
+- `contexts/`: Context
 
 ### Frontend Structure (apps/frontend/src)
 - `assets/`: Styles, SCSS, CSS

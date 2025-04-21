@@ -12,10 +12,11 @@ import { useNavbarFeatures } from '~/composables/useNavbarFeatures';
 import { useDarkMode } from '~/composables/useDarkMode';
 import { useIcon } from '~/composables/useIcon';
 import { useCssColorValue } from '~/composables/useColorUtils';
-import { Phone } from 'lucide-vue-next';
+import { Phone, User, LogIn, UserCircle, LogOut, Settings } from 'lucide-vue-next';
 import type { MenuItem, TopMenuItem } from '~/types/navbar';
 import { defineAsyncComponent, markRaw } from 'vue';
 import type { Component } from 'vue';
+import { useAuth } from '@/composables/useAuth';
 
 // Register components using defineAsyncComponent
 const registeredComponents = {
@@ -293,20 +294,31 @@ const callPhone = (phoneNumber: string) => {
   window.location.href = `tel:${phoneNumber.replace(/\s+/g, '')}`;
 };
 
+// Replace with correct auth state properties
+const { user, logout, checkAuth } = useAuth();
+const showUserDropdown = ref(false);
+
+const isAuthenticated = computed(() => {
+  return !!user.value;
+});
+
+const userDisplayName = computed(() => {
+  if (!user.value) return '';
+  return user.value.profile?.firstName || user.value.email;
+});
+
+const handleLogout = async () => {
+  await logout();
+  showUserDropdown.value = false;
+};
+
 onMounted(() => {
-  const init = async () => {
-    try {
-      await fetchMenuItems();
-      nextTick(() => {
-        calculateVisibleItems();
-      });
-    } catch (err) {
-      console.error('Error fetching menu items:', err);
-    }
-    await checkCartFeatureFlag();
-  };
-  
-  init();
+  // Check auth state when component mounts
+  checkAuth();
+
+  nextTick(() => {
+    calculateVisibleItems();
+  });
 
   resizeObserver = new ResizeObserver(() => {
     calculateVisibleItems();
@@ -351,13 +363,13 @@ watch(locale, () => {
           color: isDark ? props.settings?.darkMode?.textColor : '#ffffff'
         }"
       >
-        <div class="w-full px-8">
-          <div class="flex items-center h-16">
+        <div class="w-full px-2 sm:px-4 lg:px-8">
+          <div class="flex items-center h-10 sm:h-12 lg:h-16">
             <!-- Left Column -->
             <div 
-              class="flex items-center gap-4" 
+              class="flex items-center gap-2 sm:gap-3 lg:gap-4" 
               :style="{
-                width: props.settings?.topMenu?.leftColumn?.width || '30%',
+                width: props.settings?.topMenu?.leftColumn?.width || '20%',
                 justifyContent: props.settings?.topMenu?.leftColumn?.alignment === 'center' ? 'center' : 
                               props.settings?.topMenu?.leftColumn?.alignment === 'end' ? 'flex-end' : 'flex-start'
               }"
@@ -378,11 +390,11 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-5 h-5"
+                    class="nav-icon w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5"
                     :style="{ color: item.textColor }"
                   />
                   <span
-                    class="text-[18px] font-medium whitespace-nowrap"
+                    class="text-xs sm:text-sm lg:text-base font-medium whitespace-nowrap"
                     :style="{ color: item.textColor }"
                   >
                     {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -393,7 +405,7 @@ watch(locale, () => {
                 <NuxtLink
                   v-else-if="item.type === 'link'"
                   :to="item.href"
-                  class="flex items-center gap-2 text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  class="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm lg:text-base font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                   :style="{
                     color: item.textColor,
                     '&:hover': {
@@ -404,7 +416,7 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-5 h-5"
+                    class="nav-icon w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5"
                     :style="{ color: item.textColor }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
@@ -413,7 +425,7 @@ watch(locale, () => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-6 w-[2px] mx-2"
+                  class="h-3 sm:h-4 lg:h-6 w-[1px] sm:w-[1px] lg:w-[2px] mx-1 sm:mx-1 lg:mx-2"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
@@ -423,7 +435,7 @@ watch(locale, () => {
             <div 
               class="flex items-center gap-4" 
               :style="{
-                width: props.settings?.topMenu?.centerColumn?.width || '40%',
+                width: props.settings?.topMenu?.centerColumn?.width || '60%',
                 justifyContent: props.settings?.topMenu?.centerColumn?.alignment === 'start' ? 'flex-start' : 
                               props.settings?.topMenu?.centerColumn?.alignment === 'end' ? 'flex-end' : 'center'
               }"
@@ -444,11 +456,11 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-5 h-5"
+                    class="nav-icon w-4 h-4 md:w-5 md:h-5"
                     :style="{ color: item.textColor }"
                   />
                   <span
-                    class="text-[18px] font-medium whitespace-nowrap"
+                    class="text-sm md:text-base lg:text-[16px] font-medium whitespace-nowrap"
                     :style="{ color: item.textColor }"
                   >
                     {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -459,7 +471,7 @@ watch(locale, () => {
                 <NuxtLink
                   v-else-if="item.type === 'link'"
                   :to="item.href"
-                  class="flex items-center gap-2 text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  class="flex items-center gap-1 md:gap-2 text-sm md:text-base lg:text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                   :style="{
                     color: item.textColor,
                     '&:hover': {
@@ -470,7 +482,7 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-5 h-5"
+                    class="nav-icon w-4 h-4 md:w-5 md:h-5"
                     :style="{ color: item.textColor }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
@@ -479,7 +491,7 @@ watch(locale, () => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-6 w-[2px] mx-2"
+                  class="h-4 md:h-6 w-[1px] md:w-[2px] mx-1 md:mx-2"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
@@ -489,7 +501,7 @@ watch(locale, () => {
             <div 
               class="flex items-center gap-4" 
               :style="{
-                width: props.settings?.topMenu?.rightColumn?.width || '30%',
+                width: props.settings?.topMenu?.rightColumn?.width || '20%',
                 justifyContent: props.settings?.topMenu?.rightColumn?.alignment === 'center' ? 'center' : 
                               props.settings?.topMenu?.rightColumn?.alignment === 'start' ? 'flex-start' : 'flex-end'
               }"
@@ -510,11 +522,11 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-5 h-5"
+                    class="nav-icon w-4 h-4 md:w-5 md:h-5"
                     :style="{ color: item.textColor }"
                   />
                   <span
-                    class="text-[18px] font-medium whitespace-nowrap"
+                    class="text-sm md:text-base lg:text-[18px] font-medium whitespace-nowrap"
                     :style="{ color: item.textColor }"
                   >
                     {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -525,7 +537,7 @@ watch(locale, () => {
                 <NuxtLink
                   v-else-if="item.type === 'link'"
                   :to="item.href"
-                  class="flex items-center gap-2 text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  class="flex items-center gap-1 md:gap-2 text-sm md:text-base lg:text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                   :style="{
                     color: item.textColor,
                     '&:hover': {
@@ -536,7 +548,7 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-5 h-5"
+                    class="nav-icon w-4 h-4 md:w-5 md:h-5"
                     :style="{ color: item.textColor }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
@@ -545,10 +557,85 @@ watch(locale, () => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-6 w-[2px] mx-2"
+                  class="h-4 md:h-6 w-[1px] md:w-[2px] mx-1 md:mx-2"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
+
+              <!-- User Menu -->
+              <div class="relative">
+                <button
+                  class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/20 transition-colors duration-300"
+                  @click="showUserDropdown = !showUserDropdown"
+                >
+                  <User class="w-5 h-5 text-white" />
+                </button>
+
+                <!-- User Dropdown -->
+                <Transition
+                  enter-active-class="transition ease-out duration-200"
+                  enter-from-class="transform opacity-0 scale-95"
+                  enter-to-class="transform opacity-100 scale-100"
+                  leave-active-class="transition ease-in duration-150"
+                  leave-from-class="transform opacity-100 scale-100"
+                  leave-to-class="transform opacity-0 scale-95"
+                >
+                  <div
+                    v-if="showUserDropdown"
+                    class="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
+                    @click.outside="showUserDropdown = false"
+                  >
+                    <!-- Not Logged In -->
+                    <template v-if="!isAuthenticated">
+                      <NuxtLink
+                        to="/auth/login"
+                        class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        @click="showUserDropdown = false"
+                      >
+                        <LogIn class="w-4 h-4" />
+                        {{ t('Đăng nhập') }}
+                      </NuxtLink>
+                      <NuxtLink
+                        to="/auth/register"
+                        class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        @click="showUserDropdown = false"
+                      >
+                        <UserCircle class="w-4 h-4" />
+                        {{ t('Đăng ký') }}
+                      </NuxtLink>
+                    </template>
+
+                    <!-- Logged In -->
+                    <template v-else>
+                      <!-- User Info -->
+                      <div class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
+                        <div class="text-sm font-medium text-neutral-900 dark:text-white">
+                          {{ userDisplayName }}
+                        </div>
+                        <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                          {{ user?.email }}
+                        </div>
+                      </div>
+                      
+                      <NuxtLink
+                        to="/dashboard"
+                        class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        @click="showUserDropdown = false"
+                      >
+                        <Settings class="w-4 h-4" />
+                        {{ t('Dashboard') }}
+                      </NuxtLink>
+                      <button
+                        class="flex items-center gap-2 w-full px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        @click="handleLogout"
+                      >
+                        <LogOut class="w-4 h-4" />
+                        {{ t('Đăng xuất') }}
+                      </button>
+                    </template>
+                  </div>
+                </Transition>
+              </div>
             </div>
           </div>
         </div>
@@ -759,13 +846,13 @@ watch(locale, () => {
                   </div>
                 </div>
                 <div class="flex flex-col items-start py-0.5">
-                  <span class="text-xs lg:text-lg font-bold leading-none lg:leading-normal whitespace-nowrap">
+                  <span class="text-xs sm:text-sm lg:text-lg font-bold leading-none lg:leading-normal whitespace-nowrap">
                     {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
                   </span>
                   <div class="flex flex-col">
                     <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
                       <button 
-                        class="text-[10px] lg:text-sm leading-tight lg:leading-normal opacity-90 hover:underline transition-all duration-300"
+                        class="text-[8px] sm:text-[10px] lg:text-sm leading-tight lg:leading-normal opacity-90 hover:underline transition-all duration-300"
                         @click.stop="callPhone(phone.number)"
                       >
                         {{ t(phone.label) }}: {{ phone.number }}
@@ -962,28 +1049,68 @@ watch(locale, () => {
 
 <style lang="scss" scoped>
 .navbar-container {
-  @apply relative z-50;
+  position: relative;
+  z-index: 50;
+
+  .top-menu {
+    position: relative;
+    z-index: 50;
+    background-color: rgb(var(--color-primary-DEFAULT));
+
+    .w-full.px-8 {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    @screen sm {
+      .w-full.px-8 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+    }
+
+    @screen md {
+      .w-full.px-8 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+      }
+    }
+
+    .icon {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+
+      @screen md {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+  }
 
   .fixed-time-width {
-    @apply inline-block;
-    width: 240px; // Fixed width to accommodate "23:59:59 - 31/12/2024" format
+    display: inline-block;
+    width: 240px;
   }
 
   .nav-icon {
-    @apply flex-shrink-0;
+    flex-shrink: 0;
     width: auto;
     height: auto;
   }
 
   .main-menu-item {
-    @apply relative transition-colors duration-300;
+    position: relative;
+    transition-property: color;
+    transition-duration: 300ms;
 
     &::after {
       content: none;
     }
 
     span, .icon {
-      @apply transition-colors duration-300;
+      transition-property: color;
+      transition-duration: 300ms;
     }
 
     &:hover {
@@ -1003,80 +1130,137 @@ watch(locale, () => {
     }
   }
 
-  .top-menu {
-    @apply relative z-50;
-    background-color: rgb(var(--color-primary-DEFAULT));
-
-    .icon {
-      width: auto;
-      height: auto;
-    }
-  }
-
   .nav-wrapper {
-    @apply relative z-40;
     position: relative;
+    z-index: 40;
 
     &.nav-sticky {
-      @apply fixed top-0 left-0 right-0 shadow-md;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       animation: slideDown 0.3s ease-out;
     }
   }
 
   .navigation-section {
-    @apply relative;
+    position: relative;
     
     .container {
-      @apply h-full;
+      height: 100%;
       
       > div {
-        @apply h-full;
+        height: 100%;
       }
     }
   }
 
-  // Add styles for More menu
   .more-menu {
-    @apply relative;
+    position: relative;
 
     &-dropdown {
-      @apply absolute right-0 mt-2 py-2 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700;
+      position: absolute;
+      right: 0;
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      background-color: white;
+      border-radius: 0.375rem;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      border: 1px solid rgb(229 231 235);
       min-width: 280px;
       z-index: 1000;
 
+      .dark & {
+        background-color: rgb(38 38 38);
+        border-color: rgb(64 64 64);
+      }
+
       &::before {
         content: '';
-        @apply absolute -top-2 right-[20px] h-4 w-4 bg-white dark:bg-neutral-800 border-l border-t border-neutral-200 dark:border-neutral-700 rotate-45;
+        position: absolute;
+        top: -0.5rem;
+        right: 1.25rem;
+        height: 1rem;
+        width: 1rem;
+        background-color: white;
+        border-left: 1px solid rgb(229 231 235);
+        border-top: 1px solid rgb(229 231 235);
+        transform: rotate(45deg);
+
+        .dark & {
+          background-color: rgb(38 38 38);
+          border-color: rgb(64 64 64);
+        }
       }
 
       .menu-item {
-        @apply flex items-center justify-between px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        cursor: pointer;
+
+        &:hover {
+          background-color: rgb(243 244 246);
+          .dark & {
+            background-color: rgb(64 64 64);
+          }
+        }
 
         span {
-          @apply text-[1.05rem];
+          font-size: 1.05rem;
         }
       }
     }
   }
 
   .mobile-menu-overlay {
-    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 50;
 
     .mobile-menu-content {
-      @apply fixed top-0 right-0 h-full w-full max-w-[90%] sm:max-w-[400px] overflow-y-auto shadow-xl;
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 100%;
+      max-width: 90%;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
       animation: slideInRight 0.3s ease-out;
+
+      @media (min-width: 640px) {
+        max-width: 400px;
+      }
     }
   }
 
   .mobile-main-menu-item {
-    @apply relative;
+    position: relative;
 
     &:hover {
-      @apply bg-neutral-50 dark:bg-neutral-800;
+      background-color: rgb(249 250 251);
+
+      .dark & {
+        background-color: rgb(38 38 38);
+      }
     }
 
     &.mobile-menu-active {
-      @apply text-primary-500 bg-primary-50 dark:bg-primary-900/20;
+      color: rgb(var(--color-primary-500));
+      background-color: rgb(239 246 255);
+
+      .dark & {
+        background-color: rgba(var(--color-primary-900), 0.2);
+      }
     }
   }
 

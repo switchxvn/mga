@@ -28,7 +28,7 @@ const toggleTheme = () => {
             
             <!-- Logo Box -->
             <div class="relative flex items-center justify-center">
-              <div class="w-48 h-48 bg-[#FEB914] rounded-3xl flex items-center justify-center shadow-lg overflow-hidden group">
+                <div class="w-48 h-48 bg-transparent border-2 border-primary-500 rounded-3xl flex items-center justify-center shadow-lg overflow-hidden group">
                 <!-- Logo with animation -->
                 <div class="relative w-40 h-40 flex items-center justify-center p-4">
                   <img

@@ -7,7 +7,14 @@ const globalSettings = reactive<Record<string, any>>({});
 const isInitialized = ref(false);
 const isGlobalLoading = ref(false);
 
-export interface Settings {
+interface Logo {
+  light: string;
+  dark: string;
+}
+
+interface Settings {
+  logo: Logo;
+  siteName: string;
   showLanguageSwitcher: boolean;
   showThemeToggle: boolean;
   showCart: boolean;
@@ -48,43 +55,10 @@ export interface Settings {
  */
 export function useSettings() {
   const trpc = useTrpc();
+  const settings = ref<Settings | null>(null);
   const isLoading = ref(false);
-  const error = ref<string | null>(null);
-  const settings = ref<Settings>({
-    showLanguageSwitcher: true,
-    showThemeToggle: true,
-    showCart: true,
-    slogan: {
-      text: 'CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ MGA',
-      subText: 'ĐẠI LÝ PHÂN PHỐI XE NÂNG CHÍNH HÃNG',
-      additionalText: 'HÀNG ĐẦU VIỆT NAM',
-    },
-    hotlines: {
-      sales: {
-        text: 'Mua hàng',
-        number: '0909090909',
-        backgroundColor: '#0EA5E9',
-        textColor: '#ffffff',
-      },
-      support: {
-        text: 'Hỗ trợ kỹ thuật',
-        number: '0909090908',
-        backgroundColor: '#0EA5E9',
-        textColor: '#ffffff',
-      },
-    },
-    navigation: {
-      textColor: '#0EA5E9',
-      activeTextColor: '#0284C7',
-    },
-    darkMode: {
-      menuBackgroundColor: '#171717',
-    },
-    menuBackgroundColor: '#ffffff',
-    hotline: '',
-    operatingHours: '',
-  });
-  
+  const error = ref<Error | null>(null);
+
   /**
    * Lấy tất cả các cài đặt công khai và lưu vào bộ nhớ cache
    */
@@ -236,25 +210,15 @@ export function useSettings() {
     fetchPublicSettings();
   }
   
-  const fetchSettings = async () => {
-    try {
-      // TODO: Implement API call to fetch settings
-      // For now, using default settings
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    }
-  };
-  
   return {
+    settings,
     isLoading,
     error,
-    settings,
     fetchPublicSettings,
     getPublicSettingByKey,
     getPublicSettingValueByKey,
     isSettingEnabled,
     isAddToCartEnabled,
     isInitialized,
-    fetchSettings,
   };
 }
