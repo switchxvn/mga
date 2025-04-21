@@ -20,7 +20,6 @@ export default defineNuxtConfig({
     '~/assets/scss/main.scss'
   ],
 
-
   vite: {
     css: {
       preprocessorOptions: {
@@ -28,6 +27,24 @@ export default defineNuxtConfig({
           additionalData: '@use "~/assets/scss/abstracts/_variables.scss" as *;'
         }
       }
+    },
+    server: {
+      proxy: {
+        '/api': {
+          target: process.env.API_BASE || 'http://localhost:3000',
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+          configure: (proxy, options) => {
+            proxy.on('error', (err, req, res) => {
+              console.log('proxy error', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log('Proxying request:', req.url);
+            });
+          }
+        },
+      },
     },
   },
 
@@ -67,7 +84,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     jwtSecret: process.env.JWT_SECRET,
     public: {
-      apiBase: process.env.API_BASE || '/api'
+      apiBase: process.env.API_BASE || 'http://localhost:3000'
     }
   }
 })
