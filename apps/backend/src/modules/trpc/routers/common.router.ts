@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+import { publicProcedure, router } from '../procedures';
 import { CountryPhoneCodeService } from '../../common/country-phone-code.service';
 
 @Injectable()

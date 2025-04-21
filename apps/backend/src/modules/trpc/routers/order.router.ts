@@ -1,13 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { TrpcService } from '../trpc.service';
-import { z } from 'zod';
-import { publicProcedure, adminProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { OrderStatus, PaymentStatus } from '../../order/entities/order.entity';
-import { ProductType } from '../../order/entities/order-item.entity';
 import { randomUUID } from 'crypto';
-import { ProductSnapshot } from '../../order/entities/order-item.entity';
+import { z } from 'zod';
+import { ProductSnapshot, ProductType } from '../../order/entities/order-item.entity';
+import { OrderStatus, PaymentStatus } from '../../order/entities/order.entity';
 import { generateOrderCode } from '../../order/utils/order-code.util';
+import { adminProcedure, publicProcedure, router } from '../procedures';
 
 const addressSchema = z.object({
   fullName: z.string(),
@@ -44,11 +41,6 @@ const createOrderSchema = z.object({
   returnUrl: z.string(),
   cancelUrl: z.string(),
 }).strict();
-
-@Injectable()
-export class OrderRouter {
-  constructor(private readonly trpc: TrpcService) {}
-}
 
 export const orderRouter = router({
   // Frontend routes

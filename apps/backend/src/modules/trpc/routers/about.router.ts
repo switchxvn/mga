@@ -1,11 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { TrpcService } from '../trpc.service';
-import { AboutAdminService } from '../../about/admin/services/about-admin.service';
-import { AboutFrontendService } from '../../about/frontend/services/about-frontend.service';
 import { z } from 'zod';
-import { publicProcedure, adminProcedure, router } from '../trpc';
-import { TRPCError } from '@trpc/server';
 import { AboutSectionType } from '../../about/entities/about-section.entity';
+import { adminProcedure, publicProcedure, router } from '../procedures';
 
 // Define the schema outside the class
 const aboutSectionSchema = z.object({
@@ -24,19 +19,6 @@ const aboutSectionSchema = z.object({
 });
 
 type AboutSectionInput = z.infer<typeof aboutSectionSchema>;
-
-@Injectable()
-export class AboutRouter {
-  constructor(
-    private readonly trpc: TrpcService,
-    @Inject(AboutAdminService)
-    private readonly aboutAdminService: AboutAdminService,
-    @Inject(AboutFrontendService)
-    private readonly aboutFrontendService: AboutFrontendService,
-  ) {}
-}
-
-// Định nghĩa router cho trang giới thiệu
 export const aboutRouter = router({
   // Frontend routes
   getActiveSections: publicProcedure

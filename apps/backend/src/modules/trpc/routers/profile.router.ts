@@ -1,9 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { UpdateProfileDto } from '../../profile/dto/update-profile.dto';
-import { UserProfile } from '../../profile/entities/user-profile.entity';
-import { CountryPhoneCode } from '../../common/entities/country-phone-code.entity';
+import { protectedProcedure, router } from '../procedures';
 
 // Define the response type to match entity structure
 type UserResponse = {

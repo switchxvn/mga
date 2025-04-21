@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, adminProcedure, router } from '../trpc';
+import { publicProcedure, adminProcedure, router } from '../procedures';
 
 export const heroRouter = router({
   // Public procedures

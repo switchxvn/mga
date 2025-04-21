@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { publicProcedure, router, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 import { ProductType } from '../../product/entities/product.entity';
+import { protectedProcedure, publicProcedure, router } from '../procedures';
 
 export const productRouter = router({
   getAll: publicProcedure

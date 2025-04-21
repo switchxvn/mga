@@ -1,11 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { TrpcService } from '../trpc.service';
-import { ContactSectionAdminService } from '../../contact/admin/services/contact-section-admin.service';
-import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
-import { z } from 'zod';
-import { publicProcedure, adminProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 import { ContactSectionType } from '../../contact/entities/contact-section.entity';
+import { adminProcedure, publicProcedure, router } from '../procedures';
 
 // Define the schema outside the class
 const contactSectionSchema = z.object({
@@ -22,17 +18,6 @@ const contactSectionSchema = z.object({
     data: z.record(z.any()).optional(),
   })).optional(),
 });
-
-@Injectable()
-export class ContactSectionRouter {
-  constructor(
-    private readonly trpc: TrpcService,
-    @Inject(ContactSectionAdminService)
-    private readonly contactSectionAdminService: ContactSectionAdminService,
-    @Inject(ContactSectionFrontendService)
-    private readonly contactSectionFrontendService: ContactSectionFrontendService,
-  ) {}
-}
 
 // Định nghĩa router cho trang liên hệ
 export const contactSectionRouter = router({

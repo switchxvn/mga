@@ -1,7 +1,7 @@
+import { createPostSchema, getPostByIdSchema, updatePostSchema } from '@ew/shared';
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, protectedProcedure, router } from '../trpc';
-import { createPostSchema, updatePostSchema, getPostByIdSchema } from '@ew/shared';
 import { z } from 'zod';
+import { protectedProcedure, publicProcedure, router } from '../procedures';
 
 export const postRouter = router({
   latest: publicProcedure

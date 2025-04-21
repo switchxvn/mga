@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '../trpc';
+import { router, publicProcedure } from '../procedures';
 import { z } from 'zod';
 import type { CreateContactDto, ContactResponse } from '@ew/shared';
 

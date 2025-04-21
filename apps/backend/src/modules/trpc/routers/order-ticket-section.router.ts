@@ -1,10 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { TrpcService } from '../trpc.service';
-import { OrderTicketSectionAdminService } from '../../order-ticket/admin/services/order-ticket-section-admin.service';
-import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/services/order-ticket-section-frontend.service';
-import { z } from 'zod';
-import { publicProcedure, adminProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { adminProcedure, publicProcedure, router } from '../procedures';
 
 // Define the schema for order ticket section
 const orderTicketSectionSchema = z.object({
@@ -21,17 +17,6 @@ const orderTicketSectionSchema = z.object({
     data: z.record(z.any()).optional(),
   })).optional(),
 });
-
-@Injectable()
-export class OrderTicketSectionRouter {
-  constructor(
-    private readonly trpc: TrpcService,
-    @Inject(OrderTicketSectionAdminService)
-    private readonly orderTicketSectionAdminService: OrderTicketSectionAdminService,
-    @Inject(OrderTicketSectionFrontendService)
-    private readonly orderTicketSectionFrontendService: OrderTicketSectionFrontendService,
-  ) {}
-}
 
 // Define router for order ticket section
 export const orderTicketSectionRouter = router({

@@ -1,11 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { TrpcService } from '../trpc.service';
-import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
-import { TicketPricingSectionFrontendService } from '../../ticket-pricing/frontend/services/ticket-pricing-section-frontend.service';
-import { z } from 'zod';
-import { publicProcedure, adminProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 import { TicketPricingSectionType } from '../../ticket-pricing/entities/ticket-pricing-section.entity';
+import { adminProcedure, publicProcedure, router } from '../procedures';
 
 // Define the schema outside the class
 const ticketPricingSectionSchema = z.object({
@@ -22,17 +18,6 @@ const ticketPricingSectionSchema = z.object({
     data: z.record(z.any()).optional(),
   })).optional(),
 });
-
-@Injectable()
-export class TicketPricingSectionRouter {
-  constructor(
-    private readonly trpc: TrpcService,
-    @Inject(TicketPricingSectionAdminService)
-    private readonly ticketPricingSectionAdminService: TicketPricingSectionAdminService,
-    @Inject(TicketPricingSectionFrontendService)
-    private readonly ticketPricingSectionFrontendService: TicketPricingSectionFrontendService,
-  ) {}
-}
 
 // Định nghĩa router cho trang bảng giá vé
 export const ticketPricingSectionRouter = router({

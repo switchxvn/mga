@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
-import { middleware } from '../trpc';
 import { Permissions } from '../../auth/constants/permissions.constant';
+import { middleware } from '../procedures';
 
 export const permissionMiddleware = (requiredPermissions: Permissions[]) =>
   middleware(async ({ ctx, next }) => {

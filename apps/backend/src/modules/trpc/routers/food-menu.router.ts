@@ -1,6 +1,6 @@
 import type { FoodCategory, FoodItem } from '@ew/shared';
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+import { publicProcedure, router } from '../procedures';
 
 export const foodMenuRouter = router({
   getAllActiveCategories: publicProcedure

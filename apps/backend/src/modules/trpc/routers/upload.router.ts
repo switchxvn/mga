@@ -1,13 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { TrpcService } from '../trpc.service';
-import { z } from 'zod';
-import { publicProcedure, adminProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
-
-@Injectable()
-export class UploadRouter {
-  constructor(private readonly trpc: TrpcService) {}
-}
+import { z } from 'zod';
+import { adminProcedure, publicProcedure, router } from '../procedures';
 
 export const uploadRouter = router({
   // Frontend routes

@@ -1,6 +1,6 @@
-import { router, publicProcedure } from '../../trpc';
+import type { FoodCategory, FoodItem } from '@ew/shared';
 import { z } from 'zod';
-import type { FoodItem, FoodCategory } from '@ew/shared';
+import { publicProcedure, router } from '../../procedures';
 
 const updateFoodItemSchema = z.object({
   id: z.string(),

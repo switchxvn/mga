@@ -1,9 +1,9 @@
-import { router } from '../../trpc';
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { adminProcedure } from '../../procedures/admin.procedure';
-import { permissionMiddleware } from '../../middlewares/permission.middleware';
+import { z } from 'zod';
 import { Permissions } from '../../../auth/constants/permissions.constant';
+import { permissionMiddleware } from '../../middlewares/permission.middleware';
+import { adminProcedure } from '../../procedures/admin.procedure';
+import { router } from '../../procedures/index';
 
 interface MenuItemTranslation {
   id?: number;

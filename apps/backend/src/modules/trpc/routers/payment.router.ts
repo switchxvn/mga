@@ -1,22 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { TrpcService } from '../trpc.service';
-import { PaymentAdminService } from '../../payment/admin/services/payment-admin.service';
-import { PaymentFrontendService } from '../../payment/frontend/services/payment-frontend.service';
-import { z } from 'zod';
-import { publicProcedure, adminProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 import { CreatePaymentDto } from '../../payment/dto/create-payment.dto';
-
-@Injectable()
-export class PaymentRouter {
-  constructor(
-    private readonly trpc: TrpcService,
-    @Inject(PaymentAdminService)
-    private readonly paymentAdminService: PaymentAdminService,
-    @Inject(PaymentFrontendService)
-    private readonly paymentFrontendService: PaymentFrontendService,
-  ) {}
-}
+import { adminProcedure, publicProcedure, router } from '../procedures/index';
 
 const createPaymentSchema = z.object({
   payment_method_id: z.number(),

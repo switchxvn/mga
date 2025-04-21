@@ -1,4 +1,3 @@
-import { router } from '../trpc';
 import { authRouter } from './auth.router';
 import { postRouter } from './post.router';
 import { userRouter } from './user.router';
@@ -29,6 +28,7 @@ import { orderRouter } from './order.router';
 import { uploadRouter } from './upload.router';
 import { adminMenuItemsRouter } from './admin/menu-items.router';
 import { adminFoodMenuRouter } from './admin/food-menu.router';
+import { router } from '../procedures';
 
 // Re-export all routers
 export {

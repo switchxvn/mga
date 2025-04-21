@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, router, protectedProcedure } from '../trpc';
+import { publicProcedure, router, protectedProcedure } from '../procedures';
 import { loginSchema, registerSchema } from '../../auth/dto/auth.dto';
 
 export const authRouter = router({

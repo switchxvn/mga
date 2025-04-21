@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, protectedProcedure, adminProcedure, router } from '../trpc';
+import { publicProcedure, protectedProcedure, adminProcedure, router } from '../procedures';
 import { z } from 'zod';
 
 // Định nghĩa schema cho ComponentStyleConfig

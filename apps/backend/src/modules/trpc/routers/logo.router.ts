@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, adminProcedure, router } from '../trpc';
 import { z } from 'zod';
+import { publicProcedure, adminProcedure, router } from '../procedures';
 
 export const logoRouter = router({
   getActiveLogo: publicProcedure

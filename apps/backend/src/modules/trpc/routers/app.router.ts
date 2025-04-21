@@ -1,4 +1,4 @@
-import { router } from '../trpc';
+import { router } from '../procedures';
 import { postRouter } from './post.router';
 import { galleryRouter } from './gallery.router';
 

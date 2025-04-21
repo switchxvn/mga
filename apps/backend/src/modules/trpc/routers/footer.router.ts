@@ -1,7 +1,6 @@
 import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
-import { createFooterSchema, updateFooterSchema } from '@ew/shared';
-import { router, publicProcedure } from '../trpc.service';
+import { publicProcedure, router } from '../procedures';
+
 
 export const footerRouter = router({
   // Public endpoints

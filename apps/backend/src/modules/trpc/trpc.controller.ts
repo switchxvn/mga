@@ -1,15 +1,15 @@
-import { Controller, All, Req, Res, NotFoundException, Param, Logger } from '@nestjs/common';
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { TrpcService } from './trpc.service';
-import { TrpcRouter } from './trpc.router';
+import { All, Controller, Logger, Req, Res } from '@nestjs/common';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { TRPCContextManager } from './contexts/trpc.context';
+import { TrpcRouter } from './trpc.router';
 
 @Controller('trpc')
 export class TrpcController {
   private readonly logger = new Logger(TrpcController.name);
 
   constructor(
-    private readonly trpcService: TrpcService,
+    private readonly contextManager: TRPCContextManager,
     private readonly trpcRouter: TrpcRouter
   ) {}
 
@@ -35,9 +35,6 @@ export class TrpcController {
         this.logger.debug(`Request body: ${JSON.stringify(req.body)}`);
       }
 
-      // Create context
-      const ctx = await this.trpcService.createContext(req);
-
       // Create full URL from request
       const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
       
@@ -56,7 +53,7 @@ export class TrpcController {
         endpoint: '/api/trpc',
         req: request,
         router: this.trpcRouter.getRouter(),
-        createContext: () => ctx,
+        createContext: () => this.contextManager.createContext({ req, res }),
         batching: {
           enabled: true,
         },

@@ -1,7 +1,7 @@
+import { GalleryType } from '@ew/shared';
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { z } from 'zod';
-import { Gallery, GalleryType } from '@ew/shared';
+import { protectedProcedure, publicProcedure, router } from '../procedures';
 
 const galleryTranslationSchema = z.object({
   locale: z.string(),

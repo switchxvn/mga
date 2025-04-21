@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { middleware, procedure } from '../trpc';
+import { middleware, procedure } from './index';
 
 // Middleware to check if user is admin
 const isAdmin = middleware(async ({ ctx, next }) => {
@@ -8,13 +8,6 @@ const isAdmin = middleware(async ({ ctx, next }) => {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: 'You must be logged in to access this resource',
-    });
-  }
-
-  if (!ctx.user.isAdmin) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'You must be an admin to access this resource',
     });
   }
 

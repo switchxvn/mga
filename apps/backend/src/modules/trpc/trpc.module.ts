@@ -1,36 +1,39 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TrpcService } from './trpc.service';
-import { UserModule } from '../user/user.module';
-import { PostModule } from '../post/post.module';
-import { ProfileModule } from '../profile/profile.module';
-import { AuthModule } from '../auth/auth.module';
-import { SettingsModule } from '../settings/settings.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { TrpcController } from './trpc.controller';
-import { SeoModule } from '../seo/seo.module';
-import { FooterModule } from '../footer/footer.module';
-import { CategoryModule } from '../category/category.module';
-import { ServiceModule } from '../service/service.module';
-import { ProductModule } from '../product/product.module';
-import { PriceRequestModule } from '../price-request/price-request.module';
-import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
-import { HeroModule } from '../hero/hero.module';
-import { CommonModule } from '../common';
-import { CommonRouter } from './routers/common.router';
-import { TrpcRouter } from './trpc.router';
-import { ThemeModule } from '../theme/theme.module';
-import { LanguageModule } from '../language/language.module';
 import { AboutModule } from '../about/about.module';
-import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
+import { AuthModule } from '../auth/auth.module';
+import { CategoryModule } from '../category/category.module';
+import { CommonModule } from '../common';
 import { ContactModule } from '../contact/contact.module';
-import { GalleryModule } from '../gallery/gallery.module';
-import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
-import { OrderTicketModule } from '../order-ticket/order-ticket.module';
+import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
+import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
 import { FoodMenuModule } from '../food-menu/food-menu.module';
-import { PaymentModule } from '../payment/payment.module';
+import { FooterModule } from '../footer/footer.module';
+import { GalleryModule } from '../gallery/gallery.module';
+import { HeroModule } from '../hero/hero.module';
+import { LanguageModule } from '../language/language.module';
+import { OrderTicketModule } from '../order-ticket/order-ticket.module';
 import { OrderModule } from '../order/order.module';
+import { PaymentModule } from '../payment/payment.module';
+import { PostModule } from '../post/post.module';
+import { PriceRequestModule } from '../price-request/price-request.module';
+import { ProductModule } from '../product/product.module';
+import { ProfileModule } from '../profile/profile.module';
+import { SeoModule } from '../seo/seo.module';
+import { ServiceModule } from '../service/service.module';
+import { SettingsModule } from '../settings/settings.module';
+import { ThemeModule } from '../theme/theme.module';
+import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
 import { UploadModule } from '../upload/upload.module';
+import { UserModule } from '../user/user.module';
+import { CommonRouter } from './routers/common.router';
+import { TrpcController } from './trpc.controller';
+import { TrpcRouter } from './trpc.router';
+import { TRPCContextManager } from './contexts/trpc.context';
+import { ServiceContext } from './contexts/service.context';
+import { DataSourceContext } from './contexts/datasource.context';
+import { AuthContext } from './contexts/auth.context';
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
  * 
@@ -98,10 +101,13 @@ import { UploadModule } from '../upload/upload.module';
     PaymentModule,
   ],
   providers: [
-    TrpcService,
     CommonRouter,
     TrpcRouter,
+    TRPCContextManager,
+    ServiceContext,
+    DataSourceContext,
+    AuthContext,
   ],
-  exports: [TrpcService, TrpcRouter],
+  exports: [TrpcRouter],
 })
 export class TrpcModule {} 
