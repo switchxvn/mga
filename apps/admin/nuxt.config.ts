@@ -10,6 +10,12 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss'
   ],
 
+  app: {
+    middleware: {
+      global: ['auth']
+    }
+  },
+
   css: [
     '~/assets/scss/main.scss'
   ],

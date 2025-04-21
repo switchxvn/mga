@@ -299,13 +299,16 @@ const { user, logout, checkAuth } = useAuth();
 const showUserDropdown = ref(false);
 
 const isAuthenticated = computed(() => {
+  console.log('Auth state check:', { user: user.value });
   return !!user.value;
 });
+
 
 const userDisplayName = computed(() => {
   if (!user.value) return '';
   return user.value.profile?.firstName || user.value.email;
 });
+
 
 const handleLogout = async () => {
   await logout();
@@ -314,10 +317,20 @@ const handleLogout = async () => {
 
 onMounted(() => {
   // Check auth state when component mounts
-  checkAuth();
-
-  nextTick(() => {
-    calculateVisibleItems();
+  checkAuth().then(() => {
+    const init = async () => {
+      try {
+        await fetchMenuItems();
+        nextTick(() => {
+          calculateVisibleItems();
+        });
+      } catch (err) {
+        console.error('Error fetching menu items:', err);
+      }
+      await checkCartFeatureFlag();
+    };
+    
+    init();
   });
 
   resizeObserver = new ResizeObserver(() => {
@@ -607,8 +620,8 @@ watch(locale, () => {
 
                     <!-- Logged In -->
                     <template v-else>
-                      <!-- User Info -->
-                      <div class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
+                       <!-- User Info -->
+                       <div class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
                         <div class="text-sm font-medium text-neutral-900 dark:text-white">
                           {{ userDisplayName }}
                         </div>
@@ -616,8 +629,7 @@ watch(locale, () => {
                           {{ user?.email }}
                         </div>
                       </div>
-                      
-                      <NuxtLink
+                                            <NuxtLink
                         to="/dashboard"
                         class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
                         @click="showUserDropdown = false"

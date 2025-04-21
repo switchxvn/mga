@@ -1,84 +1,76 @@
 <script setup lang="ts">
-const authStore = useAuthStore()
-const router = useRouter()
+import { ref } from 'vue';
+import { useAuth } from '../../composables/useAuth';
 
-const form = reactive({
-  email: '',
-  password: '',
-  loading: false,
-  error: ''
-})
+definePageMeta({
+  layout: 'auth'
+});
 
-async function handleLogin() {
-  if (!form.email || !form.password) {
-    form.error = 'Please fill in all fields'
-    return
-  }
+const { login } = useAuth();
+const email = ref('');
+const password = ref('');
+const isLoading = ref(false);
+const error = ref<string | null>(null);
 
-  form.loading = true
-  form.error = ''
-
+const handleLogin = async () => {
   try {
-    const success = await authStore.login(form.email, form.password)
-    if (success) {
-      router.push('/')
-    } else {
-      form.error = 'Invalid credentials'
-    }
-  } catch (error) {
-    form.error = 'An error occurred during login'
+    isLoading.value = true;
+    error.value = null;
+    await login({ email: email.value, password: password.value });
+  } catch (err: any) {
+    error.value = err.message || 'Failed to login';
   } finally {
-    form.loading = false
+    isLoading.value = false;
   }
-}
+};
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center">
-    <UCard class="w-full max-w-md p-8">
-      <template #header>
-        <h1 class="text-2xl font-bold text-center">
-          Admin Login
-        </h1>
-      </template>
+  <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">
+      Admin Login
+    </h2>
 
-      <form @submit.prevent="handleLogin">
-        <div class="space-y-4">
-          <UFormGroup label="Email">
-            <UInput
-              v-model="form.email"
-              type="email"
-              placeholder="admin@example.com"
-              autocomplete="email"
-            />
-          </UFormGroup>
+    <form @submit.prevent="handleLogin" class="space-y-6">
+      <div>
+        <UFormGroup label="Email" name="email">
+          <UInput
+            v-model="email"
+            type="email"
+            placeholder="admin@example.com"
+            autocomplete="email"
+            required
+          />
+        </UFormGroup>
+      </div>
 
-          <UFormGroup label="Password">
-            <UInput
-              v-model="form.password"
-              type="password"
-              placeholder="••••••••"
-              autocomplete="current-password"
-            />
-          </UFormGroup>
+      <div>
+        <UFormGroup label="Password" name="password">
+          <UInput
+            v-model="password"
+            type="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+        </UFormGroup>
+      </div>
 
-          <p
-            v-if="form.error"
-            class="text-red-500 text-sm"
-          >
-            {{ form.error }}
-          </p>
+      <div v-if="error" class="text-red-500 text-sm text-center">
+        {{ error }}
+      </div>
 
-          <UButton
-            type="submit"
-            block
-            :loading="form.loading"
-          >
-            Sign In
-          </UButton>
-        </div>
-      </form>
-    </UCard>
+      <div>
+        <UButton
+          type="submit"
+          color="primary"
+          block
+          :loading="isLoading"
+        >
+          Sign In
+        </UButton>
+      </div>
+    </form>
   </div>
 </template>
 
