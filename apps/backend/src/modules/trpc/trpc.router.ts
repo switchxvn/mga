@@ -30,8 +30,7 @@ import {
   paymentRouter,
   orderRouter,
   uploadRouter,
-  adminMenuItemsRouter,
-  adminFoodMenuRouter,
+  adminRouter
 } from './routers';
 
 @Injectable()
@@ -71,10 +70,7 @@ export class TrpcRouter {
       payment: paymentRouter,
       order: orderRouter,
       upload: uploadRouter,
-      admin: router({
-        menuItems: adminMenuItemsRouter,
-        foodMenu: adminFoodMenuRouter,
-      }),
+      admin: adminRouter,
     });
   }
 

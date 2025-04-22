@@ -1,30 +1,36 @@
-export enum Permissions {
-  // Content Management
-  VIEW_CONTENT = 'view_content',
-  CREATE_CONTENT = 'create_content',
-  EDIT_CONTENT = 'edit_content',
-  DELETE_CONTENT = 'delete_content',
-  PUBLISH_CONTENT = 'publish_content',
+export const Permissions = {
+  // User permissions
+  VIEW_USERS: 'VIEW_USERS',
+  CREATE_USERS: 'CREATE_USERS',
+  EDIT_USERS: 'EDIT_USERS',
+  DELETE_USERS: 'DELETE_USERS',
 
-  // User Management
-  VIEW_USERS = 'view_users',
-  CREATE_USERS = 'create_users',
-  EDIT_USERS = 'edit_users',
-  DELETE_USERS = 'delete_users',
+  // Content permissions
+  VIEW_CONTENT: 'VIEW_CONTENT',
+  CREATE_CONTENT: 'CREATE_CONTENT',
+  EDIT_CONTENT: 'EDIT_CONTENT',
+  DELETE_CONTENT: 'DELETE_CONTENT',
+  PUBLISH_CONTENT: 'PUBLISH_CONTENT',
+
+  // Dashboard permissions
+  VIEW_DASHBOARD: 'VIEW_DASHBOARD',
+  MANAGE_DASHBOARD: 'MANAGE_DASHBOARD',
 
   // Role Management
-  VIEW_ROLES = 'view_roles',
-  CREATE_ROLES = 'create_roles',
-  EDIT_ROLES = 'edit_roles',
-  DELETE_ROLES = 'delete_roles',
+  VIEW_ROLES: 'VIEW_ROLES',
+  CREATE_ROLES: 'CREATE_ROLES',
+  EDIT_ROLES: 'EDIT_ROLES',
+  DELETE_ROLES: 'DELETE_ROLES',
 
   // Settings Management
-  VIEW_SETTINGS = 'view_settings',
-  EDIT_SETTINGS = 'edit_settings',
+  VIEW_SETTINGS: 'VIEW_SETTINGS',
+  EDIT_SETTINGS: 'EDIT_SETTINGS',
 
   // Menu Management
-  VIEW_MENUS = 'view_menus',
-  CREATE_MENUS = 'create_menus',
-  EDIT_MENUS = 'edit_menus',
-  DELETE_MENUS = 'delete_menus',
-} 
+  VIEW_MENUS: 'VIEW_MENUS',
+  CREATE_MENUS: 'CREATE_MENUS',
+  EDIT_MENUS: 'EDIT_MENUS',
+  DELETE_MENUS: 'DELETE_MENUS',
+
+  // Add other permissions as needed...
+} as const; 

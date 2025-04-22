@@ -1,4 +1,5 @@
 import { UserService } from '../../user/services/user.service';
+import { UserAdminService } from '../../user/admin/services/user-admin.service';
 import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../../post/admin/services/post-admin.service';
 import { ProfileService } from '../../profile/services/profile.service';
@@ -58,6 +59,7 @@ import { SettingsService } from '../../settings/services/settings.service';
 
 export interface ITrpcServices {
   userService: UserService;
+  userAdminService: UserAdminService;
   postService: PostFrontendService;
   postAdminService: PostAdminService;
   profileService: ProfileService;

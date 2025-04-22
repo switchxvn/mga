@@ -13,6 +13,9 @@ export type TRPCContext = {
   dataSource: DataSource | null;
   logger: Logger;
   services: ReturnType<ServiceContext['getServices']>;
+  _custom?: {
+    needsOwnershipCheck?: boolean;
+  };
 };
 
 @Injectable()
@@ -35,6 +38,7 @@ export class TRPCContextManager {
       dataSource: ds,
       logger: this.logger,
       services: this.serviceContext.getServices(),
+      _custom: {},
     };
   }
 } 

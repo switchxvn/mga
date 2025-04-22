@@ -33,6 +33,23 @@ export class UserAdminService {
     return user;
   }
 
+  async findOneWithPermissions(id: number): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: [
+        'permissions',
+        'roles',
+        'roles.permissions'
+      ]
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return user;
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }

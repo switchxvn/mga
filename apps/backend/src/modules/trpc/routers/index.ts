@@ -26,8 +26,7 @@ import { orderTicketSectionRouter } from './order-ticket-section.router';
 import { paymentRouter } from './payment.router';
 import { orderRouter } from './order.router';
 import { uploadRouter } from './upload.router';
-import { adminMenuItemsRouter } from './admin/menu-items.router';
-import { adminFoodMenuRouter } from './admin/food-menu.router';
+import { adminRouter } from './admin';
 import { router } from '../procedures';
 
 // Re-export all routers
@@ -60,8 +59,7 @@ export {
   paymentRouter,
   orderRouter,
   uploadRouter,
-  adminMenuItemsRouter,
-  adminFoodMenuRouter,
+  adminRouter,
 };
 
 export const appRouter = (commonRouter) => router({
@@ -94,10 +92,7 @@ export const appRouter = (commonRouter) => router({
   payment: paymentRouter,
   order: orderRouter,
   upload: uploadRouter,
-  admin: router({
-    menuItems: adminMenuItemsRouter,
-    foodMenu: adminFoodMenuRouter,
-  }),
+  admin: adminRouter,
 });
 
 export type AppRouter = ReturnType<typeof appRouter>; 

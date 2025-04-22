@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ITrpcServices } from '../interfaces/trpc-services.interface';
 import { UserService } from '../../user/services/user.service';
+import { UserAdminService } from '../../user/admin/services/user-admin.service';
 import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../../post/admin/services/post-admin.service';
 import { ProfileService } from '../../profile/services/profile.service';
@@ -64,6 +65,7 @@ export class ServiceContext {
 
   constructor(
     private readonly userService: UserService,
+    private readonly userAdminService: UserAdminService,
     private readonly postFrontendService: PostFrontendService,
     private readonly postAdminService: PostAdminService,
     private readonly profileService: ProfileService,
@@ -125,6 +127,7 @@ export class ServiceContext {
   public getServices(): ITrpcServices {
     return {
       userService: this.userService,
+      userAdminService: this.userAdminService,
       postService: this.postFrontendService,
       postAdminService: this.postAdminService,
       profileService: this.profileService,
