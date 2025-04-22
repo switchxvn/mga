@@ -6,8 +6,8 @@ import { ref } from './useVueComposables';
 import type { User, UserProfile, AuthLoginResponse } from '../types/User';
 import { useCookie } from 'nuxt/app';
 import type { AppRouter } from '../types/trpc';
-import type { createTRPCNuxtClient } from 'trpc-nuxt/client';
-// import { trpc } from '@/utils/trpc'; // Removed direct import
+import { useUserStore } from '@/stores/useUserStore';
+import { computed } from 'vue';
 
 export interface LoginCredentials {
   email: string;
@@ -23,7 +23,7 @@ export const useAuth = () => {
   const trpc = useTrpc();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const user = ref<any>(null);
+  const userStore = useUserStore();
 
   const login = async (credentials: { email: string; password: string }) => {
     try {
@@ -36,9 +36,8 @@ export const useAuth = () => {
         // Lưu token vào localStorage
         localStorage.setItem('accessToken', result.accessToken);
         
-        // Lấy thông tin user
-        const userInfo = await trpc.profile.getMyProfile.query();
-        user.value = userInfo;
+        // Lấy thông tin user và cập nhật store
+        await userStore.fetchUser();
 
         // Redirect to dashboard
         router.push('/dashboard');
@@ -64,7 +63,7 @@ export const useAuth = () => {
       
       // Xóa token và user info
       localStorage.removeItem('accessToken');
-      user.value = null;
+      userStore.clearUser();
 
       // Redirect to login
       router.push('/auth/login');
@@ -86,31 +85,25 @@ export const useAuth = () => {
         throw new Error('No token found');
       }
 
-      // Lấy thông tin user
-      const userInfo = await trpc.profile.getMyProfile.query();
-      user.value = userInfo;
+      // Lấy thông tin user và cập nhật store
+      await userStore.fetchUser();
 
       return true;
     } catch (err) {
       localStorage.removeItem('accessToken');
-      user.value = null;
+      userStore.clearUser();
       return false;
     } finally {
       isLoading.value = false;
     }
   };
 
-  const getUser = () => {
-    return user.value;
-  };
-
   return {
     login,
     logout,
     checkAuth,
-    getUser,
     isLoading,
     error,
-    user,
+    user: computed(() => userStore.user),
   };
 }; 

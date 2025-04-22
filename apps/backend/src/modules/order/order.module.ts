@@ -9,6 +9,7 @@ import { PaymentModule } from '../payment/payment.module';
 import { MailModule } from '../mail/mail.module';
 import { Product } from '../product/entities/product.entity';
 import { UploadModule } from '../upload/upload.module';
+import { DashboardModule } from '../dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { UploadModule } from '../upload/upload.module';
     PaymentGatewayModule,
     forwardRef(() => PaymentModule),
     MailModule,
-    UploadModule
+    UploadModule,
+    DashboardModule
   ],
   providers: [
     OrderFrontendService,

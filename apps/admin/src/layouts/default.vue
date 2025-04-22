@@ -1,14 +1,48 @@
 <script setup lang="ts">
+import type { DropdownItem } from '#ui/types'
+import { useUserStore } from '@/stores/useUserStore'
+import { storeToRefs } from 'pinia'
+
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
+const userStore = useUserStore()
+const { user, isLoading } = storeToRefs(userStore)
+
+// Fetch user data when component mounts
+onMounted(async () => {
+  try {
+    await userStore.fetchUser()
+  } catch (error) {
+    console.error('Failed to fetch user:', error)
+  }
+})
 
 const navigation = [
-  { name: 'Dashboard', icon: 'i-heroicons-home', to: '/' },
-  { name: 'Products', icon: 'i-heroicons-shopping-bag', to: '/products' },
-  { name: 'Orders', icon: 'i-heroicons-shopping-cart', to: '/orders' },
-  { name: 'Customers', icon: 'i-heroicons-users', to: '/customers' },
-  { name: 'Settings', icon: 'i-heroicons-cog-6-tooth', to: '/settings' }
+  { label: 'Dashboard', icon: 'i-heroicons-home', to: '/' },
+  { label: 'Products', icon: 'i-heroicons-shopping-bag', to: '/products' },
+  { label: 'Orders', icon: 'i-heroicons-shopping-cart', to: '/orders' },
+  { label: 'Customers', icon: 'i-heroicons-users', to: '/customers' },
+  { label: 'Settings', icon: 'i-heroicons-cog-6-tooth', to: '/settings' }
 ]
+
+const handleLogout = async () => {
+  userStore.clearUser()
+  // Redirect to login page
+  navigateTo('/login')
+}
+
+const userMenuItems: DropdownItem[][] = [[
+  { 
+    label: 'Profile', 
+    icon: 'i-heroicons-user-circle',
+    to: '/profile'
+  },
+  { 
+    label: 'Logout', 
+    icon: 'i-heroicons-arrow-right-on-rectangle',
+    click: handleLogout
+  }
+]]
 </script>
 
 <template>
@@ -29,7 +63,13 @@ const navigation = [
       <!-- Header -->
       <UCard class="rounded-none">
         <div class="flex justify-between items-center p-4">
-          <h2 class="text-lg font-semibold">Welcome, Admin</h2>
+          <h2 class="text-lg font-semibold">
+            <template v-if="isLoading">Loading...</template>
+            <template v-else-if="user">
+              Welcome, {{ user.email }}
+              <span class="text-sm text-gray-500 ml-2">({{  }})</span>
+            </template>
+          </h2>
           <div class="flex items-center gap-4">
             <UButton
               :icon="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'"
@@ -38,16 +78,15 @@ const navigation = [
               @click="colorMode.preference = isDark ? 'light' : 'dark'"
             />
             <UDropdown
-              :items="[
-                { label: 'Profile', icon: 'i-heroicons-user-circle' },
-                { label: 'Logout', icon: 'i-heroicons-arrow-right-on-rectangle' }
-              ]"
+              :items="userMenuItems"
             >
               <UButton
                 color="gray"
                 variant="ghost"
                 icon="i-heroicons-user-circle"
-              />
+              >
+                <span class="ml-2">{{ user?.email }}</span>
+              </UButton>
             </UDropdown>
           </div>
         </div>
