@@ -34,6 +34,7 @@ import { TRPCContextManager } from './contexts/trpc.context';
 import { ServiceContext } from './contexts/service.context';
 import { DataSourceContext } from './contexts/datasource.context';
 import { AuthContext } from './contexts/auth.context';
+import { DashboardModule } from '../dashboard/dashboard.module';
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
  * 
@@ -99,6 +100,7 @@ import { AuthContext } from './contexts/auth.context';
       isGlobal: true,
     }),
     PaymentModule,
+    DashboardModule,
   ],
   providers: [
     CommonRouter,

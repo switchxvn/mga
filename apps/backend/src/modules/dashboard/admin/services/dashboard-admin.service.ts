@@ -16,6 +16,7 @@ export class DashboardAdminService {
     try {
       // Get the latest stats
       const stats = await this.dashboardStatsRepository.findOne({
+        where: {},
         order: { createdAt: 'DESC' }
       });
 

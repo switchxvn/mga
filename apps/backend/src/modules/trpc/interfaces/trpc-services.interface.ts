@@ -56,6 +56,7 @@ import { OrderAdminService } from '../../order/admin/services/order-admin.servic
 import { UploadFrontendService } from '../../upload/frontend/services/upload-frontend.service';
 import { UploadAdminService } from '../../upload/admin/services/upload-admin.service';
 import { SettingsService } from '../../settings/services/settings.service';
+import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -116,4 +117,5 @@ export interface ITrpcServices {
   uploadFrontendService: UploadFrontendService;
   uploadAdminService: UploadAdminService;
   settingsService: SettingsService;
+  dashboardAdminService: DashboardAdminService;
 } 

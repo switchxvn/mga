@@ -111,4 +111,127 @@ export { ContactSectionTranslation } from './contact/entities/contact-section-tr
 
 // Ticket Pricing
 export { TicketPricingSection } from './ticket-pricing/entities/ticket-pricing-section.entity';
-export { TicketPricingSectionTranslation } from './ticket-pricing/entities/ticket-pricing-section-translation.entity'; 
+export { TicketPricingSectionTranslation } from './ticket-pricing/entities/ticket-pricing-section-translation.entity';
+
+// Dashboard
+export { DashboardStats } from './dashboard/entities/dashboard-stats.entity';
+
+export const entities = [
+  // Payment
+  PaymentMethod,
+  PaymentTransaction,
+  
+  // Order
+  Order,
+  OrderItem,
+  
+  // Mail
+  MailConfig,
+  MailLog,
+  MailTemplate,
+  
+  // Upload
+  Upload,
+  UploadConfig,
+  
+  // Product
+  Product,
+  ProductTranslation,
+  CrossSellProduct,
+  ProductSpecification,
+  ProductSpecificationTranslation,
+  ProductCombo,
+  ProductVariant,
+  ProductVariantTranslation,
+  ProductAttribute,
+  ProductAttributeValue,
+  ProductAttributeTranslation,
+  ProductAttributeValueTranslation,
+  
+  // Category
+  Category,
+  CategoryTranslation,
+  
+  // Language
+  Language,
+  Translation,
+  
+  // Post
+  Post,
+  PostTranslation,
+  PostTag,
+  
+  // User
+  User,
+  Role,
+  Permission,
+  
+  // Profile
+  UserProfile,
+  
+  // Common
+  CountryPhoneCode,
+  
+  // Settings
+  Tag,
+  Logo,
+  Settings,
+  MenuItem,
+  MenuItemTranslation,
+  
+  // Price Request
+  PriceRequest,
+  
+  // SEO
+  Seo,
+  
+  // Customer Logo
+  ThemeCustomerLogo,
+  CustomerLogo,
+  
+  // Service
+  Service,
+  ServiceTranslation,
+  
+  // Hero
+  Hero,
+  HeroSlider,
+  HeroVideo,
+  
+  // Theme
+  Theme,
+  ThemeSection,
+  ComponentStyleConfig,
+  
+  // About
+  AboutSection,
+  AboutSectionTranslation,
+  
+  // Food Menu
+  FoodItem,
+  FoodCategory,
+  FoodCategoryTranslation,
+  FoodItemTranslation,
+  
+  // Feature Flags
+  FeatureFlag,
+  
+  // Gallery
+  Gallery,
+  GalleryTranslation,
+  
+  // Footer
+  Footer,
+  
+  // Contact
+  Contact,
+  ContactSection,
+  ContactSectionTranslation,
+  
+  // Ticket Pricing
+  TicketPricingSection,
+  TicketPricingSectionTranslation,
+  
+  // Dashboard
+  DashboardStats,
+]; 

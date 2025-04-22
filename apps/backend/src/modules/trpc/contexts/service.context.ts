@@ -58,6 +58,7 @@ import { UploadAdminService } from '../../upload/admin/services/upload-admin.ser
 import { OrderTicketSectionAdminService } from '../../order-ticket/admin/services/order-ticket-section-admin.service';
 import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/services/order-ticket-section-frontend.service';
 import { SettingsService } from '../../settings/services/settings.service';
+import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
 
 @Injectable()
 export class ServiceContext {
@@ -122,6 +123,7 @@ export class ServiceContext {
     private readonly orderTicketSectionAdminService: OrderTicketSectionAdminService,
     private readonly orderTicketSectionFrontendService: OrderTicketSectionFrontendService,
     private readonly settingsService: SettingsService,
+    private readonly dashboardAdminService: DashboardAdminService,
   ) {}
 
   public getServices(): ITrpcServices {
@@ -184,6 +186,7 @@ export class ServiceContext {
       orderTicketSectionAdminService: this.orderTicketSectionAdminService,
       orderTicketSectionFrontendService: this.orderTicketSectionFrontendService,
       settingsService: this.settingsService,
+      dashboardAdminService: this.dashboardAdminService,
     };
   }
 } 

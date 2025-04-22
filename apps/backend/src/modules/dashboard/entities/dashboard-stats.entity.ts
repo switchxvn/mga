@@ -8,30 +8,30 @@ export class DashboardStats {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   revenue: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({ name: 'revenue_change', type: 'decimal', precision: 5, scale: 2, default: 0 })
   revenueChange: number;
 
   @Column({ type: 'int', default: 0 })
   orders: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({ name: 'orders_change', type: 'decimal', precision: 5, scale: 2, default: 0 })
   ordersChange: number;
 
   @Column({ type: 'int', default: 0 })
   customers: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({ name: 'customers_change', type: 'decimal', precision: 5, scale: 2, default: 0 })
   customersChange: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({ name: 'conversion_rate', type: 'decimal', precision: 5, scale: 2, default: 0 })
   conversionRate: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({ name: 'conversion_rate_change', type: 'decimal', precision: 5, scale: 2, default: 0 })
   conversionRateChange: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 } 

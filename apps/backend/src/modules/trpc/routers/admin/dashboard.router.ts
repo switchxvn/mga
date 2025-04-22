@@ -52,4 +52,43 @@ export const dashboardAdminRouter = router({
         });
       }
     }),
+
+  // Update dashboard stats manually (for admin)
+  updateStats: adminProcedure
+    .use(requirePermission(Permissions.MANAGE_DASHBOARD))
+    .input(z.object({
+      revenue: z.number().optional(),
+      orders: z.number().optional(),
+      customers: z.number().optional(),
+      conversionRate: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await ctx.services.dashboardAdminService.updateStats(input);
+      } catch (error) {
+        ctx.logger.error('Failed to update dashboard stats:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update dashboard statistics',
+          cause: error,
+        });
+      }
+    }),
+
+  // Calculate dashboard stats automatically
+  calculateStats: adminProcedure
+    .use(requirePermission(Permissions.MANAGE_DASHBOARD))
+    .mutation(async ({ ctx }) => {
+      try {
+        await ctx.services.dashboardAdminService.calculateStats();
+        return { success: true };
+      } catch (error) {
+        ctx.logger.error('Failed to calculate dashboard stats:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to calculate dashboard statistics',
+          cause: error,
+        });
+      }
+    }),
 }); 

@@ -14,7 +14,7 @@ import { DashboardFrontendService } from './frontend/services/dashboard-frontend
   ],
   exports: [
     DashboardAdminService,
-    DashboardFrontendService
+    DashboardFrontendService,
   ]
 })
 export class DashboardModule {} 
