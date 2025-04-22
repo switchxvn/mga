@@ -12,6 +12,7 @@ import { UploadFrontendService } from '../../../upload/frontend/services/upload-
 import * as QRCode from 'qrcode';
 import { Readable } from 'stream';
 import fetch from 'node-fetch';
+import { DashboardStatsService } from '../../../dashboard/services/dashboard-stats.service';
 
 export interface CreateOrderDto {
   orderCode: string;
@@ -45,6 +46,7 @@ export class OrderFrontendService {
     private readonly paymentFrontendService: PaymentFrontendService,
     private readonly mailService: MailService,
     private readonly uploadFrontendService: UploadFrontendService,
+    private readonly dashboardStatsService: DashboardStatsService,
   ) {}
 
   private async generateAndUploadQRCode(text: string, orderId: number): Promise<string> {
@@ -227,6 +229,13 @@ export class OrderFrontendService {
       return_url: orderInput.return_url,
       cancel_url: orderInput.cancel_url
     });
+
+    // Update dashboard stats
+    try {
+      await this.dashboardStatsService.calculateAndUpdateStats();
+    } catch (error) {
+      this.logger.error('Failed to update dashboard stats after order creation:', error);
+    }
 
     return {
       order: {

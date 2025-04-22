@@ -12,6 +12,7 @@ import { PaymentMethod } from '../../../../../apps/backend/src/modules/payment/e
 import { PaymentFrontendService } from '../../../../../apps/backend/src/modules/payment/frontend/services/payment-frontend.service';
 import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
 import { PayOSException } from '../exceptions/payos.exception';
+import { DashboardStatsService } from '../../../../../apps/backend/src/modules/dashboard/services/dashboard-stats.service';
 
 @Injectable()
 export class PayOSWebhookService {
@@ -22,6 +23,7 @@ export class PayOSWebhookService {
     private readonly orderAdminService: OrderAdminService,
     private readonly paymentFrontendService: PaymentFrontendService,
     private readonly mailService: MailService,
+    private readonly dashboardStatsService: DashboardStatsService,
     @InjectRepository(PaymentMethod)
     private readonly paymentMethodRepository: Repository<PaymentMethod>
   ) {}
@@ -86,6 +88,15 @@ export class PayOSWebhookService {
 
       // Update order status
       const order = await this.orderAdminService.updatePaymentStatus(orderId, orderPaymentStatus);
+
+      // Update dashboard stats if payment is successful
+      if (webhookData.success) {
+        try {
+          await this.dashboardStatsService.calculateAndUpdateStats();
+        } catch (error) {
+          this.logger.error('Failed to update dashboard stats after payment completion:', error);
+        }
+      }
 
       // Send email notification if payment is successful
       if (webhookData.success && order) {
