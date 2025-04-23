@@ -75,13 +75,20 @@
             <h2 class="text-lg font-medium text-gray-900 mb-4">Content</h2>
             
             <div class="form-control">
-              <QuillEditor
-                v-model:content="form.content"
-                placeholder="Write your post content here..."
-                theme="snow"
-                toolbar="full"
-                class="min-h-[400px]"
-              />
+              <ClientOnly>
+                <QuillEditor
+                  v-model:content="form.content"
+                  placeholder="Write your post content here..."
+                  theme="snow"
+                  toolbar="full"
+                  class="min-h-[400px]"
+                />
+                <template #fallback>
+                  <div class="min-h-[400px] border rounded-lg p-4 bg-gray-50">
+                    Loading editor...
+                  </div>
+                </template>
+              </ClientOnly>
             </div>
           </div>
         </div>
@@ -176,12 +183,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '../../../composables/useTrpc'
-import { formatDate } from '../../../utils/date'
-import { QuillEditor } from '@vueup/vue-quill'
-import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
 const trpc = useTrpc()
 const route = useRoute()
@@ -235,6 +239,17 @@ watch(() => form.value.title, (newTitle) => {
   }
 })
 
+const formatDate = (date: string): string => {
+  if (!date) return ''
+  return new Date(date).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 const fetchPost = async () => {
   try {
     const post = await trpc.admin.posts.getPostById.query(Number(route.params.id))
@@ -277,7 +292,14 @@ const updatePost = async () => {
   }
 }
 
+// Add client-only dynamic import
+const QuillEditor = defineAsyncComponent(() => 
+  import('@vueup/vue-quill').then(({ QuillEditor }) => QuillEditor)
+)
+
+// Add style import in onMounted
 onMounted(() => {
+  import('@vueup/vue-quill/dist/vue-quill.snow.css')
   fetchPost()
 })
 </script>

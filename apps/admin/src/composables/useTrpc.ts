@@ -8,13 +8,14 @@ import { useRuntimeConfig } from '#imports';
  */
 export const useTrpc = () => {
   const config = useRuntimeConfig();
-  // Always use relative URL for client-side requests
-  // Server middleware will handle the proxying
+  const baseUrl = process.server 
+    ? config.public.apiBase // Use configured API base on server
+    : ''; // Use relative URL on client
 
   return createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
-        url: '/api/trpc',
+        url: `${baseUrl}/api/trpc`,
         headers() {
           const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
           return token ? { Authorization: `Bearer ${token}` } : {};
