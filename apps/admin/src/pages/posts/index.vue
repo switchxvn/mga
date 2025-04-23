@@ -390,6 +390,56 @@ const closeZoomModal = () => {
   selectedImage.value = null;
   isZoomModalOpen.value = false;
 };
+
+// Add toggle published function
+async function togglePublished(post: Post) {
+  const newStatus = !post.published;
+  
+  const result = await Swal.fire({
+    title: `${newStatus ? 'Publish' : 'Unpublish'} Post?`,
+    text: `Are you sure you want to ${newStatus ? 'publish' : 'unpublish'} "${post.title}"?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: `Yes, ${newStatus ? 'publish' : 'unpublish'} it!`,
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: newStatus ? '#10B981' : '#6B7280',
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await trpc.admin.posts.updatePost.mutate({
+      id: post.id,
+      data: {
+        title: post.title,
+        content: post.content || '',
+        status: newStatus ? 'PUBLISHED' : 'DRAFT',
+        featuredImage: post.thumbnail,
+        metaDescription: post.shortDescription
+      }
+    });
+    
+    // Update local state
+    post.published = newStatus;
+
+    Swal.fire({
+      title: 'Success!',
+      text: `Post ${newStatus ? 'published' : 'unpublished'} successfully`,
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  } catch (err: any) {
+    error.value = err.message || "Failed to update post status";
+    console.error("Error updating post status:", err);
+    
+    Swal.fire({
+      title: 'Error!',
+      text: error.value,
+      icon: 'error'
+    });
+  }
+}
 </script>
 
 <template>
@@ -630,7 +680,7 @@ const closeZoomModal = () => {
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <button
-                  @click="handleBulkAction(post.published ? 'unpublish' : 'publish')"
+                  @click="togglePublished(post)"
                   :class="{
                     'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full items-center gap-1 cursor-pointer transition-colors duration-200': true,
                     'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800': post.published,
