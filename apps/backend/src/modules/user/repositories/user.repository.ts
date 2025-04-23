@@ -12,7 +12,7 @@ export class UserRepository extends Repository<User> {
     return this.findOne({ where: { email } });
   }
 
-  async findByIdWithPosts(id: number): Promise<User | null> {
+  async findByIdWithPosts(id: string): Promise<User | null> {
     return this.findOne({
       where: { id },
       relations: ['posts'],

@@ -16,10 +16,10 @@ export class PostAdminService {
     private readonly postTranslationRepository: Repository<PostTranslation>
   ) {}
 
-  async create(data: Partial<Post>, authorId: number) {
+  async create(createPostDto: CreatePostInput, userId: string): Promise<Post> {
     const post = this.postRepository.create({
-      ...data,
-      authorId
+      ...createPostDto,
+      authorId: userId
     });
     return this.postRepository.save(post);
   }
@@ -38,27 +38,22 @@ export class PostAdminService {
     });
   }
 
-  async update(id: number, data: Partial<Post>, authorId: number) {
-    const post = await this.postRepository.findOne({
-      where: { id, authorId },
-      relations: ['translations']
-    });
+  async update(id: number, updatePostDto: UpdatePostInput, userId: string): Promise<Post> {
+    const post = await this.findOne(id);
 
     if (!post) {
-      throw new Error('Post not found or unauthorized');
+      throw new NotFoundException(`Post with ID ${id} not found`);
     }
 
-    Object.assign(post, data);
+    Object.assign(post, updatePostDto);
     return this.postRepository.save(post);
   }
 
-  async remove(id: number, authorId: number) {
-    const post = await this.postRepository.findOne({
-      where: { id, authorId }
-    });
+  async remove(id: number, userId: string): Promise<{ success: boolean }> {
+    const post = await this.findOne(id);
 
     if (!post) {
-      throw new Error('Post not found or unauthorized');
+      throw new NotFoundException(`Post with ID ${id} not found`);
     }
 
     await this.postRepository.remove(post);

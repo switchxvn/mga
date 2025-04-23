@@ -25,7 +25,7 @@ export class PostFrontendService {
     this.logger = new Logger(PostFrontendService.name);
   }
 
-  async create(createPostDto: CreatePostInput, authorId: number): Promise<Post> {
+  async create(createPostDto: CreatePostInput, authorId: string): Promise<Post> {
     const post = this.postRepository.create({
       ...createPostDto,
       authorId,
@@ -129,12 +129,12 @@ export class PostFrontendService {
       shortDescription: currentTranslation?.shortDescription || '',
       thumbnail: post.thumbnail,
       published: post.published,
-      authorId: post.authorId,
+      authorId: String(post.authorId),
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       tags,
       author: post.author ? {
-        id: post.author.id,
+        id: String(post.author.id),
         email: post.author.email,
         username: post.author.username,
         isEmailVerified: post.author.isEmailVerified,
@@ -361,10 +361,8 @@ export class PostFrontendService {
     }
   }
 
-  async update(id: number, updatePostDto: UpdatePostInput, userId: number): Promise<Post> {
-    const post = await this.postRepository.findOne({
-      where: { id }
-    });
+  async update(id: number, updatePostDto: UpdatePostInput, userId: string): Promise<Post> {
+    const post = await this.findOne(id);
 
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
@@ -378,10 +376,8 @@ export class PostFrontendService {
     return this.postRepository.save(post);
   }
 
-  async remove(id: number, userId: number): Promise<void> {
-    const post = await this.postRepository.findOne({
-      where: { id }
-    });
+  async remove(id: number, userId: string): Promise<void> {
+    const post = await this.findOne(id);
 
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
@@ -394,7 +390,7 @@ export class PostFrontendService {
     await this.postRepository.remove(post);
   }
 
-  async findByAuthorId(authorId: number): Promise<Post[]> {
+  async findByAuthorId(authorId: string): Promise<Post[]> {
     return this.postRepository.find({
       where: { authorId },
       order: { createdAt: 'DESC' }

@@ -40,7 +40,7 @@ export class AuthResponseDto {
 
   @ApiProperty()
   user: {
-    id: number;
+    id: string;
     email: string;
     name?: string;
   };

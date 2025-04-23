@@ -5,7 +5,7 @@ import { PostTranslation } from './post-translation.interface';
 export interface Post {
   id: number;
   published: boolean;
-  authorId: number;
+  authorId: string;
   title?: string;
   content?: string;
   shortDescription?: string;

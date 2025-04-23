@@ -25,7 +25,7 @@ export class UserAdminService {
     return this.userRepository.find();
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -33,14 +33,14 @@ export class UserAdminService {
     return user;
   }
 
-  async findOneWithPermissions(id: number): Promise<User> {
+  async findOneWithPermissions(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: [
         'permissions',
         'roles',
         'roles.permissions'
-      ]
+      ],
     });
 
     if (!user) {
@@ -54,8 +54,8 @@ export class UserAdminService {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id);
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findOne(id.toString());
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
@@ -63,7 +63,7 @@ export class UserAdminService {
     return this.userRepository.save(user);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
     await this.userRepository.remove(user);
   }

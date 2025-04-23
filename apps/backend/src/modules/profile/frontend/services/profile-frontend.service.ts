@@ -14,7 +14,7 @@ export class ProfileFrontendService {
     private readonly countryPhoneCodeRepository: Repository<CountryPhoneCode>,
   ) {}
 
-  async getProfileByUserId(userId: number) {
+  async getProfileByUserId(userId: string) {
     try {
       const profile = await this.userProfileRepository.findOne({
         where: { userId },
@@ -40,7 +40,7 @@ export class ProfileFrontendService {
     }
   }
 
-  async updateProfile(userId: number, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
     let profile = await this.userProfileRepository.findOne({
       where: { userId },
     });

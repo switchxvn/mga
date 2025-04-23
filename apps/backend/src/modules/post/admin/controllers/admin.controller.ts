@@ -20,7 +20,7 @@ export class PostAdminController {
   @ApiResponse({ status: 201, description: 'Post created successfully', type: PostEntity })
   create(@Body() createPostDto: CreatePostInput): Promise<PostEntity> {
     // Assuming admin ID is 1 for now, in a real app you would get this from the request
-    return this.postAdminService.create(createPostDto, 1);
+    return this.postAdminService.create(createPostDto, '1');
   }
 
   @Get()
@@ -35,25 +35,25 @@ export class PostAdminController {
   // @Roles('admin')
   @ApiOperation({ summary: 'Get post by id' })
   @ApiResponse({ status: 200, description: 'Return found post', type: PostEntity })
-  findOne(@Param('id') id: string): Promise<PostEntity> {
-    return this.postAdminService.findOne(+id);
+  findOne(@Param('id') id: number): Promise<PostEntity> {
+    return this.postAdminService.findOne(id);
   }
 
   @Patch(':id')
   // @Roles('admin')
   @ApiOperation({ summary: 'Update post' })
   @ApiResponse({ status: 200, description: 'Post updated successfully', type: PostEntity })
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostInput): Promise<PostEntity> {
+  update(@Param('id') id: number, @Body() updatePostDto: UpdatePostInput): Promise<PostEntity> {
     // Assuming admin ID is 1 for now, in a real app you would get this from the request
-    return this.postAdminService.update(+id, updatePostDto, 1);
+    return this.postAdminService.update(id, updatePostDto, '1');
   }
 
   @Delete(':id')
   // @Roles('admin')
   @ApiOperation({ summary: 'Delete post' })
   @ApiResponse({ status: 200, description: 'Post deleted successfully' })
-  remove(@Param('id') id: string): Promise<{ success: boolean }> {
+  remove(@Param('id') id: number): Promise<{ success: boolean }> {
     // Assuming admin ID is 1 for now, in a real app you would get this from the request
-    return this.postAdminService.remove(+id, 1);
+    return this.postAdminService.remove(id, '1');
   }
 } 
