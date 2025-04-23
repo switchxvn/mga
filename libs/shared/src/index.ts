@@ -23,3 +23,4 @@ export * from './types/contact';
 export * from './types/food.type';
 export * from './lib/utils/price';
 export * from './lib/types/product.type';
+export * from './types/profile.type';

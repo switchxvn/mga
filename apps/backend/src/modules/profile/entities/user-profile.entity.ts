@@ -8,7 +8,7 @@ export class UserProfile {
   id: number;
 
   @Column({ name: 'user_id' })
-  userId: number;
+  userId: string;
 
   @OneToOne(() => User, user => user.profile, { lazy: true })
   @JoinColumn({ name: 'user_id' })

@@ -2,6 +2,7 @@
 import type { DropdownItem } from '#ui/types'
 import { useUserStore } from '@/stores/useUserStore'
 import { storeToRefs } from 'pinia'
+import { Moon, Sun } from 'lucide-vue-next'
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -12,6 +13,7 @@ const { user, isLoading } = storeToRefs(userStore)
 onMounted(async () => {
   try {
     await userStore.fetchUser()
+    console.log('User data in component:', user.value)
   } catch (error) {
     console.error('Failed to fetch user:', error)
   }
@@ -67,16 +69,21 @@ const userMenuItems: DropdownItem[][] = [[
             <template v-if="isLoading">Loading...</template>
             <template v-else-if="user">
               Welcome, {{ user.email }}
-              <span class="text-sm text-gray-500 ml-2">({{  }})</span>
+              <span v-if="user.roles?.length" class="text-sm text-gray-500 ml-2">({{ user.roles[0] }})</span>
             </template>
           </h2>
           <div class="flex items-center gap-4">
-            <UButton
-              :icon="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'"
-              color="gray"
-              variant="ghost"
+            <button
+              class="p-2 rounded-md transition-colors duration-200 ease-in-out"
+              :class="[
+                isDark 
+                  ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+              ]"
               @click="colorMode.preference = isDark ? 'light' : 'dark'"
-            />
+            >
+              <component :is="isDark ? Moon : Sun" class="w-5 h-5" />
+            </button>
             <UDropdown
               :items="userMenuItems"
             >

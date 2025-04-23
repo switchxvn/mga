@@ -5,7 +5,6 @@ export * from './post.interface';
 export * from './post-translation.interface';
 export * from './price-request.interface';
 export * from './product.interface';
-export * from './profile.interface';
 export * from './seo.interface';
 export * from './service.interface';
 export * from './tag.interface'; 

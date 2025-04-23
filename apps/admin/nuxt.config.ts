@@ -8,7 +8,6 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxtjs/color-mode',
     '@nuxtjs/tailwindcss',
-    '@workmate/nuxt-auth'
   ],
 
   app: {
@@ -36,14 +35,6 @@ export default defineNuxtConfig({
           changeOrigin: true,
           secure: false,
           ws: true,
-          configure: (proxy, options) => {
-            proxy.on('error', (err, req, res) => {
-              console.log('proxy error', err);
-            });
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log('Proxying request:', req.url);
-            });
-          }
         },
       },
     },
@@ -52,13 +43,23 @@ export default defineNuxtConfig({
   // @ts-ignore
   colorMode: {
     classSuffix: '',
-    preference: 'system',
-    fallback: 'light'
+    preference: 'light',
+    fallback: 'light',
+    storage: 'localStorage'
   },
 
   ui: {
     global: true,
-    icons: ['heroicons'],
+    icons: {
+      dynamic: true,
+      families: {
+        heroicons: {
+          outline: true,
+          solid: true,
+          mini: true
+        }
+      }
+    },
     notifications: {
       position: 'top-right'
     }

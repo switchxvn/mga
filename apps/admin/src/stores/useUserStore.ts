@@ -1,18 +1,8 @@
 import { defineStore } from 'pinia';
 import { useTrpc } from '@/composables/useTrpc';
-
-interface AdminUser {
-  id: number;
-  email: string;
-  roles: string[];
-  isActive: boolean;
-  lastLoginAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
+import type { ProfileResponse } from '@ew/shared';
 interface State {
-  user: AdminUser | null;
+  user: ProfileResponse | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -38,7 +28,7 @@ export const useUserStore = defineStore('admin-user', {
       this.error = null;
 
       try {
-        const userInfo = await trpc.auth.me.query();
+        const userInfo = await trpc.profile.getMyProfile.query();
         this.user = userInfo;
         return userInfo;
       } catch (err: any) {

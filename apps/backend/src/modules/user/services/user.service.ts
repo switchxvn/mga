@@ -26,7 +26,7 @@ export class UserService {
     return this.userRepository.find();
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -38,7 +38,7 @@ export class UserService {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
@@ -47,16 +47,16 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
     await this.userRepository.remove(user);
   }
 
-  async findById(id: number): Promise<User> {
+  async findById(id: string): Promise<User> {
     try {
       const user = await this.userRepository.findOne({
         where: { id },
-        relations: ['profile', 'profile.countryPhoneCode'],
+        relations: ['profile', 'profile.countryPhoneCode', 'roles', 'permissions'],
       });
 
       if (!user) {
