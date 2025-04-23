@@ -3,6 +3,38 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../procedures';
 
+// Admin router for posts
+export const adminPostRouter = router({
+  getPostById: protectedProcedure
+    .input(getPostByIdSchema)
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Admin fetching post by ID: ${input}`);
+        const post = await ctx.services.postService.findOne(input);
+
+        if (!post) {
+          ctx.logger.warn(`Post not found for ID: ${input}`);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Post with ID ${input} not found`,
+          });
+        }
+
+        ctx.logger.debug(`Successfully retrieved post ID: ${input}`);
+        return post;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching post by ID ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve post',
+          cause: error,
+        });
+      }
+    }),
+});
+
 export const postRouter = router({
   latest: publicProcedure
     .input(z.object({

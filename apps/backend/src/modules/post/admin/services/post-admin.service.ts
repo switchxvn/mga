@@ -86,7 +86,7 @@ export class PostAdminService {
     return { success: true };
   }
 
-  async getPosts({ page, limit, search, status }) {
+  async getPosts({ page, limit, search, published }) {
     const query = this.postRepository.createQueryBuilder('post');
 
     if (search) {
@@ -95,8 +95,8 @@ export class PostAdminService {
       });
     }
 
-    if (status) {
-      query.andWhere('post.status = :status', { status });
+    if (published !== null) {
+      query.andWhere('post.published = :published', { published });
     }
 
     const [items, total] = await query
