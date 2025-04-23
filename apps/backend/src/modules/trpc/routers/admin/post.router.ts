@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { adminProcedure, router } from '../../procedures';
 import { Permissions } from '../../../auth/constants/permissions.constant';
 import { requirePermission } from '../../middlewares/permission.middleware';
+import { BadRequestException } from '@nestjs/common';
 
 export const postAdminRouter = router({
   getPostById: adminProcedure
@@ -99,13 +100,13 @@ export const postAdminRouter = router({
         featuredImage: z.string().optional(),
         metaDescription: z.string().optional(),
         translations: z.array(z.object({
-          locale: z.string(),
-          title: z.string(),
-          slug: z.string(),
+          locale: z.string().min(2),
+          title: z.string().min(1, 'Title is required'),
+          slug: z.string().min(1, 'Slug is required'),
           content: z.string(),
           metaDescription: z.string().optional(),
           ogImage: z.string().optional()
-        })).optional(),
+        })).min(1, 'At least one translation is required'),
         tags: z.array(z.string()).optional()
       })
     }))
@@ -114,6 +115,12 @@ export const postAdminRouter = router({
         const updatedPost = await ctx.services.postAdminService.updatePost(input.id, input.data);
         return updatedPost;
       } catch (error) {
+        if (error instanceof BadRequestException) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
         ctx.logger.error('Failed to update post:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',

@@ -162,14 +162,43 @@ useHead(() => {
       </div>
       
       <!-- Error state -->
-      <div v-else-if="error" class="post-detail__error">
-        <p class="post-detail__error-message">{{ error }}</p>
-        <button 
-          @click="() => { refresh(); }" 
-          class="post-detail__error-button"
-        >
-          Thử lại
-        </button>
+      <div v-else-if="error" class="post-detail__error w-full">
+        <div class="post-detail__error-background">
+          <div class="post-detail__error-background-shape shape-1"></div>
+          <div class="post-detail__error-background-shape shape-2"></div>
+          <div class="post-detail__error-background-shape shape-3"></div>
+        </div>
+        <div class="post-detail__error-content">
+          <div class="post-detail__error-illustration">
+            <div class="post-detail__error-emoji">🐼</div>
+            <div class="post-detail__error-circle"></div>
+          </div>
+          <h2 class="post-detail__error-title">
+            {{ locale === 'vi' ? 'Rất tiếc, đã có lỗi xảy ra' : 'Sorry, an error occurred' }}
+          </h2>
+          <p class="post-detail__error-message">
+            {{ locale === 'vi' 
+              ? 'Chúng tôi không thể tải bài viết lúc này. Vui lòng thử lại sau hoặc xem các bài viết khác.' 
+              : 'We could not load the post at this time. Please try again later or view other posts.'
+            }}
+          </p>
+          <div class="post-detail__error-actions">
+            <button 
+              @click="() => refresh()" 
+              class="post-detail__error-button primary"
+            >
+              <Icon name="RefreshCw" :size="20" class="mr-2" />
+              {{ locale === 'vi' ? 'Thử lại' : 'Try Again' }}
+            </button>
+            <NuxtLink 
+              :to="getLocalizedPath()"
+              class="post-detail__error-button secondary"
+            >
+              <Icon name="List" :size="20" class="mr-2" />
+              {{ locale === 'vi' ? 'Xem bài viết khác' : 'View Other Posts' }}
+            </NuxtLink>
+          </div>
+        </div>
       </div>
       
       <!-- Post content with sidebar -->
@@ -261,15 +290,35 @@ useHead(() => {
       
       <!-- Not found state -->
       <div v-else class="post-detail__not-found">
-        <div class="post-detail__not-found-emoji">😕</div>
-        <h2 class="post-detail__not-found-title">Không tìm thấy bài viết</h2>
-        <p class="post-detail__not-found-message">Bài viết bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
-        <NuxtLink 
-          to="/bai-viet" 
-          class="post-detail__not-found-button"
-        >
-          Xem tất cả bài viết
-        </NuxtLink>
+        <div class="post-detail__not-found-illustration">
+          <div class="post-detail__not-found-emoji animate-bounce">📝</div>
+          <div class="post-detail__not-found-circle"></div>
+        </div>
+        <h2 class="post-detail__not-found-title">
+          {{ locale === 'vi' ? 'Không tìm thấy bài viết' : 'Post Not Found' }}
+        </h2>
+        <p class="post-detail__not-found-message">
+          {{ locale === 'vi' 
+            ? 'Bài viết bạn đang tìm kiếm không tồn tại hoặc đã bị xóa. Bạn có thể thử tìm kiếm bài viết khác hoặc xem danh sách bài viết mới nhất.' 
+            : 'The post you are looking for does not exist or has been removed. You can try searching for another post or view the latest posts.'
+          }}
+        </p>
+        <div class="post-detail__not-found-actions">
+          <NuxtLink 
+            :to="getLocalizedPath()"
+            class="post-detail__not-found-button primary"
+          >
+            <Icon name="List" :size="20" class="mr-2" />
+            {{ locale === 'vi' ? 'Xem tất cả bài viết' : 'View All Posts' }}
+          </NuxtLink>
+          <NuxtLink 
+            to="/"
+            class="post-detail__not-found-button secondary"
+          >
+            <Icon name="Home" :size="20" class="mr-2" />
+            {{ locale === 'vi' ? 'Về trang chủ' : 'Back to Home' }}
+          </NuxtLink>
+        </div>
       </div>
     </div>
   </div>
@@ -371,5 +420,212 @@ useHead(() => {
 
 .tag-hash {
   @apply mr-0.5 text-gray-500 dark:text-gray-400 font-medium;
+}
+
+.post-detail__not-found {
+  @apply flex flex-col items-center justify-center py-16 px-4 text-center max-w-2xl mx-auto;
+}
+
+.post-detail__not-found-illustration {
+  @apply relative mb-8;
+}
+
+.post-detail__not-found-emoji {
+  @apply text-6xl z-10 relative;
+  animation: float 3s ease-in-out infinite;
+}
+
+.post-detail__not-found-circle {
+  @apply absolute w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900/30 -z-10;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.post-detail__not-found-title {
+  @apply text-3xl font-bold mb-4 text-gray-900 dark:text-white;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.post-detail__not-found-message {
+  @apply text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-lg;
+  animation: fadeIn 0.5s ease-in-out 0.2s both;
+}
+
+.post-detail__not-found-actions {
+  @apply flex flex-col sm:flex-row gap-4 w-full justify-center;
+  animation: fadeIn 0.5s ease-in-out 0.4s both;
+}
+
+.post-detail__not-found-button {
+  @apply flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-all duration-200 min-w-[200px];
+}
+
+.post-detail__not-found-button.primary {
+  @apply bg-primary-600 hover:bg-primary-700 text-white shadow-lg hover:shadow-xl;
+}
+
+.post-detail__not-found-button.secondary {
+  @apply bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 
+    text-gray-700 dark:text-gray-300;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.3;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.post-detail__error {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg min-h-[calc(100vh-12rem)] relative overflow-hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-detail__error-background {
+  @apply absolute inset-0 overflow-hidden opacity-20 dark:opacity-10;
+  z-index: 0;
+}
+
+.post-detail__error-background-shape {
+  @apply absolute rounded-full opacity-50;
+  background: linear-gradient(45deg, var(--primary-500), var(--primary-600));
+}
+
+.post-detail__error-background-shape.shape-1 {
+  width: 600px;
+  height: 600px;
+  top: -200px;
+  right: -200px;
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  animation: floating 20s infinite alternate;
+}
+
+.post-detail__error-background-shape.shape-2 {
+  width: 450px;
+  height: 450px;
+  bottom: -150px;
+  left: -150px;
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  animation: floating 15s infinite alternate-reverse;
+}
+
+.post-detail__error-background-shape.shape-3 {
+  width: 300px;
+  height: 300px;
+  bottom: 20%;
+  right: 20%;
+  border-radius: 50% 50% 20% 80% / 25% 80% 20% 75%;
+  animation: floating 18s infinite alternate;
+}
+
+.post-detail__error-content {
+  @apply flex flex-col items-center justify-center py-20 text-center w-full relative;
+  z-index: 1;
+}
+
+.post-detail__error-illustration {
+  @apply relative mb-12;
+  transform: scale(1.2);
+}
+
+.post-detail__error-emoji {
+  @apply text-7xl z-10 relative;
+  animation: wobble 3s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.post-detail__error-circle {
+  @apply absolute w-32 h-32 rounded-full bg-green-100/50 dark:bg-green-900/30 -z-10 backdrop-blur-sm;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.post-detail__error-title {
+  @apply text-4xl font-bold mb-6 text-gray-900 dark:text-white;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.post-detail__error-message {
+  @apply text-xl text-gray-600 dark:text-gray-400 mb-12 mx-auto px-4;
+  max-width: min(800px, 100% - 2rem);
+}
+
+.post-detail__error-actions {
+  @apply flex flex-col sm:flex-row gap-6 justify-center items-center w-full px-4;
+  max-width: min(600px, 100% - 2rem);
+  margin: 0 auto;
+}
+
+.post-detail__error-button {
+  @apply flex items-center justify-center px-8 py-4 rounded-lg font-medium transition-all duration-200 text-lg backdrop-blur-sm;
+  min-width: min(240px, 100% - 2rem);
+}
+
+.post-detail__error-button.primary {
+  @apply bg-primary-600/90 hover:bg-primary-700 text-white shadow-lg hover:shadow-xl 
+    transform hover:-translate-y-0.5 active:translate-y-0;
+}
+
+.post-detail__error-button.secondary {
+  @apply bg-white/80 dark:bg-gray-800/80 hover:bg-gray-50 dark:hover:bg-gray-700/90
+    text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700
+    transform hover:-translate-y-0.5 active:translate-y-0;
+}
+
+@keyframes floating {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(30px, 20px) rotate(4deg);
+  }
+  100% {
+    transform: translate(-20px, -15px) rotate(-2deg);
+  }
+}
+
+@keyframes wobble {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-5deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(0deg) scale(1);
+  }
+  75% {
+    transform: rotate(5deg) scale(1.1);
+  }
 }
 </style> 

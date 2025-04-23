@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from '../../entities/post.entity';
@@ -132,6 +132,27 @@ export class PostAdminService {
     return this.postRepository.save(post);
   }
 
+  async findPostTranslationBySlug(slug: string): Promise<PostTranslation | null> {
+    return this.postTranslationRepository.findOne({
+      where: { slug },
+      relations: ['post']
+    });
+  }
+
+  async validateSlug(slug: string, postId?: number, translationId?: number): Promise<void> {
+    const existingTranslation = await this.findPostTranslationBySlug(slug);
+    
+    if (existingTranslation) {
+      // Allow the slug if we're updating the same translation
+      if (translationId && existingTranslation.id === translationId) {
+        return;
+      }
+      
+      // Don't allow the slug if it exists in any translation (even for the same post)
+      throw new BadRequestException(`Slug "${slug}" already exists in another translation`);
+    }
+  }
+
   async updatePost(id: number, data: UpdatePostInput): Promise<Post> {
     try {
       this.logger.debug('Received update data:', JSON.stringify(data, null, 2));
@@ -181,6 +202,9 @@ export class PostAdminService {
             const slugToUse = translation.slug ?? existingTranslation.slug;
             this.logger.debug('Will use slug:', slugToUse);
 
+            // Validate slug before updating
+            await this.validateSlug(slugToUse, id, existingTranslation.id);
+
             await this.postTranslationRepository.update(existingTranslation.id, {
               title: translation.title,
               content: translation.content,
@@ -194,6 +218,9 @@ export class PostAdminService {
             // Create new translation
             const slugToUse = translation.slug ?? this.generateSlug(translation.title);
             this.logger.debug('Will use slug for new translation:', slugToUse);
+
+            // Validate slug before creating
+            await this.validateSlug(slugToUse, id);
 
             const newTranslation = this.postTranslationRepository.create({
               ...translation,
@@ -262,6 +289,19 @@ export class PostAdminService {
   }
 
   async deletePost(id: number) {
-    await this.postRepository.delete(id);
+    const post = await this.findOne(id);
+    if (post) {
+      await this.postRepository.delete(id);
+      return { success: true };
+    }
+    return { success: false };
+  }
+
+  async findPostBySlug(slug: string): Promise<Post | null> {
+    const translation = await this.postTranslationRepository.findOne({
+      where: { slug },
+      relations: ['post']
+    });
+    return translation?.post || null;
   }
 } 

@@ -24,13 +24,15 @@
                   @click.stop="isLanguageOpen = !isLanguageOpen"
                   class="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                 >
-                  <img 
-                    v-if="selectedLanguage"
-                    :src="`../../../assets/images/flag/${languages.find(l => l.code === selectedLanguage)?.flagCode}.svg`"
-                    :alt="`${languages.find(l => l.code === selectedLanguage)?.nativeName} flag`"
-                    class="w-5 h-5 rounded-sm object-cover"
-                    @error="handleImageError"
-                  />
+                  <div class="w-5 h-5 flex items-center justify-center">
+                    <img 
+                      v-if="selectedLanguage"
+                      :src="`/images/flag/${languages.find(l => l.code === selectedLanguage)?.flagCode.toLowerCase()}.svg`"
+                      :alt="`${languages.find(l => l.code === selectedLanguage)?.nativeName} flag`"
+                      class="w-5 h-5 rounded-sm object-cover"
+                      @error="onFlagImageError"
+                    />
+                  </div>
                   <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
                   <ChevronDownIcon 
                     class="h-4 w-4 transition-transform"
@@ -41,29 +43,29 @@
                 <!-- Dropdown menu -->
                 <div 
                   v-if="isLanguageOpen" 
-                  class="absolute z-50 mt-1 min-w-[160px] rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none"
+                  class="absolute z-50 mt-1 min-w-[240px] rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none"
                 >
                   <div class="py-1">
                     <button
                       v-for="lang in languages"
                       :key="lang.code"
                       @click="selectedLanguage = lang.code; fetchPost(); isLanguageOpen = false"
-                      class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors"
+                      class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
                       :class="{ 'bg-slate-50': selectedLanguage === lang.code }"
                     >
-                      <div class="w-5 h-5 flex items-center justify-center mr-2">
+                      <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center mr-2">
                         <img 
-                          :src="`../../../assets/images/flag/${lang.flagCode}.svg`"
+                          :src="`/images/flag/${lang.flagCode.toLowerCase()}.svg`"
                           :alt="`${lang.nativeName} flag`"
                           class="w-5 h-5 rounded-sm object-cover"
-                          @error="handleImageError"
+                          @error="onFlagImageError"
                         />
                       </div>
-                      <span>{{ lang.name }}</span>
-                      <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500">(Default)</span>
+                      <span class="truncate">{{ lang.nativeName }}</span>
+                      <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
                       <CheckIcon
                         v-if="selectedLanguage === lang.code"
-                        class="h-4 w-4 ml-auto text-primary"
+                        class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
                       />
                     </button>
                   </div>
@@ -239,6 +241,13 @@ interface PostForm {
   metaDescription: string
   tags: string[]
   updatedAt: string
+  translations: Record<string, {
+    title: string
+    slug: string
+    content: string
+    metaDescription: string
+    featuredImage: string
+  }>
 }
 
 const initialForm: PostForm = {
@@ -249,7 +258,8 @@ const initialForm: PostForm = {
   featuredImage: '',
   metaDescription: '',
   tags: [],
-  updatedAt: new Date().toISOString()
+  updatedAt: new Date().toISOString(),
+  translations: {}
 }
 
 const form = ref({ ...initialForm })
@@ -357,22 +367,66 @@ onBeforeUnmount(() => {
   }
 })
 
+// Update watch for selectedLanguage
+watch(selectedLanguage, (newLang, oldLang) => {
+  if (oldLang) {
+    // Save current content to translations before switching
+    form.value.translations[oldLang] = {
+      title: form.value.title,
+      slug: form.value.slug,
+      content: form.value.content,
+      metaDescription: form.value.metaDescription,
+      featuredImage: form.value.featuredImage
+    }
+  }
+  
+  // Load content for new language
+  if (form.value.translations[newLang]) {
+    const translation = form.value.translations[newLang]
+    form.value.title = translation.title
+    form.value.slug = translation.slug
+    form.value.content = translation.content
+    form.value.metaDescription = translation.metaDescription
+    form.value.featuredImage = translation.featuredImage
+  } else {
+    // Reset form for new translation
+    form.value.title = ''
+    form.value.slug = ''
+    form.value.content = ''
+    form.value.metaDescription = ''
+    form.value.featuredImage = ''
+  }
+})
+
 // Update fetchPost function
 const fetchPost = async () => {
   try {
     const post = await trpc.admin.posts.getPostById.query(Number(route.params.id))
     
     if (post) {
-      const translation = post.translations?.find(t => t.locale === selectedLanguage.value) || post.translations?.[0] || {}
+      // Initialize translations
+      const translations: Record<string, any> = {}
+      
+      post.translations?.forEach(translation => {
+        translations[translation.locale] = {
+          title: translation.title,
+          slug: translation.slug,
+          content: translation.content,
+          metaDescription: translation.metaDescription,
+          featuredImage: translation.ogImage
+        }
+      })
+
       form.value = {
-        title: translation.title || post.title || '',
-        slug: translation.slug || '',  // Use translation slug directly, don't generate
-        content: translation.content || post.content || '',
+        title: post.translations?.find(t => t.locale === selectedLanguage.value)?.title || post.title || '',
+        slug: post.translations?.find(t => t.locale === selectedLanguage.value)?.slug || '',
+        content: post.translations?.find(t => t.locale === selectedLanguage.value)?.content || post.content || '',
         published: post.published,
-        featuredImage: translation.ogImage || post.thumbnail || '',
-        metaDescription: translation.metaDescription || '',
+        featuredImage: post.translations?.find(t => t.locale === selectedLanguage.value)?.ogImage || post.thumbnail || '',
+        metaDescription: post.translations?.find(t => t.locale === selectedLanguage.value)?.metaDescription || '',
         tags: post.postTags?.map(tag => tag.tag.name) || [],
-        updatedAt: post.updatedAt
+        updatedAt: post.updatedAt,
+        translations
       }
       tagsInput.value = form.value.tags.join(', ')
     }
@@ -384,34 +438,30 @@ const fetchPost = async () => {
   }
 }
 
-// Update translations interface to match backend
-interface PostTranslation {
-  locale: string;
-  title: string;
-  slug: string;
-  content: string;
-  shortDescription?: string;
-  metaDescription?: string;
-  metaTitle?: string;
-  metaKeywords?: string;
-  ogTitle?: string;
-  ogDescription?: string;
-  ogImage?: string;
-  canonicalUrl?: string;
-}
-
-const handleImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  if (target) {
-    target.style.display = 'none';
-  }
-};
-
 // Update updatePost function
 const updatePost = async (continueEditing = false) => {
   try {
     loading.value = true
     saveAndContinue.value = continueEditing
+
+    // Save current content to translations before updating
+    form.value.translations[selectedLanguage.value] = {
+      title: form.value.title,
+      slug: form.value.slug,
+      content: form.value.content,
+      metaDescription: form.value.metaDescription,
+      featuredImage: form.value.featuredImage
+    }
+
+    // Prepare translations array for API
+    const translations = Object.entries(form.value.translations).map(([locale, content]) => ({
+      locale,
+      title: content.title,
+      slug: content.slug,
+      content: content.content,
+      metaDescription: content.metaDescription,
+      ogImage: content.featuredImage
+    }))
 
     await trpc.admin.posts.updatePost.mutate({
       id: Number(route.params.id),
@@ -421,14 +471,7 @@ const updatePost = async (continueEditing = false) => {
         status: form.value.published ? 'PUBLISHED' : 'DRAFT',
         featuredImage: form.value.featuredImage || '',
         metaDescription: form.value.metaDescription || '',
-        translations: [{
-          locale: selectedLanguage.value,
-          title: form.value.title,
-          slug: form.value.slug,
-          content: form.value.content,
-          metaDescription: form.value.metaDescription,
-          ogImage: form.value.featuredImage
-        }],
+        translations,
         tags: form.value.tags
       }
     })
@@ -441,9 +484,33 @@ const updatePost = async (continueEditing = false) => {
       // Refresh the post data
       await fetchPost()
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to update post:', error)
-    toast.error('Failed to update post. Please try again.')
+    
+    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
+    const langName = currentLang?.nativeName || selectedLanguage.value
+    
+    let errorMessage = `[${langName}] `
+    
+    // Handle tRPC error
+    if (error.cause) {
+      errorMessage += error.cause
+    } else if (error.message) {
+      errorMessage += error.message
+    } else {
+      errorMessage += 'Failed to update post. Please try again.'
+    }
+    
+    toast.error(errorMessage, {
+      timeout: 8000,
+      position: 'top-center',
+      closeButton: true,
+      icon: true,
+      closeOnClick: false,
+      pauseOnHover: true,
+      draggable: true,
+      theme: 'colored'
+    })
   } finally {
     loading.value = false
     saveAndContinue.value = false
@@ -472,6 +539,19 @@ const editorOptions = {
     ]
   }
 }
+
+const onFlagImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.style.display = 'none';
+    // Add a fallback display like the language code or first letter
+    const parent = target.parentElement;
+    if (parent) {
+      parent.textContent = selectedLanguage.value?.toUpperCase().slice(0, 2) || '';
+      parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
+    }
+  }
+};
 </script>
 
 <style>
