@@ -270,6 +270,10 @@ export default defineNuxtConfig({
     '@nuxt/image',
   ],
 
+  plugins: [
+    '~/plugins/trpc',
+  ],
+
   // @ts-expect-error - i18n module types
   i18n: './i18n.config.ts',
 

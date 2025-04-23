@@ -1,6 +1,19 @@
+import { defineNuxtConfig } from 'nuxt/config';
+
 export default defineNuxtConfig({
-  srcDir: 'src/',
+  srcDir: 'src',
   devtools: { enabled: true },
+
+  devServer: {
+    host: process.env.NUXT_HOST || 'localhost',
+    port: process.env.NUXT_PORT ? parseInt(process.env.NUXT_PORT) : 4300,
+  },
+
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.API_BASE || 'http://localhost:3000',
+    },
+  },
 
   modules: [
     '@nuxt/ui',
@@ -8,6 +21,11 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxtjs/color-mode',
     '@nuxtjs/tailwindcss',
+    '@nuxtjs/i18n',
+  ],
+
+  plugins: [
+    '~/plugins/trpc',
   ],
 
   imports: {
@@ -48,6 +66,11 @@ export default defineNuxtConfig({
           secure: false,
           ws: true,
         },
+        '/api/trpc': {
+          target: process.env.API_BASE || 'http://localhost:3000',
+          changeOrigin: true,
+          rewrite: (path) => path,
+        },
       },
     },
   },
@@ -83,11 +106,4 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2025-04-04',
-
-  runtimeConfig: {
-    jwtSecret: process.env.JWT_SECRET,
-    public: {
-      apiBase: process.env.API_BASE || 'http://localhost:3000'
-    }
-  }
 })
