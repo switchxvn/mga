@@ -10,9 +10,21 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
   ],
 
+  imports: {
+    dirs: ['composables/**']
+  },
+
   app: {
     middleware: {
       global: ['auth']
+    },
+    head: {
+      title: 'Admin Dashboard',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: 'Admin Dashboard for E-commerce Website' }
+      ]
     }
   },
 
@@ -62,17 +74,6 @@ export default defineNuxtConfig({
     },
     notifications: {
       position: 'top-right'
-    }
-  },
-
-  app: {
-    head: {
-      title: 'Admin Dashboard',
-      meta: [
-        { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Admin Dashboard for E-commerce Website' }
-      ]
     }
   },
 

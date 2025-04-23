@@ -85,4 +85,52 @@ export class PostAdminService {
     }
     return { success: true };
   }
+
+  async getPosts({ page, limit, search, status }) {
+    const query = this.postRepository.createQueryBuilder('post');
+
+    if (search) {
+      query.where('post.title ILIKE :search OR post.content ILIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    if (status) {
+      query.andWhere('post.status = :status', { status });
+    }
+
+    const [items, total] = await query
+      .orderBy('post.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getPost(id: number) {
+    return this.postRepository.findOne({
+      where: { id },
+    });
+  }
+
+  async createPost(data: Partial<Post>) {
+    const post = this.postRepository.create(data);
+    return this.postRepository.save(post);
+  }
+
+  async updatePost(id: number, data: Partial<Post>) {
+    await this.postRepository.update(id, data);
+    return this.getPost(id);
+  }
+
+  async deletePost(id: number) {
+    await this.postRepository.delete(id);
+  }
 } 
