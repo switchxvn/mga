@@ -1,8 +1,14 @@
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../../../../apps/backend/src/modules/trpc/trpc.router';
+import type { AppRouter } from '../types/trpc';
 import superjson from 'superjson';
+import { useRuntimeConfig } from '#imports';
 
 export default defineNuxtPlugin(() => {
+  const config = useRuntimeConfig();
+  const baseUrl = process.server 
+    ? config.public.apiBase 
+    : '';
+
   /**
    * createTRPCNuxtClient adds a `useQuery` composable
    * built on top of `useAsyncData`.
@@ -11,9 +17,9 @@ export default defineNuxtPlugin(() => {
     transformer: superjson,
     links: [
       httpBatchLink({
-        url: '/api/trpc',
+        url: `${baseUrl}/api/trpc`,
         headers() {
-          const token = localStorage.getItem('accessToken');
+          const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
       }),
@@ -22,7 +28,7 @@ export default defineNuxtPlugin(() => {
 
   return {
     provide: {
-      client,
+      trpc: client,
     },
   };
 });

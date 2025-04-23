@@ -1,19 +1,9 @@
 import { ref, onMounted, computed } from 'vue';
 import { useTrpc } from './useTrpc';
 import { useColorMode } from '@vueuse/core';
+import type { RouterOutput } from '../types/trpc';
 
-interface LogoData {
-  id: number;
-  darkModeUrl: string;
-  lightModeUrl: string;
-  altText: string;
-  type: string;
-  isActive: boolean;
-  width: number;
-  height: number;
-  createdAt: string;
-  updatedAt: string;
-}
+type LogoData = NonNullable<RouterOutput['logo']['getActiveLogo']>;
 
 export const useLogo = () => {
   const trpc = useTrpc();
@@ -22,13 +12,12 @@ export const useLogo = () => {
   const error = ref<string | null>(null);
   const colorMode = useColorMode();
 
-  const fetchLogo = async (type: string = 'main') => {
+  const fetchLogo = async (type = 'main') => {
     try {
       isLoading.value = true;
       error.value = null;
-      // tRPC tự động unwrap kết quả cho chúng ta
       logo.value = await trpc.logo.getActiveLogo.query({ type });
-      console.log('Logo fetched:', logo.value); // Debug log
+      console.log('Logo fetched:', logo.value);
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Error fetching logo';
       console.error('Error fetching logo:', err);
@@ -37,15 +26,8 @@ export const useLogo = () => {
     }
   };
 
-  // Computed để lấy URL logo phù hợp với mode hiện tại
   const currentLogoUrl = computed(() => {
-    console.log('Logo:', logo.value); // Debug log
     if (!logo.value) return null;
-    console.log('Current mode:', colorMode.value); // Debug log
-    console.log('Logo URLs:', { 
-      dark: logo.value.darkModeUrl, 
-      light: logo.value.lightModeUrl 
-    }); // Debug log
     return colorMode.value === 'dark' ? logo.value.darkModeUrl : logo.value.lightModeUrl;
   });
 
