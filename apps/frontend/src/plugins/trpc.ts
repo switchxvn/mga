@@ -1,7 +1,6 @@
+import { useRuntimeConfig } from '#imports';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../types/trpc';
-import superjson from 'superjson';
-import { useRuntimeConfig } from '#imports';
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig();
@@ -14,7 +13,6 @@ export default defineNuxtPlugin(() => {
    * built on top of `useAsyncData`.
    */
   const client = createTRPCProxyClient<AppRouter>({
-    transformer: superjson,
     links: [
       httpBatchLink({
         url: `${baseUrl}/api/trpc`,

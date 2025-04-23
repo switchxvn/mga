@@ -268,6 +268,7 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     '@nuxt/ui',
     '@nuxt/image',
+    '@pinia/nuxt',
   ],
 
   plugins: [

@@ -87,12 +87,12 @@
     "superjson": "^2.2.1",
     "swagger-ui-express": "^5.0.1",
     "swiper": "^11.2.5",
+    "trpc-nuxt": "^0.10.12",
     "typeorm": "^0.3.20",
     "v-calendar": "^3.1.2",
     "vue-facebook-page": "^1.0.1",
     "vue-toast-notification": "^3",
-    "zod": "^3.22.4",
-    "trpc-nuxt": "^0.10.12"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
