@@ -10,15 +10,16 @@ const userStore = useUserStore()
 const { user, isLoading } = storeToRefs(userStore)
 const route = useRoute()
 
-// Fetch user data when component mounts
-onMounted(async () => {
-  try {
-    await userStore.fetchUser()
-    console.log('User data in component:', user.value)
-  } catch (error) {
-    console.error('Failed to fetch user:', error)
+// Try to get injected page title from child components
+const injectedTitle = inject('pageTitle', ref(''))
+
+// Improved active route checking
+const isActiveRoute = (path: string) => {
+  if (path === '/') {
+    return route.path === '/'
   }
-})
+  return route.path.startsWith(path)
+}
 
 const navigation = [
   { label: 'Dashboard', icon: 'i-heroicons-home', to: '/' },
@@ -28,6 +29,43 @@ const navigation = [
   { label: 'Customers', icon: 'i-heroicons-users', to: '/customers' },
   { label: 'Settings', icon: 'i-heroicons-cog-6-tooth', to: '/settings' }
 ]
+
+// Get current section from route
+const getCurrentSection = () => {
+  const path = route.path
+  // If we have an injected title from a child component, use it
+  if (injectedTitle.value) return injectedTitle.value
+  
+  if (path.includes('/posts/create')) return 'Create Post'
+  if (path.includes('/products/edit/')) return 'Edit Product'
+  if (path.includes('/products/create')) return 'Create Product'
+  
+  const currentRoute = navigation.find(item => isActiveRoute(item.to))
+  return currentRoute?.label || 'Admin Dashboard'
+}
+
+// Dynamic page title based on current route with SSR support
+const pageTitle = computed(() => {
+  const section = getCurrentSection()
+  // If section already includes "- Admin Dashboard", return as is
+  if (section.includes('- Admin Dashboard')) return section
+  return section !== 'Dashboard' ? `${section} - Admin Dashboard` : 'Admin Dashboard'
+})
+
+// Set page title with SSR support
+useHead(() => ({
+  title: pageTitle.value
+}))
+
+// Fetch user data when component mounts
+onMounted(async () => {
+  try {
+    await userStore.fetchUser()
+    console.log('User data in component:', user.value)
+  } catch (error) {
+    console.error('Failed to fetch user:', error)
+  }
+})
 
 const handleLogout = async () => {
   userStore.clearUser()
@@ -66,7 +104,7 @@ const userMenuItems: DropdownItem[][] = [[
           :to="item.to"
           :class="[
             'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-            route.path === item.to
+            isActiveRoute(item.to)
               ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400'
           ]"
@@ -75,7 +113,7 @@ const userMenuItems: DropdownItem[][] = [[
             :name="item.icon"
             :class="[
               'w-6 h-6',
-              route.path === item.to
+              isActiveRoute(item.to)
                 ? 'text-primary-600 dark:text-primary-400'
                 : 'text-gray-500 dark:text-gray-400'
             ]"

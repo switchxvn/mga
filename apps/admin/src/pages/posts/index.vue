@@ -9,17 +9,23 @@ import {
   PencilIcon,
   Trash2Icon,
   ImageIcon,
-  ZoomInIcon
+  ZoomInIcon,
+  EyeIcon,
+  EyeOffIcon,
+  ArchiveIcon,
+  MoreHorizontalIcon,
+  CopyIcon,
+  TrashIcon,
+  XCircleIcon as LucideXCircleIcon,
+  ListChecksIcon
 } from 'lucide-vue-next';
 import {
-  ChevronUpDownIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
   DocumentTextIcon,
   InformationCircleIcon,
   MagnifyingGlassIcon as SearchIcon,    
-  XCircleIcon,
-  XMarkIcon
+  XMarkIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/vue/24/outline'
 import { TransitionRoot } from '@headlessui/vue'
 import { Swiper, SwiperSlide } from 'swiper/vue';
@@ -29,6 +35,10 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/zoom';
 import PaginationComponent from '../../components/ui/Pagination.vue';
+import PageHeader from '../../components/ui/PageHeader.vue';
+import SearchFilter from '../../components/posts/SearchFilter.vue';
+import Swal from 'sweetalert2';
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue';
 
 definePageMeta({
   middleware: ["auth"],
@@ -161,6 +171,141 @@ async function handleDelete(id: number) {
   }
 }
 
+// Add bulk actions handler
+async function handleBulkAction(action: string) {
+  const selectedCount = selectedPosts.value.length;
+  if (!selectedCount) return;
+
+  let confirmConfig: any = {
+    icon: 'question' as const,
+    showCancelButton: true,
+    confirmButtonText: 'Yes, proceed',
+    cancelButtonText: 'Cancel',
+    title: '',
+    text: '',
+    confirmButtonColor: ''
+  };
+
+  switch (action) {
+    case 'publish':
+      confirmConfig = {
+        ...confirmConfig,
+        title: 'Publish Selected Posts?',
+        text: `Are you sure you want to publish ${selectedCount} selected posts?`,
+        confirmButtonColor: '#10B981',
+        confirmButtonText: 'Yes, publish them'
+      };
+      break;
+    case 'unpublish':
+      confirmConfig = {
+        ...confirmConfig,
+        title: 'Unpublish Selected Posts?',
+        text: `Are you sure you want to unpublish ${selectedCount} selected posts?`,
+        confirmButtonColor: '#6B7280',
+        confirmButtonText: 'Yes, unpublish them'
+      };
+      break;
+    case 'archive':
+      confirmConfig = {
+        ...confirmConfig,
+        title: 'Archive Selected Posts?',
+        text: `Are you sure you want to archive ${selectedCount} selected posts?`,
+        confirmButtonColor: '#6366F1',
+        confirmButtonText: 'Yes, archive them'
+      };
+      break;
+    case 'unarchive':
+      confirmConfig = {
+        ...confirmConfig,
+        title: 'Unarchive Selected Posts?',
+        text: `Are you sure you want to unarchive ${selectedCount} selected posts?`,
+        confirmButtonColor: '#8B5CF6',
+        confirmButtonText: 'Yes, unarchive them'
+      };
+      break;
+    case 'duplicate':
+      confirmConfig = {
+        ...confirmConfig,
+        title: 'Duplicate Selected Posts?',
+        text: `Are you sure you want to duplicate ${selectedCount} selected posts?`,
+        confirmButtonColor: '#2563EB',
+        confirmButtonText: 'Yes, duplicate them'
+      };
+      break;
+    case 'delete':
+      confirmConfig = {
+        ...confirmConfig,
+        title: 'Delete Selected Posts?',
+        text: `Are you sure you want to permanently delete ${selectedCount} selected posts? This action cannot be undone.`,
+        confirmButtonColor: '#DC2626',
+        confirmButtonText: 'Yes, delete them',
+        icon: 'warning' as const
+      };
+      break;
+  }
+
+  const result = await Swal.fire(confirmConfig);
+  if (!result.isConfirmed) return;
+
+  try {
+    isLoading.value = true;
+
+    switch (action) {
+      case 'publish':
+      case 'unpublish':
+        await Promise.all(
+          selectedPosts.value.map(postId => {
+            const post = posts.value.items.find(p => p.id === postId);
+            if (!post) return;
+
+            return trpc.admin.posts.updatePost.mutate({
+              id: postId,
+              data: {
+                title: post.title,
+                content: post.content || '',
+                status: action === 'publish' ? 'PUBLISHED' : 'DRAFT',
+                featuredImage: post.thumbnail,
+                metaDescription: post.shortDescription
+              }
+            });
+          })
+        );
+        break;
+      case 'delete':
+        await Promise.all(
+          selectedPosts.value.map(postId => 
+            trpc.admin.posts.deletePost.mutate(postId)
+          )
+        );
+        break;
+      // Add more cases for other actions when backend support is added
+    }
+
+    // Refresh posts list
+    await fetchPosts();
+    selectedPosts.value = [];
+
+    Swal.fire({
+      title: 'Success!',
+      text: `Successfully performed ${action} on ${selectedCount} posts`,
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  } catch (err: any) {
+    error.value = err.message || `Failed to ${action} posts`;
+    console.error(`Error performing ${action} on posts:`, err);
+    
+    Swal.fire({
+      title: 'Error!',
+      text: error.value,
+      icon: 'error'
+    });
+  } finally {
+    isLoading.value = false;
+  }
+}
+
 // Debounced search
 let searchTimeout: NodeJS.Timeout;
 function handleSearch() {
@@ -249,87 +394,129 @@ const closeZoomModal = () => {
 
 <template>
   <div class="space-y-6">
-    <!-- Enhanced Header -->
-    <div class="bg-white dark:bg-neutral-800 shadow-sm rounded-lg p-6">
-      <div class="md:flex md:items-center md:justify-between">
-        <div class="min-w-0 flex-1">
-          <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-2">
-            <DocumentTextIcon class="h-8 w-8 text-indigo-600" />
-            Posts Management
-          </h2>
-          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-            <InformationCircleIcon class="h-5 w-5" />
-            Manage and organize your blog posts efficiently
-          </p>
-        </div>
-        <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:mt-0">
-          <button v-if="selectedPosts.length" 
-            @click="handleBulkDelete"
-            class="btn btn-error btn-sm flex items-center gap-2">
-            <Trash2Icon class="h-4 w-4" />
-            Delete Selected ({{ selectedPosts.length }})
-          </button>
+    <!-- Header -->
+    <PageHeader
+      title="Posts Management"
+      description="Manage and organize your blog posts efficiently"
+    >
+      <template #actions>
+        <div class="flex items-center gap-2">
+          <Menu as="div" class="relative" v-if="selectedPosts.length">
+            <MenuButton class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
+              <ListChecksIcon class="h-4 w-4" />
+              Bulk Actions ({{ selectedPosts.length }})
+              <ChevronDownIcon class="h-4 w-4" />
+            </MenuButton>
+
+            <MenuItems class="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+              <div class="p-1">
+                <MenuItem v-slot="{ active }">
+                  <button
+                    @click="handleBulkAction('publish')"
+                    :class="[
+                      active ? 'bg-emerald-50 text-emerald-700' : 'text-gray-900',
+                      'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
+                    ]"
+                  >
+                    <EyeIcon class="h-4 w-4" :class="active ? 'text-emerald-700' : 'text-gray-500'" />
+                    Publish Selected
+                  </button>
+                </MenuItem>
+                <MenuItem v-slot="{ active }">
+                  <button
+                    @click="handleBulkAction('unpublish')"
+                    :class="[
+                      active ? 'bg-slate-50 text-slate-700' : 'text-gray-900',
+                      'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
+                    ]"
+                  >
+                    <EyeOffIcon class="h-4 w-4" :class="active ? 'text-slate-700' : 'text-gray-500'" />
+                    Unpublish Selected
+                  </button>
+                </MenuItem>
+              </div>
+              <div class="p-1">
+                <MenuItem v-slot="{ active }">
+                  <button
+                    @click="handleBulkAction('archive')"
+                    :class="[
+                      active ? 'bg-indigo-50 text-indigo-700' : 'text-gray-900',
+                      'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
+                    ]"
+                  >
+                    <ArchiveIcon class="h-4 w-4" :class="active ? 'text-indigo-700' : 'text-gray-500'" />
+                    Archive Selected
+                  </button>
+                </MenuItem>
+                <MenuItem v-slot="{ active }">
+                  <button
+                    @click="handleBulkAction('unarchive')"
+                    :class="[
+                      active ? 'bg-purple-50 text-purple-700' : 'text-gray-900',
+                      'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
+                    ]"
+                  >
+                    <ArchiveIcon class="h-4 w-4" :class="active ? 'text-purple-700' : 'text-gray-500'" />
+                    Unarchive Selected
+                  </button>
+                </MenuItem>
+              </div>
+              <div class="p-1">
+                <MenuItem v-slot="{ active }">
+                  <button
+                    @click="handleBulkAction('duplicate')"
+                    :class="[
+                      active ? 'bg-blue-50 text-blue-700' : 'text-gray-900',
+                      'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
+                    ]"
+                  >
+                    <CopyIcon class="h-4 w-4" :class="active ? 'text-blue-700' : 'text-gray-500'" />
+                    Duplicate Selected
+                  </button>
+                </MenuItem>
+              </div>
+              <div class="p-1">
+                <MenuItem v-slot="{ active }">
+                  <button
+                    @click="handleBulkAction('delete')"
+                    :class="[
+                      active ? 'bg-red-50 text-red-700' : 'text-gray-900',
+                      'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
+                    ]"
+                  >
+                    <TrashIcon class="h-4 w-4" :class="active ? 'text-red-700' : 'text-gray-500'" />
+                    Delete Selected
+                  </button>
+                </MenuItem>
+              </div>
+            </MenuItems>
+          </Menu>
+
           <NuxtLink
             to="/posts/create"
-            class="btn btn-primary btn-sm flex items-center gap-2"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
           >
             <PlusCircleIcon class="h-4 w-4" />
             Create Post
           </NuxtLink>
         </div>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
-    <!-- Enhanced Search and Filter -->
-    <div class="bg-white dark:bg-neutral-800 shadow-sm rounded-lg p-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Search Input with rounded corners -->
-        <div class="relative rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <SearchIcon class="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Search posts..."
-            class="block w-full pl-10 pr-3 py-2 border-0 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500 rounded-lg bg-transparent"
-            @input="handleSearch"
-          />
-        </div>
-
-        <!-- Status Filter -->
-        <div class="rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
-          <select 
-            v-model="publishedFilter" 
-            class="block w-full px-3 py-2 border-0 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500 rounded-lg bg-transparent"
-          >
-            <option :value="undefined">All Posts</option>
-            <option :value="true">Published</option>
-            <option :value="false">Draft</option>
-          </select>
-        </div>
-
-        <!-- Items per page Select with rounded corners -->
-        <div class="rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
-          <select 
-            v-model="pageSize" 
-            class="block w-full px-3 py-2 border-0 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500 rounded-lg bg-transparent"
-            @change="page = 1; fetchPosts()"
-          >
-            <option :value="10">10 per page</option>
-            <option :value="25">25 per page</option>
-            <option :value="50">50 per page</option>
-          </select>
-        </div>
-      </div>
-    </div>
+    <!-- Search and Filter -->
+    <SearchFilter
+      v-model:search="search"
+      v-model:published-filter="publishedFilter"
+      v-model:page-size="pageSize"
+      search-placeholder="Search posts..."
+    />
 
     <!-- Enhanced Error Alert -->
     <TransitionRoot as="template" :show="!!error">
       <div class="rounded-md bg-red-50 p-4 mb-6">
         <div class="flex">
           <div class="flex-shrink-0">
-            <XCircleIcon class="h-5 w-5 text-red-400" />
+            <LucideXCircleIcon class="h-5 w-5 text-red-400" />
           </div>
           <div class="ml-3">
             <h3 class="text-sm font-medium text-red-800">Error</h3>
@@ -389,7 +576,7 @@ const closeZoomModal = () => {
               >
                 <div class="flex items-center gap-2">
                   {{ column }}
-                  <ChevronUpDownIcon v-if="sortBy !== column.toLowerCase()" class="h-4 w-4" />
+                  <ChevronDownIcon v-if="sortBy !== column.toLowerCase()" class="h-4 w-4" />
                   <ChevronUpIcon v-else-if="sortOrder === 'asc'" class="h-4 w-4" />
                   <ChevronDownIcon v-else class="h-4 w-4" />
                 </div>
@@ -435,18 +622,19 @@ const closeZoomModal = () => {
                 <div class="flex items-center">
                   <div class="text-sm font-medium text-gray-900 dark:text-white">
                     {{ post.title }}
-                    <p v-if="post.shortDescription" class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                    <p v-if="post.shortDescription" class="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-[200px] truncate">
                       {{ post.shortDescription }}
                     </p>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span
+                <button
+                  @click="handleBulkAction(post.published ? 'unpublish' : 'publish')"
                   :class="{
-                    'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full items-center gap-1': true,
-                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': post.published,
-                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200': !post.published
+                    'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full items-center gap-1 cursor-pointer transition-colors duration-200': true,
+                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800': post.published,
+                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600': !post.published
                   }"
                 >
                   <div class="w-2 h-2 rounded-full"
@@ -456,7 +644,7 @@ const closeZoomModal = () => {
                     }"
                   ></div>
                   {{ post.published ? 'Published' : 'Draft' }}
-                </span>
+                </button>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                 {{ formatDate(post.createdAt) }}

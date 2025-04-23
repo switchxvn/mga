@@ -11,7 +11,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE || 'http://localhost:3000',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000'
     },
   },
 
@@ -26,6 +26,7 @@ export default defineNuxtConfig({
 
   plugins: [
     '~/plugins/trpc',
+    '~/plugins/toast',
   ],
 
   imports: {
@@ -60,17 +61,13 @@ export default defineNuxtConfig({
     },
     server: {
       proxy: {
-        '/api': {
-          target: process.env.API_BASE || 'http://localhost:3000',
+        '/api/trpc': {
+          target: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000',
           changeOrigin: true,
           secure: false,
           ws: true,
-        },
-        '/api/trpc': {
-          target: process.env.API_BASE || 'http://localhost:3000',
-          changeOrigin: true,
-          rewrite: (path) => path,
-        },
+          rewrite: (path) => path
+        }
       },
     },
   },

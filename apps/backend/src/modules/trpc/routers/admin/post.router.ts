@@ -94,11 +94,18 @@ export const postAdminRouter = router({
       id: z.number(),
       data: z.object({
         title: z.string(),
-        slug: z.string(),
         content: z.string(),
         status: z.enum(['DRAFT', 'PUBLISHED']),
         featuredImage: z.string().optional(),
         metaDescription: z.string().optional(),
+        translations: z.array(z.object({
+          locale: z.string(),
+          title: z.string(),
+          slug: z.string(),
+          content: z.string(),
+          metaDescription: z.string().optional(),
+          ogImage: z.string().optional()
+        })).optional(),
         tags: z.array(z.string()).optional()
       })
     }))

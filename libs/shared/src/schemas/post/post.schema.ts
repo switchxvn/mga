@@ -22,12 +22,29 @@ const seoFieldsSchema = z.object({
   canonicalUrl: z.string().optional(),
 });
 
+// Translation schema
+const translationSchema = z.object({
+  locale: z.string(),
+  title: z.string(),
+  content: z.string(),
+  slug: z.string(),
+  metaDescription: z.string().optional(),
+  ogImage: z.string().optional()
+});
+
 // Create post schema
 export const createPostSchema = basePostSchema.merge(seoFieldsSchema);
 
 // Update post schema
-export const updatePostSchema = basePostSchema.merge(seoFieldsSchema).partial().extend({
+export const updatePostSchema = z.object({
   id: z.number(),
+  title: z.string(),
+  content: z.string(),
+  status: z.enum(['DRAFT', 'PUBLISHED']),
+  featuredImage: z.string().optional(),
+  metaDescription: z.string().optional(),
+  translations: z.array(translationSchema).optional(),
+  tags: z.array(z.string()).optional()
 });
 
 // Get post by ID schema

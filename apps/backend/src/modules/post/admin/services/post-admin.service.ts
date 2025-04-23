@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Post } from '../../entities/post.entity';
 import { PostTranslation } from '../../entities/post-translation.entity';
 import { CreatePostInput, UpdatePostInput } from '@ew/shared';
+import { PostTag } from '../../entities/post-tag.entity';
+import { Tag } from '../../../settings/entities/tag.entity';
 
 @Injectable()
 export class PostAdminService {
@@ -13,7 +15,11 @@ export class PostAdminService {
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
     @InjectRepository(PostTranslation)
-    private readonly postTranslationRepository: Repository<PostTranslation>
+    private readonly postTranslationRepository: Repository<PostTranslation>,
+    @InjectRepository(PostTag)
+    private readonly postTagRepository: Repository<PostTag>,
+    @InjectRepository(Tag)
+    private readonly tagRepository: Repository<Tag>
   ) {}
 
   async create(createPostDto: CreatePostInput, userId: string): Promise<Post> {
@@ -117,6 +123,7 @@ export class PostAdminService {
   async getPost(id: number) {
     return this.postRepository.findOne({
       where: { id },
+      relations: ['translations', 'postTags', 'postTags.tag', 'author', 'author.profile']
     });
   }
 
@@ -125,9 +132,133 @@ export class PostAdminService {
     return this.postRepository.save(post);
   }
 
-  async updatePost(id: number, data: Partial<Post>) {
-    await this.postRepository.update(id, data);
-    return this.getPost(id);
+  async updatePost(id: number, data: UpdatePostInput): Promise<Post> {
+    try {
+      this.logger.debug('Received update data:', JSON.stringify(data, null, 2));
+
+      // Find existing post with translations
+      const existingPost = await this.postRepository.findOne({
+        where: { id },
+        relations: ['translations', 'postTags']
+      });
+
+      if (!existingPost) {
+        throw new NotFoundException(`Post with ID ${id} not found`);
+      }
+
+      // Update basic post information
+      const postToUpdate = {
+        title: data.title,
+        content: data.content,
+        published: data.status === 'PUBLISHED',
+        thumbnail: data.featuredImage || existingPost.thumbnail,
+      };
+
+      // Update the post first
+      await this.postRepository.update(id, postToUpdate);
+
+      // Handle translations
+      if (data.translations && data.translations.length > 0) {
+        for (const translation of data.translations) {
+          this.logger.debug('Processing translation:', {
+            locale: translation.locale,
+            receivedSlug: translation.slug,
+            slugType: typeof translation.slug
+          });
+
+          // Find existing translation for this locale
+          const existingTranslation = existingPost.translations?.find(
+            t => t.locale === translation.locale
+          );
+
+          if (existingTranslation) {
+            this.logger.debug('Found existing translation:', {
+              id: existingTranslation.id,
+              currentSlug: existingTranslation.slug
+            });
+
+            // Update existing translation
+            const slugToUse = translation.slug ?? existingTranslation.slug;
+            this.logger.debug('Will use slug:', slugToUse);
+
+            await this.postTranslationRepository.update(existingTranslation.id, {
+              title: translation.title,
+              content: translation.content,
+              slug: slugToUse,
+              metaDescription: translation.metaDescription,
+              ogImage: translation.ogImage
+            });
+          } else {
+            this.logger.debug('Creating new translation');
+            
+            // Create new translation
+            const slugToUse = translation.slug ?? this.generateSlug(translation.title);
+            this.logger.debug('Will use slug for new translation:', slugToUse);
+
+            const newTranslation = this.postTranslationRepository.create({
+              ...translation,
+              slug: slugToUse,
+              postId: id
+            });
+            await this.postTranslationRepository.save(newTranslation);
+          }
+        }
+      }
+
+      // Handle tags if provided
+      if (data.tags) {
+        // Remove existing tags
+        if (existingPost.postTags) {
+          await this.postTagRepository.remove(existingPost.postTags);
+        }
+
+        // Add new tags
+        for (const tagName of data.tags) {
+          // Find or create tag
+          let tag = await this.tagRepository.findOne({ where: { name: tagName } });
+          if (!tag) {
+            tag = await this.tagRepository.save(this.tagRepository.create({ 
+              name: tagName,
+              slug: tagName.toLowerCase().replace(/\s+/g, '-')
+            }));
+          }
+
+          // Create post-tag relationship
+          const postTag = this.postTagRepository.create({
+            postId: id,
+            tagId: tag.id
+          });
+          await this.postTagRepository.save(postTag);
+        }
+      }
+
+      // Return updated post with all relations
+      return this.postRepository.findOne({
+        where: { id },
+        relations: ['translations', 'postTags', 'postTags.tag']
+      });
+    } catch (error) {
+      this.logger.error('Error updating post:', error);
+      throw error;
+    }
+  }
+
+  // Helper method to generate slug
+  private generateSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, 'a')
+      .replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, 'e')
+      .replace(/ì|í|ị|ỉ|ĩ/g, 'i')
+      .replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, 'o')
+      .replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, 'u')
+      .replace(/ỳ|ý|ỵ|ỷ|ỹ/g, 'y')
+      .replace(/đ/g, 'd')
+      .replace(/\s+/g, '-')           // Replace spaces with -
+      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+      .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+      .replace(/^-+/, '')             // Trim - from start of text
+      .replace(/-+$/, '');            // Trim - from end of text
   }
 
   async deletePost(id: number) {

@@ -125,4 +125,17 @@ export class LanguageAdminService {
     
     return results;
   }
+
+  async getLanguages() {
+    return this.languageRepository.find({
+      where: { isActive: true },
+      order: { isDefault: 'DESC', name: 'ASC' }
+    });
+  }
+
+  async getDefaultLanguage() {
+    return this.languageRepository.findOne({
+      where: { isDefault: true }
+    });
+  }
 } 
