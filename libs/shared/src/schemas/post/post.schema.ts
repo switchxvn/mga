@@ -42,6 +42,7 @@ export const updatePostSchema = z.object({
   content: z.string(),
   shortDescription: z.string().nullable().optional(),
   status: z.enum(['DRAFT', 'PUBLISHED']),
+  thumbnail: z.string().nullable().optional(),
   featuredImage: z.string().nullable().optional(),
   metaDescription: z.string().nullable().optional(),
   translations: z.array(translationSchema.extend({

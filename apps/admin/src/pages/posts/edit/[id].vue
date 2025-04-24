@@ -498,6 +498,7 @@ const updatePost = async (continueEditing = false) => {
         content: form.value.content,
         shortDescription: form.value.shortDescription,
         status: form.value.published ? 'PUBLISHED' : 'DRAFT',
+        thumbnail: form.value.featuredImage || '',
         featuredImage: form.value.featuredImage || '',
         metaDescription: form.value.metaDescription || '',
         translations,

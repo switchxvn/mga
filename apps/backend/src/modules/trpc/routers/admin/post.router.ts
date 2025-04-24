@@ -164,4 +164,73 @@ export const postAdminRouter = router({
         });
       }
     }),
+
+  createPost: adminProcedure
+    .use(requirePermission(Permissions.CREATE_CONTENT))
+    .input(z.object({
+      title: z.string().min(1, 'Tiêu đề không được để trống'),
+      content: z.string().min(1, 'Nội dung không được để trống'),
+      status: z.enum(['DRAFT', 'PUBLISHED']),
+      thumbnail: z.string().nullable().optional(),
+      featuredImage: z.string().nullable().optional(),
+      metaDescription: z.string().nullable().optional(),
+      shortDescription: z.string().nullable().optional(),
+      translations: z.array(z.object({
+        locale: z.string().min(2, 'Mã ngôn ngữ không hợp lệ'),
+        title: z.string().min(1, 'Tiêu đề không được để trống'),
+        slug: z.string().min(1, 'Đường dẫn không được để trống'),
+        content: z.string().min(1, 'Nội dung không được để trống'),
+        shortDescription: z.string().nullable().optional(),
+        metaDescription: z.string().nullable().optional(),
+        ogImage: z.string().nullable().optional()
+      })).min(1, 'Cần ít nhất một bản dịch'),
+      tags: z.array(z.string()).optional(),
+      categoryIds: z.array(z.number()).optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const newPost = await ctx.services.postAdminService.createPost(input);
+        return newPost;
+      } catch (error) {
+        ctx.logger.error('Failed to create post:', error);
+
+        // Handle specific error cases
+        if (error instanceof BadRequestException) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error.message || 'Dữ liệu không hợp lệ'
+          });
+        }
+
+        // Handle duplicate slug error
+        if (error.code === '23505' && error.detail?.includes('slug')) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'Đường dẫn này đã tồn tại, vui lòng chọn đường dẫn khác'
+          });
+        }
+
+        // Handle foreign key violation (e.g. invalid category)
+        if (error.code === '23503') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Danh mục không tồn tại hoặc không hợp lệ'
+          });
+        }
+
+        // Handle other database errors
+        if (error.code) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Có lỗi xảy ra khi lưu dữ liệu, vui lòng thử lại'
+          });
+        }
+
+        // Default error
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Có lỗi xảy ra, vui lòng thử lại sau'
+        });
+      }
+    }),
 }); 

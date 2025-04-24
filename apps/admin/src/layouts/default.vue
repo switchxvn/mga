@@ -9,21 +9,20 @@ const isDark = computed(() => colorMode.value === 'dark')
 const userStore = useUserStore()
 const { user, isLoading } = storeToRefs(userStore)
 const route = useRoute()
+const router = useRouter()
+const currentPath = ref(route.path)
 
 // Try to get injected page title from child components
 const injectedTitle = inject('pageTitle', ref(''))
 
-// Improved active route checking
-const isActiveRoute = (path: string) => {
-  if (path === '/') {
-    return route.path === '/'
-  }
-  // Ensure exact match for first-level routes
-  if (path.split('/').length === 2) {
-    return route.path === path || route.path.startsWith(`${path}/`)
-  }
-  return route.path.startsWith(path)
-}
+// Watch for route changes
+onMounted(() => {
+  currentPath.value = route.path
+  // Listen to route changes
+  router.afterEach((to) => {
+    currentPath.value = to.path
+  })
+})
 
 const navigation = [
   { label: 'Dashboard', icon: 'i-heroicons-home', to: '/' },
@@ -35,9 +34,16 @@ const navigation = [
   { label: 'Settings', icon: 'i-heroicons-cog-6-tooth', to: '/settings' }
 ]
 
+const isActive = (path: string) => {
+  if (path === '/') {
+    return currentPath.value === '/'
+  }
+  return currentPath.value.startsWith(path)
+}
+
 // Get current section from route
 const getCurrentSection = () => {
-  const path = route.path
+  const path = currentPath.value
   // If we have an injected title from a child component, use it
   if (injectedTitle.value) return injectedTitle.value
   
@@ -45,7 +51,7 @@ const getCurrentSection = () => {
   if (path.includes('/products/edit/')) return 'Edit Product'
   if (path.includes('/products/create')) return 'Create Product'
   
-  const currentRoute = navigation.find(item => isActiveRoute(item.to))
+  const currentRoute = navigation.find(item => isActive(item.to))
   return currentRoute?.label || 'Admin Dashboard'
 }
 
@@ -107,10 +113,9 @@ const userMenuItems: DropdownItem[][] = [[
           v-for="item in navigation"
           :key="item.to"
           :to="item.to"
-          :exact="item.to === '/'"
           :class="[
             'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-            isActiveRoute(item.to)
+            isActive(item.to)
               ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400'
           ]"
@@ -119,7 +124,7 @@ const userMenuItems: DropdownItem[][] = [[
             :name="item.icon"
             :class="[
               'w-6 h-6',
-              isActiveRoute(item.to)
+              isActive(item.to)
                 ? 'text-primary-600 dark:text-primary-400'
                 : 'text-gray-500 dark:text-gray-400'
             ]"

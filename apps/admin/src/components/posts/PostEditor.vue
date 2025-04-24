@@ -1,127 +1,144 @@
 <template>
-  <div class="space-y-6">
-    <!-- Title & Slug Section -->
-    <section class="grid gap-6 p-6 bg-white shadow-sm rounded-lg border border-slate-200">
-      <div class="border-b border-slate-200 pb-6">
-        <h3 class="text-lg font-medium text-slate-900 flex items-center gap-2">
-          <TypeIcon class="w-5 h-5" />
-          Basic Information
-        </h3>
-      </div>
+  <div class="grid gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+    <div class="space-y-4">
+      <h2 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h2>
       
-      <div class="space-y-6">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-900 flex items-center gap-2">
-            <TypeIcon class="w-4 h-4" />
-            Title
-          </label>
-          <input
-            :value="title"
-            type="text"
-            placeholder="Enter a descriptive title"
-            class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            @input="$emit('update:title', ($event.target as HTMLInputElement).value)"
+      <div class="grid grid-cols-1 gap-4">
+        <!-- Title -->
+        <UFormGroup :label="$t('Title')" required :error="errors?.title">
+          <UInput
+            v-model="localTitle"
+            :placeholder="$t('Enter title')"
+            required
+            :error="!!errors?.title"
           />
-        </div>
+        </UFormGroup>
 
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-900 flex items-center gap-2">
-            <LinkIcon class="w-4 h-4" />
-            URL Slug
-          </label>
+        <!-- Slug -->
+        <UFormGroup :label="$t('URL Slug')" required :error="errors?.slug">
           <div class="flex gap-2">
-            <input
-              :value="slug"
-              type="text"
-              placeholder="url-friendly-slug"
-              class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              @input="$emit('update:slug', ($event.target as HTMLInputElement).value)"
+            <UInput
+              v-model="localSlug"
+              :placeholder="$t('Enter URL slug')"
+              required
+              :error="!!errors?.slug"
+              class="flex-1"
             />
-            <button 
+            <UButton
+              type="button"
+              variant="soft"
+              color="gray"
               @click="$emit('generate-slug')"
-              class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 w-10"
-              title="Generate SEO-friendly URL"
+              class="flex-shrink-0"
+              :title="$t('Generate slug from title')"
+              v-if="showGenerateSlug"
             >
               <WandIcon class="w-4 h-4" />
-            </button>
+            </UButton>
           </div>
-          <p class="text-sm text-slate-500 flex items-center gap-2">
-            <LinkIcon class="w-4 h-4" />
-            /posts/{{ slug }}
-          </p>
-        </div>
+          <div class="mt-1 text-sm text-slate-500">/posts/{{ localSlug }}</div>
+        </UFormGroup>
 
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-900 flex items-center gap-2">
-            <TypeIcon class="w-4 h-4" />
-            Short Description
-          </label>
-          <textarea
-            :value="shortDescription"
+        <!-- Short Description -->
+        <UFormGroup :label="$t('Short Description')">
+          <UTextarea
+            v-model="localShortDescription"
+            :placeholder="$t('Enter a short description')"
             rows="3"
-            placeholder="Enter a short description for this post"
-            class="flex w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            @input="$emit('update:shortDescription', $event.target.value)"
-          ></textarea>
-        </div>
-      </div>
-    </section>
-
-    <!-- Content Editor -->
-    <section class="bg-white shadow-sm rounded-lg border border-slate-200 overflow-hidden">
-      <div class="p-6 border-b border-slate-200">
-        <h3 class="text-lg font-medium text-slate-900 flex items-center gap-2">
-          <PencilIcon class="w-5 h-5" />
-          Content Editor
-        </h3>
-      </div>
-      <div class="p-6">
-        <ClientOnly>
-          <QuillEditor
-            :content="content"
-            :options="editorOptions"
-            contentType="html"
-            placeholder="Write your post content here..."
-            class="min-h-[500px] [&_.ql-editor]:min-h-[400px] [&_.ql-toolbar]:border-slate-200 [&_.ql-container]:border-slate-200"
-            @update:content="$emit('update:content', $event)"
           />
-          <template #fallback>
-            <div class="min-h-[500px] rounded-lg p-4 bg-slate-50">
-              <div class="animate-pulse space-y-4">
-                <div class="h-4 bg-slate-200 rounded w-3/4"></div>
-                <div class="space-y-2">
-                  <div class="h-4 bg-slate-200 rounded"></div>
-                  <div class="h-4 bg-slate-200 rounded w-5/6"></div>
-                </div>
-              </div>
-            </div>
-          </template>
-        </ClientOnly>
+        </UFormGroup>
+
+        <!-- Content -->
+        <UFormGroup :label="$t('Content')" required :error="errors?.content">
+          <div 
+            class="quill-editor"
+            :class="{ 'border border-red-500 rounded-lg': !!errors?.content }"
+          >
+            <QuillEditor
+              v-model:content="localContent"
+              :toolbar="editorOptions.modules.toolbar"
+              contentType="html"
+              theme="snow"
+            />
+          </div>
+        </UFormGroup>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+import { WandIcon } from 'lucide-vue-next'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
-import { TypeIcon, LinkIcon, WandIcon, PencilIcon } from 'lucide-vue-next'
 
-defineProps<{
+interface Props {
   title: string
   slug: string
   content: string
-  shortDescription: string
+  shortDescription?: string
   editorOptions: any
+  showGenerateSlug?: boolean
+  errors?: {
+    title?: string
+    slug?: string
+    content?: string
+  }
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  title: '',
+  slug: '',
+  content: '',
+  shortDescription: '',
+  showGenerateSlug: false
+})
+
+const emit = defineEmits<{
+  (e: 'update:title', value: string): void
+  (e: 'update:slug', value: string): void
+  (e: 'update:content', value: string): void
+  (e: 'update:shortDescription', value: string): void
+  (e: 'generate-slug'): void
 }>()
 
-defineEmits<{
-  'update:title': [value: string]
-  'update:slug': [value: string]
-  'update:content': [value: string]
-  'update:shortDescription': [value: string]
-  'generate-slug': []
-}>()
+const localTitle = ref(props.title)
+const localSlug = ref(props.slug)
+const localContent = ref(props.content)
+const localShortDescription = ref(props.shortDescription)
+
+watch(() => props.title, (newVal) => {
+  localTitle.value = newVal
+})
+
+watch(() => props.slug, (newVal) => {
+  localSlug.value = newVal
+})
+
+watch(() => props.content, (newVal) => {
+  localContent.value = newVal
+})
+
+watch(() => props.shortDescription, (newVal) => {
+  localShortDescription.value = newVal
+})
+
+watch(localTitle, (newVal) => {
+  emit('update:title', newVal)
+})
+
+watch(localSlug, (newVal) => {
+  emit('update:slug', newVal)
+})
+
+watch(localContent, (newVal) => {
+  emit('update:content', newVal)
+})
+
+watch(localShortDescription, (newVal) => {
+  emit('update:shortDescription', newVal)
+})
 </script>
 
 <style scoped>

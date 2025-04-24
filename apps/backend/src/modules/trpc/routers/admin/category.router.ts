@@ -41,6 +41,54 @@ const updateCategorySchema = z.object({
   }).strict()
 }).strict();
 
+// Helper function to transform category data
+const transformCategory = (category: any) => {
+  if (!category) return null;
+  
+  const transformed = {
+    id: category.id,
+    type: category.type,
+    active: category.active,
+    createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
+    translations: category.translations?.map((translation: any) => ({
+      id: translation.id,
+      locale: translation.locale,
+      name: translation.name,
+      slug: translation.slug,
+      description: translation.description,
+      createdAt: translation.createdAt,
+      updatedAt: translation.updatedAt
+    })) || [],
+    parent: category.parent ? {
+      id: category.parent.id,
+      type: category.parent.type,
+      active: category.parent.active,
+      translations: category.parent.translations?.map((translation: any) => ({
+        id: translation.id,
+        locale: translation.locale,
+        name: translation.name,
+        slug: translation.slug,
+        description: translation.description
+      })) || []
+    } : null,
+    children: category.children?.map((child: any) => ({
+      id: child.id,
+      type: child.type,
+      active: child.active,
+      translations: child.translations?.map((translation: any) => ({
+        id: translation.id,
+        locale: translation.locale,
+        name: translation.name,
+        slug: translation.slug,
+        description: translation.description
+      })) || []
+    })) || []
+  };
+  
+  return transformed;
+};
+
 export const categoryAdminRouter = router({
   getCategoryById: adminProcedure
     .use(requirePermission(Permissions.VIEW_CONTENT))
@@ -59,7 +107,7 @@ export const categoryAdminRouter = router({
         }
 
         ctx.logger.debug(`Successfully retrieved category ID: ${input}`);
-        return category;
+        return transformCategory(category);
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         
@@ -94,7 +142,7 @@ export const categoryAdminRouter = router({
           limit: input.limit,
           search: input.search,
           active: input.active,
-          type: input.type,
+          type: input.type as CategoryType,
           sortBy: input.sortBy,
           sortOrder: input.sortOrder
         });
@@ -107,7 +155,7 @@ export const categoryAdminRouter = router({
         });
 
         return {
-          categories: result.items,
+          categories: result.items.map(transformCategory),
           total: result.total,
           totalPages: Math.ceil(result.total / input.limit),
           currentPage: input.page,
@@ -151,7 +199,7 @@ export const categoryAdminRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         const category = await ctx.services.categoryAdminService.create(input as CreateCategoryData);
-        return category;
+        return transformCategory(category);
       } catch (error) {
         if (error instanceof BadRequestException) {
           throw new TRPCError({
@@ -183,7 +231,7 @@ export const categoryAdminRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         const updatedCategory = await ctx.services.categoryAdminService.updateCategory(input.id, input.data as UpdateCategoryData);
-        return updatedCategory;
+        return transformCategory(updatedCategory);
       } catch (error) {
         // Handle duplicate slug error
         if (error instanceof Error && error.message.includes('Slug')) {
