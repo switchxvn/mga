@@ -50,6 +50,20 @@
             /posts/{{ slug }}
           </p>
         </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <TypeIcon class="w-4 h-4" />
+            Short Description
+          </label>
+          <textarea
+            :value="shortDescription"
+            rows="3"
+            placeholder="Enter a short description for this post"
+            class="flex w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            @input="$emit('update:shortDescription', $event.target.value)"
+          ></textarea>
+        </div>
       </div>
     </section>
 
@@ -97,6 +111,7 @@ defineProps<{
   title: string
   slug: string
   content: string
+  shortDescription: string
   editorOptions: any
 }>()
 
@@ -104,6 +119,7 @@ defineEmits<{
   'update:title': [value: string]
   'update:slug': [value: string]
   'update:content': [value: string]
+  'update:shortDescription': [value: string]
   'generate-slug': []
 }>()
 </script>

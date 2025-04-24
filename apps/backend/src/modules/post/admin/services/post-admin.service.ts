@@ -6,6 +6,7 @@ import { PostTranslation } from '../../entities/post-translation.entity';
 import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 import { PostTag } from '../../entities/post-tag.entity';
 import { Tag } from '../../../settings/entities/tag.entity';
+import { Category } from '../../../category/entities/category.entity';
 
 @Injectable()
 export class PostAdminService {
@@ -19,7 +20,9 @@ export class PostAdminService {
     @InjectRepository(PostTag)
     private readonly postTagRepository: Repository<PostTag>,
     @InjectRepository(Tag)
-    private readonly tagRepository: Repository<Tag>
+    private readonly tagRepository: Repository<Tag>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>
   ) {}
 
   async create(createPostDto: CreatePostInput, userId: string): Promise<Post> {
@@ -120,10 +123,18 @@ export class PostAdminService {
     };
   }
 
-  async getPost(id: number) {
+  async getPost(id: number, options?: { relations?: Record<string, any> }) {
     return this.postRepository.findOne({
       where: { id },
-      relations: ['translations', 'postTags', 'postTags.tag', 'author', 'author.profile']
+      relations: options?.relations || {
+        translations: true,
+        postTags: {
+          tag: true
+        },
+        author: {
+          profile: true
+        }
+      }
     });
   }
 
@@ -160,7 +171,7 @@ export class PostAdminService {
       // Find existing post with translations
       const existingPost = await this.postRepository.findOne({
         where: { id },
-        relations: ['translations', 'postTags']
+        relations: ['translations', 'postTags', 'categories']
       });
 
       if (!existingPost) {
@@ -171,6 +182,7 @@ export class PostAdminService {
       const postToUpdate = {
         title: data.title,
         content: data.content,
+        shortDescription: data.shortDescription,
         published: data.status === 'PUBLISHED',
         thumbnail: data.featuredImage || existingPost.thumbnail,
       };
@@ -208,6 +220,7 @@ export class PostAdminService {
             await this.postTranslationRepository.update(existingTranslation.id, {
               title: translation.title,
               content: translation.content,
+              shortDescription: translation.shortDescription,
               slug: slugToUse,
               metaDescription: translation.metaDescription,
               ogImage: translation.ogImage
@@ -259,10 +272,21 @@ export class PostAdminService {
         }
       }
 
+      // Handle categories if provided
+      if (data.categoryIds) {
+        // Clear existing categories
+        existingPost.categories = [];
+        await this.postRepository.save(existingPost);
+
+        // Set new categories
+        existingPost.categories = await this.categoryRepository.findByIds(data.categoryIds);
+        await this.postRepository.save(existingPost);
+      }
+
       // Return updated post with all relations
       return this.postRepository.findOne({
         where: { id },
-        relations: ['translations', 'postTags', 'postTags.tag']
+        relations: ['translations', 'postTags', 'postTags.tag', 'categories', 'categories.translations']
       });
     } catch (error) {
       this.logger.error('Error updating post:', error);

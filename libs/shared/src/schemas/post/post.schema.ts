@@ -28,8 +28,8 @@ const translationSchema = z.object({
   title: z.string(),
   content: z.string(),
   slug: z.string(),
-  metaDescription: z.string().optional(),
-  ogImage: z.string().optional()
+  metaDescription: z.string().nullable().optional(),
+  ogImage: z.string().nullable().optional()
 });
 
 // Create post schema
@@ -40,11 +40,15 @@ export const updatePostSchema = z.object({
   id: z.number(),
   title: z.string(),
   content: z.string(),
+  shortDescription: z.string().nullable().optional(),
   status: z.enum(['DRAFT', 'PUBLISHED']),
-  featuredImage: z.string().optional(),
-  metaDescription: z.string().optional(),
-  translations: z.array(translationSchema).optional(),
-  tags: z.array(z.string()).optional()
+  featuredImage: z.string().nullable().optional(),
+  metaDescription: z.string().nullable().optional(),
+  translations: z.array(translationSchema.extend({
+    shortDescription: z.string().nullable().optional()
+  })).optional(),
+  tags: z.array(z.string()).optional(),
+  categoryIds: z.array(z.number()).optional()
 });
 
 // Get post by ID schema

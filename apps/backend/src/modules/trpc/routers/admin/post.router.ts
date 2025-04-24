@@ -4,6 +4,7 @@ import { adminProcedure, router } from '../../procedures';
 import { Permissions } from '../../../auth/constants/permissions.constant';
 import { requirePermission } from '../../middlewares/permission.middleware';
 import { BadRequestException } from '@nestjs/common';
+import { CategoryType } from '../../../../../../../libs/shared/src/types/category.type';
 
 export const postAdminRouter = router({
   getPostById: adminProcedure
@@ -12,7 +13,17 @@ export const postAdminRouter = router({
     .query(async ({ ctx, input }) => {
       try {
         ctx.logger.log(`Admin fetching post by ID: ${input}`);
-        const post = await ctx.services.postAdminService.getPost(input);
+        const post = await ctx.services.postAdminService.getPost(input, {
+          relations: {
+            translations: true,
+            postTags: {
+              tag: true
+            },
+            categories: {
+              translations: true
+            }
+          }
+        });
 
         if (!post) {
           ctx.logger.warn(`Post not found for ID: ${input}`);
@@ -89,6 +100,27 @@ export const postAdminRouter = router({
       }
     }),
 
+  getNewsCategories: adminProcedure
+    .use(requirePermission(Permissions.VIEW_CONTENT))
+    .query(async ({ ctx }) => {
+      try {
+        const categories = await ctx.services.categoryAdminService.getAllCategories({
+          where: {
+            type: CategoryType.NEWS,
+            active: true
+          }
+        });
+        return categories;
+      } catch (error) {
+        ctx.logger.error('Failed to fetch news categories:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch news categories',
+          cause: error,
+        });
+      }
+    }),
+
   updatePost: adminProcedure
     .use(requirePermission(Permissions.EDIT_CONTENT))
     .input(z.object({
@@ -97,17 +129,20 @@ export const postAdminRouter = router({
         title: z.string(),
         content: z.string(),
         status: z.enum(['DRAFT', 'PUBLISHED']),
-        featuredImage: z.string().optional(),
-        metaDescription: z.string().optional(),
+        featuredImage: z.string().nullable().optional(),
+        metaDescription: z.string().nullable().optional(),
+        shortDescription: z.string().nullable().optional(),
         translations: z.array(z.object({
           locale: z.string().min(2),
           title: z.string().min(1, 'Title is required'),
           slug: z.string().min(1, 'Slug is required'),
           content: z.string(),
-          metaDescription: z.string().optional(),
-          ogImage: z.string().optional()
+          shortDescription: z.string().nullable().optional(),
+          metaDescription: z.string().nullable().optional(),
+          ogImage: z.string().nullable().optional()
         })).min(1, 'At least one translation is required'),
-        tags: z.array(z.string()).optional()
+        tags: z.array(z.string()).optional(),
+        categoryIds: z.array(z.number()).optional()
       })
     }))
     .mutation(async ({ ctx, input }) => {

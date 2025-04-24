@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { Category } from '../../entities/category.entity';
+import { CategoryType } from '@ew/shared';
 
 @Injectable()
 export class CategoryAdminService {
@@ -9,6 +10,22 @@ export class CategoryAdminService {
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
   ) {}
+
+  async getAllCategories(options?: { where?: FindOptionsWhere<Category> }) {
+    const queryBuilder = this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.translations', 'translations');
+
+    if (options?.where) {
+      Object.entries(options.where).forEach(([key, value]) => {
+        queryBuilder.andWhere(`category.${key} = :${key}`, { [key]: value });
+      });
+    }
+
+    return queryBuilder
+      .orderBy('translations.name', 'ASC')
+      .getMany();
+  }
 
   async findAll(): Promise<Category[]> {
     return this.categoryRepository
