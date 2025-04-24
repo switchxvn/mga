@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useLocalization } from '~/composables/useLocalization';
 import { Swiper, SwiperSlide } from 'swiper/vue';
+import type { Swiper as SwiperType } from 'swiper';
 import { Autoplay, Pagination, Navigation, EffectFade } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -124,6 +125,28 @@ const heightClasses = computed(() => [
 // Swiper modules
 const modules = [Autoplay, Pagination, Navigation, EffectFade];
 
+const swiperInstance = ref<SwiperType>();
+
+const onSwiper = (swiper: SwiperType) => {
+  swiperInstance.value = swiper;
+};
+
+// Thêm ref để kiểm soát mounted state
+const isMounted = ref(true);
+
+// Cải thiện cleanup
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  if (swiperInstance.value) {
+    try {
+      swiperInstance.value.destroy(true, true);
+      swiperInstance.value = undefined;
+    } catch (error) {
+      console.error('Error destroying swiper:', error);
+    }
+  }
+});
+
 // Swiper options
 const swiperOptions = computed(() => ({
   modules,
@@ -154,11 +177,27 @@ const swiperOptions = computed(() => ({
     waitForTransition: false
   } : false
 }));
+
+// Add computed properties for animation
+const animationProps = computed(() => {
+  if (!props.settings?.animation?.enabled) return {};
+  
+  return {
+    'data-aos': props.settings.animation.type,
+    'data-aos-duration': props.settings.animation.duration,
+    'data-aos-delay': props.settings.animation.delay
+  };
+});
 </script>
 
 <template>
-  <section :class="[containerClasses, heightClasses]" class="relative overflow-hidden">
-    <Swiper v-bind="swiperOptions" class="h-full order-ticket-swiper">
+  <section :class="[containerClasses, heightClasses]" class="relative overflow-hidden" v-if="isMounted">
+    <Swiper 
+      v-if="settings?.slides && settings.slides.length > 0"
+      v-bind="swiperOptions" 
+      class="h-full order-ticket-swiper" 
+      @swiper="onSwiper"
+    >
       <SwiperSlide v-for="(slide, index) in settings?.slides" :key="index" class="h-full">
         <!-- Background Image -->
         <div class="absolute inset-0">
@@ -177,11 +216,10 @@ const swiperOptions = computed(() => ({
 
         <!-- Content -->
         <div class="container mx-auto px-4 h-full relative z-10 flex items-center">
-          <div class="max-w-4xl mx-auto text-center"
-               :data-aos="settings?.animation?.enabled ? settings.animation.type : ''"
-               :data-aos-duration="settings?.animation?.duration"
-               :data-aos-delay="settings?.animation?.delay">
-            
+          <div 
+            class="max-w-4xl mx-auto text-center"
+            v-bind="animationProps"
+          >
             <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6" v-if="slide.title">
               {{ slide.title }}
             </h1>

@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "~/*": ["./src/*"],
+      "@/*": ["./src/*"],
+      "#app": ["./.nuxt/types/app"]
+    }
+  },
+  "include": [
+    ".nuxt/nuxt.d.ts",
+    ".nuxt/types/app.d.ts",
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "../../apps/backend/**/*",
+    "../../libs/database/**/*"
+  ]
+} 

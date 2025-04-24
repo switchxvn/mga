@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@nuxtjs/i18n": "^9.0.0-rc.2",
+    "@tanstack/vue-query": "^5.66.9",
+    "@trpc/client": "^10.45.1",
+    "@trpc/server": "^10.45.1",
+    "photoswipe": "^5.4.4",
+    "trpc-nuxt": "^0.10.12",
+    "superjson": "^2.2.1",
+    "vue": "^3.3.4",
+    "vue-facebook-page": "^1.0.1",
+    "vue-masonry-css": "^1.0.3"
+  },
+  "devDependencies": {
+    "@headlessui/tailwindcss": "^0.2.2",
+    "sass": "^1.85.1"
+  }
+}

@@ -1,0 +1,148 @@
+// Common styles for detail pages (products, posts, etc.)
+.detail-page {
+  @apply container mx-auto px-4 py-6;
+
+  // Main container
+  &__container {
+    @apply max-w-7xl mx-auto;
+  }
+
+  // Loading state
+  &__loading {
+    @apply flex justify-center items-center min-h-[400px];
+    
+    &-spinner {
+      @apply w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin;
+    }
+  }
+
+  // Error state
+  &__error {
+    @apply flex flex-col items-center justify-center min-h-[400px] text-center;
+
+    &-message {
+      @apply text-red-600 dark:text-red-400 text-lg mb-4;
+    }
+
+    &-button {
+      @apply px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200;
+    }
+  }
+
+  // Not found state
+  &__not-found {
+    @apply flex flex-col items-center justify-center min-h-[400px] text-center;
+
+    &-emoji {
+      @apply text-6xl mb-4;
+    }
+
+    &-title {
+      @apply text-2xl font-bold text-gray-900 dark:text-white mb-2;
+    }
+
+    &-message {
+      @apply text-gray-600 dark:text-gray-400 mb-6;
+    }
+
+    &-button {
+      @apply px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200;
+    }
+  }
+
+  // Content layout
+  &__content {
+    @apply grid gap-8 mt-6;
+    grid-template-columns: minmax(0, 1fr) 300px;
+
+    @screen lg {
+      grid-template-columns: minmax(0, 1fr) 320px;
+    }
+
+    @screen md {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Main content area
+  &__main {
+    @apply space-y-8;
+  }
+
+  // Sidebar
+  &__sidebar {
+    @apply space-y-6;
+
+    @screen md {
+      @apply mt-8;
+    }
+  }
+
+  // Article styles
+  &__article {
+    @apply space-y-6;
+  }
+
+  // Featured image
+  &__featured-image {
+    @apply mb-6 rounded-lg overflow-hidden;
+    
+    img {
+      @apply w-full h-auto;
+    }
+  }
+
+  // Header section
+  &__header {
+    @apply space-y-4;
+  }
+
+  // Title
+  &__title {
+    @apply text-3xl font-bold text-gray-900 dark:text-white;
+    
+    @screen sm {
+      @apply text-2xl;
+    }
+  }
+
+  // Meta information
+  &__meta {
+    @apply flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400;
+  }
+
+  // Body content
+  &__body {
+    @apply prose dark:prose-invert max-w-none;
+  }
+
+  // Common card style
+  &__card {
+    @apply bg-white dark:bg-gray-800 rounded-lg p-6;
+  }
+
+  // Tags section
+  &__tags {
+    @apply mt-6 pt-6 border-t border-gray-200 dark:border-gray-700;
+
+    &-title {
+      @apply flex items-center text-gray-600 dark:text-gray-400 mb-3 font-medium;
+    }
+
+    &-list {
+      @apply flex flex-wrap gap-2;
+    }
+
+    &-item {
+      @apply px-3 py-1.5 text-sm rounded-full border transition-colors duration-200 inline-flex items-center;
+      @apply bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300;
+      @apply border-gray-200 dark:border-gray-700;
+      @apply hover:bg-gray-200 dark:hover:bg-gray-700;
+    }
+  }
+}
+
+// Common table of contents styles
+.table-of-contents {
+  @apply bg-white dark:bg-gray-800 rounded-lg p-6 mb-6;
+} 

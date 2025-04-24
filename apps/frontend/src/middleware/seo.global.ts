@@ -9,11 +9,11 @@ type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
 
 const defaultSeo = {
-  title: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-  description: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-  keywords: 'Cáp Treo Núi Sam, Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-  ogTitle: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
-  ogDescription: 'Cáp Treo Núi Sam | Trọn Vẹn Trải Nghiệm Tâm Linh Từ Trên Cao',
+  title: 'website',
+  description: 'website',
+  keywords: 'website',
+  ogTitle: 'website',
+  ogDescription: 'website',
   ogImage: '',
   robotsTxt: 'index, follow',
   canonicalUrl: ''

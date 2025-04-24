@@ -1,0 +1,211 @@
+// Sidebar styles
+.post-sidebar {
+  @apply space-y-8;
+  
+  &__section {
+    @apply rounded-lg shadow-md p-6;
+    
+    // Light mode
+    @apply bg-white;
+    
+    // Dark mode
+    .dark & {
+      @apply bg-gray-800 shadow-xl shadow-gray-900/50;
+    }
+    
+    &--highlight {
+      // Light mode
+      @apply bg-blue-50;
+      
+      // Dark mode
+      .dark & {
+        @apply bg-blue-900/20;
+      }
+    }
+  }
+  
+  &__title {
+    @apply text-xl font-semibold mb-4 border-b pb-2;
+    
+    // Light mode
+    @apply border-gray-100;
+    
+    // Dark mode
+    .dark & {
+      @apply border-gray-700 text-white;
+    }
+  }
+  
+  &__author {
+    @apply flex items-center;
+    
+    &-avatar {
+      @apply w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold mr-4;
+      
+      // Light mode
+      @apply bg-blue-500;
+      
+      // Dark mode
+      .dark & {
+        @apply bg-blue-600;
+      }
+    }
+    
+    &-name {
+      @apply font-medium text-lg;
+      
+      // Light mode
+      @apply text-gray-900;
+      
+      // Dark mode
+      .dark & {
+        @apply text-white;
+      }
+    }
+    
+    &-bio {
+      @apply mt-1;
+      
+      // Light mode
+      @apply text-gray-600;
+      
+      // Dark mode
+      .dark & {
+        @apply text-gray-300;
+      }
+    }
+  }
+  
+  &__loading {
+    @apply flex justify-center py-4;
+    
+    &-spinner {
+      @apply animate-spin rounded-full h-6 w-6 border-t-2 border-b-2;
+      
+      // Light mode
+      @apply border-blue-500;
+      
+      // Dark mode
+      .dark & {
+        @apply border-blue-400;
+      }
+    }
+  }
+  
+  &__empty {
+    @apply py-2;
+    
+    // Light mode
+    @apply text-gray-500;
+    
+    // Dark mode
+    .dark & {
+      @apply text-gray-400;
+    }
+  }
+  
+  &__post-list {
+    @apply space-y-4;
+  }
+  
+  &__post-item {
+    @apply border-b pb-3 last:border-0;
+    
+    // Light mode
+    @apply border-gray-100;
+    
+    // Dark mode
+    .dark & {
+      @apply border-gray-700;
+    }
+    
+    &-link {
+      @apply transition-colors;
+      
+      // Light mode
+      @apply hover:text-blue-600;
+      
+      // Dark mode
+      .dark & {
+        @apply hover:text-blue-400;
+      }
+    }
+    
+    &-content {
+      @apply flex items-start;
+    }
+    
+    &-image {
+      @apply w-16 h-16 rounded overflow-hidden flex-shrink-0 mr-3;
+      
+      img {
+        @apply w-full h-full object-cover;
+      }
+    }
+    
+    &-title {
+      @apply font-medium line-clamp-2;
+      
+      // Dark mode
+      .dark & {
+        @apply text-gray-100;
+      }
+    }
+    
+    &-date {
+      @apply text-xs mt-1;
+      
+      // Light mode
+      @apply text-gray-500;
+      
+      // Dark mode
+      .dark & {
+        @apply text-gray-400;
+      }
+    }
+  }
+  
+  &__categories {
+    @apply flex flex-wrap gap-2;
+  }
+  
+  &__category {
+    @apply px-3 py-1 rounded-full text-sm transition-colors;
+    
+    // Light mode
+    @apply bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700;
+    
+    // Dark mode
+    .dark & {
+      @apply bg-gray-700 text-gray-200 hover:bg-blue-900/50 hover:text-blue-300;
+    }
+  }
+  
+  &__form {
+    @apply space-y-3;
+    
+    &-input {
+      @apply w-full px-4 py-2 border rounded-md;
+      
+      // Light mode
+      @apply border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500;
+      
+      // Dark mode
+      .dark & {
+        @apply bg-gray-700 border-gray-600 text-white focus:ring-blue-600;
+      }
+    }
+    
+    &-button {
+      @apply w-full font-medium py-2 px-4 rounded-md transition-colors;
+      
+      // Light mode
+      @apply bg-blue-600 hover:bg-blue-700 text-white;
+      
+      // Dark mode
+      .dark & {
+        @apply bg-blue-700 hover:bg-blue-600;
+      }
+    }
+  }
+} 

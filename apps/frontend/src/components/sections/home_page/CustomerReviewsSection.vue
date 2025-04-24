@@ -5,7 +5,7 @@ import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import { computed, ref } from 'vue';
+import { computed, ref, onBeforeUnmount } from 'vue';
 import { Quote, Star, StarOff } from 'lucide-vue-next';
 
 interface Review {
@@ -77,6 +77,13 @@ const onSwiper = (swiper: SwiperType) => {
   swiper.autoplay.start();
 };
 
+// Add cleanup
+onBeforeUnmount(() => {
+  if (swiperInstance.value) {
+    swiperInstance.value.destroy();
+  }
+});
+
 const swiperOptions = computed(() => ({
   modules: [Navigation, Pagination, Autoplay],
   slidesPerView: 1,
@@ -143,8 +150,10 @@ const renderStars = (rating: number) => {
       <!-- Reviews Slider -->
       <div class="relative">
         <Swiper 
+          v-if="section.settings.reviews && section.settings.reviews.length > 0"
           v-bind="swiperOptions" 
           class="reviews-slider"
+          @swiper="onSwiper"
         >
           <SwiperSlide v-for="review in section.settings.reviews" :key="review.id">
             <div :class="[

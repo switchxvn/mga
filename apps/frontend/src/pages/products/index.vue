@@ -415,18 +415,7 @@ watch(locale, async () => {
               </nav>
             </div>
             
-            <!-- No Results Message -->
-            <div v-if="totalProducts === 0" class="mt-8 text-center">
-              <div class="inline-flex items-center justify-center rounded-full bg-gray-100 p-6 dark:bg-gray-800">
-                <i class="i-heroicons-inbox-20-solid h-12 w-12 text-gray-400 dark:text-gray-500" />
-              </div>
-              <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-                {{ t('products.noResults') }}
-              </h3>
-              <p class="mt-2 text-gray-600 dark:text-gray-400">
-                {{ t('products.tryAdjustingFilters') }}
-              </p>
-            </div>
+        
           </template>
         </div>
       </div>

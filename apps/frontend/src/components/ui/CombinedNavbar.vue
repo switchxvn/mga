@@ -1,6 +1,6 @@
 <!-- Kết hợp NavbarWithLogoHotline và NavbarWithoutLogo -->
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, computed } from "vue";
+import { ref, watch, nextTick, onMounted, computed, onBeforeUnmount } from "vue";
 import { useNow, useDateFormat } from "@vueuse/core";
 import { useFeatureFlags } from "~/composables/useFeatureFlags";
 import { useLocalization } from "~/composables/useLocalization";
@@ -16,6 +16,7 @@ import LanguageSwitcher from "~/components/common/LanguageSwitcher.vue";
 import CartIcon from "~/components/cart/CartIcon.vue";
 import MegaMenu from "~/components/menu/MegaMenu.vue";
 import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
+import { useI18n } from 'vue-i18n';
 
 // Props cho component
 interface NavbarProps {
@@ -124,7 +125,7 @@ const isCartEnabled = ref<boolean | null>(null);
 const isLoadingFeatureFlag = ref(true);
 
 // Localization
-const { locale } = useLocalization();
+const { locale, $t } = useLocalization();
 
 // Logo
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
@@ -206,6 +207,9 @@ const formattedTime = useDateFormat(now, "HH:mm:ss - DD/MM/YYYY");
 // Features (Time and Cart)
 const { checkCartFeatureFlag } = useNavbarFeatures();
 
+// Thêm ref để kiểm soát mounted state
+const isMounted = ref(true);
+
 // Watch for logo changes to update navbar height
 watch([logo, isLoadingLogo], () => {
   nextTick(() => {
@@ -236,10 +240,18 @@ onMounted(() => {
 watch(locale, () => {
   fetchMenuItems();
 });
+
+// Cải thiện cleanup
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  // Cleanup other resources if needed
+});
+
+const { t } = useI18n();
 </script>
 
 <template>
-  <div class="navbar-container">
+  <div class="navbar-container" v-if="isMounted">
     <!-- Top Menu - New Section -->
     <div class="top-menu w-full border-b relative">
       <div class="top-menu-bg-layer"></div>
@@ -268,7 +280,7 @@ watch(locale, () => {
                     '--hover-color': link.hoverColor,
                   }"
                 >
-                  {{ $t(link.label.toLowerCase()) }}
+                  {{ t(link.label.toLowerCase()) }}
                 </NuxtLink>
                 <span
                   v-if="index < props.settings.topMenu.links.length - 1"

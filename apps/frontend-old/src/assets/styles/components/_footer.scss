@@ -1,0 +1,80 @@
+// Footer Component Styles
+@use '../base/_variables.scss' as *;
+@use '../_theme.scss' as *;
+
+.footer {
+  background-color: $footer-bg-default;
+  color: $footer-text-default;
+  border-top: 1px solid $footer-border-default;
+  width: 100%;
+  
+  html.dark & {
+    background-color: $footer-bg-dark !important;
+    color: $footer-text-dark !important;
+    border-color: $footer-border-dark !important;
+  }
+  
+  &__column {
+    margin-bottom: 1rem;
+  }
+  
+  &__title {
+    color: $footer-text-default;
+    
+    html.dark & {
+      color: $footer-text-dark !important;
+    }
+  }
+  
+  &__link {
+    color: $footer-link-default;
+    transition: color 0.2s ease;
+    
+    html.dark & {
+      color: $footer-link-dark !important;
+    }
+    
+    &:hover {
+      color: $footer-link-hover-default;
+      
+      html.dark & {
+        color: $footer-link-hover-dark !important;
+      }
+    }
+  }
+  
+  &__text {
+    color: $footer-link-default;
+    
+    html.dark & {
+      color: $footer-link-dark !important;
+    }
+  }
+  
+  &__social-link {
+    color: $footer-link-default;
+    transition: color 0.2s ease;
+    
+    html.dark & {
+      color: $footer-link-dark !important;
+    }
+    
+    &:hover {
+      color: $footer-link-hover-default;
+      
+      html.dark & {
+        color: $footer-link-hover-dark !important;
+      }
+    }
+  }
+  
+  &__copyright {
+    border-top: 1px solid $footer-border-default;
+    color: $footer-link-default;
+    
+    html.dark & {
+      border-color: $footer-border-dark !important;
+      color: $footer-link-dark !important;
+    }
+  }
+} 

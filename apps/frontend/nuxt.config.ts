@@ -340,7 +340,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      titleTemplate: '%s | Cáp Treo Núi Sam',
+      titleTemplate: '%s',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
