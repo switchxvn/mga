@@ -42,7 +42,7 @@
               :key="category.id"
               class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-sm"
             >
-              <span>{{ category.name }}</span>
+              <span>{{ category.translations[0]?.name || 'Unnamed category' }}</span>
               <button
                 type="button"
                 @click="toggleCategory(category.id)"
@@ -60,15 +60,22 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { LoadingIcon, SearchIcon, XIcon } from 'lucide-vue-next'
-import { useTrpc } from '../../../composables/useTrpc'
+import { Loader2Icon as LoadingIcon, SearchIcon, XIcon } from 'lucide-vue-next'
+import { useTrpc } from '#imports'
 import CategoryItem from './CategoryItem.vue'
+
+interface CategoryTranslation {
+  id: number
+  name: string
+  description?: string
+  locale: string
+}
 
 interface Category {
   id: number
-  name: string
   slug: string
   parentId: number | null
+  translations: CategoryTranslation[]
   children?: Category[]
 }
 
@@ -88,7 +95,7 @@ const searchQuery = ref('')
 // Fetch categories
 onMounted(async () => {
   try {
-    const response = await trpc.admin.categories.getCategories.query()
+    const response = await trpc.admin.category.getCategories.query()
     categories.value = buildCategoryTree(response)
   } catch (error) {
     console.error('Failed to fetch categories:', error)
@@ -134,7 +141,9 @@ const filteredCategories = computed(() => {
 
 const filterCategoriesByQuery = (categories: Category[], query: string): Category[] => {
   return categories.filter(category => {
-    const matchesQuery = category.name.toLowerCase().includes(query)
+    const matchesQuery = category.translations.some(
+      translation => translation.name.toLowerCase().includes(query)
+    )
     const hasMatchingChildren = category.children?.length
       ? filterCategoriesByQuery(category.children, query).length > 0
       : false

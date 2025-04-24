@@ -37,7 +37,7 @@
         :for="'category-' + category.id"
         class="flex-1 cursor-pointer text-sm"
       >
-        {{ category.name }}
+        {{ category.translations[0]?.name || 'Unnamed category' }}
       </label>
     </div>
 
@@ -58,11 +58,18 @@
 import { ref, computed } from 'vue'
 import { ChevronRightIcon } from 'lucide-vue-next'
 
-interface Category {
+interface CategoryTranslation {
   id: number
   name: string
+  description?: string
+  locale: string
+}
+
+interface Category {
+  id: number
   slug: string
   parentId: number | null
+  translations: CategoryTranslation[]
   children?: Category[]
 }
 
