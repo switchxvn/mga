@@ -59,13 +59,13 @@ let initialized = false;
 
 // Default configs cho từng loại component
 const defaultConfigs: Record<string, ComponentStyleConfig> = {
-  'product-card': {
+  'ticket-card': {
     id: 0,
     themeId: 1,
-    type: 'product-card',
-    title: 'Product Card Style Configuration',
+    type: 'ticket-card',
+    title: 'Ticket Card Style Configuration',
     settings: {
-      imageHeight: 192,
+      imageHeight: 400,
       showLabels: {
         featured: true,
         new: true,

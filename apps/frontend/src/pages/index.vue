@@ -1,31 +1,22 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
-import HeroSection from "../components/sections/home_page/HeroSection.vue";
-import HeroSectionFullWidth from "../components/sections/home_page/HeroSectionFullWidth.vue";
-import ProductCategoriesSection from "../components/sections/home_page/ProductCategoriesSection.vue";
-import ServiceSection from "../components/sections/home_page/ServiceSection.vue";
-import PostCard from "../components/ui/card/PostCard.vue";
 import { useLocalization } from "../composables/useLocalization";
 import { useTrpc } from "../composables/useTrpc";
 import { computed, onMounted, ref, watch } from "../composables/useVueComposables";
+import { onBeforeUnmount } from 'vue';
 // Import Swiper
+import type { Seo } from '@ew/shared';
+import { PageType } from '@ew/shared';
+import { useHead } from '@unhead/vue';
+import { useAsyncData } from 'nuxt/app';
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/vue";
-import FeaturedProductsSection from "../components/sections/home_page/FeaturedProductsSection.vue";
+import type { Component } from 'vue';
+import { defineAsyncComponent, markRaw } from 'vue';
 import { useTheme } from '../composables/useTheme';
-import CompanyIntroSection from "../components/sections/home_page/CompanyIntroSection.vue";
-import NewsSection from "../components/sections/home_page/NewsSection.vue";
-import VideoIntroSection from "../components/sections/home_page/VideoIntroSection.vue";
-import StyledProductCategoriesSection from "../components/sections/home_page/StyledProductCategoriesSection.vue";
-import StyledFeaturedProductsSection from "../components/sections/home_page/StyledFeaturedProductsSection.vue";
-import CustomerLogosSection from "../components/sections/home_page/CustomerLogosSection.vue";
-import FeatureServicesSection from "../components/sections/home_page/FeatureServicesSection.vue";
-import WhyChooseUsSection from "../components/sections/home_page/WhyChooseUsSection.vue";
-import { PageType } from '@ew/shared';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface PostTranslation {
@@ -314,60 +305,99 @@ const error = ref<string | null>(null);
 const { getActiveTheme } = useTheme();
 const theme = ref<Theme | null>(null);
 
-// Register components
-const components = {
-  HeroSection,
-  FeaturedProductsSection,
-  ProductCategoriesSection,
-  ServiceSection,
-  NewsSection,
-  CompanyIntroSection,
-  HeroSectionFullWidth,
-  VideoIntroSection,
-  StyledProductCategoriesSection,
-  StyledFeaturedProductsSection,
-  CustomerLogosSection,
-  FeatureServicesSection,
-  WhyChooseUsSection
-} as const;
+// Định nghĩa type cho components
+type ComponentType = Component;
+type ComponentRegistry = Record<string, ComponentType>;
 
-// Function to get component name based on section type and componentName
-const resolveComponent = (section: ThemeSection) => {
-  console.log('Resolving component for section:', section);
-  if (section.componentName && components[section.componentName as keyof typeof components]) {
-    return components[section.componentName as keyof typeof components];
+// Register components using defineAsyncComponent
+const registeredComponents = {
+  'HeroSection': defineAsyncComponent(() => import("../components/sections/home_page/HeroSection.vue")),
+  'HeroBannerSection': defineAsyncComponent(() => import("../components/sections/HeroBannerSection.vue")),
+  'FeaturedProductsSection': defineAsyncComponent(() => import("../components/sections/home_page/FeaturedProductsSection.vue")),
+  'ProductCategoriesSection': defineAsyncComponent(() => import("../components/sections/home_page/ProductCategoriesSection.vue")),
+  'ServiceSection': defineAsyncComponent(() => import("../components/sections/home_page/ServiceSection.vue")),
+  'NewsSection': defineAsyncComponent(() => import("../components/sections/home_page/NewsSection.vue")),
+  'CompanyIntroSection': defineAsyncComponent(() => import("../components/sections/home_page/CompanyIntroSection.vue")),
+  'HeroSectionFullWidth': defineAsyncComponent(() => import("../components/sections/home_page/HeroSectionFullWidth.vue")),
+  'VideoIntroSection': defineAsyncComponent(() => import("../components/sections/home_page/VideoIntroSection.vue")),
+  'StyledProductCategoriesSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledProductCategoriesSection.vue")),
+  'StyledFeaturedProductsSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledFeaturedProductsSection.vue")),
+  'CustomerLogosSection': defineAsyncComponent(() => import("../components/sections/home_page/CustomerLogosSection.vue")),
+  'FeatureServicesSection': defineAsyncComponent(() => import("../components/sections/home_page/FeatureServicesSection.vue")),
+  'WhyChooseUsSection': defineAsyncComponent(() => import("../components/sections/home_page/WhyChooseUsSection.vue")),
+  'TicketBookingSection': defineAsyncComponent(() => import("../components/sections/home_page/TicketBookingSection.vue")),
+  'VideoIntroWithTextSection': defineAsyncComponent(() => import("../components/sections/home_page/VideoIntroWithTextSection.vue")),
+  'GalleryMasonrySection': defineAsyncComponent(() => import("../components/sections/home_page/GalleryMasonrySection.vue")),
+  'FoodGallerySection': defineAsyncComponent(() => import("../components/sections/home_page/FoodGallerySection.vue")),
+  'StyledNewsSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledNewsSection.vue")),
+  'CustomerReviewsSection': defineAsyncComponent(() => import("../components/sections/home_page/CustomerReviewsSection.vue")),
+  'HorizontalGallerySection': defineAsyncComponent(() => import("../components/sections/home_page/HorizontalGallerySection.vue")),
+  'TravelServicesSection': defineAsyncComponent(() => import("../components/sections/home_page/TravelServicesSection.vue"))
+} as ComponentRegistry;
+
+// Modify the resolveComponent function
+const resolveComponent = (section: ThemeSection): ComponentType | null => {
+  if (!section?.type && !section?.componentName) {
+    console.warn('Invalid section configuration');
+    return null;
   }
-  const component = getDefaultComponent(section.type);
-  console.log('Resolved component:', component?.name);
-  return component;
+
+  // First try componentName if specified
+  if (section.componentName && registeredComponents[section.componentName]) {
+    return markRaw(registeredComponents[section.componentName]);
+  }
+
+  // Then try type mapping
+  const typeToComponentName: Record<string, keyof typeof registeredComponents> = {
+    'hero': 'HeroSection',
+    'hero_banner': 'HeroBannerSection',
+    'featured_products': 'FeaturedProductsSection',
+    'product_categories': 'ProductCategoriesSection',
+    'services': 'ServiceSection',
+    'news': 'NewsSection',
+    'company_intro': 'CompanyIntroSection',
+    'hero_full_width': 'HeroSectionFullWidth',
+    'video_intro': 'VideoIntroSection',
+    'styled_product_categories': 'StyledProductCategoriesSection',
+    'styled_featured_products': 'StyledFeaturedProductsSection',
+    'customer_logos': 'CustomerLogosSection',
+    'feature_services': 'FeatureServicesSection',
+    'ticket_booking': 'TicketBookingSection',
+    'gallery': 'GalleryMasonrySection',
+    'food_gallery': 'FoodGallerySection',
+    'styled_news': 'StyledNewsSection',
+    'customer_reviews': 'CustomerReviewsSection',
+    'horizontal_gallery': 'HorizontalGallerySection',
+    'travel_services': 'TravelServicesSection'
+  };
+
+  const componentName = typeToComponentName[section.type];
+  if (componentName && registeredComponents[componentName]) {
+    return markRaw(registeredComponents[componentName]);
+  }
+
+  console.warn(`No component found for section type: ${section.type}`);
+  return null;
 };
 
-// Function to get default component based on section type
-const getDefaultComponent = (type: string) => {
-  const typeToComponent: Record<string, any> = {
-    'hero': components.HeroSection,
-    'featured_products': components.FeaturedProductsSection,
-    'product_categories': components.ProductCategoriesSection,
-    'services': components.ServiceSection,
-    'news': components.NewsSection,
-    'company_intro': components.CompanyIntroSection,
-    'hero_full_width': components.HeroSectionFullWidth,
-    'video_intro': components.VideoIntroSection,
-    'styled_product_categories': components.StyledProductCategoriesSection,
-    'styled_featured_products': components.StyledFeaturedProductsSection,
-    'customer_logos': components.CustomerLogosSection,
-    'feature_services': components.FeatureServicesSection
-  };
-  
-  return typeToComponent[type] || null;
-};
+// Thêm ref để kiểm soát mounted state
+const pageIsMounted = ref(true);
+
+// Cleanup khi unmount
+onBeforeUnmount(() => {
+  pageIsMounted.value = false;
+  // Reset theme và các states khác
+  theme.value = null;
+  latestPosts.value = [];
+  isLoading.value = false;
+  error.value = null;
+});
 
 // Fetch theme on mount
 onMounted(async () => {
   theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
   try {
-    // Fetch posts only, theme is handled by useTheme
-    await fetchLatestPosts();
+   
 
     // Debug theme sections
     console.log('Theme sections:', theme.value?.sections);
@@ -399,7 +429,6 @@ onMounted(async () => {
 // Watch for locale changes to update theme and posts
 watch(locale, async () => {
   theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
-  fetchLatestPosts();
 });
 
 // Cấu hình Swiper cho posts dựa trên theme
@@ -454,44 +483,6 @@ const getPostsSwiperOptions = (theme: Theme | null) => {
 
 const postsSwiperOptions = computed(() => getPostsSwiperOptions(theme.value));
 
-async function fetchLatestPosts() {
-  isLoading.value = true;
-  error.value = null;
-  try {
-    // Gọi tRPC endpoint để lấy danh sách bài viết theo locale hiện tại
-    const result = await trpc.post.byLocale.query({ locale: locale.value });
-
-    // Chuyển đổi dữ liệu để phù hợp với kiểu Post
-    latestPosts.value = result.map((post: any) => {
-      // Tìm bản dịch cho locale hiện tại
-      const translation = post.translations?.find(
-        (t: { locale: string }) => t.locale === locale.value
-      );
-
-      // Chuyển đổi translations để phù hợp với PostTranslation
-      const mappedTranslations = post.translations?.map((t: any) => ({
-        ...t,
-        slug: t.slug || undefined
-      }));
-
-      return {
-        ...post,
-        id: Number(post.id),
-        // Sử dụng title và content từ bản dịch nếu có, nếu không sử dụng giá trị mặc định
-        title: translation?.title || post.title,
-        content: translation?.content || post.content,
-        author: post.author || {},
-        translations: mappedTranslations
-      } as Post;
-    }).slice(0, 20); // Lấy tối đa 20 bài viết
-  } catch (err: any) {
-    console.error("Failed to fetch latest posts:", err);
-    error.value = err.message || "Đã xảy ra lỗi khi tải bài viết";
-  } finally {
-    isLoading.value = false;
-  }
-}
-
 const getAuthorName = (author: any) => {
   if (author?.profile) {
     const firstName = author.profile.firstName || "";
@@ -503,30 +494,46 @@ const getAuthorName = (author: any) => {
   return author?.username || author?.email?.split("@")[0] || "Ẩn danh";
 };
 
-const getSectionConfig = (type: string) => {
-  const currentTheme = theme.value;
-  if (!currentTheme?.sections) return undefined;
-  
-  const section = currentTheme.sections.find((section: ThemeSection) => section.type === type);
+const getSectionConfig = (section: ThemeSection) => {
   if (!section) return undefined;
 
   return {
     ...section.settings,
     title: section.title,
     isActive: section.isActive,
-    themeId: currentTheme.id,
+    themeId: theme.value?.id,
   };
 };
 
-const sliderConfig = computed(() => getSectionConfig("hero") as SliderConfig | undefined);
-const productsConfig = computed(() => getSectionConfig("featured_products") as ProductsConfig | undefined);
-const servicesConfig = computed(() => getSectionConfig("services") as ServicesConfig | undefined);
-const categoriesConfig = computed(() => getSectionConfig("product_categories") as CategoriesConfig | undefined);
-const companyIntroConfig = computed(() => getSectionConfig("company_intro") as CompanyIntroConfig | undefined);
+const seoData = ref<Seo | null>(null);
+
+useAsyncData('home-seo', () => 
+  useTrpc().seo.getSeoByPath.query('/'),
+  {
+    server: true,
+    lazy: false,
+    transform: (data) => {
+      seoData.value = data as Seo;
+      return data;
+    }
+  }
+);
+
+useHead({
+  title: computed(() => seoData.value?.title || 'Trang Chủ'),
+  meta: computed(() => [
+    { name: 'title', content: seoData.value?.title || 'Trang Chủ' },
+    { property: 'og:title', content: seoData.value?.ogTitle || seoData.value?.title || 'Trang Chủ' },
+    { name: 'description', content: seoData.value?.description },
+    { property: 'og:description', content: seoData.value?.ogDescription || seoData.value?.description },
+    { property: 'og:image', content: seoData.value?.ogImage },
+    { name: 'keywords', content: seoData.value?.keywords }
+  ])
+});
 </script>
 
 <template>
-  <div class="bg-gray-50 dark:bg-gray-900">
+  <div class="bg-gray-50 dark:bg-gray-900" v-if="pageIsMounted">
     <template v-if="isLoading">
       <div class="flex justify-center items-center min-h-screen">
         <ULoader size="lg" />
@@ -538,13 +545,22 @@ const companyIntroConfig = computed(() => getSectionConfig("company_intro") as C
       </div>
     </template>
     <template v-else>
-      <!-- Render sections based on their order -->
-      <template v-for="(section, index) in theme?.sections" :key="`section-${section.id}-${index}`">
-        <component 
-          :is="resolveComponent(section)"
-          v-if="section.isActive"
-          :config="getSectionConfig(section.type)"
-        />
+      <template v-if="theme?.sections">
+        <template v-for="(section, index) in theme.sections" :key="`section-${section.id}-${index}`">
+          <ClientOnly>
+            <component
+              v-if="section.isActive"
+              :is="resolveComponent(section)"
+              :section="section"
+              :config="getSectionConfig(section)"
+            />
+            <template #fallback>
+              <div class="p-4 text-center">
+                <ULoader />
+              </div>
+            </template>
+          </ClientOnly>
+        </template>
       </template>
     </template>
   </div>

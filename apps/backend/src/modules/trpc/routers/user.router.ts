@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, protectedProcedure, router } from '../trpc';
+import { publicProcedure, protectedProcedure, router } from '../procedures';
 import { updateUserSchema, getUserByIdSchema } from '../../user/dto/user.dto';
 
 export const userRouter = router({
@@ -37,7 +37,7 @@ export const userRouter = router({
     .query(async ({ input, ctx }) => {
       try {
         ctx.logger.log(`Fetching user by ID: ${input}`);
-        const user = await ctx.services.userService.findOne(input);
+        const user = await ctx.services.userService.findOne(input.toString());
         
         // Exclude sensitive information
         const { password, ...userWithoutPassword } = user;

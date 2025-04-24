@@ -63,22 +63,82 @@ export interface CopyrightStyle {
   };
 }
 
+export interface FooterSettings {
+  verticalImage?: {
+    url: string;
+    alt: string;
+  };
+}
+
 export interface Footer {
   id: number;
   name: string;
-  addresses: Address[];
+  componentName: string;
+  isActive: boolean;
+  addresses: Array<{
+    title: string;
+    subtitle?: string;
+    location: string;
+    email?: Array<{
+      label: string;
+      address: string;
+      contact?: string;
+    }>;
+    phone?: Array<{
+      label: string;
+      number: string;
+      contact?: string;
+    }>;
+  }>;
   mapUrl?: string;
   fanpageUrl?: string;
-  companyInfo: CompanyInfo;
-  quickLinks: QuickLink[];
+  settings?: FooterSettings;
+  companyInfo: {
+    name: string;
+    tax_number?: string;
+    registration?: string;
+    business_license?: string;
+    certifications?: Array<{
+      image: string;
+      alt?: string;
+      text?: string;
+    }>;
+  };
+  quickLinks?: Array<{
+    url: string;
+    icon: string;
+    label: string;
+  }>;
   backgroundLightColor: string;
   backgroundDarkColor: string;
-  copyrightStyle: CopyrightStyle;
-  socialIcons: SocialIcon[];
+  socialIcons?: Array<{
+    url: string;
+    icon: string;
+    name: string;
+  }>;
   logoUrl: string;
   logoAlt: string;
-  branchInfo?: BranchInfo[];
-  isActive: boolean;
+  branchInfo?: Array<{
+    title: string;
+    address: string;
+    contacts?: Array<{
+      name?: string;
+      position?: string;
+      phone?: string;
+      email?: string;
+    }>;
+  }>;
+  copyrightStyle?: {
+    text?: string;
+    dark?: {
+      textColor: string;
+      backgroundColor: string;
+    };
+    light?: {
+      textColor: string;
+      backgroundColor: string;
+    };
+  };
   createdAt: string;
   updatedAt: string;
 } 

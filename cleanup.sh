@@ -12,27 +12,29 @@ cleanup() {
   local pattern=$1
   local exclude=$2
   local dir=$3
-  local files=()
+  local count=0
+  local files=""
   
   if [ -n "$exclude" ]; then
-    mapfile -t files < <(find "$dir" -name "$pattern" -not -path "*/node_modules/*" | grep -v "$exclude")
+    files=$(find "$dir" -name "$pattern" -not -path "*/node_modules/*" | grep -v "$exclude" || true)
   else
-    mapfile -t files < <(find "$dir" -name "$pattern" -not -path "*/node_modules/*")
+    files=$(find "$dir" -name "$pattern" -not -path "*/node_modules/*" || true)
   fi
   
-  local count=${#files[@]}
-  
-  if [ $count -gt 0 ]; then
+  if [ -n "$files" ]; then
+    count=$(echo "$files" | wc -l)
     if [ "$CHECK_ONLY" = true ]; then
       echo "Tìm thấy $count file $pattern trong $dir:"
-      printf '%s\n' "${files[@]}"
+      echo "$files"
     else
       echo "Đang xóa $count file $pattern trong $dir..."
-      printf '%s\n' "${files[@]}" | xargs rm -f
+      echo "$files" | xargs rm -f
     fi
+  else
+    count=0
   fi
   
-  echo $count
+  echo "$count"
 }
 
 total_count=0

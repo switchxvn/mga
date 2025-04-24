@@ -8,7 +8,17 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Theme } from './theme.entity';
-import { PageType } from '@ew/shared';
+
+// Define PageType enum locally for migrations
+export enum PageType {
+  HOME_PAGE = 'home_page',
+  NEWS_PAGE = 'news_page',
+  PRODUCT_PAGE = 'product_page',
+  ABOUT_PAGE = 'about_page',
+  SERVICE_PAGE = 'service_page',
+  CONTACT_PAGE = 'contact_page',
+  COMMON = 'common'
+}
 
 @Entity('theme_sections')
 export class ThemeSection {
@@ -74,6 +84,24 @@ export class ThemeSection {
     showHotline: false,
     mobileMenuBreakpoint: 'md',
     borderColor: '',
+    // Top menu settings with new column structure
+    topMenu: {
+      leftColumn: {
+        items: [],
+        width: '30%',
+        alignment: 'start'
+      },
+      centerColumn: {
+        items: [],
+        width: '40%',
+        alignment: 'center'
+      },
+      rightColumn: {
+        items: [],
+        width: '30%',
+        alignment: 'end'
+      }
+    },
     // Product categories section settings
     colors: {
       title: 'text-gray-900 dark:text-white',

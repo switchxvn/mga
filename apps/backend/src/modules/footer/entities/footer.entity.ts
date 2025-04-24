@@ -65,6 +65,13 @@ export interface CopyrightStyle {
   };
 }
 
+export interface FooterSettings {
+  verticalImage?: {
+    url: string;
+    alt: string;
+  };
+}
+
 @Entity('footers')
 export class Footer {
     @PrimaryGeneratedColumn()
@@ -72,6 +79,9 @@ export class Footer {
 
     @Column()
     name: string;
+
+    @Column({ name: 'component_name', default: 'Footer' })
+    componentName: string;
 
     @Column({ type: 'jsonb', name: 'addresses' })
     addresses: Address[];
@@ -111,6 +121,9 @@ export class Footer {
 
     @Column({ default: false, name: 'is_active' })
     isActive: boolean;
+
+    @Column({ type: 'jsonb', name: 'settings', default: {} })
+    settings: FooterSettings;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: string;

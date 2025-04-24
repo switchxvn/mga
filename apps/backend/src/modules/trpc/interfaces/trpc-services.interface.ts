@@ -1,4 +1,5 @@
 import { UserService } from '../../user/services/user.service';
+import { UserAdminService } from '../../user/admin/services/user-admin.service';
 import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../../post/admin/services/post-admin.service';
 import { ProfileService } from '../../profile/services/profile.service';
@@ -39,9 +40,27 @@ import { AuthFrontendService } from '../../auth/frontend/services/auth-frontend.
 import { AuthAdminService } from '../../auth/admin/services/auth-admin.service';
 import { ContactAdminService } from '../../contact/admin/services/contact-admin.service';
 import { ContactFrontendService } from '../../contact/frontend/services/contact-frontend.service';
+import { GalleryFrontendService } from '../../gallery/frontend/services/gallery-frontend.service';
+import { ContactSectionAdminService } from '../../contact/admin/services/contact-section-admin.service';
+import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
+import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
+import { TicketPricingSectionFrontendService } from '../../ticket-pricing/frontend/services/ticket-pricing-section-frontend.service';
+import { OrderTicketSectionAdminService } from '../../order-ticket/admin/services/order-ticket-section-admin.service';
+import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/services/order-ticket-section-frontend.service';
+import { FoodMenuFrontendService } from '../../food-menu/frontend/services/food-menu-frontend.service';
+import { FoodMenuAdminService } from '../../food-menu/admin/services/food-menu-admin.service';
+import { PaymentFrontendService } from '../../payment/frontend/services/payment-frontend.service';
+import { PaymentAdminService } from '../../payment/admin/services/payment-admin.service';
+import { OrderFrontendService } from '../../order/frontend/services/order-frontend.service';
+import { OrderAdminService } from '../../order/admin/services/order-admin.service';
+import { UploadFrontendService } from '../../upload/frontend/services/upload-frontend.service';
+import { UploadAdminService } from '../../upload/admin/services/upload-admin.service';
+import { SettingsService } from '../../settings/services/settings.service';
+import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
+  userAdminService: UserAdminService;
   postService: PostFrontendService;
   postAdminService: PostAdminService;
   profileService: ProfileService;
@@ -82,4 +101,21 @@ export interface ITrpcServices {
   authAdminService: AuthAdminService;
   contactAdminService: ContactAdminService;
   contactFrontendService: ContactFrontendService;
+  galleryFrontendService: GalleryFrontendService;
+  contactSectionAdminService: ContactSectionAdminService;
+  contactSectionFrontendService: ContactSectionFrontendService;
+  ticketPricingSectionAdminService: TicketPricingSectionAdminService;
+  ticketPricingSectionFrontendService: TicketPricingSectionFrontendService;
+  orderTicketSectionAdminService: OrderTicketSectionAdminService;
+  orderTicketSectionFrontendService: OrderTicketSectionFrontendService;
+  foodMenuFrontendService: FoodMenuFrontendService;
+  foodMenuAdminService: FoodMenuAdminService;
+  paymentFrontendService: PaymentFrontendService;
+  paymentAdminService: PaymentAdminService;
+  orderFrontendService: OrderFrontendService;
+  orderAdminService: OrderAdminService;
+  uploadFrontendService: UploadFrontendService;
+  uploadAdminService: UploadAdminService;
+  settingsService: SettingsService;
+  dashboardAdminService: DashboardAdminService;
 } 

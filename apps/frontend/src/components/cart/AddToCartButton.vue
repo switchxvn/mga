@@ -1,53 +1,42 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useCart } from '~/composables/useCart';
-import { useFeatureFlags } from '~/composables/useFeatureFlags';
-import { useNotification } from '~/composables/useNotification';
+import { ShoppingCart, Plus, Minus, Loader } from 'lucide-vue-next';
+
+interface CartProduct {
+  id: number;
+  title: string;
+  thumbnail?: string;
+  price: number | null;
+  comparePrice?: number;
+  formattedPrice?: string;
+  variantId?: number;
+  variantName?: string;
+  sku?: string;
+  stock?: number;
+  hasRequiredAttributes?: boolean;
+  hasSelectedAllAttributes?: boolean;
+}
 
 const props = defineProps<{
-  product: any;
+  product: CartProduct;
   buttonText?: string;
   buttonClass?: string;
   iconOnly?: boolean;
   showQuantity?: boolean;
 }>();
 
-const { addToCart, isCartEnabled, initialize } = useCart();
-const { isInitialized } = useFeatureFlags();
-const { showNotification } = useNotification();
-const isLoading = ref(true);
+const { addToCart } = useCart();
 const isAdding = ref(false);
 const quantity = ref(1);
 const showRipple = ref(false);
 const rippleX = ref(0);
 const rippleY = ref(0);
 
-// Kiểm tra cài đặt khi component được mount
-onMounted(async () => {
-  console.log('AddToCartButton mounted, checking cart enabled...');
-  isLoading.value = true;
-  
-  // Khởi tạo giỏ hàng và kiểm tra cài đặt
-  await initialize();
-  console.log('Cart enabled after initialize in AddToCartButton:', isCartEnabled.value);
-  isLoading.value = false;
-});
-
-// Theo dõi sự thay đổi của isCartEnabled
-watch(isCartEnabled, (newValue) => {
-  console.log('isCartEnabled changed in AddToCartButton:', newValue);
-});
-
-// Theo dõi sự thay đổi của isInitialized
-watch(isInitialized, async (newValue) => {
-  if (newValue && isLoading.value) {
-    await initialize();
-    isLoading.value = false;
-  }
-});
-
 // Tăng số lượng sản phẩm
 const increaseQuantity = () => {
+  const maxStock = props.product.stock || Infinity;
+  if (quantity.value >= maxStock) return;
   quantity.value++;
 };
 
@@ -75,37 +64,45 @@ const createRipple = (event: MouseEvent) => {
   }, 10);
 };
 
+// Kiểm tra xem có thể thêm vào giỏ hàng không
+const canAddToCart = computed(() => {
+  // Kiểm tra nếu không có sản phẩm
+  if (!props.product) return false;
+
+  // Kiểm tra nếu sản phẩm có thuộc tính bắt buộc nhưng chưa chọn đủ
+  if (props.product.hasRequiredAttributes && !props.product.hasSelectedAllAttributes) {
+    return false;
+  }
+
+  // Kiểm tra giá và trạng thái đang thêm vào giỏ hàng
+  return props.product.price !== null && !isAdding.value;
+});
+
+// Kiểm tra số lượng tồn kho
+const isMaxQuantity = computed(() => {
+  const maxStock = props.product.stock || Infinity;
+  return quantity.value >= maxStock;
+});
+
 // Thêm sản phẩm vào giỏ hàng
 const handleAddToCart = async (event: MouseEvent) => {
+  if (!canAddToCart.value) return;
+  
   createRipple(event);
-  
-  if (!isCartEnabled.value) {
-    showNotification({
-      title: 'Không thể thêm vào giỏ hàng',
-      text: 'Tính năng giỏ hàng đang bị tắt',
-      type: 'error'
-    });
-    return;
-  }
-  
   isAdding.value = true;
   
   try {
-    const success = await addToCart(props.product, quantity.value);
-    
-    if (success) {
-      showNotification({
-        title: 'Thêm vào giỏ hàng thành công',
-        text: `Đã thêm ${quantity.value} ${props.product.title || 'sản phẩm'} vào giỏ hàng`,
-        type: 'success'
-      });
-    }
-  } catch (error) {
-    showNotification({
-      title: 'Lỗi',
-      text: 'Không thể thêm sản phẩm vào giỏ hàng',
-      type: 'error'
+    await addToCart({
+      id: String(props.product.id),
+      productId: String(props.product.id),
+      name: props.product.title,
+      price: props.product.price || 0,
+      quantity: quantity.value,
+      image: props.product.thumbnail,
+      variantId: props.product.variantId ? String(props.product.variantId) : undefined,
+      variantName: props.product.variantName
     });
+  } catch (error) {
     console.error('Error adding product to cart:', error);
   } finally {
     isAdding.value = false;
@@ -114,66 +111,60 @@ const handleAddToCart = async (event: MouseEvent) => {
 </script>
 
 <template>
-  <div>
-    <!-- Hiển thị skeleton loader khi đang tải -->
-    <div v-if="isLoading" class="w-full h-12 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-    
-    <!-- Hiển thị nút thêm vào giỏ hàng nếu tính năng được bật -->
-    <div v-else-if="isCartEnabled" class="add-to-cart-container">
-      <!-- Chọn số lượng sản phẩm nếu showQuantity = true -->
-      <div v-if="showQuantity" class="quantity-selector">
-        <button 
-          @click="decreaseQuantity" 
-          class="quantity-btn"
-          :disabled="quantity <= 1"
-        >
-          <UIcon name="i-heroicons-minus" class="w-4 h-4" />
-        </button>
-        <span class="quantity-value">{{ quantity }}</span>
-        <button 
-          @click="increaseQuantity" 
-          class="quantity-btn"
-        >
-          <UIcon name="i-heroicons-plus" class="w-4 h-4" />
-        </button>
-      </div>
-      
-      <button
-        :class="['add-to-cart-button', buttonClass]"
-        :disabled="isAdding"
-        @click="handleAddToCart"
+  <div class="add-to-cart-container">
+    <!-- Chọn số lượng sản phẩm nếu showQuantity = true -->
+    <div v-if="showQuantity" class="quantity-selector">
+      <button 
+        @click="decreaseQuantity" 
+        class="quantity-btn"
+        :disabled="quantity <= 1"
       >
-        <div class="button-content">
-          <!-- Sử dụng slot mặc định nếu được cung cấp -->
-          <slot v-if="$slots.default"></slot>
-          
-          <!-- Sử dụng icon mặc định nếu không có slot -->
-          <template v-else>
-            <UIcon v-if="iconOnly" name="i-heroicons-shopping-cart" class="w-5 h-5" />
-            <template v-else>
-              <UIcon name="i-heroicons-shopping-cart" class="cart-icon" />
-              <span class="button-text">{{ buttonText || 'Thêm vào giỏ hàng' }}</span>
-            </template>
-          </template>
-        </div>
-        
-        <!-- Hiệu ứng loading -->
-        <div v-if="isAdding" class="loading-spinner">
-          <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin" />
-        </div>
-        
-        <!-- Hiệu ứng ripple -->
-        <span 
-          v-if="showRipple" 
-          class="ripple-effect"
-          :style="{
-            left: `${rippleX}px`,
-            top: `${rippleY}px`
-          }"
-        ></span>
+        <Minus class="w-4 h-4" />
+      </button>
+      <span class="quantity-value">{{ quantity }}</span>
+      <button 
+        @click="increaseQuantity" 
+        class="quantity-btn"
+        :disabled="isMaxQuantity"
+      >
+        <Plus class="w-4 h-4" />
       </button>
     </div>
-    <div v-else class="hidden"><!-- Không hiển thị gì khi tính năng bị tắt --></div>
+    
+    <button
+      :class="['add-to-cart-button', buttonClass]"
+      :disabled="!canAddToCart"
+      @click="handleAddToCart"
+    >
+      <div class="button-content">
+        <!-- Sử dụng slot mặc định nếu được cung cấp -->
+        <slot v-if="$slots.default"></slot>
+        
+        <!-- Sử dụng icon mặc định nếu không có slot -->
+        <template v-else>
+          <ShoppingCart v-if="iconOnly" class="w-5 h-5" />
+          <template v-else>
+            <ShoppingCart class="cart-icon" />
+            <span class="button-text">{{ buttonText || 'Thêm vào giỏ hàng' }}</span>
+          </template>
+        </template>
+      </div>
+      
+      <!-- Hiệu ứng loading -->
+      <div v-if="isAdding" class="loading-spinner">
+        <Loader class="w-5 h-5 animate-spin" />
+      </div>
+      
+      <!-- Hiệu ứng ripple -->
+      <span 
+        v-if="showRipple" 
+        class="ripple-effect"
+        :style="{
+          left: `${rippleX}px`,
+          top: `${rippleY}px`
+        }"
+      ></span>
+    </button>
   </div>
 </template>
 

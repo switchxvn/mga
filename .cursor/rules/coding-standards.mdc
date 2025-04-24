@@ -1,0 +1,90 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# General Coding Standards
+
+## TypeScript Guidelines
+
+### Basic Principles
+- Use English for all code and documentation
+- Maintain strict TypeScript usage
+- Follow proper type declarations
+- Avoid using `any` type
+- Document public interfaces and methods
+
+### Naming Conventions
+- PascalCase for:
+  - Classes
+  - Interfaces
+  - Type aliases
+  - Enums
+- camelCase for:
+  - Variables
+  - Functions
+  - Methods
+  - Properties
+- kebab-case for:
+  - File names
+  - Directory names
+- UPPERCASE for:
+  - Constants
+  - Environment variables
+
+### Function Guidelines
+- Keep functions small (< 20 lines)
+- Single responsibility principle
+- Use descriptive names
+- Proper type annotations
+- Default parameters over null checks
+- Early returns over nesting
+
+### Code Organization
+- One concept per file
+- Clear file organization
+- Proper module structure
+- Consistent import ordering
+- Clear separation of concerns
+
+### Documentation
+- JSDoc for public APIs
+- Clear inline comments
+- Meaningful commit messages
+- Keep documentation up-to-date
+- Document complex algorithms
+
+### Error Handling
+- Proper error types
+- Consistent error patterns
+- Meaningful error messages
+- Proper error logging
+- Error recovery strategies
+
+### Testing
+- Unit tests for business logic
+- Integration tests for APIs
+- E2E tests for critical flows
+- Clear test descriptions
+- Proper test coverage
+
+### Version Control
+- Clear commit messages
+- Feature branching
+- Regular small commits
+- Proper PR descriptions
+- Code review guidelines
+
+### Performance
+- Optimize imports
+- Lazy loading when appropriate
+- Proper caching strategies
+- Resource optimization
+- Regular performance audits
+
+### Security
+- Input validation
+- Output sanitization
+- Proper authentication
+- Secure communication
+- Regular security audits

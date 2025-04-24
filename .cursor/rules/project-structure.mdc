@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure Guidelines
+
+## Monorepo Structure
+
+The project follows an Nx monorepo structure with the following organization:
+
+### Root Directories
+- `apps/`: Contains all application projects
+- `libs/`: Contains shared libraries and modules
+  - `database/`: Database management and migrations
+  - `shared/`: Common types, enums, and utilities
+
+### Backend Structure (apps/backend)
+- `src/modules/{module-name}/`: Module-based organization
+  - `entities/`: Entity definitions for the module
+  - `admin/services/`: Admin-specific service patterns
+  - `frontend/services/`: Frontend-specific service patterns
+  - `{module-name}.module.ts`: Module definition file
+
+### tRPC Structure (apps/backend/src/modules/trpc)
+- `routers/`: tRPC route definitions
+  - `admin/`: Protected admin routes
+  - `index.ts`: Route exports
+- `interfaces/`: Service interfaces
+- `contexts/`: Context
+
+### Frontend Structure (apps/frontend/src)
+- `assets/`: Styles, SCSS, CSS
+- `components/`: Vue components
+- `composables/`: TypeScript logic files (useX.ts)
+- `i18n/locales/`: Translation files
+- `layouts/`: Layout components
+- `middleware/`: Nuxt middleware
+- `pages/`: Page components
+- `plugins/`: Nuxt plugins
+- `public/`: Static assets
+- `utils/`: Helper functions
+
+### Admin Structure (apps/admin)
+Follows similar structure to frontend
+
+### API Structure (apps/api)
+External API endpoints for third-party integrations
+
+## Key Files
+- [apps/backend/src/modules/entities.ts](mdc:apps/backend/src/modules/entities.ts): Entity registration
+- [libs/database/src/migrations](mdc:libs/database/src/migrations): Database migrations
+- [package.json](mdc:package.json): Project scripts and dependencies
+

@@ -1,78 +1,86 @@
+# ----------------------------
 # Build stage
-FROM node:20-alpine AS builder
+# ----------------------------
+FROM node:20 AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Create cache directory and set permissions
-RUN mkdir -p /app/.yarn-cache && \
-    chown -R node:node /app
+# Install system dependencies for native modules
+RUN apt-get update && apt-get install -y \
+curl python3 make g++ git \
+&& rm -rf /var/lib/apt/lists/*
 
-# Switch to non-root user
-USER node
+# Copy only essential files to install dependencies
+COPY package.json yarn.lock ./
+COPY nx.json tsconfig.base.json ./
 
-# Set yarn cache directory
-ENV YARN_CACHE_FOLDER=/app/.yarn-cache
+# Set environment variables with optimized settings
+ENV YARN_CACHE_FOLDER=/app/.yarn-cache \
+    NX_SKIP_NX_CACHE_CREATION=true \
+    NX_DAEMON=false \
+    CYPRESS_INSTALL_BINARY=0 \
+    NODE_OPTIONS="--max_old_space_size=4096 --no-experimental-fetch" \
+    YARN_NETWORK_TIMEOUT=300000
 
-# Copy only necessary package files
-COPY --chown=node:node package.json yarn.lock ./
-COPY --chown=node:node nx.json tsconfig.base.json ./
+# Install dependencies with optimized settings
+RUN yarn config set ignore-engines true \
+    && yarn config set network-timeout 300000 \
+    && yarn install --frozen-lockfile --prefer-offline --network-concurrent 1
 
-# Install dependencies
-RUN yarn install --frozen-lockfile
-
-# Copy only frontend related files
-COPY --chown=node:node apps/frontend ./apps/frontend
-COPY --chown=node:node libs ./libs
+# Copy application code
+COPY apps/frontend ./apps/frontend
+COPY libs ./libs
 
 # Build argument for environment file
 ARG ENV_FILE=.env
 ENV ENV_FILE=${ENV_FILE}
 
 # Copy environment file
-COPY --chown=node:node apps/frontend/${ENV_FILE} apps/frontend/.env
+COPY apps/frontend/${ENV_FILE} apps/frontend/.env
 
-# Build only frontend application
-RUN mkdir -p apps/frontend/.output && \
-    cd apps/frontend && \
-    npx nuxt build && \
-    ls -la .output/server || exit 1
+# Build only frontend app with Nuxt
+RUN mkdir -p apps/frontend/.output \
+    && cd apps/frontend \
+    && NODE_OPTIONS="--max-old-space-size=4096" npx nuxt build \
+    && ls -la .output/server || exit 1
 
+# ----------------------------
 # Production stage
-FROM node:20-alpine AS runner
+# ----------------------------
+FROM node:20 AS runner
 
-# Set working directory
 WORKDIR /app
 
-# Create cache directory and set permissions
-RUN mkdir -p /app/.yarn-cache && \
-    chown -R node:node /app
-
-# Switch to non-root user
-USER node
-
-# Set yarn cache directory
-ENV YARN_CACHE_FOLDER=/app/.yarn-cache
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+curl \
+&& rm -rf /var/lib/apt/lists/*
 
 # Copy package files
-COPY --chown=node:node package.json yarn.lock ./
+COPY package.json yarn.lock ./
 
-# Install production dependencies only
-RUN yarn install --production --frozen-lockfile
+# Set environment with optimized settings
+ENV YARN_CACHE_FOLDER=/app/.yarn-cache \
+    NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=3000 \
+    NX_SKIP_NX_CACHE_CREATION=true \
+    NX_DAEMON=false \
+    CYPRESS_INSTALL_BINARY=0 \
+    NODE_OPTIONS="--max-old-space-size=4096 --no-experimental-fetch" \
+    YARN_NETWORK_TIMEOUT=300000
 
-# Copy built application
-COPY --chown=node:node --from=builder /app/apps/frontend/.output ./.output
+# Install production dependencies with optimized settings
+RUN yarn config set ignore-engines true \
+    && yarn config set network-timeout 300000 \
+    && yarn install --production --frozen-lockfile --prefer-offline --network-concurrent 1
 
-# Copy environment file
-COPY --chown=node:node --from=builder /app/apps/frontend/.env .env
+# Copy built output from builder
+COPY --from=builder /app/apps/frontend/.output ./.output
+COPY --from=builder /app/apps/frontend/.env .env
 
-# Expose the port the app runs on
 EXPOSE 3000
 
-# Set production environment
-ENV NODE_ENV=production
-ENV HOST=0.0.0.0
-ENV PORT=3000
-
-# Start the application
-CMD ["node", ".output/server/index.mjs"] 
+# Start Nuxt app
+CMD ["node", ".output/server/index.mjs"]

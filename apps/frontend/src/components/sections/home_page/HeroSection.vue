@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, defineComponent } from 'vue';
+import { ref, onMounted, onUnmounted, computed, defineComponent, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useTrpc } from '~/composables/useTrpc';
 import { Swiper, SwiperSlide } from 'swiper/vue';
@@ -15,6 +15,7 @@ import type { PropType } from 'vue';
 import VideoThumbnailComponent from '~/components/media/VideoThumbnail.vue';
 import HeroSliderComponent from '~/components/sliders/HeroSlider.vue';
 import type { Hero, HeroSlider, VideoThumbnail, Slide, HeroConfig } from '~/types/hero';
+import type { SwiperType } from 'swiper/vue';
 
 interface Props {
   slides?: Slide[];
@@ -81,6 +82,15 @@ const heroSwiperOptions = {
   },
 };
 
+const swiperInstance = ref<SwiperType>();
+
+const onSwiper = (swiper: SwiperType) => {
+  swiperInstance.value = swiper;
+};
+
+// Thêm ref để kiểm soát mounted state
+const isMounted = ref(true);
+
 onMounted(async () => {
   try {
     const [heroResult, sliderResult, videoResult] = await Promise.all([
@@ -89,19 +99,23 @@ onMounted(async () => {
       videoQuery
     ]);
     
-    heroData.value = heroResult as Hero[];
-    sliderData.value = sliderResult as HeroSlider[];
-    videoThumbnails.value = videoResult as VideoThumbnail[];
-    
-    console.log('Hero data:', heroData.value);
-    console.log('Slider data:', sliderData.value);
-    console.log('Video data:', videoThumbnails.value);
-    
-    isLoading.value = false;
+    if (isMounted.value) {
+      heroData.value = heroResult as Hero[];
+      sliderData.value = sliderResult as HeroSlider[];
+      videoThumbnails.value = videoResult as VideoThumbnail[];
+      
+      console.log('Hero data:', heroData.value);
+      console.log('Slider data:', sliderData.value);
+      console.log('Video data:', videoThumbnails.value);
+      
+      isLoading.value = false;
+    }
   } catch (err) {
-    console.error('Error fetching hero data:', err);
-    error.value = err as Error;
-    isLoading.value = false;
+    if (isMounted.value) {
+      console.error('Error fetching hero data:', err);
+      error.value = err as Error;
+      isLoading.value = false;
+    }
   }
 });
 
@@ -224,9 +238,12 @@ const HeroSlider = defineComponent({
     return { localT };
   },
   template: `
-    <Swiper v-if="slides.length > 0" 
-            v-bind="options" 
-            class="w-full h-full rounded-lg overflow-hidden shadow-md">
+    <Swiper 
+      v-if="slides && slides.length > 0" 
+      v-bind="options" 
+      class="w-full h-full rounded-lg overflow-hidden shadow-md"
+      @swiper="onSwiper"
+    >
       <SwiperSlide v-for="slide in slides" :key="slide.order" class="relative">
         <div class="relative w-full h-full">
           <img 
@@ -236,14 +253,7 @@ const HeroSlider = defineComponent({
           />
           
           <!-- Gradient overlay -->
-          <div class="absolute inset-0" 
-               :class="[config.backgroundGradient?.direction || 'bg-gradient-to-t']"
-               :style="{
-                 background: config.backgroundGradient ? 
-                   \`linear-gradient(\${config.backgroundGradient.direction.replace('to-', 'to ')}, \${config.backgroundGradient.from}, \${config.backgroundGradient.to})\` : 
-                   'linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0))',
-                 opacity: config.overlayOpacity || '0.5'
-               }"></div>
+          <div class="absolute inset-0" :style="slideGradientStyle"></div>
           
           <div class="absolute inset-0 flex items-center justify-center">
             <div class="container mx-auto px-4 text-center text-white">
@@ -276,20 +286,51 @@ const components = {
   VideoThumbnail,
   HeroSlider
 };
+
+// Thêm computed properties cho styles và gradients
+const backgroundGradientStyle = computed(() => {
+  if (!props.config?.backgroundGradient) return {};
+  
+  const direction = props.config.backgroundGradient.direction.replace('to-', 'to ');
+  const { from, to } = props.config.backgroundGradient;
+  
+  return {
+    background: `linear-gradient(${direction}, ${from}, ${to})`,
+    opacity: props.config?.overlayOpacity || '0.5',
+    pointerEvents: 'none'
+  };
+});
+
+const slideGradientStyle = computed(() => {
+  if (!props.config?.backgroundGradient) return {};
+  
+  const direction = props.config.backgroundGradient.direction.replace('to-', 'to ');
+  const { from, to } = props.config.backgroundGradient;
+  
+  return {
+    background: `linear-gradient(${direction}, ${from}, ${to})`,
+    opacity: props.config?.overlayOpacity || '0.5'
+  };
+});
+
+// Cải thiện cleanup
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  if (swiperInstance.value) {
+    try {
+      swiperInstance.value.destroy(true, true);
+      swiperInstance.value = undefined;
+    } catch (error) {
+      console.error('Error destroying swiper:', error);
+    }
+  }
+});
 </script>
 
 <template>
-  <section class="hero-section relative" :style="{ height: config?.height || '600px' }">
+  <section class="hero-section relative" :style="{ height: config?.height || '600px' }" v-if="isMounted">
     <!-- Background gradient overlay -->
-    <div class="absolute inset-0" 
-         :style="{ 
-           background: config?.backgroundGradient ? 
-             `linear-gradient(${config.backgroundGradient.direction.replace('to-', 'to ')}, ${config.backgroundGradient.from}, ${config.backgroundGradient.to})` : 
-             'none',
-           opacity: config?.overlayOpacity || '0.5',
-           pointerEvents: 'none'
-         }">
-    </div>
+    <div class="absolute inset-0" :style="backgroundGradientStyle"></div>
 
     <div v-if="isLoading" class="flex items-center justify-center w-full h-full">
       <ULoader size="lg" />

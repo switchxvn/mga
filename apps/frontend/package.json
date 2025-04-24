@@ -1,14 +1,22 @@
 {
+  "scripts": {
+    "build": "nuxt build",
+    "start": "node .output/server/index.mjs"
+  },
   "dependencies": {
     "@nuxtjs/i18n": "^9.0.0-rc.2",
     "@tanstack/vue-query": "^5.66.9",
-    "@trpc/client": "^10.45.2",
-    "@trpc/server": "^10.45.2",
+    "photoswipe": "^5.4.4",
+    "trpc-nuxt": "^1.0.4",
     "vue": "^3.3.4",
-    "vue-facebook-page": "^1.0.1"
+    "vue-facebook-page": "^1.0.1",
+    "vue-masonry-css": "^1.0.3"
   },
   "devDependencies": {
     "@headlessui/tailwindcss": "^0.2.2",
     "sass": "^1.85.1"
+  },
+  "resolutions": {
+    "estree-walker": "2.0.2"
   }
 }

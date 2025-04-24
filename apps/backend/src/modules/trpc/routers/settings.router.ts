@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, protectedProcedure, router } from '../trpc';
+import { publicProcedure, protectedProcedure, router } from '../procedures';
 import {
   createMenuItemSchema,
   updateMenuItemSchema,

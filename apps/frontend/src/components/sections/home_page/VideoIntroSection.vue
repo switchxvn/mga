@@ -3,6 +3,7 @@
   <section 
     ref="sectionRef"
     class="video-intro-section py-8"
+    v-if="isMounted"
   >
     <div class="container mx-auto px-4">
       <div v-if="isLoading" class="flex justify-center items-center py-12">
@@ -49,10 +50,7 @@
                   v-if="props.config?.showTitle"
                   :class="titleClasses"
                   class="line-clamp-2 mb-3"
-                  :style="{
-                    fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
-                    fontWeight: props.config?.titleStyle?.fontWeight || '600'
-                  }"
+                  :style="videoCardStyle"
                 >
                   <a
                     v-if="props.config?.linkEnabled"
@@ -60,9 +58,7 @@
                     :target="props.config?.linkTarget || '_blank'"
                     rel="noopener noreferrer"
                     :class="linkClasses"
-                    :style="{
-                      textDecoration: props.config?.titleStyle?.textDecoration || 'none'
-                    }"
+                    :style="videoCardStyle"
                   >
                     {{ video.title }}
                   </a>
@@ -82,9 +78,10 @@
         </div>
 
         <!-- Slider Layout -->
-        <div v-else class="w-full">
+        <div v-else class="swiper-outer-container">
           <div class="swiper-container">
             <Swiper
+              v-if="videoData.length > 0"
               :modules="[Autoplay, SwiperPagination, SwiperNavigation]"
               :slides-per-view="props.config?.sliderSettings?.slidesPerView || 3"
               :space-between="24"
@@ -115,11 +112,10 @@
                 stopOnLastSlide: false,
                 waitForTransition: false
               } : false"
-              :pagination="{
-                el: '.video-swiper-pagination',
+              :pagination="{ 
+                el: '.swiper-pagination',
                 clickable: true,
-                dynamicBullets: true,
-                enabled: true
+                type: 'bullets'
               }"
               :navigation="{
                 nextEl: '.video-swiper-next',
@@ -127,6 +123,7 @@
                 enabled: true
               }"
               class="!overflow-visible pb-12"
+              @swiper="onSwiper"
             >
               <SwiperSlide v-for="video in videoData" :key="video.id" class="group h-[480px]">
                 <div class="video-card group relative h-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
@@ -159,10 +156,7 @@
                         v-if="props.config?.showTitle"
                         :class="titleClasses"
                         class="line-clamp-2 mb-3"
-                        :style="{
-                          fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
-                          fontWeight: props.config?.titleStyle?.fontWeight || '600'
-                        }"
+                        :style="videoCardStyle"
                       >
                         <a
                           v-if="props.config?.linkEnabled"
@@ -170,9 +164,7 @@
                           :target="props.config?.linkTarget || '_blank'"
                           rel="noopener noreferrer"
                           :class="linkClasses"
-                          :style="{
-                            textDecoration: props.config?.titleStyle?.textDecoration || 'none'
-                          }"
+                          :style="videoCardStyle"
                         >
                           {{ video.title }}
                         </a>
@@ -191,13 +183,15 @@
                 </div>
               </SwiperSlide>
             </Swiper>
+          </div>
 
-            <!-- Navigation Arrows -->
-            <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-prev swiper-button-prev !z-10"></div>
-            <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-next swiper-button-next !z-10"></div>
-            
-            <!-- Pagination -->
-            <div v-if="props.config?.sliderSettings?.dots" class="video-swiper-pagination !z-10"></div>
+          <!-- Navigation Arrows -->
+          <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-prev swiper-button-prev !z-10"></div>
+          <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-next swiper-button-next !z-10"></div>
+          
+          <!-- Pagination -->
+          <div class="flex justify-center w-full">
+            <div class="swiper-pagination !relative !bottom-0 mt-6"></div>
           </div>
         </div>
       </div>
@@ -206,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from "vue";
+import { computed, ref, onMounted, watch, onBeforeUnmount } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import {
   Autoplay,
@@ -220,6 +214,7 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import "swiper/css/autoplay";
 import { PlayCircle } from "lucide-vue-next";
+import { type Swiper as SwiperInstance } from 'swiper';
 
 interface VideoIntro {
   id: number;
@@ -282,6 +277,8 @@ const trpc = useTrpc();
 const { isDark } = useDarkMode();
 const sectionRef = ref<HTMLElement | null>(null);
 
+const swiperInstance = ref<SwiperInstance>();
+
 const titleClasses = computed(() => {
   const baseClasses = ['font-roboto', 'mb-1', 'transition-colors', 'duration-300'];
   baseClasses.push('text-gray-900', 'dark:text-gray-100');
@@ -297,6 +294,13 @@ const linkClasses = computed(() => {
 const descriptionClasses = computed(() => {
   return ['mt-2', 'text-sm', 'text-gray-600', 'dark:text-gray-400', 'transition-colors', 'duration-300'].join(' ');
 });
+
+// Thêm các computed properties cho styles
+const videoCardStyle = computed(() => ({
+  fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
+  fontWeight: props.config?.titleStyle?.fontWeight || '600',
+  textDecoration: props.config?.titleStyle?.textDecoration || 'none'
+}));
 
 // Update CSS variables when theme changes
 const updateThemeColors = () => {
@@ -331,25 +335,40 @@ const currentLayout = computed(() => {
   return props.config?.layout || 'grid';
 });
 
+// Trong script setup
+const isMounted = ref(true);
+let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+
 // Fetch videos using tRPC
 const videoQuery = trpc.hero.getHeroVideos.query({
   themeId: props.config?.themeId,
 });
 
 onMounted(async () => {
-  console.log("Component mounted");
-  console.log("Initial config:", props.config);
-  console.log("Initial layout:", props.config?.layout);
+  if (!isMounted.value) return;
+  
+  cleanupTimer = setTimeout(() => {
+    if (!isMounted.value) return;
+    console.log("Component mounted");
+    console.log("Initial config:", props.config);
+    console.log("Initial layout:", props.config?.layout);
+  }, 0);
 
   try {
     const result = await videoQuery;
-    videoData.value = result as VideoIntro[];
-    console.log("Fetched videos:", videoData.value);
+    if (isMounted.value) {
+      videoData.value = result as VideoIntro[];
+      console.log("Fetched videos:", videoData.value);
+    }
   } catch (err) {
-    console.error("Error fetching videos:", err);
-    error.value = err as Error;
+    if (isMounted.value) {
+      console.error("Error fetching videos:", err);
+      error.value = err as Error;
+    }
   } finally {
-    isLoading.value = false;
+    if (isMounted.value) {
+      isLoading.value = false;
+    }
   }
 });
 
@@ -403,6 +422,32 @@ const handleImageError = (event: Event) => {
   const imgElement = event.target as HTMLImageElement;
   imgElement.src = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400&auto=format&fit=crop";
 };
+
+const onSwiper = (swiper: SwiperInstance) => {
+  swiperInstance.value = swiper;
+};
+
+// Cải thiện cleanup
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  
+  if (cleanupTimer) {
+    clearTimeout(cleanupTimer);
+  }
+  
+  if (swiperInstance.value) {
+    try {
+      swiperInstance.value.destroy(true, true);
+      swiperInstance.value = undefined;
+    } catch (error) {
+      console.error('Error destroying swiper:', error);
+    }
+  }
+});
+
+const onSlideChange = () => {
+  console.log('slide change');
+};
 </script>
 
 <style scoped>
@@ -414,12 +459,32 @@ const handleImageError = (event: Event) => {
   overflow: hidden;
 }
 
+.swiper-outer-container {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 0;
+
+  @media (min-width: 641px) {
+    width: auto;
+    left: auto;
+    right: auto;
+    margin: 0 -40px;
+    padding: 0 40px;
+  }
+}
+
 .swiper-container {
   overflow: hidden;
-  margin: 0 40px;
-  
-  @media (max-width: 640px) {
-    margin: 0;
+  position: relative;
+  width: 100%;
+  padding: 0 16px;
+
+  @media (min-width: 641px) {
+    padding: 0;
   }
 }
 
@@ -445,9 +510,9 @@ const handleImageError = (event: Event) => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  margin-top: -22px;
+  width: 40px;
+  height: 40px;
+  margin-top: -20px;
   background: white;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -459,7 +524,6 @@ const handleImageError = (event: Event) => {
   }
   
   &::after {
-    font-family: swiper-icons;
     font-size: 1.2rem;
     font-weight: bold;
     color: var(--primary);
@@ -486,56 +550,47 @@ const handleImageError = (event: Event) => {
 }
 
 .video-intro-section :deep(.swiper-button-prev) {
-  left: 20px;
-  &::after {
-    content: 'prev';
-  }
+  left: 0;
 }
 
 .video-intro-section :deep(.swiper-button-next) {
-  right: 20px;
-  &::after {
-    content: 'next';
-  }
+  right: 0;
 }
 
 .video-intro-section :deep(.swiper-pagination) {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
+  position: relative !important;
+  bottom: 0 !important;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  z-index: 10;
-  padding: 0;
-  margin: 0;
-  width: auto;
-  min-width: max-content;
+  margin-top: 1rem;
+  width: 100%;
 }
 
 .video-intro-section :deep(.swiper-pagination-bullet) {
-  width: 8px;
-  height: 8px;
-  margin: 0;
-  background-color: var(--primary);
-  opacity: 0.3;
+  width: 10px !important;
+  height: 10px !important;
+  margin: 0 4px !important;
+  background-color: rgb(var(--secondary-300)) !important;
+  opacity: 1 !important;
   transition: all 0.3s ease;
-  
-  &-active {
-    opacity: 1;
-    transform: scale(1.2);
-  }
+  border-radius: 50%;
+}
+
+.video-intro-section :deep(.swiper-pagination-bullet-active) {
+  transform: scale(1.2);
+  background-color: rgb(var(--primary-500)) !important;
 }
 
 /* Video card styling */
 .video-card {
-  @apply transform transition-all duration-300;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.3s ease;
 }
 
 .video-card:hover {
-  @apply -translate-y-1;
+  transform: translate3d(0, -4px, 0);
 }
 
 .video-card .play-button {
@@ -608,5 +663,9 @@ const handleImageError = (event: Event) => {
   aspect-ratio: 16/9;
   width: 100%;
   height: 100%;
+}
+
+.yt-title {
+  font-family: var(--font-primary);
 }
 </style>

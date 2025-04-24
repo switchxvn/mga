@@ -1,4 +1,5 @@
 // Import all SCSS modules
+@use 'base/fonts' as *;
 @use 'base/variables' as *;
 @use 'base/reset' as *;
 @use 'base/mixins' as *;
@@ -12,7 +13,6 @@
 @use 'components/toast' as *;
 @use 'components/button' as *;
 @use 'components/detail-page' as *;
-@use 'components/product-detail' as *;
 @use 'components/form' as *;
 
 // Import Tailwind layers
@@ -26,6 +26,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-primary);
   }
   
   html.dark {
@@ -55,6 +56,114 @@
   }
 }
 
+
+
+/* Primary background colors */
+.bg-primary-100 {
+  background-color: rgb(var(--primary-100));
+}
+.bg-primary-200 {
+  background-color: rgb(var(--primary-200));
+}
+.bg-primary-300 {
+  background-color: rgb(var(--primary-300));
+}
+.bg-primary-400 {
+  background-color: rgb(var(--primary-400));
+}
+.bg-primary-500 {
+  background-color: rgb(var(--primary-500));
+}
+.bg-primary-600 {
+  background-color: rgb(var(--primary-600));
+}
+.bg-primary-700 {
+  background-color: rgb(var(--primary-700));
+}
+.bg-primary-800 {
+  background-color: rgb(var(--primary-800));
+}
+.bg-primary-900 {
+  background-color: rgb(var(--primary-900));
+}
+
+.bg-yellow-100 {
+  background-color: rgb(var(--yellow-100));
+}
+.bg-yellow-200 {
+  background-color: rgb(var(--yellow-200));
+}
+
+.bg-yellow-300 {
+  background-color: rgb(var(--yellow-300));
+}
+.bg-yellow-400 {
+  background-color: rgb(var(--yellow-400));
+}
+
+.bg-yellow-500 {
+  background-color: rgb(var(--yellow-500));
+}
+
+.bg-yellow-600 {
+  background-color: rgb(var(--yellow-600));
+}
+
+.bg-yellow-700 {
+  background-color: rgb(var(--yellow-700));
+}
+
+.bg-yellow-800 {
+  background-color: rgb(var(--yellow-800));
+}
+
+.bg-yellow-900 {
+  background-color: rgb(var(--yellow-900));
+}
+
+.bg-yellow-950 {
+  background-color: rgb(var(--yellow-950));
+}
+
+.text-yellow-100 {
+  color: rgb(var(--yellow-100));
+}
+
+.text-yellow-200 {
+  color: rgb(var(--yellow-200));
+} 
+
+.text-yellow-300 {
+  color: rgb(var(--yellow-300));
+}
+
+.text-yellow-400 {
+  color: rgb(var(--yellow-400));
+}
+
+.text-yellow-500 {
+  color: rgb(var(--yellow-500));
+}
+
+.text-yellow-600 {
+  color: rgb(var(--yellow-600));
+}
+
+.text-yellow-700 {
+  color: rgb(var(--yellow-700));
+}
+
+.text-yellow-800 {
+  color: rgb(var(--yellow-800));
+}
+
+.text-yellow-900 {
+  color: rgb(var(--yellow-900));
+}
+
+.text-yellow-950 {
+  color: rgb(var(--yellow-950));
+}
 /* Custom styles for Nuxt UI inputs */
 .u-input-leading {
   padding-right: 0.75rem !important;
@@ -88,4 +197,80 @@
 
 :root.disable-transitions .transition-\[background\] {
   transition: background-color 150ms !important;
+}
+
+/* v-calendar custom styles */
+.vc-container {
+  --vc-font-family: inherit;
+  --vc-rounded-full: 9999px;
+  --vc-font-bold: 600;
+  --vc-font-semibold: 500;
+  --vc-text-lg: 1.125rem;
+
+  .vc-weeks {
+    padding: 0 1rem;
+  }
+
+  .vc-day {
+    &:not(.is-not-in-month) {
+      .vc-day-content {
+        color: theme('colors.gray.700');
+        font-weight: 500;
+        border-radius: theme('borderRadius.lg');
+
+        &:hover {
+          background-color: theme('colors.primary.500') !important;
+          color: theme('colors.white') !important;
+        }
+
+        &.is-today {
+          background-color: theme('colors.gray.100') !important;
+          color: theme('colors.gray.900') !important;
+        }
+      }
+    }
+  }
+
+  .vc-nav-title {
+    color: theme('colors.gray.700');
+    font-weight: 600;
+  }
+
+  .vc-nav-arrow {
+    color: theme('colors.gray.400');
+    &:hover {
+      color: theme('colors.gray.600');
+    }
+  }
+
+  .vc-weekday {
+    color: theme('colors.gray.400');
+    font-weight: 500;
+  }
+
+  /* Custom highlight styles */
+  .vc-highlight-content-solid {
+    background-color: theme('colors.primary.500') !important;
+    color: theme('colors.white') !important;
+    border-radius: theme('borderRadius.lg') !important;
+  }
+
+  .vc-highlight {
+    background-color: transparent !important;
+    .vc-highlight-base-start {
+      width: 100% !important;
+      border-radius: theme('borderRadius.lg') !important;
+    }
+  }
+}
+
+/* Swiper pagination bullet styles */
+.swiper-pagination-bullet {
+  background-color: rgb(var(--secondary-300)) !important;
+  opacity: 1 !important;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: rgb(var(--primary-500)) !important;
+  opacity: 1 !important;
 } 

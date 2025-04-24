@@ -6,6 +6,7 @@ import { useCategory } from '../../composables/useCategory'
 import { useRoute, useRouter } from 'vue-router'
 import CategorySidebar from '../../components/sidebar/CategorySidebar.vue'
 import CategoryMobileSidebar from '../../components/sidebar/CategoryMobileSidebar.vue'
+import ProductCard from '../../components/cards/ProductCard.vue'
 import { useProduct, type ProductFilter, type ProductSortBy } from '../../composables/useProduct'
 
 // Sử dụng composables
@@ -151,67 +152,50 @@ useHead(() => {
   };
 });
 
-// Filter state
-type SortByType = 'newest' | 'oldest' | 'price_asc' | 'price_desc';
-
-interface FilterState {
-  search: string;
-  minPrice?: number;
-  maxPrice?: number;
+// Extend ProductFilter to ensure includeNullPrice is required and boolean
+interface CategoryProductFilter extends Omit<ProductFilter, 'categories'> {
   includeNullPrice: boolean;
-  categories: number[];
+  categories: string[];
   isFeatured: boolean;
   isNew: boolean;
   isSale: boolean;
-  sortBy: SortByType;
+  sortBy: ProductSortBy;
   page: number;
   limit: number;
+}
+
+// Update FilterState to use CategoryProductFilter
+interface FilterState extends CategoryProductFilter {
   categorySlug: string;
 }
 
-const filters = ref<FilterState>({
+// Convert string IDs to numbers for API
+const convertCategoryIds = (ids: (string | number)[]): number[] => {
+  return ids.map(id => typeof id === 'string' ? parseInt(id, 10) : id);
+};
+
+// Initialize filters
+const filters = reactive<FilterState>({
   search: route.query.search as string || '',
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
-  includeNullPrice: route.query.includeNullPrice === 'true',
+  includeNullPrice: true,
   categories: [], // Will be updated when category data is loaded
   isFeatured: route.query.isFeatured === 'true',
   isNew: route.query.isNew === 'true',
   isSale: route.query.isSale === 'true',
-  sortBy: (route.query.sortBy as SortByType) || 'newest',
+  sortBy: (route.query.sortBy as ProductSortBy) || 'newest',
   page: Number(route.query.page) || 1,
   limit: Number(route.query.limit) || 12,
   categorySlug: slug.value
-})
+});
 
-// Products data
-interface ProductTranslation {
-  locale: string;
-  name: string;
-  description?: string;
-  title?: string;
-  shortDescription?: string;
-  // Thêm các thuộc tính khác nếu cần
-}
-
-interface Product {
-  id: number;
-  title: string; // Sản phẩm có title thay vì name
-  slug: string;
-  price: number | null; // Không dùng optional (?) mà dùng union với null
-  isFeatured: boolean;
-  isNew: boolean;
-  isSale: boolean;
-  translations: ProductTranslation[];
-  // Thêm các thuộc tính khác của sản phẩm nếu cần
-}
-
-// Initialize product composable with empty initial filters
-const initialFilters: ProductFilter = {
+// Update initial filters
+const initialFilters: CategoryProductFilter = {
   search: '',
   minPrice: undefined,
   maxPrice: undefined,
-  includeNullPrice: false,
+  includeNullPrice: true,
   categories: [],
   isFeatured: false,
   isNew: false,
@@ -234,21 +218,20 @@ const {
 
 // Sort options as computed property to ensure translations are updated
 const sortOptions = computed(() => [
-  { value: "newest", label: t("sort.newest") },
-  { value: "oldest", label: t("sort.oldest") },
-  { value: "price_asc", label: t("sort.price_asc") },
-  { value: "price_desc", label: t("sort.price_desc") },
+  { value: "newest" as ProductSortBy, label: t("sort.newest") },
+  { value: "oldest" as ProductSortBy, label: t("sort.oldest") },
+  { value: "price_asc" as ProductSortBy, label: t("sort.price_asc") },
+  { value: "price_desc" as ProductSortBy, label: t("sort.price_desc") },
 ]);
 
 // Watch for category changes to update filters and fetch products
 watch([() => slug.value, () => categoryData.value?.id], async ([newSlug, newId]) => {
   if (newId) {
-    // Update filters with current route query params and category ID
-    productFilters.value = {
+    const updatedFilters: FilterState = {
       search: route.query.search as string || '',
       minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
       maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
-      includeNullPrice: route.query.includeNullPrice === 'true',
+      includeNullPrice: true,
       categories: [newId],
       isFeatured: route.query.isFeatured === 'true',
       isNew: route.query.isNew === 'true',
@@ -256,6 +239,15 @@ watch([() => slug.value, () => categoryData.value?.id], async ([newSlug, newId])
       sortBy: (route.query.sortBy as ProductSortBy) || 'newest',
       page: Number(route.query.page) || 1,
       limit: Number(route.query.limit) || 12,
+      categorySlug: slug.value
+    };
+
+    Object.assign(filters, updatedFilters);
+    
+    // Convert to API format
+    productFilters.value = {
+      ...updatedFilters,
+      categories: convertCategoryIds(updatedFilters.categories),
       locale: locale.value
     };
     
@@ -265,121 +257,33 @@ watch([() => slug.value, () => categoryData.value?.id], async ([newSlug, newId])
   }
 }, { immediate: true });
 
-// Watch for locale changes
-watch(locale, async () => {
-  // Reset all states first
-  products.value = [];
-  totalProducts.value = 0;
-  totalPages.value = 0;
-  
-  // Reset filters
-  filters.value = {
-    search: '',
-    minPrice: undefined,
-    maxPrice: undefined,
-    includeNullPrice: false,
-    categories: categoryData.value?.id ? [categoryData.value.id] : [],
-    isFeatured: false,
-    isNew: false,
-    isSale: false,
-    sortBy: 'newest',
-    page: 1,
-    limit: 12,
-    categorySlug: slug.value
-  };
-  
-  productFilters.value = {
-    ...filters.value,
-    locale: locale.value
-  };
-
-  // Clear URL query params except category
-  router.replace({ 
-    query: { 
-      ...route.query,
-      page: undefined,
-      sortBy: undefined,
-      search: undefined,
-      minPrice: undefined,
-      maxPrice: undefined,
-      includeNullPrice: undefined,
-      isFeatured: undefined,
-      isNew: undefined,
-      isSale: undefined
-    }
-  });
-
-  // Then refresh data
-  await refreshCategory();
-  
-  // Only fetch products if we have a category ID
-  if (!isLoading.value && categoryData.value?.id) {
-    fetchProducts();
-  }
-});
-
-// Handle page change
-const handlePageChange = (page: number) => {
-  // Update both filter states
-  filters.value.page = page;
-  productFilters.value.page = page;
-  
-  // Update URL query params
-  updateQueryParams();
-  
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-// Update URL query params and fetch products
-const updateQueryParams = () => {
-  if (!categoryData.value?.id) return;
-  
-  // Build query params object
-  const query: Record<string, string | number | undefined> = {};
-  
-  if (filters.value.search) query.search = filters.value.search;
-  if (filters.value.minPrice !== undefined) query.minPrice = filters.value.minPrice;
-  if (filters.value.maxPrice !== undefined) query.maxPrice = filters.value.maxPrice;
-  if (filters.value.includeNullPrice) query.includeNullPrice = 'true';
-  if (filters.value.isFeatured) query.isFeatured = 'true';
-  if (filters.value.isNew) query.isNew = 'true';
-  if (filters.value.isSale) query.isSale = 'true';
-  if (filters.value.sortBy && filters.value.sortBy !== 'newest') query.sortBy = filters.value.sortBy;
-  if (filters.value.page > 1) query.page = filters.value.page;
-  if (filters.value.limit !== 12) query.limit = filters.value.limit;
-  
-  // Update route without category in query
-  router.replace({ query });
-  
-  // Fetch products with current filters
-  if (!isLoading.value) {
-    fetchProducts();
-  }
-};
-
 // Handle filter changes
 const handleFilterChange = (newFilters: ProductFilter) => {
   if (!categoryData.value?.id) return;
   
-  // Update both filter states
-  filters.value = {
+  const updatedFilters: FilterState = {
     ...newFilters,
-    categories: [categoryData.value.id],
+    categories: [categoryData.value.id.toString()],
     categorySlug: slug.value,
-    search: newFilters.search || '', // Ensure search is always a string
-    limit: newFilters.limit || 12, // Ensure limit is always a number
-    page: 1 // Reset to page 1 when filters change
+    search: newFilters.search || '',
+    limit: newFilters.limit || 12,
+    page: 1,
+    includeNullPrice: newFilters.includeNullPrice ?? true,
+    isFeatured: newFilters.isFeatured ?? false,
+    isNew: newFilters.isNew ?? false,
+    isSale: newFilters.isSale ?? false,
+    sortBy: newFilters.sortBy || 'newest'
   };
   
+  Object.assign(filters, updatedFilters);
+  
+  // Convert to API format
   productFilters.value = {
-    ...newFilters,
-    categories: [categoryData.value.id],
-    locale: locale.value,
-    page: 1 // Reset to page 1 when filters change
+    ...updatedFilters,
+    categories: convertCategoryIds(updatedFilters.categories),
+    locale: locale.value
   };
   
-  // Update URL query params and fetch products
   updateQueryParams();
 };
 
@@ -389,8 +293,8 @@ const handleSortChange = (event: Event) => {
   const newSortBy = target.value as ProductSortBy;
   
   // Update both filter states
-  filters.value.sortBy = newSortBy;
-  filters.value.page = 1;
+  filters.sortBy = newSortBy;
+  filters.page = 1;
   
   productFilters.value.sortBy = newSortBy;
   productFilters.value.page = 1;
@@ -426,6 +330,46 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   
   return items;
 });
+
+// Handle page change
+const handlePageChange = (page: number) => {
+  // Update both filter states
+  filters.page = page;
+  productFilters.value.page = page;
+  
+  // Update URL query params
+  updateQueryParams();
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Update URL query params and fetch products
+const updateQueryParams = () => {
+  if (!categoryData.value?.id) return;
+  
+  // Build query params object
+  const query: Record<string, string | number | undefined> = {};
+  
+  if (filters.search) query.search = filters.search;
+  if (filters.minPrice !== undefined) query.minPrice = filters.minPrice;
+  if (filters.maxPrice !== undefined) query.maxPrice = filters.maxPrice;
+  if (filters.includeNullPrice) query.includeNullPrice = 'true';
+  if (filters.isFeatured) query.isFeatured = 'true';
+  if (filters.isNew) query.isNew = 'true';
+  if (filters.isSale) query.isSale = 'true';
+  if (filters.sortBy && filters.sortBy !== 'newest') query.sortBy = filters.sortBy;
+  if (filters.page > 1) query.page = filters.page;
+  if (filters.limit !== 12) query.limit = filters.limit;
+  
+  // Update route without category in query
+  router.replace({ query });
+  
+  // Fetch products with current filters
+  if (!isLoading.value) {
+    fetchProducts();
+  }
+};
 </script>
 
 <template>
@@ -441,6 +385,24 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
       </div>
       
       <template v-else>
+        <!-- Breadcrumb -->
+        <nav class="mb-4">
+          <ol class="flex flex-wrap items-center gap-2">
+            <li v-for="(item, index) in breadcrumbItems" :key="index" class="flex items-center">
+              <NuxtLink
+                :to="item.to"
+                :class="[
+                  'text-sm hover:text-primary-600 dark:hover:text-primary-400',
+                  item.active ? 'text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400'
+                ]"
+              >
+                {{ item.label }}
+              </NuxtLink>
+              <span v-if="index < breadcrumbItems.length - 1" class="ml-2 text-gray-400">/</span>
+            </li>
+          </ol>
+        </nav>
+
         <div class="mb-8">
           <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
             {{ categoryName || slug }}
@@ -488,7 +450,7 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
           <!-- Products Content -->
           <div class="lg:w-3/4">
             <!-- Toolbar -->
-              <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div class="flex items-center gap-2">
                 <span class="text-sm text-gray-600 dark:text-gray-400">
                   {{ t('products.showing') }} {{ totalProducts }} {{ t('products.items') }}
@@ -526,13 +488,21 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
               </div>
 
               <template v-else>
-                <ProductGrid
-                  :products="products"
-                  :loading="false"
-                  :locale="locale"
-                  :columns="3"
-                />
-                
+                <!-- Debug info -->
+                <div v-if="products.length === 0" class="mb-4 rounded-lg bg-yellow-50 p-4 dark:bg-yellow-900/20">
+                  <p class="text-yellow-800 dark:text-yellow-200">{{ t('products.noProducts') }}</p>
+                  <pre class="mt-2 text-xs text-yellow-600 dark:text-yellow-400">Filters: {{ JSON.stringify(filters, null, 2) }}</pre>
+                </div>
+
+                <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <ProductCard
+                    v-for="product in products"
+                    :key="product.id"
+                    :product="product"
+                    :locale="locale"
+                  />
+                </div>
+
                 <!-- Pagination -->
                 <div v-if="totalProducts > 0" class="mt-8 flex justify-center">
                   <Pagination
@@ -542,19 +512,6 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
                     :max-visible-buttons="5"
                     @update:model-value="handlePageChange"
                   />
-                </div>
-                
-                <!-- No Results Message -->
-                <div v-else class="mt-8 text-center">
-                  <div class="inline-flex items-center justify-center rounded-full bg-gray-100 p-6 dark:bg-gray-800">
-                    <i class="i-heroicons-inbox-20-solid h-12 w-12 text-gray-400 dark:text-gray-500" />
-                  </div>
-                  <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-                    {{ t('products.noResults') }}
-                  </h3>
-                  <p class="mt-2 text-gray-600 dark:text-gray-400">
-                    {{ t('products.tryAdjustingFilters') }}
-                  </p>
                 </div>
               </template>
             </template>
@@ -566,7 +523,6 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 </template>
 
 <style scoped>
-
 /* Hiệu ứng hover cho các thẻ */
 :deep(.u-breadcrumb-item) {
   @apply transition-colors duration-200;

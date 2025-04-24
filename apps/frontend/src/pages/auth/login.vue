@@ -3,13 +3,15 @@
 import { useAuth } from '@/composables/useAuth';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email } from '@vuelidate/validators';
+import { useToast } from '@/composables/useToast';
 
 definePageMeta({
   layout: 'auth',
   middleware: ['guest']
 });
 
-const { login, isLoading, error } = useAuth();
+const { login, isLoading, error: authError } = useAuth();
+const toast = useToast();
 
 const form = ref({
   email: '',
@@ -33,10 +35,20 @@ const handleSubmit = async () => {
   const isValid = await v$.value.$validate();
   if (!isValid) return;
   
-  await login({
-    email: form.value.email,
-    password: form.value.password,
-  });
+  try {
+    await login({
+      email: form.value.email,
+      password: form.value.password,
+    });
+    
+    toast.success('Đăng nhập thành công!');
+  } catch (err: any) {
+    if (err.shape?.message) {
+      toast.error(err.shape.message);
+    } else {
+      toast.error('Đã xảy ra lỗi khi đăng nhập');
+    }
+  }
 };
 
 // Handle enter key press
@@ -49,16 +61,6 @@ const handleKeyPress = (e: KeyboardEvent) => {
 
 <template>
   <div class="space-y-8">
-    <!-- Mobile Header -->
-    <div class="lg:hidden text-center">
-      <h1 class="text-2xl font-bold tracking-tight">
-        Đăng nhập
-      </h1>
-      <p class="mt-2 text-sm text-muted-foreground">
-        Nhập thông tin đăng nhập của bạn để tiếp tục
-      </p>
-    </div>
-
     <!-- Form -->
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <UFormGroup
@@ -104,14 +106,14 @@ const handleKeyPress = (e: KeyboardEvent) => {
         </NuxtLink>
       </div>
 
-      <div v-if="error" class="rounded-md bg-destructive/10 p-4">
+      <div v-if="authError" class="rounded-md bg-destructive/10 p-4">
         <div class="flex">
           <div class="flex-shrink-0">
             <UIcon name="i-heroicons-exclamation-circle" class="h-5 w-5 text-destructive" />
           </div>
           <div class="ml-3">
             <p class="text-sm text-destructive">
-              {{ error }}
+              {{ authError }}
             </p>
           </div>
         </div>
@@ -169,4 +171,20 @@ const handleKeyPress = (e: KeyboardEvent) => {
       </div>
     </form>
   </div>
-</template> 
+</template>
+
+<style scoped>
+/* Add logo animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+</style> 

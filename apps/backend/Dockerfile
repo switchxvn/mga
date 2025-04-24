@@ -1,92 +1,98 @@
-# Build stage
-FROM node:20-alpine AS builder
+# Stage 1: Dependencies
+FROM node:20-slim AS deps
 
 WORKDIR /app
 
-# Create cache directory and set permissions
-RUN mkdir -p /app/.yarn-cache && \
-    chown -R node:node /app
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl python3 make g++ git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Switch to non-root user
-USER node
+# Set environment variables
+ENV NX_SKIP_NX_CACHE_CREATION=true
+ENV NX_DAEMON=false
+ENV CYPRESS_INSTALL_BINARY=0
 
-# Set yarn cache directory
-ENV YARN_CACHE_FOLDER=/app/.yarn-cache
+# Copy package.json and yarn.lock
+COPY package.json yarn.lock ./
+COPY nx.json ./
 
-# Copy package files
-COPY --chown=node:node package.json yarn.lock ./
+# Install dependencies in smaller chunks to avoid memory issues
+RUN yarn config set ignore-engines true && \
+    yarn config set network-timeout 300000 && \
+    yarn install --frozen-lockfile --production=false
 
-# Copy the nx workspace files
-COPY --chown=node:node nx.json tsconfig.base.json ./
+# Stage 2: Builder
+FROM node:20-slim AS builder
 
-# Install dependencies
-RUN yarn install --frozen-lockfile
+WORKDIR /app
 
-# Copy TypeScript configs and source code for migrations
-COPY --chown=node:node tsconfig.json tsconfig.base.json ./
-COPY --chown=node:node libs ./libs
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl python3 make g++ git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy remaining source code
-COPY --chown=node:node . .
+# Set environment variables
+ENV NX_SKIP_NX_CACHE_CREATION=true
+ENV NX_DAEMON=false
+ENV CYPRESS_INSTALL_BINARY=0
+ENV NODE_OPTIONS="--max_old_space_size=4096"
+
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy project files
+COPY package.json yarn.lock ./
+COPY nx.json tsconfig.base.json ./
+COPY tsconfig.json ./
+COPY eslint.config.mjs ./
+COPY .prettierrc .prettierignore ./
+
+# Copy source code
+COPY libs ./libs
+COPY apps/backend ./apps/backend
 
 # Build argument for environment file
-ARG ENV_FILE=.env
+ARG ENV_FILE=.env.production
 ENV ENV_FILE=${ENV_FILE}
 
 # Copy environment file
-COPY --chown=node:node apps/backend/${ENV_FILE} apps/backend/.env
+COPY apps/backend/${ENV_FILE} apps/backend/.env
 
-# Build the application and verify output
-RUN yarn nx build backend --prod && \
-    ls -la dist/apps/backend || exit 1
+# Build the application
+RUN yarn nx build backend --prod
 
-# Production stage
-FROM node:20-alpine AS runner
+# Stage 3: Runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# Create cache directory and set permissions
-RUN mkdir -p /app/.yarn-cache && \
-    chown -R node:node /app
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Switch to non-root user
-USER node
+# Set environment variables
+ENV NODE_ENV=production
 
-# Set yarn cache directory
-ENV YARN_CACHE_FOLDER=/app/.yarn-cache
+# Copy package files for production dependencies
+COPY package.json yarn.lock ./
 
-# Copy package files
-COPY --chown=node:node package.json yarn.lock ./
-
-# Copy TypeScript configs and libs for migrations
-COPY --chown=node:node tsconfig.json tsconfig.base.json ./
-COPY --chown=node:node libs ./libs
-
-# Install production dependencies only
-RUN yarn install --production --frozen-lockfile
+# Copy node_modules from deps stage and filter out dev dependencies
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built application
-COPY --chown=node:node --from=builder /app/dist/apps/backend/ ./dist/
+COPY --from=builder /app/dist/apps/backend ./dist
 
 # Copy environment file
-COPY --chown=node:node --from=builder /app/apps/backend/.env .env
+COPY --from=builder /app/apps/backend/.env .env
 
-# Switch back to root for entrypoint creation
-USER root
-
-# Create entrypoint script
-COPY --chown=root:root scripts/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh && \
-    chown node:node /app/entrypoint.sh
-
-# Switch back to non-root user
-USER node
+# Create and setup entrypoint script
+COPY scripts/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 3333
-
-# Set production environment
-ENV NODE_ENV=production
 
 # Use the entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]

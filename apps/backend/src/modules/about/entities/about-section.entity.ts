@@ -1,46 +1,51 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { AboutPage } from './about-page.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { AboutSectionTranslation } from './about-section-translation.entity';
+
+export enum AboutSectionType {
+  HERO = 'hero',
+  CONTENT = 'content',
+  TEAM = 'team',
+  MILESTONE = 'milestone',
+  STATS = 'stats',
+  GALLERY = 'gallery',
+  FEATURES = 'features',
+  CULTURAL = 'cultural',
+  TOURISM_HERO = 'tourism_hero',
+  TOURISM_FEATURES = 'tourism_features',
+  TOURISM_CULTURAL = 'tourism_cultural',
+  TOURISM_GALLERY = 'tourism_gallery'
+}
 
 @Entity('about_sections')
 export class AboutSection {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'about_page_id' })
-  aboutPageId: number;
+  @Column({
+    type: 'enum',
+    enum: AboutSectionType,
+    default: AboutSectionType.CONTENT
+  })
+  type: AboutSectionType;
 
-  @Column()
-  title: string;
+  @Column({ length: 100, name: 'component_name' })
+  componentName: string;
 
-  @Column({ type: 'text', nullable: true })
-  content: string;
-
-  @Column({ name: 'image_url', nullable: true })
-  imageUrl: string;
-
-  @Column({ name: 'video_url', nullable: true })
-  videoUrl: string;
-
-  @Column({ name: 'section_type', default: 'text' })
-  sectionType: string;
-
-  @Column({ default: 0 })
+  @Column({ default: 0, name: 'order' })
   order: number;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ type: 'jsonb', default: {} })
+  settings: Record<string, any>;
+
+  @Column({ default: true, name: 'is_active' })
   isActive: boolean;
+
+  @OneToMany(() => AboutSectionTranslation, translation => translation.section)
+  translations: AboutSectionTranslation[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  @ManyToOne(() => AboutPage, aboutPage => aboutPage.sections, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'about_page_id' })
-  aboutPage: AboutPage;
-
-  @OneToMany(() => AboutSectionTranslation, translation => translation.aboutSection, { cascade: true })
-  translations: AboutSectionTranslation[];
 } 

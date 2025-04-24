@@ -46,6 +46,22 @@ export const ROUTE_NAMES = {
   CONTACT: {
     en: 'contact',
     vi: 'lien-he'
+  },
+  GALLERY: {
+    en: 'gallery',
+    vi: 'thu-vien-hinh-anh'
+  },
+  TICKET_PRICING: {
+    en: 'ticket-pricing',
+    vi: 'bang-gia-ve'
+  },
+  MENU: {
+    en: 'menu',
+    vi: 'thuc-don'
+  },
+  ORDER_TICKET: {
+    en: 'order-ticket',
+    vi: 'dat-ve'
   }
 } as const;
 
@@ -97,11 +113,29 @@ export const ROUTE_PATHS = {
   CONTACT: {
     en: '/contact',
     vi: '/lien-he'
-  }
+  },
+  GALLERY: {
+    en: '/gallery',
+    vi: '/thu-vien-hinh-anh'
+  },
+  TICKET_PRICING: {
+    en: '/ticket-pricing',
+    vi: '/bang-gia-ve'
+  },
+  MENU: {
+    en: '/menu',
+    vi: '/thuc-don'
+  },
+  ORDER_TICKET: {
+    en: '/order-ticket',
+    vi: '/dat-ve'
+  } 
 } as const;
 
 export type LocaleType = 'en' | 'vi';
 type RouteType = keyof typeof ROUTE_PATHS;
+
+type RoutePath = typeof ROUTE_PATHS[RouteType][LocaleType];
 
 /**
  * Get localized route path
@@ -110,7 +144,7 @@ type RouteType = keyof typeof ROUTE_PATHS;
  * @param params - Route parameters (e.g., slug)
  */
 export function getLocalizedRoute(routeType: RouteType, locale: LocaleType, params?: Record<string, string>): string {
-  let path = ROUTE_PATHS[routeType][locale];
+  let path = ROUTE_PATHS[routeType][locale] as string;
   
   if (params) {
     Object.entries(params).forEach(([key, value]) => {

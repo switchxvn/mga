@@ -8,10 +8,13 @@ import { PageType } from '@ew/shared';
 // Import components
 import CombinedNavbar from '../components/ui/CombinedNavbar.vue';
 import Footer from '../components/ui/Footer.vue';
+import TourismFooter from '../components/ui/TourismFooter.vue';
 import BackToTop from '~/components/ui/BackToTop.vue';
 import FloatingPhoneSupport from '~/components/ui/FloatingPhoneSupport.vue';
 import FloatingZaloSupport from '~/components/ui/FloatingZaloSupport.vue';
 import FloatingMessengerSupport from '~/components/ui/FloatingMessengerSupport.vue';
+import SimpleNavbar from '~/components/ui/SimpleNavbar.vue';
+import MaintenancePage from '~/components/MaintenancePage.vue';
 
 const router = useRouter();
 const trpc = useTrpc();
@@ -21,27 +24,46 @@ const user = ref<any>(null);
 const isLoading = ref(true);
 const isDarkMode = ref(false);
 const theme = ref<any>({ sections: [] }); // Initialize with empty sections
+const footer = ref<any>(null);
+const isMaintenanceMode = ref(false);
 
 // Register available components
 const components = {
-  CombinedNavbar
+  CombinedNavbar,
+  SimpleNavbar,
+  Footer,
+  TourismFooter,
 } as const;
+
+// Function to resolve footer component
+const resolveFooterComponent = (componentName?: string) => {
+  if (!componentName) return Footer;
+  return components[componentName as keyof typeof components] || Footer;
+};
 
 // Function to get component name based on section type and componentName
 const resolveComponent = (section: any) => {
   console.log('Resolving component for section:', section);
+  console.log('Section type:', section.type);
+  console.log('Section componentName:', section.componentName);
+  
   if (section.componentName && components[section.componentName as keyof typeof components]) {
-    return components[section.componentName as keyof typeof components];
+    const component = components[section.componentName as keyof typeof components];
+    console.log('Using component from componentName:', component.name);
+    return component;
   }
+  
   const component = getDefaultComponent(section.type);
-  console.log('Resolved component:', component?.name);
+  console.log('Using default component for type:', section.type, component?.name);
   return component;
 };
 
 // Function to get default component based on section type
 const getDefaultComponent = (type: string) => {
   const typeToComponent: Record<string, any> = {
-    'navbar': components.CombinedNavbar
+    'navbar': components.CombinedNavbar,
+    'simple_navbar': components.SimpleNavbar,
+    'combined_navbar': components.CombinedNavbar
   };
   
   return typeToComponent[type] || components.CombinedNavbar;
@@ -83,29 +105,28 @@ onMounted(async () => {
       const activeTheme = await getActiveTheme({ pageType: PageType.COMMON });
       if (activeTheme) {
         theme.value = activeTheme;
+        console.log('Active theme loaded:', activeTheme);
+        console.log('Theme sections:', activeTheme.sections);
+        console.log('Active sections:', activeTheme.sections?.filter(s => s.isActive));
       }
     } catch (error) {
       console.error('Failed to load theme:', error);
     }
     
+    // Fetch footer data
+    try {
+      const activeFooter = await trpc.footer.getActiveFooter.query();
+      if (activeFooter) {
+        footer.value = activeFooter;
+        console.log('Active footer loaded:', activeFooter);
+      }
+    } catch (error) {
+      console.error('Failed to load footer:', error);
+    }
+    
     // Kiểm tra dark mode
     checkDarkMode();
     
-    // Theo dõi thay đổi của dark mode
-    if (process.client) {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.attributeName === 'class') {
-            checkDarkMode();
-          }
-        });
-      });
-      
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class']
-      });
-    }
   } catch (error) {
     console.error('Error in layout setup:', error);
   } finally {
@@ -147,38 +168,42 @@ async function handleLogout() {
 
 <template>
   <div class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <template v-if="theme?.sections">
-      <component 
-        v-for="section in theme.sections" 
-        :key="section.id"
-        v-show="section.isActive"
-        :is="resolveComponent(section)"
-        :settings="section.settings"
-        :user="user"
-        :isLoading="isLoading"
-        @logout="handleLogout"
-      />
+    <template v-if="isLoading">
+      <div class="flex justify-center items-center min-h-screen">
+        <ULoader size="lg" />
+      </div>
     </template>
     <template v-else>
-      <CombinedNavbar 
-        :user="user" 
-        :isLoading="isLoading" 
-        @logout="handleLogout" 
+      <!-- Header -->
+      <template v-if="theme?.sections">
+        <component 
+          v-for="section in theme.sections" 
+          :key="section.id"
+          v-show="section.isActive"
+          :is="resolveComponent(section)"
+          :settings="section.settings"
+          :user="user"
+          :isLoading="isLoading"
+          @logout="handleLogout"
+        />
+      </template>
+      
+      <!-- Main content -->
+      <main class="flex-grow">
+        <slot />
+      </main>
+      
+      <!-- Footer -->
+      <component
+        v-if="footer"
+        :is="resolveFooterComponent(footer.componentName)"
+        v-bind="footer"
       />
+      <BackToTop />
+      <FloatingPhoneSupport />
+      <FloatingZaloSupport />
+      <FloatingMessengerSupport />
     </template>
-    
-    <!-- Main content -->
-    <main class="flex-grow">
-      <slot />
-    </main>
-    
-    <!-- Footer -->
-    <Footer appName="E-Commerce" />
-    <BackToTop />
-    <FloatingPhoneSupport />
-    <FloatingZaloSupport />
-    <FloatingMessengerSupport />
   </div>
 </template>
 

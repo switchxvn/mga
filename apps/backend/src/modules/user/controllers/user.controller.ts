@@ -30,7 +30,7 @@ export class UserController {
   @ApiOperation({ summary: 'Get user by id' })
   @ApiResponse({ status: 200, description: 'Return found user', type: User })
   findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+    return this.userService.findOne(id);
   }
 
   @Put(':id')
@@ -38,7 +38,7 @@ export class UserController {
   @ApiOperation({ summary: 'Update user' })
   @ApiResponse({ status: 200, description: 'User updated successfully', type: User })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+    return this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
@@ -46,6 +46,6 @@ export class UserController {
   @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+    return this.userService.remove(id);
   }
 } 

@@ -1,7 +1,7 @@
 import { Profile } from './profile.interface';
 
 export interface Author {
-  id: number;
+  id: string;
   email: string;
   username: string;
   isEmailVerified: boolean;

@@ -8,7 +8,7 @@ export class UserProfile {
   id: number;
 
   @Column({ name: 'user_id' })
-  userId: number;
+  userId: string;
 
   @OneToOne(() => User, user => user.profile, { lazy: true })
   @JoinColumn({ name: 'user_id' })
@@ -33,8 +33,14 @@ export class UserProfile {
   @JoinColumn({ name: 'phone_code', referencedColumnName: 'phoneCode' })
   countryPhoneCode: Promise<CountryPhoneCode>;
 
-  @Column({ nullable: true })
-  address: string;
+  @Column({ nullable: true, type: 'json' })
+  address: {
+    street: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    zipCode: string | null;
+  } | null;
   
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

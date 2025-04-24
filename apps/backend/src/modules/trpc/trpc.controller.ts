@@ -1,21 +1,30 @@
-import { Controller, All, Req, Res, NotFoundException, Param, Logger } from '@nestjs/common';
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { TrpcService } from './trpc.service';
-import { TrpcRouter } from './trpc.router';
+import { All, Controller, Logger, Req, Res } from '@nestjs/common';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { TRPCContextManager } from './contexts/trpc.context';
+import { TrpcRouter } from './trpc.router';
 
 @Controller('trpc')
 export class TrpcController {
   private readonly logger = new Logger(TrpcController.name);
 
   constructor(
-    private readonly trpcService: TrpcService,
+    private readonly contextManager: TRPCContextManager,
     private readonly trpcRouter: TrpcRouter
   ) {}
 
   @All('*')
   async handleRequest(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     try {
+      // Handle CORS preflight
+      if (req.method === 'OPTIONS') {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.header('Access-Control-Max-Age', '86400'); // 24 hours
+        return res.status(204).send();
+      }
+
       // Log request details
       this.logger.debug(`Processing tRPC request: ${req.url}`);
       this.logger.debug(`Request path: ${req.url}`);
@@ -26,16 +35,16 @@ export class TrpcController {
         this.logger.debug(`Request body: ${JSON.stringify(req.body)}`);
       }
 
-      // Create context
-      const ctx = await this.trpcService.createContext(req);
-
-      // Tạo URL đầy đủ từ request
+      // Create full URL from request
       const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
       
-      // Tạo Request object cho fetchRequestHandler
+      // Create Request object for fetchRequestHandler
       const request = new Request(url, {
         method: req.method,
-        headers: new Headers(req.headers as Record<string, string>),
+        headers: new Headers({
+          ...req.headers as Record<string, string>,
+          'Content-Type': 'application/json',
+        }),
         body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
       });
 
@@ -44,7 +53,10 @@ export class TrpcController {
         endpoint: '/api/trpc',
         req: request,
         router: this.trpcRouter.getRouter(),
-        createContext: () => ctx,
+        createContext: () => this.contextManager.createContext({ req, res }),
+        batching: {
+          enabled: true,
+        },
         onError: ({ error, path }) => {
           this.logger.error(`tRPC error on path ${path}: ${error.message}`);
           this.logger.error(error.stack);
@@ -54,22 +66,9 @@ export class TrpcController {
         },
       });
 
-      // Log response details
-      this.logger.debug(`tRPC response status: ${result.status}`);
-      
-      // Lấy headers từ response
-      const headers: Record<string, string> = {};
-      result.headers.forEach((value, key) => {
-        headers[key] = value;
-      });
-      
-      this.logger.debug(`tRPC response headers: ${JSON.stringify(headers)}`);
-      
       // Set response headers
-      Object.entries(headers).forEach(([key, value]) => {
-        if (value !== undefined) {
-          res.header(key, value);
-        }
+      result.headers.forEach((value, key) => {
+        res.header(key, value);
       });
 
       // Set CORS headers
@@ -84,19 +83,26 @@ export class TrpcController {
 
       // Send response
       res.status(result.status);
-      
-      // Log response body for debugging
       const responseBody = await result.text();
-      this.logger.debug(`Response body: ${responseBody.substring(0, 200)}${responseBody.length > 200 ? '...' : ''}`);
       
-      res.send(responseBody);
+      // Set content type for JSON response
+      res.header('Content-Type', 'application/json');
+      
+      try {
+        // Parse and re-stringify to ensure valid JSON
+        const parsedBody = JSON.parse(responseBody);
+        return res.send(parsedBody);
+      } catch {
+        // If parsing fails, send raw response
+        return res.send(responseBody);
+      }
     } catch (error) {
       this.logger.error(`Error handling tRPC request: ${error instanceof Error ? error.message : String(error)}`);
       if (error instanceof Error) {
         this.logger.error(error.stack);
       }
       
-      res.status(500).send({
+      return res.status(500).send({
         message: 'Internal Server Error in tRPC handler',
         error: error instanceof Error ? error.message : String(error),
       });

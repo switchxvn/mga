@@ -3,7 +3,11 @@ import { useRouter } from 'vue-router';
 import { TRPCClientError } from '@trpc/client';
 import { useTrpc } from './useTrpc';
 import { ref } from './useVueComposables';
-import type { User } from '../types/User';
+import type { User, UserProfile, AuthLoginResponse } from '../types/User';
+import { useCookie } from 'nuxt/app';
+import type { AppRouter } from '../types/trpc';
+import { useUserStore } from '@/stores/useUserStore';
+import { computed } from 'vue';
 
 export interface LoginCredentials {
   email: string;
@@ -14,64 +18,37 @@ export interface RegisterCredentials extends LoginCredentials {
   name: string;
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const router = useRouter();
   const trpc = useTrpc();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const user = ref<User | null>(null);
+  const userStore = useUserStore();
 
-  const login = async (credentials: LoginCredentials) => {
+  const login = async (credentials: { email: string; password: string }) => {
     try {
       isLoading.value = true;
       error.value = null;
-      
+
       const result = await trpc.auth.login.mutate(credentials);
       
       if (result.accessToken) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', result.accessToken);
-          localStorage.setItem('user', JSON.stringify(result.user));
-        }
-        user.value = result.user;
-        await router.push('/');
-      } else {
-        throw new Error('Không nhận được token từ server');
-      }
-    } catch (e) {
-      if (e instanceof TRPCClientError) {
-        error.value = e.message;
-      } else if (e instanceof Error) {
-        error.value = e.message;
-      } else {
-        error.value = 'Đã xảy ra lỗi không xác định';
-      }
-    } finally {
-      isLoading.value = false;
-    }
-  };
+        // Lưu token vào localStorage
+        localStorage.setItem('accessToken', result.accessToken);
+        
+        // Lấy thông tin user và cập nhật store
+        await userStore.fetchUser();
 
-  const register = async (credentials: RegisterCredentials) => {
-    try {
-      isLoading.value = true;
-      error.value = null;
-      
-      const result = await trpc.auth.register.mutate(credentials);
-      
-      if (result.user) {
-        // Đăng ký thành công, chuyển hướng đến trang đăng nhập
-        await router.push('/login');
-      } else {
-        throw new Error('Đăng ký không thành công');
+        // Redirect to dashboard
+        router.push('/dashboard');
       }
-    } catch (e) {
-      if (e instanceof TRPCClientError) {
-        error.value = e.message;
-      } else if (e instanceof Error) {
-        error.value = e.message;
+    } catch (err: any) {
+      if (err.shape?.message) {
+        error.value = err.shape.message;
       } else {
-        error.value = 'Đã xảy ra lỗi không xác định';
+        error.value = 'Đã xảy ra lỗi trong quá trình đăng nhập';
       }
+      throw err;
     } finally {
       isLoading.value = false;
     }
@@ -81,22 +58,18 @@ export function useAuth() {
     try {
       isLoading.value = true;
       error.value = null;
-      
+
       await trpc.auth.logout.mutate();
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
-      user.value = null;
-      await router.push('/login');
-    } catch (e) {
-      if (e instanceof TRPCClientError) {
-        error.value = e.message;
-      } else if (e instanceof Error) {
-        error.value = e.message;
-      } else {
-        error.value = 'Đã xảy ra lỗi không xác định';
-      }
+      
+      // Xóa token và user info
+      localStorage.removeItem('accessToken');
+      userStore.clearUser();
+
+      // Redirect to login
+      router.push('/auth/login');
+    } catch (err: any) {
+      error.value = 'Đã xảy ra lỗi trong quá trình đăng xuất';
+      throw err;
     } finally {
       isLoading.value = false;
     }
@@ -104,44 +77,33 @@ export function useAuth() {
 
   const checkAuth = async () => {
     try {
-      if (typeof window === 'undefined') {
-        return false;
-      }
-      
-      const token = localStorage.getItem('token');
+      isLoading.value = true;
+      error.value = null;
+
+      const token = localStorage.getItem('accessToken');
       if (!token) {
-        user.value = null;
-        return false;
+        throw new Error('No token found');
       }
 
-      try {
-        const currentUser = await trpc.auth.me.query();
-        user.value = currentUser;
-        return true;
-      } catch (error) {
-        // Nếu token không hợp lệ hoặc hết hạn
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        user.value = null;
-        return false;
-      }
-    } catch (e) {
-      user.value = null;
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
+      // Lấy thông tin user và cập nhật store
+      await userStore.fetchUser();
+
+      return true;
+    } catch (err) {
+      localStorage.removeItem('accessToken');
+      userStore.clearUser();
       return false;
+    } finally {
+      isLoading.value = false;
     }
   };
 
   return {
     login,
-    register,
     logout,
     checkAuth,
     isLoading,
     error,
-    user,
+    user: computed(() => userStore.user),
   };
-} 
+}; 

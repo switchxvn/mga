@@ -20,14 +20,14 @@ export class UserAdminController {
   @Post()
   @ApiOperation({ summary: 'Create user' })
   @ApiResponse({ status: 201, description: 'User created successfully', type: User })
-  create(@Body() createUserDto: CreateUserDto): Promise<User> {
+  create(@Body() createUserDto: CreateUserDto) {
     return this.userAdminService.create(createUserDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Return all users', type: [User] })
-  findAll(): Promise<User[]> {
+  findAll() {
     return this.userAdminService.findAll();
   }
 
@@ -35,20 +35,20 @@ export class UserAdminController {
   @ApiOperation({ summary: 'Get user by id' })
   @ApiResponse({ status: 200, description: 'Return found user', type: User })
   findOne(@Param('id') id: string): Promise<User> {
-    return this.userAdminService.findOne(+id);
+    return this.userAdminService.findOne(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update user' })
   @ApiResponse({ status: 200, description: 'User updated successfully', type: User })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto): Promise<User> {
-    return this.userAdminService.update(+id, updateUserDto);
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.userAdminService.update(String(id), updateUserDto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  remove(@Param('id') id: string): Promise<void> {
-    return this.userAdminService.remove(+id);
+  remove(@Param('id') id: string) {
+    return this.userAdminService.remove(String(id));
   }
 } 

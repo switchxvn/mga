@@ -1,8 +1,7 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, router } from '../trpc';
 import { z } from 'zod';
-import { Injectable } from '@nestjs/common';
 import { PriceRequestStatus } from '../../price-request/entities/price-request.entity';
+import { publicProcedure, router } from '../procedures';
 
 export const priceRequestRouter = router({
   // Public procedure to create a price request

@@ -1,9 +1,8 @@
-import { router } from '../../trpc';
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { adminProcedure } from '../../procedures/admin.procedure';
-import { permissionMiddleware } from '../../middlewares/permission.middleware';
+import { z } from 'zod';
 import { Permissions } from '../../../auth/constants/permissions.constant';
+import { adminProcedure } from '../../procedures';
+import { router } from '../../procedures/index';
 
 interface MenuItemTranslation {
   id?: number;
@@ -197,7 +196,6 @@ export const adminMenuItemsRouter = router({
     }),
 
   create: adminProcedure
-    .use(permissionMiddleware([Permissions.CREATE_CONTENT]))
     .input(createMenuItemSchema)
     .output(menuItemSchema)
     .mutation(async ({ ctx, input }) => {
@@ -214,7 +212,6 @@ export const adminMenuItemsRouter = router({
     }),
 
   update: adminProcedure
-    .use(permissionMiddleware([Permissions.EDIT_CONTENT]))
     .input(updateMenuItemSchema)
     .output(menuItemSchema)
     .mutation(async ({ ctx, input }) => {
@@ -245,7 +242,6 @@ export const adminMenuItemsRouter = router({
     }),
 
   delete: adminProcedure
-    .use(permissionMiddleware([Permissions.DELETE_CONTENT]))
     .input(z.number())
     .mutation(async ({ ctx, input: id }) => {
       try {
@@ -262,7 +258,6 @@ export const adminMenuItemsRouter = router({
     }),
 
   updateOrder: adminProcedure
-    .use(permissionMiddleware([Permissions.EDIT_CONTENT]))
     .input(z.array(z.object({
       id: z.number(),
       order: z.number(),

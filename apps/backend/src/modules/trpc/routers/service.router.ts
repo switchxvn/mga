@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, protectedProcedure, adminProcedure, router } from '../trpc';
+import { publicProcedure, router } from '../procedures';
 
 const translationSchema = z.object({
   title: z.string(),

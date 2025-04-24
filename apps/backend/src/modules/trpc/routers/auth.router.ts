@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, router, protectedProcedure } from '../trpc';
+import { publicProcedure, router, protectedProcedure } from '../procedures';
 import { loginSchema, registerSchema } from '../../auth/dto/auth.dto';
 
 export const authRouter = router({
@@ -81,31 +81,6 @@ export const authRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to logout',
-          cause: error,
-        });
-      }
-    }),
-
-  me: protectedProcedure
-    .query(async ({ ctx }) => {
-      try {
-        ctx.logger.log(`Fetching current user data for user ID: ${ctx.user.id}`);
-        return await ctx.services.authFrontendService.getCurrentUser(ctx.user.id);
-      } catch (error) {
-        ctx.logger.error(`Error fetching current user: ${error instanceof Error ? error.message : String(error)}`);
-        
-        if (error instanceof TRPCError) throw error;
-
-        if (error.message === 'User not found') {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'User not found',
-          });
-        }
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve current user',
           cause: error,
         });
       }

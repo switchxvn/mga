@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserProfile } from '../entities/user-profile.entity';
-import { CountryPhoneCode } from '../../common/entities/country-phone-code.entity';
 import { TRPCError } from '@trpc/server';
+import { Repository } from 'typeorm';
+import { CountryPhoneCode } from '../../common/entities/country-phone-code.entity';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { UserProfile } from '../entities/user-profile.entity';
 
 @Injectable()
 export class ProfileService {
@@ -15,11 +15,11 @@ export class ProfileService {
     private readonly countryPhoneCodeRepository: Repository<CountryPhoneCode>,
   ) {}
 
-  async getProfileByUserId(userId: number) {
+  async getProfileByUserId(userId: string): Promise<UserProfile> {
     try {
       const profile = await this.profileRepository.findOne({
         where: { userId },
-        relations: ['countryPhoneCode'],
+        relations: ['countryPhoneCode', 'user', 'user.roles', 'user.permissions'],
       });
 
       if (!profile) {
@@ -40,39 +40,43 @@ export class ProfileService {
     }
   }
 
-  async updateProfile(userId: number, data: UpdateProfileDto) {
+  async updateProfile(userId: string, data: UpdateProfileDto): Promise<UserProfile> {
     try {
       let profile = await this.profileRepository.findOne({
         where: { userId },
+        relations: ['countryPhoneCode'],
       });
 
       if (!profile) {
         profile = this.profileRepository.create({
           userId,
+          ...data,
+          address: data.address || null,
+        });
+      } else {
+        Object.assign(profile, {
+          ...data,
+          address: data.address || profile.address,
         });
       }
 
-      // Update profile fields
-      Object.assign(profile, data);
-
-      // If phone code is provided, validate and set country phone code
       if (data.phoneCode) {
         const countryPhoneCode = await this.countryPhoneCodeRepository.findOne({
-          where: { phoneCode: data.phoneCode }
+          where: { phoneCode: data.phoneCode },
         });
 
         if (!countryPhoneCode) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Invalid phone code',
+            code: 'NOT_FOUND',
+            message: `Country phone code ${data.phoneCode} not found`,
           });
         }
 
         profile.phoneCode = data.phoneCode;
+        profile.countryPhoneCode = Promise.resolve(countryPhoneCode);
       }
 
-      const updatedProfile = await this.profileRepository.save(profile);
-      return updatedProfile;
+      return await this.profileRepository.save(profile);
     } catch (error) {
       if (error instanceof TRPCError) throw error;
       throw new TRPCError({
@@ -83,10 +87,11 @@ export class ProfileService {
     }
   }
 
-  async createUserProfile(data: { userId: number, firstName?: string, lastName?: string }) {
+  async createUserProfile(data: { userId: string, firstName?: string, lastName?: string }): Promise<UserProfile> {
     try {
       let profile = await this.profileRepository.findOne({
         where: { userId: data.userId },
+        relations: ['countryPhoneCode'],
       });
 
       if (profile) {
@@ -112,15 +117,19 @@ export class ProfileService {
     }
   }
 
-  async findOne(userId: number) {
-    return this.profileRepository.findOne({
-      where: { userId }
+  async findOne(userId: string): Promise<UserProfile | null> {
+    const profile = await this.profileRepository.findOne({
+      where: { userId },
+      relations: ['countryPhoneCode'],
     });
+
+    return profile;
   }
 
-  async update(userId: number, data: Partial<UserProfile>) {
+  async update(userId: string, data: Partial<UserProfile>): Promise<UserProfile> {
     let profile = await this.profileRepository.findOne({
-      where: { userId }
+      where: { userId },
+      relations: ['countryPhoneCode'],
     });
 
     if (!profile) {
@@ -132,6 +141,6 @@ export class ProfileService {
       Object.assign(profile, data);
     }
 
-    return this.profileRepository.save(profile);
+    return await this.profileRepository.save(profile);
   }
 } 

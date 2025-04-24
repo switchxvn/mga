@@ -25,7 +25,7 @@ export class Post {
   published!: boolean;
 
   @Column({ name: 'author_id' })
-  authorId!: number;
+  authorId!: string;
 
   @ManyToOne(() => User, (user) => user.posts, {
     onDelete: 'CASCADE',

@@ -55,7 +55,7 @@ export class AuthFrontendService {
     return {
       accessToken: this.jwtService.sign(payload),
       user: {
-        id: user.id,
+        id: String(user.id),
         email: user.email,
         name: profile ? `${profile.firstName} ${profile.lastName}`.trim() : undefined,
       },
@@ -100,14 +100,14 @@ export class AuthFrontendService {
     return {
       accessToken: this.jwtService.sign({ sub: savedUser.id, email: savedUser.email }),
       user: {
-        id: savedUser.id,
+        id: String(savedUser.id),
         email: savedUser.email,
         name: `${firstName} ${lastName}`.trim(),
       },
     };
   }
 
-  async getCurrentUser(userId: number): Promise<any> {
+  async getCurrentUser(userId: string): Promise<any> {
     const user = await this.userRepository.findOne({ 
       where: { id: userId },
       select: ['id', 'email', 'isActive', 'isEmailVerified', 'lastLoginAt'],
@@ -125,13 +125,13 @@ export class AuthFrontendService {
     };
   }
 
-  async logout(userId: number): Promise<{ success: boolean }> {
+  async logout(userId: string): Promise<{ success: boolean }> {
     // In a stateless JWT setup, we don't need to do anything server-side
     // The client should remove the token
     return { success: true };
   }
 
-  generateToken(tokenData: { sub: number; email: string }): string {
+  generateToken(tokenData: { sub: string; email: string }): string {
     return this.jwtService.sign(tokenData);
   }
 } 

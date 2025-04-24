@@ -1,4 +1,4 @@
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useTrpc } from './useTrpc';
 import { TRPCClientError } from '@trpc/client';
 
@@ -7,29 +7,71 @@ const globalSettings = reactive<Record<string, any>>({});
 const isInitialized = ref(false);
 const isGlobalLoading = ref(false);
 
+interface Logo {
+  light: string;
+  dark: string;
+}
+
+interface Settings {
+  logo: Logo;
+  siteName: string;
+  showLanguageSwitcher: boolean;
+  showThemeToggle: boolean;
+  showCart: boolean;
+  slogan?: {
+    text: string;
+    subText: string;
+    additionalText?: string;
+  };
+  hotlines?: {
+    sales?: {
+      text: string;
+      number: string;
+      backgroundColor?: string;
+      textColor?: string;
+    };
+    support?: {
+      text: string;
+      number: string;
+      backgroundColor?: string;
+      textColor?: string;
+    };
+  };
+  navigation?: {
+    textColor?: string;
+    activeTextColor?: string;
+  };
+  darkMode?: {
+    menuBackgroundColor?: string;
+  };
+  menuBackgroundColor?: string;
+  hotline: string;
+  operatingHours: string;
+}
+
 /**
  * Composable để quản lý và truy cập các cài đặt hệ thống
  * @returns Các phương thức và thuộc tính để làm việc với settings
  */
 export function useSettings() {
   const trpc = useTrpc();
+  const settings = ref<Settings | null>(null);
   const isLoading = ref(false);
-  const error = ref<string | null>(null);
-  const settings = ref<any[]>([]);
-  
+  const error = ref<Error | null>(null);
+
   /**
    * Lấy tất cả các cài đặt công khai và lưu vào bộ nhớ cache
    */
   const fetchPublicSettings = async (forceRefresh = false) => {
     // Nếu đã khởi tạo và không yêu cầu refresh, trả về kết quả từ cache
     if (isInitialized.value && !forceRefresh) {
-      settings.value = Object.values(globalSettings);
+      settings.value = { ...settings.value, ...globalSettings };
       return settings.value;
     }
     
     // Nếu đang tải, không gọi API lại
     if (isGlobalLoading.value) {
-      return Object.values(globalSettings);
+      return { ...settings.value, ...globalSettings };
     }
     
     try {
@@ -43,7 +85,7 @@ export function useSettings() {
       console.log('Public settings from tRPC:', data);
       
       // Lưu vào bộ nhớ cache
-      settings.value = data;
+      settings.value = { ...settings.value, ...data };
       
       // Cập nhật globalSettings
       data.forEach((setting: any) => {
@@ -53,7 +95,7 @@ export function useSettings() {
       });
       
       isInitialized.value = true;
-      return data;
+      return { ...settings.value, ...globalSettings };
     } catch (err) {
       if (err instanceof TRPCClientError) {
         error.value = err.message;
@@ -61,7 +103,7 @@ export function useSettings() {
         error.value = 'Đã xảy ra lỗi khi tải cài đặt';
       }
       console.error('Error fetching public settings:', err);
-      return [];
+      return { ...settings.value, ...globalSettings };
     } finally {
       isLoading.value = false;
       isGlobalLoading.value = false;
@@ -169,9 +211,9 @@ export function useSettings() {
   }
   
   return {
+    settings,
     isLoading,
     error,
-    settings,
     fetchPublicSettings,
     getPublicSettingByKey,
     getPublicSettingValueByKey,

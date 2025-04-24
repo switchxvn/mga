@@ -6,6 +6,12 @@ import { CrossSellProduct } from './entities/cross-sell-product.entity';
 import { ProductSpecification } from './entities/product-specification.entity';
 import { ProductSpecificationTranslation } from './entities/product-specification-translation.entity';
 import { ProductCombo } from './entities/product-combo.entity';
+import { ProductVariant } from './entities/product-variant.entity';
+import { ProductVariantTranslation } from './entities/product-variant-translation.entity';
+import { ProductAttribute } from './entities/product-attribute.entity';
+import { ProductAttributeTranslation } from './entities/product-attribute-translation.entity';
+import { ProductAttributeValue } from './entities/product-attribute-value.entity';
+import { ProductAttributeValueTranslation } from './entities/product-attribute-value-translation.entity';
 import { ProductAdminController } from './admin/controllers/admin.controller';
 import { ProductFrontendController } from './frontend/controllers/frontend.controller';
 import { ProductAdminService } from './admin/services/product-admin.service';
@@ -22,7 +28,13 @@ import { ProductComboService } from './frontend/services/product-combo.service';
       CrossSellProduct,
       ProductSpecification,
       ProductSpecificationTranslation,
-      ProductCombo
+      ProductCombo,
+      ProductVariant,
+      ProductVariantTranslation,
+      ProductAttribute,
+      ProductAttributeTranslation,
+      ProductAttributeValue,
+      ProductAttributeValueTranslation
     ])
   ],
   controllers: [ProductAdminController, ProductFrontendController],

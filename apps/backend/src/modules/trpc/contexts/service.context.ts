@@ -1,0 +1,192 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ITrpcServices } from '../interfaces/trpc-services.interface';
+import { UserService } from '../../user/services/user.service';
+import { UserAdminService } from '../../user/admin/services/user-admin.service';
+import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
+import { PostAdminService } from '../../post/admin/services/post-admin.service';
+import { ProfileService } from '../../profile/services/profile.service';
+import { SettingsAdminService } from '../../settings/admin/services/settings-admin.service';
+import { SettingsFrontendService } from '../../settings/frontend/services/settings-frontend.service';
+import { AuthAdminService } from '../../auth/admin/services/auth-admin.service';
+import { AuthFrontendService } from '../../auth/frontend/services/auth-frontend.service';
+import { SeoAdminService } from '../../seo/admin/services/seo-admin.service';
+import { SeoFrontendService } from '../../seo/frontend/services/seo-frontend.service';
+import { FooterAdminService } from '../../footer/admin/services/footer-admin.service';
+import { FooterFrontendService } from '../../footer/frontend/services/footer-frontend.service';
+import { CategoryFrontendService } from '../../category/frontend/services/category-frontend.service';
+import { CategoryAdminService } from '../../category/admin/services/category-admin.service';
+import { ServiceAdminService } from '../../service/admin/services/service-admin.service';
+import { ServiceFrontendService } from '../../service/frontend/services/service-frontend.service';
+import { ProductAdminService } from '../../product/admin/services/product-admin.service';
+import { ProductFrontendService } from '../../product/frontend/services/product-frontend.service';
+import { CrossSellService } from '../../product/frontend/services/cross-sell.service';
+import { ProductSpecificationService } from '../../product/services/product-specification.service';
+import { ProductComboService } from '../../product/frontend/services/product-combo.service';
+import { PriceRequestService } from '../../price-request/services/price-request.service';
+import { FeatureFlagsAdminService } from '../../feature-flags/admin/services/feature-flags-admin.service';
+import { FeatureFlagsFrontendService } from '../../feature-flags/frontend/services/feature-flags-frontend.service';
+import { HeroService } from '../../hero/admin/services/hero.service';
+import { HeroSliderService } from '../../hero/admin/services/hero-slider.service';
+import { HeroVideoService } from '../../hero/services/hero-video.service';
+import { ThemeAdminService } from '../../theme/admin/services/theme-admin.service';
+import { ThemeFrontendService } from '../../theme/frontend/services/theme-frontend.service';
+import { ComponentStyleConfigAdminService } from '../../theme/admin/services/component-style-config-admin.service';
+import { ComponentStyleConfigFrontendService } from '../../theme/frontend/services/component-style-config-frontend.service';
+import { LanguageFrontendService } from '../../language/frontend/services/language-frontend.service';
+import { LanguageAdminService } from '../../language/admin/services/language-admin.service';
+import { AboutAdminService } from '../../about/admin/services/about-admin.service';
+import { AboutFrontendService } from '../../about/frontend/services/about-frontend.service';
+import { LogoFrontendService } from '../../settings/frontend/services/logo-frontend.service';
+import { LogoAdminService } from '../../settings/admin/services/logo-admin.service';
+import { CustomerLogoFrontendService } from '../../customer-logo/frontend/services/customer-logo-frontend.service';
+import { CustomerLogoAdminService } from '../../customer-logo/admin/services/customer-logo-admin.service';
+import { ContactAdminService } from '../../contact/admin/services/contact-admin.service';
+import { ContactFrontendService } from '../../contact/frontend/services/contact-frontend.service';
+import { GalleryFrontendService } from '../../gallery/frontend/services/gallery-frontend.service';
+import { ContactSectionAdminService } from '../../contact/admin/services/contact-section-admin.service';
+import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
+import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
+import { TicketPricingSectionFrontendService } from '../../ticket-pricing/frontend/services/ticket-pricing-section-frontend.service';
+import { FoodMenuFrontendService } from '../../food-menu/frontend/services/food-menu-frontend.service';
+import { FoodMenuAdminService } from '../../food-menu/admin/services/food-menu-admin.service';
+import { PaymentFrontendService } from '../../payment/frontend/services/payment-frontend.service';
+import { PaymentAdminService } from '../../payment/admin/services/payment-admin.service';
+import { OrderFrontendService } from '../../order/frontend/services/order-frontend.service';
+import { OrderAdminService } from '../../order/admin/services/order-admin.service';
+import { UploadFrontendService } from '../../upload/frontend/services/upload-frontend.service';
+import { UploadAdminService } from '../../upload/admin/services/upload-admin.service';
+import { OrderTicketSectionAdminService } from '../../order-ticket/admin/services/order-ticket-section-admin.service';
+import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/services/order-ticket-section-frontend.service';
+import { SettingsService } from '../../settings/services/settings.service';
+import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
+
+@Injectable()
+export class ServiceContext {
+  private readonly logger = new Logger(ServiceContext.name);
+
+  constructor(
+    private readonly userService: UserService,
+    private readonly userAdminService: UserAdminService,
+    private readonly postFrontendService: PostFrontendService,
+    private readonly postAdminService: PostAdminService,
+    private readonly profileService: ProfileService,
+    private readonly settingsAdminService: SettingsAdminService,
+    private readonly settingsFrontendService: SettingsFrontendService,
+    private readonly authAdminService: AuthAdminService,
+    private readonly authFrontendService: AuthFrontendService,
+    private readonly seoAdminService: SeoAdminService,
+    private readonly seoFrontendService: SeoFrontendService,
+    private readonly footerAdminService: FooterAdminService,
+    private readonly footerFrontendService: FooterFrontendService,
+    private readonly categoryFrontendService: CategoryFrontendService,
+    private readonly categoryAdminService: CategoryAdminService,
+    private readonly serviceAdminService: ServiceAdminService,
+    private readonly serviceFrontendService: ServiceFrontendService,
+    private readonly productAdminService: ProductAdminService,
+    private readonly productFrontendService: ProductFrontendService,
+    private readonly crossSellService: CrossSellService,
+    private readonly productSpecificationService: ProductSpecificationService,
+    private readonly productComboService: ProductComboService,
+    private readonly priceRequestService: PriceRequestService,
+    private readonly featureFlagsAdminService: FeatureFlagsAdminService,
+    private readonly featureFlagsFrontendService: FeatureFlagsFrontendService,
+    private readonly heroService: HeroService,
+    private readonly heroSliderService: HeroSliderService,
+    private readonly heroVideoService: HeroVideoService,
+    private readonly themeAdminService: ThemeAdminService,
+    private readonly themeFrontendService: ThemeFrontendService,
+    private readonly componentStyleConfigAdminService: ComponentStyleConfigAdminService,
+    private readonly componentStyleConfigFrontendService: ComponentStyleConfigFrontendService,
+    private readonly languageFrontendService: LanguageFrontendService,
+    private readonly languageAdminService: LanguageAdminService,
+    private readonly aboutAdminService: AboutAdminService,
+    private readonly aboutFrontendService: AboutFrontendService,
+    private readonly logoFrontendService: LogoFrontendService,
+    private readonly logoAdminService: LogoAdminService,
+    private readonly customerLogoFrontendService: CustomerLogoFrontendService,
+    private readonly customerLogoAdminService: CustomerLogoAdminService,
+    private readonly contactAdminService: ContactAdminService,
+    private readonly contactFrontendService: ContactFrontendService,
+    private readonly galleryFrontendService: GalleryFrontendService,
+    private readonly contactSectionAdminService: ContactSectionAdminService,
+    private readonly contactSectionFrontendService: ContactSectionFrontendService,
+    private readonly ticketPricingSectionAdminService: TicketPricingSectionAdminService,
+    private readonly ticketPricingSectionFrontendService: TicketPricingSectionFrontendService,
+    private readonly foodMenuFrontendService: FoodMenuFrontendService,
+    private readonly foodMenuAdminService: FoodMenuAdminService,
+    private readonly paymentFrontendService: PaymentFrontendService,
+    private readonly paymentAdminService: PaymentAdminService,
+    private readonly orderFrontendService: OrderFrontendService,
+    private readonly orderAdminService: OrderAdminService,
+    private readonly uploadFrontendService: UploadFrontendService,
+    private readonly uploadAdminService: UploadAdminService,
+    private readonly orderTicketSectionAdminService: OrderTicketSectionAdminService,
+    private readonly orderTicketSectionFrontendService: OrderTicketSectionFrontendService,
+    private readonly settingsService: SettingsService,
+    private readonly dashboardAdminService: DashboardAdminService,
+  ) {}
+
+  public getServices(): ITrpcServices {
+    return {
+      userService: this.userService,
+      userAdminService: this.userAdminService,
+      postService: this.postFrontendService,
+      postAdminService: this.postAdminService,
+      profileService: this.profileService,
+      settingsAdminService: this.settingsAdminService,
+      settingsFrontendService: this.settingsFrontendService,
+      authAdminService: this.authAdminService,
+      authFrontendService: this.authFrontendService,
+      seoAdminService: this.seoAdminService,
+      seoFrontendService: this.seoFrontendService,
+      footerAdminService: this.footerAdminService,
+      footerFrontendService: this.footerFrontendService,
+      categoryFrontendService: this.categoryFrontendService,
+      categoryAdminService: this.categoryAdminService,
+      serviceAdminService: this.serviceAdminService,
+      serviceFrontendService: this.serviceFrontendService,
+      productAdminService: this.productAdminService,
+      productFrontendService: this.productFrontendService,
+      crossSellService: this.crossSellService,
+      productSpecificationService: this.productSpecificationService,
+      productComboService: this.productComboService,
+      priceRequestService: this.priceRequestService,
+      featureFlagsAdminService: this.featureFlagsAdminService,
+      featureFlagsFrontendService: this.featureFlagsFrontendService,
+      heroService: this.heroService,
+      heroSliderService: this.heroSliderService,
+      heroVideoService: this.heroVideoService,
+      themeAdminService: this.themeAdminService,
+      themeFrontendService: this.themeFrontendService,
+      componentStyleConfigAdminService: this.componentStyleConfigAdminService,
+      componentStyleConfigFrontendService: this.componentStyleConfigFrontendService,
+      languageFrontendService: this.languageFrontendService,
+      languageAdminService: this.languageAdminService,
+      aboutAdminService: this.aboutAdminService,
+      aboutFrontendService: this.aboutFrontendService,
+      logoFrontendService: this.logoFrontendService,
+      logoAdminService: this.logoAdminService,
+      customerLogoFrontendService: this.customerLogoFrontendService,
+      customerLogoAdminService: this.customerLogoAdminService,
+      contactAdminService: this.contactAdminService,
+      contactFrontendService: this.contactFrontendService,
+      galleryFrontendService: this.galleryFrontendService,
+      contactSectionAdminService: this.contactSectionAdminService,
+      contactSectionFrontendService: this.contactSectionFrontendService,
+      ticketPricingSectionAdminService: this.ticketPricingSectionAdminService,
+      ticketPricingSectionFrontendService: this.ticketPricingSectionFrontendService,
+      foodMenuFrontendService: this.foodMenuFrontendService,
+      foodMenuAdminService: this.foodMenuAdminService,
+      paymentFrontendService: this.paymentFrontendService,
+      paymentAdminService: this.paymentAdminService,
+      orderFrontendService: this.orderFrontendService,
+      orderAdminService: this.orderAdminService,
+      uploadFrontendService: this.uploadFrontendService,
+      uploadAdminService: this.uploadAdminService,
+      orderTicketSectionAdminService: this.orderTicketSectionAdminService,
+      orderTicketSectionFrontendService: this.orderTicketSectionFrontendService,
+      settingsService: this.settingsService,
+      dashboardAdminService: this.dashboardAdminService,
+    };
+  }
+} 

@@ -10,7 +10,7 @@ export class UserFrontendService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({ 
       where: { id },
       select: ['id', 'email', 'createdAt', 'updatedAt']

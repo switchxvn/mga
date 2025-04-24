@@ -85,7 +85,11 @@ export default defineNuxtConfig({
       const categoriesListRoute = routes.find(r => r.path === ROUTE_PATHS.CATEGORIES_LIST.en);
       const categoryDetailRoute = routes.find(r => r.path.startsWith(ROUTE_PATHS.CATEGORIES_LIST.en + '/'));
       const contactRoute = routes.find(r => r.path === ROUTE_PATHS.CONTACT.en);
-
+      const galleryRoute = routes.find(r => r.path === ROUTE_PATHS.GALLERY.en);
+      const aboutRoute = routes.find(r => r.path === ROUTE_PATHS.ABOUT.en);
+      const ticketPricingRoute = routes.find(r => r.path === ROUTE_PATHS.TICKET_PRICING.en);
+      const menuRoute = routes.find(r => r.path === ROUTE_PATHS.MENU.en);
+      const orderTicketRoute = routes.find(r => r.path === ROUTE_PATHS.ORDER_TICKET.en);
       if (postsListRoute) {
         routes.push({
           name: ROUTE_NAMES.POSTS_LIST.vi,
@@ -162,6 +166,46 @@ export default defineNuxtConfig({
           meta: contactRoute.meta
         });
       }
+
+      if (galleryRoute) {
+        routes.push({
+          name: ROUTE_NAMES.GALLERY.vi,
+          path: ROUTE_PATHS.GALLERY.vi,
+          file: galleryRoute.file
+        });
+      }
+
+      if (aboutRoute) {
+        routes.push({
+          name: ROUTE_NAMES.ABOUT.vi,
+          path: ROUTE_PATHS.ABOUT.vi,
+          file: aboutRoute.file
+        });
+      }
+
+      if (ticketPricingRoute) {
+        routes.push({
+          name: ROUTE_NAMES.TICKET_PRICING.vi,
+          path: ROUTE_PATHS.TICKET_PRICING.vi,
+          file: ticketPricingRoute.file
+        });
+      }
+
+      if (menuRoute) {
+        routes.push({
+          name: ROUTE_NAMES.MENU.vi,
+          path: ROUTE_PATHS.MENU.vi,
+          file: menuRoute.file
+        });
+      }
+
+      if (orderTicketRoute) {
+        routes.push({
+          name: ROUTE_NAMES.ORDER_TICKET.vi,
+          path: ROUTE_PATHS.ORDER_TICKET.vi,
+          file: orderTicketRoute.file
+        });
+      }
     }
   },
 
@@ -170,7 +214,11 @@ export default defineNuxtConfig({
     typeCheck: false,
     shim: false,
     tsConfig: {
-      extends: './nuxt.tsconfig.json'
+      extends: './nuxt.tsconfig.json',
+      compilerOptions: {
+        module: 'esnext',
+        target: 'esnext',
+      }
     },
   },
 
@@ -189,13 +237,14 @@ export default defineNuxtConfig({
     presets: [
       {
         from: 'vue',
-        imports: [] as string[]
+        imports: []
       }
     ]
   },
 
   css: [
     '@/assets/styles/main.scss',
+    'photoswipe/style.css'
   ],
   
   postcss: {
@@ -219,21 +268,49 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     '@nuxt/ui',
     '@nuxt/image',
+    '@pinia/nuxt',
   ],
 
-  // @ts-ignore - i18n module types
+  plugins: [
+    '~/plugins/trpc',
+  ],
+
+  // @ts-expect-error - i18n module types
   i18n: './i18n.config.ts',
 
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
-      include: ['@trpc/client', '@trpc/server'],
+      include: ['@trpc/client', '@trpc/server', 'photoswipe', 'estree-walker'],
+      exclude: ['entities'],
+      esbuildOptions: {
+        target: 'es2020'
+      }
+    },
+    build: {
+      target: 'es2020',
+      rollupOptions: {
+        external: [],
+        output: {
+          manualChunks: {
+            photoswipe: ['photoswipe']
+          }
+        }
+      },
+      cssCodeSplit: true,
+      commonjsOptions: {
+        include: [/node_modules/],
+        transformMixedEsModules: true
+      }
+    },
+    ssr: {
+      noExternal: ['entities', 'photoswipe']
     },
     vue: {
       script: {
         defineModel: true,
         propsDestructure: true,
-      },
+      }
     },
     server: {
       proxy: {
@@ -263,8 +340,19 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      script: []
-    }
+      titleTemplate: '%s',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'robots', content: 'index, follow' },
+        { property: 'og:type', content: 'website' },
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      ]
+    },
+    pageTransition: { name: 'page', mode: 'out-in' }
   },
 
   image: {
@@ -278,5 +366,19 @@ export default defineNuxtConfig({
       xl: 1280,
       xxl: 1536,
     },
+  },
+
+  // Enable detailed error pages in production
+  errorHandler: '~/error',
+
+  // Enable source maps in production for better error tracking
+  sourcemap: true,
+
+  experimental: {
+    componentIslands: true
+  },
+
+  build: {
+    transpile: ['vue', 'estree-walker', 'photoswipe']
   },
 });

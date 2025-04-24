@@ -50,40 +50,57 @@ if [ ! -f "$PROJECT_ROOT/apps/backend/.env.production" ]; then
     exit 1
 fi
 
+if [ ! -f "$PROJECT_ROOT/apps/api/.env.production" ]; then
+    echo "Error: API production environment file not found at apps/api/.env.production"
+    exit 1
+fi
+
 # Build and push frontend
 echo "Building frontend image..."
 docker build --platform linux/amd64 \
-    -t $REGISTRY/$GITHUB_USERNAME/ew-frontend:$VERSION \
-    -t $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:$VERSION \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:latest \
     --build-arg ENV_FILE=.env.production \
     -f apps/frontend/Dockerfile .
 
 echo "Pushing frontend image..."
-docker push $REGISTRY/$GITHUB_USERNAME/ew-frontend:$VERSION
-docker push $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:$VERSION
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:latest
 
 # Build and push backend
 echo "Building backend image..."
 docker build --platform linux/amd64 \
-    -t $REGISTRY/$GITHUB_USERNAME/ew-backend:$VERSION \
-    -t $REGISTRY/$GITHUB_USERNAME/ew-backend:latest \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-backend:$VERSION \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest \
     --build-arg ENV_FILE=.env.production \
     -f apps/backend/Dockerfile .
 
 echo "Pushing backend image..."
-docker push $REGISTRY/$GITHUB_USERNAME/ew-backend:$VERSION
-docker push $REGISTRY/$GITHUB_USERNAME/ew-backend:latest
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-backend:$VERSION
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest
+
+# Build and push api
+echo "Building api image..."
+docker build --platform linux/amd64 \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-api:$VERSION \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest \
+    --build-arg ENV_FILE=.env.production \
+    -f apps/api/Dockerfile .
+
+echo "Pushing api image..."
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-api:$VERSION
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
 
 # Build and push nginx
 echo "Building nginx image..."
 docker build --platform linux/amd64 \
-    -t $REGISTRY/$GITHUB_USERNAME/ew-nginx:$VERSION \
-    -t $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:$VERSION \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest \
     -f nginx/Dockerfile .
 
 echo "Pushing nginx image..."
-docker push $REGISTRY/$GITHUB_USERNAME/ew-nginx:$VERSION
-docker push $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:$VERSION
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
 
 echo "Build and push completed successfully!"
 echo "Version: $VERSION"

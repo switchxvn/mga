@@ -1,5 +1,5 @@
-import { computed, ref, watch } from 'vue';
-import type { Product, ProductTranslation } from '@ew/shared';
+import { computed, ref, watch, unref } from 'vue';
+import type { Product, ProductTranslation, ProductType, LocaleType } from '@ew/shared/types';
 import { useLocalization } from './useLocalization';
 import { getLocalizedRoute } from '../utils/routes';
 import { useTrpc } from './useTrpc';
@@ -10,15 +10,16 @@ export interface ProductFilter {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
-  categories?: number[];
+  includeNullPrice?: boolean;
+  categories?: string[];
   isFeatured?: boolean;
   isNew?: boolean;
   isSale?: boolean;
-  includeNullPrice?: boolean;
-  sortBy?: ProductSortBy;
-  page: number;
+  sortBy?: 'newest' | 'oldest' | 'price_asc' | 'price_desc';
+  page?: number;
   limit?: number;
-  locale?: string;
+  locale?: LocaleType;
+  type?: ProductType;
 }
 
 export interface PriceRange {
@@ -34,6 +35,53 @@ export interface ProductListResponse {
   totalPages: number;
 }
 
+// Product Variant Interfaces
+export interface ProductAttributeValue {
+  id: number;
+  value: string;
+  displayValue: string;
+  thumbnail?: string | null;
+}
+
+export interface ProductAttribute {
+  id: number;
+  name: string;
+  displayName: string;
+  values: ProductAttributeValue[];
+  required?: boolean;
+}
+
+export interface SelectedAttributes {
+  [attributeId: number]: number; // attributeId -> selectedValueId
+}
+
+// Mở rộng interface ProductVariant
+export interface ProductVariant {
+  id: number;
+  name: string;
+  description: string;
+  sku: string;
+  price: number | null;
+  comparePrice: number | null;
+  formattedPrice: string;
+  stock: number;
+  thumbnail: string;
+  image: string;
+  attributeValues: {
+    [attributeId: number]: number; // attributeId -> valueId
+  };
+}
+
+export interface VariantAttributes {
+  attributes: ProductAttribute[];
+  variants: ProductVariant[];
+}
+
+// Add to Product interface
+export interface Product {
+  variantAttributes?: VariantAttributes;
+}
+
 export function useProduct(initialFilters?: ProductFilter) {
   const { locale } = useLocalization();
   const trpc = useTrpc();
@@ -43,15 +91,16 @@ export function useProduct(initialFilters?: ProductFilter) {
     search: initialFilters?.search || '',
     minPrice: initialFilters?.minPrice,
     maxPrice: initialFilters?.maxPrice,
+    includeNullPrice: true,
     categories: initialFilters?.categories || [],
     isFeatured: initialFilters?.isFeatured,
     isNew: initialFilters?.isNew,
     isSale: initialFilters?.isSale,
-    includeNullPrice: true,
     sortBy: initialFilters?.sortBy || 'newest',
     page: initialFilters?.page || 1,
     limit: initialFilters?.limit || 12,
-    locale: initialFilters?.locale || locale.value
+    locale: initialFilters?.locale || locale.value,
+    type: initialFilters?.type
   });
 
   // Products state
@@ -169,7 +218,8 @@ export function useProduct(initialFilters?: ProductFilter) {
         includeNullPrice: filters.value.includeNullPrice,
         sortBy: filters.value.sortBy,
         page: filters.value.page,
-        limit: filters.value.limit
+        limit: filters.value.limit,
+        type: filters.value.type
       };
 
       const result = await trpc.product.getAll.query(filterParams);
@@ -214,12 +264,12 @@ export function useProduct(initialFilters?: ProductFilter) {
   /**
    * Toggle category selection
    */
-  const toggleCategory = (categoryId: number) => {
+  const toggleCategory = (categorySlug: string) => {
     const categories = filters.value.categories || [];
-    const index = categories.indexOf(categoryId);
+    const index = categories.indexOf(categorySlug);
     
     if (index === -1) {
-      filters.value.categories = [...categories, categoryId];
+      filters.value.categories = [...categories, categorySlug];
     } else {
       categories.splice(index, 1);
       filters.value.categories = categories;
@@ -242,7 +292,8 @@ export function useProduct(initialFilters?: ProductFilter) {
       sortBy: 'newest',
       page: 1,
       limit: 12,
-      locale: locale.value
+      locale: locale.value as LocaleType,
+      type: undefined
     };
   };
 
@@ -280,5 +331,99 @@ export function useProduct(initialFilters?: ProductFilter) {
     handleSearch,
     toggleCategory,
     resetFilters
+  };
+}
+
+export function useProductVariants(product: MaybeRef<Product | null>) {
+  const selectedAttributes = ref<{ [key: number]: number }>({});
+
+  // Get available attributes
+  const productAttributes = computed(() => {
+    return unref(product)?.variantAttributes?.attributes || [];
+  });
+
+  // Reset selected attributes when product changes
+  watch(() => unref(product), () => {
+    selectedAttributes.value = {};
+  }, { immediate: true });
+
+  // Find matching variant based on selected attributes
+  const matchingVariant = computed(() => {
+    const currentProduct = unref(product);
+    if (!currentProduct?.variantAttributes?.variants || Object.keys(selectedAttributes.value).length === 0) {
+      return null;
+    }
+
+    return currentProduct.variantAttributes.variants.find(variant => {
+      return Object.entries(selectedAttributes.value).every(([attributeId, valueId]) => {
+        return variant.attributeValues[Number(attributeId)] === valueId;
+      });
+    });
+  });
+
+  // Check if a specific attribute value is available
+  const isAttributeValueAvailable = (attributeId: number, valueId: number): boolean => {
+    const currentProduct = unref(product);
+    if (!currentProduct?.variantAttributes?.variants) return false;
+
+    // Get currently selected attributes excluding the one we're checking
+    const otherSelectedAttributes = Object.entries(selectedAttributes.value)
+      .filter(([id]) => Number(id) !== attributeId)
+      .reduce((acc, [id, val]) => ({ ...acc, [id]: val }), {});
+
+    // Find variants that match current selection
+    const possibleVariants = currentProduct.variantAttributes.variants.filter(variant => {
+      return Object.entries(otherSelectedAttributes).every(([attrId, valId]) => {
+        return variant.attributeValues[Number(attrId)] === valId;
+      });
+    });
+
+    // Check if any of these variants have the value we're looking for
+    return possibleVariants.some(variant => 
+      variant.attributeValues[attributeId] === valueId
+    );
+  };
+
+  // Handle attribute selection
+  const selectAttributeValue = (attributeId: number, valueId: number) => {
+    selectedAttributes.value = {
+      ...selectedAttributes.value,
+      [attributeId]: valueId
+    };
+  };
+
+  // Reset selections
+  const resetSelectedAttributes = () => {
+    selectedAttributes.value = {};
+  };
+
+  // Check if all required attributes are selected
+  const hasRequiredAttributes = computed(() => {
+    return productAttributes.value
+      .filter(attr => attr.required)
+      .every(attr => selectedAttributes.value[attr.id] !== undefined);
+  });
+
+  // Get current variant price
+  const variantPrice = computed(() => {
+    if (matchingVariant.value) {
+      return {
+        price: matchingVariant.value.price,
+        comparePrice: matchingVariant.value.comparePrice,
+        formattedPrice: matchingVariant.value.formattedPrice
+      };
+    }
+    return null;
+  });
+
+  return {
+    selectedAttributes,
+    productAttributes,
+    matchingVariant,
+    variantPrice,
+    hasRequiredAttributes,
+    isAttributeValueAvailable,
+    selectAttributeValue,
+    resetSelectedAttributes
   };
 } 

@@ -15,6 +15,19 @@ const { getTranslationByLocale } = usePost();
 const props = defineProps<{
   post: Post;
   compact?: boolean;
+  showDate?: boolean;
+  showAuthor?: boolean;
+  showExcerpt?: boolean;
+  excerptLength?: number;
+  imageAspectRatio?: string;
+  overlayOpacity?: number;
+  backgroundGradient?: {
+    from: string;
+    to: string;
+    direction: string;
+  };
+  buttonText?: string;
+  buttonStyle?: string;
 }>();
 
 const currentTranslation = computed(() => getTranslationByLocale(props.post, locale.value));
@@ -35,7 +48,16 @@ const hasImage = computed(() => {
  * Lấy mô tả ngắn gọn của bài viết
  */
 const getDescription = computed(() => {
+  if (!props.showExcerpt) return '';
   return postShortDescription.value || postMetaDescription.value || postContent.value || '';
+});
+
+/**
+ * Cắt nội dung theo độ dài yêu cầu
+ */
+const truncatedDescription = computed(() => {
+  if (!getDescription.value) return '';
+  return truncateContent(getDescription.value, props.excerptLength || 120);
 });
 
 const postUrl = computed(() => {
@@ -55,21 +77,39 @@ watch(locale, () => {
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
       <div class="flex" :class="{ 'flex-col flex-grow': !compact, 'flex-row': compact }">
         <!-- Hình ảnh bài viết - phiên bản lớn khi không compact -->
-        <div v-if="!compact" class="image-container">
-          <LazyImage 
-            :src="post.thumbnail || '/images/default-image.jpg'" 
-            :alt="postTitle" 
-            class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-          />
+        <div v-if="!compact" class="image-container" :style="imageAspectRatio ? { aspectRatio: imageAspectRatio } : {}">
+          <div class="relative w-full h-full">
+            <LazyImage 
+              :src="post.thumbnail || '/images/default-image.jpg'" 
+              :alt="postTitle" 
+              class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            />
+            <div v-if="overlayOpacity !== undefined" 
+                 class="absolute inset-0" 
+                 :style="{
+                   background: backgroundGradient ? `linear-gradient(${backgroundGradient.direction}, ${backgroundGradient.from}, ${backgroundGradient.to})` : 'none',
+                   opacity: overlayOpacity
+                 }">
+            </div>
+          </div>
         </div>
         
         <!-- Hình ảnh bài viết - phiên bản nhỏ khi compact -->
         <div v-else-if="compact && hasImage" class="compact-image-container">
-          <LazyImage 
-            :src="post.thumbnail || '/images/default-image.jpg'" 
-            :alt="postTitle" 
-            class="w-full h-full object-cover"
-          />
+          <div class="relative w-full h-full">
+            <LazyImage 
+              :src="post.thumbnail || '/images/default-image.jpg'" 
+              :alt="postTitle" 
+              class="w-full h-full object-cover"
+            />
+            <div v-if="overlayOpacity !== undefined" 
+                 class="absolute inset-0" 
+                 :style="{
+                   background: backgroundGradient ? `linear-gradient(${backgroundGradient.direction}, ${backgroundGradient.from}, ${backgroundGradient.to})` : 'none',
+                   opacity: overlayOpacity
+                 }">
+            </div>
+          </div>
         </div>
         
         <!-- Nội dung bài viết -->
@@ -77,12 +117,23 @@ watch(locale, () => {
           <h3 class="title-container">{{ postTitle }}</h3>
           
           <p v-if="!compact && getDescription" class="description-container">
-            {{ truncateContent(getDescription) }}
+            {{ truncatedDescription }}
           </p>
           
           <div class="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 mt-auto">
-            <span>{{ formatDate(post.createdAt) }}</span>
-            <span v-if="post.author && !compact">{{ getAuthorName(post.author) }}</span>
+            <span v-if="showDate !== false">{{ formatDate(post.createdAt) }}</span>
+            <span v-if="post.author && (showAuthor !== false) && !compact">{{ getAuthorName(post.author) }}</span>
+          </div>
+          
+          <div v-if="buttonText" class="mt-4">
+            <UButton 
+              :color="buttonStyle || 'primary'" 
+              variant="soft" 
+              size="sm"
+              class="w-full justify-center"
+            >
+              {{ buttonText }}
+            </UButton>
           </div>
         </div>
       </div>
@@ -97,7 +148,7 @@ watch(locale, () => {
 
 /* Cố định chiều cao cho hình ảnh */
 .image-container {
-  height: 200px;
+  height: 240px;
   width: 100%;
   overflow: hidden;
 }
@@ -111,15 +162,15 @@ watch(locale, () => {
 
 /* Cố định chiều cao cho tiêu đề */
 .title-container {
-  height: 48px; /* Chiều cao cho 2 dòng */
+  height: 72px;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   text-overflow: ellipsis;
-  font-size: 1.125rem;
+  font-size: 1.5rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   color: inherit;
 }
 
@@ -129,14 +180,13 @@ watch(locale, () => {
 
 /* Cố định chiều cao cho mô tả */
 .description-container {
-  height: 72px; /* Chiều cao cho 3 dòng */
-  overflow: hidden;
+  @apply text-sm text-gray-600 dark:text-gray-300 mt-2;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 0.75rem;
-  color: #4b5563;
+  line-height: 1.5;
 }
 
 .dark .description-container {

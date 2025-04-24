@@ -1,62 +1,124 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ShoppingCart } from 'lucide-vue-next';
+import { ShoppingCart, Ticket, Calendar, MapPin } from 'lucide-vue-next';
 import LazyImage from '~/components/ui/LazyImage.vue';
 import AddToCartButton from '~/components/cart/AddToCartButton.vue';
 import { getLocalizedRoute } from '~/utils/routes';
 import { useLocalization } from '~/composables/useLocalization';
 import { useProduct } from '~/composables/useProduct';
 import { useComponentStyles } from '~/composables/useComponentStyles';
+import type { Product, ProductTranslation, ProductSpecification } from '@ew/shared';
+import { ProductType } from '@ew/shared';
 
-interface ProductTranslation {
-  title: string;
-  shortDescription: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
-  slug?: string;
-}
-
-interface Product {
-  id: number;
-  sku?: string;
-  price: number | null;
-  comparePrice?: number | null;
-  thumbnail?: string;
-  isFeatured: boolean;
-  isNew: boolean;
-  isSale: boolean;
-  translations: ProductTranslation[];
-  formattedPrice?: string;
+interface ComponentStyleConfig {
+  settings: {
+    imageHeight: number;
+    showLabels: {
+      new: boolean;
+      sale: boolean;
+      featured: boolean;
+      discount: boolean;
+    };
+    labelStyles: {
+      featured: {
+        backgroundColor: string;
+        textColor: string;
+      };
+      new: {
+        backgroundColor: string;
+        textColor: string;
+      };
+      sale: {
+        backgroundColor: string;
+        textColor: string;
+      };
+      discount: {
+        backgroundColor: string;
+        textColor: string;
+      };
+    };
+  };
 }
 
 const props = defineProps<{
-  product: Product;
+  product: Product & {
+    formattedComparePrice?: string;
+  };
   locale?: string;
 }>();
 
-const { locale } = useLocalization();
+const { t } = useLocalization();
 const { getTranslationByLocale, formatPrice, calculateDiscountPercentage, getProductUrl } = useProduct();
 const { getStyleConfig } = useComponentStyles();
 
 // Lấy style config từ store toàn cục
-const styleConfig = computed(() => getStyleConfig('product-card'));
+const styleConfig = computed(() => getStyleConfig('product-card') || {
+  settings: {
+    imageHeight: 300,
+    showLabels: {
+      new: true,
+      sale: true,
+      featured: true,
+      discount: true
+    },
+    labelStyles: {
+      featured: {
+        backgroundColor: '#4F46E5',
+        textColor: '#ffffff'
+      },
+      new: {
+        backgroundColor: '#10B981',
+        textColor: '#ffffff'
+      },
+      sale: {
+        backgroundColor: '#EF4444', 
+        textColor: '#ffffff'
+      },
+      discount: {
+        backgroundColor: '#F59E0B',
+        textColor: '#ffffff'
+      }
+    }
+  }
+});
 
-const translation = computed(() => getTranslationByLocale(props.product, props.locale || locale.value));
+const currentLocale = computed(() => props.locale || 'vi');
+const translation = computed(() => getTranslationByLocale(props.product, currentLocale.value));
 const title = computed(() => translation.value?.title || '');
 const shortDescription = computed(() => translation.value?.shortDescription || '');
 const productSlug = computed(() => translation.value?.slug || props.product.id.toString());
 
-const formattedPrice = computed(() => {
-  if (props.product.formattedPrice) {
-    return props.product.formattedPrice;
+// Check if product has variants and should show "From" in price
+const hasVariants = computed(() => 
+  props.product.variantAttributes?.variants && 
+  props.product.variantAttributes.variants.length > 0
+);
+
+// Determine if we should show "From" text before price
+const shouldShowFromPrice = computed(() => 
+  hasVariants.value && 
+  props.product.variantAttributes?.variants?.some((v: any) => v.price !== props.product.price)
+);
+
+// Format the price with "From" if needed
+const displayPrice = computed(() => {
+  if (props.product.price === null) {
+    return t('products.contactUs') || 'Liên hệ';
   }
-  return formatPrice(props.product.price);
+  
+  const priceText = props.product.formattedPrice || formatPrice(props.product.price);
+  
+  if (shouldShowFromPrice.value) {
+    return `${t('products.from') || 'Từ'} ${priceText}`;
+  }
+  
+  return priceText;
 });
 
-const formattedComparePrice = computed(() => {
+// Handle compare price
+const displayComparePrice = computed(() => {
   if (!props.product.comparePrice) return null;
-  return formatPrice(props.product.comparePrice);
+  return props.product.formattedComparePrice || formatPrice(props.product.comparePrice);
 });
 
 const discountPercentage = computed(() => {
@@ -74,23 +136,39 @@ const productLink = computed(() => getProductUrl(props.product));
 
 // Style computed properties
 const imageStyle = computed(() => ({
-  height: `${styleConfig.value.settings.imageHeight}px`
+  height: `${styleConfig.value?.settings?.imageHeight || 200}px`
 }));
 
 const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
-  backgroundColor: styleConfig.value.settings.labelStyles[type].backgroundColor,
-  color: styleConfig.value.settings.labelStyles[type].textColor
+  backgroundColor: styleConfig.value?.settings?.labelStyles?.[type]?.backgroundColor || '#4F46E5',
+  color: styleConfig.value?.settings?.labelStyles?.[type]?.textColor || '#ffffff'
 });
+
+// Specs for ticket
+const ticketLocation = computed(() => props.product.specifications?.find((spec: ProductSpecification) => spec.name === 'location')?.value || '');
+const ticketDate = computed(() => props.product.specifications?.find((spec: ProductSpecification) => spec.name === 'date')?.value || '');
 </script>
 
 <template>
   <div
     class="product-card group relative overflow-hidden rounded-lg border-2 border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+    :class="{'ticket-card': product.type === ProductType.TICKET}"
   >
     <!-- Badge: New, Sale, Featured -->
     <div class="absolute left-2 top-2 z-10 flex flex-col gap-1">
+      <!-- Ticket Badge -->
       <UBadge
-        v-if="product.isNew && styleConfig.settings.showLabels.new"
+        v-if="product.type === ProductType.TICKET"
+        color="purple"
+        variant="solid"
+        class="text-xs"
+      >
+        <Ticket class="w-3 h-3 mr-1" />
+        {{ t("products.ticketType") || "Vé" }}
+      </UBadge>
+      
+      <UBadge
+        v-if="product.isNew && styleConfig.value?.settings?.showLabels?.new"
         :style="labelStyle('new')"
         variant="solid"
         class="text-xs"
@@ -98,7 +176,7 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
         Mới
       </UBadge>
       <UBadge
-        v-if="product.isSale && styleConfig.settings.showLabels.sale"
+        v-if="product.isSale && styleConfig.value?.settings?.showLabels?.sale"
         :style="labelStyle('sale')"
         variant="solid"
         class="text-xs"
@@ -106,7 +184,7 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
         Giảm giá
       </UBadge>
       <UBadge
-        v-if="product.isFeatured && styleConfig.settings.showLabels.featured"
+        v-if="product.isFeatured && styleConfig.value?.settings?.showLabels?.featured"
         :style="labelStyle('featured')"
         variant="solid"
         class="text-xs"
@@ -117,7 +195,7 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
 
     <!-- Discount percentage -->
     <div
-      v-if="discountPercentage && styleConfig.settings.showLabels.discount"
+      v-if="discountPercentage && styleConfig.value?.settings?.showLabels?.discount"
       class="absolute right-2 top-2 z-10"
     >
       <UBadge :style="labelStyle('discount')" variant="solid" class="text-xs">
@@ -136,7 +214,7 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
     </NuxtLink>
 
     <!-- Product info -->
-    <div class="product-info p-4 flex flex-col">
+    <div class="product-info p-4 flex flex-col" :class="{'ticket-info': product.type === ProductType.TICKET}">
       <NuxtLink :to="productLink" class="block">
         <h3
           class="product-title mb-1 text-lg font-medium text-gray-900 dark:text-gray-100"
@@ -145,7 +223,19 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
         </h3>
       </NuxtLink>
 
-      <div class="product-description-container">
+      <!-- Ticket Specific Info -->
+      <div v-if="product.type === ProductType.TICKET" class="ticket-details mb-2">
+        <div v-if="ticketLocation" class="flex items-center text-xs text-gray-600 dark:text-gray-400 mb-1">
+          <MapPin class="w-3 h-3 mr-1 flex-shrink-0" />
+          <span class="truncate">{{ ticketLocation }}</span>
+        </div>
+        <div v-if="ticketDate" class="flex items-center text-xs text-gray-600 dark:text-gray-400">
+          <Calendar class="w-3 h-3 mr-1 flex-shrink-0" />
+          <span>{{ ticketDate }}</span>
+        </div>
+      </div>
+
+      <div v-else class="product-description-container">
         <p
           v-if="shortDescription"
           class="product-description text-sm text-gray-600 line-clamp-2 dark:text-gray-400"
@@ -161,17 +251,17 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
             <span
               v-if="product.price === null"
               class="text-lg font-semibold text-primary-600 dark:text-primary-400"
-              >Liên hệ</span
+              >{{ t('products.contactUs') || 'Liên hệ' }}</span
             >
             <template v-else>
               <span
                 class="text-lg font-semibold text-primary-600 dark:text-primary-400"
-                >{{ formattedPrice }}</span
+                >{{ displayPrice }}</span
               >
               <span
-                v-if="formattedComparePrice"
+                v-if="displayComparePrice"
                 class="text-sm text-gray-500 line-through dark:text-gray-400"
-                >{{ formattedComparePrice }}</span
+                >{{ displayComparePrice }}</span
               >
             </template>
           </div>
@@ -212,6 +302,19 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
   height: 11rem;
   display: grid;
   grid-template-rows: auto 3rem 1fr;
+}
+
+/* Ticket card specific styles */
+.ticket-card {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.ticket-info {
+  grid-template-rows: auto auto 1fr;
+}
+
+.ticket-details {
+  margin-top: 0.25rem;
 }
 
 .product-title {

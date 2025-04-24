@@ -1,7 +1,39 @@
+import { createPostSchema, getPostByIdSchema, updatePostSchema } from '@ew/shared';
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, protectedProcedure, router } from '../trpc';
-import { createPostSchema, updatePostSchema, getPostByIdSchema } from '@ew/shared';
 import { z } from 'zod';
+import { protectedProcedure, publicProcedure, router } from '../procedures';
+
+// Admin router for posts
+export const adminPostRouter = router({
+  getPostById: protectedProcedure
+    .input(getPostByIdSchema)
+    .query(async ({ input, ctx }) => {
+      try {
+        ctx.logger.log(`Admin fetching post by ID: ${input}`);
+        const post = await ctx.services.postService.findOne(input);
+
+        if (!post) {
+          ctx.logger.warn(`Post not found for ID: ${input}`);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Post with ID ${input} not found`,
+          });
+        }
+
+        ctx.logger.debug(`Successfully retrieved post ID: ${input}`);
+        return post;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        ctx.logger.error(`Error fetching post by ID ${input}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve post',
+          cause: error,
+        });
+      }
+    }),
+});
 
 export const postRouter = router({
   latest: publicProcedure
@@ -11,50 +43,36 @@ export const postRouter = router({
         categories: z.string().optional(),
         locale: z.string().optional(),
         category: z.string().optional(),
+        search: z.string().optional(),
+        page: z.number().optional().default(1),
+        limit: z.number().optional().default(12),
+        sortBy: z.string().optional().default('newest'),
       }).optional()
     }))
     .query(async ({ input, ctx }) => {
       try {
         const { filters } = input || {};
-        const { locale, categories, categoryId, category } = filters || {};
+        const { locale = 'vi', categories, search, page = 1, limit = 12, sortBy = 'newest' } = filters || {};
 
-        // Xử lý danh sách categories nếu có
-        let categoryIds: number[] = [];
-        
-        // Nếu có category slug, ưu tiên tìm category theo slug
-        if (category) {
-          const allCategories = await ctx.services.categoryFrontendService.findAll();
-          const foundCategory = allCategories.find(cat => 
-            cat.translations?.some(trans => trans.slug === category)
-          );
-          
-          if (foundCategory) {
-            categoryIds = [foundCategory.id];
-          } else {
-            // Nếu không tìm thấy category theo slug, trả về mảng rỗng
-            return [];
-          }
-        } else if (categories) {
-          // Chuyển đổi chuỗi categories thành mảng số
-          categoryIds = categories.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
-        } else if (categoryId) {
-          // Hỗ trợ ngược cho categoryId cũ
-          categoryIds = [categoryId];
-        }
+        // Chuẩn bị filters cho service
+        const serviceFilters = {
+          categorySlugs: categories ? categories.split(',') : undefined,
+          search,
+          page,
+          limit,
+          sortBy
+        };
 
-        // Tìm posts theo locale và/hoặc categories
-        if (locale) {
-          if (categoryIds.length > 0) {
-            return ctx.services.postService.findByLocaleAndCategories(locale, categoryIds);
-          }
-          return ctx.services.postService.findByLocale(locale);
-        }
+        // Lấy bài viết với phân trang
+        const result = await ctx.services.postService.findByLocale(locale, serviceFilters);
 
-        if (categoryIds.length > 0) {
-          return ctx.services.postService.findByCategories(categoryIds);
-        }
-
-        return ctx.services.postService.findPublished();
+        return { 
+          posts: result.items, 
+          total: result.total, 
+          totalPages: result.totalPages,
+          currentPage: result.page,
+          limit: result.limit
+        };
       } catch (error) {
         console.error('Failed to fetch latest posts:', error);
         throw new TRPCError({
@@ -66,16 +84,66 @@ export const postRouter = router({
     }),
 
   byLocale: publicProcedure
-    .input(z.object({ locale: z.string() }))
+    .input(z.object({ 
+      locale: z.string(),
+      page: z.number().optional().default(1),
+      limit: z.number().optional().default(12),
+      search: z.string().optional(),
+      categories: z.string().optional(),
+      sort: z.string().optional().default('newest'),
+      category: z.string().optional(),
+      tags: z.string().optional()
+    }))
     .query(async ({ ctx, input }) => {
       try {
-        const posts = await ctx.services.postService.findByLocale(input.locale);
-        return posts;
+        const { locale, page, limit, search, categories, sort, category, tags } = input;
+        
+        // Chuẩn bị filters cho service
+        const serviceFilters = {
+          categorySlugs: category ? [category] : categories ? categories.split(',') : undefined,
+          search,
+          page,
+          limit,
+          sortBy: sort
+        };
+
+        // Lấy bài viết với phân trang
+        const result = await ctx.services.postService.findByLocale(locale, serviceFilters);
+        
+        return result;
       } catch (error) {
         console.error(`Failed to fetch posts by locale ${input.locale}:`, error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch posts by locale',
+          cause: error,
+        });
+      }
+    }),
+
+  byIds: publicProcedure
+    .input(z.object({ 
+      ids: z.array(z.number()),
+      locale: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        ctx.logger.log(`Fetching posts by IDs: ${input.ids.join(', ')}`);
+        const posts = await ctx.services.postService.findByIds(input.ids);
+        
+        // Lọc bài viết theo locale nếu cần
+        if (input.locale) {
+          return posts.filter(post => 
+            post.translations?.some(trans => trans.locale === input.locale)
+          );
+        }
+        
+        return posts;
+      } catch (error) {
+        ctx.logger.error(`Error fetching posts by IDs: ${error instanceof Error ? error.message : String(error)}`);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch posts by IDs',
           cause: error,
         });
       }
@@ -349,6 +417,64 @@ export const postRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to delete post',
+          cause: error,
+        });
+      }
+    }),
+
+  byIdsAndCategories: publicProcedure
+    .input(z.object({
+      postIds: z.array(z.number()).optional(),
+      categoryIds: z.array(z.number()).optional(),
+      locale: z.string().optional(),
+      limit: z.number().optional().default(12),
+      page: z.number().optional().default(1),
+    }))
+    .query(async ({ input, ctx }) => {
+      try {
+        const { postIds, categoryIds, locale, limit, page } = input;
+        
+        // Nếu có postIds, ưu tiên lấy theo postIds
+        if (postIds && postIds.length > 0) {
+          const posts = await ctx.services.postService.findByIds(postIds);
+          return {
+            items: posts,
+            total: posts.length,
+            totalPages: 1,
+            page: 1,
+            limit: posts.length
+          };
+        }
+        
+        // Nếu có categoryIds, lấy theo categoryIds
+        if (categoryIds && categoryIds.length > 0) {
+          // Gọi hàm findByCategories với mảng categoryIds
+          const posts = await ctx.services.postService.findByCategories(categoryIds);
+          
+          // Áp dụng phân trang thủ công
+          const startIndex = (page - 1) * limit;
+          const endIndex = startIndex + limit;
+          const paginatedPosts = posts.slice(startIndex, endIndex);
+          
+          return {
+            items: paginatedPosts,
+            total: posts.length,
+            totalPages: Math.ceil(posts.length / limit),
+            page,
+            limit
+          };
+        }
+        
+        // Nếu không có cả hai, trả về lỗi
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Either postIds or categoryIds must be provided',
+        });
+      } catch (error) {
+        console.error('Failed to fetch posts by IDs and categories:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch posts by IDs and categories',
           cause: error,
         });
       }

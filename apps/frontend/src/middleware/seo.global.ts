@@ -1,53 +1,97 @@
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
 import { useTrpc } from '../composables/useTrpc';
+import { defineNuxtRouteMiddleware, useAsyncData, useRuntimeConfig } from 'nuxt/app';
+import { useHead, useSeoMeta } from '@unhead/vue';
+import type { RouteLocationNormalized } from 'vue-router';
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
 
-export default defineNuxtRouteMiddleware(async (to) => {
-  // Bỏ qua các tài nguyên tĩnh
+const defaultSeo = {
+  title: 'website',
+  description: 'website',
+  keywords: 'website',
+  ogTitle: 'website',
+  ogDescription: 'website',
+  ogImage: '',
+  robotsTxt: 'index, follow',
+  canonicalUrl: ''
+} as const;
+
+export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => {
+  // Skip for static resources
   if (to.path.match(/\.(svg|png|jpg|jpeg|gif|css|js|ico|woff|woff2|ttf|eot|json|xml)$/i)) {
     return;
   }
   
-  // Bỏ qua các trang chi tiết vì chúng đã có SEO riêng
-  // Kiểm tra các mẫu URL của trang chi tiết
+  // Skip detail pages as they have their own SEO
   const detailPagePatterns = [
-    /^\/posts\/[^\/]+$/,  // Trang chi tiết bài viết: /posts/slug
-    /^\/products\/[^\/]+$/,  // Trang chi tiết sản phẩm: /products/slug
-    /^\/bai-viet\/[^\/]+$/,  // Trang chi tiết bài viết: /bai-viet/slug
-    /^\/san-pham\/[^\/]+$/,  // Trang chi tiết sản phẩm: /san-pham/slug
-    /^\/dich-vu\/[^\/]+$/,  // Trang chi tiết dịch vụ: /dich-vu/slug
-    // Thêm các mẫu URL khác nếu cần
+    /^\/posts\/[^\/]+$/,
+    /^\/products\/[^\/]+$/,
+    /^\/bai-viet\/[^\/]+$/,
+    /^\/san-pham\/[^\/]+$/,
+    /^\/dich-vu\/[^\/]+$/,
+    /^\/tickets\/[^\/]+$/,
   ];
   
-  // Nếu URL hiện tại khớp với bất kỳ mẫu nào, bỏ qua việc gọi API SEO
   if (detailPagePatterns.some(pattern => pattern.test(to.path))) {
     return;
   }
-  
-  const trpc = useTrpc();
-  
-  try {
-    const seo = await trpc.seo.getSeoByPath.query(to.path || '/');
-    if (!seo) return;
 
+  try {
+    // Initialize tRPC client
+    const trpc = useTrpc();
+    if (!trpc) {
+      console.error('tRPC client not initialized');
+      return;
+    }
+
+    // Use useAsyncData with SSR-specific options
+    const { data: seoData } = await useAsyncData(
+      `seo-${to.path}`,
+      () => trpc.seo.getSeoByPath.query(to.path || '/'),
+      {
+        server: true,
+        lazy: false,
+        immediate: true,
+        transform: (result) => result || defaultSeo
+      }
+    );
+
+    // Ensure we have SEO data
+    const seo = seoData.value || defaultSeo;
+
+    // Use useSeoMeta for better SEO handling
     useSeoMeta({
-      title: seo.title || undefined,
-      description: seo.description || undefined,
-      // Open Graph
-      ogTitle: seo.ogTitle || seo.title || undefined,
-      ogDescription: seo.ogDescription || seo.description || undefined,
-      ogImage: seo.ogImage || undefined,
-      // Keywords
-      keywords: seo.keywords || undefined,
-      // Robots
-      robots: seo.robotsTxt || undefined,
-      // Canonical
-      ...(seo.canonicalUrl ? { canonical: seo.canonicalUrl } : {}),
+      title: () => seo.title,
+      ogTitle: () => seo.ogTitle || seo.title,
+      description: () => seo.description,
+      ogDescription: () => seo.ogDescription || seo.description,
+      ogImage: () => seo.ogImage,
+      keywords: () => seo.keywords,
+      robots: () => seo.robotsTxt,
     });
-  } catch (err) {
-    console.error('Error updating SEO tags:', err);
+
+    // Set canonical URL if available
+    if (seo.canonicalUrl) {
+      useHead({
+        link: [
+          { rel: 'canonical', href: seo.canonicalUrl }
+        ]
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching SEO data:', error);
+    
+    // Set default SEO values on error
+    useSeoMeta({
+      title: () => defaultSeo.title,
+      ogTitle: () => defaultSeo.ogTitle,
+      description: () => defaultSeo.description,
+      ogDescription: () => defaultSeo.ogDescription,
+      keywords: () => defaultSeo.keywords,
+      robots: 'index, follow'
+    });
   }
 }); 

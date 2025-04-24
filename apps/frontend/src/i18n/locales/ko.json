@@ -51,7 +51,9 @@
     "error": "오류가 발생했습니다",
     "success": "성공",
     "required": "필수",
-    "viewDetails": "상세 보기"
+    "viewDetails": "상세 보기",
+    "addToCart": "장바구니에 담기",
+    "price": "가격"
   },
   "validation": {
     "required": "이 필드는 필수입니다",
@@ -75,12 +77,13 @@
   "products": {
     "title": "제품",
     "description": "우리의 제품 컬렉션을 둘러보세요",
-    "all": "전체 제품",
+    "all": "모든 제품",
     "featured": "추천 제품",
-    "new": "신상품",
-    "sale": "할인 중",
-    "viewAll": "전체 보기",
+    "new": "신제품",
+    "sale": "할인",
+    "viewAll": "모두 보기",
     "addToCart": "장바구니에 담기",
+    "bookTicket": "예매하기",
     "contact": "문의하기",
     "description": "제품 설명",
     "videoReview": "동영상 리뷰",
@@ -150,7 +153,34 @@
     "linkCopied": "링크가 복사되었습니다",
     "linkCopiedDescription": "링크가 클립보드에 복사되었습니다",
     "linkCopyFailed": "링크 복사 실패",
-    "linkCopyFailedDescription": "링크 복사 중 오류가 발생했습니다"
+    "linkCopyFailedDescription": "링크 복사 중 오류가 발생했습니다",
+    "ticketType": "티켓",
+    "ticketNotes": "주요 안내사항",
+    "ticketNote1": "티켓은 방문 당일에만 유효합니다",
+    "ticketNote2": "티켓 사용 시 신분증을 지참해 주세요",
+    "ticketNote3": "3세 미만 어린이는 무료입니다",
+    "ticketProcess": "티켓 사용 방법",
+    "ticketStep1": "온라인 예매",
+    "ticketStep1Desc": "티켓 유형 선택 및 결제",
+    "ticketStep2": "티켓 코드 수령",
+    "ticketStep2Desc": "이메일 또는 SMS로 발송",
+    "ticketStep3": "티켓 사용",
+    "ticketStep3Desc": "입구에서 티켓 코드 제시",
+    "ticketDate": "방문 날짜",
+    "ticketTime": "시간",
+    "ticketLocation": "위치",
+    "ticketValidity": "유효기간",
+    "departureDate": "출발일",
+    "selectDepartureDate": "출발일 선택",
+    "departureDateRequired": "출발일을 선택해 주세요",
+    "departureDateInvalid": "유효하지 않은 출발일입니다",
+    "departureDatePast": "과거 날짜는 선택할 수 없습니다",
+    "selectedDate": "선택한 날짜",
+    "availableSlots": "잔여 티켓",
+    "noAvailableSlots": "해당 날짜의 티켓이 매진되었습니다",
+    "limitedSlots": "잔여 {count}매",
+    "from": "부터",
+    "noMatchingVariant": "선택하신 옵션에 맞는 상품이 없습니다"
   },
   "priceRequest": {
     "title": "견적 요청",
@@ -252,5 +282,14 @@
     "light": "라이트 테마",
     "dark": "다크 테마",
     "system": "시스템 테마"
+  },
+  "modals": {
+    "variantSelection": {
+      "title": "티켓 정보 선택"
+    }
+  },
+  "tickets": {
+    "showing": "표시 중",
+    "items": "티켓"
   }
 } 

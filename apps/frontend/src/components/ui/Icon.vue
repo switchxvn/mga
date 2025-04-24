@@ -1,24 +1,37 @@
 <script setup lang="ts">
-import { type Icon as LucideIcon, type LucideProps } from 'lucide-vue-next'
-import * as lucideIcons from 'lucide-vue-next'
-import { computed } from 'vue'
+import * as LucideIcons from 'lucide-vue-next';
+import { computed } from 'vue';
+import { useIcon } from '~/composables/useIcon';
 
-export interface IconProps {
-  name: keyof typeof lucideIcons
-  size?: number
-  strokeWidth?: number
+interface IconProps {
+  name: string;
+  size?: number;
+  strokeWidth?: number;
 }
 
 const props = withDefaults(defineProps<IconProps>(), {
   size: 24,
-  strokeWidth: 2,
-})
+  strokeWidth: 2
+});
 
-const Icon = computed(() => lucideIcons[props.name])
+const { getIconComponent } = useIcon();
+
+// Convert kebab-case to PascalCase for icon names
+const toPascalCase = (str: string) => {
+  return str
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('');
+};
+
+// Get icon component dynamically
+const Icon = computed(() => {
+  return getIconComponent(props.name);
+});
 </script>
 
 <template>
-  <component
+  <component 
     :is="Icon"
     :size="props.size"
     :stroke-width="props.strokeWidth"

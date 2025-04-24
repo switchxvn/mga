@@ -1,6 +1,7 @@
-import { z } from 'zod';
-import { publicProcedure, router, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { ProductType } from '../../product/entities/product.entity';
+import { protectedProcedure, publicProcedure, router } from '../procedures';
 
 export const productRouter = router({
   getAll: publicProcedure
@@ -19,6 +20,7 @@ export const productRouter = router({
         sortBy: z.enum(['price_asc', 'price_desc', 'newest', 'oldest']).optional(),
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(50).default(12),
+        type: z.nativeEnum(ProductType).optional(),
       }).optional(),
     )
     .query(async ({ ctx, input }) => {
@@ -51,6 +53,7 @@ export const productRouter = router({
         sortBy: input?.sortBy,
         page: input?.page,
         limit: input?.limit,
+        type: input?.type,
       });
 
       return {
@@ -65,6 +68,16 @@ export const productRouter = router({
             metaDescription: translation?.metaDescription || '',
             metaKeywords: translation?.metaKeywords || '',
             formattedPrice: ctx.services.productFrontendService.formatPrice(product.price),
+            variants: product.variants?.map(variant => {
+              const variantTranslation = ctx.services.productFrontendService.getVariantTranslation(variant, input?.locale);
+              return {
+                ...variant,
+                name: variantTranslation?.name || '',
+                description: variantTranslation?.description || '',
+                formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
+              };
+            }) || [],
+            variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
           };
         }),
         total: result.total,
@@ -94,6 +107,16 @@ export const productRouter = router({
           metaDescription: translation?.metaDescription || '',
           metaKeywords: translation?.metaKeywords || '',
           formattedPrice: ctx.services.productFrontendService.formatPrice(product.price),
+          variants: product.variants?.map(variant => {
+            const variantTranslation = ctx.services.productFrontendService.getVariantTranslation(variant, input?.locale);
+            return {
+              ...variant,
+              name: variantTranslation?.name || '',
+              description: variantTranslation?.description || '',
+              formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
+            };
+          }) || [],
+          variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
         };
       });
     }),
@@ -118,6 +141,16 @@ export const productRouter = router({
           metaDescription: translation?.metaDescription || '',
           metaKeywords: translation?.metaKeywords || '',
           formattedPrice: ctx.services.productFrontendService.formatPrice(product.price),
+          variants: product.variants?.map(variant => {
+            const variantTranslation = ctx.services.productFrontendService.getVariantTranslation(variant, input?.locale);
+            return {
+              ...variant,
+              name: variantTranslation?.name || '',
+              description: variantTranslation?.description || '',
+              formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
+            };
+          }) || [],
+          variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
         };
       });
     }),
@@ -142,6 +175,16 @@ export const productRouter = router({
           metaDescription: translation?.metaDescription || '',
           metaKeywords: translation?.metaKeywords || '',
           formattedPrice: ctx.services.productFrontendService.formatPrice(product.price),
+          variants: product.variants?.map(variant => {
+            const variantTranslation = ctx.services.productFrontendService.getVariantTranslation(variant, input?.locale);
+            return {
+              ...variant,
+              name: variantTranslation?.name || '',
+              description: variantTranslation?.description || '',
+              formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
+            };
+          }) || [],
+          variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
         };
       });
     }),
@@ -167,6 +210,16 @@ export const productRouter = router({
         metaDescription: translation?.metaDescription || '',
         metaKeywords: translation?.metaKeywords || '',
         formattedPrice: ctx.services.productFrontendService.formatPrice(product.price),
+        variants: product.variants?.map(variant => {
+          const variantTranslation = ctx.services.productFrontendService.getVariantTranslation(variant, input.locale);
+          return {
+            ...variant,
+            name: variantTranslation?.name || '',
+            description: variantTranslation?.description || '',
+            formattedPrice: ctx.services.productFrontendService.formatPrice(variant.price),
+          };
+        }) || [],
+        variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
       };
     }),
 
@@ -205,6 +258,7 @@ export const productRouter = router({
         metaDescription: translation?.metaDescription || '',
         metaKeywords: translation?.metaKeywords || '',
         formattedPrice: ctx.services.productFrontendService.formatPrice(product.price),
+        variantAttributes: translation?.variantAttributes || { attributes: [], variants: [] }
       };
     }),
 

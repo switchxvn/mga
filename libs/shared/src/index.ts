@@ -12,8 +12,15 @@ export * from './transformers/date.transformer';
 
 // Interfaces
 export * from './lib/interfaces';
+export * from './lib/interfaces/seo.interface';
+export * from './lib/interfaces/gallery.interface';
+export * from './lib/dtos/gallery.dto';
 
 // Types
 export * from './types/page-type';
 export * from './types/category.type';
-export * from './types/contact'; 
+export * from './types/contact';
+export * from './types/food.type';
+export * from './lib/utils/price';
+export * from './lib/types/product.type';
+export * from './types/profile.type';

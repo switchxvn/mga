@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, adminProcedure, router } from '../trpc';
+import { publicProcedure, adminProcedure, router } from '../procedures';
 import { z } from 'zod';
 import { Theme } from '../../theme/entities/theme.entity';
 import { PageType } from '@ew/shared';

@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+import { publicProcedure, router } from '../procedures';
 
 // Tạo router cho language
 export const languageRouter = router({

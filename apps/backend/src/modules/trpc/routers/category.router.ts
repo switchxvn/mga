@@ -1,7 +1,7 @@
 import { CategoryType } from '@ew/shared';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+import { publicProcedure, router } from '../procedures';
 
 export const categoryRouter = router({
   all: publicProcedure

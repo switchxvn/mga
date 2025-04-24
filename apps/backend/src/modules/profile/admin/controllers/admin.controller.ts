@@ -34,7 +34,7 @@ export class ProfileAdminController {
   @ApiOperation({ summary: 'Get profile by user id' })
   @ApiResponse({ status: 200, description: 'Return found profile', type: UserProfile })
   findByUserId(@Param('userId') userId: string) {
-    return this.profileAdminService.findByUserId(+userId);
+    return this.profileAdminService.findByUserId(userId);
   }
 
   @Patch(':id')

@@ -65,9 +65,10 @@ NETWORK_NAME="app-network"
 
 # Stop and remove existing containers first
 echo "Cleaning up existing containers..."
-stop_container "ew-frontend"
-stop_container "ew-backend"
-stop_container "ew-nginx"
+stop_container "cable-car-frontend"
+stop_container "cable-car-backend"
+stop_container "cable-car-api"
+stop_container "cable-car-nginx"
 
 # Clean up network after containers are stopped
 echo "Setting up docker network..."
@@ -89,31 +90,48 @@ docker network create $NETWORK_NAME
 
 # Pull latest images with platform specification
 echo "Pulling latest images..."
-docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest
-docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/ew-backend:latest
-docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
 
 # Start backend
 echo "Starting backend..."
 docker run -d \
     --platform linux/amd64 \
-    --name ew-backend \
+    --name cable-car-backend \
     --network app-network \
     --network-alias backend \
     -p 3333:3333 \
     --env-file apps/backend/.env.production \
     -e NODE_ENV=production \
     --restart unless-stopped \
-    $REGISTRY/$GITHUB_USERNAME/ew-backend:latest
+    $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest
 
 # Wait for backend to be ready
-wait_for_container "ew-backend"
+wait_for_container "cable-car-backend"
+
+# Start api
+echo "Starting api..."
+docker run -d \
+    --platform linux/amd64 \
+    --name cable-car-api \
+    --network app-network \
+    --network-alias api \
+    -p 4000:4000 \
+    --env-file apps/api/.env.production \
+    -e NODE_ENV=production \
+    --restart unless-stopped \
+    $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
+
+# Wait for api to be ready
+wait_for_container "cable-car-api"
 
 # Start frontend
 echo "Starting frontend..."
 docker run -d \
     --platform linux/amd64 \
-    --name ew-frontend \
+    --name cable-car-frontend \
     --network app-network \
     --network-alias frontend \
     -p 3000:3000 \
@@ -121,30 +139,31 @@ docker run -d \
     -e NODE_ENV=production \
     -e HOST=0.0.0.0 \
     --restart unless-stopped \
-    $REGISTRY/$GITHUB_USERNAME/ew-frontend:latest
+    $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:latest
 
 # Wait for frontend to be ready
-wait_for_container "ew-frontend"
+wait_for_container "cable-car-frontend"
 
 # Start nginx
 echo "Starting nginx..."
 docker run -d \
     --platform linux/amd64 \
-    --name ew-nginx \
+    --name cable-car-nginx \
     --network app-network \
     -p 80:80 \
     -p 443:443 \
     -v /etc/nginx/ssl:/etc/nginx/ssl:ro \
     --restart unless-stopped \
-    $REGISTRY/$GITHUB_USERNAME/ew-nginx:latest
+    $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
 
 # Wait for nginx to be ready
-wait_for_container "ew-nginx"
+wait_for_container "cable-car-nginx"
 
 echo "Deployment completed successfully!"
 echo "Services:"
 echo "- Frontend: http://localhost:3000"
 echo "- Backend: http://localhost:3333"
+echo "- API: http://localhost:4000"
 echo "- Nginx: http://localhost (80) and https://localhost (443)"
 
 # Show running containers and their networks

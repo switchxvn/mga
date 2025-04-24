@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, protectedProcedure, router } from '../trpc';
+import { publicProcedure, protectedProcedure, router } from '../procedures';
 import { z } from 'zod';
 
 export const seoRouter = router({
@@ -7,6 +7,7 @@ export const seoRouter = router({
   getSeoByPath: publicProcedure
     .input(z.string())
     .query(async ({ input, ctx }) => {
+      console.log(ctx.user);
       try {
         ctx.logger.log(`Fetching SEO for path: ${input}`);
         const seo = await ctx.services.seoFrontendService.findActiveSeoByPath(input);

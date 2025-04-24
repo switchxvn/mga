@@ -33,7 +33,7 @@ export class ProfileAdminService {
     return profile;
   }
 
-  async findByUserId(userId: number) {
+  async findByUserId(userId: string) {
     const profile = await this.userProfileRepository.findOne({
       where: { userId },
       relations: ['countryPhoneCode'],

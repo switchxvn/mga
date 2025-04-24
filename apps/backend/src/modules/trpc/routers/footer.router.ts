@@ -1,7 +1,6 @@
 import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
-import { createFooterSchema, updateFooterSchema } from '@ew/shared';
-import { router, publicProcedure } from '../trpc.service';
+import { publicProcedure, router } from '../procedures';
+
 
 export const footerRouter = router({
   // Public endpoints
@@ -19,6 +18,7 @@ export const footerRouter = router({
       return {
         id: footer.id,
         name: footer.name,
+        componentName: footer.componentName,
         addresses: footer.addresses,
         mapUrl: footer.mapUrl,
         fanpageUrl: footer.fanpageUrl,
@@ -32,6 +32,7 @@ export const footerRouter = router({
         logoAlt: footer.logoAlt,
         isActive: footer.isActive,
         branchInfo: footer.branchInfo,
+        settings: footer.settings,
         createdAt: footer.createdAt,
         updatedAt: footer.updatedAt,
       };

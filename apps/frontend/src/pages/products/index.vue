@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
-import { useLocalization } from "../../composables/useLocalization";
-import { useTrpc } from "../../composables/useTrpc";
+import { ProductType, type Product } from '@ew/shared';
+import { Calendar, MapPin, Ticket } from 'lucide-vue-next';
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
+import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
+import ProductCard from "../../components/cards/ProductCard.vue";
+import { useLocalization } from "../../composables/useLocalization";
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
+import { useTrpc } from "../../composables/useTrpc";
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -64,22 +67,32 @@ const fetchSeoData = async () => {
   }
 };
 
+// Add type for specifications
+interface ProductSpecification {
+  name: string;
+  value: string;
+}
+
 // Initialize filters from route query
-const initialFilters: ProductFilter = {
+const initialFilters = ref<ProductFilter>({
   search: (route.query.search as string) || "",
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
   includeNullPrice: route.query.includeNullPrice === "true",
   categories: route.query.categories
-    ? String(route.query.categories).split(",").map(Number)
+    ? String(route.query.categories).split(",")
     : undefined,
   isFeatured: route.query.isFeatured === "true" ? true : undefined,
   isNew: route.query.isNew === "true" ? true : undefined,
   isSale: route.query.isSale === "true" ? true : undefined,
   sortBy: (route.query.sortBy as ProductSortBy) || "newest",
   page: Number(route.query.page) || 1,
-  limit: Number(route.query.limit) || 12,
-};
+  limit: 12, // Set default limit
+  type: (route.query.type as ProductType) || ProductType.PHYSICAL,
+});
+
+// Current page
+const currentPage = ref(Number(route.query.page) || 1);
 
 // Use product composable
 const {
@@ -90,7 +103,15 @@ const {
   isLoadingProducts: isLoading,
   fetchPriceRange,
   fetchProducts
-} = useProduct(initialFilters);
+} = useProduct(initialFilters.value);
+
+// Remove client-side filtering
+const hasProducts = computed(() => products.value.length > 0);
+
+// Filter products by type
+const ticketProducts = computed(() => products.value.filter((product: Product) => product.type === ProductType.TICKET));
+const regularProducts = computed(() => products.value.filter((product: Product) => product.type !== ProductType.TICKET));
+const hasTickets = computed(() => ticketProducts.value.length > 0);
 
 // Sort options as computed property to ensure translations are updated
 const sortOptions = computed(() => [
@@ -121,12 +142,26 @@ const handleSortChange = (event: Event) => {
 };
 
 // Handle page change
-const handlePageChange = (page: number) => {
-  filters.value.page = page;
-  updateQueryParams();
+const handlePageChange = async (page: number) => {
+  currentPage.value = page;
+  filters.value = {
+    ...filters.value,
+    page
+  };
+  
+  // Update URL query params
+  await router.replace({
+    query: {
+      ...route.query,
+      page: String(page)
+    }
+  });
 
   // Scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
+  
+  // Fetch products with new page
+  await fetchProducts();
 };
 
 // Update URL query params
@@ -145,7 +180,8 @@ const updateQueryParams = () => {
   if (filters.value.isSale) query.isSale = "true";
   if (filters.value.sortBy && filters.value.sortBy !== "newest") query.sortBy = filters.value.sortBy;
   if (filters.value.page && filters.value.page > 1) query.page = String(filters.value.page);
-  if (filters.value.limit !== 12) query.limit = String(filters.value.limit);
+  if (filters.value.limit && filters.value.limit !== 12) query.limit = String(filters.value.limit);
+  if (filters.value.type) query.type = filters.value.type;
 
   // Update route
   router.replace({ query });
@@ -167,6 +203,7 @@ watch(locale, async () => {
   products.value = [];
   totalProducts.value = 0;
   totalPages.value = 0;
+  currentPage.value = 1;
   
   // Reset filters to initial state
   filters.value = {
@@ -181,16 +218,16 @@ watch(locale, async () => {
     sortBy: 'newest',
     page: 1,
     limit: 12,
-    locale: locale.value
+    type: ProductType.PHYSICAL,
   };
 
   // Clear URL query params
-  router.replace({ query: {} });
+  await router.replace({ query: {} });
 
   // Then refresh data
   await fetchSeoData();
   await fetchPriceRange();
-  fetchProducts();
+  await fetchProducts();
 });
 </script>
 
@@ -227,7 +264,7 @@ watch(locale, async () => {
           <div v-if="!isLoading || totalProducts > 0" class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ t("products.showing") }} {{ totalProducts }} {{ t("products.items") }}
+                {{ t("products.showing") }} {{ ((currentPage - 1) * (filters.value?.limit || 12)) + 1 }} - {{ Math.min(currentPage * (filters.value?.limit || 12), totalProducts) }} {{ t("products.of") }} {{ totalProducts }} {{ t("products.items") }}
               </span>
             </div>
 
@@ -262,36 +299,67 @@ watch(locale, async () => {
 
           <template v-else>
             <!-- Products Grid -->
-            <ProductGrid
-              :products="products"
-              :loading="false"
-              :locale="locale"
-              :columns="3"
-            />
-
-            <!-- Pagination -->
-            <div v-if="totalProducts > 0" class="mt-8">
-              <Pagination
-                v-model="filters.page"
-                :total="totalProducts"
-                :items-per-page="filters.limit"
-                :max-visible-buttons="5"
-                @update:model-value="handlePageChange"
+            <div v-if="hasProducts" class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              <ProductCard
+                v-for="product in products"
+                :key="product.id"
+                :product="product"
+                :locale="locale"
               />
             </div>
             
-            <!-- No Results Message -->
-            <div v-else class="mt-8 text-center">
-              <div class="inline-flex items-center justify-center rounded-full bg-gray-100 p-6 dark:bg-gray-800">
-                <i class="i-heroicons-inbox-20-solid h-12 w-12 text-gray-400 dark:text-gray-500" />
-              </div>
-              <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-                {{ t('products.noResults') }}
-              </h3>
-              <p class="mt-2 text-gray-600 dark:text-gray-400">
-                {{ t('products.tryAdjustingFilters') }}
-              </p>
+            <!-- Pagination -->
+            <div v-if="totalProducts > 0" class="mt-8">
+              <nav class="flex items-center justify-center" role="navigation" aria-label="pagination">
+                <ul class="flex items-center -space-x-px">
+                  <!-- Previous -->
+                  <li>
+                    <button
+                      :disabled="currentPage === 1"
+                      @click="handlePageChange(currentPage - 1)"
+                      class="ml-0 block rounded-l-lg border border-gray-300 bg-white px-3 py-2 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                      :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }"
+                    >
+                      <span class="sr-only">Previous</span>
+                      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </li>
+                  
+                  <!-- Page Numbers -->
+                  <li v-for="page in totalPages" :key="page">
+                    <button
+                      @click="handlePageChange(page)"
+                      class="border border-gray-300 px-3 py-2 leading-tight"
+                      :class="{
+                        'bg-primary-600 text-white': currentPage === page,
+                        'bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white': currentPage !== page
+                      }"
+                    >
+                      {{ page }}
+                    </button>
+                  </li>
+                  
+                  <!-- Next -->
+                  <li>
+                    <button
+                      :disabled="currentPage === totalPages"
+                      @click="handlePageChange(currentPage + 1)"
+                      class="block rounded-r-lg border border-gray-300 bg-white px-3 py-2 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                      :class="{ 'opacity-50 cursor-not-allowed': currentPage === totalPages }"
+                    >
+                      <span class="sr-only">Next</span>
+                      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
             </div>
+            
+        
           </template>
         </div>
       </div>

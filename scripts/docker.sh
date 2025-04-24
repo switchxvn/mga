@@ -49,8 +49,8 @@ show_help() {
 # Stop function
 stop_containers() {
     echo "Stopping containers..."
-    docker stop ew-frontend ew-backend ew-nginx 2>/dev/null || true
-    docker rm ew-frontend ew-backend ew-nginx 2>/dev/null || true
+    docker stop cable-car-frontend cable-car-backend cable-car-nginx 2>/dev/null || true
+    docker rm cable-car-frontend cable-car-backend cable-car-nginx 2>/dev/null || true
     echo "Containers stopped and removed."
 }
 
@@ -104,7 +104,7 @@ case $COMMAND in
         ;;
     "status")
         echo "Container Status:"
-        docker ps --filter "name=ew-"
+        docker ps --filter "name=cable-car-"
         ;;
     *)
         show_help

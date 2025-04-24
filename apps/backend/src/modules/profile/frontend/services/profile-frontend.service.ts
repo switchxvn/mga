@@ -14,20 +14,33 @@ export class ProfileFrontendService {
     private readonly countryPhoneCodeRepository: Repository<CountryPhoneCode>,
   ) {}
 
-  async getProfileByUserId(userId: number) {
-    const profile = await this.userProfileRepository.findOne({
-      where: { userId },
-      relations: ['countryPhoneCode'],
-    });
+  async getProfileByUserId(userId: string) {
+    try {
+      const profile = await this.userProfileRepository.findOne({
+        where: { userId },
+        relations: ['countryPhoneCode'],
+      });
 
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
+      if (!profile) {
+        throw new NotFoundException('Profile not found');
+      }
+
+      // Convert Promise<CountryPhoneCode> to CountryPhoneCode
+      const countryPhoneCode = await profile.countryPhoneCode;
+      const result = {
+        ...profile,
+        countryPhoneCode,
+      };
+
+      console.log('Profile from frontend service:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error) {
+      console.error('Error in getProfileByUserId:', error);
+      throw error;
     }
-
-    return profile;
   }
 
-  async updateProfile(userId: number, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
     let profile = await this.userProfileRepository.findOne({
       where: { userId },
     });

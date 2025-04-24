@@ -3,6 +3,31 @@ export default defineNuxtPlugin({
   name: 'seo-meta-plugin',
   enforce: 'pre', // Chạy trước các plugin khác
   setup() {
+    const route = useRoute();
+    
+    // Set default meta tags during SSR
+    useHead({
+      htmlAttrs: {
+        lang: 'vi'
+      },
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { property: 'og:url', content: process.client ? window.location.href : `https://captreonuisam.com${route.fullPath}` }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      ]
+    });
+
+    // Set default SEO meta
+    useSeoMeta({
+      ogType: 'website',
+      twitterCard: 'summary_large_image'
+    });
+
     // Sử dụng useHead để đảm bảo các thẻ meta mặc định được render
     useHead({
       meta: [

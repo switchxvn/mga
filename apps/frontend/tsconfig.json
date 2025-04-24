@@ -12,6 +12,7 @@
     "incremental": true,
     "types": ["node"],
     "baseUrl": ".",
+    "moduleResolution": "bundler",
     "paths": {
       "~/*": ["./src/*"],
       "@/*": ["./src/*"],

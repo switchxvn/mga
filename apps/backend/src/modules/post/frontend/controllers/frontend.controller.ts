@@ -68,8 +68,8 @@ export class PostFrontendController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update post' })
   @ApiResponse({ status: 200, description: 'Post updated successfully', type: PostEntity })
-  update(@Request() req, @Param('id') id: string, @Body() updatePostDto: UpdatePostInput): Promise<PostEntity> {
-    return this.postService.update(+id, updatePostDto, req.user.id);
+  update(@Request() req, @Param('id') id: number, @Body() updatePostDto: UpdatePostInput): Promise<PostEntity> {
+    return this.postService.update(id, updatePostDto, req.user.id);
   }
 
   @Delete(':id')
@@ -77,14 +77,14 @@ export class PostFrontendController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete post' })
   @ApiResponse({ status: 200, description: 'Post deleted successfully' })
-  remove(@Request() req, @Param('id') id: string): Promise<void> {
-    return this.postService.remove(+id, req.user.id);
+  remove(@Request() req, @Param('id') id: number): Promise<void> {
+    return this.postService.remove(id, req.user.id);
   }
 
   @Get('author/:id')
   @ApiOperation({ summary: 'Get posts by author id' })
   @ApiResponse({ status: 200, description: 'Return posts by author', type: [PostEntity] })
   findByAuthorId(@Param('id') id: string): Promise<PostEntity[]> {
-    return this.postService.findByAuthorId(+id);
+    return this.postService.findByAuthorId(id);
   }
 } 
