@@ -15,11 +15,10 @@ export class Category {
   @Column({ default: false, name: 'is_featured' })
   isFeatured!: boolean;
 
-  // Thêm trường type để phân biệt loại category
   @Column({
     type: 'enum',
     enum: CategoryType,
-    default: CategoryType.BOTH,
+    default: CategoryType.PRODUCT,
     name: 'category_type'
   })
   type!: CategoryType;
@@ -35,7 +34,9 @@ export class Category {
   @OneToMany(() => Category, category => category.parent)
   children!: Category[];
 
-  @OneToMany(() => CategoryTranslation, translation => translation.category)
+  @OneToMany(() => CategoryTranslation, translation => translation.category, {
+    cascade: true
+  })
   translations!: CategoryTranslation[];
 
   @ManyToMany(() => Post, (post) => post.categories)

@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Put } from '@nestjs/common';
-import { CategoryAdminService } from '../services/category-admin.service';
+import { CategoryAdminService, CreateCategoryData } from '../services/category-admin.service';
 import { Category } from '../../entities/category.entity';
 
 @Controller('admin/categories')
@@ -32,7 +32,7 @@ export class CategoryAdminController {
   }
 
   @Post()
-  create(@Body() categoryData: Partial<Category>) {
+  create(@Body() categoryData: CreateCategoryData) {
     return this.categoryAdminService.create(categoryData);
   }
 

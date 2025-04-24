@@ -18,12 +18,17 @@ const isActiveRoute = (path: string) => {
   if (path === '/') {
     return route.path === '/'
   }
+  // Ensure exact match for first-level routes
+  if (path.split('/').length === 2) {
+    return route.path === path || route.path.startsWith(`${path}/`)
+  }
   return route.path.startsWith(path)
 }
 
 const navigation = [
   { label: 'Dashboard', icon: 'i-heroicons-home', to: '/' },
   { label: 'Posts', icon: 'i-heroicons-document-text', to: '/posts' },
+  { label: 'Categories', icon: 'i-heroicons-folder', to: '/categories' },
   { label: 'Products', icon: 'i-heroicons-shopping-bag', to: '/products' },
   { label: 'Orders', icon: 'i-heroicons-shopping-cart', to: '/orders' },
   { label: 'Customers', icon: 'i-heroicons-users', to: '/customers' },
@@ -102,6 +107,7 @@ const userMenuItems: DropdownItem[][] = [[
           v-for="item in navigation"
           :key="item.to"
           :to="item.to"
+          :exact="item.to === '/'"
           :class="[
             'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
             isActiveRoute(item.to)
@@ -199,7 +205,5 @@ const userMenuItems: DropdownItem[][] = [[
 </template>
 
 <style scoped>
-.router-link-active {
-  @apply bg-primary-500/10 text-primary-600 dark:text-primary-400;
-}
+/* Remove router-link-active styling */
 </style> 
