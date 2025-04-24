@@ -45,6 +45,11 @@ if [ ! -f "$PROJECT_ROOT/apps/frontend/.env.production" ]; then
     exit 1
 fi
 
+if [ ! -f "$PROJECT_ROOT/apps/admin/.env.production" ]; then
+    echo "Error: Admin production environment file not found at apps/admin/.env.production"
+    exit 1
+fi
+
 if [ ! -f "$PROJECT_ROOT/apps/backend/.env.production" ]; then
     echo "Error: Backend production environment file not found at apps/backend/.env.production"
     exit 1
@@ -101,6 +106,18 @@ docker build --platform linux/amd64 \
 echo "Pushing nginx image..."
 docker push $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:$VERSION
 docker push $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
+
+# Build and push admin
+echo "Building admin image..."
+docker build --platform linux/amd64 \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-admin:$VERSION \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-admin:latest \
+    --build-arg ENV_FILE=.env.production \
+    -f apps/admin/Dockerfile .
+
+echo "Pushing admin image..."
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-admin:$VERSION
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-admin:latest
 
 echo "Build and push completed successfully!"
 echo "Version: $VERSION"

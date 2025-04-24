@@ -66,6 +66,7 @@ NETWORK_NAME="app-network"
 # Stop and remove existing containers first
 echo "Cleaning up existing containers..."
 stop_container "cable-car-frontend"
+stop_container "cable-car-admin"
 stop_container "cable-car-backend"
 stop_container "cable-car-api"
 stop_container "cable-car-nginx"
@@ -91,6 +92,7 @@ docker network create $NETWORK_NAME
 # Pull latest images with platform specification
 echo "Pulling latest images..."
 docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-admin:latest
 docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest
 docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
 docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
@@ -144,6 +146,23 @@ docker run -d \
 # Wait for frontend to be ready
 wait_for_container "cable-car-frontend"
 
+# Start admin
+echo "Starting admin..."
+docker run -d \
+    --platform linux/amd64 \
+    --name cable-car-admin \
+    --network app-network \
+    --network-alias admin \
+    -p 3001:3001 \
+    --env-file apps/admin/.env.production \
+    -e NODE_ENV=production \
+    -e HOST=0.0.0.0 \
+    --restart unless-stopped \
+    $REGISTRY/$GITHUB_USERNAME/cable-car-admin:latest
+
+# Wait for admin to be ready
+wait_for_container "cable-car-admin"
+
 # Start nginx
 echo "Starting nginx..."
 docker run -d \
@@ -162,6 +181,7 @@ wait_for_container "cable-car-nginx"
 echo "Deployment completed successfully!"
 echo "Services:"
 echo "- Frontend: http://localhost:3000"
+echo "- Admin: http://localhost:3001"
 echo "- Backend: http://localhost:3333"
 echo "- API: http://localhost:4000"
 echo "- Nginx: http://localhost (80) and https://localhost (443)"
