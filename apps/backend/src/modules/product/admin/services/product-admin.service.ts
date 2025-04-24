@@ -19,6 +19,34 @@ export class ProductAdminService {
     });
   }
 
+  async getProducts({ page, limit, search, published }: { page: number; limit: number; search?: string; published?: boolean | null }) {
+    const queryBuilder = this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.translations', 'translations')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.translations', 'variantTranslations');
+
+    if (search) {
+      queryBuilder.andWhere('translations.name ILIKE :search', { search: `%${search}%` });
+    }
+
+    if (published !== null) {
+      queryBuilder.andWhere('product.published = :published', { published });
+    }
+
+    const [items, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async findOne(id: number): Promise<Product> {
     return this.productRepository.findOne({
       where: { id },

@@ -40,7 +40,7 @@ export const useAuth = () => {
         await userStore.fetchUser();
 
         // Redirect to dashboard
-        router.push('/dashboard');
+        router.push('/');
       }
     } catch (err: any) {
       if (err.shape?.message) {
