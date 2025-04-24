@@ -143,6 +143,28 @@ export class PostAdminService {
     return this.postRepository.save(post);
   }
 
+  async createPostWithTranslations(data: any) {
+    // Create base post
+    const post = await this.postRepository.save(this.postRepository.create({
+      title: data.title,
+      content: data.content,
+      shortDescription: data.shortDescription,
+      published: data.status === 'PUBLISHED',
+      thumbnail: data.thumbnail,
+    }));
+
+    // Create translations
+    if (data.translations?.length) {
+      const translations = data.translations.map(t => this.postTranslationRepository.create({
+        ...t,
+        postId: post.id
+      }));
+      await this.postTranslationRepository.save(translations);
+    }
+
+    return this.getPost(post.id);
+  }
+
   async findPostTranslationBySlug(slug: string): Promise<PostTranslation | null> {
     return this.postTranslationRepository.findOne({
       where: { slug },
@@ -184,8 +206,10 @@ export class PostAdminService {
         content: data.content,
         shortDescription: data.shortDescription,
         published: data.status === 'PUBLISHED',
-        thumbnail: data.featuredImage || existingPost.thumbnail,
+        thumbnail: data.thumbnail,
       };
+
+      this.logger.debug('Updating post with:', postToUpdate);
 
       // Update the post first
       await this.postRepository.update(id, postToUpdate);
@@ -223,7 +247,7 @@ export class PostAdminService {
               shortDescription: translation.shortDescription,
               slug: slugToUse,
               metaDescription: translation.metaDescription,
-              ogImage: translation.ogImage
+              ogImage: translation.ogImage,
             });
           } else {
             this.logger.debug('Creating new translation');
@@ -238,7 +262,8 @@ export class PostAdminService {
             const newTranslation = this.postTranslationRepository.create({
               ...translation,
               slug: slugToUse,
-              postId: id
+              postId: id,
+              ogImage: translation.ogImage
             });
             await this.postTranslationRepository.save(newTranslation);
           }
@@ -274,13 +299,20 @@ export class PostAdminService {
 
       // Handle categories if provided
       if (data.categoryIds) {
-        // Clear existing categories
-        existingPost.categories = [];
-        await this.postRepository.save(existingPost);
+        // Get updated post with current values
+        const updatedPost = await this.postRepository.findOne({
+          where: { id },
+          relations: ['categories']
+        });
 
-        // Set new categories
-        existingPost.categories = await this.categoryRepository.findByIds(data.categoryIds);
-        await this.postRepository.save(existingPost);
+        if (updatedPost) {
+          // Update categories while preserving other fields
+          updatedPost.categories = await this.categoryRepository.findByIds(data.categoryIds);
+          await this.postRepository.save({
+            ...updatedPost,
+            thumbnail: data.thumbnail // Ensure thumbnail is preserved
+          });
+        }
       }
 
       // Return updated post with all relations
@@ -327,5 +359,32 @@ export class PostAdminService {
       relations: ['post']
     });
     return translation?.post || null;
+  }
+
+  async updatePostStatus(id: number, status: 'DRAFT' | 'PUBLISHED'): Promise<Post> {
+    try {
+      const existingPost = await this.postRepository.findOne({
+        where: { id },
+        relations: ['translations', 'postTags', 'categories']
+      });
+
+      if (!existingPost) {
+        throw new NotFoundException(`Post with ID ${id} not found`);
+      }
+
+      // Update post status
+      await this.postRepository.update(id, {
+        published: status === 'PUBLISHED'
+      });
+
+      // Return updated post
+      return this.postRepository.findOne({
+        where: { id },
+        relations: ['translations', 'postTags', 'postTags.tag', 'categories', 'categories.translations']
+      });
+    } catch (error) {
+      this.logger.error('Error updating post status:', error);
+      throw error;
+    }
   }
 } 

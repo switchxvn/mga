@@ -129,7 +129,7 @@ export const postAdminRouter = router({
         title: z.string(),
         content: z.string(),
         status: z.enum(['DRAFT', 'PUBLISHED']),
-        featuredImage: z.string().nullable().optional(),
+        thumbnail: z.string().nullable().optional(),
         metaDescription: z.string().nullable().optional(),
         shortDescription: z.string().nullable().optional(),
         translations: z.array(z.object({
@@ -147,6 +147,7 @@ export const postAdminRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
+        ctx.logger.debug('Updating post with data:', input);
         const updatedPost = await ctx.services.postAdminService.updatePost(input.id, input.data);
         return updatedPost;
       } catch (error) {
@@ -160,6 +161,32 @@ export const postAdminRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update post',
+          cause: error,
+        });
+      }
+    }),
+
+  updatePostStatus: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      status: z.enum(['DRAFT', 'PUBLISHED'])
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        ctx.logger.debug('Updating post status:', input);
+        const updatedPost = await ctx.services.postAdminService.updatePostStatus(input.id, input.status);
+        return updatedPost;
+      } catch (error) {
+        if (error instanceof BadRequestException) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        ctx.logger.error('Failed to update post status:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update post status',
           cause: error,
         });
       }
@@ -185,11 +212,11 @@ export const postAdminRouter = router({
         ogImage: z.string().nullable().optional()
       })).min(1, 'Cần ít nhất một bản dịch'),
       tags: z.array(z.string()).optional(),
-      categoryIds: z.array(z.number()).optional()
+      categoryIds: z.array(z.number()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const newPost = await ctx.services.postAdminService.createPost(input);
+        const newPost = await ctx.services.postAdminService.createPostWithTranslations(input);
         return newPost;
       } catch (error) {
         ctx.logger.error('Failed to create post:', error);

@@ -136,7 +136,7 @@
             <!-- Media Tab -->
             <div v-show="currentTab === 'media'">
               <PostMedia
-                v-model:featured-image="form.featuredImage"
+                v-model:thumbnail="form.thumbnail"
               />
             </div>
 
@@ -257,7 +257,7 @@ interface PostForm {
   content: string
   shortDescription: string
   published: boolean
-  featuredImage: string
+  thumbnail: string
   metaDescription: string
   tags: string[]
   categoryIds: number[]
@@ -268,7 +268,7 @@ interface PostForm {
     content: string
     shortDescription: string
     metaDescription: string
-    featuredImage: string
+    thumbnail: string
   }>
 }
 
@@ -278,7 +278,7 @@ const initialForm: PostForm = {
   content: '',
   shortDescription: '',
   published: false,
-  featuredImage: '',
+  thumbnail: '',
   metaDescription: '',
   tags: [],
   categoryIds: [],
@@ -393,7 +393,7 @@ watch(selectedLanguage, (newLang, oldLang) => {
       content: form.value.content,
       shortDescription: form.value.shortDescription,
       metaDescription: form.value.metaDescription,
-      featuredImage: form.value.featuredImage
+      thumbnail: form.value.thumbnail
     }
   }
   
@@ -405,7 +405,7 @@ watch(selectedLanguage, (newLang, oldLang) => {
     form.value.content = translation.content
     form.value.shortDescription = translation.shortDescription
     form.value.metaDescription = translation.metaDescription
-    form.value.featuredImage = translation.featuredImage
+    form.value.thumbnail = translation.thumbnail
   } else {
     // Reset form for new translation
     form.value.title = ''
@@ -413,7 +413,7 @@ watch(selectedLanguage, (newLang, oldLang) => {
     form.value.content = ''
     form.value.shortDescription = ''
     form.value.metaDescription = ''
-    form.value.featuredImage = ''
+    form.value.thumbnail = ''
   }
 })
 
@@ -474,7 +474,7 @@ const createPost = async (continueEditing = false) => {
       content: form.value.content,
       shortDescription: form.value.shortDescription,
       metaDescription: form.value.metaDescription,
-      featuredImage: form.value.featuredImage
+      thumbnail: form.value.thumbnail
     }
 
     // Prepare translations array for API
@@ -485,7 +485,7 @@ const createPost = async (continueEditing = false) => {
       content: content.content,
       shortDescription: content.shortDescription,
       metaDescription: content.metaDescription,
-      ogImage: content.featuredImage
+      ogImage: content.thumbnail
     }))
 
     const response = await trpc.admin.posts.createPost.mutate({
@@ -493,8 +493,7 @@ const createPost = async (continueEditing = false) => {
       content: form.value.content,
       shortDescription: form.value.shortDescription,
       status: form.value.published ? 'PUBLISHED' : 'DRAFT',
-      thumbnail: form.value.featuredImage || '',
-      featuredImage: form.value.featuredImage || '',
+      thumbnail: form.value.thumbnail || '',
       metaDescription: form.value.metaDescription || '',
       translations,
       tags: form.value.tags,

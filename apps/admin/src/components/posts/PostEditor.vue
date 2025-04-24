@@ -54,12 +54,14 @@
             class="quill-editor"
             :class="{ 'border border-red-500 rounded-lg': !!errors?.content }"
           >
-            <QuillEditor
-              v-model:content="localContent"
-              :toolbar="editorOptions.modules.toolbar"
-              contentType="html"
-              theme="snow"
-            />
+            <ClientOnly>
+              <QuillEditor
+                v-model:content="localContent"
+                :toolbar="editorOptions.modules.toolbar"
+                contentType="html"
+                theme="snow"
+              />
+            </ClientOnly>
           </div>
         </UFormGroup>
       </div>
@@ -68,10 +70,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, defineAsyncComponent } from 'vue'
 import { WandIcon } from 'lucide-vue-next'
-import { QuillEditor } from '@vueup/vue-quill'
-import '@vueup/vue-quill/dist/vue-quill.snow.css'
+
+// Import QuillEditor lazily
+const QuillEditor = defineAsyncComponent(() => 
+  import('@vueup/vue-quill').then(mod => {
+    // Import CSS only on client-side
+    if (process.client) {
+      import('@vueup/vue-quill/dist/vue-quill.snow.css')
+    }
+    return mod.QuillEditor
+  })
+)
 
 interface Props {
   title: string

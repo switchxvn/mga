@@ -38,18 +38,23 @@ export const createPostSchema = basePostSchema.merge(seoFieldsSchema);
 // Update post schema
 export const updatePostSchema = z.object({
   id: z.number(),
-  title: z.string(),
-  content: z.string(),
+  title: z.string().optional(),
+  content: z.string().optional(),
   shortDescription: z.string().nullable().optional(),
-  status: z.enum(['DRAFT', 'PUBLISHED']),
+  status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
   thumbnail: z.string().nullable().optional(),
-  featuredImage: z.string().nullable().optional(),
   metaDescription: z.string().nullable().optional(),
   translations: z.array(translationSchema.extend({
     shortDescription: z.string().nullable().optional()
   })).optional(),
   tags: z.array(z.string()).optional(),
   categoryIds: z.array(z.number()).optional()
+});
+
+// Update post status schema
+export const updatePostStatusSchema = z.object({
+  id: z.number(),
+  status: z.enum(['DRAFT', 'PUBLISHED'])
 });
 
 // Get post by ID schema
@@ -69,5 +74,6 @@ export const getPostsSchema = z.object({
 // Export types
 export type CreatePostInput = z.infer<typeof createPostSchema>;
 export type UpdatePostInput = z.infer<typeof updatePostSchema>;
+export type UpdatePostStatusInput = z.infer<typeof updatePostStatusSchema>;
 export type GetPostByIdInput = z.infer<typeof getPostByIdSchema>;
 export type GetPostsInput = z.infer<typeof getPostsSchema>; 

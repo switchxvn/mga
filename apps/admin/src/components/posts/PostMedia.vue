@@ -10,11 +10,11 @@
     <div class="p-6">
       <div class="space-y-4">
         <div 
-          v-if="featuredImage" 
+          v-if="thumbnail" 
           class="aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200 group relative"
         >
           <img 
-            :src="featuredImage" 
+            :src="thumbnail" 
             alt="Featured image" 
             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
@@ -37,11 +37,11 @@
         
         <div class="space-y-2">
           <input
-            :value="featuredImage"
+            :value="thumbnail"
             type="text"
             placeholder="Enter image URL or upload"
             class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            @input="$emit('update:featuredImage', ($event.target as HTMLInputElement).value)"
+            @input="$emit('update:thumbnail', ($event.target as HTMLInputElement).value)"
           />
           <p class="text-sm text-slate-500 flex items-center gap-2">
             <RulerIcon class="w-4 h-4" />
@@ -96,11 +96,11 @@ import { ImageIcon, RulerIcon, UploadIcon, XIcon, AlertCircleIcon } from 'lucide
 import { useUpload } from '../../composables/useUpload'
 
 const props = defineProps<{
-  featuredImage: string
+  thumbnail: string
 }>()
 
 const emit = defineEmits<{
-  'update:featuredImage': [value: string]
+  'update:thumbnail': [value: string]
 }>()
 
 const { uploadFile } = useUpload()
@@ -115,7 +115,7 @@ const handleUploadClick = () => {
 }
 
 const handleRemoveImage = () => {
-  emit('update:featuredImage', '')
+  emit('update:thumbnail', '')
 }
 
 const handleFileSelect = async (event: Event) => {
@@ -147,7 +147,7 @@ const handleFileSelect = async (event: Event) => {
       }
     })
     
-    emit('update:featuredImage', result.url)
+    emit('update:thumbnail', result.url)
   } catch (err) {
     error.value = 'Failed to upload image. Please try again.'
     console.error('Upload error:', err)

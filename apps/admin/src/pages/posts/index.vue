@@ -408,15 +408,9 @@ async function togglePublished(post: Post) {
   if (!result.isConfirmed) return;
 
   try {
-    await trpc.admin.posts.updatePost.mutate({
+    await trpc.admin.posts.updatePostStatus.mutate({
       id: post.id,
-      data: {
-        title: post.title,
-        content: post.content || '',
-        status: newStatus ? 'PUBLISHED' : 'DRAFT',
-        featuredImage: post.thumbnail,
-        metaDescription: post.shortDescription
-      }
+      status: newStatus ? 'PUBLISHED' : 'DRAFT'
     });
     
     // Update local state
