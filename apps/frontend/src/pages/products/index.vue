@@ -5,6 +5,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
 import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
+import ProductCard from "../../components/cards/ProductCard.vue";
 import { useLocalization } from "../../composables/useLocalization";
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
 import { useTrpc } from "../../composables/useTrpc";
@@ -66,6 +67,12 @@ const fetchSeoData = async () => {
   }
 };
 
+// Add type for specifications
+interface ProductSpecification {
+  name: string;
+  value: string;
+}
+
 // Initialize filters from route query
 const initialFilters = ref<ProductFilter>({
   search: (route.query.search as string) || "",
@@ -80,7 +87,7 @@ const initialFilters = ref<ProductFilter>({
   isSale: route.query.isSale === "true" ? true : undefined,
   sortBy: (route.query.sortBy as ProductSortBy) || "newest",
   page: Number(route.query.page) || 1,
-  limit: Number(route.query.limit) || 12,
+  limit: 12, // Set default limit
   type: (route.query.type as ProductType) || ProductType.PHYSICAL,
 });
 
@@ -257,7 +264,7 @@ watch(locale, async () => {
           <div v-if="!isLoading || totalProducts > 0" class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ t("products.showing") }} {{ ((currentPage - 1) * filters.limit) + 1 }} - {{ Math.min(currentPage * filters.limit, totalProducts) }} {{ t("products.of") }} {{ totalProducts }} {{ t("products.items") }}
+                {{ t("products.showing") }} {{ ((currentPage - 1) * (filters.value?.limit || 12)) + 1 }} - {{ Math.min(currentPage * (filters.value?.limit || 12), totalProducts) }} {{ t("products.of") }} {{ totalProducts }} {{ t("products.items") }}
               </span>
             </div>
 
@@ -293,75 +300,12 @@ watch(locale, async () => {
           <template v-else>
             <!-- Products Grid -->
             <div v-if="hasProducts" class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-              <div 
-                v-for="product in products" 
-                :key="product.id" 
-                class="product-card flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
-              >
-                <NuxtLink :to="`/products/${product.translations?.[0]?.slug || product.id}`" class="block relative">
-                  <!-- Product Type Badge -->
-                  <div class="absolute left-2 top-2 z-10">
-                    <UBadge 
-                      :color="product.type === 'TICKET' ? 'purple' : 'gray'" 
-                      variant="solid" 
-                      class="text-xs"
-                    >
-                      <Ticket v-if="product.type === 'TICKET'" class="w-3 h-3 mr-1" />
-                      {{ product.type === 'TICKET' ? (t("products.ticketType") || "Vé") : (t("products.physicalType") || "Sản phẩm") }}
-                    </UBadge>
-                  </div>
-                  
-                  <!-- Image -->
-                  <img
-                    :src="product.thumbnail || '/images/default-image.jpg'"
-                    :alt="product.translations?.[0]?.title || ''"
-                    class="h-48 w-full object-cover transition-transform duration-300 hover:scale-105"
-                    @error="($event.target as HTMLImageElement).src = '/images/default-image.jpg'"
-                  />
-                </NuxtLink>
-                
-                <div class="flex flex-1 flex-col p-4">
-                  <NuxtLink :to="`/products/${product.translations?.[0]?.slug || product.id}`" class="block">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">
-                      {{ product.translations?.[0]?.title || '' }}
-                    </h3>
-                  </NuxtLink>
-                  
-                  <!-- Ticket Details -->
-                  <div v-if="product.type === 'TICKET'" class="mb-3 space-y-1">
-                    <div v-if="product.specifications?.find(spec => spec.name === 'location')?.value" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                      <MapPin class="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span class="line-clamp-1">{{ product.specifications.find(spec => spec.name === 'location')?.value }}</span>
-                    </div>
-                    <div v-if="product.specifications?.find(spec => spec.name === 'date')?.value" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                      <Calendar class="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span>{{ product.specifications.find(spec => spec.name === 'date')?.value }}</span>
-                    </div>
-                  </div>
-                  
-                  <!-- Price and Button -->
-                  <div class="mt-auto flex items-center justify-between">
-                    <div>
-                      <div v-if="product.price === null" class="text-lg font-semibold text-primary-600 dark:text-primary-400">
-                        {{ t('products.contactForPrice') || 'Liên hệ' }}
-                      </div>
-                      <div v-else class="text-lg font-semibold text-primary-600 dark:text-primary-400">
-                        {{ product.formattedPrice || formatPrice(product.price) }}
-                      </div>
-                    </div>
-                    
-                    <UButton 
-                      color="primary"
-                      variant="solid"
-                      size="sm"
-                      class="px-3 py-1"
-                      :to="`/products/${product.translations?.[0]?.slug || product.id}`"
-                    >
-                      {{ product.type === 'TICKET' ? (t('products.bookNow') || 'Đặt ngay') : (t('products.viewDetail') || 'Xem chi tiết') }}
-                    </UButton>
-                  </div>
-                </div>
-              </div>
+              <ProductCard
+                v-for="product in products"
+                :key="product.id"
+                :product="product"
+                :locale="locale"
+              />
             </div>
             
             <!-- Pagination -->

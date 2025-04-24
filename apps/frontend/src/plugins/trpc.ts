@@ -20,6 +20,14 @@ export default defineNuxtPlugin(() => {
           const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
+        fetch(url, options) {
+          return fetch(url, {
+            ...options,
+            signal: AbortSignal.timeout(5000), // 5 second timeout
+          });
+        },
+        retryDelay: (attempt) => Math.min(attempt * 500, 3000), // Linear backoff
+        maxRetries: 3,
       }),
     ],
   });

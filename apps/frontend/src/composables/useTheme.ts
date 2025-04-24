@@ -38,6 +38,8 @@ interface ThemeSection {
   type: string;
   title: string;
   order: number;
+  pageType: PageType;
+  componentName?: string;
   settings: Record<string, any>;
   isActive: boolean;
 }

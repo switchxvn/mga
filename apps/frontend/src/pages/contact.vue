@@ -14,6 +14,7 @@ const registeredComponents = {
   'ContactHeroSection': defineAsyncComponent(() => import("../components/sections/contact/ContactHeroSection.vue")),
   'ContactFormSection': defineAsyncComponent(() => import("../components/sections/contact/ContactFormSection.vue")),
   'ContactBranchSection': defineAsyncComponent(() => import("../components/sections/contact/ContactBranchSection.vue")),
+  'BranchContactSection': defineAsyncComponent(() => import("../components/sections/common/BranchContactSection.vue")),
   'ContactFaqSection': defineAsyncComponent(() => import("../components/sections/contact/ContactFaqSection.vue")),
   'ContactMapSection': defineAsyncComponent(() => import("../components/sections/contact/ContactMapSection.vue")),
 } as ComponentRegistry
@@ -35,6 +36,7 @@ const resolveComponent = (section: any): ComponentType | null => {
     'hero': 'ContactHeroSection',
     'contact_form': 'ContactFormSection',
     'branch_contact': 'ContactBranchSection',
+    'branch_contact_new': 'BranchContactSection',
     'faq': 'ContactFaqSection',
     'map': 'ContactMapSection'
   }

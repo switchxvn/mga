@@ -6,6 +6,7 @@ import { useCategory } from '../../composables/useCategory'
 import { useRoute, useRouter } from 'vue-router'
 import CategorySidebar from '../../components/sidebar/CategorySidebar.vue'
 import CategoryMobileSidebar from '../../components/sidebar/CategoryMobileSidebar.vue'
+import ProductCard from '../../components/cards/ProductCard.vue'
 import { useProduct, type ProductFilter, type ProductSortBy } from '../../composables/useProduct'
 
 // Sử dụng composables
@@ -154,7 +155,7 @@ useHead(() => {
 // Extend ProductFilter to ensure includeNullPrice is required and boolean
 interface CategoryProductFilter extends Omit<ProductFilter, 'categories'> {
   includeNullPrice: boolean;
-  categories: number[];
+  categories: string[];
   isFeatured: boolean;
   isNew: boolean;
   isSale: boolean;
@@ -174,7 +175,7 @@ const convertCategoryIds = (ids: (string | number)[]): number[] => {
 };
 
 // Initialize filters
-const filters = ref<FilterState>({
+const filters = reactive<FilterState>({
   search: route.query.search as string || '',
   minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
   maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
@@ -231,7 +232,7 @@ watch([() => slug.value, () => categoryData.value?.id], async ([newSlug, newId])
       minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
       maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
       includeNullPrice: true,
-      categories: [newId], // Keep as number
+      categories: [newId],
       isFeatured: route.query.isFeatured === 'true',
       isNew: route.query.isNew === 'true',
       isSale: route.query.isSale === 'true',
@@ -241,7 +242,7 @@ watch([() => slug.value, () => categoryData.value?.id], async ([newSlug, newId])
       categorySlug: slug.value
     };
 
-    filters.value = updatedFilters;
+    Object.assign(filters, updatedFilters);
     
     // Convert to API format
     productFilters.value = {
@@ -262,7 +263,7 @@ const handleFilterChange = (newFilters: ProductFilter) => {
   
   const updatedFilters: FilterState = {
     ...newFilters,
-    categories: [categoryData.value.id], // Keep as number
+    categories: [categoryData.value.id.toString()],
     categorySlug: slug.value,
     search: newFilters.search || '',
     limit: newFilters.limit || 12,
@@ -274,7 +275,7 @@ const handleFilterChange = (newFilters: ProductFilter) => {
     sortBy: newFilters.sortBy || 'newest'
   };
   
-  filters.value = updatedFilters;
+  Object.assign(filters, updatedFilters);
   
   // Convert to API format
   productFilters.value = {
@@ -292,8 +293,8 @@ const handleSortChange = (event: Event) => {
   const newSortBy = target.value as ProductSortBy;
   
   // Update both filter states
-  filters.value.sortBy = newSortBy;
-  filters.value.page = 1;
+  filters.sortBy = newSortBy;
+  filters.page = 1;
   
   productFilters.value.sortBy = newSortBy;
   productFilters.value.page = 1;
@@ -333,7 +334,7 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 // Handle page change
 const handlePageChange = (page: number) => {
   // Update both filter states
-  filters.value.page = page;
+  filters.page = page;
   productFilters.value.page = page;
   
   // Update URL query params
@@ -350,16 +351,16 @@ const updateQueryParams = () => {
   // Build query params object
   const query: Record<string, string | number | undefined> = {};
   
-  if (filters.value.search) query.search = filters.value.search;
-  if (filters.value.minPrice !== undefined) query.minPrice = filters.value.minPrice;
-  if (filters.value.maxPrice !== undefined) query.maxPrice = filters.value.maxPrice;
-  if (filters.value.includeNullPrice) query.includeNullPrice = 'true';
-  if (filters.value.isFeatured) query.isFeatured = 'true';
-  if (filters.value.isNew) query.isNew = 'true';
-  if (filters.value.isSale) query.isSale = 'true';
-  if (filters.value.sortBy && filters.value.sortBy !== 'newest') query.sortBy = filters.value.sortBy;
-  if (filters.value.page > 1) query.page = filters.value.page;
-  if (filters.value.limit !== 12) query.limit = filters.value.limit;
+  if (filters.search) query.search = filters.search;
+  if (filters.minPrice !== undefined) query.minPrice = filters.minPrice;
+  if (filters.maxPrice !== undefined) query.maxPrice = filters.maxPrice;
+  if (filters.includeNullPrice) query.includeNullPrice = 'true';
+  if (filters.isFeatured) query.isFeatured = 'true';
+  if (filters.isNew) query.isNew = 'true';
+  if (filters.isSale) query.isSale = 'true';
+  if (filters.sortBy && filters.sortBy !== 'newest') query.sortBy = filters.sortBy;
+  if (filters.page > 1) query.page = filters.page;
+  if (filters.limit !== 12) query.limit = filters.limit;
   
   // Update route without category in query
   router.replace({ query });
@@ -490,25 +491,16 @@ const updateQueryParams = () => {
                 <!-- Debug info -->
                 <div v-if="products.length === 0" class="mb-4 rounded-lg bg-yellow-50 p-4 dark:bg-yellow-900/20">
                   <p class="text-yellow-800 dark:text-yellow-200">{{ t('products.noProducts') }}</p>
-                  <pre class="mt-2 text-xs text-yellow-600 dark:text-yellow-400">Filters: {{ JSON.stringify(filters.value, null, 2) }}</pre>
+                  <pre class="mt-2 text-xs text-yellow-600 dark:text-yellow-400">Filters: {{ JSON.stringify(filters, null, 2) }}</pre>
                 </div>
 
                 <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  <div v-for="product in products" :key="product.id" class="group relative">
-                    <NuxtLink :to="`/products/${product.slug}`" class="block">
-                      <div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg">
-                        <img 
-                          :src="product.thumbnail || '/images/placeholder.png'" 
-                          :alt="product.title"
-                          class="h-full w-full object-cover object-center transition-transform group-hover:scale-105"
-                        >
-                      </div>
-                      <div class="mt-4">
-                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">{{ product.title }}</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ product.formattedPrice }}</p>
-                      </div>
-                    </NuxtLink>
-                  </div>
+                  <ProductCard
+                    v-for="product in products"
+                    :key="product.id"
+                    :product="product"
+                    :locale="locale"
+                  />
                 </div>
 
                 <!-- Pagination -->

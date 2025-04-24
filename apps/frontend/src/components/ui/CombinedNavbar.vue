@@ -17,6 +17,7 @@ import CartIcon from "~/components/cart/CartIcon.vue";
 import MegaMenu from "~/components/menu/MegaMenu.vue";
 import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
 import { useI18n } from 'vue-i18n';
+import { processColorValue } from '~/utils/color';
 
 // Props cho component
 interface NavbarProps {
@@ -168,32 +169,32 @@ const {
 
 // Computed color values
 const salesBackgroundColor = computed(
-  () => props.settings.hotlines?.sales?.backgroundColor || "#0EA5E9"
+  () => processColorValue(props.settings.hotlines?.sales?.backgroundColor) || "#0EA5E9"
 );
 
 const salesTextColor = computed(
-  () => props.settings.hotlines?.sales?.textColor || "#ffffff"
+  () => processColorValue(props.settings.hotlines?.sales?.textColor) || "#ffffff"
 );
 
 const supportBackgroundColor = computed(
-  () => props.settings.hotlines?.support?.backgroundColor || "#0EA5E9"
+  () => processColorValue(props.settings.hotlines?.support?.backgroundColor) || "#0EA5E9"
 );
 
 const supportTextColor = computed(
-  () => props.settings.hotlines?.support?.textColor || "#ffffff"
+  () => processColorValue(props.settings.hotlines?.support?.textColor) || "#ffffff"
 );
 
-const tertiaryBorderColor = computed(() => "var(--tertiary-900)");
+const tertiaryBorderColor = computed(() => processColorValue("var(--tertiary-900)"));
 
 const darkModeMenuBackground = computed(
-  () => props.settings?.darkMode?.menuBackgroundColor || "#171717"
+  () => processColorValue(props.settings?.darkMode?.menuBackgroundColor) || "#171717"
 );
 
 const lightModeMenuBackground = computed(
-  () => props.settings?.menuBackgroundColor || "#ffffff"
+  () => processColorValue(props.settings?.menuBackgroundColor) || "#ffffff"
 );
 
-const primaryHoverColor = computed(() => "var(--primary-400)");
+const primaryHoverColor = computed(() => processColorValue("var(--primary-400)"));
 
 const getNavLinkColor = (isActive: boolean) => ({
   color: isActive ? navigationActiveTextColor : navigationTextColor,
@@ -256,7 +257,7 @@ const { t } = useI18n();
     <div class="top-menu w-full border-b relative">
       <div class="top-menu-bg-layer"></div>
       <div class="container mx-auto">
-        <div class="flex items-center justify-between h-12 px-4">
+        <div class="flex items-center justify-between h-12">
           <!-- Current Time -->
           <div class="flex items-center gap-2">
             <Icon name="Clock" class="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
@@ -428,7 +429,7 @@ const { t } = useI18n();
         class="navigation-section w-full relative"
         :style="{
           backgroundColor: isDark ? darkModeMenuBackground : lightModeMenuBackground,
-          borderColor: borderColor,
+          borderColor: 'rgb(229, 231, 235)',
         }"
       >
         <div
@@ -465,7 +466,7 @@ const { t } = useI18n();
             </div>
 
             <!-- Desktop Navigation -->
-            <nav class="hidden md:flex items-center space-x-5 flex-grow justify-start">
+            <nav class="hidden md:flex items-center space-x-5 flex-grow justify-between">
               <div
                 v-if="isLoading"
                 class="text-sm text-neutral-500 dark:text-neutral-400"
@@ -494,13 +495,13 @@ const { t } = useI18n();
                     :style="getNavLinkColor(isMenuActive(item.href))"
                     :class="{ 'menu-active': isMenuActive(item.href) }"
                   >
-                    <span class="text-[1.05rem] transition-colors duration-300">
+                    <span class="text-[1.05rem] transition-colors duration-300 text-white dark:text-neutral-300 font-bold">
                       {{ item.label }}
                     </span>
                     <Icon
                       v-if="item.children?.length"
                       name="ChevronDown"
-                      class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
+                      class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4 text-white dark:text-neutral-300 font-bold"
                       :style="getNavLinkColor(isMenuActive(item.href))"
                     />
                   </NuxtLink>
