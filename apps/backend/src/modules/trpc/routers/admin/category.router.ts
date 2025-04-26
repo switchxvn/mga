@@ -6,7 +6,10 @@ import { requirePermission } from '../../middlewares/permission.middleware';
 import { BadRequestException } from '@nestjs/common';
 import { CategoryType } from '@ew/shared';
 import { UpdateCategoryData, CategoryTranslationData, CreateCategoryData } from '../../../category/admin/services/category-admin.service';
-import { Category, CategoryTranslation } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+
+type Category = PrismaClient['category']['create']['data'];
+type CategoryTranslation = PrismaClient['categoryTranslation']['create']['data'];
 
 const categoryTranslationSchema = z.object({
   locale: z.string(),

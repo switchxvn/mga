@@ -1,22 +1,21 @@
 import { Inject } from '@nestjs/common'
 import { z } from 'zod'
 import { AdminUserService } from '../../../user/admin/services/user.service'
-import { createTRPCRouter, protectedProcedure } from '../../trpc'
+import { adminProcedure, router } from '../../procedures'
 
 export const createAdminUserRouter = () => {
-  return createTRPCRouter({
-    updateName: protectedProcedure
+  return router({
+    updateName: adminProcedure
       .input(
         z.object({
           name: z.string().min(1, 'Tên không được để trống')
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const userService = ctx.container.resolve(AdminUserService)
-        return userService.updateName(ctx.user.id, input.name)
+        return ctx.services.userAdminService.updateName(ctx.user.id, input.name)
       }),
 
-    updatePassword: protectedProcedure
+    updatePassword: adminProcedure
       .input(
         z.object({
           currentPassword: z.string().min(1, 'Mật khẩu hiện tại không được để trống'),
@@ -24,8 +23,7 @@ export const createAdminUserRouter = () => {
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const userService = ctx.container.resolve(AdminUserService)
-        return userService.updatePassword(
+        return ctx.services.userAdminService.updatePassword(
           ctx.user.id,
           input.currentPassword,
           input.newPassword

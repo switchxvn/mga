@@ -1,8 +1,32 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { adminProcedure, router } from '../../procedures';
 import { Permissions } from '../../../auth/constants/permissions.constant';
+import { Category } from '../../../category/entities/category.entity';
+import { ProductTranslation } from '../../../product/entities/product-translation.entity';
+import { ProductType } from '../../../product/entities/product.entity';
 import { requirePermission } from '../../middlewares/permission.middleware';
+import { adminProcedure, protectedProcedure, router } from '../../procedures';
+
+// Base translation input schema
+const productTranslationSchema = z.object({
+  locale: z.string().length(2),
+  title: z.string(),
+  content: z.string().optional(),
+  shortDescription: z.string().optional(),
+  slug: z.string().optional(),
+  videoTitle: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  metaKeywords: z.string().optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional()
+});
+
+// Category input schema
+const categoryInputSchema = z.object({
+  id: z.number()
+});
+
 
 export const productAdminRouter = router({
   getAllProducts: adminProcedure
@@ -64,75 +88,61 @@ export const productAdminRouter = router({
       }
     }),
 
-  createProduct: adminProcedure
-    .use(requirePermission(Permissions.CREATE_CONTENT))
+  createProduct: protectedProcedure
     .input(z.object({
-      title: z.string(),
-      slug: z.string(),
-      content: z.string(),
-      shortDescription: z.string().optional(),
-      published: z.boolean().default(false),
+      sku: z.string().optional(),
+      price: z.number().nullable().optional(),
+      comparePrice: z.number().nullable().optional(),
       thumbnail: z.string().optional(),
-      metaDescription: z.string().optional(),
-      translations: z.array(z.object({
-        locale: z.string(),
-        title: z.string(),
-        slug: z.string(),
-        content: z.string(),
-        shortDescription: z.string().optional(),
-        metaDescription: z.string().optional(),
-        ogImage: z.string().optional()
-      })).optional(),
-      categoryIds: z.array(z.number()).optional()
+      gallery: z.array(z.string()).optional(),
+      published: z.boolean().optional(),
+      quantity: z.number().optional(),
+      isFeatured: z.boolean().optional(),
+      isNew: z.boolean().optional(),
+      isSale: z.boolean().optional(),
+      type: z.nativeEnum(ProductType).optional(),
+      videoReview: z.string().optional(),
+      translations: z.array(productTranslationSchema),
+      categories: z.array(categoryInputSchema).optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      try {
-        return await ctx.services.productAdminService.create(input);
-      } catch (error) {
-        ctx.logger.error('Failed to create product:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create product',
-          cause: error,
-        });
-      }
+      const { translations, categories, ...productData } = input;
+      
+      return ctx.services.productAdminService.create({
+        ...productData,
+        translations: translations as unknown as ProductTranslation[],
+        categories: categories ? categories.map(({ id }) => ({ id } as Category)) : undefined
+      });
     }),
 
-  updateProduct: adminProcedure
-    .use(requirePermission(Permissions.EDIT_CONTENT))
+  updateProduct: protectedProcedure
     .input(z.object({
       id: z.number(),
       data: z.object({
-        title: z.string().optional(),
-        slug: z.string().optional(),
-        content: z.string().optional(),
-        shortDescription: z.string().optional(),
-        published: z.boolean().optional(),
+        sku: z.string().optional(),
+        price: z.number().nullable().optional(),
+        comparePrice: z.number().nullable().optional(),
         thumbnail: z.string().optional(),
-        metaDescription: z.string().optional(),
-        translations: z.array(z.object({
-          locale: z.string(),
-          title: z.string(),
-          slug: z.string(),
-          content: z.string(),
-          shortDescription: z.string().optional(),
-          metaDescription: z.string().optional(),
-          ogImage: z.string().optional()
-        })).optional(),
-        categoryIds: z.array(z.number()).optional()
+        gallery: z.array(z.string()).optional(),
+        published: z.boolean().optional(),
+        quantity: z.number().optional(),
+        isFeatured: z.boolean().optional(),
+        isNew: z.boolean().optional(),
+        isSale: z.boolean().optional(),
+        type: z.nativeEnum(ProductType).optional(),
+        videoReview: z.string().optional(),
+        translations: z.array(productTranslationSchema).optional(),
+        categories: z.array(categoryInputSchema).optional()
       })
     }))
     .mutation(async ({ ctx, input }) => {
-      try {
-        return await ctx.services.productAdminService.update(input.id, input.data);
-      } catch (error) {
-        ctx.logger.error('Failed to update product:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update product',
-          cause: error,
-        });
-      }
+      const { translations, categories, ...updateData } = input.data;
+      
+      return ctx.services.productAdminService.update(input.id, {
+        ...updateData,
+        translations: translations as unknown as ProductTranslation[],
+        categories: categories ? categories.map(({ id }) => ({ id } as Category)) : undefined
+      });
     }),
 
   deleteProduct: adminProcedure
@@ -140,7 +150,7 @@ export const productAdminRouter = router({
     .input(z.number())
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.services.productAdminService.delete(input);
+        await ctx.services.productAdminService.remove(input);
         return { success: true };
       } catch (error) {
         ctx.logger.error('Failed to delete product:', error);
