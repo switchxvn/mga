@@ -11,11 +11,18 @@ import { PostFrontendService } from './frontend/services/post-frontend.service';
 import { User } from '../user/entities/user.entity';
 import { UserProfile } from '../profile/entities/user-profile.entity';
 import { Category } from '../category/entities/category.entity';
+import { PostTransformer } from './transformers/post.transformer';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, PostTranslation, PostTag, Tag, User, UserProfile, Category])],
+  imports: [
+    TypeOrmModule.forFeature([Post, PostTranslation, PostTag, Tag, User, UserProfile, Category])
+  ],
   controllers: [PostAdminController, PostFrontendController],
-  providers: [PostAdminService, PostFrontendService],
-  exports: [PostAdminService, PostFrontendService],
+  providers: [
+    PostAdminService,
+    PostFrontendService,
+    PostTransformer
+  ],
+  exports: [PostAdminService, PostFrontendService]
 })
 export class PostModule {} 

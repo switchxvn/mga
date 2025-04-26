@@ -4,26 +4,25 @@ import { adminProcedure, router } from '../../procedures';
 import { Permissions } from '../../../auth/constants/permissions.constant';
 import { requirePermission } from '../../middlewares/permission.middleware';
 import { BadRequestException } from '@nestjs/common';
-import { CategoryType } from '../../../../../../../libs/shared/src/types/category.type';
+import { CategoryType } from '@ew/shared';
+import {
+  CreateAdminPostSchema,
+  UpdateAdminPostSchema,
+  UpdateAdminPostStatusSchema,
+  AdminPost,
+  PaginatedResponse
+} from '@ew/shared';
+import { PostTransformer } from '../../../post/transformers/post.transformer';
 
 export const postAdminRouter = router({
   getPostById: adminProcedure
     .use(requirePermission(Permissions.VIEW_CONTENT))
     .input(z.number())
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx, input }): Promise<AdminPost> => {
       try {
         ctx.logger.log(`Admin fetching post by ID: ${input}`);
-        const post = await ctx.services.postAdminService.getPost(input, {
-          relations: {
-            translations: true,
-            postTags: {
-              tag: true
-            },
-            categories: {
-              translations: true
-            }
-          }
-        });
+        const transformer = new PostTransformer();
+        const post = await ctx.services.postAdminService.getPost(input);
 
         if (!post) {
           ctx.logger.warn(`Post not found for ID: ${input}`);
@@ -34,7 +33,7 @@ export const postAdminRouter = router({
         }
 
         ctx.logger.debug(`Successfully retrieved post ID: ${input}`);
-        return post;
+        return transformer.toAdminPost(post);
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         
@@ -57,8 +56,9 @@ export const postAdminRouter = router({
         published: z.boolean().nullable().default(null),
       })
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx, input }): Promise<PaginatedResponse<AdminPost>> => {
       try {
+        const transformer = new PostTransformer();
         const result = await ctx.services.postAdminService.getPosts({
           page: input.page,
           limit: input.limit,
@@ -67,7 +67,7 @@ export const postAdminRouter = router({
         });
 
         return {
-          posts: result.items,
+          items: transformer.toAdminPosts(result.items),
           total: result.total,
           totalPages: Math.ceil(result.total / input.limit),
           currentPage: input.page,
@@ -123,33 +123,13 @@ export const postAdminRouter = router({
 
   updatePost: adminProcedure
     .use(requirePermission(Permissions.EDIT_CONTENT))
-    .input(z.object({
-      id: z.number(),
-      data: z.object({
-        title: z.string(),
-        content: z.string(),
-        status: z.enum(['DRAFT', 'PUBLISHED']),
-        thumbnail: z.string().nullable().optional(),
-        metaDescription: z.string().nullable().optional(),
-        shortDescription: z.string().nullable().optional(),
-        translations: z.array(z.object({
-          locale: z.string().min(2),
-          title: z.string().min(1, 'Title is required'),
-          slug: z.string().min(1, 'Slug is required'),
-          content: z.string(),
-          shortDescription: z.string().nullable().optional(),
-          metaDescription: z.string().nullable().optional(),
-          ogImage: z.string().nullable().optional()
-        })).min(1, 'At least one translation is required'),
-        tags: z.array(z.string()).optional(),
-        categoryIds: z.array(z.number()).optional()
-      })
-    }))
-    .mutation(async ({ ctx, input }) => {
+    .input(UpdateAdminPostSchema)
+    .mutation(async ({ ctx, input }): Promise<AdminPost> => {
       try {
         ctx.logger.debug('Updating post with data:', input);
-        const updatedPost = await ctx.services.postAdminService.updatePost(input.id, input.data);
-        return updatedPost;
+        const transformer = new PostTransformer();
+        const post = await ctx.services.postAdminService.updatePost(input.id, input.data);
+        return transformer.toAdminPost(post);
       } catch (error) {
         if (error instanceof BadRequestException) {
           throw new TRPCError({
@@ -167,15 +147,13 @@ export const postAdminRouter = router({
     }),
 
   updatePostStatus: adminProcedure
-    .input(z.object({
-      id: z.number(),
-      status: z.enum(['DRAFT', 'PUBLISHED'])
-    }))
-    .mutation(async ({ ctx, input }) => {
+    .input(UpdateAdminPostStatusSchema)
+    .mutation(async ({ ctx, input }): Promise<AdminPost> => {
       try {
         ctx.logger.debug('Updating post status:', input);
-        const updatedPost = await ctx.services.postAdminService.updatePostStatus(input.id, input.status);
-        return updatedPost;
+        const transformer = new PostTransformer();
+        const post = await ctx.services.postAdminService.updatePostStatus(input.id, input.status);
+        return transformer.toAdminPost(post);
       } catch (error) {
         if (error instanceof BadRequestException) {
           throw new TRPCError({
@@ -194,30 +172,12 @@ export const postAdminRouter = router({
 
   createPost: adminProcedure
     .use(requirePermission(Permissions.CREATE_CONTENT))
-    .input(z.object({
-      title: z.string().min(1, 'Tiêu đề không được để trống'),
-      content: z.string().min(1, 'Nội dung không được để trống'),
-      status: z.enum(['DRAFT', 'PUBLISHED']),
-      thumbnail: z.string().nullable().optional(),
-      featuredImage: z.string().nullable().optional(),
-      metaDescription: z.string().nullable().optional(),
-      shortDescription: z.string().nullable().optional(),
-      translations: z.array(z.object({
-        locale: z.string().min(2, 'Mã ngôn ngữ không hợp lệ'),
-        title: z.string().min(1, 'Tiêu đề không được để trống'),
-        slug: z.string().min(1, 'Đường dẫn không được để trống'),
-        content: z.string().min(1, 'Nội dung không được để trống'),
-        shortDescription: z.string().nullable().optional(),
-        metaDescription: z.string().nullable().optional(),
-        ogImage: z.string().nullable().optional()
-      })).min(1, 'Cần ít nhất một bản dịch'),
-      tags: z.array(z.string()).optional(),
-      categoryIds: z.array(z.number()).optional(),
-    }))
-    .mutation(async ({ ctx, input }) => {
+    .input(CreateAdminPostSchema)
+    .mutation(async ({ ctx, input }): Promise<AdminPost> => {
       try {
-        const newPost = await ctx.services.postAdminService.createPostWithTranslations(input);
-        return newPost;
+        const transformer = new PostTransformer();
+        const post = await ctx.services.postAdminService.createPostWithTranslations(input);
+        return transformer.toAdminPost(post);
       } catch (error) {
         ctx.logger.error('Failed to create post:', error);
 
