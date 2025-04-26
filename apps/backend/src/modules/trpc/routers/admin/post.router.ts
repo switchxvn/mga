@@ -128,7 +128,7 @@ export const postAdminRouter = router({
       try {
         ctx.logger.debug('Updating post with data:', input);
         const transformer = new PostTransformer();
-        const post = await ctx.services.postAdminService.updatePost(input.id, input.data);
+        const post = await ctx.services.postAdminService.updatePost(input.id, input.data, ctx.user.id);
         return transformer.toAdminPost(post);
       } catch (error) {
         if (error instanceof BadRequestException) {
@@ -176,7 +176,7 @@ export const postAdminRouter = router({
     .mutation(async ({ ctx, input }): Promise<AdminPost> => {
       try {
         const transformer = new PostTransformer();
-        const post = await ctx.services.postAdminService.createPostWithTranslations(input);
+        const post = await ctx.services.postAdminService.createPostWithTranslations(input, ctx.user.id);
         return transformer.toAdminPost(post);
       } catch (error) {
         ctx.logger.error('Failed to create post:', error);

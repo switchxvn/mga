@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
+import { CreateAdminPostInput } from '@ew/shared';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Post } from '../../entities/post.entity';
-import { PostTranslation } from '../../entities/post-translation.entity';
-import { CreatePostInput, UpdatePostInput } from '@ew/shared';
-import { PostTag } from '../../entities/post-tag.entity';
-import { Tag } from '../../../settings/entities/tag.entity';
+import { DeepPartial, Repository } from 'typeorm';
 import { Category } from '../../../category/entities/category.entity';
+import { Tag } from '../../../settings/entities/tag.entity';
+import { PostTag } from '../../entities/post-tag.entity';
+import { PostTranslation } from '../../entities/post-translation.entity';
+import { Post } from '../../entities/post.entity';
 
 @Injectable()
 export class PostAdminService {
@@ -25,12 +25,12 @@ export class PostAdminService {
     private readonly categoryRepository: Repository<Category>
   ) {}
 
-  async create(createPostDto: CreatePostInput, userId: string): Promise<Post> {
+  async create(createPostDto: CreateAdminPostInput, userId: string): Promise<Post> {
     const post = this.postRepository.create({
       ...createPostDto,
       authorId: userId
     });
-    return this.postRepository.save(post);
+    return this.postRepository.save(post as DeepPartial<Post>);
   }
 
   async findAll() {
@@ -47,7 +47,7 @@ export class PostAdminService {
     });
   }
 
-  async update(id: number, updatePostDto: UpdatePostInput, userId: string): Promise<Post> {
+  async update(id: number, updatePostDto: CreateAdminPostInput, userId: string): Promise<Post> {
     const post = await this.findOne(id);
 
     if (!post) {
@@ -143,7 +143,7 @@ export class PostAdminService {
     return this.postRepository.save(post);
   }
 
-  async createPostWithTranslations(data: any) {
+  async createPostWithTranslations(data: CreateAdminPostInput, userId: string) {
     // Create base post
     const post = await this.postRepository.save(this.postRepository.create({
       title: data.title,
@@ -151,6 +151,7 @@ export class PostAdminService {
       shortDescription: data.shortDescription,
       published: data.status === 'PUBLISHED',
       thumbnail: data.thumbnail,
+      authorId: userId
     }));
 
     // Create translations
@@ -186,7 +187,7 @@ export class PostAdminService {
     }
   }
 
-  async updatePost(id: number, data: UpdatePostInput): Promise<Post> {
+  async updatePost(id: number, data: CreateAdminPostInput, userId: string): Promise<Post> {
     try {
       this.logger.debug('Received update data:', JSON.stringify(data, null, 2));
 
@@ -207,6 +208,7 @@ export class PostAdminService {
         shortDescription: data.shortDescription,
         published: data.status === 'PUBLISHED',
         thumbnail: data.thumbnail,
+        authorId: userId // Add authorId to update
       };
 
       this.logger.debug('Updating post with:', postToUpdate);
@@ -338,8 +340,8 @@ export class PostAdminService {
       .replace(/ỳ|ý|ỵ|ỷ|ỹ/g, 'y')
       .replace(/đ/g, 'd')
       .replace(/\s+/g, '-')           // Replace spaces with -
-      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-      .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+      .replace(/[^\w-]+/g, '')       // Remove all non-word chars
+      .replace(/--+/g, '-')         // Replace multiple - with single -
       .replace(/^-+/, '')             // Trim - from start of text
       .replace(/-+$/, '');            // Trim - from end of text
   }

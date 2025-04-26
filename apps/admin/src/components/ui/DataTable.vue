@@ -71,7 +71,7 @@ const handleSort = (column: string) => {
 
 <template>
   <!-- Enhanced Error Alert -->
-  <TransitionRoot as="template" :show="!!error">
+  <TransitionRoot as="template" :show="!!error" v-if="error">
     <div class="rounded-md bg-red-50 p-4 mb-6">
       <div class="flex">
         <div class="flex-shrink-0">
