@@ -118,37 +118,34 @@ export class MailtrapService implements MailServiceInterface, OnModuleInit {
   }
 
   async sendOrderConfirmation(email: string, orderDetails: any): Promise<void> {
-    const mailLogData = {
-      fromEmail: this.config.from,
-      toEmail: email,
-      subject: 'Order Confirmation',
-      body: `Thank you for your order! Order details: ${JSON.stringify(orderDetails)}`,
-      status: MailStatus.PENDING,
+    await this.sendMail({
+      to: email,
+      template: { id: 'order-confirmation', data: orderDetails },
+      subject: 'Xác nhận đơn hàng'
+    });
+  }
+
+  async sendRefundRequestNotification(data: {
+    to: string;
+    orderCode: string;
+    refundCode: string;
+    customerName: string;
+    refundType: string;
+    refundAmount?: number;
+  }): Promise<MailResponse> {
+    const templateData = {
+      customerName: data.customerName,
+      orderCode: data.orderCode,
+      refundCode: data.refundCode,
+      refundType: data.refundType,
+      refundAmount: data.refundAmount
     };
     
-    const mailLog = await this.mailLogRepository.save(
-      this.mailLogRepository.create(mailLogData)
-    );
-
-    const mailOptions: ExtendedTemplateMailOptions = {
-      to: mailLog.toEmail,
-      subject: mailLog.subject,
-      text: mailLog.body,
-      category: 'Order Confirmation',
-    };
-
-    try {
-      const result = await this.sendMail(mailOptions);
-      await this.mailLogRepository.update(mailLog.id, {
-        status: MailStatus.SENT,
-        providerMessageId: result.messageId,
-      });
-    } catch (error) {
-      await this.mailLogRepository.update(mailLog.id, {
-        status: MailStatus.FAILED,
-        error: error.message,
-      });
-    }
+    return this.sendMail({
+      to: data.to,
+      template: { id: 'refund-request', data: templateData },
+      subject: `Xác nhận yêu cầu hoàn trả #${data.refundCode}`
+    });
   }
 
   async verifyConfiguration(): Promise<boolean> {

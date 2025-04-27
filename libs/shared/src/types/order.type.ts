@@ -1,7 +1,9 @@
 export enum OrderStatus {
   PENDING = 'pending',
+  CONFIRMED = 'confirmed',
   PROCESSING = 'processing',
-  COMPLETED = 'completed',
+  SHIPPED = 'shipped',
+  DELIVERED = 'delivered',
   CANCELLED = 'cancelled'
 }
 
@@ -15,6 +17,30 @@ export enum ProductType {
   PHYSICAL = 'PHYSICAL',
   DIGITAL = 'DIGITAL',
   TICKET = 'TICKET'
+}
+
+export enum RefundReason {
+  CHANGE_MIND = 'CHANGE_MIND',
+  PRODUCT_DEFECT = 'PRODUCT_DEFECT',
+  WRONG_PRODUCT = 'WRONG_PRODUCT',
+  SCHEDULE_CHANGE = 'SCHEDULE_CHANGE',
+  OTHER = 'OTHER',
+}
+
+export enum RefundType {
+  MONEY_REFUND = 'MONEY_REFUND',
+  RESCHEDULE = 'RESCHEDULE',
+  PRODUCT_EXCHANGE = 'PRODUCT_EXCHANGE',
+  STORE_CREDIT = 'STORE_CREDIT',
+}
+
+export enum RefundStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
 }
 
 export interface Address {
@@ -46,6 +72,7 @@ export interface OrderItem {
 export interface Order {
   id: number;
   userId?: string;
+  orderCode: string;
   phoneCode: string;
   phoneNumber: string;
   email?: string;

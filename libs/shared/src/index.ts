@@ -13,7 +13,24 @@ export * from './types/contact';
 export * from './types/food.type';
 export * from './types/profile.type';
 export * from './types/upload.type';
+// Re-export ProductType from lib/types/product.type
+export { ProductType as LibProductType } from './lib/types/product.type';
+// Re-export other items from lib/types/product.type except ProductType
 export * from './lib/types/product.type';
+
+// Order enums - these are not interfaces/types but values
+export { 
+  RefundReason, RefundType, RefundStatus,
+  OrderStatus, PaymentStatus, ProductType
+} from './types/order.type';
+
+// Order interfaces and types
+export type { 
+  OrderItem, Order, CreateOrderInput,
+  UpdateOrderStatusInput, UpdatePaymentStatusInput,
+  OrdersQueryInput, OrdersQueryResult,
+  Address as OrderAddress
+} from './types/order.type';
 
 // Interfaces
 export * from './lib/interfaces';
