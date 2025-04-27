@@ -136,8 +136,19 @@
         </div>
       </div>
 
+      <!-- Notification for new product -->
+      <div v-if="!route.params.id" class="mt-8 border-t border-slate-200 pt-6">
+        <div class="flex items-center p-4 bg-blue-50 rounded-md text-blue-700 text-sm">
+          <InfoIcon class="w-5 h-5 mr-2 flex-shrink-0" />
+          <div>
+            <p><span class="font-medium">Thông báo:</span> Lịch sử tồn kho sẽ có sẵn sau khi sản phẩm được tạo.</p>
+            <p>Bạn có thể theo dõi lịch sử thay đổi số lượng tồn kho sau khi sản phẩm đã được lưu.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Stock History -->
-      <div class="mt-8 border-t border-slate-200 pt-6">
+      <div v-if="route.params.id" class="mt-8 border-t border-slate-200 pt-6">
         <div class="flex flex-wrap items-center justify-between mb-4">
           <h4 class="text-md font-medium text-slate-900">Stock Movement History</h4>
           
@@ -311,7 +322,7 @@ import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTrpc } from '../../composables/useTrpc';
 import { useToast } from 'vue-toastification';
-import { RefreshCcwIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-vue-next';
+import { RefreshCcwIcon, ChevronLeftIcon, ChevronRightIcon, InfoIcon } from 'lucide-vue-next';
 import { format } from 'date-fns';
 
 const props = defineProps({
@@ -398,6 +409,11 @@ const toast = useToast();
 // Load stock history
 const loadStockHistory = async () => {
   try {
+    if (!route.params.id) {
+      console.log('No product ID available (create mode), skipping stock history load')
+      return
+    }
+    
     loading.value = true;
     const productId = Number(route.params.id);
     
@@ -429,6 +445,11 @@ const adjustStock = async () => {
   try {
     if (adjustmentQuantity.value === 0) {
       toast.warning('Please enter a non-zero adjustment quantity.');
+      return;
+    }
+    
+    if (!route.params.id) {
+      toast.warning('Cannot adjust stock for a product that has not been created yet.');
       return;
     }
     
@@ -544,7 +565,7 @@ watch(historyFilter, () => {
 
 // Load initial data
 onMounted(() => {
-  if (!props.hasVariants) {
+  if (!props.hasVariants && route.params.id) {
     loadStockHistory();
   }
 });

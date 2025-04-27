@@ -168,12 +168,23 @@
                       </td>
                       <td class="px-4 py-2">
                         <div class="flex items-center space-x-2">
-                          <button @click="openStockHistoryModal(variant)" class="rounded-md p-2 hover:bg-slate-100">
+                          <button v-if="variant.id" @click="openStockHistoryModal(variant)" class="rounded-md p-2 hover:bg-slate-100">
                             <div class="flex items-center text-xs text-primary">
                               <PackageIcon class="h-4 w-4 mr-1" />
                               <span>Stock History</span>
                             </div>
                           </button>
+                          <div v-else class="relative group">
+                            <button disabled class="rounded-md p-2 text-slate-400 cursor-not-allowed">
+                              <div class="flex items-center text-xs">
+                                <PackageIcon class="h-4 w-4 mr-1" />
+                                <span>Stock History</span>
+                              </div>
+                            </button>
+                            <div class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                              Stock history will be available after product creation.
+                            </div>
+                          </div>
                           <button @click="removeVariant(variant)" class="rounded-md p-2 hover:bg-red-50 text-red-500">
                             <TrashIcon class="h-4 w-4" />
                           </button>
@@ -236,7 +247,7 @@
               <button 
                 @click="applyVariantStockAdjustment" 
                 class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                :disabled="stockHistoryModal.adjustmentQuantity === 0"
+                :disabled="stockHistoryModal.adjustmentQuantity === 0 || !stockHistoryModal.variant.id"
               >
                 Apply Adjustment
               </button>
@@ -252,7 +263,12 @@
             </div>
             
             <div v-else-if="!stockHistoryModal.history.length" class="text-center py-8 text-slate-500">
-              No stock history found for this variant.
+              <div v-if="stockHistoryModal.variant.id">
+                No stock history found for this variant.
+              </div>
+              <div v-else>
+                Stock history will be available after product creation.
+              </div>
             </div>
             
             <div v-else class="overflow-x-auto">
@@ -541,7 +557,10 @@ const displayVariants = computed(() => {
 // Function to load variant stock history
 const loadVariantStockHistory = async (variantId: number) => {
   try {
-    if (!variantId) return []
+    if (!variantId) {
+      console.log('No variant ID available, cannot load stock history')
+      return []
+    }
     
     const response = await trpc.admin.products.getVariantStockHistory.query({
       variantId,
@@ -552,7 +571,10 @@ const loadVariantStockHistory = async (variantId: number) => {
     return response.data || []
   } catch (error) {
     console.error('Error loading variant stock history:', error)
-    toast.error('Failed to load variant stock history')
+    // Chỉ hiển thị toast cho lỗi hệ thống thực sự, không phải lỗi do thiếu ID
+    if (variantId) {
+      toast.error('Failed to load variant stock history')
+    }
     return []
   }
 }

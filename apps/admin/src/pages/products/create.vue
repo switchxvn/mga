@@ -19,58 +19,10 @@
           >
             <template #actions>
               <!-- Language Switcher -->
-              <div class="language-switcher relative">
-                <button 
-                  @click.stop="isLanguageOpen = !isLanguageOpen"
-                  class="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-                >
-                  <div class="w-5 h-5 flex items-center justify-center">
-                    <img 
-                      v-if="selectedLanguage"
-                      :src="`/images/flag/${languages.find(l => l.code === selectedLanguage)?.flagCode.toLowerCase()}.svg`"
-                      :alt="`${languages.find(l => l.code === selectedLanguage)?.nativeName} flag`"
-                      class="w-5 h-5 rounded-sm object-cover"
-                      @error="onFlagImageError"
-                    />
-                  </div>
-                  <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
-                  <ChevronDownIcon 
-                    class="h-4 w-4 transition-transform"
-                    :class="{ 'rotate-180': isLanguageOpen }"
-                  />
-                </button>
-
-                <!-- Dropdown menu -->
-                <div 
-                  v-if="isLanguageOpen" 
-                  class="absolute z-50 mt-1 min-w-[240px] rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none"
-                >
-                  <div class="py-1">
-                    <button
-                      v-for="lang in languages"
-                      :key="lang.code"
-                      @click="selectedLanguage = lang.code; isLanguageOpen = false"
-                      class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
-                      :class="{ 'bg-slate-50': selectedLanguage === lang.code }"
-                    >
-                      <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center mr-2">
-                        <img 
-                          :src="`/images/flag/${lang.flagCode.toLowerCase()}.svg`"
-                          :alt="`${lang.nativeName} flag`"
-                          class="w-5 h-5 rounded-sm object-cover"
-                          @error="onFlagImageError"
-                        />
-                      </div>
-                      <span class="truncate">{{ lang.nativeName }}</span>
-                      <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
-                      <CheckIcon
-                        v-if="selectedLanguage === lang.code"
-                        class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <LanguageSwitcher 
+                v-model="selectedLanguage" 
+                @language-changed="handleLanguageChange"
+              />
 
               <NuxtLink 
                 to="/products" 
@@ -96,15 +48,19 @@
             <button
               v-for="tab in tabs"
               :key="tab.id"
-              @click="currentTab = tab.id"
-              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
+              @click="tab.id !== 'inventory' || !form.hasVariants ? currentTab = tab.id : null"
+              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative group"
               :class="{
                 'bg-primary text-white': currentTab === tab.id,
-                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id
+                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id,
+                'opacity-50 cursor-not-allowed': tab.id === 'inventory' && form.hasVariants
               }"
             >
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.name }}
+              <div v-if="tab.id === 'inventory' && form.hasVariants" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                Inventory is disabled because this product has variants. Please manage inventory for individual variants in the Variants tab.
+              </div>
             </button>
           </nav>
 
@@ -121,6 +77,7 @@
                 v-model:sku="form.sku"
                 v-model:barcode="form.barcode"
                 :editor-options="editorOptions"
+                :disable-price="form.hasVariants"
                 @generate-slug="generateSlug"
               />
             </div>
@@ -148,13 +105,34 @@
               />
             </div>
 
+            <!-- Specifications Tab -->
+            <div v-show="currentTab === 'specifications'">
+              <div class="bg-white rounded-lg shadow-sm p-6 space-y-6">
+                <ProductSpecificationsNew
+                  v-model="form.specifications"
+                  :selectedLanguage="selectedLanguage"
+                />
+              </div>
+            </div>
+
             <!-- Inventory Tab -->
             <div v-show="currentTab === 'inventory'">
               <ProductInventory
                 v-model:trackInventory="form.trackInventory"
                 v-model:quantity="form.quantity"
                 v-model:lowStockThreshold="form.lowStockThreshold"
+                v-model:stockStatus="form.stockStatus"
+                v-model:allowBackorders="form.allowBackorders"
+                :stockMovements="form.stockMovements"
+                :hasVariants="form.hasVariants"
               />
+              <div v-if="form.hasVariants" class="mt-4 flex items-center p-4 bg-blue-50 rounded-md text-blue-700 text-sm">
+                <InfoIcon class="w-5 h-5 mr-2 flex-shrink-0" />
+                <div>
+                  <p><span class="font-medium">Thông báo:</span> Quản lý số lượng đã bị vô hiệu hóa vì sản phẩm này có biến thể.</p>
+                  <p>Số lượng được quản lý riêng cho từng biến thể trong <button @click="currentTab = 'variants'" class="underline font-medium hover:text-blue-900">tab Variants</button>.</p>
+                </div>
+              </div>
             </div>
 
             <!-- SEO Tab -->
@@ -174,6 +152,7 @@
                 v-model:published="form.published"
                 v-model:featured="form.featured"
                 v-model:taxable="form.taxable"
+                :updated-at="form.updatedAt"
               />
             </div>
           </div>
@@ -185,7 +164,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '../../composables/useTrpc'
 import slugify from 'slugify'
 import { useHead } from 'nuxt/app'
@@ -204,7 +183,9 @@ import {
   SaveIcon,
   FolderIcon,
   LayersIcon,
-  PackageIcon
+  PackageIcon,
+  InfoIcon,
+  ClipboardListIcon
 } from 'lucide-vue-next'
 
 // Import components
@@ -216,8 +197,12 @@ import ProductSettings from '../../components/products/ProductSettings.vue'
 import ProductCategories from '../../components/products/ProductCategories.vue'
 import ProductVariants from '../../components/products/ProductVariants.vue'
 import ProductInventory from '../../components/products/ProductInventory.vue'
+import ProductSpecifications from '../../components/products/ProductSpecifications.vue'
+import ProductSpecificationsNew from '../../components/products/ProductSpecificationsNew.vue'
+import LanguageSwitcher from '../../components/common/LanguageSwitcher.vue'
 
 const trpc = useTrpc()
+const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const loading = ref(false)
@@ -247,6 +232,11 @@ const tabs = [
     icon: LayersIcon
   },
   {
+    id: 'specifications',
+    name: 'Specifications',
+    icon: ClipboardListIcon
+  },
+  {
     id: 'inventory',
     name: 'Inventory',
     icon: PackageIcon
@@ -271,10 +261,8 @@ interface ProductVariant {
   price: number
   compareAtPrice: number | null
   quantity: number
-  options: {
-    name: string
-    value: string
-  }[]
+  stock: number
+  options: Record<string, string>
 }
 
 interface ProductForm {
@@ -299,6 +287,11 @@ interface ProductForm {
   trackInventory: boolean
   quantity: number
   lowStockThreshold: number
+  stockStatus: string
+  allowBackorders: boolean
+  stockMovements: any[]
+  updatedAt: string
+  specifications: Array<{name: string, value: string, position: number, isNew?: boolean}>
   translations: Record<string, {
     name: string
     slug: string
@@ -330,6 +323,11 @@ const initialForm: ProductForm = {
   trackInventory: true,
   quantity: 0,
   lowStockThreshold: 5,
+  stockStatus: 'in_stock',
+  allowBackorders: false,
+  stockMovements: [],
+  specifications: [],
+  updatedAt: new Date().toISOString(),
   translations: {}
 }
 
@@ -340,6 +338,45 @@ const tagsInput = ref('')
 useHead({
   title: 'Create Product - Admin Dashboard'
 })
+
+// Initialize selectedLanguage
+const selectedLanguage = ref('')
+const defaultLanguage = ref('')
+
+// Handle language change
+const handleLanguageChange = (code: string) => {
+  // Lưu translations hiện tại trước khi chuyển ngôn ngữ
+  if (selectedLanguage.value && form.value.name !== undefined) {
+    form.value.translations[selectedLanguage.value] = {
+      name: form.value.name,
+      slug: form.value.slug,
+      description: form.value.description,
+      shortDescription: form.value.shortDescription,
+      metaDescription: form.value.metaDescription
+    }
+  }
+  
+  // Cập nhật selectedLanguage
+  selectedLanguage.value = code;
+  
+  // Kiểm tra xem đã có dữ liệu cho ngôn ngữ mới chưa
+  if (form.value.translations[code]) {
+    // Nếu có, cập nhật form với dữ liệu từ translations
+    const translation = form.value.translations[code];
+    form.value.name = translation.name || '';
+    form.value.slug = translation.slug || '';
+    form.value.description = translation.description || '';
+    form.value.shortDescription = translation.shortDescription || '';
+    form.value.metaDescription = translation.metaDescription || '';
+  } else {
+    // Nếu chưa có, reset form để nhập mới
+    form.value.name = '';
+    form.value.slug = '';
+    form.value.description = '';
+    form.value.shortDescription = '';
+    form.value.metaDescription = '';
+  }
+}
 
 const handleTagInput = (e: KeyboardEvent) => {
   // Handle Enter key
@@ -385,84 +422,20 @@ const generateSlug = () => {
 
 // Watch name changes to suggest slug
 watch(() => form.value.name, (newName) => {
-  if (!form.value.slug && newName) {
+  if (newName) {
     generateSlug()
   }
 })
 
-interface Language {
-  id: number;
-  name: string;
-  code: string;
-  nativeName: string;
-  flagCode: string;
-  isDefault: boolean;
-  isActive: boolean;
-}
-
-const languages = ref<Language[]>([])
-const selectedLanguage = ref('')
-const defaultLanguage = ref('')
-const isLanguageOpen = ref(false)
-
-const handleClickOutside = (event: Event) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.language-switcher')) {
-    isLanguageOpen.value = false;
-  }
-};
-
 onMounted(async () => {
   try {
-    const [langs, defaultLang] = await Promise.all([
-      trpc.admin.languages.getLanguages.query(),
-      trpc.admin.languages.getDefaultLanguage.query()
-    ])
-    languages.value = langs
-    defaultLanguage.value = defaultLang?.code || ''
-    selectedLanguage.value = defaultLang?.code || ''
+    // Lấy ngôn ngữ mặc định từ hệ thống
+    const defaultLang = await trpc.admin.languages.getDefaultLanguage.query()
+    selectedLanguage.value = defaultLang?.code || 'en'
+    defaultLanguage.value = defaultLang?.code || 'en'
   } catch (error) {
-    console.error('Failed to fetch languages:', error)
-  }
-  if (process.client) {
-    document.addEventListener('click', handleClickOutside);
-  }
-})
-
-onBeforeUnmount(() => {
-  if (process.client) {
-    document.removeEventListener('click', handleClickOutside);
-  }
-})
-
-// Update watch for selectedLanguage
-watch(selectedLanguage, (newLang, oldLang) => {
-  if (oldLang) {
-    // Save current content to translations before switching
-    form.value.translations[oldLang] = {
-      name: form.value.name,
-      slug: form.value.slug,
-      description: form.value.description,
-      shortDescription: form.value.shortDescription,
-      metaDescription: form.value.metaDescription
-    }
-  }
-  
-  // Load content for new language
-  if (form.value.translations[newLang]) {
-    const translation = form.value.translations[newLang]
-    form.value.name = translation.name
-    form.value.slug = translation.slug
-    form.value.description = translation.description
-    form.value.shortDescription = translation.shortDescription
-    form.value.metaDescription = translation.metaDescription
-  } else {
-    // Reset form for new translation
-    form.value.name = ''
-    form.value.slug = ''
-    form.value.description = ''
-    form.value.shortDescription = ''
-    form.value.metaDescription = ''
+    console.error('Failed to fetch default language:', error)
+    selectedLanguage.value = 'en' // Fallback nếu không lấy được ngôn ngữ mặc định
   }
 })
 
@@ -483,46 +456,81 @@ const createProduct = async () => {
     // Prepare translations array for API
     const translations = Object.entries(form.value.translations).map(([locale, content]) => ({
       locale,
-      name: content.name,
+      title: content.name,
       slug: content.slug,
-      description: content.description,
+      content: content.description,
       shortDescription: content.shortDescription,
       metaDescription: content.metaDescription
     }))
 
-    await trpc.admin.products.createProduct.mutate({
-      name: form.value.name,
-      description: form.value.description,
-      shortDescription: form.value.shortDescription,
-      price: form.value.price,
-      compareAtPrice: form.value.compareAtPrice,
+    // Chuẩn bị dữ liệu sản phẩm theo schema API
+    const productData: any = {
       sku: form.value.sku,
-      barcode: form.value.barcode,
-      published: form.value.published,
-      featured: form.value.featured,
-      taxable: form.value.taxable,
+      price: form.value.price,
+      comparePrice: form.value.compareAtPrice,
       thumbnail: form.value.thumbnail,
       gallery: form.value.gallery,
-      metaDescription: form.value.metaDescription,
-      translations,
-      tags: form.value.tags,
-      categoryIds: form.value.categoryIds,
-      hasVariants: form.value.hasVariants,
-      variants: form.value.variants,
-      trackInventory: form.value.trackInventory,
-      quantity: form.value.quantity,
-      lowStockThreshold: form.value.lowStockThreshold
-    })
+      published: form.value.published,
+      quantity: form.value.hasVariants ? 0 : form.value.quantity,
+      isFeatured: form.value.featured,
+      translations
+    }
+
+    // Thêm các trường tùy chọn nếu có
+    if (form.value.categoryIds && form.value.categoryIds.length > 0) {
+      productData.categoryIds = form.value.categoryIds
+    }
+
+    // Thêm trường specifications nếu có
+    if (form.value.specifications && form.value.specifications.length > 0) {
+      productData.specifications = form.value.specifications.map(spec => ({
+        name: spec.name,
+        value: spec.value,
+        position: spec.position,
+        locale: selectedLanguage.value
+      }))
+    }
+
+    // Xử lý variants nếu product có variants
+    if (form.value.hasVariants && form.value.variants.length > 0) {
+      // API mong đợi variants là một mảng của ProductVariant entities
+      productData.variants = form.value.variants.map(variant => {
+        // Chuẩn bị dữ liệu cho variant
+        const variantData: any = {
+          sku: variant.sku,
+          price: variant.price,
+          comparePrice: variant.compareAtPrice,
+          quantity: variant.quantity || variant.stock || 0
+        }
+
+        // Xử lý translations dựa trên options
+        const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type'
+        const optionValue = variant.options[optionName] || variant.name
+
+        // Thêm translations nếu có giá trị
+        if (optionValue) {
+          variantData.translations = [
+            {
+              locale: selectedLanguage.value,
+              name: optionValue
+            }
+          ]
+        }
+
+        return variantData
+      })
+    }
+
+    // Gọi API tạo sản phẩm
+    await trpc.admin.products.createProduct.mutate(productData)
 
     toast.success('Product created successfully!')
     router.push('/products')
   } catch (error: any) {
     console.error('Failed to create product:', error)
     
-    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
-    const langName = currentLang?.nativeName || selectedLanguage.value
-    
-    let errorMessage = `[${langName}] `
+    // Hiển thị thông báo lỗi với ngôn ngữ hiện tại
+    let errorMessage = `[${selectedLanguage.value}] `
     
     // Handle tRPC error
     if (error.cause) {
@@ -539,8 +547,7 @@ const createProduct = async () => {
       icon: true,
       closeOnClick: false,
       pauseOnHover: true,
-      draggable: true,
-      theme: 'colored'
+      draggable: true
     })
   } finally {
     loading.value = false
@@ -574,19 +581,6 @@ if (process.client) {
     ]
   }
 }
-
-const onFlagImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  if (target) {
-    target.style.display = 'none';
-    // Add a fallback display like the language code or first letter
-    const parent = target.parentElement;
-    if (parent) {
-      parent.textContent = selectedLanguage.value?.toUpperCase().slice(0, 2) || '';
-      parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
-    }
-  }
-};
 </script>
 
 <style>

@@ -31,6 +31,14 @@ const categoryInputSchema = z.object({
   id: z.number()
 });
 
+// Specification input schema
+const specificationInputSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+  position: z.number().optional(),
+  locale: z.string().length(2)
+});
+
 // Tạo router thay vì sử dụng class với @injectable
 export const productAdminRouter = router({
   getAllProducts: adminProcedure
@@ -41,6 +49,8 @@ export const productAdminRouter = router({
         limit: z.number().min(1).default(10),
         search: z.string().optional(),
         published: z.boolean().nullable().default(null),
+        sortBy: z.string().optional().default('createdAt'),
+        sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
       })
     )
     .query(async ({ ctx, input }) => {
@@ -49,7 +59,9 @@ export const productAdminRouter = router({
           page: input.page,
           limit: input.limit,
           search: input.search,
-          published: input.published
+          published: input.published,
+          sortBy: input.sortBy,
+          sortOrder: input.sortOrder
         });
 
         return {
@@ -108,10 +120,11 @@ export const productAdminRouter = router({
       videoReview: z.string().optional(),
       translations: z.array(productTranslationSchema),
       categories: z.array(categoryInputSchema).optional(),
-      categoryIds: z.array(z.number()).optional()
+      categoryIds: z.array(z.number()).optional(),
+      specifications: z.array(specificationInputSchema).optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      const { translations, categories, categoryIds, ...productData } = input;
+      const { translations, categories, categoryIds, specifications, ...productData } = input;
       
       // Tạo đối tượng dữ liệu sản phẩm
       const productCreateData: any = {
@@ -126,7 +139,25 @@ export const productAdminRouter = router({
         productCreateData.categories = categoryIds.map(id => ({ id } as unknown as Category));
       }
       
-      return ctx.services.productAdminService.create(productCreateData);
+      // Tạo sản phẩ
+      const product = await ctx.services.productAdminService.create(productCreateData);
+      
+      // Xử lý thông số kỹ thuật nếu có
+      if (specifications && specifications.length > 0) {
+        for (const spec of specifications) {
+          await ctx.services.productSpecificationService.create(
+            product.id,
+            {
+              name: spec.name,
+              value: spec.value,
+              locale: spec.locale,
+              position: spec.position
+            }
+          );
+        }
+      }
+      
+      return product;
     }),
 
   updateProduct: protectedProcedure
@@ -404,6 +435,35 @@ export const productAdminRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: `Không thể xóa thông số kỹ thuật: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
+  // Thêm endpoint mới để cập nhật trạng thái published
+  updateProductStatus: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      published: z.boolean()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const product = await ctx.services.productAdminService.findOne(input.id);
+        
+        if (!product) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Product with ID ${input.id} not found`,
+          });
+        }
+        
+        product.published = input.published;
+        return ctx.services.productAdminService.update(input.id, { published: input.published });
+      } catch (error) {
+        ctx.logger.error('Failed to update product status:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update product status',
           cause: error,
         });
       }

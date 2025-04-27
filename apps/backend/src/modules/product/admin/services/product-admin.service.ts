@@ -19,7 +19,14 @@ export class ProductAdminService {
     });
   }
 
-  async getProducts({ page, limit, search, published }: { page: number; limit: number; search?: string; published?: boolean | null }) {
+  async getProducts({ page, limit, search, published, sortBy = 'createdAt', sortOrder = 'desc' }: { 
+    page: number; 
+    limit: number; 
+    search?: string; 
+    published?: boolean | null;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) {
     const queryBuilder = this.productRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.translations', 'translations')
       .leftJoinAndSelect('product.variants', 'variants')
@@ -31,6 +38,29 @@ export class ProductAdminService {
 
     if (published !== null) {
       queryBuilder.andWhere('product.published = :published', { published });
+    }
+
+    // Chuyển đổi sortOrder sang định dạng viết hoa theo yêu cầu của TypeORM
+    const order = sortOrder?.toUpperCase() as 'ASC' | 'DESC';
+
+    // Xử lý sắp xếp
+    switch (sortBy) {
+      case 'title':
+        queryBuilder.orderBy('translations.name', order);
+        break;
+      case 'sku':
+        queryBuilder.orderBy('product.sku', order);
+        break;
+      case 'price':
+        queryBuilder.orderBy('product.price', order);
+        break;
+      case 'published':
+        queryBuilder.orderBy('product.published', order);
+        break;
+      case 'createdAt':
+      default:
+        queryBuilder.orderBy('product.createdAt', order);
+        break;
     }
 
     const [items, total] = await queryBuilder

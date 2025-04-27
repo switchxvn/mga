@@ -444,7 +444,7 @@ const generateSlug = () => {
 
 // Watch name changes to suggest slug
 watch(() => form.value.name, (newName) => {
-  if (!form.value.slug && newName) {
+  if (newName) {
     generateSlug()
   }
 })

@@ -74,6 +74,19 @@ interface ProductTranslation {
   videoTitle?: string;
 }
 
+interface ProductVariantTranslation {
+  id: number;
+  name: string;
+  description: string;
+  shortDescription: string;
+  locale: string;
+  metaTitle: string;
+  metaDescription: string;
+  variantId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ProductVariant {
   id: number;
   sku: string;
@@ -148,14 +161,16 @@ const updateQueryParams = () => {
   const query: Record<string, string | undefined> = {
     page: page.value > 1 ? page.value.toString() : undefined,
     search: search.value || undefined,
-    published: publishedFilter.value !== undefined ? publishedFilter.value.toString() : undefined
+    published: publishedFilter.value !== undefined ? publishedFilter.value.toString() : undefined,
+    sortBy: sortBy.value !== 'createdAt' ? sortBy.value : undefined,
+    sortOrder: sortOrder.value !== 'desc' ? sortOrder.value : undefined
   };
 
   Object.keys(query).forEach(key => query[key] === undefined && delete query[key]);
   router.replace({ query });
 };
 
-watch([page, search, publishedFilter], () => {
+watch([page, search, publishedFilter, sortBy, sortOrder], () => {
   updateQueryParams();
   fetchProducts();
 }, { deep: true });
@@ -165,11 +180,14 @@ async function fetchProducts() {
     isLoading.value = true;
     error.value = null;
 
+    // @ts-ignore - Sử dụng ts-ignore cho phép thêm tham số sortBy và sortOrder
     const result = await trpc.admin.products.getAllProducts.query({
       page: page.value,
       limit: pageSize.value,
       search: search.value || undefined,
-      published: publishedFilter.value
+      published: publishedFilter.value,
+      sortBy: sortBy.value,
+      sortOrder: sortOrder.value
     });
 
     // Map API response to Product interface
@@ -435,6 +453,15 @@ onMounted(async () => {
       return;
     }
 
+    // Initialize sort parameters from URL
+    if (route.query.sortBy) {
+      sortBy.value = route.query.sortBy.toString();
+    }
+    
+    if (route.query.sortOrder && ['asc', 'desc'].includes(route.query.sortOrder.toString())) {
+      sortOrder.value = route.query.sortOrder.toString() as 'asc' | 'desc';
+    }
+
     await fetchProducts();
   } catch (err: any) {
     error.value = err.message || "Failed to initialize products page";
@@ -572,22 +599,31 @@ onMounted(async () => {
       </template>
 
       <!-- Header slot -->
-      <template #header="{ sortBy, sortOrder, handleSort }">
+      <template #header="{ sortBy: tableSortBy, sortOrder: tableSortOrder, handleSort }">
         <th scope="col" class="px-6 py-3 text-left">
           <span class="text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thumbnail</span>
         </th>
         <th 
-          v-for="column in ['Product', 'SKU', 'Price', 'Status', 'Created At', 'Actions']" 
-          :key="column"
+          v-for="column in [
+            { display: 'Product', value: 'title' },
+            { display: 'SKU', value: 'sku' },
+            { display: 'Price', value: 'price' },
+            { display: 'Status', value: 'published' },
+            { display: 'Created At', value: 'createdAt' },
+            { display: 'Actions', value: '' }
+          ]" 
+          :key="column.display"
           scope="col" 
           class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-600"
-          @click="handleSort(column.toLowerCase())"
+          @click="column.value && (sortBy = column.value, sortOrder = sortBy === column.value && sortOrder === 'desc' ? 'asc' : 'desc')"
         >
           <div class="flex items-center gap-2">
-            {{ column }}
-            <ChevronDownIcon v-if="sortBy !== column.toLowerCase()" class="h-4 w-4" />
-            <ChevronUpIcon v-else-if="sortOrder === 'asc'" class="h-4 w-4" />
-            <ChevronDownIcon v-else class="h-4 w-4" />
+            {{ column.display }}
+            <template v-if="column.value">
+              <ChevronDownIcon v-if="sortBy !== column.value" class="h-4 w-4" />
+              <ChevronUpIcon v-else-if="sortOrder === 'asc'" class="h-4 w-4" />
+              <ChevronDownIcon v-else class="h-4 w-4" />
+            </template>
           </div>
         </th>
       </template>
