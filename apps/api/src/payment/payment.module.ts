@@ -8,6 +8,7 @@ import { PaymentModule as BackendPaymentModule } from '../../../../apps/backend/
 import { PaymentMethod } from '../../../../apps/backend/src/modules/payment/entities/payment-method.entity';
 import { UploadModule } from '../../../../apps/backend/src/modules/upload/upload.module';
 import { MailModule } from '../../../../apps/backend/src/modules/mail/mail.module';
+import { DashboardModule } from '../../../../apps/backend/src/modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MailModule } from '../../../../apps/backend/src/modules/mail/mail.modul
     BackendPaymentModule,
     UploadModule,
     MailModule,
+    DashboardModule,
   ],
   controllers: [PayOSWebhookController],
   providers: [PayOSWebhookService],

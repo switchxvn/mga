@@ -488,5 +488,22 @@
         "sms": "SMS"
       }
     }
+  },
+  "map": {
+    "title": "Bản đồ khu du lịch Cáp Treo Núi Sam",
+    "description": "Khám phá khu du lịch Cáp treo Núi Sam với bản đồ chi tiết các khu vực tham quan, dịch vụ và điểm tham quan nổi bật.",
+    "contactInfo": "Thông tin liên hệ",
+    "address": "Địa chỉ: Núi Sam, phường Núi Sam, thành phố Châu Đốc, tỉnh An Giang",
+    "phone": "Điện thoại: 0917 001 254",
+    "email": "Email: info@cablecar.com.vn",
+    "openingHours": "Giờ mở cửa: 7:00 - 17:30 hàng ngày",
+    "zoom": {
+      "instructions": "Hướng dẫn",
+      "doubleClick": "Nhấp đúp để phóng to / thu nhỏ",
+      "drag": "Kéo để di chuyển khi phóng to",
+      "zoomIn": "Phóng to",
+      "zoomOut": "Thu nhỏ",
+      "reset": "Khôi phục"
+    }
   }
 } 
