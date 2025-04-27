@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../../entities/product.entity';
 import { ProductTranslation } from '../../entities/product-translation.entity';
+import { ProductVariant } from '../../entities/product-variant.entity';
+import { ProductVariantTranslation } from '../../entities/product-variant-translation.entity';
 
 @Injectable()
 export class ProductAdminService {
@@ -11,6 +13,10 @@ export class ProductAdminService {
     private productRepository: Repository<Product>,
     @InjectRepository(ProductTranslation)
     private productTranslationRepository: Repository<ProductTranslation>,
+    @InjectRepository(ProductVariant)
+    private productVariantRepository: Repository<ProductVariant>,
+    @InjectRepository(ProductVariantTranslation)
+    private productVariantTranslationRepository: Repository<ProductVariantTranslation>,
   ) {}
 
   async findAll(): Promise<Product[]> {
@@ -170,5 +176,78 @@ export class ProductAdminService {
 
   async removeTranslation(id: number): Promise<void> {
     await this.productTranslationRepository.delete(id);
+  }
+
+  // Phương thức tìm biến thể sản phẩm theo ID
+  async findVariantById(id: number): Promise<ProductVariant> {
+    return this.productVariantRepository.findOne({
+      where: { id },
+      relations: [
+        'translations',
+        'product',
+        'attributeValues',
+        'attributeValues.attribute',
+        'attributeValues.translations',
+      ],
+    });
+  }
+
+  // Phương thức cập nhật biến thể sản phẩm
+  async updateVariant(id: number, variantData: Partial<ProductVariant>): Promise<ProductVariant> {
+    // Tách dữ liệu relations và các trường khác ra khỏi variantData
+    const { translations, attributeValues, ...variantDetails } = variantData;
+    
+    // Lấy variant hiện tại với relations cần thiết
+    const existingVariant = await this.productVariantRepository.findOne({
+      where: { id },
+      relations: ['translations', 'attributeValues'],
+    });
+    
+    if (!existingVariant) {
+      throw new Error(`Variant with ID ${id} not found`);
+    }
+    
+    // Cập nhật thông tin cơ bản của variant
+    Object.assign(existingVariant, variantDetails);
+    
+    // Xử lý translations nếu có
+    if (translations && translations.length > 0) {
+      // Đối với mỗi translation mới, tìm và cập nhật hoặc thêm mới
+      if (existingVariant.translations) {
+        for (const newTranslation of translations) {
+          const existingTranslation = existingVariant.translations.find(
+            t => t.locale === newTranslation.locale
+          );
+          
+          if (existingTranslation) {
+            // Cập nhật translation hiện có
+            Object.assign(existingTranslation, newTranslation);
+          } else {
+            // Thêm translation mới
+            const translationToAdd = this.productVariantTranslationRepository.create({
+              ...newTranslation,
+              variantId: id
+            });
+            existingVariant.translations.push(translationToAdd);
+          }
+        }
+      } else {
+        // Nếu chưa có translations, tạo mới
+        existingVariant.translations = translations.map(translation => 
+          this.productVariantTranslationRepository.create({
+            ...translation,
+            variantId: id
+          })
+        );
+      }
+    }
+    
+    // Xử lý attributeValues nếu có
+    if (attributeValues) {
+      existingVariant.attributeValues = attributeValues;
+    }
+    
+    // Lưu toàn bộ variant với relations
+    return this.productVariantRepository.save(existingVariant);
   }
 } 

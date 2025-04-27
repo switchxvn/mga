@@ -23,7 +23,9 @@ import {
   TrashIcon,
   ZoomInIcon,
   PackageIcon,
-  MoreHorizontalIcon
+  MoreHorizontalIcon,
+  ChevronDownIcon as LucideChevronDownIcon,
+  ChevronUpIcon as LucideChevronUpIcon
 } from 'lucide-vue-next';
 import Swal from 'sweetalert2';
 import 'swiper/css';
@@ -145,6 +147,9 @@ const sortOrder = ref<'asc' | 'desc'>('desc');
 const selectedImage = ref<string | null>(null);
 const isZoomModalOpen = ref(false);
 
+// Theo dõi sản phẩm đang được mở rộng
+const expandedProductId = ref<number | null>(null);
+
 // Add image error handler
 const handleImageError = (e: Event) => {
   const target = e.target as HTMLImageElement;
@@ -210,7 +215,16 @@ async function fetchProducts() {
         price: typeof v.price === 'number' ? v.price : parseFloat(v.price) || 0,
         salePrice: typeof v.salePrice === 'number' ? v.salePrice : v.salePrice ? parseFloat(v.salePrice) : null,
         stock: typeof v.stock === 'number' ? v.stock : parseInt(v.stock) || 0,
-        translations: v.translations || []
+        translations: v.translations || [],
+        // Đảm bảo thuộc tính này luôn có và là boolean
+        published: v.published !== undefined ? !!v.published : true,
+        // Thêm các thuộc tính từ entity
+        quantity: typeof v.quantity === 'number' ? v.quantity : parseInt(v.quantity) || 0,
+        comparePrice: typeof v.comparePrice === 'number' ? v.comparePrice : v.comparePrice ? parseFloat(v.comparePrice) : null,
+        thumbnail: v.thumbnail || undefined,
+        isFeatured: !!v.isFeatured,
+        isNew: !!v.isNew,
+        isSale: !!v.isSale
       })),
       thumbnail: p.thumbnail || undefined,
       // @ts-ignore
@@ -444,6 +458,83 @@ const closeZoomModal = () => {
   isZoomModalOpen.value = false;
 };
 
+// Toggle variant list expansion
+const toggleVariants = (productId: number) => {
+  if (expandedProductId.value === productId) {
+    expandedProductId.value = null; // Close if already open
+  } else {
+    expandedProductId.value = productId; // Open the variants
+  }
+};
+
+// Toggle variant published status
+const toggleVariantPublished = async (variant: any) => {
+  try {
+    const newStatus = !variant.published;
+    
+    const result = await Swal.fire({
+      title: `${newStatus ? 'Publish' : 'Unpublish'} Variant?`,
+      text: `Are you sure you want to ${newStatus ? 'publish' : 'unpublish'} "${variant.translations[0]?.name || 'Unnamed Variant'}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: `Yes, mark as ${newStatus ? 'published' : 'unpublished'}`,
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: newStatus ? '#10B981' : '#6B7280',
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Gọi API để cập nhật trạng thái variant
+    try {
+      // Sử dụng any để tránh lỗi TypeScript vì có thể API chưa được khai báo trong type
+      const adminProductsApi = trpc.admin.products as any;
+      
+      // Nếu có API endpoint riêng cho variant
+      if (adminProductsApi.updateVariantStatus) {
+        await adminProductsApi.updateVariantStatus.mutate({
+          id: variant.id,
+          published: newStatus
+        });
+      } 
+      // Nếu không có API endpoint riêng, có thể gọi API cập nhật variant
+      else if (adminProductsApi.updateVariant) {
+        await adminProductsApi.updateVariant.mutate({
+          id: variant.id,
+          published: newStatus
+        });
+      }
+      // Nếu không có bất kỳ API endpoint nào, chỉ cập nhật UI
+      else {
+        console.warn("API endpoint for updating variant status not found. UI updated but database unchanged.");
+      }
+    } catch (apiError) {
+      console.error("API error:", apiError);
+      throw new Error("Failed to update variant status on server");
+    }
+    
+    // Cập nhật UI
+    variant.published = newStatus;
+
+    Swal.fire({
+      title: 'Success!',
+      text: `Variant is now ${newStatus ? 'published' : 'unpublished'}`,
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  } catch (err: any) {
+    const errorMessage = err.message || "Failed to update variant status";
+    error.value = errorMessage;
+    console.error("Error updating variant status:", err);
+    
+    Swal.fire({
+      title: 'Error!',
+      text: errorMessage,
+      icon: 'error'
+    });
+  }
+};
+
 onMounted(async () => {
   try {
     // Check authentication first
@@ -660,8 +751,17 @@ onMounted(async () => {
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {{ product.translations[0]?.shortDescription || '' }}
             </p>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {{ product.variants.length }} variants
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+              <button
+                v-if="product.variants.length > 0"
+                @click="toggleVariants(product.id)"
+                class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+              >
+                {{ product.variants.length }} variants
+                <LucideChevronDownIcon v-if="expandedProductId !== product.id" class="h-4 w-4 ml-1" />
+                <LucideChevronUpIcon v-else class="h-4 w-4 ml-1" />
+              </button>
+              <span v-else>{{ product.variants.length }} variants</span>
             </div>
           </div>
         </td>
@@ -713,6 +813,150 @@ onMounted(async () => {
             </button>
           </div>
         </td>
+      </template>
+      
+      <!-- Variants dropdown -->
+      <template #expanded-row="{ item: product }">
+        <tr v-if="expandedProductId === product.id">
+          <td colspan="8" class="px-2 pb-6 pt-2">
+            <div class="bg-gray-50 dark:bg-neutral-800 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-700 overflow-hidden mx-2">
+              <div class="bg-gray-100 dark:bg-neutral-700 px-4 py-3 border-b border-gray-200 dark:border-neutral-600 flex items-center justify-between">
+                <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ product.translations[0]?.title || 'Untitled Product' }} - Variants</h3>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ product.variants.length }} variants found</div>
+              </div>
+              <div class="overflow-x-auto p-0">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead class="bg-gray-50 dark:bg-neutral-700">
+                    <tr>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Image</th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">SKU</th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Compare Price</th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stock</th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Flags</th>
+                      <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white dark:bg-neutral-800 divide-y divide-gray-100 dark:divide-gray-700">
+                    <tr v-for="variant in product.variants" :key="variant.id" class="hover:bg-gray-50 dark:hover:bg-neutral-700">
+                      <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div v-if="variant.thumbnail" class="h-12 w-12 flex-shrink-0 rounded overflow-hidden border border-gray-200 dark:border-neutral-700">
+                            <img 
+                              :src="variant.thumbnail" 
+                              class="h-full w-full object-cover"
+                              alt=""
+                              @error="handleImageError"
+                            />
+                          </div>
+                          <div v-else class="h-12 w-12 flex-shrink-0 rounded bg-gray-100 dark:bg-neutral-700 flex items-center justify-center border border-gray-200 dark:border-neutral-700">
+                            <PackageIcon class="h-6 w-6 text-gray-400" />
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                          {{ variant.translations[0]?.name || 'Unnamed Variant' }}
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                          {{ variant.translations[0]?.shortDescription || '' }}
+                        </div>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {{ variant.sku }}
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {{ typeof variant.price === 'number' ? variant.price.toFixed(2) : variant.price }}
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap text-sm text-red-500 dark:text-red-400">
+                        {{ variant.comparePrice ? (typeof variant.comparePrice === 'number' ? variant.comparePrice.toFixed(2) : variant.comparePrice) : '-' }}
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap text-sm">
+                        <span :class="{
+                          'px-2 py-1 text-xs rounded-full': true,
+                          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': variant.quantity > 10,
+                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': variant.quantity > 0 && variant.quantity <= 10,
+                          'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': variant.quantity === 0
+                        }">
+                          {{ variant.quantity }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap text-sm">
+                        <button
+                          @click="toggleVariantPublished(variant)"
+                          :class="{
+                            'px-2 py-1 text-xs rounded-full inline-flex items-center gap-1 cursor-pointer transition-colors': true,
+                            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800': variant.published,
+                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600': !variant.published
+                          }"
+                        >
+                          <div class="w-1.5 h-1.5 rounded-full" :class="{
+                            'bg-green-500': variant.published,
+                            'bg-gray-500': !variant.published
+                          }"></div>
+                          {{ variant.published ? 'Published' : 'Unpublished' }}
+                        </button>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap text-sm">
+                        <div class="flex space-x-1.5">
+                          <span v-if="variant.isFeatured" class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                            Featured
+                          </span>
+                          <span v-if="variant.isNew" class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            New
+                          </span>
+                          <span v-if="variant.isSale" class="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                            Sale
+                          </span>
+                        </div>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex justify-end gap-2">
+                          <NuxtLink
+                            :to="`/products/edit/${product.id}/variants/${variant.id}`"
+                            class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                            title="Edit variant"
+                          >
+                            <PencilIcon class="h-4 w-4" />
+                          </NuxtLink>
+                          <button
+                            class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                            title="Delete variant"
+                          >
+                            <Trash2Icon class="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-if="product.variants.length === 0">
+                      <td colspan="9" class="px-4 py-6 text-sm text-gray-500 dark:text-gray-400 text-center">
+                        <div class="flex flex-col items-center py-4">
+                          <PackageIcon class="h-10 w-10 text-gray-300 dark:text-gray-600 mb-2" />
+                          <p>No variants available for this product</p>
+                          <p class="text-xs mt-1">Add variants to provide different options of the same product</p>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-4 py-3 bg-gray-50 dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-600 flex justify-between items-center">
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Variants allow you to create different versions of the same product
+                </div>
+                <NuxtLink
+                  :to="`/products/edit/${product.id}/variants/create`"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  <PlusCircleIcon class="h-3.5 w-3.5" />
+                  Add New Variant
+                </NuxtLink>
+              </div>
+            </div>
+          </td>
+        </tr>
       </template>
     </DataTable>
 

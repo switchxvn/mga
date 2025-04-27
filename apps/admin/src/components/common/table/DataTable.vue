@@ -156,31 +156,34 @@ const handleSort = (column: string) => {
         </thead>
         
         <tbody class="bg-white dark:bg-neutral-800 divide-y divide-gray-200 dark:divide-gray-700">
-          <tr 
-            v-for="item in items" 
-            :key="item.id"
-            class="hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors duration-150 ease-in-out"
-          >
-            <!-- Selection Column -->
-            <td v-if="$slots.selection" class="px-6 py-4 whitespace-nowrap">
-              <slot 
-                name="selection" 
-                :item="item"
-                :is-selected="selectedItems.includes(item.id)"
-                :toggle-selection="toggleItemSelection"
-              >
-                <input
-                  type="checkbox"
-                  class="checkbox rounded"
-                  :checked="selectedItems.includes(item.id)"
-                  @change="toggleItemSelection(item.id)"
-                />
-              </slot>
-            </td>
+          <template v-for="item in items" :key="item.id">
+            <tr 
+              class="hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors duration-150 ease-in-out"
+            >
+              <!-- Selection Column -->
+              <td v-if="$slots.selection" class="px-6 py-4 whitespace-nowrap">
+                <slot 
+                  name="selection" 
+                  :item="item"
+                  :is-selected="selectedItems.includes(item.id)"
+                  :toggle-selection="toggleItemSelection"
+                >
+                  <input
+                    type="checkbox"
+                    class="checkbox rounded"
+                    :checked="selectedItems.includes(item.id)"
+                    @change="toggleItemSelection(item.id)"
+                  />
+                </slot>
+              </td>
 
-            <!-- Custom Row Content -->
-            <slot name="row" :item="item" />
-          </tr>
+              <!-- Custom Row Content -->
+              <slot name="row" :item="item" />
+            </tr>
+            
+            <!-- Optional expanded content for each row -->
+            <slot name="expanded-row" :item="item" />
+          </template>
         </tbody>
       </table>
     </div>

@@ -468,4 +468,32 @@ export const productAdminRouter = router({
         });
       }
     }),
+
+  // Cập nhật trạng thái biến thể sản phẩm
+  updateVariantStatus: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      published: z.boolean()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const variant = await ctx.services.productAdminService.findVariantById(input.id);
+        
+        if (!variant) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Variant with ID ${input.id} not found`,
+          });
+        }
+        
+        return ctx.services.productAdminService.updateVariant(input.id, { published: input.published });
+      } catch (error) {
+        ctx.logger.error('Failed to update variant status:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update variant status',
+          cause: error,
+        });
+      }
+    }),
 }); 
