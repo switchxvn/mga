@@ -85,8 +85,9 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy built application
 COPY --from=builder /app/dist/apps/backend ./dist
 
-# Copy tsconfig.migration.json for migrations
+# Copy tsconfig files for migrations
 COPY --from=builder /app/libs/database/tsconfig.migration.json ./libs/database/tsconfig.migration.json
+COPY --from=builder /app/tsconfig.base.json ./tsconfig.base.json
 
 # Copy environment file
 COPY --from=builder /app/apps/backend/.env .env
