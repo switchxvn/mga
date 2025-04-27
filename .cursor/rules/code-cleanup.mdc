@@ -1,0 +1,86 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Code Cleanup Guidelines
+
+## Unused Code Detection
+
+### Imports
+- Remove unused imports immediately
+- Keep imports organized and grouped:
+  ```typescript
+  // External imports first
+  import { z } from 'zod';
+  import { TRPCError } from '@trpc/server';
+  
+  // Internal imports next
+  import { ProductType } from '../entities/product.entity';
+  ```
+- Remove commented-out imports
+- Use specific imports instead of whole modules
+
+### Types and Interfaces
+- Remove unused types/interfaces
+- If type is only used for Zod schema, use `z.infer<>` instead:
+  ```typescript
+  // ❌ Don't
+  interface ProductInput { ... }
+  
+  // ✅ Do
+  const productSchema = z.object({ ... });
+  type ProductInput = z.infer<typeof productSchema>;
+  ```
+
+### Variables and Constants
+- Remove unused variables
+- Remove unused constants
+- Check for dead code assignments
+- Example from [apps/backend/src/modules/trpc/routers/admin/product.router.ts](mdc:apps/backend/src/modules/trpc/routers/admin/product.router.ts):
+  ```typescript
+  // ❌ Don't - unused type
+  type UpdateProductInput = Partial<CreateProductInput>; // Never used
+  
+  // ✅ Do - remove if not used
+  ```
+
+### Functions and Methods
+- Remove unused functions/methods
+- Remove empty/stub methods
+- Remove commented-out functions
+- Check for dead code in functions
+
+### Classes and Components
+- Remove unused classes
+- Remove unused class members
+- Remove empty/stub classes
+- Check for dead code in class methods
+
+## Best Practices
+
+### Code Review
+- Check for unused code before committing
+- Use linter warnings as guidance
+- Review entire files when making large changes
+- Use IDE tools to detect unused code
+
+### Refactoring
+- Remove code instead of commenting out
+- Extract reusable code before deletion
+- Document why code is preserved if seemingly unused
+- Keep related code together
+
+### TypeScript Specific
+- Enable strict mode in `tsconfig.json`
+- Use `noUnusedLocals` and `noUnusedParameters`
+- Check for unused type parameters
+- Remove unnecessary type annotations
+
+### Comments
+- Remove commented-out code
+- Keep only necessary comments
+- Update comments when code changes
+- Remove TODO comments after completion
+
+

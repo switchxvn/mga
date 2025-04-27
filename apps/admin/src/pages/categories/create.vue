@@ -14,9 +14,10 @@ import {
   WandIcon
 } from 'lucide-vue-next'
 import { TYPE } from 'vue-toastification'
+import { useTrpc } from '../../composables/useTrpc'
 
 // Import components
-import PageHeader from '../../components/ui/PageHeader.vue'
+import PageHeader from '../../components/common/header/PageHeader.vue'
 
 const router = useRouter()
 const { showToast } = useToast()
@@ -243,7 +244,10 @@ const handleSubmit = async (saveAndContinue = false) => {
     }))
 
     const result = await trpc.admin.category.createCategory.mutate({
-      ...form.value,
+      name: form.value.name,
+      slug: currentTranslation.value.slug,
+      type: form.value.type,
+      isActive: form.value.active,
       translations
     })
     

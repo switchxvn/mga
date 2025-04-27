@@ -115,4 +115,40 @@ export class MailService implements MailServiceInterface {
   async sendOrderConfirmation(email: string, orderDetails: any): Promise<void> {
     return this.mailProvider.sendOrderConfirmation(email, orderDetails);
   }
+
+  async sendRefundRequestNotification(data: {
+    to: string;
+    orderCode: string;
+    refundCode: string;
+    customerName: string;
+    refundType: string;
+    refundAmount?: number;
+  }): Promise<MailResponse> {
+    try {
+      const templateId = 'refund_request';
+      const templateData = {
+        customerName: data.customerName,
+        orderCode: data.orderCode,
+        refundCode: data.refundCode,
+        refundType: data.refundType,
+        refundAmount: data.refundAmount ? data.refundAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : 'N/A',
+        requestDate: new Date().toLocaleDateString('vi-VN')
+      };
+
+      return this.sendMail({
+        to: data.to,
+        subject: `Xác nhận yêu cầu hoàn trả đơn hàng #${data.orderCode}`,
+        template: {
+          id: templateId,
+          data: templateData
+        }
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send refund request notification: ${error.message}`);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 } 

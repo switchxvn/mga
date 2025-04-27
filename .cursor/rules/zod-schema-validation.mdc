@@ -1,0 +1,85 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Zod Schema Validation Guidelines
+
+## General Rules
+
+### Schema Definition
+- Always use Zod for input validation
+- Define reusable schemas as constants with descriptive names
+- Use `z.object()` for structured data
+- Follow TypeScript naming conventions for schema constants:
+  ```typescript
+  const userSchema = z.object({...})
+  const productSchema = z.object({...})
+  ```
+
+### Type Inference
+- Don't manually define types for validated data
+- Use `z.infer<typeof schemaName>` if type is needed
+- Example:
+  ```typescript
+  const productSchema = z.object({...})
+  type Product = z.infer<typeof productSchema>
+  ```
+
+### Schema Composition
+- Break down complex schemas into smaller, reusable parts
+- Use composition over large single schemas
+- Example:
+  ```typescript
+  const translationSchema = z.object({...})
+  const metaSchema = z.object({...})
+  const productSchema = z.object({
+    ...translationSchema.shape,
+    ...metaSchema.shape,
+  })
+  ```
+
+### Validation Rules
+- Use appropriate Zod methods for validation:
+  - `.min()`, `.max()` for numbers/strings/arrays
+  - `.email()` for email validation
+  - `.url()` for URL validation
+  - `.regex()` for pattern matching
+  - `.nullable()` for null values
+  - `.optional()` for optional fields
+- Add meaningful error messages
+
+### TRPC Integration
+- Use Zod schemas directly in TRPC input validation
+- Example from [apps/backend/src/modules/trpc/routers/admin/product.router.ts](mdc:apps/backend/src/modules/trpc/routers/admin/product.router.ts):
+  ```typescript
+  .input(z.object({
+    locale: z.string().length(2),
+    title: z.string(),
+    content: z.string().optional()
+  }))
+  ```
+
+## Best Practices
+
+### Schema Organization
+- Keep related schemas in the same file
+- Export reusable schemas
+- Place common schemas in shared locations
+- Use descriptive names for schema constants
+
+### Error Handling
+- Provide custom error messages for better UX
+- Use `.refine()` for complex validations
+- Handle validation errors appropriately in TRPC
+
+### Performance
+- Reuse schema instances when possible
+- Avoid unnecessary schema transformations
+- Cache complex schema compositions
+
+### Documentation
+- Document complex validation rules
+- Add comments for non-obvious validations
+- Include examples for schema usage
+

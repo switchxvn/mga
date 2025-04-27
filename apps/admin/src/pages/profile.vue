@@ -95,7 +95,7 @@ import { onMounted } from 'vue';
 import { useAuth } from "@/composables/useAuth";
 import { useRouter } from "vue-router";
 import ProfileForm from '@/components/profile/ProfileForm.vue';
-import PageHeader from '@/components/ui/PageHeader.vue';
+import PageHeader from '@/components/common/header/PageHeader.vue';
 
 const router = useRouter();
 const { checkAuth } = useAuth();

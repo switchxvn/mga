@@ -1,44 +1,48 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
-import { useAuth } from "../../composables/useAuth";
-import { useTrpc } from "../../composables/useTrpc";
-import { useRouter, useRoute } from "vue-router";
-import { 
-  PlusCircleIcon, 
-  AlertCircleIcon,
-  PencilIcon,
-  Trash2Icon,
-  ImageIcon,
-  ZoomInIcon,
+import type { AdminPost, PaginatedResponse } from '@ew/shared';
+import { PostStatus } from '@ew/shared';
+import { Menu, MenuButton, MenuItem, MenuItems, TransitionRoot } from '@headlessui/vue';
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  XMarkIcon
+} from '@heroicons/vue/24/outline';
+import {
+  ArchiveIcon,
+  CopyIcon,
   EyeIcon,
   EyeOffIcon,
-  ArchiveIcon,
-  MoreHorizontalIcon,
-  CopyIcon,
-  TrashIcon,
+  ImageIcon,
+  ListChecksIcon,
   XCircleIcon as LucideXCircleIcon,
-  ListChecksIcon
+  PencilIcon,
+  PlusCircleIcon,
+  Trash2Icon,
+  TrashIcon,
+  ZoomInIcon
 } from 'lucide-vue-next';
-import {
-  DocumentTextIcon,
-  InformationCircleIcon,
-  MagnifyingGlassIcon as SearchIcon,    
-  XMarkIcon,
-  ChevronDownIcon,
-  ChevronUpIcon
-} from '@heroicons/vue/24/outline'
-import { TransitionRoot } from '@headlessui/vue'
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Navigation, Pagination, Zoom } from 'swiper/modules';
+import Swal from 'sweetalert2';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/zoom';
-import PaginationComponent from '../../components/ui/Pagination.vue';
-import PageHeader from '../../components/ui/PageHeader.vue';
-import SearchFilter from '../../components/posts/SearchFilter.vue';
-import Swal from 'sweetalert2';
-import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue';
+import { Navigation, Pagination, Zoom } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+// These functions are provided by Nuxt at runtime
+// @ts-ignore
+const definePageMeta = (meta: any) => {}; 
+// @ts-ignore
+const useHead = (head: any) => {};
+import SearchFilter from '../../components/common/filter/SearchFilter.vue';
+import StatusFilter from '../../components/common/filter/StatusFilter.vue';
+import PageSizeFilter from '../../components/common/filter/PageSizeFilter.vue';
+import FilterContainer from '../../components/common/filter/FilterContainer.vue';
+import DataTable from '../../components/common/table/DataTable.vue';
+import PageHeader from '../../components/common/header/PageHeader.vue';
+import { useAuth } from "../../composables/useAuth";
+import { useTrpc } from "../../composables/useTrpc";
 
 definePageMeta({
   middleware: ["auth"],
@@ -53,32 +57,6 @@ const route = useRoute();
 const { checkAuth } = useAuth();
 const trpc = useTrpc();
 
-
-interface Post {
-  id: number;
-  title: string;
-  content: string;
-  published: boolean;
-  shortDescription?: string;
-  createdAt: string;
-  updatedAt: string;
-  categories: any[];
-  postTags: any[];
-  author?: any;
-  thumbnail?: string;
-  translations?: any[];
-}
-
-interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-  };
-}
-
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const search = ref(route.query.search?.toString() || '');
@@ -89,17 +67,11 @@ const publishedFilter = ref<boolean | undefined>(
 );
 const page = ref(Number(route.query.page) || 1);
 const pageSize = ref(10);
-const posts = ref<{
-  items: Post[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}>({
+const posts = ref<PaginatedResponse<AdminPost>>({
   items: [],
   total: 0,
-  page: 1,
-  pageSize: 10,
+  currentPage: 1,
+  limit: 10,
   totalPages: 1
 });
 
@@ -143,13 +115,7 @@ async function fetchPosts() {
       published: publishedFilter.value
     });
 
-    posts.value = {
-      items: result.posts,
-      total: result.total,
-      page: result.currentPage,
-      pageSize: result.limit,
-      totalPages: result.totalPages
-    };
+    posts.value = result;
   } catch (err: any) {
     error.value = err.message || "Failed to load posts";
     console.error("Error loading posts:", err);
@@ -255,18 +221,9 @@ async function handleBulkAction(action: string) {
       case 'unpublish':
         await Promise.all(
           selectedPosts.value.map(postId => {
-            const post = posts.value.items.find(p => p.id === postId);
-            if (!post) return;
-
-            return trpc.admin.posts.updatePost.mutate({
+            return trpc.admin.posts.updatePostStatus.mutate({
               id: postId,
-              data: {
-                title: post.title,
-                content: post.content || '',
-                status: action === 'publish' ? 'PUBLISHED' : 'DRAFT',
-                featuredImage: post.thumbnail,
-                metaDescription: post.shortDescription
-              }
+              status: action === 'publish' ? PostStatus.PUBLISHED : PostStatus.DRAFT
             });
           })
         );
@@ -298,8 +255,8 @@ async function handleBulkAction(action: string) {
     
     Swal.fire({
       title: 'Error!',
-      text: error.value,
-      icon: 'error'
+      text: err.message || `Failed to ${action} posts`,
+      icon: 'error' as const
     });
   } finally {
     isLoading.value = false;
@@ -341,7 +298,7 @@ const toggleSelectAll = () => {
   if (selectedPosts.value.length === posts.value.items.length) {
     selectedPosts.value = [];
   } else {
-    selectedPosts.value = posts.value.items.map(post => post.id);
+    selectedPosts.value = posts.value.items.map((post: AdminPost) => post.id);
   }
 };
 
@@ -392,7 +349,7 @@ const closeZoomModal = () => {
 };
 
 // Add toggle published function
-async function togglePublished(post: Post) {
+async function togglePublished(post: AdminPost) {
   const newStatus = !post.published;
   
   const result = await Swal.fire({
@@ -410,10 +367,9 @@ async function togglePublished(post: Post) {
   try {
     await trpc.admin.posts.updatePostStatus.mutate({
       id: post.id,
-      status: newStatus ? 'PUBLISHED' : 'DRAFT'
+      status: newStatus ? PostStatus.PUBLISHED : PostStatus.DRAFT
     });
     
-    // Update local state
     post.published = newStatus;
 
     Swal.fire({
@@ -424,13 +380,14 @@ async function togglePublished(post: Post) {
       showConfirmButton: false
     });
   } catch (err: any) {
-    error.value = err.message || "Failed to update post status";
+    const errorMessage = err.message || "Failed to update post status";
+    error.value = errorMessage;
     console.error("Error updating post status:", err);
     
     Swal.fire({
       title: 'Error!',
-      text: error.value,
-      icon: 'error'
+      text: errorMessage,
+      icon: 'error' as const
     });
   }
 }
@@ -548,12 +505,31 @@ async function togglePublished(post: Post) {
     </PageHeader>
 
     <!-- Search and Filter -->
-    <SearchFilter
-      v-model:search="search"
-      v-model:published-filter="publishedFilter"
-      v-model:page-size="pageSize"
-      search-placeholder="Search posts..."
-    />
+    <FilterContainer>
+      <template #search>
+        <SearchFilter
+          v-model:search="search"
+          search-placeholder="Search posts..."
+        />
+      </template>
+      
+      <template #status>
+        <StatusFilter
+          v-model:modelValue="publishedFilter"
+          :options="[
+            { label: 'All Posts', value: undefined },
+            { label: 'Published', value: true },
+            { label: 'Draft', value: false }
+          ]"
+        />
+      </template>
+      
+      <template #pageSize>
+        <PageSizeFilter
+          v-model:modelValue="pageSize"
+        />
+      </template>
+    </FilterContainer>
 
     <!-- Enhanced Error Alert -->
     <TransitionRoot as="template" :show="!!error">
@@ -594,137 +570,129 @@ async function togglePublished(post: Post) {
     </div>
 
     <!-- Enhanced Posts Table with Thumbnails -->
-    <div v-else class="bg-white dark:bg-neutral-800 shadow-sm rounded-lg overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-neutral-700">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left">
-                <input
-                  type="checkbox"
-                  class="checkbox rounded"
-                  :checked="selectedPosts.length === posts.items.length"
-                  :indeterminate="selectedPosts.length > 0 && selectedPosts.length < posts.items.length"
-                  @change="toggleSelectAll"
-                />
-              </th>
-              <th scope="col" class="px-6 py-3 text-left">
-                <span class="text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thumbnail</span>
-              </th>
-              <th 
-                v-for="(column, index) in ['Title', 'Status', 'Created At', 'Actions']" 
-                :key="index"
-                scope="col" 
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-600"
-                @click="handleSort(column.toLowerCase())"
-              >
-                <div class="flex items-center gap-2">
-                  {{ column }}
-                  <ChevronDownIcon v-if="sortBy !== column.toLowerCase()" class="h-4 w-4" />
-                  <ChevronUpIcon v-else-if="sortOrder === 'asc'" class="h-4 w-4" />
-                  <ChevronDownIcon v-else class="h-4 w-4" />
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white dark:bg-neutral-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr 
-              v-for="post in posts.items" 
-              :key="post.id"
-              class="hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors duration-150 ease-in-out"
-            >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <input
-                  type="checkbox"
-                  class="checkbox rounded"
-                  :checked="selectedPosts.includes(post.id)"
-                  @change="togglePostSelection(post.id)"
-                />
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div 
-                    v-if="post.thumbnail" 
-                    class="h-16 w-16 flex-shrink-0 cursor-pointer group relative rounded-lg overflow-hidden"
-                    @click="openZoomModal(post.thumbnail)"
-                  >
-                    <img 
-                      :src="post.thumbnail" 
-                      class="h-full w-full object-cover transition-transform group-hover:scale-105"
-                      alt=""
-                    />
-                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity flex items-center justify-center">
-                      <ZoomInIcon class="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                  <div v-else class="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-100 dark:bg-neutral-700 flex items-center justify-center">
-                    <ImageIcon class="h-8 w-8 text-gray-400" />
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ post.title }}
-                    <p v-if="post.shortDescription" class="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-[200px] truncate">
-                      {{ post.shortDescription }}
-                    </p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <button
-                  @click="togglePublished(post)"
-                  :class="{
-                    'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full items-center gap-1 cursor-pointer transition-colors duration-200': true,
-                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800': post.published,
-                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600': !post.published
-                  }"
-                >
-                  <div class="w-2 h-2 rounded-full"
-                    :class="{
-                      'bg-green-500': post.published,
-                      'bg-gray-500': !post.published
-                    }"
-                  ></div>
-                  {{ post.published ? 'Published' : 'Draft' }}
-                </button>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {{ formatDate(post.createdAt) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex justify-end gap-2">
-                  <NuxtLink
-                    :to="`/posts/edit/${post.id}`"
-                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                    title="Edit post"
-                  >
-                    <PencilIcon class="h-5 w-5" />
-                  </NuxtLink>
-                  <button
-                    @click="handleDelete(post.id)"
-                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                    title="Delete post"
-                  >
-                    <Trash2Icon class="h-5 w-5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <DataTable
+      :items="posts.items"
+      :loading="isLoading"
+      :error="error"
+      :sort-by="sortBy"
+      :sort-order="sortOrder"
+      :selected-items="selectedPosts"
+      :pagination="{
+        currentPage: page,
+        totalPages: posts.totalPages,
+        total: posts.total,
+        pageSize: pageSize
+      }"
+      @update:selected-items="selectedPosts = $event"
+      @sort="handleSort"
+      @page-change="(newPage) => { page = newPage; fetchPosts(); }"
+      @clear-error="error = null"
+    >
+      <!-- Selection slot -->
+      <template #selection="{ item, isSelected, toggleSelection }">
+        <input
+          type="checkbox"
+          class="checkbox rounded"
+          :checked="isSelected"
+          @change="toggleSelection(item.id)"
+        />
+      </template>
 
-      <!-- Enhanced Pagination -->
-      <PaginationComponent
-        :current-page="page"
-        :total-pages="posts.totalPages"
-        :total-items="posts.total"
-        :items-per-page="pageSize"
-        @page-change="(newPage: number) => { page = newPage; fetchPosts(); }"
-      />
-    </div>
+      <!-- Header slot -->
+      <template #header="{ sortBy, sortOrder, handleSort }">
+        <th scope="col" class="px-6 py-3 text-left">
+          <span class="text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thumbnail</span>
+        </th>
+        <th 
+          v-for="column in ['Title', 'Status', 'Created At', 'Actions']" 
+          :key="column"
+          scope="col" 
+          class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-600"
+          @click="handleSort(column.toLowerCase())"
+        >
+          <div class="flex items-center gap-2">
+            {{ column }}
+            <ChevronDownIcon v-if="sortBy !== column.toLowerCase()" class="h-4 w-4" />
+            <ChevronUpIcon v-else-if="sortOrder === 'asc'" class="h-4 w-4" />
+            <ChevronDownIcon v-else class="h-4 w-4" />
+          </div>
+        </th>
+      </template>
+
+      <!-- Row slot -->
+      <template #row="{ item: post }">
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            <div 
+              v-if="post.thumbnail" 
+              class="h-16 w-16 flex-shrink-0 cursor-pointer group relative rounded-lg overflow-hidden"
+              @click="openZoomModal(post.thumbnail)"
+            >
+              <img 
+                :src="post.thumbnail" 
+                class="h-full w-full object-cover transition-transform group-hover:scale-105"
+                alt=""
+              />
+              <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity flex items-center justify-center">
+                <ZoomInIcon class="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
+            <div v-else class="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-100 dark:bg-neutral-700 flex items-center justify-center">
+              <ImageIcon class="h-8 w-8 text-gray-400" />
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            <div class="text-sm font-medium text-gray-900 dark:text-white">
+              {{ post.title }}
+              <p v-if="post.shortDescription" class="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-[200px] truncate">
+                {{ post.shortDescription }}
+              </p>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <button
+            @click="togglePublished(post)"
+            :class="{
+              'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full items-center gap-1 cursor-pointer transition-colors duration-200': true,
+              'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800': post.published,
+              'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600': !post.published
+            }"
+          >
+            <div class="w-2 h-2 rounded-full"
+              :class="{
+                'bg-green-500': post.published,
+                'bg-gray-500': !post.published
+              }"
+            ></div>
+            {{ post.published ? 'Published' : 'Draft' }}
+          </button>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          {{ formatDate(post.createdAt) }}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <div class="flex justify-end gap-2">
+            <NuxtLink
+              :to="`/posts/edit/${post.id}`"
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+              title="Edit post"
+            >
+              <PencilIcon class="h-5 w-5" />
+            </NuxtLink>
+            <button
+              @click="handleDelete(post.id)"
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+              title="Delete post"
+            >
+              <Trash2Icon class="h-5 w-5" />
+            </button>
+          </div>
+        </td>
+      </template>
+    </DataTable>
 
     <!-- Image Zoom Modal -->
     <TransitionRoot as="template" :show="isZoomModalOpen">

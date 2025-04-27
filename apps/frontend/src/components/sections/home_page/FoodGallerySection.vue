@@ -24,8 +24,79 @@
         </div>
       </div>
 
-      <!-- Food Grid -->
-      <div v-if="galleries?.length" class="grid gap-6"
+      <!-- Mobile Swiper View -->
+      <div class="md:hidden">
+        <Swiper v-if="galleries?.length"
+          :modules="[Pagination, Navigation, Autoplay]"
+          :slides-per-view="2"
+          :space-between="16"
+          :pagination="{ 
+            el: '.food-swiper-pagination',
+            clickable: true,
+            type: 'bullets'
+          }"
+          :autoplay="{
+            delay: 5000,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true
+          }"
+          class="pb-12"
+        >
+          <SwiperSlide v-for="(item, index) in galleries" :key="item.id">
+            <div
+              class="relative group cursor-pointer"
+              :class="[settings.card.rounded, settings.card.shadow]"
+              @click="openGallery(index)"
+            >
+              <!-- Image Container -->
+              <div class="relative overflow-hidden" :class="settings.card.rounded">
+                <NuxtImg
+                  :src="item.image"
+                  :alt="item.translations?.[0]?.title || ''"
+                  class="w-full h-full object-cover transition-transform duration-300"
+                  :class="settings.card.animation"
+                  :style="{
+                    aspectRatio: settings.card.aspectRatio
+                  }"
+                  loading="lazy"
+                />
+                
+                <!-- Overlay -->
+                <div v-if="settings.card.overlay.show"
+                  class="absolute inset-0 transition-all duration-300 transform translate-y-full group-hover:translate-y-0"
+                  :class="[
+                    settings.card.overlay.opacity,
+                    'group-hover:opacity-100',
+                    settings.card.overlay.content.position === 'bottom' ? 'bg-gradient-to-t from-black/60 to-transparent' : ''
+                  ]"
+                >
+                  <div class="absolute bottom-0 left-0 right-0"
+                    :class="settings.card.overlay.content.padding"
+                  >
+                    <h3 class="text-white font-semibold mb-1"
+                      :class="settings.card.overlay.content.titleSize"
+                    >
+                      {{ item.translations?.[0]?.title }}
+                    </h3>
+                    <p v-if="item.translations?.[0]?.description"
+                      class="text-white/90"
+                      :class="settings.card.overlay.content.descriptionSize"
+                    >
+                      {{ item.translations?.[0]?.description }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </SwiperSlide>
+
+          <!-- Pagination -->
+          <div class="food-swiper-pagination flex justify-center w-full mt-6"></div>
+        </Swiper>
+      </div>
+
+      <!-- Desktop Grid View -->
+      <div v-if="galleries?.length" class="hidden md:grid gap-6"
         :class="{
           'grid-cols-1': currentColumns === 1,
           'grid-cols-2': currentColumns === 2,
@@ -137,6 +208,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import PhotoSwipe from 'photoswipe';
 import type { PhotoSwipeOptions } from 'photoswipe';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { Pagination, Navigation, Autoplay } from 'swiper/modules';
 // CSS is already imported globally in nuxt.config.ts
 
 interface GalleryTranslation {

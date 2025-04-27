@@ -222,9 +222,10 @@ import {
   WandIcon
 } from 'lucide-vue-next'
 import { TYPE } from 'vue-toastification'
+import { useTrpc } from '../../../composables/useTrpc'
 
 // Import components
-import PageHeader from '../../../components/ui/PageHeader.vue'
+import PageHeader from '../../../components/common/header/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -179,6 +179,7 @@ import { useTrpc } from '@/composables/useTrpc'
 import slugify from 'slugify'
 import { useHead } from 'nuxt/app'
 import { useToast } from 'vue-toastification'
+import { useI18n } from "vue-i18n";
 
 // Import Lucide icons
 import {
@@ -196,7 +197,7 @@ import {
 } from 'lucide-vue-next'
 
 // Import components
-import PageHeader from '@/components/ui/PageHeader.vue'
+import PageHeader from '@/components/common/header/PageHeader.vue'
 import PostEditor from '@/components/posts/PostEditor.vue'
 import PostMedia from '@/components/posts/PostMedia.vue'
 import PostSEO from '@/components/posts/PostSEO.vue'
