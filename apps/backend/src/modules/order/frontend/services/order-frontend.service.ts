@@ -37,6 +37,7 @@ export interface CreateOrderDto {
 export interface CreateRefundDto {
   orderCode: string;
   requesterPhone: string;
+  requesterPhoneCode: string;
   requesterName: string;
   requesterEmail?: string;
   refundReason: RefundReason;
@@ -46,6 +47,7 @@ export interface CreateRefundDto {
     orderItemId: number;
     quantity: number;
     reason?: string;
+    newDate?: string;
   }[];
 }
 
@@ -346,12 +348,13 @@ export class OrderFrontendService {
     // Tạo mã hoàn trả
     const refundCode = generateRefundCode();
 
-    // Tạo đối tượng hoàn trả
+    // Tạo bản ghi hoàn trả
     const refund = this.orderRefundRepository.create({
       orderId: order.id,
-      refundCode,
+      refundCode: refundCode,
       requesterName: refundData.requesterName,
       requesterPhone: refundData.requesterPhone,
+      requesterPhoneCode: refundData.requesterPhoneCode,
       requesterEmail: refundData.requesterEmail,
       refundReason: refundData.refundReason,
       refundType: refundData.refundType,
@@ -360,20 +363,25 @@ export class OrderFrontendService {
       details: refundData.details
     });
 
-    // Lưu yêu cầu hoàn trả
+    // Lưu bản ghi và tạo các item hoàn trả
     const savedRefund = await this.orderRefundRepository.save(refund);
 
-    // Tạo các mục hoàn trả
-    const refundItems = refundData.items.map(item => {
-      const orderItem = orderItems.find(oi => oi.id === item.orderItemId);
-      return this.orderRefundItemRepository.create({
+    // Tạo các item hoàn trả
+    const refundItems: OrderRefundItem[] = [];
+    for (const item of refundData.items) {
+      const orderItem = order.items.find(oi => oi.id === item.orderItemId);
+      
+      const refundItem = this.orderRefundItemRepository.create({
         refundId: savedRefund.id,
         orderItemId: item.orderItemId,
         quantity: item.quantity,
         refundAmount: orderItem ? Number(orderItem.unitPrice) * item.quantity : null,
-        reason: item.reason
+        reason: item.reason,
+        newDate: item.newDate
       });
-    });
+      
+      refundItems.push(refundItem);
+    }
 
     await this.orderRefundItemRepository.save(refundItems);
 
