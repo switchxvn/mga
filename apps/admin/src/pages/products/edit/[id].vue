@@ -476,22 +476,70 @@ const debouncedNameWatcher = (() => {
 // Thay thế watch để sử dụng debounce
 watch(() => form.value.name, debouncedNameWatcher, { immediate: false });
 
-// Fetch product data
+// Đăng ký các lifecycle hooks
+onMounted(() => {
+  // Khởi tạo dữ liệu
+  initData();
+});
+
+// Sử dụng biến để ngăn chặn việc gọi fetchProduct nhiều lần
+let fetchInProgress = false;
+
+// Hàm khởi tạo dữ liệu
+const initData = async () => {
+  // Chỉ chạy khi selectedLanguage chưa được thiết lập
+  if (selectedLanguage.value) return;
+  
+  // Kiểm tra URL parameter khi component mounted
+  const localeFromUrl = route.query.locale as string;
+  
+  // Nếu có locale trong URL, sử dụng giá trị đó
+  if (localeFromUrl) {
+    selectedLanguage.value = localeFromUrl;
+  } else {
+    // Nếu không, lấy ngôn ngữ mặc định từ hệ thống
+    try {
+      const defaultLang = await trpc.admin.languages.getDefaultLanguage.query();
+      selectedLanguage.value = defaultLang?.code || 'en';
+      
+      // Sử dụng router.push thay vì replace để tránh trigger nhiều lần
+      if (route.query.locale !== selectedLanguage.value) {
+        router.push({ 
+          query: { 
+            ...route.query,
+            locale: selectedLanguage.value 
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch default language:', error);
+      selectedLanguage.value = 'en'; // Fallback nếu không lấy được ngôn ngữ mặc định
+    }
+  }
+  
+  // Khởi tạo dữ liệu sau khi đã có selectedLanguage
+  await fetchProduct();
+};
+
+// Cải thiện hàm fetchProduct để giảm thiểu re-render không cần thiết và tránh gọi chồng chéo
 const fetchProduct = async () => {
+  if (fetchInProgress) return;
+  
   try {
-    loading.value = true
+    fetchInProgress = true;
+    loading.value = true;
     
     // Tránh log quá nhiều trong production
     if (process.env.NODE_ENV !== 'production') {
-      console.log('Fetching product with ID:', route.params.id, 'and language:', selectedLanguage.value)
+      console.log('Fetching product with ID:', route.params.id, 'and language:', selectedLanguage.value);
     }
     
-    const product = await trpc.admin.products.getProductById.query(Number(route.params.id))
+    const product = await trpc.admin.products.getProductById.query(Number(route.params.id));
     
     if (product) {
       // Giảm số lượng logging không cần thiết
       if (process.env.NODE_ENV !== 'production') {
-        console.log('Product loaded successfully')
+        console.log('Product loaded successfully');
       }
       
       // Initialize translations
@@ -639,7 +687,7 @@ const fetchProduct = async () => {
 
       // Giảm số lượng log debug không cần thiết
       if (process.env.NODE_ENV !== 'production') {
-        console.log('Form updated with variants count:', form.value.variants.length)
+        console.log('Form updated with variants count:', form.value.variants?.length || 0);
       }
 
       // Log giá trị price để debug
@@ -649,60 +697,31 @@ const fetchProduct = async () => {
       tagsInput.value = form.value.tags.join(', ')
     }
   } catch (error) {
-    console.error('Failed to fetch product:', error)
-    router.push('/products')
+    console.error('Failed to fetch product:', error);
+    router.push('/products');
   } finally {
-    loading.value = false
+    loading.value = false;
+    fetchInProgress = false;
   }
-}
-
-// Đăng ký các lifecycle hooks
-onMounted(() => {
-  // Khởi tạo dữ liệu
-  initData();
-});
-
-// Hàm khởi tạo dữ liệu
-const initData = async () => {
-  // Chỉ chạy khi selectedLanguage chưa được thiết lập
-  if (selectedLanguage.value) return;
-  
-  // Kiểm tra URL parameter khi component mounted
-  const localeFromUrl = route.query.locale as string;
-  
-  // Nếu có locale trong URL, sử dụng giá trị đó
-  if (localeFromUrl) {
-    selectedLanguage.value = localeFromUrl;
-  } else {
-    // Nếu không, lấy ngôn ngữ mặc định từ hệ thống
-    try {
-      const defaultLang = await trpc.admin.languages.getDefaultLanguage.query();
-      selectedLanguage.value = defaultLang?.code || 'en';
-      
-      // Sử dụng router.push thay vì replace để tránh trigger nhiều lần
-      if (route.query.locale !== selectedLanguage.value) {
-        router.push({ 
-          query: { 
-            ...route.query,
-            locale: selectedLanguage.value 
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch default language:', error);
-      selectedLanguage.value = 'en'; // Fallback nếu không lấy được ngôn ngữ mặc định
-    }
-  }
-  
-  // Khởi tạo dữ liệu sau khi đã có selectedLanguage
-  await fetchProduct();
 };
 
-// Update product
-const updateProduct = async (continueEditing = false) => {
+// Thêm debounce cho việc cập nhật Product
+const debounce = (fn: Function, wait = 300) => {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  
+  return (...args: any[]) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), wait);
+  };
+};
+
+// Cập nhật updateProduct để tránh gọi liên tục và thêm debounce
+const updateProduct = debounce(async (continueEditing = false) => {
+  if (loading.value) return;
+  
   try {
-    loading.value = true
-    saveAndContinue.value = continueEditing
+    loading.value = true;
+    saveAndContinue.value = continueEditing;
 
     // Save current content to translations before updating
     form.value.translations[selectedLanguage.value] = {
@@ -805,18 +824,18 @@ const updateProduct = async (continueEditing = false) => {
     await trpc.admin.products.updateProduct.mutate({
       id: Number(route.params.id),
       data: updateData
-    })
+    });
 
-    toast.success('Product updated successfully!')
+    toast.success('Product updated successfully!');
 
     if (!continueEditing) {
-      router.push('/products')
+      router.push('/products');
     } else {
-      // Chỉ refresh data nếu thực sự cần thiết
-      await fetchProduct()
+      // Chỉ refresh data khi thực sự cần thiết
+      await fetchProduct();
     }
   } catch (error: any) {
-    console.error('Failed to update product:', error)
+    console.error('Failed to update product:', error);
     
     // Hiển thị thông báo lỗi với ngôn ngữ hiện tại
     let errorMessage = `[${selectedLanguage.value}] `
@@ -837,12 +856,12 @@ const updateProduct = async (continueEditing = false) => {
       closeOnClick: false,
       pauseOnHover: true,
       draggable: true
-    })
+    });
   } finally {
-    loading.value = false
-    saveAndContinue.value = false
+    loading.value = false;
+    saveAndContinue.value = false;
   }
-}
+}, 500);
 
 // Quill Editor Options
 const editorOptions = ref({
