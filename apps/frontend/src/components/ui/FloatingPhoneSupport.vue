@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-8 left-8 z-50">
+  <div class="fixed bottom-8 left-8 z-10">
     <!-- Phone Icon Button -->
     <button
       @mouseenter="handleMouseEnter"

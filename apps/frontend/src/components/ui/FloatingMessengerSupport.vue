@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-24 left-8 z-50">
+  <div class="fixed bottom-24 left-8 z-10">
     <!-- Ripple Effects -->
     <div class="absolute inset-0">
       <div class="animate-ripple absolute inset-0 rounded-full bg-[#0A7CFF]/20"></div>

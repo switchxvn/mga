@@ -13,6 +13,7 @@ export * from './types/contact';
 export * from './types/food.type';
 export * from './types/profile.type';
 export * from './types/upload.type';
+export * from './lib/types/product.type';
 
 // Interfaces
 export * from './lib/interfaces';
@@ -30,3 +31,6 @@ export * from './types/common/pagination.type';
 
 // Footer Types
 export * from './types/footer.type';
+
+// Utils
+export * from './lib/utils';

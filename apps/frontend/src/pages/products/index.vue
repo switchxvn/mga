@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ProductType, type Product } from '@ew/shared';
-import { Calendar, MapPin, Ticket } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import ProductCard from "../../components/cards/ProductCard.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
 import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
-import ProductCard from "../../components/cards/ProductCard.vue";
 import { useLocalization } from "../../composables/useLocalization";
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
 import { useTrpc } from "../../composables/useTrpc";
@@ -148,7 +147,7 @@ const handlePageChange = async (page: number) => {
     ...filters.value,
     page
   };
-  
+
   // Update URL query params
   await router.replace({
     query: {
@@ -159,7 +158,7 @@ const handlePageChange = async (page: number) => {
 
   // Scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
-  
+
   // Fetch products with new page
   await fetchProducts();
 };
@@ -204,7 +203,7 @@ watch(locale, async () => {
   totalProducts.value = 0;
   totalPages.value = 0;
   currentPage.value = 1;
-  
+
   // Reset filters to initial state
   filters.value = {
     search: '',
@@ -261,22 +260,34 @@ watch(locale, async () => {
         <!-- Products Content -->
         <div class="lg:w-3/4">
           <!-- Toolbar -->
-          <div v-if="!isLoading || totalProducts > 0" class="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div
+            v-if="!isLoading || totalProducts > 0"
+            class="mb-6 flex flex-wrap items-center justify-between gap-4"
+          >
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ t("products.showing") }} {{ ((currentPage - 1) * (filters.value?.limit || 12)) + 1 }} - {{ Math.min(currentPage * (filters.value?.limit || 12), totalProducts) }} {{ t("products.of") }} {{ totalProducts }} {{ t("products.items") }}
+                {{ t("products.showing") }}
+                {{ (currentPage - 1) * (filters.limit || 12) + 1 }} -
+                {{ Math.min(currentPage * (filters.limit || 12), totalProducts) }}
+                {{ t("products.of") }} {{ totalProducts }} {{ t("products.items") }}
               </span>
             </div>
 
             <div class="flex items-center gap-2">
-              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t("posts.sortBy") }}:</label>
+              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400"
+                >{{ t("posts.sortBy") }}:</label
+              >
               <select
                 id="sort"
                 v-model="filters.sortBy"
                 @change="handleSortChange"
                 class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
               >
-                <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+                <option
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
                   {{ option.label }}
                 </option>
               </select>
@@ -286,20 +297,28 @@ watch(locale, async () => {
           <!-- Loading State -->
           <div v-if="isLoading" class="flex items-center justify-center py-12">
             <div class="text-center">
-              <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent align-[-0.125em]" role="status">
-                <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-                  {{ t('common.loading') }}...
+              <div
+                class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent align-[-0.125em]"
+                role="status"
+              >
+                <span
+                  class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]"
+                >
+                  {{ t("common.loading") }}...
                 </span>
               </div>
               <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ t('common.loading') }}...
+                {{ t("common.loading") }}...
               </div>
             </div>
           </div>
 
           <template v-else>
             <!-- Products Grid -->
-            <div v-if="hasProducts" class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+            <div
+              v-if="hasProducts"
+              class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3"
+            >
               <ProductCard
                 v-for="product in products"
                 :key="product.id"
@@ -307,10 +326,14 @@ watch(locale, async () => {
                 :locale="locale"
               />
             </div>
-            
+
             <!-- Pagination -->
             <div v-if="totalProducts > 0" class="mt-8">
-              <nav class="flex items-center justify-center" role="navigation" aria-label="pagination">
+              <nav
+                class="flex items-center justify-center"
+                role="navigation"
+                aria-label="pagination"
+              >
                 <ul class="flex items-center -space-x-px">
                   <!-- Previous -->
                   <li>
@@ -322,11 +345,15 @@ watch(locale, async () => {
                     >
                       <span class="sr-only">Previous</span>
                       <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        <path
+                          fill-rule="evenodd"
+                          d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                          clip-rule="evenodd"
+                        />
                       </svg>
                     </button>
                   </li>
-                  
+
                   <!-- Page Numbers -->
                   <li v-for="page in totalPages" :key="page">
                     <button
@@ -334,32 +361,37 @@ watch(locale, async () => {
                       class="border border-gray-300 px-3 py-2 leading-tight"
                       :class="{
                         'bg-primary-600 text-white': currentPage === page,
-                        'bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white': currentPage !== page
+                        'bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white':
+                          currentPage !== page,
                       }"
                     >
                       {{ page }}
                     </button>
                   </li>
-                  
+
                   <!-- Next -->
                   <li>
                     <button
                       :disabled="currentPage === totalPages"
                       @click="handlePageChange(currentPage + 1)"
                       class="block rounded-r-lg border border-gray-300 bg-white px-3 py-2 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-                      :class="{ 'opacity-50 cursor-not-allowed': currentPage === totalPages }"
+                      :class="{
+                        'opacity-50 cursor-not-allowed': currentPage === totalPages,
+                      }"
                     >
                       <span class="sr-only">Next</span>
                       <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        <path
+                          fill-rule="evenodd"
+                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                          clip-rule="evenodd"
+                        />
                       </svg>
                     </button>
                   </li>
                 </ul>
               </nav>
             </div>
-            
-        
           </template>
         </div>
       </div>
