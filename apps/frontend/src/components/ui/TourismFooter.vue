@@ -23,12 +23,10 @@ const isDark = computed(() => colorMode.value === 'dark');
 
 // Tính toán style dựa trên theme từ API
 const footerStyle = computed(() => {
-  if (!activeFooter.value) return {};
-  
+  // Bỏ qua giá trị từ API và áp dụng cứng màu đỏ
   return {
-    backgroundColor: isDark.value 
-      ? activeFooter.value.backgroundDarkColor 
-      : activeFooter.value.backgroundLightColor,
+    backgroundColor: '#f02d2d',
+    background: 'linear-gradient(180deg, #e53e3e 0%, #dc2626 100%)'
   };
 });
 
@@ -91,6 +89,17 @@ const openPhotoSwipe = (imageUrl: string, imageAlt: string) => {
   img.src = imageUrl;
 };
 
+// Thêm hàm xử lý hover cho thẻ di động
+const addHoverBackground = (event: MouseEvent) => {
+  const target = event.currentTarget as HTMLElement;
+  target.style.backgroundColor = '#b91c1c';
+};
+
+const removeHoverBackground = (event: MouseEvent) => {
+  const target = event.currentTarget as HTMLElement;
+  target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+};
+
 onMounted(async () => {
   try {
     await fetchActiveFooter();
@@ -103,13 +112,13 @@ onMounted(async () => {
 
 <template>
   <div>
-    <footer v-if="activeFooter" class="tourism-footer relative" :style="footerStyle">
+    <footer v-if="activeFooter" class="tourism-footer relative" style="background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%) !important;">
       <!-- Main Content -->
       <div class="main-content flex-1">
         <div class="container mx-auto px-4 py-16 relative">
           <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
             <!-- Company Info Section -->
-            <div class="col-span-1 md:col-span-4 backdrop-blur-sm bg-white/5 rounded-xl p-6">
+            <div class="col-span-1 md:col-span-4 backdrop-blur-sm rounded-xl p-6" style="background-color: rgba(255, 255, 255, 0.05);">
               <div class="company-brand mb-6">
                 <img :src="activeFooter.logoUrl" :alt="activeFooter.logoAlt" class="h-20 mb-4 object-contain" />
                 <h3 class="text-3xl font-extrabold mb-3 bg-gradient-to-r from-white to-white/90 bg-clip-text">
@@ -152,14 +161,17 @@ onMounted(async () => {
             </div>
 
             <!-- Quick Links & Contact Section -->
-            <div class="col-span-1 md:col-span-4 backdrop-blur-sm bg-white/5 rounded-xl p-6">
+            <div class="col-span-1 md:col-span-4 backdrop-blur-sm rounded-xl p-6" style="background-color: rgba(255, 255, 255, 0.05);">
               <!-- Quick Links -->
               <div class="quick-links mb-8">
                 <h4 class="section-title">Liên Kết Nhanh</h4>
                 <ul class="space-y-4 mt-6">
                   <li v-for="link in activeFooter?.quickLinks" :key="link.url">
                     <NuxtLink :to="link.url" 
-                             class="quick-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
+                             class="quick-link group flex items-center space-x-3 p-3 rounded-lg transition-all duration-300"
+                             style="background-color: rgba(255, 255, 255, 0.1);"
+                             @mouseover="addHoverBackground"
+                             @mouseout="removeHoverBackground">
                       <UIcon :name="link.icon || 'Link'" 
                             class="w-6 h-6 text-white group-hover:text-white transition-colors duration-300" />
                       <span class="text-lg font-bold text-white group-hover:text-white transition-colors duration-300">{{ link.label }}</span>
@@ -179,7 +191,10 @@ onMounted(async () => {
                   
                   <div v-for="(phone, phoneIndex) in address.phone" :key="'phone-'+phoneIndex">
                     <a :href="'tel:' + phone.number" 
-                       class="contact-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
+                       class="contact-link group flex items-center space-x-3 p-3 rounded-lg transition-all duration-300"
+                       style="background-color: rgba(255, 255, 255, 0.1);"
+                       @mouseover="addHoverBackground"
+                       @mouseout="removeHoverBackground">
                       <Phone class="w-6 h-6 text-white group-hover:text-white transition-colors duration-300" />
                       <span class="text-lg font-bold text-white group-hover:text-white transition-colors duration-300">{{ phone.number }}</span>
                     </a>
@@ -187,7 +202,10 @@ onMounted(async () => {
 
                   <div v-for="(email, emailIndex) in address.email" :key="'email-'+emailIndex">
                     <a :href="'mailto:' + email.address" 
-                       class="contact-link group flex items-center space-x-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300">
+                       class="contact-link group flex items-center space-x-3 p-3 rounded-lg transition-all duration-300"
+                       style="background-color: rgba(255, 255, 255, 0.1);"
+                       @mouseover="addHoverBackground"
+                       @mouseout="removeHoverBackground">
                       <Mail class="w-6 h-6 text-white group-hover:text-white transition-colors duration-300" />
                       <span class="text-lg font-bold text-white group-hover:text-white transition-colors duration-300">{{ email.address }}</span>
                     </a>
@@ -197,14 +215,17 @@ onMounted(async () => {
             </div>
 
             <!-- Map & Social Section -->
-            <div class="col-span-1 md:col-span-4 backdrop-blur-sm bg-white/5 rounded-xl p-6 space-y-6">
+            <div class="col-span-1 md:col-span-4 backdrop-blur-sm rounded-xl p-6 space-y-6" style="background-color: rgba(255, 255, 255, 0.05);">
               <!-- Branch Info -->
               <div v-if="activeFooter.branchInfo" class="branch-section mb-6">
                 <h4 class="section-title">Chi Nhánh</h4>
                 <div class="space-y-4 mt-6">
                   <div v-for="(branch, index) in activeFooter.branchInfo" 
                        :key="index" 
-                       class="branch-card p-4 rounded-lg bg-white/10 hover:bg-white/15 transition-all duration-300 transform hover:-translate-y-1">
+                       class="branch-card p-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1"
+                       style="background-color: rgba(255, 255, 255, 0.1);"
+                       @mouseover="addHoverBackground"
+                       @mouseout="removeHoverBackground">
                     <h5 class="text-lg font-semibold mb-2 text-white">{{ branch.title }}</h5>
                     <p class="text-base text-white">{{ branch.address }}</p>
                   </div>
@@ -254,8 +275,10 @@ onMounted(async () => {
                    :href="icon.url" 
                    target="_blank"
                    rel="noopener noreferrer"
-                   class="social-icon-link p-4 rounded-full bg-white/10 hover:bg-white/20 transform hover:scale-110 transition-all duration-300"
-                   :title="icon.name">
+                   class="social-icon-link p-4 rounded-full transform hover:scale-110 transition-all duration-300"
+                   style="background-color: rgba(255, 255, 255, 0.1);"
+                   @mouseover="addHoverBackground"
+                   @mouseout="removeHoverBackground">
                   <UIcon :name="icon.icon" class="w-7 h-7 text-white" />
                 </a>
               </div>
@@ -286,7 +309,7 @@ onMounted(async () => {
       </div>
 
       <!-- Copyright Section -->
-      <div class="copyright-section w-full bg-[#9a1c1c]">
+      <div class="copyright-section w-full" style="background-color: #9a1c1c !important;">
         <div class="container mx-auto px-4 py-4">
           <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p class="text-sm text-white/80">{{ activeFooter.copyrightStyle?.text }}</p>
@@ -296,7 +319,7 @@ onMounted(async () => {
     </footer>
 
     <!-- Loading State -->
-    <div v-else-if="isLoading" class="tourism-footer-loading animate-pulse">
+    <div v-else-if="isLoading" class="tourism-footer-loading animate-pulse" style="background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%) !important;">
       <div class="container mx-auto px-4 py-12">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div v-for="i in 3" :key="i" class="h-48 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
@@ -338,7 +361,6 @@ onMounted(async () => {
 .tourism-footer {
   @apply text-white overflow-hidden flex flex-col;
   min-height: 500px;
-  background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%) !important;
 }
 
 .main-content {
@@ -395,7 +417,7 @@ onMounted(async () => {
 }
 
 .social-icon-link:hover {
-  background: rgba(185, 28, 28, 0.8) !important; /* Darker red on hover */
+  background: transparent;
 }
 
 /* Make sure content sections have proper contrast */
@@ -406,7 +428,6 @@ onMounted(async () => {
 /* Enhance loading state */
 .tourism-footer-loading {
   @apply min-h-[500px];
-  background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%) !important;
 }
 
 .section-title {
@@ -474,8 +495,7 @@ h3, h4, h5 {
 }
 
 .quick-link:hover, .contact-link:hover {
-  @apply shadow-lg backdrop-blur-sm;
-  background: #b91c1c !important;
+  @apply shadow-lg;
 }
 
 .branch-card {
