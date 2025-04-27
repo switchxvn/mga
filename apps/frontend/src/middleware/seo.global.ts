@@ -9,11 +9,11 @@ type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
 
 const defaultSeo = {
-  title: 'website',
-  description: 'website',
-  keywords: 'website',
-  ogTitle: 'website',
-  ogDescription: 'website',
+  title: 'Khu du lịch Cáp Treo núi Sam - Châu Đốc, An Giang',
+  description: 'Khu du lịch Cáp Treo núi Sam - Châu Đốc, An Giang',
+  keywords: 'Khu du lịch Cáp Treo núi Sam - Châu Đốc, An Giang',
+  ogTitle: 'Khu du lịch Cáp Treo núi Sam - Châu Đốc, An Giang',
+  ogDescription: 'Khu du lịch Cáp Treo núi Sam - Châu Đốc, An Giang',
   ogImage: '',
   robotsTxt: 'index, follow',
   canonicalUrl: ''
