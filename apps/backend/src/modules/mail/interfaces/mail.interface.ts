@@ -4,6 +4,14 @@ export interface MailServiceInterface {
   sendMail(options: TemplateMailOptions): Promise<MailResponse>;
   verifyConfiguration(): Promise<boolean>;
   sendOrderConfirmation(email: string, orderDetails: any): Promise<void>;
+  sendRefundRequestNotification(data: {
+    to: string;
+    orderCode: string;
+    refundCode: string;
+    customerName: string;
+    refundType: string;
+    refundAmount?: number;
+  }): Promise<MailResponse>;
 }
 
 export interface MailgunConfig {

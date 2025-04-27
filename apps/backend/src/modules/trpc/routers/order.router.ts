@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { ProductSnapshot, ProductType } from '../../order/entities/order-item.entity';
 import { OrderStatus, PaymentStatus } from '../../order/entities/order.entity';
+import { RefundReason, RefundStatus, RefundType } from '../../order/entities/order-refund.entity';
 import { generateOrderCode } from '../../order/utils/order-code.util';
 import { adminProcedure, publicProcedure, router } from '../procedures';
 
@@ -40,6 +41,24 @@ const createOrderSchema = z.object({
   totalAmount: z.number(),
   returnUrl: z.string(),
   cancelUrl: z.string(),
+}).strict();
+
+// Schema cho yêu cầu hoàn trả
+const refundItemSchema = z.object({
+  orderItemId: z.number(),
+  quantity: z.number().min(1),
+  reason: z.string().optional()
+});
+
+const createRefundSchema = z.object({
+  orderCode: z.string(),
+  requesterPhone: z.string(),
+  requesterName: z.string(),
+  requesterEmail: z.string().email().optional(),
+  refundReason: z.nativeEnum(RefundReason),
+  refundType: z.nativeEnum(RefundType),
+  details: z.string().optional(),
+  items: z.array(refundItemSchema).min(1)
 }).strict();
 
 export const orderRouter = router({
@@ -232,5 +251,123 @@ export const orderRouter = router({
           input.isUsed
         );
       }),
+
+    getAllRefunds: adminProcedure
+      .input(z.object({
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(10),
+        status: z.nativeEnum(RefundStatus).optional(),
+        search: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        return ctx.services.orderAdminService.findAllRefunds(input);
+      }),
+
+    getRefundById: adminProcedure
+      .input(z.number())
+      .query(async ({ ctx, input }) => {
+        const refund = await ctx.services.orderAdminService.findRefundById(input);
+        if (!refund) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Không tìm thấy yêu cầu hoàn trả',
+          });
+        }
+        return refund;
+      }),
+
+    updateRefundStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.nativeEnum(RefundStatus),
+        adminNotes: z.string().optional()
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          return ctx.services.orderAdminService.updateRefundStatus(
+            input.id,
+            input.status,
+            input.adminNotes
+          );
+        } catch (error) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: error.message || 'Không thể cập nhật trạng thái yêu cầu hoàn trả',
+          });
+        }
+      }),
   }),
+
+  // Thêm các route cho hoàn trả
+  validateOrder: publicProcedure
+    .input(z.object({
+      orderCode: z.string(),
+      phoneNumber: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      const order = await ctx.services.orderFrontendService.findOrderByCodeAndPhone(
+        input.orderCode,
+        input.phoneNumber
+      );
+
+      if (!order) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Không tìm thấy đơn hàng với mã đơn và số điện thoại này',
+        });
+      }
+
+      return order;
+    }),
+
+  createRefundRequest: publicProcedure
+    .input(createRefundSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const result = await ctx.services.orderFrontendService.createRefundRequest(input);
+        return result;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: error.message || 'Không thể tạo yêu cầu hoàn trả',
+        });
+      }
+    }),
+
+  getRefundStatus: publicProcedure
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
+      try {
+        const refund = await ctx.services.orderFrontendService.findRefundByCode(input);
+        
+        if (!refund) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Không tìm thấy yêu cầu hoàn trả với mã này',
+          });
+        }
+        
+        return refund;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Đã xảy ra lỗi khi kiểm tra trạng thái hoàn trả',
+        });
+      }
+    }),
+
+  getRefundsByOrderCode: publicProcedure
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
+      try {
+        return ctx.services.orderFrontendService.findRefundsByOrderCode(input);
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Đã xảy ra lỗi khi lấy danh sách yêu cầu hoàn trả',
+        });
+      }
+    }),
 }); 

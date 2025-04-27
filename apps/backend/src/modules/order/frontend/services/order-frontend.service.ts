@@ -3,12 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Order } from '../../entities/order.entity';
 import { OrderItem, ProductType } from '../../entities/order-item.entity';
+import { OrderRefund, RefundStatus, RefundType, RefundReason } from '../../entities/order-refund.entity';
+import { OrderRefundItem } from '../../entities/order-refund-item.entity';
 import { PaymentGatewayInterface, CreatePaymentRequest, PaymentItem } from '../../../payment-gateway/interfaces/payment-gateway.interface';
 import { PAYMENT_GATEWAY_TOKEN } from '../../../payment-gateway/payment-gateway.module';
 import { Address } from '../../entities/order.entity';
 import { PaymentFrontendService } from '../../../payment/frontend/services/payment-frontend.service';
 import { MailService } from '../../../mail/services/mail.service';
 import { UploadFrontendService } from '../../../upload/frontend/services/upload-frontend.service';
+import { generateRefundCode } from '../../utils/refund-code.util';
 import * as QRCode from 'qrcode';
 import { Readable } from 'stream';
 import fetch from 'node-fetch';
@@ -31,6 +34,21 @@ export interface CreateOrderDto {
   payment_description: string;
 }
 
+export interface CreateRefundDto {
+  orderCode: string;
+  requesterPhone: string;
+  requesterName: string;
+  requesterEmail?: string;
+  refundReason: RefundReason;
+  refundType: RefundType;
+  details?: string;
+  items: {
+    orderItemId: number;
+    quantity: number;
+    reason?: string;
+  }[];
+}
+
 @Injectable()
 export class OrderFrontendService {
   private readonly logger = new Logger(OrderFrontendService.name);
@@ -40,6 +58,10 @@ export class OrderFrontendService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(OrderRefund)
+    private readonly orderRefundRepository: Repository<OrderRefund>,
+    @InjectRepository(OrderRefundItem)
+    private readonly orderRefundItemRepository: Repository<OrderRefundItem>,
     @Inject(PAYMENT_GATEWAY_TOKEN)
     private readonly paymentGateway: PaymentGatewayInterface,
     @Inject(forwardRef(() => PaymentFrontendService))
@@ -250,5 +272,139 @@ export class OrderFrontendService {
     return this.orderRepository.findOne({
       order: { id: 'DESC' }
     });
+  }
+
+  /**
+   * Tìm kiếm đơn hàng theo orderCode và số điện thoại
+   */
+  async findOrderByCodeAndPhone(orderCode: string, phoneNumber: string): Promise<Order | null> {
+    return this.orderRepository.findOne({
+      where: { orderCode, phoneNumber },
+      relations: ['items', 'items.product', 'items.product.translations']
+    });
+  }
+
+  /**
+   * Tìm yêu cầu hoàn trả theo refundCode
+   */
+  async findRefundByCode(refundCode: string): Promise<OrderRefund | null> {
+    return this.orderRefundRepository.findOne({
+      where: { refundCode },
+      relations: ['items', 'items.orderItem', 'items.orderItem.product', 'items.orderItem.product.translations', 'order']
+    });
+  }
+
+  /**
+   * Tìm các yêu cầu hoàn trả theo orderCode
+   */
+  async findRefundsByOrderCode(orderCode: string): Promise<OrderRefund[]> {
+    const order = await this.orderRepository.findOne({ where: { orderCode } });
+    if (!order) return [];
+    
+    return this.orderRefundRepository.find({
+      where: { orderId: order.id },
+      relations: ['items', 'items.orderItem', 'order'],
+      order: { createdAt: 'DESC' }
+    });
+  }
+
+  /**
+   * Tạo yêu cầu hoàn trả
+   */
+  async createRefundRequest(refundData: CreateRefundDto): Promise<OrderRefund> {
+    // Tìm đơn hàng
+    const order = await this.orderRepository.findOne({
+      where: { orderCode: refundData.orderCode },
+      relations: ['items']
+    });
+    
+    if (!order) {
+      throw new Error(`Không tìm thấy đơn hàng với mã ${refundData.orderCode}`);
+    }
+
+    // Kiểm tra các orderItem có tồn tại không
+    const orderItems = await this.orderItemRepository.findBy({
+      id: In(refundData.items.map(item => item.orderItemId))
+    });
+
+    if (orderItems.length !== refundData.items.length) {
+      throw new Error('Một hoặc nhiều sản phẩm không thuộc đơn hàng này');
+    }
+
+    // Tính tổng tiền hoàn trả (nếu là hoàn tiền)
+    let totalRefundAmount = 0;
+    if (refundData.refundType === RefundType.MONEY_REFUND) {
+      for (const item of refundData.items) {
+        const orderItem = orderItems.find(oi => oi.id === item.orderItemId);
+        if (orderItem) {
+          const itemRefundAmount = Number(orderItem.unitPrice) * item.quantity;
+          totalRefundAmount += itemRefundAmount;
+        }
+      }
+    }
+
+    // Tạo mã hoàn trả
+    const refundCode = generateRefundCode();
+
+    // Tạo đối tượng hoàn trả
+    const refund = this.orderRefundRepository.create({
+      orderId: order.id,
+      refundCode,
+      requesterName: refundData.requesterName,
+      requesterPhone: refundData.requesterPhone,
+      requesterEmail: refundData.requesterEmail,
+      refundReason: refundData.refundReason,
+      refundType: refundData.refundType,
+      refundAmount: totalRefundAmount > 0 ? totalRefundAmount : null,
+      status: RefundStatus.PENDING,
+      details: refundData.details
+    });
+
+    // Lưu yêu cầu hoàn trả
+    const savedRefund = await this.orderRefundRepository.save(refund);
+
+    // Tạo các mục hoàn trả
+    const refundItems = refundData.items.map(item => {
+      const orderItem = orderItems.find(oi => oi.id === item.orderItemId);
+      return this.orderRefundItemRepository.create({
+        refundId: savedRefund.id,
+        orderItemId: item.orderItemId,
+        quantity: item.quantity,
+        refundAmount: orderItem ? Number(orderItem.unitPrice) * item.quantity : null,
+        reason: item.reason
+      });
+    });
+
+    await this.orderRefundItemRepository.save(refundItems);
+
+    // Gửi email thông báo
+    try {
+      await this.mailService.sendRefundRequestNotification({
+        to: refundData.requesterEmail || order.email,
+        orderCode: order.orderCode,
+        refundCode: refundCode,
+        customerName: refundData.requesterName,
+        refundType: refundData.refundType,
+        refundAmount: totalRefundAmount
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send refund notification email: ${error.message}`);
+    }
+
+    // Trả về kết quả đã bao gồm các item
+    return this.findRefundByCode(refundCode);
+  }
+
+  /**
+   * Kiểm tra trạng thái yêu cầu hoàn trả
+   */
+  async checkRefundStatus(refundCode: string): Promise<OrderRefund> {
+    const refund = await this.findRefundByCode(refundCode);
+    
+    if (!refund) {
+      throw new Error(`Không tìm thấy yêu cầu hoàn trả với mã ${refundCode}`);
+    }
+    
+    return refund;
   }
 } 
