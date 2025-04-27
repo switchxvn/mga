@@ -9,6 +9,7 @@ import { adminProcedure, protectedProcedure, router } from '../../procedures';
 import { ProductAdminService } from '../../../product/admin/services/product-admin.service';
 import { ProductStockHistoryService } from '../../../product/services/product-stock-history.service';
 import { StockAdjustmentType } from '../../../product/entities/product-stock-history.entity';
+import { ProductSpecificationService } from '../../../product/services/product-specification.service';
 
 // Base translation input schema
 const productTranslationSchema = z.object({
@@ -298,6 +299,111 @@ export const productAdminRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: `Không thể điều chỉnh tồn kho biến thể: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
+  // Lấy thông số kỹ thuật của sản phẩm (cho admin)
+  getProductSpecifications: protectedProcedure
+    .input(
+      z.object({
+        productId: z.number(),
+        locale: z.string().default('en'),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        return ctx.services.productSpecificationService.findByProductId(
+          input.productId,
+          input.locale
+        );
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Không thể lấy thông số kỹ thuật: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
+  // Thêm thông số kỹ thuật mới
+  addProductSpecification: protectedProcedure
+    .input(
+      z.object({
+        productId: z.number(),
+        name: z.string(),
+        value: z.string(),
+        locale: z.string().default('en'),
+        position: z.number().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return ctx.services.productSpecificationService.create(
+          input.productId,
+          {
+            name: input.name,
+            value: input.value,
+            locale: input.locale,
+            position: input.position,
+          }
+        );
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Không thể thêm thông số kỹ thuật: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
+  // Cập nhật thông số kỹ thuật
+  updateProductSpecification: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        value: z.string().optional(),
+        locale: z.string().optional(),
+        position: z.number().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return ctx.services.productSpecificationService.update(
+          input.id,
+          {
+            name: input.name,
+            value: input.value,
+            locale: input.locale,
+            position: input.position,
+          }
+        );
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Không thể cập nhật thông số kỹ thuật: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
+  // Xóa thông số kỹ thuật
+  deleteProductSpecification: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ctx.services.productSpecificationService.delete(input.id);
+        return { success: true };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Không thể xóa thông số kỹ thuật: ${error.message}`,
           cause: error,
         });
       }

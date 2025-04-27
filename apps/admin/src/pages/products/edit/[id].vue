@@ -19,58 +19,10 @@
           >
             <template #actions>
               <!-- Language Switcher -->
-              <div class="language-switcher relative">
-                <button 
-                  @click.stop="isLanguageOpen = !isLanguageOpen"
-                  class="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-                >
-                  <div class="w-5 h-5 flex items-center justify-center">
-                    <img 
-                      v-if="selectedLanguage"
-                      :src="`/images/flag/${languages.find(l => l.code === selectedLanguage)?.flagCode.toLowerCase()}.svg`"
-                      :alt="`${languages.find(l => l.code === selectedLanguage)?.nativeName} flag`"
-                      class="w-5 h-5 rounded-sm object-cover"
-                      @error="onFlagImageError"
-                    />
-                  </div>
-                  <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
-                  <ChevronDownIcon 
-                    class="h-4 w-4 transition-transform"
-                    :class="{ 'rotate-180': isLanguageOpen }"
-                  />
-                </button>
-
-                <!-- Dropdown menu -->
-                <div 
-                  v-if="isLanguageOpen" 
-                  class="absolute z-50 mt-1 min-w-[240px] rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none"
-                >
-                  <div class="py-1">
-                    <button
-                      v-for="lang in languages"
-                      :key="lang.code"
-                      @click="selectedLanguage = lang.code; fetchProduct(); isLanguageOpen = false"
-                      class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
-                      :class="{ 'bg-slate-50': selectedLanguage === lang.code }"
-                    >
-                      <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center mr-2">
-                        <img 
-                          :src="`/images/flag/${lang.flagCode.toLowerCase()}.svg`"
-                          :alt="`${lang.nativeName} flag`"
-                          class="w-5 h-5 rounded-sm object-cover"
-                          @error="onFlagImageError"
-                        />
-                      </div>
-                      <span class="truncate">{{ lang.nativeName }}</span>
-                      <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
-                      <CheckIcon
-                        v-if="selectedLanguage === lang.code"
-                        class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <LanguageSwitcher 
+                v-model="selectedLanguage" 
+                @language-changed="handleLanguageChange"
+              />
 
               <NuxtLink 
                 to="/products" 
@@ -163,6 +115,14 @@
               />
             </div>
 
+            <!-- Specifications Tab -->
+            <div v-show="currentTab === 'specifications'">
+              <ProductSpecifications
+                :productId="Number(route.params.id)"
+                :locale="selectedLanguage"
+              />
+            </div>
+
             <!-- Inventory Tab -->
             <div v-show="currentTab === 'inventory'">
               <ProductInventory
@@ -226,13 +186,12 @@ import {
   SettingsIcon,
   XIcon,
   SaveAllIcon,
-  ChevronDownIcon,
-  CheckIcon,
   SaveIcon,
   FolderIcon,
   LayersIcon,
   PackageIcon,
-  InfoIcon
+  InfoIcon,
+  ClipboardListIcon
 } from 'lucide-vue-next'
 
 // Import components
@@ -244,6 +203,8 @@ import ProductSettings from '../../../components/products/ProductSettings.vue'
 import ProductCategories from '../../../components/products/ProductCategories.vue'
 import ProductVariants from '../../../components/products/ProductVariants.vue'
 import ProductInventory from '../../../components/products/ProductInventory.vue'
+import ProductSpecifications from '../../../components/products/ProductSpecifications.vue'
+import LanguageSwitcher from '../../../components/common/LanguageSwitcher.vue'
 
 const trpc = useTrpc()
 const route = useRoute()
@@ -254,6 +215,45 @@ const saveAndContinue = ref(false)
 
 // Initialize currentTab from query params or default to 'basic'
 const currentTab = ref(route.query.tab?.toString() || 'basic')
+
+// Initialize selectedLanguage
+const selectedLanguage = ref('')
+const defaultLanguage = ref('')
+
+// Handle language change
+const handleLanguageChange = (code: string) => {
+  // Lưu translations hiện tại trước khi chuyển ngôn ngữ
+  if (selectedLanguage.value && form.value.name !== undefined) {
+    form.value.translations[selectedLanguage.value] = {
+      name: form.value.name,
+      slug: form.value.slug,
+      description: form.value.description,
+      shortDescription: form.value.shortDescription,
+      metaDescription: form.value.metaDescription
+    }
+  }
+  
+  // Cập nhật selectedLanguage
+  selectedLanguage.value = code;
+  
+  // Kiểm tra xem đã có dữ liệu cho ngôn ngữ mới chưa
+  if (form.value.translations[code]) {
+    // Nếu có, cập nhật form với dữ liệu từ translations
+    const translation = form.value.translations[code];
+    form.value.name = translation.name || '';
+    form.value.slug = translation.slug || '';
+    form.value.description = translation.description || '';
+    form.value.shortDescription = translation.shortDescription || '';
+    form.value.metaDescription = translation.metaDescription || '';
+  } else {
+    // Nếu chưa có, reset form để nhập mới
+    form.value.name = '';
+    form.value.slug = '';
+    form.value.description = '';
+    form.value.shortDescription = '';
+    form.value.metaDescription = '';
+  }
+}
 
 // Watch for tab changes and update URL
 watch(currentTab, (newTab) => {
@@ -291,6 +291,11 @@ const tabs = [
     id: 'variants',
     name: 'Variants',
     icon: LayersIcon
+  },
+  {
+    id: 'specifications',
+    name: 'Specifications',
+    icon: ClipboardListIcon
   },
   {
     id: 'inventory',
@@ -444,92 +449,6 @@ watch(() => form.value.name, (newName) => {
   }
 })
 
-interface Language {
-  id: number;
-  name: string;
-  code: string;
-  nativeName: string;
-  flagCode: string;
-  isDefault: boolean;
-  isActive: boolean;
-}
-
-const languages = ref<Language[]>([])
-const selectedLanguage = ref('')
-const defaultLanguage = ref('')
-const isLanguageOpen = ref(false)
-
-const handleClickOutside = (event: Event) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.language-switcher')) {
-    isLanguageOpen.value = false;
-  }
-};
-
-onMounted(() => {
-  // Tạo hàm async bên trong để xử lý Promise
-  const loadLanguages = async () => {
-    try {
-      const [langs, defaultLang] = await Promise.all([
-        trpc.admin.languages.getLanguages.query(),
-        trpc.admin.languages.getDefaultLanguage.query()
-      ])
-      languages.value = langs
-      defaultLanguage.value = defaultLang?.code || ''
-      selectedLanguage.value = defaultLang?.code || ''
-      
-      // Tải thông tin sản phẩm sau khi đã có ngôn ngữ
-      await fetchProduct()
-    } catch (error) {
-      console.error('Failed to fetch languages:', error)
-    }
-  }
-  
-  // Gọi hàm async
-  loadLanguages()
-  
-  if (process.client) {
-    document.addEventListener('click', handleClickOutside);
-  }
-})
-
-onBeforeUnmount(() => {
-  if (process.client) {
-    document.removeEventListener('click', handleClickOutside);
-  }
-})
-
-// Update watch for selectedLanguage
-watch(selectedLanguage, (newLang, oldLang) => {
-  if (oldLang) {
-    // Save current content to translations before switching
-    form.value.translations[oldLang] = {
-      name: form.value.name,
-      slug: form.value.slug,
-      description: form.value.description,
-      shortDescription: form.value.shortDescription,
-      metaDescription: form.value.metaDescription
-    }
-  }
-  
-  // Load content for new language
-  if (form.value.translations[newLang]) {
-    const translation = form.value.translations[newLang]
-    form.value.name = translation.name || ''
-    form.value.slug = translation.slug || ''
-    form.value.description = translation.description || ''
-    form.value.shortDescription = translation.shortDescription || ''
-    form.value.metaDescription = translation.metaDescription || ''
-  } else {
-    // Reset form for new translation
-    form.value.name = ''
-    form.value.slug = ''
-    form.value.description = ''
-    form.value.shortDescription = ''
-    form.value.metaDescription = ''
-  }
-})
-
 // Fetch product data
 const fetchProduct = async () => {
   try {
@@ -649,11 +568,14 @@ const fetchProduct = async () => {
 
       console.log('Final variants:', variants)
 
+      // Lấy translation theo ngôn ngữ hiện tại
+      const currentTranslation = product.translations?.find(t => t.locale === selectedLanguage.value);
+      
       form.value = {
-        name: product.translations?.find(t => t.locale === selectedLanguage.value)?.title || '',
-        slug: product.translations?.find(t => t.locale === selectedLanguage.value)?.slug || '',
-        description: product.translations?.find(t => t.locale === selectedLanguage.value)?.content || '',
-        shortDescription: product.translations?.find(t => t.locale === selectedLanguage.value)?.shortDescription || '',
+        name: currentTranslation?.title || '',
+        slug: currentTranslation?.slug || '',
+        description: currentTranslation?.content || '',
+        shortDescription: currentTranslation?.shortDescription || '',
         price: productPrice,
         compareAtPrice: comparePrice,
         sku: product.sku || '',
@@ -663,7 +585,7 @@ const fetchProduct = async () => {
         taxable: (product as any).taxable === undefined ? true : Boolean((product as any).taxable),
         thumbnail: product.thumbnail || '',
         gallery: Array.isArray(product.gallery) ? product.gallery : [],
-        metaDescription: product.translations?.find(t => t.locale === selectedLanguage.value)?.metaDescription || '',
+        metaDescription: currentTranslation?.metaDescription || '',
         tags: productTags,
         categoryIds: Array.isArray(product.categories) ? product.categories.map(category => category.id) : [],
         hasVariants: Boolean(variants.length > 0),
@@ -693,6 +615,43 @@ const fetchProduct = async () => {
     loading.value = false
   }
 }
+
+// Đăng ký các lifecycle hooks
+onMounted(() => {
+  // Khởi tạo dữ liệu
+  initData();
+});
+
+// Hàm khởi tạo dữ liệu
+const initData = async () => {
+  // Kiểm tra URL parameter khi component mounted
+  const localeFromUrl = route.query.locale as string;
+  
+  // Nếu có locale trong URL, sử dụng giá trị đó
+  if (localeFromUrl) {
+    selectedLanguage.value = localeFromUrl;
+  } else {
+    // Nếu không, lấy ngôn ngữ mặc định từ hệ thống
+    try {
+      const defaultLang = await trpc.admin.languages.getDefaultLanguage.query();
+      selectedLanguage.value = defaultLang?.code || 'en';
+      
+      // Cập nhật URL để phản ánh ngôn ngữ đã chọn
+      router.replace({ 
+        query: { 
+          ...route.query,
+          locale: selectedLanguage.value 
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch default language:', error);
+      selectedLanguage.value = 'en'; // Fallback nếu không lấy được ngôn ngữ mặc định
+    }
+  }
+  
+  // Khởi tạo dữ liệu sau khi đã có selectedLanguage
+  await fetchProduct();
+};
 
 // Update product
 const updateProduct = async (continueEditing = false) => {
@@ -814,10 +773,8 @@ const updateProduct = async (continueEditing = false) => {
   } catch (error: any) {
     console.error('Failed to update product:', error)
     
-    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
-    const langName = currentLang?.nativeName || selectedLanguage.value
-    
-    let errorMessage = `[${langName}] `
+    // Hiển thị thông báo lỗi với ngôn ngữ hiện tại
+    let errorMessage = `[${selectedLanguage.value}] `
     
     // Handle tRPC error
     if (error.cause) {
@@ -869,19 +826,6 @@ if (process.client) {
     ]
   }
 }
-
-const onFlagImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  if (target) {
-    target.style.display = 'none';
-    // Add a fallback display like the language code or first letter
-    const parent = target.parentElement;
-    if (parent) {
-      parent.textContent = selectedLanguage.value?.toUpperCase().slice(0, 2) || '';
-      parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
-    }
-  }
-};
 </script>
 
 <style>

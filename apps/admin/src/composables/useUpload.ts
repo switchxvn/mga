@@ -1,6 +1,7 @@
 import { ref } from 'vue'
-import { useNuxtApp } from '#app'
+import axios from 'axios'
 import { useTrpc } from './useTrpc'
+import { useToast } from 'vue-toastification'
 
 export interface UploadOptions {
   file: File
@@ -10,17 +11,14 @@ export interface UploadOptions {
 
 export interface UploadResult {
   url: string
-  public_id: string
-  width: number
-  height: number
-  format: string
-  resource_type: string
+  key?: string
+  uploadId?: number
 }
 
 export function useUpload() {
-  const { $trpc } = useNuxtApp()
   const trpc = useTrpc()
   const isUploading = ref(false)
+  const toast = useToast()
 
   const uploadFile = async ({
     file,
@@ -30,25 +28,89 @@ export function useUpload() {
     try {
       isUploading.value = true
       
-      // Create a FormData instance to handle the file
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', folder)
-
-      // Simulate onProgress for now
-      onProgress(30)
+      // Báo cáo tiến trình bắt đầu
+      onProgress(10)
       
-      // Use trpc upload endpoint
-      const result = await trpc.upload.uploadFile.mutate({
-        file: await fileToBase64(file),
+      // 1. Lấy presigned URL từ API
+      console.log(`Getting presigned URL for: ${file.name}, type: ${file.type}, size: ${file.size} bytes, folder: ${folder}`)
+      const presignedData = await trpc.upload.getPresignedUrl.mutate({
+        filename: file.name,
+        mimeType: file.type,
+        size: file.size,
         folder
       })
       
-      onProgress(100)
+      if (!presignedData?.presignedUrl || !presignedData?.url) {
+        const errorMsg = 'Failed to get presigned URL from server'
+        console.error(errorMsg, presignedData)
+        throw new Error(errorMsg)
+      }
       
-      return result
-    } catch (error) {
+      console.log('Presigned URL obtained successfully', {
+        uploadId: presignedData.uploadId,
+        hasUrl: !!presignedData.url,
+        hasKey: !!presignedData.key
+      })
+      
+      onProgress(30)
+      
+      // 2. Tạo FormData để gửi lên server Nuxt
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('presignedUrl', presignedData.presignedUrl)
+      formData.append('key', presignedData.key || '')
+      formData.append('uploadId', String(presignedData.uploadId || 0))
+      formData.append('url', presignedData.url)
+      
+      console.log('Uploading file to server middleware...')
+      
+      // 3. Upload file thông qua server-side API để tránh CORS - sử dụng axios thay vì $fetch
+      try {
+        onProgress(50)
+        
+        // Sử dụng axios thay vì $fetch
+        const response = await axios.post('/api/local/upload-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              onProgress(50 + percentCompleted * 0.5) // 50% -> 100%
+            }
+          }
+        })
+        
+        const uploadResult = response.data
+        
+        console.log('Upload completed successfully', uploadResult)
+        onProgress(100)
+        
+        if (!uploadResult || !uploadResult.url) {
+          throw new Error('Server returned invalid upload result')
+        }
+        
+        return {
+          url: uploadResult.url,
+          key: uploadResult.key,
+          uploadId: uploadResult.uploadId
+        }
+      } catch (uploadError: any) {
+        console.error('Error during server upload:', uploadError)
+        
+        // Hiển thị lỗi chi tiết hơn để debug
+        const errorMessage = uploadError?.response?.data?.message || 
+                            uploadError?.message || 
+                            'Unknown upload error'
+        const statusCode = uploadError?.response?.status || 'unknown'
+        
+        toast.error(`Upload failed (${statusCode}): ${errorMessage}`)
+        throw new Error(`Upload failed: ${errorMessage}`)
+      }
+    } catch (error: any) {
       console.error('Upload failed:', error)
+      const errorMessage = error?.message || 'Unknown error occurred'
+      toast.error(`Upload failed: ${errorMessage}`)
       throw error
     } finally {
       isUploading.value = false
@@ -60,22 +122,12 @@ export function useUpload() {
       isUploading.value = true
       const result = await uploadFile({ file, folder })
       return result.url
-    } catch (error) {
+    } catch (error: any) {
       console.error('Image upload failed:', error)
       throw error
     } finally {
       isUploading.value = false
     }
-  }
-
-  // Helper function to convert File to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = error => reject(error)
-    })
   }
 
   return {

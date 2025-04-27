@@ -35,7 +35,7 @@
                   :src="image"
                   :alt="'Product gallery image ' + (index + 1)"
                   class="w-full h-full object-cover"
-                  @error="onImageError"
+                  @error="(e) => onImageError(e, index)"
                 />
                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
@@ -65,7 +65,7 @@
             <!-- Upload Button -->
             <div
               class="aspect-square rounded-lg border-2 border-dashed border-slate-200 hover:border-slate-300 transition-colors bg-slate-50 flex flex-col items-center justify-center gap-2 cursor-pointer"
-              @click="$refs.galleryInput.click()"
+              @click="openGalleryInput"
             >
               <PlusIcon class="w-6 h-6 text-slate-400" />
               <span class="text-sm text-slate-500">Add Image</span>
@@ -94,6 +94,11 @@
 import { ref, watch } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon } from 'lucide-vue-next'
 import MediaUploader from '../common/media/MediaUploader.vue'
+import { useToast } from 'vue-toastification'
+import { useUpload } from '../../composables/useUpload'
+
+const { uploadImage, isUploading: uploading } = useUpload()
+const toast = useToast()
 
 const props = defineProps<{
   thumbnail: string
@@ -107,9 +112,11 @@ const emit = defineEmits<{
 
 const localThumbnail = ref(props.thumbnail)
 const localGallery = ref([...props.gallery])
+const galleryInput = ref<HTMLInputElement | null>(null)
+const isUploading = ref(false)
 
-// Base64 encoded transparent placeholder image 
-const FALLBACK_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+// Đường dẫn ảnh mặc định
+const DEFAULT_IMAGE = '/images/default/default-image.jpg';
 
 // Watch for prop changes
 watch(() => props.thumbnail, (newValue) => {
@@ -120,6 +127,13 @@ watch(() => props.gallery, (newValue) => {
   localGallery.value = [...newValue]
 })
 
+// Mở input file một cách an toàn cho TypeScript
+const openGalleryInput = () => {
+  if (galleryInput.value) {
+    galleryInput.value.click()
+  }
+}
+
 // Gallery methods
 const handleGalleryUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement
@@ -128,20 +142,40 @@ const handleGalleryUpload = async (event: Event) => {
   const files = Array.from(input.files)
   const maxFiles = 8 - localGallery.value.length
   const filesToUpload = files.slice(0, maxFiles)
+  
+  isUploading.value = true
 
-  for (const file of filesToUpload) {
-    try {
-      // Here you would typically upload the file to your server/storage
-      // For now, we'll just create an object URL
-      const url = URL.createObjectURL(file)
-      localGallery.value.push(url)
-    } catch (error) {
-      console.error('Failed to upload image:', error)
-    }
+  try {
+    // Upload all files using the uploadImage function
+    const uploadPromises = filesToUpload.map(async (file) => {
+      try {
+        // Sử dụng uploadImage từ composable useUpload với folder products
+        return await uploadImage(file, 'products')
+      } catch (error) {
+        console.error('Failed to upload image:', error)
+        toast.error(`Failed to upload ${file.name}`)
+        return null
+      }
+    })
+
+    // Wait for all uploads to complete
+    const uploadedUrls = await Promise.all(uploadPromises)
+    
+    // Filter out any failed uploads (null values)
+    const validUrls = uploadedUrls.filter(url => url !== null) as string[]
+    
+    // Update gallery with new images
+    localGallery.value = [...localGallery.value, ...validUrls]
+    
+    // Notify parent component
+    emit('update:gallery', localGallery.value)
+  } catch (error) {
+    console.error('Gallery upload error:', error)
+    toast.error('Failed to upload images')
+  } finally {
+    isUploading.value = false
+    input.value = '' // Reset input
   }
-
-  emit('update:gallery', localGallery.value)
-  input.value = '' // Reset input
 }
 
 const removeImage = (index: number) => {
@@ -160,12 +194,16 @@ const moveImage = (fromIndex: number, toIndex: number) => {
   emit('update:gallery', localGallery.value)
 }
 
-// Handle image error without causing an infinite loop
-const onImageError = (e: Event) => {
+// Handle image error with the default image
+const onImageError = (e: Event, index: number) => {
   const target = e.target as HTMLImageElement;
   if (target) {
-    // Use a data URI to prevent infinite error loops
-    target.src = FALLBACK_IMAGE;
+    console.log(`Image loading failed at index ${index}, using default image`);
+    // Replace failed image URL with default image
+    target.src = DEFAULT_IMAGE;
+    // Also update the gallery array to keep consistency
+    localGallery.value[index] = DEFAULT_IMAGE;
+    emit('update:gallery', localGallery.value);
     // Remove onerror handler to prevent potential loops
     target.onerror = null;
   }

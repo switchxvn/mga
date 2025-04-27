@@ -50,7 +50,14 @@ export class ProductAdminService {
   async findOne(id: number): Promise<Product> {
     return this.productRepository.findOne({
       where: { id },
-      relations: ['translations', 'categories', 'variants', 'variants.translations'],
+      relations: [
+        'translations', 
+        'categories', 
+        'variants', 
+        'variants.translations',
+        'specifications',
+        'specifications.translations'
+      ],
     });
   }
 
