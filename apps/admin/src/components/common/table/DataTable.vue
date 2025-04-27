@@ -5,6 +5,8 @@ import {
   ChevronUpIcon,
   XMarkIcon
 } from '@heroicons/vue/24/outline';
+import { XCircleIcon } from 'lucide-vue-next';
+import Pagination from '../../common/pagination/Pagination.vue';
 
 interface Props {
   items: any[];
@@ -186,7 +188,7 @@ const handleSort = (column: string) => {
     <!-- Pagination -->
     <div v-if="pagination" class="px-6 py-4">
       <slot name="pagination" :pagination="pagination" :on-page-change="(page: number) => $emit('page-change', page)">
-        <PaginationComponent
+        <Pagination
           :current-page="pagination.currentPage"
           :total-pages="pagination.totalPages"
           :total-items="pagination.total"

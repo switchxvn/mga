@@ -52,8 +52,19 @@
         <div class="grid gap-6 md:grid-cols-2">
           <!-- Price -->
           <div class="grid gap-2">
-            <label for="price" class="text-sm font-medium text-slate-900">
-              Price <span class="text-red-500">*</span>
+            <label
+              for="price"
+              class="text-sm font-medium text-slate-900 flex items-center"
+            >
+              Price
+              <div v-if="disablePrice" class="relative ml-2 group">
+                <button type="button" class="text-slate-400 hover:text-slate-900">
+                  <HelpCircleIcon class="w-4 h-4" />
+                </button>
+                <div class="absolute left-0 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  Price is disabled because this product has variants. Please manage prices for individual variants in the Variants tab.
+                </div>
+              </div>
             </label>
             <div class="relative">
               <span class="absolute left-3 top-2.5 text-slate-500">$</span>
@@ -63,21 +74,31 @@
                 :value="price"
                 @input="$emit('update:price', Number(($event.target as HTMLInputElement).value))"
                 class="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-7 pr-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="0.00"
                 min="0"
                 step="0.01"
-                required
+                :disabled="disablePrice"
               />
             </div>
           </div>
 
           <!-- Compare at Price -->
           <div class="grid gap-2">
-            <label for="compareAtPrice" class="text-sm font-medium text-slate-900">
+            <label 
+              for="compareAtPrice" 
+              class="text-sm font-medium text-slate-900 flex items-center"
+            >
               Compare at Price
+              <div v-if="disablePrice" class="relative ml-2 group">
+                <button type="button" class="text-slate-400 hover:text-slate-900">
+                  <HelpCircleIcon class="w-4 h-4" />
+                </button>
+                <div class="absolute left-0 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  Compare at Price is disabled because this product has variants. Please manage prices for individual variants in the Variants tab.
+                </div>
+              </div>
             </label>
             <div class="relative">
-              <span class="absolute left-3 top-2.5 text-slate-500">$</span>
+              <span class="absolute left-3 top-2 text-slate-500">$</span>
               <input
                 id="compareAtPrice"
                 type="number"
@@ -87,6 +108,7 @@
                 placeholder="0.00"
                 min="0"
                 step="0.01"
+                :disabled="disablePrice"
               />
             </div>
           </div>
@@ -162,6 +184,7 @@
               :options="editorOptions"
               contentType="html"
               theme="snow"
+              class="quill-editor"
             />
           </client-only>
         </div>
@@ -171,6 +194,20 @@
 </template>
 
 <script setup lang="ts">
+import { defineAsyncComponent } from 'vue'
+import { HelpCircleIcon } from 'lucide-vue-next'
+
+// Import QuillEditor lazily
+const QuillEditor = defineAsyncComponent(() => 
+  import('@vueup/vue-quill').then(mod => {
+    // Import CSS only on client-side
+    if (process.client) {
+      import('@vueup/vue-quill/dist/vue-quill.snow.css')
+    }
+    return mod.QuillEditor
+  })
+)
+
 defineProps<{
   name: string
   slug: string
@@ -181,6 +218,7 @@ defineProps<{
   sku: string
   barcode: string
   editorOptions: any
+  disablePrice?: boolean
 }>()
 
 defineEmits<{
@@ -194,4 +232,66 @@ defineEmits<{
   'update:barcode': [value: string]
   'generate-slug': []
 }>()
-</script> 
+</script>
+
+<style scoped>
+.quill-editor {
+  @apply bg-white rounded-lg overflow-hidden;
+}
+
+.ql-toolbar {
+  @apply border-0 border-b border-slate-200 bg-white px-6 !important;
+}
+
+.ql-container {
+  @apply border-0 bg-white !important;
+}
+
+.ql-editor {
+  @apply min-h-[400px] text-slate-700 px-6 !important;
+}
+
+.ql-editor h1 {
+  @apply text-3xl font-bold mb-4;
+}
+
+.ql-editor h2 {
+  @apply text-2xl font-semibold mb-3;
+}
+
+.ql-editor h3 {
+  @apply text-xl font-semibold mb-3;
+}
+
+.ql-editor p {
+  @apply mb-4 text-base leading-relaxed;
+}
+
+.ql-editor ul, .ql-editor ol {
+  @apply mb-4 pl-6;
+}
+
+.ql-editor ul {
+  @apply list-disc;
+}
+
+.ql-editor ol {
+  @apply list-decimal;
+}
+
+.ql-editor blockquote {
+  @apply border-l-4 border-slate-200 pl-4 italic my-4;
+}
+
+.ql-editor img {
+  @apply max-w-full rounded-lg my-4;
+}
+
+.ql-editor pre {
+  @apply bg-slate-100 p-4 rounded-lg my-4 overflow-x-auto;
+}
+
+.ql-editor code {
+  @apply font-mono text-sm bg-slate-100 px-1.5 py-0.5 rounded;
+}
+</style> 

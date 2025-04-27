@@ -12,6 +12,7 @@ import { ProductAttribute } from './entities/product-attribute.entity';
 import { ProductAttributeTranslation } from './entities/product-attribute-translation.entity';
 import { ProductAttributeValue } from './entities/product-attribute-value.entity';
 import { ProductAttributeValueTranslation } from './entities/product-attribute-value-translation.entity';
+import { ProductStockHistory } from './entities/product-stock-history.entity';
 import { ProductAdminController } from './admin/controllers/admin.controller';
 import { ProductFrontendController } from './frontend/controllers/frontend.controller';
 import { ProductAdminService } from './admin/services/product-admin.service';
@@ -19,6 +20,7 @@ import { ProductFrontendService } from './frontend/services/product-frontend.ser
 import { CrossSellService } from './frontend/services/cross-sell.service';
 import { ProductSpecificationService } from './services/product-specification.service';
 import { ProductComboService } from './frontend/services/product-combo.service';
+import { ProductStockHistoryService } from './services/product-stock-history.service';
 
 @Module({
   imports: [
@@ -34,7 +36,8 @@ import { ProductComboService } from './frontend/services/product-combo.service';
       ProductAttribute,
       ProductAttributeTranslation,
       ProductAttributeValue,
-      ProductAttributeValueTranslation
+      ProductAttributeValueTranslation,
+      ProductStockHistory
     ])
   ],
   controllers: [ProductAdminController, ProductFrontendController],
@@ -43,14 +46,16 @@ import { ProductComboService } from './frontend/services/product-combo.service';
     ProductFrontendService, 
     CrossSellService,
     ProductSpecificationService,
-    ProductComboService
+    ProductComboService,
+    ProductStockHistoryService
   ],
   exports: [
     ProductAdminService, 
     ProductFrontendService, 
     CrossSellService,
     ProductSpecificationService,
-    ProductComboService
+    ProductComboService,
+    ProductStockHistoryService
   ],
 })
 export class ProductModule {} 

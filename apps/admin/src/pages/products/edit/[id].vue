@@ -105,15 +105,19 @@
             <button
               v-for="tab in tabs"
               :key="tab.id"
-              @click="currentTab = tab.id"
-              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
+              @click="tab.id !== 'inventory' || !form.hasVariants ? currentTab = tab.id : null"
+              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative group"
               :class="{
                 'bg-primary text-white': currentTab === tab.id,
-                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id
+                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id,
+                'opacity-50 cursor-not-allowed': tab.id === 'inventory' && form.hasVariants
               }"
             >
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.name }}
+              <div v-if="tab.id === 'inventory' && form.hasVariants" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                Inventory is disabled because this product has variants. Please manage inventory for individual variants in the Variants tab.
+              </div>
             </button>
           </nav>
 
@@ -130,8 +134,10 @@
                 v-model:sku="form.sku"
                 v-model:barcode="form.barcode"
                 :editor-options="editorOptions"
+                :disable-price="form.hasVariants"
                 @generate-slug="generateSlug"
               />
+           
             </div>
 
             <!-- Media Tab -->
@@ -140,7 +146,7 @@
                 v-model:thumbnail="form.thumbnail"
                 v-model:gallery="form.gallery"
               />
-            </div>
+            </div>  
 
             <!-- Categories Tab -->
             <div v-show="currentTab === 'categories'">
@@ -163,7 +169,18 @@
                 v-model:trackInventory="form.trackInventory"
                 v-model:quantity="form.quantity"
                 v-model:lowStockThreshold="form.lowStockThreshold"
+                v-model:stockStatus="form.stockStatus"
+                v-model:allowBackorders="form.allowBackorders"
+                :stockMovements="form.stockMovements"
+                :hasVariants="form.hasVariants"
               />
+              <div v-if="form.hasVariants" class="mt-4 flex items-center p-4 bg-blue-50 rounded-md text-blue-700 text-sm">
+                <InfoIcon class="w-5 h-5 mr-2 flex-shrink-0" />
+                <div>
+                  <p><span class="font-medium">Thông báo:</span> Quản lý số lượng đã bị vô hiệu hóa vì sản phẩm này có biến thể.</p>
+                  <p>Số lượng được quản lý riêng cho từng biến thể trong <button @click="currentTab = 'variants'" class="underline font-medium hover:text-blue-900">tab Variants</button>.</p>
+                </div>
+              </div>
             </div>
 
             <!-- SEO Tab -->
@@ -214,11 +231,12 @@ import {
   SaveIcon,
   FolderIcon,
   LayersIcon,
-  PackageIcon
+  PackageIcon,
+  InfoIcon
 } from 'lucide-vue-next'
 
 // Import components
-import PageHeader from '../../../components/ui/PageHeader.vue'
+import PageHeader from '../../../components/common/header/PageHeader.vue'
 import ProductEditor from '../../../components/products/ProductEditor.vue'
 import ProductMedia from '../../../components/products/ProductMedia.vue'
 import ProductSEO from '../../../components/products/ProductSEO.vue'
@@ -245,6 +263,12 @@ watch(currentTab, (newTab) => {
       tab: newTab 
     }
   })
+  
+  // Debug khi chọn tab variants
+  if (newTab === 'variants') {
+    console.log('Variants tab selected. Current variants:', form.value.variants)
+    console.log('hasVariants flag:', form.value.hasVariants)
+  }
 })
 
 const tabs = [
@@ -293,10 +317,8 @@ interface ProductVariant {
   price: number
   compareAtPrice: number | null
   quantity: number
-  options: {
-    name: string
-    value: string
-  }[]
+  stock: number
+  options: Record<string, string>
 }
 
 interface ProductForm {
@@ -321,6 +343,9 @@ interface ProductForm {
   trackInventory: boolean
   quantity: number
   lowStockThreshold: number
+  stockStatus: string
+  allowBackorders: boolean
+  stockMovements: any[]
   updatedAt: string
   translations: Record<string, {
     name: string
@@ -353,6 +378,9 @@ const initialForm: ProductForm = {
   trackInventory: true,
   quantity: 0,
   lowStockThreshold: 5,
+  stockStatus: 'in_stock',
+  allowBackorders: false,
+  stockMovements: [],
   updatedAt: new Date().toISOString(),
   translations: {}
 }
@@ -438,22 +466,31 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
-onMounted(async () => {
-  try {
-    const [langs, defaultLang] = await Promise.all([
-      trpc.admin.languages.getLanguages.query(),
-      trpc.admin.languages.getDefaultLanguage.query()
-    ])
-    languages.value = langs
-    defaultLanguage.value = defaultLang?.code || ''
-    selectedLanguage.value = defaultLang?.code || ''
-  } catch (error) {
-    console.error('Failed to fetch languages:', error)
+onMounted(() => {
+  // Tạo hàm async bên trong để xử lý Promise
+  const loadLanguages = async () => {
+    try {
+      const [langs, defaultLang] = await Promise.all([
+        trpc.admin.languages.getLanguages.query(),
+        trpc.admin.languages.getDefaultLanguage.query()
+      ])
+      languages.value = langs
+      defaultLanguage.value = defaultLang?.code || ''
+      selectedLanguage.value = defaultLang?.code || ''
+      
+      // Tải thông tin sản phẩm sau khi đã có ngôn ngữ
+      await fetchProduct()
+    } catch (error) {
+      console.error('Failed to fetch languages:', error)
+    }
   }
+  
+  // Gọi hàm async
+  loadLanguages()
+  
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
   }
-  fetchProduct()
 })
 
 onBeforeUnmount(() => {
@@ -478,11 +515,11 @@ watch(selectedLanguage, (newLang, oldLang) => {
   // Load content for new language
   if (form.value.translations[newLang]) {
     const translation = form.value.translations[newLang]
-    form.value.name = translation.name
-    form.value.slug = translation.slug
-    form.value.description = translation.description
-    form.value.shortDescription = translation.shortDescription
-    form.value.metaDescription = translation.metaDescription
+    form.value.name = translation.name || ''
+    form.value.slug = translation.slug || ''
+    form.value.description = translation.description || ''
+    form.value.shortDescription = translation.shortDescription || ''
+    form.value.metaDescription = translation.metaDescription || ''
   } else {
     // Reset form for new translation
     form.value.name = ''
@@ -496,56 +533,157 @@ watch(selectedLanguage, (newLang, oldLang) => {
 // Fetch product data
 const fetchProduct = async () => {
   try {
+    loading.value = true
+    console.log('Fetching product with ID:', route.params.id, 'and language:', selectedLanguage.value)
+    
     const product = await trpc.admin.products.getProductById.query(Number(route.params.id))
     
     if (product) {
+      console.log('Product loaded:', product)
       // Initialize translations
       const translations: Record<string, any> = {}
       
-      product.translations?.forEach(translation => {
-        translations[translation.locale] = {
-          name: translation.name,
-          slug: translation.slug,
-          description: translation.description,
-          shortDescription: translation.shortDescription || '',
-          metaDescription: translation.metaDescription
+      if (Array.isArray(product.translations)) {
+        product.translations.forEach(translation => {
+          translations[translation.locale] = {
+            name: translation.title || '',
+            slug: translation.slug || '',
+            description: translation.content || '',
+            shortDescription: translation.shortDescription || '',
+            metaDescription: translation.metaDescription || ''
+          }
+        })
+      }
+
+      // Xử lý price đúng cách
+      let productPrice = 0
+      if (product.price !== null && product.price !== undefined) {
+        // Nếu price là string, convert sang number
+        if (typeof product.price === 'string') {
+          productPrice = parseFloat(product.price) || 0
+        } else if (typeof product.price === 'number') {
+          productPrice = product.price
         }
-      })
+      }
+
+      // Xử lý comparePrice
+      let comparePrice = null
+      if ((product as any).comparePrice !== null && (product as any).comparePrice !== undefined) {
+        if (typeof (product as any).comparePrice === 'string') {
+          comparePrice = parseFloat((product as any).comparePrice) || null
+        } else if (typeof (product as any).comparePrice === 'number') {
+          comparePrice = (product as any).comparePrice
+        }
+      }
+
+      // Xử lý product tags an toàn
+      const productTags: string[] = []
+      // Sử dụng as any để tránh lỗi linter
+      const productTagsArray = (product as any).productTags
+      if (Array.isArray(productTagsArray)) {
+        productTagsArray.forEach(tag => {
+          if (tag && typeof tag === 'object' && tag.tag && typeof tag.tag === 'object' && tag.tag.name) {
+            productTags.push(tag.tag.name)
+          }
+        })
+      }
+
+      // Xử lý variants an toàn
+      const variants: ProductVariant[] = []
+      if (Array.isArray(product.variants)) {
+        console.log('Processing variants:', product.variants.length)
+        
+        // Phân tích tên variant để tạo options
+        // Trong trường hợp này, có thể dựa vào translations để tạo options đơn giản
+        // Tạo một option duy nhất là "Type" (hoặc "Loại" trong tiếng Việt)
+        const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type'
+        
+        product.variants.forEach(variant => {
+          console.log('Processing variant:', variant)
+          
+          const variantName = Array.isArray(variant.translations) 
+            ? variant.translations.find(t => t?.locale === selectedLanguage.value)?.name || ''
+            : ''
+          
+          console.log('Variant name:', variantName)
+
+          // Xử lý variant price đúng cách
+          let variantPrice = 0
+          if (variant.price !== null && variant.price !== undefined) {
+            if (typeof variant.price === 'string') {
+              variantPrice = parseFloat(variant.price) || 0
+            } else if (typeof variant.price === 'number') {
+              variantPrice = variant.price
+            }
+          }
+
+          // Xử lý variant comparePrice
+          let variantComparePrice = null
+          if ((variant as any).comparePrice !== null && (variant as any).comparePrice !== undefined) {
+            if (typeof (variant as any).comparePrice === 'string') {
+              variantComparePrice = parseFloat((variant as any).comparePrice) || null
+            } else if (typeof (variant as any).comparePrice === 'number') {
+              variantComparePrice = (variant as any).comparePrice
+            }
+          }
+
+          // Tạo đối tượng options dựa vào tên biến thể
+          const variantOptions: Record<string, string> = {}
+          if (variantName) {
+            variantOptions[optionName] = variantName
+          }
+
+          variants.push({
+            id: variant.id,
+            name: variantName,
+            sku: variant.sku || '',
+            barcode: (variant as any).barcode || '',
+            price: variantPrice,
+            compareAtPrice: variantComparePrice,
+            quantity: variant.quantity || 0,
+            stock: variant.quantity || 0,  // Sử dụng quantity làm giá trị mặc định cho stock
+            options: variantOptions
+          })
+        })
+      }
+
+      console.log('Final variants:', variants)
 
       form.value = {
-        name: product.translations?.find(t => t.locale === selectedLanguage.value)?.name || product.name || '',
+        name: product.translations?.find(t => t.locale === selectedLanguage.value)?.title || '',
         slug: product.translations?.find(t => t.locale === selectedLanguage.value)?.slug || '',
-        description: product.translations?.find(t => t.locale === selectedLanguage.value)?.description || product.description || '',
-        shortDescription: product.translations?.find(t => t.locale === selectedLanguage.value)?.shortDescription || product.shortDescription || '',
-        price: product.price,
-        compareAtPrice: product.compareAtPrice,
+        description: product.translations?.find(t => t.locale === selectedLanguage.value)?.content || '',
+        shortDescription: product.translations?.find(t => t.locale === selectedLanguage.value)?.shortDescription || '',
+        price: productPrice,
+        compareAtPrice: comparePrice,
         sku: product.sku || '',
-        barcode: product.barcode || '',
-        published: product.published,
-        featured: product.featured,
-        taxable: product.taxable,
+        barcode: (product as any).barcode || '',
+        published: Boolean(product.published),
+        featured: Boolean((product as any).isFeatured),
+        taxable: (product as any).taxable === undefined ? true : Boolean((product as any).taxable),
         thumbnail: product.thumbnail || '',
-        gallery: product.gallery || [],
+        gallery: Array.isArray(product.gallery) ? product.gallery : [],
         metaDescription: product.translations?.find(t => t.locale === selectedLanguage.value)?.metaDescription || '',
-        tags: product.productTags?.map(tag => tag.tag.name) || [],
-        categoryIds: product.categories?.map(category => category.id) || [],
-        hasVariants: product.hasVariants,
-        variants: product.variants?.map(variant => ({
-          id: variant.id,
-          name: variant.name,
-          sku: variant.sku,
-          barcode: variant.barcode || '',
-          price: variant.price,
-          compareAtPrice: variant.compareAtPrice,
-          quantity: variant.quantity,
-          options: variant.options || []
-        })) || [],
-        trackInventory: product.trackInventory,
-        quantity: product.quantity,
-        lowStockThreshold: product.lowStockThreshold,
+        tags: productTags,
+        categoryIds: Array.isArray(product.categories) ? product.categories.map(category => category.id) : [],
+        hasVariants: Boolean(variants.length > 0),
+        variants,
+        trackInventory: (product as any).trackInventory === undefined ? true : Boolean((product as any).trackInventory),
+        quantity: typeof product.quantity === 'number' ? product.quantity : 0,
+        lowStockThreshold: (product as any).lowStockThreshold === undefined ? 5 : Number((product as any).lowStockThreshold),
+        stockStatus: (product as any).stockStatus || 'in_stock',
+        allowBackorders: (product as any).allowBackorders === undefined ? false : Boolean((product as any).allowBackorders),
+        stockMovements: (product as any).stockMovements || [],
         updatedAt: product.updatedAt,
         translations
       }
+
+      console.log('Form updated with variants:', form.value.variants)
+
+      // Log giá trị price để debug
+      console.log('Product price from API:', product.price);
+      console.log('Product price after processing:', productPrice);
+      
       tagsInput.value = form.value.tags.join(', ')
     }
   } catch (error) {
@@ -574,38 +712,95 @@ const updateProduct = async (continueEditing = false) => {
     // Prepare translations array for API
     const translations = Object.entries(form.value.translations).map(([locale, content]) => ({
       locale,
-      name: content.name,
+      title: content.name,
       slug: content.slug,
-      description: content.description,
+      content: content.description,
       shortDescription: content.shortDescription,
       metaDescription: content.metaDescription
     }))
 
+    const updateData: any = {
+      price: form.value.price,
+      comparePrice: form.value.compareAtPrice,
+      sku: form.value.sku,
+      thumbnail: form.value.thumbnail,
+      gallery: form.value.gallery,
+      published: form.value.published,
+      quantity: form.value.quantity,
+      isFeatured: form.value.featured,
+      translations
+    }
+
+    // Conditionally add optional fields
+    if (typeof form.value.barcode === 'string') {
+      updateData.barcode = form.value.barcode
+    }
+    
+    if (typeof form.value.taxable === 'boolean') {
+      updateData.taxable = form.value.taxable
+    }
+
+    if (Array.isArray(form.value.tags)) {
+      updateData.tags = form.value.tags
+    }
+
+    if (Array.isArray(form.value.categoryIds)) {
+      updateData.categoryIds = form.value.categoryIds
+    }
+
+    if (typeof form.value.hasVariants === 'boolean') {
+      updateData.hasVariants = form.value.hasVariants
+    }
+
+    if (Array.isArray(form.value.variants)) {
+      updateData.variants = form.value.variants.map(variant => {
+        // Chuẩn bị dữ liệu cho variant
+        const variantData: any = {
+          id: variant.id,
+          sku: variant.sku,
+          price: variant.price,
+          comparePrice: variant.compareAtPrice,
+          quantity: variant.quantity,
+          stock: variant.stock
+        }
+
+        // Xử lý translations dựa trên options
+        const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type'
+        const optionValue = variant.options[optionName] || variant.name
+
+        // Thêm translations nếu có giá trị
+        if (optionValue) {
+          variantData.translations = [
+            {
+              locale: selectedLanguage.value,
+              name: optionValue
+            }
+          ]
+        }
+
+        return variantData
+      })
+    }
+
+    if (typeof form.value.trackInventory === 'boolean') {
+      updateData.trackInventory = form.value.trackInventory
+    }
+
+    if (typeof form.value.lowStockThreshold === 'number') {
+      updateData.lowStockThreshold = form.value.lowStockThreshold
+    }
+
+    if (typeof form.value.stockStatus === 'string') {
+      updateData.stockStatus = form.value.stockStatus
+    }
+
+    if (typeof form.value.allowBackorders === 'boolean') {
+      updateData.allowBackorders = form.value.allowBackorders
+    }
+
     await trpc.admin.products.updateProduct.mutate({
       id: Number(route.params.id),
-      data: {
-        name: form.value.name,
-        description: form.value.description,
-        shortDescription: form.value.shortDescription,
-        price: form.value.price,
-        compareAtPrice: form.value.compareAtPrice,
-        sku: form.value.sku,
-        barcode: form.value.barcode,
-        published: form.value.published,
-        featured: form.value.featured,
-        taxable: form.value.taxable,
-        thumbnail: form.value.thumbnail,
-        gallery: form.value.gallery,
-        metaDescription: form.value.metaDescription,
-        translations,
-        tags: form.value.tags,
-        categoryIds: form.value.categoryIds,
-        hasVariants: form.value.hasVariants,
-        variants: form.value.variants,
-        trackInventory: form.value.trackInventory,
-        quantity: form.value.quantity,
-        lowStockThreshold: form.value.lowStockThreshold
-      }
+      data: updateData
     })
 
     toast.success('Product updated successfully!')
@@ -614,7 +809,7 @@ const updateProduct = async (continueEditing = false) => {
       router.push('/products')
     } else {
       // Refresh the product data
-      await fetchProduct()
+      fetchProduct()
     }
   } catch (error: any) {
     console.error('Failed to update product:', error)
@@ -635,13 +830,11 @@ const updateProduct = async (continueEditing = false) => {
     
     toast.error(errorMessage, {
       timeout: 8000,
-      position: "top-right",
       closeButton: true,
       icon: true,
       closeOnClick: false,
       pauseOnHover: true,
-      draggable: true,
-      theme: 'colored'
+      draggable: true
     })
   } finally {
     loading.value = false

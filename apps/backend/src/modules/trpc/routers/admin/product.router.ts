@@ -3,9 +3,12 @@ import { z } from 'zod';
 import { Permissions } from '../../../auth/constants/permissions.constant';
 import { Category } from '../../../category/entities/category.entity';
 import { ProductTranslation } from '../../../product/entities/product-translation.entity';
-import { ProductType } from '../../../product/entities/product.entity';
+import { Product, ProductType } from '../../../product/entities/product.entity';
 import { requirePermission } from '../../middlewares/permission.middleware';
 import { adminProcedure, protectedProcedure, router } from '../../procedures';
+import { ProductAdminService } from '../../../product/admin/services/product-admin.service';
+import { ProductStockHistoryService } from '../../../product/services/product-stock-history.service';
+import { StockAdjustmentType } from '../../../product/entities/product-stock-history.entity';
 
 // Base translation input schema
 const productTranslationSchema = z.object({
@@ -27,7 +30,7 @@ const categoryInputSchema = z.object({
   id: z.number()
 });
 
-
+// Tạo router thay vì sử dụng class với @injectable
 export const productAdminRouter = router({
   getAllProducts: adminProcedure
     .use(requirePermission(Permissions.VIEW_CONTENT))
@@ -103,16 +106,26 @@ export const productAdminRouter = router({
       type: z.nativeEnum(ProductType).optional(),
       videoReview: z.string().optional(),
       translations: z.array(productTranslationSchema),
-      categories: z.array(categoryInputSchema).optional()
+      categories: z.array(categoryInputSchema).optional(),
+      categoryIds: z.array(z.number()).optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      const { translations, categories, ...productData } = input;
+      const { translations, categories, categoryIds, ...productData } = input;
       
-      return ctx.services.productAdminService.create({
+      // Tạo đối tượng dữ liệu sản phẩm
+      const productCreateData: any = {
         ...productData,
         translations: translations as unknown as ProductTranslation[],
-        categories: categories ? categories.map(({ id }) => ({ id } as Category)) : undefined
-      });
+      };
+
+      // Xử lý categories hoặc categoryIds
+      if (categories) {
+        productCreateData.categories = categories.map(({ id }) => ({ id } as unknown as Category));
+      } else if (categoryIds && categoryIds.length > 0) {
+        productCreateData.categories = categoryIds.map(id => ({ id } as unknown as Category));
+      }
+      
+      return ctx.services.productAdminService.create(productCreateData);
     }),
 
   updateProduct: protectedProcedure
@@ -132,17 +145,31 @@ export const productAdminRouter = router({
         type: z.nativeEnum(ProductType).optional(),
         videoReview: z.string().optional(),
         translations: z.array(productTranslationSchema).optional(),
-        categories: z.array(categoryInputSchema).optional()
+        categories: z.array(categoryInputSchema).optional(),
+        categoryIds: z.array(z.number()).optional()
       })
     }))
     .mutation(async ({ ctx, input }) => {
-      const { translations, categories, ...updateData } = input.data;
+      const { translations, categories, categoryIds, ...updateData } = input.data;
       
-      return ctx.services.productAdminService.update(input.id, {
-        ...updateData,
-        translations: translations as unknown as ProductTranslation[],
-        categories: categories ? categories.map(({ id }) => ({ id } as Category)) : undefined
-      });
+      // Tạo đối tượng dữ liệu cập nhật
+      const productUpdateData: any = {
+        ...updateData
+      };
+
+      // Xử lý translations nếu có
+      if (translations) {
+        productUpdateData.translations = translations as unknown as ProductTranslation[];
+      }
+
+      // Xử lý categories hoặc categoryIds
+      if (categories) {
+        productUpdateData.categories = categories.map(({ id }) => ({ id } as unknown as Category));
+      } else if (categoryIds && categoryIds.length > 0) {
+        productUpdateData.categories = categoryIds.map(id => ({ id } as unknown as Category));
+      }
+      
+      return ctx.services.productAdminService.update(input.id, productUpdateData);
     }),
 
   deleteProduct: adminProcedure
@@ -160,5 +187,119 @@ export const productAdminRouter = router({
           cause: error,
         });
       }
-    })
+    }),
+
+  getProductStockHistory: protectedProcedure
+    .input(
+      z.object({
+        productId: z.number(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const { productId, limit, offset } = input;
+        
+        const history = await ctx.services.productStockHistoryService.getProductStockHistory(
+          productId,
+          { limit, offset }
+        );
+        
+        return history;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Không thể lấy lịch sử tồn kho: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
+  getVariantStockHistory: protectedProcedure
+    .input(
+      z.object({
+        variantId: z.number(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const { variantId, limit, offset } = input;
+        
+        const history = await ctx.services.productStockHistoryService.getVariantStockHistory(
+          variantId,
+          { limit, offset }
+        );
+        
+        return history;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Không thể lấy lịch sử tồn kho của biến thể: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
+  adjustProductStock: protectedProcedure
+    .input(
+      z.object({
+        productId: z.number(),
+        adjustmentQuantity: z.number(),
+        note: z.string().optional(),
+        userId: z.number().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const { productId, adjustmentQuantity, note, userId } = input;
+        
+        const adjustment = await ctx.services.productStockHistoryService.recordAdminAdjustment({
+          productId,
+          adjustmentQuantity,
+          note,
+          userId,
+        });
+        
+        return adjustment;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Không thể điều chỉnh tồn kho sản phẩm: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
+  adjustVariantStock: protectedProcedure
+    .input(
+      z.object({
+        variantId: z.number(),
+        adjustmentQuantity: z.number(),
+        note: z.string().optional(),
+        userId: z.number().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const { variantId, adjustmentQuantity, note, userId } = input;
+        
+        const adjustment = await ctx.services.productStockHistoryService.recordAdminAdjustment({
+          variantId,
+          adjustmentQuantity,
+          note,
+          userId,
+        });
+        
+        return adjustment;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Không thể điều chỉnh tồn kho biến thể: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
 }); 

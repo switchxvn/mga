@@ -30,9 +30,17 @@ import { Navigation, Pagination, Zoom } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import SearchFilter from '../../components/posts/SearchFilter.vue';
-import DataTable from '../../components/ui/DataTable.vue';
-import PageHeader from '../../components/ui/PageHeader.vue';
+// These functions are provided by Nuxt at runtime
+// @ts-ignore
+const definePageMeta = (meta: any) => {}; 
+// @ts-ignore
+const useHead = (head: any) => {};
+import SearchFilter from '../../components/common/filter/SearchFilter.vue';
+import StatusFilter from '../../components/common/filter/StatusFilter.vue';
+import PageSizeFilter from '../../components/common/filter/PageSizeFilter.vue';
+import FilterContainer from '../../components/common/filter/FilterContainer.vue';
+import DataTable from '../../components/common/table/DataTable.vue';
+import PageHeader from '../../components/common/header/PageHeader.vue';
 import { useAuth } from "../../composables/useAuth";
 import { useTrpc } from "../../composables/useTrpc";
 
@@ -213,19 +221,9 @@ async function handleBulkAction(action: string) {
       case 'unpublish':
         await Promise.all(
           selectedPosts.value.map(postId => {
-            const post = posts.value.items.find((p: AdminPost) => p.id === postId);
-            if (!post) return;
-
-            return trpc.admin.posts.updatePost.mutate({
+            return trpc.admin.posts.updatePostStatus.mutate({
               id: postId,
-              data: {
-                title: post.title,
-                content: post.content || '',
-                status: action === 'publish' ? PostStatus.PUBLISHED : PostStatus.DRAFT,
-                thumbnail: post.thumbnail,
-                shortDescription: post.shortDescription,
-                translations: post.translations || []
-              }
+              status: action === 'publish' ? PostStatus.PUBLISHED : PostStatus.DRAFT
             });
           })
         );
@@ -507,12 +505,31 @@ async function togglePublished(post: AdminPost) {
     </PageHeader>
 
     <!-- Search and Filter -->
-    <SearchFilter
-      v-model:search="search"
-      v-model:published-filter="publishedFilter"
-      v-model:page-size="pageSize"
-      search-placeholder="Search posts..."
-    />
+    <FilterContainer>
+      <template #search>
+        <SearchFilter
+          v-model:search="search"
+          search-placeholder="Search posts..."
+        />
+      </template>
+      
+      <template #status>
+        <StatusFilter
+          v-model:modelValue="publishedFilter"
+          :options="[
+            { label: 'All Posts', value: undefined },
+            { label: 'Published', value: true },
+            { label: 'Draft', value: false }
+          ]"
+        />
+      </template>
+      
+      <template #pageSize>
+        <PageSizeFilter
+          v-model:modelValue="pageSize"
+        />
+      </template>
+    </FilterContainer>
 
     <!-- Enhanced Error Alert -->
     <TransitionRoot as="template" :show="!!error">

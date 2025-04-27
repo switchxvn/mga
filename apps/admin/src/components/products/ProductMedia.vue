@@ -14,6 +14,7 @@
           accept="image/*"
           :preview="thumbnail"
           @update:model-value="$emit('update:thumbnail', $event)"
+          default-image="/images/default/default-image.jpg"
         />
       </div>
     </div>
@@ -34,6 +35,7 @@
                   :src="image"
                   :alt="'Product gallery image ' + (index + 1)"
                   class="w-full h-full object-cover"
+                  @error="onImageError"
                 />
                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
@@ -91,7 +93,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon } from 'lucide-vue-next'
-import MediaUploader from '../ui/MediaUploader.vue'
+import MediaUploader from '../common/media/MediaUploader.vue'
 
 const props = defineProps<{
   thumbnail: string
@@ -105,6 +107,9 @@ const emit = defineEmits<{
 
 const localThumbnail = ref(props.thumbnail)
 const localGallery = ref([...props.gallery])
+
+// Base64 encoded transparent placeholder image 
+const FALLBACK_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
 // Watch for prop changes
 watch(() => props.thumbnail, (newValue) => {
@@ -153,5 +158,16 @@ const moveImage = (fromIndex: number, toIndex: number) => {
   
   localGallery.value = images
   emit('update:gallery', localGallery.value)
+}
+
+// Handle image error without causing an infinite loop
+const onImageError = (e: Event) => {
+  const target = e.target as HTMLImageElement;
+  if (target) {
+    // Use a data URI to prevent infinite error loops
+    target.src = FALLBACK_IMAGE;
+    // Remove onerror handler to prevent potential loops
+    target.onerror = null;
+  }
 }
 </script> 

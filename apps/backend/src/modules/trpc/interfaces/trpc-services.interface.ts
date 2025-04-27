@@ -18,6 +18,7 @@ import { ProductFrontendService } from '../../product/frontend/services/product-
 import { CrossSellService } from '../../product/frontend/services/cross-sell.service';
 import { ProductSpecificationService } from '../../product/services/product-specification.service';
 import { ProductComboService } from '../../product/frontend/services/product-combo.service';
+import { ProductStockHistoryService } from '../../product/services/product-stock-history.service';
 import { PriceRequestService } from '../../price-request/services/price-request.service';
 import { FeatureFlagsAdminService } from '../../feature-flags/admin/services/feature-flags-admin.service';
 import { FeatureFlagsFrontendService } from '../../feature-flags/frontend/services/feature-flags-frontend.service';
@@ -79,6 +80,7 @@ export interface ITrpcServices {
   crossSellService: CrossSellService;
   productSpecificationService: ProductSpecificationService;
   productComboService: ProductComboService;
+  productStockHistoryService: ProductStockHistoryService;
   priceRequestService: PriceRequestService;
   featureFlagsAdminService: FeatureFlagsAdminService;
   featureFlagsFrontendService: FeatureFlagsFrontendService;

@@ -16,6 +16,7 @@
           :src="preview"
           :alt="alt"
           class="w-full h-full object-cover"
+          @error="onImageError"
         />
         <!-- Hover Overlay -->
         <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -68,6 +69,9 @@
 import { ref, watch } from 'vue'
 import { UploadCloudIcon } from 'lucide-vue-next'
 
+// Base64 encoded transparent placeholder image
+const FALLBACK_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
 const props = defineProps<{
   modelValue: string
   preview?: string
@@ -75,6 +79,7 @@ const props = defineProps<{
   maxSize?: number // in bytes
   aspectRatio?: number
   alt?: string
+  defaultImage?: string
 }>()
 
 const emit = defineEmits<{
@@ -172,6 +177,17 @@ const formatFileSize = (bytes: number): string => {
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+// Handle image error without causing an infinite loop
+const onImageError = (e: Event) => {
+  const target = e.target as HTMLImageElement;
+  if (target) {
+    // Prevent error event from firing again by using a data URI
+    target.src = props.defaultImage || FALLBACK_IMAGE;
+    // Remove onerror handler to prevent potential loops
+    target.onerror = null;
+  }
 }
 
 // Watch for external preview changes

@@ -2,9 +2,9 @@
   <div class="grid gap-2">
     <!-- Category Item -->
     <div
-      class="flex items-center gap-2"
+      class="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-slate-50 transition-colors"
       :class="{
-        'ml-6': !!category.parentId
+        'ml-8': !!category.parentId
       }"
     >
       <!-- Expand/Collapse Button -->
@@ -12,14 +12,16 @@
         v-if="hasChildren"
         type="button"
         @click="expanded = !expanded"
-        class="flex h-4 w-4 items-center justify-center rounded hover:bg-slate-100"
+        class="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-200"
       >
         <ChevronRightIcon
           class="h-4 w-4 transition-transform"
           :class="{ 'rotate-90': expanded }"
         />
       </button>
-      <div v-else class="w-4"></div>
+      <div v-else class="w-6 flex items-center justify-center">
+        <FolderIcon class="h-4 w-4 text-slate-400" />
+      </div>
 
       <!-- Checkbox -->
       <div class="flex items-center">
@@ -35,14 +37,18 @@
       <!-- Category Name -->
       <label
         :for="'category-' + category.id"
-        class="flex-1 cursor-pointer text-sm"
+        class="flex-1 cursor-pointer text-sm font-medium"
       >
         {{ category.translations[0]?.name || 'Unnamed category' }}
+        
+        <span v-if="!category.active" class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+          Draft
+        </span>
       </label>
     </div>
 
     <!-- Children -->
-    <div v-if="hasChildren && expanded" class="grid gap-2">
+    <div v-if="hasChildren && expanded" class="grid gap-1 pl-2 ml-4 border-l-2 border-slate-100">
       <CategoryItem
         v-for="child in category.children"
         :key="child.id"
@@ -56,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ChevronRightIcon } from 'lucide-vue-next'
+import { ChevronRightIcon, FolderIcon } from 'lucide-vue-next'
 
 interface CategoryTranslation {
   id: number
@@ -67,10 +73,15 @@ interface CategoryTranslation {
 
 interface Category {
   id: number
-  slug: string
-  parentId: number | null
+  type: string
+  active: boolean
+  parentId?: number | null
+  parent?: Category | null
+  slug?: string
   translations: CategoryTranslation[]
   children?: Category[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 const props = defineProps<{

@@ -6,6 +6,7 @@ import { ProductSpecification } from './product-specification.entity';
 import { ProductCombo } from './product-combo.entity';
 import { PriceRequest } from '../../price-request/entities/price-request.entity';
 import { ProductVariant } from './product-variant.entity';
+import { ProductStockHistory } from './product-stock-history.entity';
 
 export enum ProductType {
   PHYSICAL = 'PHYSICAL', // Sản phẩm vật lý
@@ -114,4 +115,8 @@ export class Product {
   // Product variants relationship
   @OneToMany(() => ProductVariant, variant => variant.product, { cascade: true })
   variants!: ProductVariant[];
+
+  // Product stock history relationship
+  @OneToMany(() => ProductStockHistory, stockHistory => stockHistory.product)
+  stockHistory!: ProductStockHistory[];
 } 

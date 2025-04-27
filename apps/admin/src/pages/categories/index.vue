@@ -1,135 +1,165 @@
 <script setup lang="ts">
-import { ref, provide } from 'vue'
-import { useToast } from '@/composables/useToast'
-import Swal from 'sweetalert2'
-import { 
-  PlusCircleIcon,
-  PencilIcon,
-  Trash2Icon,
-  ListChecksIcon
-} from 'lucide-vue-next'
+import type { Category, PaginatedResponse } from '@ew/shared';
+import { CategoryType } from '@ew/shared';
+import { Menu, MenuButton, MenuItem, MenuItems, TransitionRoot } from '@headlessui/vue';
 import {
   ChevronDownIcon,
   ChevronUpIcon,
   XMarkIcon
-} from '@heroicons/vue/24/outline'
-import { TransitionRoot } from '@headlessui/vue'
-import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
-import PageHeader from '../../components/ui/PageHeader.vue'
-import SearchFilter from '../../components/categories/SearchFilter.vue'
-import PaginationComponent from '../../components/ui/Pagination.vue'
+} from '@heroicons/vue/24/outline';
+import {
+  ArchiveIcon,
+  CopyIcon,
+  EyeIcon,
+  EyeOffIcon,
+  ImageIcon,
+  ListChecksIcon,
+  XCircleIcon as LucideXCircleIcon,
+  PencilIcon,
+  PlusCircleIcon,
+  Trash2Icon,
+  TrashIcon,
+  ZoomInIcon
+} from 'lucide-vue-next';
+import Swal from 'sweetalert2';
+import { onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import FilterContainer from '../../components/common/filter/FilterContainer.vue';
+import SearchFilter from '../../components/common/filter/SearchFilter.vue';
+import StatusFilter from '../../components/common/filter/StatusFilter.vue';
+import PageSizeFilter from '../../components/common/filter/PageSizeFilter.vue';
+import DataTable from '../../components/common/table/DataTable.vue';
+import PageHeader from '../../components/common/header/PageHeader.vue';
+import { useAuth } from "../../composables/useAuth";
+import { useTrpc } from "../../composables/useTrpc";
 
-provide('pageTitle', ref('Categories'))
+// These functions are provided by Nuxt at runtime
+// @ts-ignore
+const definePageMeta = (meta: any) => {}; 
+// @ts-ignore
+const useHead = (head: any) => {};
+// @ts-ignore
+const navigateTo = (path: any, options?: any) => {};
 
-const trpc = useTrpc()
+const router = useRouter();
+const route = useRoute();
+const { checkAuth } = useAuth();
 
-interface CategoryResponse {
-  id: number
-  type: string
-  active: boolean
-  translations: Array<{
-    name: string
-    locale: string
-  }>
-  createdAt: string
-  updatedAt: string
-}
+const trpc = useTrpc();
 
-interface Category {
-  id: number
-  name: string
-  type: string
-  active: boolean
-  createdAt: string
-  updatedAt: string
-}
+const isLoading = ref(true);
+const error = ref<string | null>(null);
+const search = ref(route.query.search?.toString() || '');
+const activeFilter = ref(
+  route.query.active === 'active' ? 'true' :
+  route.query.active === 'inactive' ? 'false' :
+  route.query.active === 'true' ? 'true' :
+  route.query.active === 'false' ? 'false' :
+  ''
+);
+const page = ref(Number(route.query.page) || 1);
+const pageSize = ref(10);
+const categories = ref({
+  items: [] as Category[],
+  total: 0,
+  totalPages: 1,
+  currentPage: 1,
+  limit: pageSize.value
+});
 
-const isLoading = ref(false)
-const error = ref<string | null>(null)
-const categories = ref<Category[]>([])
-const totalItems = ref(0)
-const currentPage = ref(1)
-const itemsPerPage = ref(10)
-const searchQuery = ref('')
-const statusFilter = ref<string>('all')
-const selectedCategories = ref<number[]>([])
-const sortBy = ref('createdAt')
-const sortOrder = ref<'asc' | 'desc'>('desc')
+const selectedCategories = ref<number[]>([]);
+const showBulkActions = ref(false);
+const sortBy = ref('createdAt');
+const sortOrder = ref<'asc' | 'desc'>('desc');
 
-const columns = [
-  {
-    key: 'id',
-    label: 'ID',
-    sortable: true
-  },
-  {
-    key: 'name',
-    label: 'Name',
-    sortable: true
-  },
-  {
-    key: 'type',
-    label: 'Type',
-    sortable: true
-  },
-  {
-    key: 'active',
-    label: 'Status',
-    sortable: true
-  },
-  {
-    key: 'createdAt',
-    label: 'Created At',
-    sortable: true
-  },
-  {
-    key: 'actions',
-    label: 'Actions',
-    sortable: false
-  }
-]
+// Update URL query parameters
+const updateQueryParams = () => {
+  console.log('Updating query params:', {
+    page: page.value,
+    search: search.value,
+    active: activeFilter.value,
+    sortBy: sortBy.value,
+    sortOrder: sortOrder.value
+  });
 
-const fetchCategories = async () => {
+  // Convert internal values to URL-friendly values
+  const activeParamValue = 
+    activeFilter.value === 'true' ? 'active' :
+    activeFilter.value === 'false' ? 'inactive' :
+    undefined;
+
+  navigateTo({
+    query: {
+      page: page.value > 1 ? page.value.toString() : undefined,
+      search: search.value || undefined,
+      active: activeParamValue,
+      sortBy: sortBy.value || undefined,
+      sortOrder: sortOrder.value || undefined
+    }
+  }, { replace: true });
+};
+
+// Get categories data
+async function fetchCategories() {
   try {
-    isLoading.value = true
+    isLoading.value = true;
+    error.value = null;
+
+    // Parse the active filter correctly
+    let activeFilterValue: boolean | null = null;
+    if (activeFilter.value === 'true') {
+      activeFilterValue = true;
+    } else if (activeFilter.value === 'false') {
+      activeFilterValue = false;
+    }
+    
+    console.log('Fetching categories with filter:', { 
+      active: activeFilterValue, 
+      activeFilter: activeFilter.value,
+      originalQuery: route.query.active
+    });
+
     const result = await trpc.admin.category.getAllCategories.query({
-      page: currentPage.value,
-      limit: itemsPerPage.value,
-      search: searchQuery.value,
-      active: statusFilter.value === 'active' ? true : statusFilter.value === 'inactive' ? false : null,
+      page: page.value,
+      limit: pageSize.value,
+      search: search.value,
+      active: activeFilterValue,
       sortBy: sortBy.value,
       sortOrder: sortOrder.value
-    })
-    
-    // Map the categories to match the interface
-    categories.value = result.categories.map((category: CategoryResponse) => ({
-      id: category.id,
-      name: category.translations?.[0]?.name || '',
-      type: category.type,
-      active: category.active,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt
-    }))
-    totalItems.value = result.total
+    });
+
+    if (result) {
+      categories.value = {
+        items: result.categories || [],
+        total: result.total || 0,
+        totalPages: result.totalPages || 1,
+        currentPage: result.currentPage || 1,
+        limit: result.limit || pageSize.value
+      };
+    }
   } catch (err: any) {
-    error.value = err.message || 'Failed to fetch categories'
-    console.error('Error fetching categories:', err)
+    error.value = err.message || "Failed to fetch categories";
+    console.error('Error fetching categories:', err);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-  fetchCategories()
-}
+// Watch for changes in filters and update URL
+watch([page, search, activeFilter, sortBy, sortOrder], () => {
+  console.log('Filters changed:', {
+    page: page.value,
+    search: search.value,
+    active: activeFilter.value,
+    sortBy: sortBy.value,
+    sortOrder: sortOrder.value
+  });
+  
+  updateQueryParams();
+  fetchCategories();
+}, { deep: true });
 
-const handleSearch = () => {
-  currentPage.value = 1
-  fetchCategories()
-}
-
-const handleDelete = async (id: number) => {
+async function handleDelete(id: number) {
   const result = await Swal.fire({
     title: 'Delete Category',
     text: 'Are you sure you want to delete this category? This action cannot be undone.',
@@ -142,7 +172,7 @@ const handleDelete = async (id: number) => {
 
   if (result.isConfirmed) {
     try {
-      await trpc.admin.category.deleteCategory.mutate(id)
+      await trpc.admin.category.deleteCategory.mutate(id);
       
       Swal.fire({
         title: 'Success!',
@@ -152,9 +182,10 @@ const handleDelete = async (id: number) => {
         showConfirmButton: false
       });
       
-      fetchCategories()
+      // Refetch data
+      await fetchCategories();
     } catch (err: any) {
-      console.error('Error deleting category:', err)
+      console.error('Error deleting category:', err);
       
       Swal.fire({
         title: 'Error!',
@@ -165,146 +196,97 @@ const handleDelete = async (id: number) => {
   }
 }
 
-const handleStatusFilter = (status: string) => {
-  statusFilter.value = status
-  currentPage.value = 1
-  fetchCategories()
-}
-
-const toggleSelectAll = () => {
-  if (selectedCategories.value.length === categories.value.length) {
-    selectedCategories.value = []
-  } else {
-    selectedCategories.value = categories.value.map(cat => cat.id)
-  }
-}
-
-const toggleCategorySelection = (categoryId: number) => {
-  const index = selectedCategories.value.indexOf(categoryId)
-  if (index === -1) {
-    selectedCategories.value.push(categoryId)
-  } else {
-    selectedCategories.value.splice(index, 1)
-  }
-}
-
+// Handle bulk actions
 const handleBulkAction = async (action: string) => {
-  const selectedCount = selectedCategories.value.length
-  if (!selectedCount) return
-
-  let confirmConfig: any = {
-    icon: 'question' as const,
-    showCancelButton: true,
-    confirmButtonText: 'Yes, proceed',
-    cancelButtonText: 'Cancel',
-    title: '',
-    text: '',
-    confirmButtonColor: ''
+  if (!selectedCategories.value.length) {
+    error.value = 'Please select at least one category';
+    return;
   }
-
-  switch (action) {
-    case 'activate':
-      confirmConfig = {
-        ...confirmConfig,
-        title: 'Activate Selected Categories?',
-        text: `Are you sure you want to activate ${selectedCount} selected categories?`,
-        confirmButtonColor: '#10B981',
-        confirmButtonText: 'Yes, activate them'
-      }
-      break
-    case 'deactivate':
-      confirmConfig = {
-        ...confirmConfig,
-        title: 'Deactivate Selected Categories?',
-        text: `Are you sure you want to deactivate ${selectedCount} selected categories?`,
-        confirmButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, deactivate them'
-      }
-      break
-    case 'delete':
-      confirmConfig = {
-        ...confirmConfig,
-        title: 'Delete Selected Categories?',
-        text: `Are you sure you want to permanently delete ${selectedCount} selected categories? This action cannot be undone.`,
-        confirmButtonColor: '#DC2626',
-        confirmButtonText: 'Yes, delete them',
-        icon: 'warning' as const
-      }
-      break
-  }
-
-  const result = await Swal.fire(confirmConfig)
-  if (!result.isConfirmed) return
 
   try {
-    isLoading.value = true
-
-    switch (action) {
-      case 'activate':
-      case 'deactivate':
-        await Promise.all(
-          selectedCategories.value.map(categoryId => 
-            trpc.admin.category.updateCategory.mutate({
-              id: categoryId,
-              data: {
-                active: action === 'activate'
-              }
-            })
-          )
-        )
-        break
-      case 'delete':
-        await Promise.all(
-          selectedCategories.value.map(categoryId => 
-            trpc.admin.category.deleteCategory.mutate(categoryId)
-          )
-        )
-        break
+    if (action === 'delete') {
+      for (const id of selectedCategories.value) {
+        await trpc.admin.category.deleteCategory.mutate(id);
+      }
+    } else if (action === 'activate' || action === 'deactivate') {
+      const isActive = action === 'activate';
+      for (const id of selectedCategories.value) {
+        await trpc.admin.category.updateCategory.mutate({
+          id,
+          data: { isActive }
+        });
+      }
     }
-
-    await fetchCategories()
-    selectedCategories.value = []
-
-    Swal.fire({
-      title: 'Success!',
-      text: `Successfully performed ${action} on ${selectedCount} categories`,
-      icon: 'success',
-      timer: 2000,
-      showConfirmButton: false
-    })
-  } catch (err: any) {
-    const errorMessage = err.message || `Failed to ${action} categories`
-    error.value = errorMessage
-    console.error(`Error performing ${action} on categories:`, err)
     
-    Swal.fire({
-      title: 'Error!',
-      text: errorMessage,
-      icon: 'error'
-    })
-  } finally {
-    isLoading.value = false
+    await fetchCategories();
+    selectedCategories.value = [];
+  } catch (err: any) {
+    console.error('Error performing bulk action:', err);
+    error.value = err.message;
   }
-}
+};
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString()
-}
+  return new Date(date).toLocaleDateString();
+};
 
-const handleSort = (column: string) => {
-  if (sortBy.value === column) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortBy.value = column
-    sortOrder.value = 'asc'
+// Handle category deletion
+const deleteCategory = async (id: number) => {
+  try {
+    await trpc.admin.category.deleteCategory.mutate(id);
+    await fetchCategories();
+  } catch (err: any) {
+    console.error('Error deleting category:', err);
+    error.value = err.message;
   }
-  fetchCategories()
-}
+};
 
-// Initial fetch
-onMounted(() => {
-  fetchCategories()
-})
+// Handle category activation/deactivation
+const toggleCategoryStatus = async (id: number, active: boolean) => {
+  try {
+    await trpc.admin.category.updateCategory.mutate({
+      id,
+      data: { isActive: active }
+    });
+    await fetchCategories();
+  } catch (err: any) {
+    console.error('Error updating category status:', err);
+    error.value = err.message;
+  }
+};
+
+// Handle row click
+const handleRowClick = async (id: number) => {
+  await navigateTo(`/categories/${id}`);
+};
+
+// Add helper function to get translated name
+const getCategoryName = (category: any): string => {
+  if (!category.translations || category.translations.length === 0) {
+    return 'No translation';
+  }
+  
+  // Try to find translation for current locale
+  const translation = category.translations.find((t: any) => t.locale === 'vi') || category.translations[0];
+  return translation?.name || 'Unnamed';
+};
+
+onMounted(async () => {
+  try {
+    // Check authentication first
+    const isAuthenticated = await checkAuth();
+    if (!isAuthenticated) {
+      router.push("/auth/login");
+      return;
+    }
+
+    await fetchCategories();
+  } catch (err: any) {
+    error.value = err.message || "Failed to initialize categories page";
+    console.error("Error initializing categories page:", err);
+    isLoading.value = false;
+  }
+});
 </script>
 
 <template>
@@ -333,7 +315,7 @@ onMounted(() => {
                       'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
                     ]"
                   >
-                    <PlusCircleIcon class="h-4 w-4" :class="active ? 'text-emerald-700' : 'text-gray-500'" />
+                    <EyeIcon class="h-4 w-4" :class="active ? 'text-emerald-700' : 'text-gray-500'" />
                     Activate Selected
                   </button>
                 </MenuItem>
@@ -345,7 +327,7 @@ onMounted(() => {
                       'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
                     ]"
                   >
-                    <XMarkIcon class="h-4 w-4" :class="active ? 'text-slate-700' : 'text-gray-500'" />
+                    <EyeOffIcon class="h-4 w-4" :class="active ? 'text-slate-700' : 'text-gray-500'" />
                     Deactivate Selected
                   </button>
                 </MenuItem>
@@ -359,7 +341,7 @@ onMounted(() => {
                       'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
                     ]"
                   >
-                    <Trash2Icon class="h-4 w-4" :class="active ? 'text-red-700' : 'text-gray-500'" />
+                    <TrashIcon class="h-4 w-4" :class="active ? 'text-red-700' : 'text-gray-500'" />
                     Delete Selected
                   </button>
                 </MenuItem>
@@ -379,20 +361,39 @@ onMounted(() => {
     </PageHeader>
 
     <!-- Search and Filter -->
-    <SearchFilter
-      v-model:search="searchQuery"
-      v-model:status-filter="statusFilter"
-      v-model:page-size="itemsPerPage"
-      search-placeholder="Search categories..."
-      @search="handleSearch"
-    />
+    <FilterContainer>
+      <template #search>
+        <SearchFilter
+          v-model:search="search"
+          search-placeholder="Search categories..."
+        />
+      </template>
+      
+      <template #status>
+        <StatusFilter
+          :modelValue="activeFilter === 'true' ? true : activeFilter === 'false' ? false : undefined"
+          :options="[
+            { label: 'All Status', value: undefined },
+            { label: 'Active', value: true },
+            { label: 'Inactive', value: false }
+          ]"
+          @update:modelValue="activeFilter = $event === true ? 'true' : $event === false ? 'false' : ''"
+        />
+      </template>
+      
+      <template #pageSize>
+        <PageSizeFilter
+          v-model:modelValue="pageSize"
+        />
+      </template>
+    </FilterContainer>
 
     <!-- Enhanced Error Alert -->
     <TransitionRoot as="template" :show="!!error">
       <div class="rounded-md bg-red-50 p-4 mb-6">
         <div class="flex">
           <div class="flex-shrink-0">
-            <XMarkIcon class="h-5 w-5 text-red-400" />
+            <LucideXCircleIcon class="h-5 w-5 text-red-400" />
           </div>
           <div class="ml-3">
             <h3 class="text-sm font-medium text-red-800">Error</h3>
@@ -413,7 +414,7 @@ onMounted(() => {
       </div>
     </TransitionRoot>
 
-    <!-- Enhanced Loading State -->
+    <!-- Loading State -->
     <div v-if="isLoading" class="bg-white dark:bg-neutral-800 shadow-sm rounded-lg p-6">
       <div class="animate-pulse space-y-4">
         <div v-for="i in 5" :key="i" class="flex space-x-4">
@@ -426,109 +427,110 @@ onMounted(() => {
     </div>
 
     <!-- Categories Table -->
-    <div v-else class="bg-white dark:bg-neutral-800 shadow-sm rounded-lg overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-neutral-700">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left">
-                <input
-                  type="checkbox"
-                  class="checkbox rounded"
-                  :checked="selectedCategories.length === categories.length"
-                  :indeterminate="selectedCategories.length > 0 && selectedCategories.length < categories.length"
-                  @change="toggleSelectAll"
-                />
-              </th>
-              <th 
-                v-for="column in columns" 
-                :key="column.key"
-                scope="col" 
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-600"
-                @click="column.sortable && handleSort(column.key)"
-              >
-                <div class="flex items-center gap-2">
-                  {{ column.label }}
-                  <template v-if="column.sortable">
-                    <ChevronDownIcon v-if="sortBy !== column.key" class="h-4 w-4" />
-                    <ChevronUpIcon v-else-if="sortOrder === 'asc'" class="h-4 w-4" />
-                    <ChevronDownIcon v-else class="h-4 w-4" />
-                  </template>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white dark:bg-neutral-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr 
-              v-for="category in categories" 
-              :key="category.id"
-              class="hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors duration-150 ease-in-out"
-            >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <input
-                  type="checkbox"
-                  class="checkbox rounded"
-                  :checked="selectedCategories.includes(category.id)"
-                  @change="toggleCategorySelection(category.id)"
-                />
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ category.id }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ category.name }}
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ category.type }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  :class="{
-                    'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full': true,
-                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': category.active,
-                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200': !category.active
-                  }"
-                >
-                  {{ category.active ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {{ formatDate(category.createdAt) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex justify-end gap-2">
-                  <NuxtLink
-                    :to="`/categories/edit/${category.id}`"
-                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                    title="Edit category"
-                  >
-                    <PencilIcon class="h-5 w-5" />
-                  </NuxtLink>
-                  <button
-                    @click="handleDelete(category.id)"
-                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                    title="Delete category"
-                  >
-                    <Trash2Icon class="h-5 w-5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <DataTable
+      v-else
+      :items="categories?.items || []"
+      :loading="isLoading"
+      :error="error"
+      :sort-by="sortBy"
+      :sort-order="sortOrder"
+      :selected-items="selectedCategories"
+      :pagination="{
+        currentPage: page,
+        totalPages: categories?.totalPages || 1,
+        total: categories?.total || 0,
+        pageSize: pageSize
+      }"
+      @update:selected-items="selectedCategories = $event"
+      @sort="(column) => { sortBy = column; fetchCategories(); }"
+      @page-change="(newPage) => { page = newPage; fetchCategories(); }"
+      @clear-error="error = null"
+    >
+      <!-- Selection slot -->
+      <template #selection="{ item, isSelected, toggleSelection }">
+        <input
+          type="checkbox"
+          class="checkbox rounded"
+          :checked="isSelected"
+          @change="toggleSelection(item.id)"
+        />
+      </template>
 
-      <!-- Pagination -->
-      <PaginationComponent
-        :current-page="currentPage"
-        :total-pages="Math.ceil(totalItems / itemsPerPage)"
-        :total-items="totalItems"
-        :items-per-page="itemsPerPage"
-        @page-change="handlePageChange"
-      />
-    </div>
+      <!-- Header slot -->
+      <template #header="{ sortBy, sortOrder, handleSort }">
+        <th scope="col" class="px-6 py-3 text-left">
+          <span class="text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</span>
+        </th>
+        <th 
+          v-for="column in ['Name', 'Type', 'Status', 'Created At', 'Actions']" 
+          :key="column"
+          scope="col" 
+          class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-600"
+          @click="handleSort(column.toLowerCase())"
+        >
+          <div class="flex items-center gap-2">
+            {{ column }}
+            <ChevronDownIcon v-if="sortBy !== column.toLowerCase()" class="h-4 w-4" />
+            <ChevronUpIcon v-else-if="sortOrder === 'asc'" class="h-4 w-4" />
+            <ChevronDownIcon v-else class="h-4 w-4" />
+          </div>
+        </th>
+      </template>
+
+      <!-- Row slot -->
+      <template #row="{ item: category }">
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+          {{ category.id }}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="text-sm font-medium text-gray-900 dark:text-white">
+            {{ getCategoryName(category) }}
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+          {{ category.type }}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <button
+            @click="toggleCategoryStatus(category.id, category.active)"
+            :class="{
+              'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full items-center gap-1 cursor-pointer transition-colors duration-200': true,
+              'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800': category.active,
+              'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600': !category.active
+            }"
+          >
+            <div class="w-2 h-2 rounded-full"
+              :class="{
+                'bg-green-500': category.active,
+                'bg-gray-500': !category.active
+              }"
+            ></div>
+            {{ category.active ? 'Active' : 'Inactive' }}
+          </button>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          {{ formatDate(category.createdAt) }}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <div class="flex justify-end gap-2">
+            <NuxtLink
+              :to="`/categories/edit/${category.id}`"
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+              title="Edit category"
+            >
+              <PencilIcon class="h-5 w-5" />
+            </NuxtLink>
+            <button
+              @click="deleteCategory(category.id)"
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+              title="Delete category"
+            >
+              <Trash2Icon class="h-5 w-5" />
+            </button>
+          </div>
+        </td>
+      </template>
+    </DataTable>
   </div>
 </template>
 

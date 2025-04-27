@@ -6,7 +6,7 @@
     "typeorm": "ts-node -r tsconfig-paths/register -P ./tsconfig.json ./node_modules/typeorm/cli.js",
     "migration:create": "yarn typeorm migration:create",
     "migration:generate": "yarn typeorm migration:generate -d libs/database/src/config/typeorm.config.ts",
-    "migration:run": "yarn typeorm migration:run -d libs/database/src/config/typeorm.config.ts",
+    "migration:run": "ts-node -r tsconfig-paths/register -P ./libs/database/tsconfig.migration.json ./node_modules/typeorm/cli.js migration:run -d libs/database/src/config/typeorm.config.ts",
     "migration:revert": "yarn typeorm migration:revert -d libs/database/src/config/typeorm.config.ts",
     "migration:show": "yarn typeorm migration:show -d libs/database/src/config/typeorm.config.ts",
     "seed": "ts-node -r tsconfig-paths/register -P ./tsconfig.seed.json -r ./libs/database/src/config/typeorm.config.ts libs/database/src/commands/seed.ts",

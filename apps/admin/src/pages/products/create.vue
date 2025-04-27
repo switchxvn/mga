@@ -1,595 +1,708 @@
-<script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useTrpc } from '../../composables/useTrpc';
-import { useLocalization } from '../../composables/useLocalization';
-import { useUpload } from '../../composables/useUpload';
-import { useNotification } from '../../composables/useNotification';
-import PageHeader from '../../components/ui/PageHeader.vue';
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
-import { 
-  ImageIcon, 
-  Trash2Icon,
-  PlusCircleIcon,
-  PackageIcon,
-  TagIcon,
-  ListChecksIcon
-} from 'lucide-vue-next';
-import VariantForm from '../../components/products/VariantForm.vue';
-import AttributeForm from '../../components/products/AttributeForm.vue';
-import SpecificationForm from '../../components/products/SpecificationForm.vue';
-
-definePageMeta({
-  middleware: ["auth"],
-});
-
-useHead({
-  title: 'Create Product - Admin Panel'
-});
-
-const router = useRouter();
-const trpc = useTrpc();
-const { t, locales, currentLocale } = useLocalization();
-const { uploadImage, isUploading } = useUpload();
-const { showSuccess, showError } = useNotification();
-
-// Form data
-const formData = ref({
-  translations: locales.value.map(locale => ({
-    locale,
-    name: '',
-    description: '',
-    shortDescription: ''
-  })),
-  sku: '',
-  price: 0,
-  salePrice: null as number | null,
-  stock: 0,
-  published: false,
-  thumbnail: '',
-  attributes: [] as any[],
-  specifications: [] as any[],
-  variants: [] as any[]
-});
-
-// Form validation
-const errors = ref<Record<string, string>>({});
-
-// Computed properties
-const defaultTranslation = computed(() => 
-  formData.value.translations.find(t => t.locale === currentLocale.value) || formData.value.translations[0]
-);
-
-const hasVariants = computed(() => formData.value.variants.length > 0);
-
-// Add variantForms ref
-const variantForms = ref<any[]>([]);
-
-// Add attributeForms ref
-const attributeForms = ref<any[]>([]);
-
-// Add specificationForms ref
-const specificationForms = ref<any[]>([]);
-
-// Methods
-async function handleImageUpload(event: Event) {
-  const input = event.target as HTMLInputElement;
-  if (!input.files?.length) return;
-
-  try {
-    const file = input.files[0];
-    const url = await uploadImage(file);
-    formData.value.thumbnail = url;
-  } catch (err: any) {
-    showError(err.message || 'Failed to upload image');
-  }
-}
-
-async function handleSubmit() {
-  try {
-    errors.value = {};
-    
-    // Validate form
-    if (!defaultTranslation.value.name) {
-      errors.value.name = 'Product name is required';
-      return;
-    }
-
-    if (!formData.value.sku) {
-      errors.value.sku = 'SKU is required';
-      return;
-    }
-
-    if (formData.value.price < 0) {
-      errors.value.price = 'Price must be greater than or equal to 0';
-      return;
-    }
-
-    if (formData.value.salePrice !== null && formData.value.salePrice > formData.value.price) {
-      errors.value.salePrice = 'Sale price cannot be greater than regular price';
-      return;
-    }
-
-    if (formData.value.stock < 0) {
-      errors.value.stock = 'Stock must be greater than or equal to 0';
-      return;
-    }
-
-    // Validate specifications
-    const specificationValidations = await Promise.all(
-      specificationForms.value.map(form => form.validate())
-    );
-
-    if (specificationValidations.some(isValid => !isValid)) {
-      return;
-    }
-
-    // Validate attributes
-    const attributeValidations = await Promise.all(
-      attributeForms.value.map(form => form.validate())
-    );
-
-    if (attributeValidations.some(isValid => !isValid)) {
-      return;
-    }
-
-    // Validate variants
-    const variantValidations = await Promise.all(
-      variantForms.value.map(form => form.validate())
-    );
-
-    if (variantValidations.some(isValid => !isValid)) {
-      return;
-    }
-
-    // Create product
-    await trpc.admin.products.createProduct.mutate(formData.value);
-    
-    showSuccess('Product created successfully');
-    router.push('/products');
-  } catch (err: any) {
-    showError(err.message || 'Failed to create product');
-  }
-}
-
-function handleCancel() {
-  router.push('/products');
-}
-</script>
-
 <template>
-  <div class="min-h-screen bg-gray-50/50">
-    <PageHeader title="Create Product" :show-back="true">
-      <template #actions>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          @click="handleCancel"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="ml-3 inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-          @click="handleSubmit"
-        >
-          Create Product
-        </button>
-      </template>
-    </PageHeader>
+  <div class="min-h-screen bg-slate-50">
+    <!-- Loading State -->
+    <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
+      <div class="flex flex-col items-center gap-2">
+        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
+        <p class="text-sm text-slate-500">Loading...</p>
+      </div>
+    </div>
 
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-      <div class="space-y-10 divide-y divide-gray-900/10">
-        <!-- Basic Information -->
-        <div class="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-3">
-          <div class="px-4 sm:px-0">
-            <h2 class="text-base font-semibold leading-7 text-gray-900">Basic Information</h2>
-            <p class="mt-1 text-sm leading-6 text-gray-600">
-              This information will be displayed publicly so be careful what you share.
-            </p>
-          </div>
-
-          <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
-            <div class="px-4 py-6 sm:p-8">
-              <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                <!-- Product Name -->
-                <div class="sm:col-span-4">
-                  <label for="name" class="block text-sm font-medium leading-6 text-gray-900">
-                    Product Name
-                    <span class="text-red-500">*</span>
-                  </label>
-                  <div class="mt-2">
-                    <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-600">
-                      <input
-                        type="text"
-                        id="name"
-                        v-model="defaultTranslation.name"
-                        class="block flex-1 border-0 bg-transparent py-1.5 pl-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                        :class="{ 'border-red-500': errors.name }"
-                      />
-                    </div>
-                    <p v-if="errors.name" class="mt-2 text-sm text-red-600">{{ errors.name }}</p>
-                  </div>
-                </div>
-
-                <!-- SKU -->
-                <div class="sm:col-span-4">
-                  <label for="sku" class="block text-sm font-medium leading-6 text-gray-900">
-                    SKU
-                    <span class="text-red-500">*</span>
-                  </label>
-                  <div class="mt-2">
-                    <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-600">
-                      <input
-                        type="text"
-                        id="sku"
-                        v-model="formData.sku"
-                        class="block flex-1 border-0 bg-transparent py-1.5 pl-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                        :class="{ 'border-red-500': errors.sku }"
-                      />
-                    </div>
-                    <p v-if="errors.sku" class="mt-2 text-sm text-red-600">{{ errors.sku }}</p>
-                  </div>
-                </div>
-
-                <!-- Price -->
-                <div class="sm:col-span-2">
-                  <label for="price" class="block text-sm font-medium leading-6 text-gray-900">
-                    Price
-                    <span class="text-red-500">*</span>
-                  </label>
-                  <div class="mt-2">
-                    <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-600">
-                      <input
-                        type="number"
-                        id="price"
-                        v-model="formData.price"
-                        min="0"
-                        step="0.01"
-                        class="block flex-1 border-0 bg-transparent py-1.5 pl-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                        :class="{ 'border-red-500': errors.price }"
-                      />
-                    </div>
-                    <p v-if="errors.price" class="mt-2 text-sm text-red-600">{{ errors.price }}</p>
-                  </div>
-                </div>
-
-                <!-- Sale Price -->
-                <div class="sm:col-span-2">
-                  <label for="salePrice" class="block text-sm font-medium leading-6 text-gray-900">
-                    Sale Price
-                  </label>
-                  <div class="mt-2">
-                    <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-600">
-                      <input
-                        type="number"
-                        id="salePrice"
-                        v-model="formData.salePrice"
-                        min="0"
-                        step="0.01"
-                        class="block flex-1 border-0 bg-transparent py-1.5 pl-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                        :class="{ 'border-red-500': errors.salePrice }"
-                      />
-                    </div>
-                    <p v-if="errors.salePrice" class="mt-2 text-sm text-red-600">{{ errors.salePrice }}</p>
-                  </div>
-                </div>
-
-                <!-- Stock -->
-                <div class="sm:col-span-2">
-                  <label for="stock" class="block text-sm font-medium leading-6 text-gray-900">
-                    Stock
-                    <span class="text-red-500">*</span>
-                  </label>
-                  <div class="mt-2">
-                    <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-600">
-                      <input
-                        type="number"
-                        id="stock"
-                        v-model="formData.stock"
-                        min="0"
-                        step="1"
-                        class="block flex-1 border-0 bg-transparent py-1.5 pl-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                        :class="{ 'border-red-500': errors.stock }"
-                      />
-                    </div>
-                    <p v-if="errors.stock" class="mt-2 text-sm text-red-600">{{ errors.stock }}</p>
-                  </div>
-                </div>
-
-                <!-- Description -->
-                <div class="col-span-full">
-                  <label for="description" class="block text-sm font-medium leading-6 text-gray-900">
-                    Description
-                  </label>
-                  <div class="mt-2">
-                    <textarea
-                      id="description"
-                      v-model="defaultTranslation.description"
-                      rows="3"
-                      class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+    <!-- Content Area -->
+    <div v-else class="min-h-screen bg-slate-50">
+      <div class="flex-1 overflow-y-auto">
+        <div class="space-y-6">
+          <!-- Header -->
+          <PageHeader
+            title="Create Product"
+            description="Add a new product to your store"
+          >
+            <template #actions>
+              <!-- Language Switcher -->
+              <div class="language-switcher relative">
+                <button 
+                  @click.stop="isLanguageOpen = !isLanguageOpen"
+                  class="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                >
+                  <div class="w-5 h-5 flex items-center justify-center">
+                    <img 
+                      v-if="selectedLanguage"
+                      :src="`/images/flag/${languages.find(l => l.code === selectedLanguage)?.flagCode.toLowerCase()}.svg`"
+                      :alt="`${languages.find(l => l.code === selectedLanguage)?.nativeName} flag`"
+                      class="w-5 h-5 rounded-sm object-cover"
+                      @error="onFlagImageError"
                     />
                   </div>
-                </div>
+                  <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
+                  <ChevronDownIcon 
+                    class="h-4 w-4 transition-transform"
+                    :class="{ 'rotate-180': isLanguageOpen }"
+                  />
+                </button>
 
-                <!-- Short Description -->
-                <div class="col-span-full">
-                  <label for="shortDescription" class="block text-sm font-medium leading-6 text-gray-900">
-                    Short Description
-                  </label>
-                  <div class="mt-2">
-                    <textarea
-                      id="shortDescription"
-                      v-model="defaultTranslation.shortDescription"
-                      rows="2"
-                      class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
-
-                <!-- Thumbnail -->
-                <div class="col-span-full">
-                  <label for="thumbnail" class="block text-sm font-medium leading-6 text-gray-900">
-                    Thumbnail
-                  </label>
-                  <div class="mt-2 flex items-center gap-x-3">
-                    <div v-if="formData.thumbnail" class="relative">
-                      <img
-                        :src="formData.thumbnail"
-                        alt="Product thumbnail"
-                        class="h-24 w-24 flex-none rounded-lg bg-gray-800 object-cover"
-                      />
-                      <button
-                        type="button"
-                        class="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700"
-                        @click="formData.thumbnail = ''"
-                      >
-                        <span class="sr-only">Remove thumbnail</span>
-                        <Trash2Icon class="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div v-else class="h-24 w-24 flex-none rounded-lg bg-gray-100 flex items-center justify-center">
-                      <ImageIcon class="h-8 w-8 text-gray-300" />
-                    </div>
-                    <input
-                      type="file"
-                      id="thumbnail"
-                      accept="image/*"
-                      class="hidden"
-                      @change="handleImageUpload"
-                      ref="fileInput"
-                    />
+                <!-- Dropdown menu -->
+                <div 
+                  v-if="isLanguageOpen" 
+                  class="absolute z-50 mt-1 min-w-[240px] rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none"
+                >
+                  <div class="py-1">
                     <button
-                      type="button"
-                      class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                      :disabled="isUploading"
-                      @click="$refs.fileInput.click()"
+                      v-for="lang in languages"
+                      :key="lang.code"
+                      @click="selectedLanguage = lang.code; isLanguageOpen = false"
+                      class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
+                      :class="{ 'bg-slate-50': selectedLanguage === lang.code }"
                     >
-                      Change
+                      <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center mr-2">
+                        <img 
+                          :src="`/images/flag/${lang.flagCode.toLowerCase()}.svg`"
+                          :alt="`${lang.nativeName} flag`"
+                          class="w-5 h-5 rounded-sm object-cover"
+                          @error="onFlagImageError"
+                        />
+                      </div>
+                      <span class="truncate">{{ lang.nativeName }}</span>
+                      <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
+                      <CheckIcon
+                        v-if="selectedLanguage === lang.code"
+                        class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
+                      />
                     </button>
                   </div>
                 </div>
-
-                <!-- Published Status -->
-                <div class="col-span-full">
-                  <div class="flex items-center gap-x-3">
-                    <input
-                      type="checkbox"
-                      id="published"
-                      v-model="formData.published"
-                      class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
-                    />
-                    <label for="published" class="block text-sm font-medium leading-6 text-gray-900">
-                      Published
-                    </label>
-                  </div>
-                  <p class="mt-1 text-sm leading-6 text-gray-600">
-                    Make this product visible on your store
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Translations -->
-        <div class="grid grid-cols-1 gap-x-8 gap-y-8 pt-10 md:grid-cols-3">
-          <div class="px-4 sm:px-0">
-            <h2 class="text-base font-semibold leading-7 text-gray-900">Translations</h2>
-            <p class="mt-1 text-sm leading-6 text-gray-600">
-              Manage product information in different languages.
-            </p>
-          </div>
-
-          <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
-            <div class="px-4 py-6 sm:p-8">
-              <div class="max-w-2xl space-y-10">
-                <div v-for="translation in formData.translations" :key="translation.locale">
-                  <h3 class="text-sm font-medium leading-6 text-gray-900 mb-4">
-                    {{ translation.locale.toUpperCase() }}
-                  </h3>
-
-                  <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                    <div class="sm:col-span-4">
-                      <label :for="'name-' + translation.locale" class="block text-sm font-medium leading-6 text-gray-900">
-                        Name
-                      </label>
-                      <div class="mt-2">
-                        <div class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-600">
-                          <input
-                            type="text"
-                            :id="'name-' + translation.locale"
-                            v-model="translation.name"
-                            class="block flex-1 border-0 bg-transparent py-1.5 pl-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="col-span-full">
-                      <label :for="'description-' + translation.locale" class="block text-sm font-medium leading-6 text-gray-900">
-                        Description
-                      </label>
-                      <div class="mt-2">
-                        <textarea
-                          :id="'description-' + translation.locale"
-                          v-model="translation.description"
-                          rows="3"
-                          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-                        />
-                      </div>
-                    </div>
-
-                    <div class="col-span-full">
-                      <label :for="'shortDescription-' + translation.locale" class="block text-sm font-medium leading-6 text-gray-900">
-                        Short Description
-                      </label>
-                      <div class="mt-2">
-                        <textarea
-                          :id="'shortDescription-' + translation.locale"
-                          v-model="translation.shortDescription"
-                          rows="2"
-                          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Specifications -->
-        <div class="grid grid-cols-1 gap-x-8 gap-y-8 pt-10 md:grid-cols-3">
-          <div class="px-4 sm:px-0">
-            <h2 class="text-base font-semibold leading-7 text-gray-900">Product Specifications</h2>
-            <p class="mt-1 text-sm leading-6 text-gray-600">
-              Add technical specifications and details about your product.
-            </p>
-          </div>
-
-          <div class="md:col-span-2">
-            <div class="space-y-6">
-              <div v-for="(specification, index) in formData.specifications" :key="index">
-                <SpecificationForm
-                  :specification="specification"
-                  @update:specification="(newSpecification) => {
-                    formData.specifications[index] = newSpecification;
-                  }"
-                  @remove="formData.specifications.splice(index, 1)"
-                  ref="specificationForms"
-                />
               </div>
 
-              <button
-                type="button"
-                class="relative block w-full rounded-lg border-2 border-dashed border-gray-300 p-4 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                @click="
-                  formData.specifications.push({
-                    translations: locales.value.map(locale => ({
-                      locale,
-                      name: '',
-                      value: ''
-                    }))
-                  })
-                "
+              <NuxtLink 
+                to="/products" 
+                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
               >
-                <PlusCircleIcon class="mx-auto h-8 w-8 text-gray-400" />
-                <span class="mt-2 block text-sm font-semibold text-gray-900">Add specification</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Attributes -->
-        <div class="grid grid-cols-1 gap-x-8 gap-y-8 pt-10 md:grid-cols-3">
-          <div class="px-4 sm:px-0">
-            <h2 class="text-base font-semibold leading-7 text-gray-900">Product Attributes</h2>
-            <p class="mt-1 text-sm leading-6 text-gray-600">
-              Define attributes like size, color, material etc.
-            </p>
-          </div>
-
-          <div class="md:col-span-2">
-            <div class="space-y-6">
-              <div v-for="(attribute, index) in formData.attributes" :key="index">
-                <AttributeForm
-                  :attribute="attribute"
-                  @update:attribute="(newAttribute) => {
-                    formData.attributes[index] = newAttribute;
-                  }"
-                  @remove="formData.attributes.splice(index, 1)"
-                  ref="attributeForms"
-                />
-              </div>
-
-              <button
-                type="button"
-                class="relative block w-full rounded-lg border-2 border-dashed border-gray-300 p-4 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                @click="
-                  formData.attributes.push({
-                    translations: locales.value.map(locale => ({
-                      locale,
-                      name: ''
-                    })),
-                    values: []
-                  })
-                "
+                <XIcon class="w-4 h-4 mr-2" />
+                Cancel
+              </NuxtLink>
+              
+              <button 
+                @click="createProduct()" 
+                :disabled="loading"
+                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
               >
-                <PlusCircleIcon class="mx-auto h-8 w-8 text-gray-400" />
-                <span class="mt-2 block text-sm font-semibold text-gray-900">Add attribute</span>
+                <SaveAllIcon class="w-4 h-4 mr-2" />
+                {{ loading ? 'Creating...' : 'Create Product' }}
               </button>
+            </template>
+          </PageHeader>
+
+          <!-- Tabs -->
+          <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">
+            <button
+              v-for="tab in tabs"
+              :key="tab.id"
+              @click="currentTab = tab.id"
+              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
+              :class="{
+                'bg-primary text-white': currentTab === tab.id,
+                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id
+              }"
+            >
+              <component :is="tab.icon" class="w-4 h-4" />
+              {{ tab.name }}
+            </button>
+          </nav>
+
+          <div class="grid gap-6">
+            <!-- Basic Info Tab -->
+            <div v-show="currentTab === 'basic'">
+              <ProductEditor
+                v-model:name="form.name"
+                v-model:slug="form.slug"
+                v-model:description="form.description"
+                v-model:shortDescription="form.shortDescription"
+                v-model:price="form.price"
+                v-model:compareAtPrice="form.compareAtPrice"
+                v-model:sku="form.sku"
+                v-model:barcode="form.barcode"
+                :editor-options="editorOptions"
+                @generate-slug="generateSlug"
+              />
+            </div>
+
+            <!-- Media Tab -->
+            <div v-show="currentTab === 'media'">
+              <ProductMedia
+                v-model:thumbnail="form.thumbnail"
+                v-model:gallery="form.gallery"
+              />
+            </div>
+
+            <!-- Categories Tab -->
+            <div v-show="currentTab === 'categories'">
+              <ProductCategories
+                v-model="form.categoryIds"
+              />
+            </div>
+
+            <!-- Variants Tab -->
+            <div v-show="currentTab === 'variants'">
+              <ProductVariants
+                v-model="form.variants"
+                v-model:hasVariants="form.hasVariants"
+              />
+            </div>
+
+            <!-- Inventory Tab -->
+            <div v-show="currentTab === 'inventory'">
+              <ProductInventory
+                v-model:trackInventory="form.trackInventory"
+                v-model:quantity="form.quantity"
+                v-model:lowStockThreshold="form.lowStockThreshold"
+              />
+            </div>
+
+            <!-- SEO Tab -->
+            <div v-show="currentTab === 'seo'">
+              <ProductSEO
+                v-model:meta-description="form.metaDescription"
+                v-model:tags-input="tagsInput"
+                :tags="form.tags"
+                @tag-input="handleTagInput"
+                @remove-tag="removeTag"
+              />
+            </div>
+
+            <!-- Settings Tab -->
+            <div v-show="currentTab === 'settings'">
+              <ProductSettings
+                v-model:published="form.published"
+                v-model:featured="form.featured"
+                v-model:taxable="form.taxable"
+              />
             </div>
           </div>
         </div>
-
-        <!-- Variants -->
-        <div class="grid grid-cols-1 gap-x-8 gap-y-8 pt-10 md:grid-cols-3">
-          <div class="px-4 sm:px-0">
-            <h2 class="text-base font-semibold leading-7 text-gray-900">Product Variants</h2>
-            <p class="mt-1 text-sm leading-6 text-gray-600">
-              Add variations of your product with different attributes.
-            </p>
-          </div>
-
-          <div class="md:col-span-2">
-            <div class="space-y-6">
-              <div v-for="(variant, index) in formData.variants" :key="index">
-                <VariantForm
-                  :variant="variant"
-                  @update:variant="(newVariant) => {
-                    formData.variants[index] = newVariant;
-                  }"
-                  @remove="formData.variants.splice(index, 1)"
-                  ref="variantForms"
-                />
-              </div>
-
-              <button
-                type="button"
-                class="relative block w-full rounded-lg border-2 border-dashed border-gray-300 p-4 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                @click="
-                  formData.variants.push({
-                    sku: '',
-                    price: 0,
-                    salePrice: null,
-                    stock: 0,
-                    translations: locales.value.map(locale => ({
-                      locale,
-                      name: ''
-                    }))
-                  })
-                "
-              >
-                <PlusCircleIcon class="mx-auto h-8 w-8 text-gray-400" />
-                <span class="mt-2 block text-sm font-semibold text-gray-900">Add variant</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
-</template> 
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTrpc } from '../../composables/useTrpc'
+import slugify from 'slugify'
+import { useHead } from 'nuxt/app'
+import { useToast } from 'vue-toastification'
+
+// Import Lucide icons
+import {
+  FileTextIcon,
+  ImageIcon,
+  SearchIcon,
+  SettingsIcon,
+  XIcon,
+  SaveAllIcon,
+  ChevronDownIcon,
+  CheckIcon,
+  SaveIcon,
+  FolderIcon,
+  LayersIcon,
+  PackageIcon
+} from 'lucide-vue-next'
+
+// Import components
+import PageHeader from '../../components/common/header/PageHeader.vue'
+import ProductEditor from '../../components/products/ProductEditor.vue'
+import ProductMedia from '../../components/products/ProductMedia.vue'
+import ProductSEO from '../../components/products/ProductSEO.vue'
+import ProductSettings from '../../components/products/ProductSettings.vue'
+import ProductCategories from '../../components/products/ProductCategories.vue'
+import ProductVariants from '../../components/products/ProductVariants.vue'
+import ProductInventory from '../../components/products/ProductInventory.vue'
+
+const trpc = useTrpc()
+const router = useRouter()
+const toast = useToast()
+const loading = ref(false)
+
+// Initialize currentTab
+const currentTab = ref('basic')
+
+const tabs = [
+  { 
+    id: 'basic', 
+    name: 'Basic Info', 
+    icon: FileTextIcon
+  },
+  { 
+    id: 'media', 
+    name: 'Media', 
+    icon: ImageIcon
+  },
+  {
+    id: 'categories',
+    name: 'Categories',
+    icon: FolderIcon
+  },
+  {
+    id: 'variants',
+    name: 'Variants',
+    icon: LayersIcon
+  },
+  {
+    id: 'inventory',
+    name: 'Inventory',
+    icon: PackageIcon
+  },
+  { 
+    id: 'seo', 
+    name: 'SEO', 
+    icon: SearchIcon
+  },
+  { 
+    id: 'settings', 
+    name: 'Settings', 
+    icon: SettingsIcon
+  }
+]
+
+interface ProductVariant {
+  id?: number
+  name: string
+  sku: string
+  barcode: string
+  price: number
+  compareAtPrice: number | null
+  quantity: number
+  options: {
+    name: string
+    value: string
+  }[]
+}
+
+interface ProductForm {
+  name: string
+  slug: string
+  description: string
+  shortDescription: string
+  price: number
+  compareAtPrice: number | null
+  sku: string
+  barcode: string
+  published: boolean
+  featured: boolean
+  taxable: boolean
+  thumbnail: string
+  gallery: string[]
+  metaDescription: string
+  tags: string[]
+  categoryIds: number[]
+  hasVariants: boolean
+  variants: ProductVariant[]
+  trackInventory: boolean
+  quantity: number
+  lowStockThreshold: number
+  translations: Record<string, {
+    name: string
+    slug: string
+    description: string
+    shortDescription: string
+    metaDescription: string
+  }>
+}
+
+const initialForm: ProductForm = {
+  name: '',
+  slug: '',
+  description: '',
+  shortDescription: '',
+  price: 0,
+  compareAtPrice: null,
+  sku: '',
+  barcode: '',
+  published: false,
+  featured: false,
+  taxable: true,
+  thumbnail: '',
+  gallery: [],
+  metaDescription: '',
+  tags: [],
+  categoryIds: [],
+  hasVariants: false,
+  variants: [],
+  trackInventory: true,
+  quantity: 0,
+  lowStockThreshold: 5,
+  translations: {}
+}
+
+const form = ref({ ...initialForm })
+const tagsInput = ref('')
+
+// Update page title
+useHead({
+  title: 'Create Product - Admin Dashboard'
+})
+
+const handleTagInput = (e: KeyboardEvent) => {
+  // Handle Enter key
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    addTag()
+  }
+  // Handle Space key
+  else if (e.key === ' ') {
+    e.preventDefault()
+    addTag()
+  }
+  // Handle Backspace when input is empty
+  else if (e.key === 'Backspace' && tagsInput.value === '') {
+    e.preventDefault()
+    form.value.tags.pop()
+  }
+}
+
+const addTag = () => {
+  const tag = tagsInput.value.trim()
+  if (tag && !form.value.tags.includes(tag)) {
+    form.value.tags.push(tag)
+    tagsInput.value = ''
+  }
+}
+
+const removeTag = (index: number) => {
+  form.value.tags.splice(index, 1)
+}
+
+// Generate slug from name with Vietnamese support
+const generateSlug = () => {
+  if (form.value.name) {
+    form.value.slug = slugify(form.value.name, {
+      lower: true,           // Convert to lowercase
+      strict: true,          // Strip special characters except replacement
+      locale: 'vi',          // Vietnamese language
+      trim: true             // Trim leading and trailing replacement chars
+    })
+  }
+}
+
+// Watch name changes to suggest slug
+watch(() => form.value.name, (newName) => {
+  if (!form.value.slug && newName) {
+    generateSlug()
+  }
+})
+
+interface Language {
+  id: number;
+  name: string;
+  code: string;
+  nativeName: string;
+  flagCode: string;
+  isDefault: boolean;
+  isActive: boolean;
+}
+
+const languages = ref<Language[]>([])
+const selectedLanguage = ref('')
+const defaultLanguage = ref('')
+const isLanguageOpen = ref(false)
+
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest('.language-switcher')) {
+    isLanguageOpen.value = false;
+  }
+};
+
+onMounted(async () => {
+  try {
+    const [langs, defaultLang] = await Promise.all([
+      trpc.admin.languages.getLanguages.query(),
+      trpc.admin.languages.getDefaultLanguage.query()
+    ])
+    languages.value = langs
+    defaultLanguage.value = defaultLang?.code || ''
+    selectedLanguage.value = defaultLang?.code || ''
+  } catch (error) {
+    console.error('Failed to fetch languages:', error)
+  }
+  if (process.client) {
+    document.addEventListener('click', handleClickOutside);
+  }
+})
+
+onBeforeUnmount(() => {
+  if (process.client) {
+    document.removeEventListener('click', handleClickOutside);
+  }
+})
+
+// Update watch for selectedLanguage
+watch(selectedLanguage, (newLang, oldLang) => {
+  if (oldLang) {
+    // Save current content to translations before switching
+    form.value.translations[oldLang] = {
+      name: form.value.name,
+      slug: form.value.slug,
+      description: form.value.description,
+      shortDescription: form.value.shortDescription,
+      metaDescription: form.value.metaDescription
+    }
+  }
+  
+  // Load content for new language
+  if (form.value.translations[newLang]) {
+    const translation = form.value.translations[newLang]
+    form.value.name = translation.name
+    form.value.slug = translation.slug
+    form.value.description = translation.description
+    form.value.shortDescription = translation.shortDescription
+    form.value.metaDescription = translation.metaDescription
+  } else {
+    // Reset form for new translation
+    form.value.name = ''
+    form.value.slug = ''
+    form.value.description = ''
+    form.value.shortDescription = ''
+    form.value.metaDescription = ''
+  }
+})
+
+// Create product
+const createProduct = async () => {
+  try {
+    loading.value = true
+
+    // Save current content to translations before updating
+    form.value.translations[selectedLanguage.value] = {
+      name: form.value.name,
+      slug: form.value.slug,
+      description: form.value.description,
+      shortDescription: form.value.shortDescription,
+      metaDescription: form.value.metaDescription
+    }
+
+    // Prepare translations array for API
+    const translations = Object.entries(form.value.translations).map(([locale, content]) => ({
+      locale,
+      name: content.name,
+      slug: content.slug,
+      description: content.description,
+      shortDescription: content.shortDescription,
+      metaDescription: content.metaDescription
+    }))
+
+    await trpc.admin.products.createProduct.mutate({
+      name: form.value.name,
+      description: form.value.description,
+      shortDescription: form.value.shortDescription,
+      price: form.value.price,
+      compareAtPrice: form.value.compareAtPrice,
+      sku: form.value.sku,
+      barcode: form.value.barcode,
+      published: form.value.published,
+      featured: form.value.featured,
+      taxable: form.value.taxable,
+      thumbnail: form.value.thumbnail,
+      gallery: form.value.gallery,
+      metaDescription: form.value.metaDescription,
+      translations,
+      tags: form.value.tags,
+      categoryIds: form.value.categoryIds,
+      hasVariants: form.value.hasVariants,
+      variants: form.value.variants,
+      trackInventory: form.value.trackInventory,
+      quantity: form.value.quantity,
+      lowStockThreshold: form.value.lowStockThreshold
+    })
+
+    toast.success('Product created successfully!')
+    router.push('/products')
+  } catch (error: any) {
+    console.error('Failed to create product:', error)
+    
+    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
+    const langName = currentLang?.nativeName || selectedLanguage.value
+    
+    let errorMessage = `[${langName}] `
+    
+    // Handle tRPC error
+    if (error.cause) {
+      errorMessage += error.cause
+    } else if (error.message) {
+      errorMessage += error.message
+    } else {
+      errorMessage += 'Failed to create product. Please try again.'
+    }
+    
+    toast.error(errorMessage, {
+      timeout: 8000,
+      closeButton: true,
+      icon: true,
+      closeOnClick: false,
+      pauseOnHover: true,
+      draggable: true,
+      theme: 'colored'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+// Quill Editor Options
+const editorOptions = ref({
+  theme: 'snow',
+  modules: {}
+})
+
+// Initialize editor options on client-side only
+if (process.client) {
+  editorOptions.value.modules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      ['blockquote', 'code-block'],
+      [{ 'header': 1 }, { 'header': 2 }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'script': 'sub'}, { 'script': 'super' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      [{ 'direction': 'rtl' }],
+      [{ 'size': ['small', false, 'large', 'huge'] }],
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'font': [] }],
+      [{ 'align': [] }],
+      ['clean'],
+      ['link', 'image']
+    ]
+  }
+}
+
+const onFlagImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.style.display = 'none';
+    // Add a fallback display like the language code or first letter
+    const parent = target.parentElement;
+    if (parent) {
+      parent.textContent = selectedLanguage.value?.toUpperCase().slice(0, 2) || '';
+      parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
+    }
+  }
+};
+</script>
+
+<style>
+.quill-editor {
+  @apply bg-white rounded-lg overflow-hidden;
+}
+
+.ql-toolbar {
+  @apply border-0 border-b border-slate-200 bg-white px-6 !important;
+}
+
+.ql-container {
+  @apply border-0 bg-white !important;
+}
+
+.ql-editor {
+  @apply min-h-[400px] text-slate-700 px-6 !important;
+}
+
+.ql-editor h1 {
+  @apply text-3xl font-bold mb-4;
+}
+
+.ql-editor h2 {
+  @apply text-2xl font-semibold mb-3;
+}
+
+.ql-editor h3 {
+  @apply text-xl font-semibold mb-3;
+}
+
+.ql-editor p {
+  @apply mb-4 text-base leading-relaxed;
+}
+
+.ql-editor ul, .ql-editor ol {
+  @apply mb-4 pl-6;
+}
+
+.ql-editor ul {
+  @apply list-disc;
+}
+
+.ql-editor ol {
+  @apply list-decimal;
+}
+
+.ql-editor blockquote {
+  @apply border-l-4 border-slate-200 pl-4 italic my-4;
+}
+
+.ql-editor img {
+  @apply max-w-full rounded-lg my-4;
+}
+
+.ql-editor pre {
+  @apply bg-slate-100 p-4 rounded-lg my-4 overflow-x-auto;
+}
+
+.ql-editor code {
+  @apply font-mono text-sm bg-slate-100 px-1.5 py-0.5 rounded;
+}
+
+/* Prose styles for preview */
+.prose {
+  @apply text-slate-700;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  @apply text-slate-900 font-semibold mt-8 mb-4;
+}
+
+.prose p {
+  @apply mb-4;
+}
+
+.prose ul, .prose ol {
+  @apply mb-4 pl-6;
+}
+
+.prose ul {
+  @apply list-disc;
+}
+
+.prose ol {
+  @apply list-decimal;
+}
+
+.prose a {
+  @apply text-primary hover:text-primary/80;
+}
+
+.prose img {
+  @apply rounded-lg my-8;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-slate-200 pl-4 italic my-6;
+}
+
+.prose code {
+  @apply bg-slate-100 px-1.5 py-0.5 rounded text-sm;
+}
+
+.prose pre {
+  @apply bg-slate-900 text-slate-50 p-4 rounded-lg my-6 overflow-x-auto;
+}
+
+.language-switcher {
+  position: relative;
+  display: inline-block;
+  width: auto;
+}
+
+/* Dropdown menu */
+.absolute {
+  z-index: 50 !important;
+}
+</style> 
