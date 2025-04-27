@@ -12,8 +12,14 @@ import { TransformInterceptor } from './modules/common/interceptors/transform.in
 import { HttpExceptionFilter } from './modules/common/filters/http-exception.filter';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { join } from 'path';
+import * as Handlebars from 'handlebars';
 
 async function bootstrap() {
+  // Đăng ký Handlebars helpers
+  Handlebars.registerHelper('eq', function(a, b) {
+    return a === b;
+  });
+
   // Tạo Fastify adapter với các tùy chọn
   const fastifyAdapter = new FastifyAdapter({
     logger: false,
