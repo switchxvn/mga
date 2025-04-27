@@ -608,29 +608,74 @@ const stockHistoryModal = ref({
 
 const openStockHistoryModal = async (variant: VariantItem) => {
   stockHistoryModal.value.show = true
-  stockHistoryModal.value.variant = variant
+  stockHistoryModal.value.variant = { ...variant } // Clone variant để tránh tham chiếu trực tiếp
+  stockHistoryModal.value.loading = true
   
-  if (variant.id) {
-    const history = await loadVariantStockHistory(variant.id)
-    stockHistoryModal.value.history = history || []
-    
-    // Cập nhật giá trị quantity từ lịch sử nếu có
-    if (history && history.length > 0) {
-      // Lấy bản ghi gần nhất để biết stock hiện tại
-      const latestRecord = history[0];
-      if (latestRecord && typeof latestRecord.quantityAfter === 'number') {
-        // Cập nhật lại quantity trong variant
-        stockHistoryModal.value.variant.quantity = latestRecord.quantityAfter;
-        variant.quantity = latestRecord.quantityAfter;
+  try {
+    if (variant.id) {
+      // Kiểm tra xem variant có trong store không và lấy dữ liệu mới nhất từ store
+      const storeVariant = variantsStore.getVariantById(variant.id)
+      if (storeVariant) {
+        // Cập nhật lại variant trong modal với dữ liệu mới nhất từ store
+        stockHistoryModal.value.variant = { ...storeVariant }
       }
+      
+      // Tải lịch sử stock
+      const history = await loadVariantStockHistory(variant.id)
+      stockHistoryModal.value.history = history || []
+      
+      // Cập nhật giá trị quantity từ lịch sử nếu có
+      if (history && history.length > 0) {
+        // Lấy bản ghi gần nhất để biết stock hiện tại
+        const latestRecord = history[0];
+        if (latestRecord && typeof latestRecord.quantityAfter === 'number') {
+          // Cập nhật lại quantity trong variant
+          stockHistoryModal.value.variant.quantity = latestRecord.quantityAfter;
+          stockHistoryModal.value.variant.stock = latestRecord.quantityAfter;
+          
+          // Đồng bộ giá trị từ history vào store
+          if (variant.id) {
+            variantsStore.updateVariantStock(variant.id, latestRecord.quantityAfter);
+            
+            // Cập nhật modelValue
+            emit('update:modelValue', [...variantsStore.allVariants]);
+          }
+        }
+      }
+    } else {
+      stockHistoryModal.value.history = [];
     }
-  } else {
-    stockHistoryModal.value.history = [];
+  } catch (error) {
+    console.error('Error loading variant data:', error)
+    toast.error('Failed to load variant data')
+  } finally {
+    stockHistoryModal.value.loading = false
   }
 }
 
 const closeStockHistoryModal = () => {
   stockHistoryModal.value.show = false
+  
+  // Đảm bảo giá trị stock được cập nhật trên UI
+  if (stockHistoryModal.value.variant.id) {
+    // Lấy variant mới nhất từ store
+    const updatedVariant = variantsStore.getVariantById(stockHistoryModal.value.variant.id)
+    
+    if (updatedVariant) {
+      // Cập nhật variant trong tất cả các vị trí hiển thị
+      const updatedVariants = props.modelValue.map(v => 
+        v.id === updatedVariant.id ? {...v, stock: updatedVariant.stock, quantity: updatedVariant.stock} : v
+      );
+      
+      // Emit để cập nhật lên component cha
+      emit('update:modelValue', updatedVariants)
+      console.log("Emitted updated variants after closing modal");
+    }
+  }
+  
+  // Reset modal data
+  stockHistoryModal.value.adjustmentQuantity = 0
+  stockHistoryModal.value.adjustmentNote = ''
 }
 
 const applyVariantStockAdjustment = async () => {
@@ -644,24 +689,48 @@ const applyVariantStockAdjustment = async () => {
     return
   }
   
+  // Lưu lại adjustmentQuantity trước khi bất kỳ API calls nào
+  const adjustmentQuantity = stockHistoryModal.value.adjustmentQuantity
+  
   // Sử dụng store để adjust stock
   const result = await variantsStore.adjustVariantStock(
     variantId, 
-    stockHistoryModal.value.adjustmentQuantity, 
+    adjustmentQuantity, 
     stockHistoryModal.value.adjustmentNote
   )
   
   if (result) {
+    // Cập nhật giá trị của variant hiện tại
+    const currentQuantity = stockHistoryModal.value.variant.quantity || stockHistoryModal.value.variant.stock || 0;
+    const newQuantity = currentQuantity + adjustmentQuantity;
+    
+    // Cập nhật cả stock và quantity trong variant hiện tại trong modal
+    stockHistoryModal.value.variant.stock = newQuantity;
+    stockHistoryModal.value.variant.quantity = newQuantity;
+    
+    // Cập nhật tất cả các variant trong modelValue
+    const updatedVariants = props.modelValue.map(v => {
+      if (v.id === variantId) {
+        return {
+          ...v,
+          stock: newQuantity,
+          quantity: newQuantity
+        };
+      }
+      return v;
+    });
+    
+    // Emit để cập nhật lên component cha
+    emit('update:modelValue', updatedVariants);
+    console.log("Emitted updated variants after stock adjustment:", newQuantity);
+    
     // Đóng modal và reset các giá trị
     stockHistoryModal.value.show = false;
     stockHistoryModal.value.adjustmentQuantity = 0;
     stockHistoryModal.value.adjustmentNote = '';
     
-    // Tải lại lịch sử stock
-    stockHistoryModal.value.history = await loadVariantStockHistory(variantId);
-    
-    // Làm mới dữ liệu từ store và emit để cập nhật component cha
-    emit('update:modelValue', [...variantsStore.allVariants]);
+    // Hiển thị thông báo thành công
+    toast.success(`Stock adjusted successfully to ${newQuantity}`);
   }
   
   stockHistoryModal.value.loading = false;
@@ -677,15 +746,24 @@ const onStockInputChange = (variant: VariantItem) => {
     // Cập nhật trong store
     variantsStore.updateVariantStock(variant.id, variant.stock);
     
+    // Đồng bộ giá trị quantity với stock
+    variant.quantity = variant.stock;
+    
     // Cập nhật lên component cha
     nextTick(() => {
-      emit('update:modelValue', [...variantsStore.allVariants]);
+      // Tạo bản sao mới của modelValue với variant đã cập nhật
+      const updatedVariants = props.modelValue.map(v => 
+        v.id === variant.id ? {...v, stock: variant.stock, quantity: variant.stock} : v
+      );
+      
+      // Emit để cập nhật
+      emit('update:modelValue', updatedVariants);
+      
+      console.log("Emitted updated variants after stock change");
     });
   } else {
-    // Nếu không có ID (variant mới), chỉ cập nhật quantity
-    if ('quantity' in variant) {
-      variant.quantity = variant.stock;
-    }
+    // Nếu không có ID (variant mới), đồng bộ quantity với stock
+    variant.quantity = variant.stock;
     
     // Cập nhật lên component cha
     nextTick(() => {

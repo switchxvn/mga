@@ -93,7 +93,6 @@ export const useProductVariantsStore = defineStore('productVariants', {
           return result;
         }
         
-        toast.success('Stock adjusted successfully');
         return result;
       } catch (error) {
         console.error('Error adjusting variant stock:', error);
