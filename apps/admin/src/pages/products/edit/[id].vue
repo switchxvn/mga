@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '../../../composables/useTrpc'
 import slugify from 'slugify'
@@ -222,6 +222,9 @@ const defaultLanguage = ref('')
 
 // Handle language change
 const handleLanguageChange = (code: string) => {
+  // Kiểm tra nếu code trùng với ngôn ngữ hiện tại thì không làm gì
+  if (code === selectedLanguage.value) return;
+  
   // Lưu translations hiện tại trước khi chuyển ngôn ngữ
   if (selectedLanguage.value && form.value.name !== undefined) {
     form.value.translations[selectedLanguage.value] = {
@@ -253,21 +256,33 @@ const handleLanguageChange = (code: string) => {
     form.value.shortDescription = '';
     form.value.metaDescription = '';
   }
+  
+  // Chỉ cập nhật URL nếu khác với ngôn ngữ trong URL hiện tại
+  if (route.query.locale !== code) {
+    router.push({
+      query: {
+        ...route.query,
+        locale: code
+      }
+    });
+  }
 }
 
 // Watch for tab changes and update URL
 watch(currentTab, (newTab) => {
-  router.replace({ 
-    query: { 
-      ...route.query,
-      tab: newTab 
-    }
-  })
+  // Tránh gọi router.replace liên tục nếu giá trị tab không thay đổi
+  if (route.query.tab?.toString() !== newTab) {
+    router.replace({ 
+      query: { 
+        ...route.query,
+        tab: newTab 
+      }
+    })
+  }
   
-  // Debug khi chọn tab variants
-  if (newTab === 'variants') {
-    console.log('Variants tab selected. Current variants:', form.value.variants)
-    console.log('hasVariants flag:', form.value.hasVariants)
+  // Debug khi chọn tab variants - giảm số lượng log
+  if (newTab === 'variants' && process.env.NODE_ENV !== 'production') {
+    console.log('Variants tab selected. hasVariants:', form.value.hasVariants)
   }
 })
 
@@ -393,12 +408,12 @@ const initialForm: ProductForm = {
 const form = ref({ ...initialForm })
 const tagsInput = ref('')
 
-// Update page title dynamically
-useHead(() => ({
-  title: form.value.name 
+// Update page title dynamically - chỉnh sửa để tránh re-render liên tục
+useHead({
+  title: computed(() => form.value.name 
     ? `Edit: ${form.value.name} - Admin Dashboard`
-    : 'Edit Product - Admin Dashboard'
-}))
+    : 'Edit Product - Admin Dashboard')
+})
 
 const handleTagInput = (e: KeyboardEvent) => {
   // Handle Enter key
@@ -442,23 +457,43 @@ const generateSlug = () => {
   }
 }
 
-// Watch name changes to suggest slug
-watch(() => form.value.name, (newName) => {
-  if (newName) {
-    generateSlug()
-  }
-})
+// Tối ưu watch cho form.value.name để không trigger generateSlug quá thường xuyên
+const debouncedNameWatcher = (() => {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  
+  return (newName: string) => {
+    if (timeout) clearTimeout(timeout);
+    
+    if (newName) {
+      timeout = setTimeout(() => {
+        generateSlug();
+        timeout = null;
+      }, 300);
+    }
+  };
+})();
+
+// Thay thế watch để sử dụng debounce
+watch(() => form.value.name, debouncedNameWatcher, { immediate: false });
 
 // Fetch product data
 const fetchProduct = async () => {
   try {
     loading.value = true
-    console.log('Fetching product with ID:', route.params.id, 'and language:', selectedLanguage.value)
+    
+    // Tránh log quá nhiều trong production
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Fetching product with ID:', route.params.id, 'and language:', selectedLanguage.value)
+    }
     
     const product = await trpc.admin.products.getProductById.query(Number(route.params.id))
     
     if (product) {
-      console.log('Product loaded:', product)
+      // Giảm số lượng logging không cần thiết
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Product loaded successfully')
+      }
+      
       // Initialize translations
       const translations: Record<string, any> = {}
       
@@ -602,6 +637,11 @@ const fetchProduct = async () => {
 
       console.log('Form updated with variants:', form.value.variants)
 
+      // Giảm số lượng log debug không cần thiết
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Form updated with variants count:', form.value.variants.length)
+      }
+
       // Log giá trị price để debug
       console.log('Product price from API:', product.price);
       console.log('Product price after processing:', productPrice);
@@ -624,6 +664,9 @@ onMounted(() => {
 
 // Hàm khởi tạo dữ liệu
 const initData = async () => {
+  // Chỉ chạy khi selectedLanguage chưa được thiết lập
+  if (selectedLanguage.value) return;
+  
   // Kiểm tra URL parameter khi component mounted
   const localeFromUrl = route.query.locale as string;
   
@@ -636,13 +679,15 @@ const initData = async () => {
       const defaultLang = await trpc.admin.languages.getDefaultLanguage.query();
       selectedLanguage.value = defaultLang?.code || 'en';
       
-      // Cập nhật URL để phản ánh ngôn ngữ đã chọn
-      router.replace({ 
-        query: { 
-          ...route.query,
-          locale: selectedLanguage.value 
-        }
-      });
+      // Sử dụng router.push thay vì replace để tránh trigger nhiều lần
+      if (route.query.locale !== selectedLanguage.value) {
+        router.push({ 
+          query: { 
+            ...route.query,
+            locale: selectedLanguage.value 
+          }
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch default language:', error);
       selectedLanguage.value = 'en'; // Fallback nếu không lấy được ngôn ngữ mặc định
@@ -767,8 +812,8 @@ const updateProduct = async (continueEditing = false) => {
     if (!continueEditing) {
       router.push('/products')
     } else {
-      // Refresh the product data
-      fetchProduct()
+      // Chỉ refresh data nếu thực sự cần thiết
+      await fetchProduct()
     }
   } catch (error: any) {
     console.error('Failed to update product:', error)
@@ -826,6 +871,15 @@ if (process.client) {
     ]
   }
 }
+
+// Thêm cleanup khi component unmount
+onBeforeUnmount(() => {
+  // Cleanup để tránh memory leak
+  selectedLanguage.value = '';
+  form.value = { ...initialForm };
+  loading.value = false;
+  saveAndContinue.value = false;
+});
 </script>
 
 <style>

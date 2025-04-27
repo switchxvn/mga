@@ -338,7 +338,7 @@ onMounted(async () => {
 .tourism-footer {
   @apply text-white overflow-hidden flex flex-col;
   min-height: 500px;
-  background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%);
+  background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%) !important;
 }
 
 .main-content {
@@ -386,16 +386,16 @@ onMounted(async () => {
 /* Adjust existing styles to work with new background */
 .quick-link, .contact-link, .branch-card, .certification-item {
   @apply backdrop-blur-sm;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .social-icon-link {
   @apply shadow-lg hover:shadow-xl backdrop-blur-sm;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .social-icon-link:hover {
-  background: rgba(185, 28, 28, 0.8); /* Darker red on hover */
+  background: rgba(185, 28, 28, 0.8) !important; /* Darker red on hover */
 }
 
 /* Make sure content sections have proper contrast */
@@ -406,7 +406,7 @@ onMounted(async () => {
 /* Enhance loading state */
 .tourism-footer-loading {
   @apply min-h-[500px];
-  background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%);
+  background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%) !important;
 }
 
 .section-title {
@@ -474,12 +474,13 @@ h3, h4, h5 {
 }
 
 .quick-link:hover, .contact-link:hover {
-  @apply shadow-lg bg-[#b91c1c] backdrop-blur-sm;
+  @apply shadow-lg backdrop-blur-sm;
+  background: #b91c1c !important;
 }
 
 .branch-card {
   @apply shadow-md hover:shadow-lg backdrop-blur-sm;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .branch-card h5 {
