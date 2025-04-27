@@ -28,6 +28,7 @@ import { ProductAttribute } from './product/entities/product-attribute.entity';
 import { ProductAttributeValue } from './product/entities/product-attribute-value.entity';
 import { ProductAttributeTranslation } from './product/entities/product-attribute-translation.entity';
 import { ProductAttributeValueTranslation } from './product/entities/product-attribute-value-translation.entity';
+import { ProductStockHistory } from './product/entities/product-stock-history.entity';
 
 // Category
 import { Category } from './category/entities/category.entity';
@@ -150,6 +151,7 @@ export const entities: (new () => any)[] = [
   ProductAttributeValue,
   ProductAttributeTranslation,
   ProductAttributeValueTranslation,
+  ProductStockHistory,
   
   // Category
   Category,
