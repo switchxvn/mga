@@ -466,5 +466,22 @@
         "sms": "SMS"
       }
     }
+  },
+  "map": {
+    "title": "Cable Car Nui Sam Tourism Area Map",
+    "description": "Explore Nui Sam Cable Car Tourism Area with a detailed map of tourist attractions, services and highlight points.",
+    "contactInfo": "Contact Information",
+    "address": "Address: Nui Sam, Nui Sam Ward, Chau Doc City, An Giang Province",
+    "phone": "Phone: 0917 001 254",
+    "email": "Email: info@cablecar.com.vn",
+    "openingHours": "Opening Hours: 7:00 - 17:30 daily",
+    "zoom": {
+      "instructions": "Instructions",
+      "doubleClick": "Double click to zoom in / out",
+      "drag": "Drag to move when zoomed in",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "reset": "Reset"
+    }
   }
 } 

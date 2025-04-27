@@ -7,6 +7,7 @@ import { dashboardAdminRouter } from './dashboard.router'
 import { categoryAdminRouter } from './category.router'
 import { usersAdminRouter } from './users.router'
 import { productAdminRouter } from './product.router'
+import { orderAdminRouter } from './order.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -16,5 +17,6 @@ export const adminRouter = router({
   dashboard: dashboardAdminRouter,
   category: categoryAdminRouter,
   users: usersAdminRouter,
-  products: productAdminRouter
+  products: productAdminRouter,
+  order: orderAdminRouter
 }) 

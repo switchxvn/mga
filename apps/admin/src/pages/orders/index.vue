@@ -203,11 +203,79 @@ const fetchOrders = async () => {
       paymentStatus: paymentStatusFilter.value
     };
     
-    const result = await trpc.admin.order.getAllOrders.query(params);
-    orders.value = result;
+    // Log request parameters
+    console.log('Request params:', params);
+    
+    // Nhận kết quả từ API
+    const response = await trpc.admin.order.getAllOrders.query(params);
+    console.log('Raw API response:', response);
+    
+    // Trường hợp API trả về dữ liệu trực tiếp
+    if (response && typeof response === 'object' && 'items' in response && 'total' in response) {
+      orders.value = {
+        items: response.items || [],
+        total: response.total || 0,
+        page: page.value,
+        pageSize: pageSize.value,
+        totalPages: Math.ceil((response.total || 0) / pageSize.value) || 1
+      };
+      
+      console.log('Orders processed successfully:', orders.value);
+    }
+    // Xử lý trường hợp cụ thể [{ result: { data: { items: [], total: number } } }]
+    else if (Array.isArray(response) && response.length > 0 && response[0]?.result?.data) {
+      const result = response[0].result.data;
+      
+      orders.value = {
+        items: result.items || [],
+        total: result.total || 0,
+        page: page.value,
+        pageSize: pageSize.value,
+        totalPages: Math.ceil((result.total || 0) / pageSize.value) || 1
+      };
+      
+      console.log('Processed orders from array format:', orders.value);
+    }
+    // Trường hợp cấu trúc { result: { data: { items: [], total: number } } }
+    else if (response?.result?.data) {
+      const result = response.result.data;
+      
+      orders.value = {
+        items: result.items || [],
+        total: result.total || 0,
+        page: page.value,
+        pageSize: pageSize.value,
+        totalPages: Math.ceil((result.total || 0) / pageSize.value) || 1
+      };
+      
+      console.log('Processed orders from result.data format:', orders.value);
+    }
+    // Nếu không tìm thấy cấu trúc phù hợp, hiển thị lỗi
+    else {
+      console.error('Unknown response structure:', response);
+      error.value = 'Không thể xử lý dữ liệu từ server';
+      
+      // Reset orders để tránh lỗi
+      orders.value = {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 10,
+        totalPages: 1
+      };
+    }
   } catch (err: any) {
     console.error('Error fetching orders:', err);
     error.value = err.message || 'Failed to fetch orders';
+    
+    // Reset orders to empty state
+    orders.value = {
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 10,
+      totalPages: 1
+    };
   } finally {
     isLoading.value = false;
   }
@@ -434,35 +502,33 @@ onMounted(async () => {
     >
       <template #headers>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          Order ID
+          ORDER INFO
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          Customer
+          CUSTOMER
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          Date
+          STATUS
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          Total
+          PAYMENT
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          Status
+          AMOUNT
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          Payment
+          DATE
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          Items
-        </th>
-        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          Actions
+          ACTIONS
         </th>
       </template>
 
-      <template #rows="{ item: order }">
+      <template #row="{ item: order }">
+        <!-- ORDER INFO Column -->
         <td class="px-6 py-4 whitespace-nowrap">
           <div class="flex items-center">
-            <div class="ml-2">
+            <div>
               <div class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ order.orderCode }}
               </div>
@@ -470,6 +536,8 @@ onMounted(async () => {
             </div>
           </div>
         </td>
+        
+        <!-- CUSTOMER Column -->
         <td class="px-6 py-4 whitespace-nowrap">
           <div class="flex flex-col">
             <div class="text-sm font-medium text-gray-900 dark:text-white">
@@ -480,37 +548,97 @@ onMounted(async () => {
             </p>
           </div>
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-          {{ formatDate(order.createdAt) }}
+        
+        <!-- STATUS Column -->
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+               :class="{
+                 'bg-yellow-100 text-yellow-800': order.status === OrderStatus.PENDING,
+                 'bg-blue-100 text-blue-800': order.status === OrderStatus.CONFIRMED,
+                 'bg-indigo-100 text-indigo-800': order.status === OrderStatus.PROCESSING,
+                 'bg-purple-100 text-purple-800': order.status === OrderStatus.SHIPPED,
+                 'bg-green-100 text-green-800': order.status === OrderStatus.DELIVERED,
+                 'bg-red-100 text-red-800': order.status === OrderStatus.CANCELLED,
+               }">
+            {{ capitalize(order.status.toLowerCase()) }}
+          </div>
+          <Menu as="div" class="relative inline-block text-left mt-1">
+            <MenuButton class="inline-flex w-full justify-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+              <span class="underline">Change</span>
+            </MenuButton>
+            <MenuItems class="absolute left-0 z-10 mt-1 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-neutral-800 dark:ring-neutral-700">
+              <div class="py-1">
+                <MenuItem v-for="status in Object.values(OrderStatus)" :key="status" v-slot="{ active }">
+                  <button
+                    @click="updateOrderStatus(order.id, status)"
+                    :class="[
+                      active ? 'bg-gray-100 text-gray-900 dark:bg-neutral-700 dark:text-white' : 'text-gray-700 dark:text-gray-300',
+                      'block px-4 py-2 text-sm w-full text-left'
+                    ]"
+                  >
+                    {{ capitalize(status.toLowerCase()) }}
+                  </button>
+                </MenuItem>
+              </div>
+            </MenuItems>
+          </Menu>
         </td>
+
+        <!-- PAYMENT STATUS Column -->
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+               :class="{
+                 'bg-yellow-100 text-yellow-800': order.paymentStatus === PaymentStatus.PENDING,
+                 'bg-green-100 text-green-800': order.paymentStatus === PaymentStatus.PAID,
+                 'bg-red-100 text-red-800': order.paymentStatus === PaymentStatus.FAILED,
+                 'bg-gray-100 text-gray-800': order.paymentStatus === PaymentStatus.CANCELLED,
+                 'bg-purple-100 text-purple-800': order.paymentStatus === PaymentStatus.REFUNDED,
+               }">
+            {{ capitalize(order.paymentStatus.toLowerCase().replace('_', ' ')) }}
+          </div>
+          <Menu as="div" class="relative inline-block text-left mt-1">
+            <MenuButton class="inline-flex w-full justify-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+              <span class="underline">Change</span>
+            </MenuButton>
+            <MenuItems class="absolute left-0 z-10 mt-1 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-neutral-800 dark:ring-neutral-700">
+              <div class="py-1">
+                <MenuItem v-for="status in Object.values(PaymentStatus)" :key="status" v-slot="{ active }">
+                  <button
+                    @click="updatePaymentStatus(order.id, status)"
+                    :class="[
+                      active ? 'bg-gray-100 text-gray-900 dark:bg-neutral-700 dark:text-white' : 'text-gray-700 dark:text-gray-300',
+                      'block px-4 py-2 text-sm w-full text-left'
+                    ]"
+                  >
+                    {{ capitalize(status.toLowerCase().replace('_', ' ')) }}
+                  </button>
+                </MenuItem>
+              </div>
+            </MenuItems>
+          </Menu>
+        </td>
+        
+        <!-- AMOUNT Column -->
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
           {{ typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : order.totalAmount }}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="getStatusBadgeClass(order.status)">
-            {{ capitalize(order.status) }}
-          </span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="getPaymentStatusBadgeClass(order.paymentStatus)">
-            {{ capitalize(order.paymentStatus.replace('_', ' ')) }}
-          </span>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {{ order.paymentMethod }}
-          </div>
-        </td>
+        
+        <!-- DATE Column -->
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-          {{ order.items?.length || 0 }} items
+          {{ formatDate(order.createdAt) }}
         </td>
+        
+        <!-- ACTIONS Column -->
         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-          <div class="flex items-center justify-end space-x-2">
-            <NuxtLink :to="`/orders/edit/${order.id}`" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+          <div class="flex items-center space-x-2">
+            <NuxtLink :to="`/orders/${order.id}`" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+              <EyeIcon class="h-5 w-5" />
+            </NuxtLink>
+            <NuxtLink :to="`/orders/${order.id}/edit`" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
               <PencilIcon class="h-5 w-5" />
-              <span class="sr-only">Edit</span>
             </NuxtLink>
             <button @click="deleteOrder(order.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
               <TrashIcon class="h-5 w-5" />
-              <span class="sr-only">Delete</span>
             </button>
           </div>
         </td>

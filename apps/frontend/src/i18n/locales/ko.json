@@ -291,5 +291,22 @@
   "tickets": {
     "showing": "표시 중",
     "items": "티켓"
+  },
+  "map": {
+    "title": "누이 삼 케이블카 관광지도",
+    "description": "관광 명소, 서비스 및 주요 관광 포인트의 상세 지도와 함께 누이 삼 케이블카 관광지를 탐험하세요.",
+    "contactInfo": "연락처 정보",
+    "address": "주소: 누이 삼, 누이 삼 동, 쩌우 독 시, 안 장 지방",
+    "phone": "전화: 0917 001 254",
+    "email": "이메일: info@cablecar.com.vn",
+    "openingHours": "운영 시간: 매일 7:00 - 17:30",
+    "zoom": {
+      "instructions": "설명",
+      "doubleClick": "확대/축소하려면 두 번 클릭하세요",
+      "drag": "확대 시 이동하려면 드래그하세요",
+      "zoomIn": "확대",
+      "zoomOut": "축소",
+      "reset": "초기화"
+    }
   }
 } 
