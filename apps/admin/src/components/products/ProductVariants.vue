@@ -339,6 +339,13 @@ import { useRoute } from 'vue-router'
 import { useTrpc } from '../../composables/useTrpc'
 import { useToast } from 'vue-toastification'
 import { format } from 'date-fns'
+import { useProductVariantsStore, VariantItem } from '../../stores/productVariantsStore'
+
+// Khởi tạo các composable
+const route = useRoute()
+const trpc = useTrpc()
+const toast = useToast()
+const variantsStore = useProductVariantsStore()
 
 interface Option {
   name: string
@@ -346,24 +353,14 @@ interface Option {
   newValue: string
 }
 
-interface Variant {
-  id?: number
-  name: string
-  price: number
-  sku: string
-  stock: number
-  quantity?: number
-  options: Record<string, string>
-}
-
 const props = defineProps<{
   hasVariants: boolean
-  modelValue: Variant[]
+  modelValue: VariantItem[]
 }>()
 
 const emit = defineEmits<{
   'update:has-variants': [value: boolean]
-  'update:modelValue': [value: Variant[]]
+  'update:modelValue': [value: VariantItem[]]
 }>()
 
 const options = ref<Option[]>([])
@@ -408,6 +405,9 @@ onMounted(() => {
   if (options.value.length === 0 && props.modelValue && props.modelValue.length > 0) {
     console.log('Unable to extract options automatically, but will display existing variants')
   }
+  
+  // Khởi tạo store với modelValue
+  variantsStore.initVariants(props.modelValue)
 })
 
 // Also watch for changes in the modelValue
@@ -417,6 +417,12 @@ watch(() => props.modelValue, (newValue) => {
     console.log('Processing existing variants from updated modelValue')
     processExistingVariants()
   }
+  
+  // Khi modelValue thay đổi, cập nhật lại displayVariants
+  console.log('modelValue changed, updating displayVariants');
+  
+  // Cập nhật store
+  variantsStore.updateAllVariants(newValue)
 }, { immediate: true, deep: true })
 
 // Watch hasVariants to initialize options when turned on
@@ -427,13 +433,6 @@ watch(() => props.hasVariants, (hasVariants) => {
     processExistingVariants()
   }
 }, { immediate: true })
-
-// Thêm watcher cho props.modelValue để cập nhật giao diện khi dữ liệu thay đổi
-// sau đoạn watch(() => props.hasVariants
-watch(() => props.modelValue, () => {
-  // Khi modelValue thay đổi, cập nhật lại displayVariants
-  console.log('modelValue changed, updating displayVariants');
-}, { deep: true });
 
 // Add new option
 const addOption = () => {
@@ -539,11 +538,6 @@ const displayVariants = computed(() => {
   return []
 })
 
-// Add stock adjustment and history functionality
-const route = useRoute()
-const trpc = useTrpc()
-const toast = useToast()
-
 // Function to load variant stock history
 const loadVariantStockHistory = async (variantId: number) => {
   try {
@@ -560,25 +554,6 @@ const loadVariantStockHistory = async (variantId: number) => {
     console.error('Error loading variant stock history:', error)
     toast.error('Failed to load variant stock history')
     return []
-  }
-}
-
-// Function to adjust variant stock
-const adjustVariantStock = async (variantId: number, quantity: number, note: string) => {
-  try {
-    if (!variantId) return false
-    
-    const result = await trpc.admin.products.adjustVariantStock.mutate({
-      variantId,
-      adjustmentQuantity: quantity,
-      note: note || undefined
-    })
-    
-    return result
-  } catch (error) {
-    console.error('Error adjusting variant stock:', error)
-    toast.error('Failed to adjust variant stock')
-    return false
   }
 }
 
@@ -621,26 +596,17 @@ const getAdjustmentTypeClass = (type: string) => {
   return classes[type] || 'bg-slate-100 text-slate-800'
 }
 
-// Expose functions to template
-defineExpose({
-  loadVariantStockHistory,
-  adjustVariantStock,
-  formatDate,
-  getAdjustmentTypeLabel,
-  getAdjustmentTypeClass
-})
-
 // Stock history modal
 const stockHistoryModal = ref({
   show: false,
-  variant: {} as Variant,
+  variant: {} as VariantItem,
   adjustmentQuantity: 0,
   adjustmentNote: '',
   history: [] as any[],
   loading: false
 })
 
-const openStockHistoryModal = async (variant: Variant) => {
+const openStockHistoryModal = async (variant: VariantItem) => {
   stockHistoryModal.value.show = true
   stockHistoryModal.value.variant = variant
   
@@ -678,58 +644,14 @@ const applyVariantStockAdjustment = async () => {
     return
   }
   
-  const result = await adjustVariantStock(
+  // Sử dụng store để adjust stock
+  const result = await variantsStore.adjustVariantStock(
     variantId, 
     stockHistoryModal.value.adjustmentQuantity, 
     stockHistoryModal.value.adjustmentNote
   )
   
   if (result) {
-    // Lấy giá trị stock mới từ API
-    const newStock = result.variant && typeof result.variant.quantity === 'number' 
-      ? result.variant.quantity 
-      : undefined;
-      
-    if (newStock !== undefined) {
-      // 1. Cập nhật variant trong modal
-      stockHistoryModal.value.variant.stock = newStock;
-      stockHistoryModal.value.variant.quantity = newStock;
-      
-      // 2. Cập nhật trong modelValue (props.modelValue)
-      const variantIndex = props.modelValue.findIndex(v => v.id === variantId);
-      if (variantIndex !== -1) {
-        props.modelValue[variantIndex].stock = newStock;
-        if ('quantity' in props.modelValue[variantIndex]) {
-          props.modelValue[variantIndex].quantity = newStock;
-        }
-        
-        // 3. Emit để cập nhật lên component cha
-        emit('update:modelValue', [...props.modelValue]);
-      }
-      
-      // 4. Cập nhật trực tiếp trong displayVariants nếu dùng giá trị khác với modelValue
-      if (options.value.length === 0) {
-        // Trường hợp hiển thị trực tiếp từ modelValue
-        const displayIndex = displayVariants.value.findIndex(v => v.id === variantId);
-        if (displayIndex !== -1) {
-          displayVariants.value[displayIndex].stock = newStock;
-          if ('quantity' in displayVariants.value[displayIndex]) {
-            displayVariants.value[displayIndex].quantity = newStock;
-          }
-        }
-      }
-      
-      // 5. Làm một cách mạnh tay hơn - duyệt qua tất cả variants hiển thị để cập nhật
-      displayVariants.value.forEach(variant => {
-        if (variant.id === variantId) {
-          variant.stock = newStock;
-          if ('quantity' in variant) {
-            variant.quantity = newStock;
-          }
-        }
-      });
-    }
-        
     // Đóng modal và reset các giá trị
     stockHistoryModal.value.show = false;
     stockHistoryModal.value.adjustmentQuantity = 0;
@@ -738,60 +660,45 @@ const applyVariantStockAdjustment = async () => {
     // Tải lại lịch sử stock
     stockHistoryModal.value.history = await loadVariantStockHistory(variantId);
     
-    // Thêm một toast thông báo thành công (chỉ hiển thị một lần)
-    toast.success('Stock adjusted successfully');
-
-    // Bổ sung thêm log để theo dõi
-    console.log('Stock updated successfully', {
-      newStock,
-      variantId,
-      modelValue: props.modelValue,
-      displayVariants: displayVariants.value
-    });
-
-    // Thực hiện cập nhật một lần nữa vào displayVariants
-    nextTick(() => {
-      // Force cập nhật lại displayVariants
-      const updatedVariants = [...props.modelValue];
-      emit('update:modelValue', updatedVariants);
-    });
+    // Làm mới dữ liệu từ store và emit để cập nhật component cha
+    emit('update:modelValue', [...variantsStore.allVariants]);
   }
   
   stockHistoryModal.value.loading = false;
 }
 
-const removeVariant = (variant: Variant) => {
+const removeVariant = (variant: VariantItem) => {
   // Implement the logic to remove the variant
   console.log('Removing variant:', variant)
 }
 
-const updateVariantStock = (variant: Variant, event: Event) => {
-  const input = event.target as HTMLInputElement;
-  const newValue = parseInt(input.value);
-  
-  if (!isNaN(newValue)) {
-    // Cập nhật trực tiếp giá trị stock
-    variant.stock = newValue;
+const onStockInputChange = (variant: VariantItem) => {
+  if (variant.id) {
+    // Cập nhật trong store
+    variantsStore.updateVariantStock(variant.id, variant.stock);
     
-    // Cập nhật quantity nếu có
+    // Cập nhật lên component cha
+    nextTick(() => {
+      emit('update:modelValue', [...variantsStore.allVariants]);
+    });
+  } else {
+    // Nếu không có ID (variant mới), chỉ cập nhật quantity
     if ('quantity' in variant) {
-      variant.quantity = newValue;
+      variant.quantity = variant.stock;
     }
     
-    // Cần emit để cập nhật lên component cha
-    emit('update:modelValue', [...props.modelValue]);
+    // Cập nhật lên component cha
+    nextTick(() => {
+      emit('update:modelValue', [...props.modelValue]);
+    });
   }
 }
 
-const onStockInputChange = (variant: Variant) => {
-  // Cập nhật quantity nếu có
-  if ('quantity' in variant) {
-    variant.quantity = variant.stock;
-  }
-  
-  // Emit để cập nhật lên component cha
-  nextTick(() => {
-    emit('update:modelValue', [...props.modelValue]);
-  });
-}
+// Expose functions to template
+defineExpose({
+  loadVariantStockHistory,
+  formatDate,
+  getAdjustmentTypeLabel,
+  getAdjustmentTypeClass
+})
 </script> 
