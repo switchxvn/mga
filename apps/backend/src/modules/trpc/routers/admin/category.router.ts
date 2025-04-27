@@ -1,0 +1,230 @@
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { adminProcedure, router } from '../../procedures';
+import { Permissions } from '../../../auth/constants/permissions.constant';
+import { requirePermission } from '../../middlewares/permission.middleware';
+import { BadRequestException } from '@nestjs/common';
+import { CategoryType } from '@ew/shared';
+import { UpdateCategoryData, CategoryTranslationData, CreateCategoryData } from '../../../category/admin/services/category-admin.service';
+import type { PrismaClient } from '@prisma/client';
+
+type Category = PrismaClient['category']['create']['data'];
+type CategoryTranslation = PrismaClient['categoryTranslation']['create']['data'];
+
+const categoryTranslationSchema = z.object({
+  locale: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  metaKeywords: z.string().optional(),
+});
+
+const createCategorySchema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().optional(),
+  parentId: z.number().nullable().optional(),
+  isActive: z.boolean().default(true),
+  type: z.string().default('default'),
+  translations: z.array(categoryTranslationSchema).optional(),
+});
+
+const updateCategorySchema = z.object({
+  id: z.number(),
+  data: createCategorySchema.partial(),
+});
+
+// Helper function to transform category data
+const transformCategory = (category: any) => {
+  if (!category) return null;
+  
+  const transformed = {
+    id: category.id,
+    type: category.type,
+    active: category.active,
+    createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
+    translations: category.translations?.map((translation: any) => ({
+      id: translation.id,
+      locale: translation.locale,
+      name: translation.name,
+      slug: translation.slug,
+      description: translation.description,
+      createdAt: translation.createdAt,
+      updatedAt: translation.updatedAt
+    })) || [],
+    parent: category.parent ? {
+      id: category.parent.id,
+      type: category.parent.type,
+      active: category.parent.active,
+      translations: category.parent.translations?.map((translation: any) => ({
+        id: translation.id,
+        locale: translation.locale,
+        name: translation.name,
+        slug: translation.slug,
+        description: translation.description
+      })) || []
+    } : null,
+    children: category.children?.map((child: any) => ({
+      id: child.id,
+      type: child.type,
+      active: child.active,
+      translations: child.translations?.map((translation: any) => ({
+        id: translation.id,
+        locale: translation.locale,
+        name: translation.name,
+        slug: translation.slug,
+        description: translation.description
+      })) || []
+    })) || []
+  };
+  
+  return transformed;
+};
+
+export const categoryAdminRouter = router({
+  getCategories: adminProcedure
+    .use(requirePermission(Permissions.VIEW_CONTENT))
+    .query(async ({ ctx }) => {
+      try {
+        return await ctx.services.categoryAdminService.findAll();
+      } catch (error) {
+        ctx.logger.error('Failed to fetch categories:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch categories',
+          cause: error,
+        });
+      }
+    }),
+
+  getCategoryById: adminProcedure
+    .use(requirePermission(Permissions.VIEW_CONTENT))
+    .input(z.number())
+    .query(async ({ ctx, input }) => {
+      try {
+        const category = await ctx.services.categoryAdminService.findOne(input);
+        if (!category) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Category with ID ${input} not found`,
+          });
+        }
+        return category;
+      } catch (error) {
+        ctx.logger.error('Failed to fetch category:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch category',
+          cause: error,
+        });
+      }
+    }),
+
+  getAllCategories: adminProcedure
+    .use(requirePermission(Permissions.VIEW_CONTENT))
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).default(100),
+        search: z.string().default(''),
+        active: z.boolean().nullable().default(null),
+        type: z.enum(['news', 'product', 'both']).optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional()
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        console.log('getAllCategories called with input:', input);
+        
+        const result = await ctx.services.categoryAdminService.getCategories({
+          page: input.page,
+          limit: input.limit,
+          search: input.search,
+          active: input.active,
+          type: input.type as CategoryType,
+          sortBy: input.sortBy,
+          sortOrder: input.sortOrder
+        });
+
+        console.log('getAllCategories result:', {
+          totalItems: result.total,
+          itemsCount: result.items.length,
+          currentPage: input.page,
+          limit: input.limit
+        });
+
+        return {
+          categories: result.items.map(transformCategory),
+          total: result.total,
+          totalPages: Math.ceil(result.total / input.limit),
+          currentPage: input.page,
+          limit: input.limit
+        };
+      } catch (error) {
+        console.error('Error in getAllCategories:', error);
+        ctx.logger.error('Failed to fetch categories:', {
+          error,
+          input,
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch categories',
+          cause: error,
+        });
+      }
+    }),
+
+  deleteCategory: adminProcedure
+    .use(requirePermission(Permissions.DELETE_CONTENT))
+    .input(z.number())
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ctx.services.categoryAdminService.remove(input);
+        return { success: true };
+      } catch (error) {
+        ctx.logger.error('Failed to delete category:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to delete category',
+          cause: error,
+        });
+      }
+    }),
+
+  createCategory: adminProcedure
+    .use(requirePermission(Permissions.CREATE_CONTENT))
+    .input(createCategorySchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await ctx.services.categoryAdminService.create(input as CreateCategoryData);
+      } catch (error) {
+        ctx.logger.error('Failed to create category:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create category',
+          cause: error,
+        });
+      }
+    }),
+
+  updateCategory: adminProcedure
+    .use(requirePermission(Permissions.EDIT_CONTENT))
+    .input(updateCategorySchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await ctx.services.categoryAdminService.update(input.id, input.data as Partial<Category>);
+      } catch (error) {
+        ctx.logger.error('Failed to update category:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update category',
+          cause: error,
+        });
+      }
+    })
+}); 

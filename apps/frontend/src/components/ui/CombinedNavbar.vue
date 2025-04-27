@@ -1,6 +1,6 @@
 <!-- Kết hợp NavbarWithLogoHotline và NavbarWithoutLogo -->
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, computed } from "vue";
+import { ref, watch, nextTick, onMounted, computed, onBeforeUnmount } from "vue";
 import { useNow, useDateFormat } from "@vueuse/core";
 import { useFeatureFlags } from "~/composables/useFeatureFlags";
 import { useLocalization } from "~/composables/useLocalization";
@@ -16,6 +16,8 @@ import LanguageSwitcher from "~/components/common/LanguageSwitcher.vue";
 import CartIcon from "~/components/cart/CartIcon.vue";
 import MegaMenu from "~/components/menu/MegaMenu.vue";
 import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
+import { useI18n } from 'vue-i18n';
+import { processColorValue } from '~/utils/color';
 
 // Props cho component
 interface NavbarProps {
@@ -124,7 +126,7 @@ const isCartEnabled = ref<boolean | null>(null);
 const isLoadingFeatureFlag = ref(true);
 
 // Localization
-const { locale } = useLocalization();
+const { locale, $t } = useLocalization();
 
 // Logo
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
@@ -167,32 +169,32 @@ const {
 
 // Computed color values
 const salesBackgroundColor = computed(
-  () => props.settings.hotlines?.sales?.backgroundColor || "#0EA5E9"
+  () => processColorValue(props.settings.hotlines?.sales?.backgroundColor) || "#0EA5E9"
 );
 
 const salesTextColor = computed(
-  () => props.settings.hotlines?.sales?.textColor || "#ffffff"
+  () => processColorValue(props.settings.hotlines?.sales?.textColor) || "#ffffff"
 );
 
 const supportBackgroundColor = computed(
-  () => props.settings.hotlines?.support?.backgroundColor || "#0EA5E9"
+  () => processColorValue(props.settings.hotlines?.support?.backgroundColor) || "#0EA5E9"
 );
 
 const supportTextColor = computed(
-  () => props.settings.hotlines?.support?.textColor || "#ffffff"
+  () => processColorValue(props.settings.hotlines?.support?.textColor) || "#ffffff"
 );
 
-const tertiaryBorderColor = computed(() => "var(--tertiary-900)");
+const tertiaryBorderColor = computed(() => processColorValue("var(--tertiary-900)"));
 
 const darkModeMenuBackground = computed(
-  () => props.settings?.darkMode?.menuBackgroundColor || "#171717"
+  () => processColorValue(props.settings?.darkMode?.menuBackgroundColor) || "#171717"
 );
 
 const lightModeMenuBackground = computed(
-  () => props.settings?.menuBackgroundColor || "#ffffff"
+  () => processColorValue(props.settings?.menuBackgroundColor) || "#ffffff"
 );
 
-const primaryHoverColor = computed(() => "var(--primary-400)");
+const primaryHoverColor = computed(() => processColorValue("var(--primary-400)"));
 
 const getNavLinkColor = (isActive: boolean) => ({
   color: isActive ? navigationActiveTextColor : navigationTextColor,
@@ -205,6 +207,9 @@ const formattedTime = useDateFormat(now, "HH:mm:ss - DD/MM/YYYY");
 
 // Features (Time and Cart)
 const { checkCartFeatureFlag } = useNavbarFeatures();
+
+// Thêm ref để kiểm soát mounted state
+const isMounted = ref(true);
 
 // Watch for logo changes to update navbar height
 watch([logo, isLoadingLogo], () => {
@@ -236,15 +241,23 @@ onMounted(() => {
 watch(locale, () => {
   fetchMenuItems();
 });
+
+// Cải thiện cleanup
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  // Cleanup other resources if needed
+});
+
+const { t } = useI18n();
 </script>
 
 <template>
-  <div class="navbar-container">
+  <div class="navbar-container" v-if="isMounted">
     <!-- Top Menu - New Section -->
     <div class="top-menu w-full border-b relative">
       <div class="top-menu-bg-layer"></div>
       <div class="container mx-auto">
-        <div class="flex items-center justify-between h-12 px-4">
+        <div class="flex items-center justify-between h-12">
           <!-- Current Time -->
           <div class="flex items-center gap-2">
             <Icon name="Clock" class="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
@@ -268,7 +281,7 @@ watch(locale, () => {
                     '--hover-color': link.hoverColor,
                   }"
                 >
-                  {{ $t(link.label.toLowerCase()) }}
+                  {{ t(link.label.toLowerCase()) }}
                 </NuxtLink>
                 <span
                   v-if="index < props.settings.topMenu.links.length - 1"
@@ -416,7 +429,7 @@ watch(locale, () => {
         class="navigation-section w-full relative"
         :style="{
           backgroundColor: isDark ? darkModeMenuBackground : lightModeMenuBackground,
-          borderColor: borderColor,
+          borderColor: 'rgb(229, 231, 235)',
         }"
       >
         <div
@@ -453,7 +466,7 @@ watch(locale, () => {
             </div>
 
             <!-- Desktop Navigation -->
-            <nav class="hidden md:flex items-center space-x-5 flex-grow justify-start">
+            <nav class="hidden md:flex items-center space-x-5 flex-grow justify-between">
               <div
                 v-if="isLoading"
                 class="text-sm text-neutral-500 dark:text-neutral-400"
@@ -482,13 +495,13 @@ watch(locale, () => {
                     :style="getNavLinkColor(isMenuActive(item.href))"
                     :class="{ 'menu-active': isMenuActive(item.href) }"
                   >
-                    <span class="text-[1.05rem] transition-colors duration-300">
+                    <span class="text-[1.05rem] transition-colors duration-300 text-white dark:text-neutral-300 font-bold">
                       {{ item.label }}
                     </span>
                     <Icon
                       v-if="item.children?.length"
                       name="ChevronDown"
-                      class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4"
+                      class="transition-transform duration-300 group-hover:rotate-180 h-4 w-4 text-white dark:text-neutral-300 font-bold"
                       :style="getNavLinkColor(isMenuActive(item.href))"
                     />
                   </NuxtLink>

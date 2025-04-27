@@ -1,22 +1,39 @@
+export enum GalleryType {
+  COMMON = 'common',
+  SLIDER = 'slider',
+  BANNER = 'banner',
+  FOOD = 'food'
+}
+
 export interface GalleryTranslation {
-  id: number;
   locale: string;
   title: string;
   description?: string;
-  galleryId: number;
+}
+
+export interface Gallery {
+  id: number;
+  type: GalleryType;
+  image: string;
+  sequence: number;
+  isActive: boolean;
+  translations: GalleryTranslation[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type GalleryType = 'common' | 'food';
-
-export interface Gallery {
-  id: number;
+export interface CreateGalleryInput {
+  type?: GalleryType;
   image: string;
-  isActive: boolean;
-  sequence: number;
-  type: GalleryType;
-  createdAt: Date;
-  updatedAt: Date;
+  sequence?: number;
+  isActive?: boolean;
   translations: GalleryTranslation[];
+}
+
+export interface UpdateGalleryInput {
+  type?: GalleryType;
+  image?: string;
+  sequence?: number;
+  isActive?: boolean;
+  translations?: GalleryTranslation[];
 } 

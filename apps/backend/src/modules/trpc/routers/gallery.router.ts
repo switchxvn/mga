@@ -13,13 +13,13 @@ const createGallerySchema = z.object({
   image: z.string(),
   isActive: z.boolean().default(true),
   sequence: z.number().default(0),
-  type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).default('common' as GalleryType),
+  type: z.nativeEnum(GalleryType).default(GalleryType.COMMON),
   translations: z.array(galleryTranslationSchema),
 }).transform((data) => ({
   image: data.image,
   isActive: data.isActive ?? true,
   sequence: data.sequence ?? 0,
-  type: data.type ?? 'common',
+  type: data.type ?? GalleryType.COMMON,
   translations: data.translations.map(t => ({
     locale: t.locale,
     title: t.title,
@@ -32,7 +32,7 @@ const updateGallerySchema = z.object({
   image: z.string().optional(),
   isActive: z.boolean().optional(),
   sequence: z.number().optional(),
-  type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional(),
+  type: z.nativeEnum(GalleryType).optional(),
   translations: z.array(galleryTranslationSchema).optional(),
 }).transform((data) => ({
   id: data.id,

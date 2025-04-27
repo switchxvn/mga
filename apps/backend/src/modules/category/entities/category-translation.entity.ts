@@ -6,7 +6,7 @@ export class CategoryTranslation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
   @Column({ nullable: true })
@@ -15,7 +15,7 @@ export class CategoryTranslation {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ length: 2 })
+  @Column({ type: 'varchar', length: 10 })
   locale: string;
 
   // SEO fields
@@ -43,8 +43,8 @@ export class CategoryTranslation {
   @Column({ name: 'category_id' })
   categoryId: number;
 
-  @ManyToOne(() => Category, (category) => category.translations, {
-    onDelete: 'CASCADE',
+  @ManyToOne(() => Category, category => category.translations, {
+    onDelete: 'CASCADE'
   })
   @JoinColumn({ name: 'category_id' })
   category: Category;

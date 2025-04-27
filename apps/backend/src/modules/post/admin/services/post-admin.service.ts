@@ -1,11 +1,12 @@
-import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
+import { CreateAdminPostInput } from '@ew/shared';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Post } from '../../entities/post.entity';
-import { PostTranslation } from '../../entities/post-translation.entity';
-import { CreatePostInput, UpdatePostInput } from '@ew/shared';
-import { PostTag } from '../../entities/post-tag.entity';
+import { DeepPartial, Repository } from 'typeorm';
+import { Category } from '../../../category/entities/category.entity';
 import { Tag } from '../../../settings/entities/tag.entity';
+import { PostTag } from '../../entities/post-tag.entity';
+import { PostTranslation } from '../../entities/post-translation.entity';
+import { Post } from '../../entities/post.entity';
 
 @Injectable()
 export class PostAdminService {
@@ -19,15 +20,17 @@ export class PostAdminService {
     @InjectRepository(PostTag)
     private readonly postTagRepository: Repository<PostTag>,
     @InjectRepository(Tag)
-    private readonly tagRepository: Repository<Tag>
+    private readonly tagRepository: Repository<Tag>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>
   ) {}
 
-  async create(createPostDto: CreatePostInput, userId: string): Promise<Post> {
+  async create(createPostDto: CreateAdminPostInput, userId: string): Promise<Post> {
     const post = this.postRepository.create({
       ...createPostDto,
       authorId: userId
     });
-    return this.postRepository.save(post);
+    return this.postRepository.save(post as DeepPartial<Post>);
   }
 
   async findAll() {
@@ -44,7 +47,7 @@ export class PostAdminService {
     });
   }
 
-  async update(id: number, updatePostDto: UpdatePostInput, userId: string): Promise<Post> {
+  async update(id: number, updatePostDto: CreateAdminPostInput, userId: string): Promise<Post> {
     const post = await this.findOne(id);
 
     if (!post) {
@@ -120,16 +123,47 @@ export class PostAdminService {
     };
   }
 
-  async getPost(id: number) {
+  async getPost(id: number, options?: { relations?: Record<string, any> }) {
     return this.postRepository.findOne({
       where: { id },
-      relations: ['translations', 'postTags', 'postTags.tag', 'author', 'author.profile']
+      relations: options?.relations || {
+        translations: true,
+        postTags: {
+          tag: true
+        },
+        author: {
+          profile: true
+        }
+      }
     });
   }
 
   async createPost(data: Partial<Post>) {
     const post = this.postRepository.create(data);
     return this.postRepository.save(post);
+  }
+
+  async createPostWithTranslations(data: CreateAdminPostInput, userId: string) {
+    // Create base post
+    const post = await this.postRepository.save(this.postRepository.create({
+      title: data.title,
+      content: data.content,
+      shortDescription: data.shortDescription,
+      published: data.status === 'PUBLISHED',
+      thumbnail: data.thumbnail,
+      authorId: userId
+    }));
+
+    // Create translations
+    if (data.translations?.length) {
+      const translations = data.translations.map(t => this.postTranslationRepository.create({
+        ...t,
+        postId: post.id
+      }));
+      await this.postTranslationRepository.save(translations);
+    }
+
+    return this.getPost(post.id);
   }
 
   async findPostTranslationBySlug(slug: string): Promise<PostTranslation | null> {
@@ -153,14 +187,14 @@ export class PostAdminService {
     }
   }
 
-  async updatePost(id: number, data: UpdatePostInput): Promise<Post> {
+  async updatePost(id: number, data: CreateAdminPostInput, userId: string): Promise<Post> {
     try {
       this.logger.debug('Received update data:', JSON.stringify(data, null, 2));
 
       // Find existing post with translations
       const existingPost = await this.postRepository.findOne({
         where: { id },
-        relations: ['translations', 'postTags']
+        relations: ['translations', 'postTags', 'categories']
       });
 
       if (!existingPost) {
@@ -171,9 +205,13 @@ export class PostAdminService {
       const postToUpdate = {
         title: data.title,
         content: data.content,
+        shortDescription: data.shortDescription,
         published: data.status === 'PUBLISHED',
-        thumbnail: data.featuredImage || existingPost.thumbnail,
+        thumbnail: data.thumbnail,
+        authorId: userId // Add authorId to update
       };
+
+      this.logger.debug('Updating post with:', postToUpdate);
 
       // Update the post first
       await this.postRepository.update(id, postToUpdate);
@@ -208,9 +246,10 @@ export class PostAdminService {
             await this.postTranslationRepository.update(existingTranslation.id, {
               title: translation.title,
               content: translation.content,
+              shortDescription: translation.shortDescription,
               slug: slugToUse,
               metaDescription: translation.metaDescription,
-              ogImage: translation.ogImage
+              ogImage: translation.ogImage,
             });
           } else {
             this.logger.debug('Creating new translation');
@@ -225,7 +264,8 @@ export class PostAdminService {
             const newTranslation = this.postTranslationRepository.create({
               ...translation,
               slug: slugToUse,
-              postId: id
+              postId: id,
+              ogImage: translation.ogImage
             });
             await this.postTranslationRepository.save(newTranslation);
           }
@@ -259,10 +299,28 @@ export class PostAdminService {
         }
       }
 
+      // Handle categories if provided
+      if (data.categoryIds) {
+        // Get updated post with current values
+        const updatedPost = await this.postRepository.findOne({
+          where: { id },
+          relations: ['categories']
+        });
+
+        if (updatedPost) {
+          // Update categories while preserving other fields
+          updatedPost.categories = await this.categoryRepository.findByIds(data.categoryIds);
+          await this.postRepository.save({
+            ...updatedPost,
+            thumbnail: data.thumbnail // Ensure thumbnail is preserved
+          });
+        }
+      }
+
       // Return updated post with all relations
       return this.postRepository.findOne({
         where: { id },
-        relations: ['translations', 'postTags', 'postTags.tag']
+        relations: ['translations', 'postTags', 'postTags.tag', 'categories', 'categories.translations']
       });
     } catch (error) {
       this.logger.error('Error updating post:', error);
@@ -282,8 +340,8 @@ export class PostAdminService {
       .replace(/ỳ|ý|ỵ|ỷ|ỹ/g, 'y')
       .replace(/đ/g, 'd')
       .replace(/\s+/g, '-')           // Replace spaces with -
-      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-      .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+      .replace(/[^\w-]+/g, '')       // Remove all non-word chars
+      .replace(/--+/g, '-')         // Replace multiple - with single -
       .replace(/^-+/, '')             // Trim - from start of text
       .replace(/-+$/, '');            // Trim - from end of text
   }
@@ -303,5 +361,32 @@ export class PostAdminService {
       relations: ['post']
     });
     return translation?.post || null;
+  }
+
+  async updatePostStatus(id: number, status: 'DRAFT' | 'PUBLISHED'): Promise<Post> {
+    try {
+      const existingPost = await this.postRepository.findOne({
+        where: { id },
+        relations: ['translations', 'postTags', 'categories']
+      });
+
+      if (!existingPost) {
+        throw new NotFoundException(`Post with ID ${id} not found`);
+      }
+
+      // Update post status
+      await this.postRepository.update(id, {
+        published: status === 'PUBLISHED'
+      });
+
+      // Return updated post
+      return this.postRepository.findOne({
+        where: { id },
+        relations: ['translations', 'postTags', 'postTags.tag', 'categories', 'categories.translations']
+      });
+    } catch (error) {
+      this.logger.error('Error updating post status:', error);
+      throw error;
+    }
   }
 } 

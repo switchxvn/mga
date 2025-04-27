@@ -3,6 +3,7 @@
   <section 
     ref="sectionRef"
     class="video-intro-section py-8"
+    v-if="isMounted"
   >
     <div class="container mx-auto px-4">
       <div v-if="isLoading" class="flex justify-center items-center py-12">
@@ -49,10 +50,7 @@
                   v-if="props.config?.showTitle"
                   :class="titleClasses"
                   class="line-clamp-2 mb-3"
-                  :style="{
-                    fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
-                    fontWeight: props.config?.titleStyle?.fontWeight || '600'
-                  }"
+                  :style="videoCardStyle"
                 >
                   <a
                     v-if="props.config?.linkEnabled"
@@ -60,9 +58,7 @@
                     :target="props.config?.linkTarget || '_blank'"
                     rel="noopener noreferrer"
                     :class="linkClasses"
-                    :style="{
-                      textDecoration: props.config?.titleStyle?.textDecoration || 'none'
-                    }"
+                    :style="videoCardStyle"
                   >
                     {{ video.title }}
                   </a>
@@ -85,6 +81,7 @@
         <div v-else class="swiper-outer-container">
           <div class="swiper-container">
             <Swiper
+              v-if="videoData.length > 0"
               :modules="[Autoplay, SwiperPagination, SwiperNavigation]"
               :slides-per-view="props.config?.sliderSettings?.slidesPerView || 3"
               :space-between="24"
@@ -126,6 +123,7 @@
                 enabled: true
               }"
               class="!overflow-visible pb-12"
+              @swiper="onSwiper"
             >
               <SwiperSlide v-for="video in videoData" :key="video.id" class="group h-[480px]">
                 <div class="video-card group relative h-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
@@ -158,10 +156,7 @@
                         v-if="props.config?.showTitle"
                         :class="titleClasses"
                         class="line-clamp-2 mb-3"
-                        :style="{
-                          fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
-                          fontWeight: props.config?.titleStyle?.fontWeight || '600'
-                        }"
+                        :style="videoCardStyle"
                       >
                         <a
                           v-if="props.config?.linkEnabled"
@@ -169,9 +164,7 @@
                           :target="props.config?.linkTarget || '_blank'"
                           rel="noopener noreferrer"
                           :class="linkClasses"
-                          :style="{
-                            textDecoration: props.config?.titleStyle?.textDecoration || 'none'
-                          }"
+                          :style="videoCardStyle"
                         >
                           {{ video.title }}
                         </a>
@@ -207,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from "vue";
+import { computed, ref, onMounted, watch, onBeforeUnmount } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import {
   Autoplay,
@@ -221,6 +214,7 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import "swiper/css/autoplay";
 import { PlayCircle } from "lucide-vue-next";
+import { type Swiper as SwiperInstance } from 'swiper';
 
 interface VideoIntro {
   id: number;
@@ -283,6 +277,8 @@ const trpc = useTrpc();
 const { isDark } = useDarkMode();
 const sectionRef = ref<HTMLElement | null>(null);
 
+const swiperInstance = ref<SwiperInstance>();
+
 const titleClasses = computed(() => {
   const baseClasses = ['font-roboto', 'mb-1', 'transition-colors', 'duration-300'];
   baseClasses.push('text-gray-900', 'dark:text-gray-100');
@@ -298,6 +294,13 @@ const linkClasses = computed(() => {
 const descriptionClasses = computed(() => {
   return ['mt-2', 'text-sm', 'text-gray-600', 'dark:text-gray-400', 'transition-colors', 'duration-300'].join(' ');
 });
+
+// Thêm các computed properties cho styles
+const videoCardStyle = computed(() => ({
+  fontSize: props.config?.titleStyle?.fontSize || '1.125rem',
+  fontWeight: props.config?.titleStyle?.fontWeight || '600',
+  textDecoration: props.config?.titleStyle?.textDecoration || 'none'
+}));
 
 // Update CSS variables when theme changes
 const updateThemeColors = () => {
@@ -332,25 +335,40 @@ const currentLayout = computed(() => {
   return props.config?.layout || 'grid';
 });
 
+// Trong script setup
+const isMounted = ref(true);
+let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+
 // Fetch videos using tRPC
 const videoQuery = trpc.hero.getHeroVideos.query({
   themeId: props.config?.themeId,
 });
 
 onMounted(async () => {
-  console.log("Component mounted");
-  console.log("Initial config:", props.config);
-  console.log("Initial layout:", props.config?.layout);
+  if (!isMounted.value) return;
+  
+  cleanupTimer = setTimeout(() => {
+    if (!isMounted.value) return;
+    console.log("Component mounted");
+    console.log("Initial config:", props.config);
+    console.log("Initial layout:", props.config?.layout);
+  }, 0);
 
   try {
     const result = await videoQuery;
-    videoData.value = result as VideoIntro[];
-    console.log("Fetched videos:", videoData.value);
+    if (isMounted.value) {
+      videoData.value = result as VideoIntro[];
+      console.log("Fetched videos:", videoData.value);
+    }
   } catch (err) {
-    console.error("Error fetching videos:", err);
-    error.value = err as Error;
+    if (isMounted.value) {
+      console.error("Error fetching videos:", err);
+      error.value = err as Error;
+    }
   } finally {
-    isLoading.value = false;
+    if (isMounted.value) {
+      isLoading.value = false;
+    }
   }
 });
 
@@ -403,6 +421,32 @@ const getEmbedUrl = (url: string): string => {
 const handleImageError = (event: Event) => {
   const imgElement = event.target as HTMLImageElement;
   imgElement.src = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400&auto=format&fit=crop";
+};
+
+const onSwiper = (swiper: SwiperInstance) => {
+  swiperInstance.value = swiper;
+};
+
+// Cải thiện cleanup
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  
+  if (cleanupTimer) {
+    clearTimeout(cleanupTimer);
+  }
+  
+  if (swiperInstance.value) {
+    try {
+      swiperInstance.value.destroy(true, true);
+      swiperInstance.value = undefined;
+    } catch (error) {
+      console.error('Error destroying swiper:', error);
+    }
+  }
+});
+
+const onSlideChange = () => {
+  console.log('slide change');
 };
 </script>
 
@@ -541,11 +585,12 @@ const handleImageError = (event: Event) => {
 
 /* Video card styling */
 .video-card {
-  @apply transform transition-all duration-300;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.3s ease;
 }
 
 .video-card:hover {
-  @apply -translate-y-1;
+  transform: translate3d(0, -4px, 0);
 }
 
 .video-card .play-button {

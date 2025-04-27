@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@ew/shared": "file:../../libs/shared",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/ui": "^2.14.2",
     "@pinia/nuxt": "^0.5.1",
@@ -30,6 +31,7 @@
     "postcss": "^8.4.35",
     "sass": "^1.71.1",
     "sass-loader": "^14.1.1",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

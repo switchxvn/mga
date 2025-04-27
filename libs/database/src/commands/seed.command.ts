@@ -6,6 +6,7 @@ import { AboutSectionSeeder } from '../seeders/about-section.seeder';
 import { TourismAboutSectionSeeder } from '../seeders/tourism-about-section.seeder';
 import { Logger } from '@nestjs/common';
 import { ContactSectionSeeder } from '../seeders/contact-section.seeder';
+import { ContactSectionNewSeeder } from '../seeders/contact-section-new.seeder';
 import { FoodMenuSeeder } from '../seeders/food-menu.seeder';
 import { MailConfigSeeder } from '../seeders/mail-config.seeder';
 import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
@@ -33,6 +34,7 @@ export class SeedCommand extends CommandRunner {
     private readonly aboutSectionSeeder: AboutSectionSeeder,
     private readonly tourismAboutSectionSeeder: TourismAboutSectionSeeder,
     private readonly contactSectionSeeder: ContactSectionSeeder,
+    private readonly contactSectionNewSeeder: ContactSectionNewSeeder,
     private readonly foodMenuSeeder: FoodMenuSeeder,
     private readonly mailConfigSeeder: MailConfigSeeder,
     private readonly mailTemplateSeeder: MailTemplateSeeder,
@@ -71,7 +73,7 @@ export class SeedCommand extends CommandRunner {
 
   @Option({
     flags: '-s, --seeder [seederName]',
-    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, mail-config, mail-template, upload-config, order-ticket)',
+    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, contact-section, contact-section-new, mail-config, mail-template, upload-config, order-ticket)',
   })
   parseSeeder(val: string): string {
     this.logger.log(`parseSeeder called with value: ${val}`);
@@ -111,6 +113,11 @@ export class SeedCommand extends CommandRunner {
         await this.contactSectionSeeder.seed();
         this.logger.log('Contact sections seeded successfully');
         break;
+      case 'contact-section-new':
+        this.logger.log('Seeding new contact sections...');
+        await this.contactSectionNewSeeder.seed();
+        this.logger.log('New contact sections seeded successfully');
+        break;
       case 'food-menu':
         this.logger.log('Seeding food menu...');
         await this.foodMenuSeeder.seed();
@@ -138,7 +145,7 @@ export class SeedCommand extends CommandRunner {
         break;
       default:
         this.logger.error(`Unknown seeder: ${seederName}`);
-        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, food-menu, mail-config, mail-template, upload-config, order-ticket');
+        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, contact-section, contact-section-new, food-menu, mail-config, mail-template, upload-config, order-ticket');
         process.exit(1);
     }
   }
@@ -179,6 +186,10 @@ export class SeedCommand extends CommandRunner {
     this.logger.log('Seeding food menu...');
     await this.foodMenuSeeder.seed();
     this.logger.log('Food menu seeded successfully');
+
+    this.logger.log('Seeding new contact sections...');
+    await this.contactSectionNewSeeder.seed();
+    this.logger.log('New contact sections seeded successfully');
 
     this.logger.log('Seeding order ticket sections...');
     await this.orderTicketSectionSeeder.seed();

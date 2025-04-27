@@ -8,6 +8,7 @@ import { TicketProductSeeder } from '../seeders/ticket-product.seeder';
 import { AboutSectionSeeder } from '../seeders/about-section.seeder';
 import { TourismAboutSectionSeeder } from '../seeders/tourism-about-section.seeder';
 import { ContactSectionSeeder } from '../seeders/contact-section.seeder';
+import { ContactSectionNewSeeder } from '../seeders/contact-section-new.seeder';
 import { Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from '../../../../apps/backend/src/modules/product/entities/product.entity';
@@ -80,6 +81,7 @@ import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modu
     AboutSectionSeeder,
     TourismAboutSectionSeeder,
     ContactSectionSeeder,
+    ContactSectionNewSeeder,
     FoodMenuSeeder,
     MailConfigSeeder,
     MailTemplateSeeder,

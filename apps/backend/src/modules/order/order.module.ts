@@ -2,6 +2,8 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
+import { OrderRefund } from './entities/order-refund.entity';
+import { OrderRefundItem } from './entities/order-refund-item.entity';
 import { OrderFrontendService } from './frontend/services/order-frontend.service';
 import { OrderAdminService } from './admin/services/order-admin.service';
 import { PaymentGatewayModule } from '../payment-gateway/payment-gateway.module';
@@ -13,7 +15,7 @@ import { DashboardModule } from '../dashboard/dashboard.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, Product]),
+    TypeOrmModule.forFeature([Order, OrderItem, OrderRefund, OrderRefundItem, Product]),
     PaymentGatewayModule,
     forwardRef(() => PaymentModule),
     MailModule,

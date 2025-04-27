@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Product } from './product.entity';
 import { ProductVariantTranslation } from './product-variant-translation.entity';
 import { ProductAttributeValue } from './product-attribute-value.entity';
+import { ProductStockHistory } from './product-stock-history.entity';
 
 @Entity('product_variants')
 export class ProductVariant {
@@ -68,4 +69,8 @@ export class ProductVariant {
     }
   })
   attributeValues!: ProductAttributeValue[];
+
+  // Stock history relationship
+  @OneToMany(() => ProductStockHistory, stockHistory => stockHistory.variant)
+  stockHistory!: ProductStockHistory[];
 } 

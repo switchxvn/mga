@@ -10,8 +10,40 @@ import { useComponentStyles } from '~/composables/useComponentStyles';
 import type { Product, ProductTranslation, ProductSpecification } from '@ew/shared';
 import { ProductType } from '@ew/shared';
 
+interface ComponentStyleConfig {
+  settings: {
+    imageHeight: number;
+    showLabels: {
+      new: boolean;
+      sale: boolean;
+      featured: boolean;
+      discount: boolean;
+    };
+    labelStyles: {
+      featured: {
+        backgroundColor: string;
+        textColor: string;
+      };
+      new: {
+        backgroundColor: string;
+        textColor: string;
+      };
+      sale: {
+        backgroundColor: string;
+        textColor: string;
+      };
+      discount: {
+        backgroundColor: string;
+        textColor: string;
+      };
+    };
+  };
+}
+
 const props = defineProps<{
-  product: Product;
+  product: Product & {
+    formattedComparePrice?: string;
+  };
   locale?: string;
 }>();
 
@@ -20,7 +52,35 @@ const { getTranslationByLocale, formatPrice, calculateDiscountPercentage, getPro
 const { getStyleConfig } = useComponentStyles();
 
 // Lấy style config từ store toàn cục
-const styleConfig = computed(() => getStyleConfig('product-card'));
+const styleConfig = computed(() => getStyleConfig('product-card') || {
+  settings: {
+    imageHeight: 300,
+    showLabels: {
+      new: true,
+      sale: true,
+      featured: true,
+      discount: true
+    },
+    labelStyles: {
+      featured: {
+        backgroundColor: '#4F46E5',
+        textColor: '#ffffff'
+      },
+      new: {
+        backgroundColor: '#10B981',
+        textColor: '#ffffff'
+      },
+      sale: {
+        backgroundColor: '#EF4444', 
+        textColor: '#ffffff'
+      },
+      discount: {
+        backgroundColor: '#F59E0B',
+        textColor: '#ffffff'
+      }
+    }
+  }
+});
 
 const currentLocale = computed(() => props.locale || 'vi');
 const translation = computed(() => getTranslationByLocale(props.product, currentLocale.value));
@@ -76,12 +136,12 @@ const productLink = computed(() => getProductUrl(props.product));
 
 // Style computed properties
 const imageStyle = computed(() => ({
-  height: `${styleConfig.value.settings.imageHeight}px`
+  height: `${styleConfig.value?.settings?.imageHeight || 200}px`
 }));
 
 const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
-  backgroundColor: styleConfig.value.settings.labelStyles[type].backgroundColor,
-  color: styleConfig.value.settings.labelStyles[type].textColor
+  backgroundColor: styleConfig.value?.settings?.labelStyles?.[type]?.backgroundColor || '#4F46E5',
+  color: styleConfig.value?.settings?.labelStyles?.[type]?.textColor || '#ffffff'
 });
 
 // Specs for ticket
@@ -108,7 +168,7 @@ const ticketDate = computed(() => props.product.specifications?.find((spec: Prod
       </UBadge>
       
       <UBadge
-        v-if="product.isNew && styleConfig.settings.showLabels.new"
+        v-if="product.isNew && styleConfig.value?.settings?.showLabels?.new"
         :style="labelStyle('new')"
         variant="solid"
         class="text-xs"
@@ -116,7 +176,7 @@ const ticketDate = computed(() => props.product.specifications?.find((spec: Prod
         Mới
       </UBadge>
       <UBadge
-        v-if="product.isSale && styleConfig.settings.showLabels.sale"
+        v-if="product.isSale && styleConfig.value?.settings?.showLabels?.sale"
         :style="labelStyle('sale')"
         variant="solid"
         class="text-xs"
@@ -124,7 +184,7 @@ const ticketDate = computed(() => props.product.specifications?.find((spec: Prod
         Giảm giá
       </UBadge>
       <UBadge
-        v-if="product.isFeatured && styleConfig.settings.showLabels.featured"
+        v-if="product.isFeatured && styleConfig.value?.settings?.showLabels?.featured"
         :style="labelStyle('featured')"
         variant="solid"
         class="text-xs"
@@ -135,7 +195,7 @@ const ticketDate = computed(() => props.product.specifications?.find((spec: Prod
 
     <!-- Discount percentage -->
     <div
-      v-if="discountPercentage && styleConfig.settings.showLabels.discount"
+      v-if="discountPercentage && styleConfig.value?.settings?.showLabels?.discount"
       class="absolute right-2 top-2 z-10"
     >
       <UBadge :style="labelStyle('discount')" variant="solid" class="text-xs">

@@ -1,14 +1,77 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { Category } from '../../entities/category.entity';
+import { CategoryType } from '@ew/shared';
+import { CategoryTranslation } from '../../entities/category-translation.entity';
+
+interface GetCategoriesParams {
+  page: number;
+  limit: number;
+  search?: string;
+  active?: boolean | null;
+  type?: CategoryType;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface CategoryTranslationData {
+  locale: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+}
+
+export interface CreateCategoryData {
+  type: CategoryType;
+  active: boolean;
+  translations: CategoryTranslationData[];
+}
+
+export interface UpdateCategoryData {
+  type?: CategoryType;
+  active?: boolean;
+  translations?: CategoryTranslationData[];
+}
 
 @Injectable()
 export class CategoryAdminService {
   constructor(
     @InjectRepository(Category)
-    private categoryRepository: Repository<Category>,
+    private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(CategoryTranslation)
+    private readonly categoryTranslationRepository: Repository<CategoryTranslation>
   ) {}
+
+  private async checkDuplicateSlug(slug: string, locale: string, excludeCategoryId?: number): Promise<boolean> {
+    const queryBuilder = this.categoryTranslationRepository
+      .createQueryBuilder('translation')
+      .where('translation.slug = :slug', { slug })
+      .andWhere('translation.locale = :locale', { locale });
+
+    if (excludeCategoryId) {
+      queryBuilder.andWhere('translation.categoryId != :categoryId', { categoryId: excludeCategoryId });
+    }
+
+    const count = await queryBuilder.getCount();
+    return count > 0;
+  }
+
+  async getAllCategories(options?: { where?: FindOptionsWhere<Category> }) {
+    const queryBuilder = this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.translations', 'translations');
+
+    if (options?.where) {
+      Object.entries(options.where).forEach(([key, value]) => {
+        queryBuilder.andWhere(`category.${key} = :${key}`, { [key]: value });
+      });
+    }
+
+    return queryBuilder
+      .orderBy('translations.name', 'ASC')
+      .getMany();
+  }
 
   async findAll(): Promise<Category[]> {
     return this.categoryRepository
@@ -66,8 +129,27 @@ export class CategoryAdminService {
       .getMany();
   }
 
-  async create(categoryData: Partial<Category>): Promise<Category> {
-    const category = this.categoryRepository.create(categoryData);
+  async create(data: CreateCategoryData): Promise<Category> {
+    // Check for duplicate slugs
+    for (const translation of data.translations) {
+      const isDuplicate = await this.checkDuplicateSlug(translation.slug, translation.locale);
+      if (isDuplicate) {
+        throw new Error(`Slug "${translation.slug}" already exists for locale "${translation.locale}"`);
+      }
+    }
+
+    const category = this.categoryRepository.create({
+      type: data.type,
+      active: data.active,
+      translations: data.translations.map(translation => {
+        const newTranslation = new CategoryTranslation();
+        newTranslation.locale = translation.locale;
+        newTranslation.name = translation.name;
+        newTranslation.slug = translation.slug;
+        newTranslation.description = translation.description;
+        return newTranslation;
+      })
+    });
     return this.categoryRepository.save(category);
   }
 
@@ -83,6 +165,127 @@ export class CategoryAdminService {
   async toggleFeatured(id: number): Promise<Category> {
     const category = await this.findOne(id);
     category.isFeatured = !category.isFeatured;
+    return this.categoryRepository.save(category);
+  }
+
+  async getCategories({
+    page,
+    limit,
+    search = '',
+    active = null,
+    type,
+    sortBy = 'id',
+    sortOrder = 'desc'
+  }: GetCategoriesParams) {
+    try {
+      console.log('Getting categories with params:', { page, limit, search, active, type, sortBy, sortOrder });
+      
+      const queryBuilder = this.categoryRepository
+        .createQueryBuilder('category')
+        .leftJoinAndSelect('category.translations', 'translations');
+
+      if (search) {
+        queryBuilder.andWhere(
+          '(LOWER(translations.name) LIKE LOWER(:search) OR LOWER(translations.slug) LIKE LOWER(:search))',
+          { search: `%${search}%` }
+        );
+      }
+
+      if (active !== null) {
+        queryBuilder.andWhere('category.active = :active', { active });
+      }
+
+      if (type) {
+        queryBuilder.andWhere('category.type = :type', { type });
+      }
+
+      // Add sorting
+      if (sortBy === 'name') {
+        queryBuilder.orderBy('translations.name', sortOrder.toUpperCase() as 'ASC' | 'DESC');
+      } else if (sortBy === 'type') {
+        queryBuilder.orderBy('category.type', sortOrder.toUpperCase() as 'ASC' | 'DESC');
+      } else {
+        queryBuilder.orderBy(`category.${sortBy}`, sortOrder.toUpperCase() as 'ASC' | 'DESC');
+      }
+
+      // Add pagination
+      queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit);
+
+      console.log('Generated SQL:', queryBuilder.getSql());
+
+      const [items, total] = await queryBuilder.getManyAndCount();
+
+      console.log('Query results:', { total, itemsCount: items.length });
+
+      return {
+        items,
+        total
+      };
+    } catch (error) {
+      console.error('Error in getCategories:', error);
+      throw error;
+    }
+  }
+
+  async deleteCategory(id: number) {
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+      relations: ['translations']
+    });
+
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    // Delete translations first
+    await this.categoryTranslationRepository.remove(category.translations);
+
+    // Then delete the category
+    await this.categoryRepository.remove(category);
+  }
+
+  async updateCategory(id: number, data: UpdateCategoryData) {
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+      relations: ['translations']
+    });
+
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    // Update basic fields
+    if (data.type !== undefined) category.type = data.type;
+    if (data.active !== undefined) category.active = data.active;
+
+    // Update translations if provided
+    if (data.translations) {
+      // Check for duplicate slugs, excluding current category
+      for (const translation of data.translations) {
+        const isDuplicate = await this.checkDuplicateSlug(translation.slug, translation.locale, id);
+        if (isDuplicate) {
+          throw new Error(`Slug "${translation.slug}" already exists for locale "${translation.locale}"`);
+        }
+      }
+
+      // Remove existing translations
+      await this.categoryTranslationRepository.remove(category.translations);
+
+      // Create new translations
+      category.translations = data.translations.map(translation => {
+        const newTranslation = new CategoryTranslation();
+        newTranslation.locale = translation.locale;
+        newTranslation.name = translation.name;
+        newTranslation.slug = translation.slug;
+        newTranslation.description = translation.description;
+        newTranslation.category = category;
+        return newTranslation;
+      });
+    }
+
+    // Save the updated category
     return this.categoryRepository.save(category);
   }
 } 

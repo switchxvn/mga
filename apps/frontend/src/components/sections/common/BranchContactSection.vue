@@ -1,6 +1,6 @@
 <!-- BranchContactSection.vue -->
 <template>
-  <div v-if="activeSection?.settings" class="relative w-screen left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] bg-gray-50 dark:bg-gray-900 mt-16">
+  <div v-if="activeSection?.settings" class="w-full bg-gray-50 dark:bg-gray-900 mt-16">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
       <!-- Section Header -->
       <div class="text-center max-w-3xl mx-auto mb-16">

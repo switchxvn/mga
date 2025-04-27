@@ -1,12 +1,17 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, Not, In } from 'typeorm';
-import { Post } from '../../entities/post.entity';
-import { PostTranslation } from '../../entities/post-translation.entity';
-import { CreatePostInput, UpdatePostInput } from '@ew/shared';
 import { Post as IPost } from '@ew/shared';
-import { PostTag } from '../../entities/post-tag.entity';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { Tag } from '../../../settings/entities/tag.entity';
+import { PostTag } from '../../entities/post-tag.entity';
+import { PostTranslation } from '../../entities/post-translation.entity';
+import { Post } from '../../entities/post.entity';
+
+interface PostWhereConditions {
+  published: boolean;
+  id?: any;
+  [key: string]: any;
+}
 
 @Injectable()
 export class PostFrontendService {
@@ -16,21 +21,11 @@ export class PostFrontendService {
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
     @InjectRepository(PostTag)
-    private readonly postTagRepository: Repository<PostTag>,
-    @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
     @InjectRepository(PostTranslation)
     private readonly postTranslationRepository: Repository<PostTranslation>,
   ) {
     this.logger = new Logger(PostFrontendService.name);
-  }
-
-  async create(createPostDto: CreatePostInput, authorId: string): Promise<Post> {
-    const post = this.postRepository.create({
-      ...createPostDto,
-      authorId,
-    });
-    return this.postRepository.save(post);
   }
 
   async findAll(): Promise<Post[]> {
@@ -285,8 +280,8 @@ export class PostFrontendService {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
 
-    // Đảm bảo author đã được load
-    if (post.author) {
+    // Ensure author is loaded if it's a Promise
+    if (post.author && post.author instanceof Promise) {
       await post.author;
     }
 
@@ -340,7 +335,7 @@ export class PostFrontendService {
     }
   }
 
-  async findPopularPosts(locale: string, limit: number = 5, excludeId?: number): Promise<IPost[]> {
+  async findPopularPosts(locale: string, limit = 5, excludeId?: number): Promise<Post[]> {
     try {
       const whereCondition: any = { published: true };
       if (excludeId) {
@@ -354,40 +349,11 @@ export class PostFrontendService {
         take: limit
       });
 
-      return Promise.all(posts.map(post => this.formatPostResponse(post, locale)));
+      return posts;
     } catch (error) {
       this.logger.error('Error in findPopularPosts:', error);
       throw error;
     }
-  }
-
-  async update(id: number, updatePostDto: UpdatePostInput, userId: string): Promise<Post> {
-    const post = await this.findOne(id);
-
-    if (!post) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
-    }
-
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only update your own posts');
-    }
-
-    Object.assign(post, updatePostDto);
-    return this.postRepository.save(post);
-  }
-
-  async remove(id: number, userId: string): Promise<void> {
-    const post = await this.findOne(id);
-
-    if (!post) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
-    }
-
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only delete your own posts');
-    }
-
-    await this.postRepository.remove(post);
   }
 
   async findByAuthorId(authorId: string): Promise<Post[]> {
@@ -520,10 +486,8 @@ export class PostFrontendService {
         .leftJoinAndSelect('postTags.tag', 'tag')
         .where('post.published = :published', { published: true });
 
-      console.log('search', search);
-      // Thêm điều kiện tìm kiếm nếu có
-      if (search && search.trim()) {
-        console.log('search', search);
+      // Add search condition if provided
+      if (search?.trim()) {
         qb.andWhere('translations.title ILIKE :search', { search: `%${search.trim()}%` });
       }
 
@@ -602,27 +566,22 @@ export class PostFrontendService {
         sortBy = 'newest' 
       } = params;
 
-      // Xác định điều kiện tìm kiếm cơ bản
-      const whereConditions: any = { published: true };
+      const whereConditions: PostWhereConditions = { published: true };
       
-      // Xác định relations cần thiết
       const relations = ['translations', 'author', 'author.profile', 'postTags', 'postTags.tag'];
       
-      // Xác định thứ tự sắp xếp
-      let order: any = { createdAt: 'DESC' };
+      const order: Record<string, 'ASC' | 'DESC'> = { createdAt: 'DESC' };
       if (sortBy) {
         const [field, direction] = sortBy.split(':');
-        order = { [field]: direction.toUpperCase() };
+        order[field] = direction.toUpperCase() as 'ASC' | 'DESC';
       }
 
-      // Lấy tất cả bài viết phù hợp với điều kiện cơ bản
       const allPosts = await this.postRepository.find({
         where: whereConditions,
         relations: relations,
         order: order
       });
 
-      // Lọc theo locale nếu có
       let filteredPosts = allPosts;
       if (locale) {
         filteredPosts = allPosts.filter(post => 
@@ -630,7 +589,6 @@ export class PostFrontendService {
         );
       }
 
-      // Lọc theo categories nếu có
       if (categories) {
         const categoryIds = categories.split(',').map(Number);
         filteredPosts = filteredPosts.filter(post => 
@@ -638,30 +596,27 @@ export class PostFrontendService {
         );
       }
 
-      // Lọc theo tìm kiếm nếu có
       if (search) {
+        const searchLower = search.toLowerCase();
         filteredPosts = filteredPosts.filter(post => {
           const translation = post.translations?.find(t => t.locale === locale) || post.translations?.[0];
           if (!translation) return false;
           
           return (
-            translation.title.toLowerCase().includes(search.toLowerCase()) ||
-            (translation.shortDescription && translation.shortDescription.toLowerCase().includes(search.toLowerCase())) ||
-            (translation.content && translation.content.toLowerCase().includes(search.toLowerCase()))
+            translation.title.toLowerCase().includes(searchLower) ||
+            (translation.shortDescription?.toLowerCase().includes(searchLower)) ||
+            (translation.content?.toLowerCase().includes(searchLower))
           );
         });
       }
 
-      // Tính toán phân trang
       const total = filteredPosts.length;
       const totalPages = Math.ceil(total / limit);
       const startIndex = (page - 1) * limit;
       const endIndex = Math.min(startIndex + limit, total);
       
-      // Lấy bài viết cho trang hiện tại
       const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
 
-      // Format kết quả
       const formattedPosts = await Promise.all(
         paginatedPosts.map(post => this.formatPostResponse(post, locale))
       );

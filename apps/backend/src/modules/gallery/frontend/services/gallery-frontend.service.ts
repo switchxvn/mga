@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { Gallery } from '../../entities/gallery.entity';
 import { GalleryTranslation } from '../../entities/gallery-translation.entity';
-import { CreateGalleryDto, UpdateGalleryDto } from '@ew/shared';
+import { CreateGalleryInput, UpdateGalleryInput, GalleryType } from '@ew/shared';
 import { Gallery as IGallery } from '@ew/shared';
 
 @Injectable()
@@ -152,9 +152,24 @@ export class GalleryFrontendService {
     }
   }
 
-  async create(createGalleryDto: CreateGalleryDto): Promise<IGallery> {
+  async create(createGalleryInput: CreateGalleryInput): Promise<IGallery> {
     try {
-      const gallery = this.galleryRepository.create(createGalleryDto);
+      // Create gallery entity with required fields
+      const gallery = new Gallery();
+      gallery.image = createGalleryInput.image;
+      gallery.type = createGalleryInput.type || GalleryType.COMMON;
+      gallery.isActive = createGalleryInput.isActive ?? true;
+      gallery.sequence = createGalleryInput.sequence ?? 0;
+
+      // Create translation entities
+      gallery.translations = createGalleryInput.translations.map(translation => {
+        const galleryTranslation = new GalleryTranslation();
+        galleryTranslation.locale = translation.locale;
+        galleryTranslation.title = translation.title;
+        galleryTranslation.description = translation.description;
+        return galleryTranslation;
+      });
+
       const savedGallery = await this.galleryRepository.save(gallery);
       return this.formatGalleryResponse(savedGallery);
     } catch (error) {
@@ -163,7 +178,7 @@ export class GalleryFrontendService {
     }
   }
 
-  async update(id: number, updateGalleryDto: UpdateGalleryDto): Promise<IGallery> {
+  async update(id: number, updateGalleryInput: UpdateGalleryInput): Promise<IGallery> {
     try {
       const gallery = await this.galleryRepository.findOne({
         where: { id },
@@ -174,7 +189,27 @@ export class GalleryFrontendService {
         throw new NotFoundException(`Gallery with ID ${id} not found`);
       }
 
-      Object.assign(gallery, updateGalleryDto);
+      // Update gallery fields if provided
+      if (updateGalleryInput.image !== undefined) gallery.image = updateGalleryInput.image;
+      if (updateGalleryInput.type !== undefined) gallery.type = updateGalleryInput.type;
+      if (updateGalleryInput.isActive !== undefined) gallery.isActive = updateGalleryInput.isActive;
+      if (updateGalleryInput.sequence !== undefined) gallery.sequence = updateGalleryInput.sequence;
+
+      // Update translations if provided
+      if (updateGalleryInput.translations) {
+        // Remove existing translations
+        await this.galleryTranslationRepository.remove(gallery.translations);
+
+        // Create new translations
+        gallery.translations = updateGalleryInput.translations.map(translation => {
+          const galleryTranslation = new GalleryTranslation();
+          galleryTranslation.locale = translation.locale;
+          galleryTranslation.title = translation.title;
+          galleryTranslation.description = translation.description;
+          return galleryTranslation;
+        });
+      }
+
       const updatedGallery = await this.galleryRepository.save(gallery);
       return this.formatGalleryResponse(updatedGallery);
     } catch (error) {

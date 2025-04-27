@@ -50,7 +50,7 @@ export const useAuth = () => {
         }
 
         // Redirect to dashboard
-        router.push('/dashboard')
+        router.push('/')
       }
     } catch (err: any) {
       if (err instanceof TRPCClientError) {

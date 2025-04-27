@@ -3,6 +3,7 @@ import { useRoute } from "vue-router";
 import { useLocalization } from "../composables/useLocalization";
 import { useTrpc } from "../composables/useTrpc";
 import { computed, onMounted, ref, watch } from "../composables/useVueComposables";
+import { onBeforeUnmount } from 'vue';
 // Import Swiper
 import type { Seo } from '@ew/shared';
 import { PageType } from '@ew/shared';
@@ -379,6 +380,19 @@ const resolveComponent = (section: ThemeSection): ComponentType | null => {
   return null;
 };
 
+// Thêm ref để kiểm soát mounted state
+const pageIsMounted = ref(true);
+
+// Cleanup khi unmount
+onBeforeUnmount(() => {
+  pageIsMounted.value = false;
+  // Reset theme và các states khác
+  theme.value = null;
+  latestPosts.value = [];
+  isLoading.value = false;
+  error.value = null;
+});
+
 // Fetch theme on mount
 onMounted(async () => {
   theme.value = await getActiveTheme({ pageType: PageType.HOME_PAGE });
@@ -519,7 +533,7 @@ useHead({
 </script>
 
 <template>
-  <div class="bg-gray-50 dark:bg-gray-900">
+  <div class="bg-gray-50 dark:bg-gray-900" v-if="pageIsMounted">
     <template v-if="isLoading">
       <div class="flex justify-center items-center min-h-screen">
         <ULoader size="lg" />

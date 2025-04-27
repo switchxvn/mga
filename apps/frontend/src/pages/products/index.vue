@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ProductType, type Product } from '@ew/shared';
-import { Calendar, MapPin, Ticket } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import ProductCard from "../../components/cards/ProductCard.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
 import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
 import { useLocalization } from "../../composables/useLocalization";
@@ -66,6 +66,12 @@ const fetchSeoData = async () => {
   }
 };
 
+// Add type for specifications
+interface ProductSpecification {
+  name: string;
+  value: string;
+}
+
 // Initialize filters from route query
 const initialFilters = ref<ProductFilter>({
   search: (route.query.search as string) || "",
@@ -80,7 +86,7 @@ const initialFilters = ref<ProductFilter>({
   isSale: route.query.isSale === "true" ? true : undefined,
   sortBy: (route.query.sortBy as ProductSortBy) || "newest",
   page: Number(route.query.page) || 1,
-  limit: Number(route.query.limit) || 12,
+  limit: 12, // Set default limit
   type: (route.query.type as ProductType) || ProductType.PHYSICAL,
 });
 
@@ -141,7 +147,7 @@ const handlePageChange = async (page: number) => {
     ...filters.value,
     page
   };
-  
+
   // Update URL query params
   await router.replace({
     query: {
@@ -152,7 +158,7 @@ const handlePageChange = async (page: number) => {
 
   // Scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
-  
+
   // Fetch products with new page
   await fetchProducts();
 };
@@ -197,7 +203,7 @@ watch(locale, async () => {
   totalProducts.value = 0;
   totalPages.value = 0;
   currentPage.value = 1;
-  
+
   // Reset filters to initial state
   filters.value = {
     search: '',
@@ -254,22 +260,34 @@ watch(locale, async () => {
         <!-- Products Content -->
         <div class="lg:w-3/4">
           <!-- Toolbar -->
-          <div v-if="!isLoading || totalProducts > 0" class="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div
+            v-if="!isLoading || totalProducts > 0"
+            class="mb-6 flex flex-wrap items-center justify-between gap-4"
+          >
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ t("products.showing") }} {{ ((currentPage - 1) * filters.limit) + 1 }} - {{ Math.min(currentPage * filters.limit, totalProducts) }} {{ t("products.of") }} {{ totalProducts }} {{ t("products.items") }}
+                {{ t("products.showing") }}
+                {{ (currentPage - 1) * (filters.limit || 12) + 1 }} -
+                {{ Math.min(currentPage * (filters.limit || 12), totalProducts) }}
+                {{ t("products.of") }} {{ totalProducts }} {{ t("products.items") }}
               </span>
             </div>
 
             <div class="flex items-center gap-2">
-              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t("posts.sortBy") }}:</label>
+              <label for="sort" class="text-sm text-gray-600 dark:text-gray-400"
+                >{{ t("posts.sortBy") }}:</label
+              >
               <select
                 id="sort"
                 v-model="filters.sortBy"
                 @change="handleSortChange"
                 class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
               >
-                <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+                <option
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
                   {{ option.label }}
                 </option>
               </select>
@@ -279,94 +297,43 @@ watch(locale, async () => {
           <!-- Loading State -->
           <div v-if="isLoading" class="flex items-center justify-center py-12">
             <div class="text-center">
-              <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent align-[-0.125em]" role="status">
-                <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-                  {{ t('common.loading') }}...
+              <div
+                class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent align-[-0.125em]"
+                role="status"
+              >
+                <span
+                  class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]"
+                >
+                  {{ t("common.loading") }}...
                 </span>
               </div>
               <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ t('common.loading') }}...
+                {{ t("common.loading") }}...
               </div>
             </div>
           </div>
 
           <template v-else>
             <!-- Products Grid -->
-            <div v-if="hasProducts" class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-              <div 
-                v-for="product in products" 
-                :key="product.id" 
-                class="product-card flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
-              >
-                <NuxtLink :to="`/products/${product.translations?.[0]?.slug || product.id}`" class="block relative">
-                  <!-- Product Type Badge -->
-                  <div class="absolute left-2 top-2 z-10">
-                    <UBadge 
-                      :color="product.type === 'TICKET' ? 'purple' : 'gray'" 
-                      variant="solid" 
-                      class="text-xs"
-                    >
-                      <Ticket v-if="product.type === 'TICKET'" class="w-3 h-3 mr-1" />
-                      {{ product.type === 'TICKET' ? (t("products.ticketType") || "Vé") : (t("products.physicalType") || "Sản phẩm") }}
-                    </UBadge>
-                  </div>
-                  
-                  <!-- Image -->
-                  <img
-                    :src="product.thumbnail || '/images/default-image.jpg'"
-                    :alt="product.translations?.[0]?.title || ''"
-                    class="h-48 w-full object-cover transition-transform duration-300 hover:scale-105"
-                    @error="($event.target as HTMLImageElement).src = '/images/default-image.jpg'"
-                  />
-                </NuxtLink>
-                
-                <div class="flex flex-1 flex-col p-4">
-                  <NuxtLink :to="`/products/${product.translations?.[0]?.slug || product.id}`" class="block">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white line-clamp-2">
-                      {{ product.translations?.[0]?.title || '' }}
-                    </h3>
-                  </NuxtLink>
-                  
-                  <!-- Ticket Details -->
-                  <div v-if="product.type === 'TICKET'" class="mb-3 space-y-1">
-                    <div v-if="product.specifications?.find(spec => spec.name === 'location')?.value" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                      <MapPin class="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span class="line-clamp-1">{{ product.specifications.find(spec => spec.name === 'location')?.value }}</span>
-                    </div>
-                    <div v-if="product.specifications?.find(spec => spec.name === 'date')?.value" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                      <Calendar class="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span>{{ product.specifications.find(spec => spec.name === 'date')?.value }}</span>
-                    </div>
-                  </div>
-                  
-                  <!-- Price and Button -->
-                  <div class="mt-auto flex items-center justify-between">
-                    <div>
-                      <div v-if="product.price === null" class="text-lg font-semibold text-primary-600 dark:text-primary-400">
-                        {{ t('products.contactForPrice') || 'Liên hệ' }}
-                      </div>
-                      <div v-else class="text-lg font-semibold text-primary-600 dark:text-primary-400">
-                        {{ product.formattedPrice || formatPrice(product.price) }}
-                      </div>
-                    </div>
-                    
-                    <UButton 
-                      color="primary"
-                      variant="solid"
-                      size="sm"
-                      class="px-3 py-1"
-                      :to="`/products/${product.translations?.[0]?.slug || product.id}`"
-                    >
-                      {{ product.type === 'TICKET' ? (t('products.bookNow') || 'Đặt ngay') : (t('products.viewDetail') || 'Xem chi tiết') }}
-                    </UButton>
-                  </div>
-                </div>
-              </div>
+            <div
+              v-if="hasProducts"
+              class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3"
+            >
+              <ProductCard
+                v-for="product in products"
+                :key="product.id"
+                :product="product"
+                :locale="locale"
+              />
             </div>
-            
+
             <!-- Pagination -->
             <div v-if="totalProducts > 0" class="mt-8">
-              <nav class="flex items-center justify-center" role="navigation" aria-label="pagination">
+              <nav
+                class="flex items-center justify-center"
+                role="navigation"
+                aria-label="pagination"
+              >
                 <ul class="flex items-center -space-x-px">
                   <!-- Previous -->
                   <li>
@@ -378,11 +345,15 @@ watch(locale, async () => {
                     >
                       <span class="sr-only">Previous</span>
                       <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        <path
+                          fill-rule="evenodd"
+                          d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                          clip-rule="evenodd"
+                        />
                       </svg>
                     </button>
                   </li>
-                  
+
                   <!-- Page Numbers -->
                   <li v-for="page in totalPages" :key="page">
                     <button
@@ -390,42 +361,36 @@ watch(locale, async () => {
                       class="border border-gray-300 px-3 py-2 leading-tight"
                       :class="{
                         'bg-primary-600 text-white': currentPage === page,
-                        'bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white': currentPage !== page
+                        'bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white':
+                          currentPage !== page,
                       }"
                     >
                       {{ page }}
                     </button>
                   </li>
-                  
+
                   <!-- Next -->
                   <li>
                     <button
                       :disabled="currentPage === totalPages"
                       @click="handlePageChange(currentPage + 1)"
                       class="block rounded-r-lg border border-gray-300 bg-white px-3 py-2 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-                      :class="{ 'opacity-50 cursor-not-allowed': currentPage === totalPages }"
+                      :class="{
+                        'opacity-50 cursor-not-allowed': currentPage === totalPages,
+                      }"
                     >
                       <span class="sr-only">Next</span>
                       <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        <path
+                          fill-rule="evenodd"
+                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                          clip-rule="evenodd"
+                        />
                       </svg>
                     </button>
                   </li>
                 </ul>
               </nav>
-            </div>
-            
-            <!-- No Results Message -->
-            <div v-if="totalProducts === 0" class="mt-8 text-center">
-              <div class="inline-flex items-center justify-center rounded-full bg-gray-100 p-6 dark:bg-gray-800">
-                <i class="i-heroicons-inbox-20-solid h-12 w-12 text-gray-400 dark:text-gray-500" />
-              </div>
-              <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-                {{ t('products.noResults') }}
-              </h3>
-              <p class="mt-2 text-gray-600 dark:text-gray-400">
-                {{ t('products.tryAdjustingFilters') }}
-              </p>
             </div>
           </template>
         </div>

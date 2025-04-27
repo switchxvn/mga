@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "target": "es2017",
     "sourceMap": true,
-    "outDir": "./dist",
+    "outDir": "../../dist/libs/database",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
@@ -20,7 +20,8 @@
     "noFallthroughCasesInSwitch": false,
     "useDefineForClassFields": false,
     "paths": {
-      "@ew/database": ["libs/database/src"]
+      "@ew/database": ["libs/database/src"],
+      "@ew/shared": ["../../libs/shared/src/index.ts"]
     }
   },
   "include": ["src/**/*"],

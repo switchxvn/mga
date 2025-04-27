@@ -124,6 +124,7 @@
                 v-model:title="form.title"
                 v-model:slug="form.slug"
                 v-model:content="form.content"
+                v-model:shortDescription="form.shortDescription"
                 :editor-options="editorOptions"
                 @generate-slug="generateSlug"
               />
@@ -132,7 +133,14 @@
             <!-- Media Tab -->
             <div v-show="currentTab === 'media'">
               <PostMedia
-                v-model:featured-image="form.featuredImage"
+                v-model:thumbnail="form.thumbnail"
+              />
+            </div>
+
+            <!-- Categories Tab -->
+            <div v-show="currentTab === 'categories'">
+              <PostCategories
+                v-model="form.categoryIds"
               />
             </div>
 
@@ -179,15 +187,17 @@ import {
   SaveAllIcon,
   ChevronDownIcon,
   CheckIcon,
-  SaveIcon
+  SaveIcon,
+  FolderIcon
 } from 'lucide-vue-next'
 
 // Import components
-import PageHeader from '../../../components/ui/PageHeader.vue'
+import PageHeader from '../../../components/common/header/PageHeader.vue'
 import PostEditor from '../../../components/posts/PostEditor.vue'
 import PostMedia from '../../../components/posts/PostMedia.vue'
 import PostSEO from '../../../components/posts/PostSEO.vue'
 import PostSettings from '../../../components/posts/PostSettings.vue'
+import PostCategories from '../../../components/posts/PostCategories.vue'
 
 const trpc = useTrpc()
 const route = useRoute()
@@ -220,6 +230,11 @@ const tabs = [
     name: 'Media', 
     icon: ImageIcon
   },
+  {
+    id: 'categories',
+    name: 'Categories',
+    icon: FolderIcon
+  },
   { 
     id: 'seo', 
     name: 'SEO', 
@@ -236,17 +251,20 @@ interface PostForm {
   title: string
   slug: string
   content: string
+  shortDescription: string
   published: boolean
-  featuredImage: string
+  thumbnail: string
   metaDescription: string
   tags: string[]
+  categoryIds: number[]
   updatedAt: string
   translations: Record<string, {
     title: string
     slug: string
     content: string
+    shortDescription: string
     metaDescription: string
-    featuredImage: string
+    thumbnail: string
   }>
 }
 
@@ -254,10 +272,12 @@ const initialForm: PostForm = {
   title: '',
   slug: '',
   content: '',
+  shortDescription: '',
   published: false,
-  featuredImage: '',
+  thumbnail: '',
   metaDescription: '',
   tags: [],
+  categoryIds: [],
   updatedAt: new Date().toISOString(),
   translations: {}
 }
@@ -375,8 +395,9 @@ watch(selectedLanguage, (newLang, oldLang) => {
       title: form.value.title,
       slug: form.value.slug,
       content: form.value.content,
+      shortDescription: form.value.shortDescription,
       metaDescription: form.value.metaDescription,
-      featuredImage: form.value.featuredImage
+      thumbnail: form.value.thumbnail
     }
   }
   
@@ -386,15 +407,17 @@ watch(selectedLanguage, (newLang, oldLang) => {
     form.value.title = translation.title
     form.value.slug = translation.slug
     form.value.content = translation.content
+    form.value.shortDescription = translation.shortDescription
     form.value.metaDescription = translation.metaDescription
-    form.value.featuredImage = translation.featuredImage
+    form.value.thumbnail = translation.thumbnail
   } else {
     // Reset form for new translation
     form.value.title = ''
     form.value.slug = ''
     form.value.content = ''
+    form.value.shortDescription = ''
     form.value.metaDescription = ''
-    form.value.featuredImage = ''
+    form.value.thumbnail = ''
   }
 })
 
@@ -412,8 +435,9 @@ const fetchPost = async () => {
           title: translation.title,
           slug: translation.slug,
           content: translation.content,
+          shortDescription: translation.shortDescription || '',
           metaDescription: translation.metaDescription,
-          featuredImage: translation.ogImage
+          thumbnail: translation.ogImage
         }
       })
 
@@ -421,10 +445,12 @@ const fetchPost = async () => {
         title: post.translations?.find(t => t.locale === selectedLanguage.value)?.title || post.title || '',
         slug: post.translations?.find(t => t.locale === selectedLanguage.value)?.slug || '',
         content: post.translations?.find(t => t.locale === selectedLanguage.value)?.content || post.content || '',
+        shortDescription: post.translations?.find(t => t.locale === selectedLanguage.value)?.shortDescription || post.shortDescription || '',
         published: post.published,
-        featuredImage: post.translations?.find(t => t.locale === selectedLanguage.value)?.ogImage || post.thumbnail || '',
+        thumbnail: post.translations?.find(t => t.locale === selectedLanguage.value)?.ogImage || post.thumbnail || '',
         metaDescription: post.translations?.find(t => t.locale === selectedLanguage.value)?.metaDescription || '',
         tags: post.postTags?.map(tag => tag.tag.name) || [],
+        categoryIds: post.categories?.map(category => category.id) || [],
         updatedAt: post.updatedAt,
         translations
       }
@@ -449,8 +475,9 @@ const updatePost = async (continueEditing = false) => {
       title: form.value.title,
       slug: form.value.slug,
       content: form.value.content,
+      shortDescription: form.value.shortDescription,
       metaDescription: form.value.metaDescription,
-      featuredImage: form.value.featuredImage
+      thumbnail: form.value.thumbnail
     }
 
     // Prepare translations array for API
@@ -459,8 +486,9 @@ const updatePost = async (continueEditing = false) => {
       title: content.title,
       slug: content.slug,
       content: content.content,
+      shortDescription: content.shortDescription,
       metaDescription: content.metaDescription,
-      ogImage: content.featuredImage
+      ogImage: content.thumbnail
     }))
 
     await trpc.admin.posts.updatePost.mutate({
@@ -468,11 +496,13 @@ const updatePost = async (continueEditing = false) => {
       data: {
         title: form.value.title,
         content: form.value.content,
+        shortDescription: form.value.shortDescription,
         status: form.value.published ? 'PUBLISHED' : 'DRAFT',
-        featuredImage: form.value.featuredImage || '',
+        thumbnail: form.value.thumbnail || '',
         metaDescription: form.value.metaDescription || '',
         translations,
-        tags: form.value.tags
+        tags: form.value.tags,
+        categoryIds: form.value.categoryIds
       }
     })
 
@@ -518,9 +548,14 @@ const updatePost = async (continueEditing = false) => {
 }
 
 // Quill Editor Options
-const editorOptions = {
+const editorOptions = ref({
   theme: 'snow',
-  modules: {
+  modules: {}
+})
+
+// Initialize editor options on client-side only
+if (process.client) {
+  editorOptions.value.modules = {
     toolbar: [
       ['bold', 'italic', 'underline', 'strike'],
       ['blockquote', 'code-block'],

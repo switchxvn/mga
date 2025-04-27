@@ -203,7 +203,7 @@ const processedConfig = computed(() => {
 </script>
 
 <template>
-  <section class="hero-section-full relative w-full pt-[64px] md:pt-0">
+  <section class="hero-section-full relative w-full md:pt-0">
     <div class="aspect-[4/3] md:aspect-[1780/450] w-full">
       <div v-if="isLoading" class="flex items-center justify-center w-full h-full">
         <ULoader size="lg" />

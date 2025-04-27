@@ -1,8 +1,14 @@
 import { defineNuxtConfig } from 'nuxt/config';
+import { resolve } from 'path';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineNuxtConfig({
   srcDir: 'src',
   devtools: { enabled: true },
+
+  build: {
+    transpile: ['@ew/shared']
+  },
 
   devServer: {
     host: process.env.NUXT_HOST || 'localhost',
@@ -52,6 +58,7 @@ export default defineNuxtConfig({
   ],
 
   vite: {
+    plugins: [tsconfigPaths()],
     css: {
       preprocessorOptions: {
         scss: {
@@ -70,6 +77,11 @@ export default defineNuxtConfig({
         }
       },
     },
+    resolve: {
+      alias: {
+        '@ew/shared': resolve(__dirname, '../../libs/shared/src')
+      }
+    }
   },
 
   // @ts-ignore
@@ -103,4 +115,8 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2025-04-04',
+
+  alias: {
+    '@ew/shared': '../../libs/shared/src'
+  },
 })

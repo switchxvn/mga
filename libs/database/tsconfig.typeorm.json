@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "target": "es2017",
     "sourceMap": true,
-    "outDir": "./dist",
+    "outDir": "../../dist/libs/database",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
@@ -18,7 +18,9 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "useDefineForClassFields": false
+    "paths": {
+      "@ew/shared": ["../../libs/shared/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]

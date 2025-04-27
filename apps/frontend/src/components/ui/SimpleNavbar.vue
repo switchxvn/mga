@@ -17,6 +17,7 @@ import type { MenuItem, TopMenuItem } from '~/types/navbar';
 import { defineAsyncComponent, markRaw } from 'vue';
 import type { Component } from 'vue';
 import { useAuth } from '@/composables/useAuth';
+import { useTrpc } from '@/composables/useTrpc';
 
 // Register components using defineAsyncComponent
 const registeredComponents = {
@@ -235,6 +236,38 @@ const { checkCartFeatureFlag } = useNavbarFeatures();
 // Logo
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
 
+// Mobile Logo - tạo một instance mới của useLogo riêng cho mobile
+const mobileLogo = ref<any>(null);
+const mobileLogoUrl = ref<string | null>(null);
+const isLoadingMobileLogo = ref(false);
+
+// Fetch mobile logo
+const fetchMobileLogo = async () => {
+  try {
+    isLoadingMobileLogo.value = true;
+    const mobileTrpc = useTrpc();
+    const result = await mobileTrpc.logo.getActiveLogo.query({ type: 'main_mobile' });
+    mobileLogo.value = result;
+    
+    // Xác định URL dựa trên dark mode
+    const { isDark } = useDarkMode();
+    mobileLogoUrl.value = isDark.value ? result.darkModeUrl : result.lightModeUrl;
+
+    // Watch thay đổi dark mode để cập nhật URL logo mobile
+    watch(() => isDark.value, (newValue) => {
+      if (mobileLogo.value) {
+        mobileLogoUrl.value = newValue ? mobileLogo.value.darkModeUrl : mobileLogo.value.lightModeUrl;
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching mobile logo:', err);
+    // Fallback to main logo if mobile logo fails
+    mobileLogoUrl.value = currentLogoUrl.value;
+  } finally {
+    isLoadingMobileLogo.value = false;
+  }
+};
+
 // Add these refs and computed properties
 const menuContainerRef = ref<HTMLElement | null>(null);
 const menuItemsRefs = ref<HTMLElement[]>([]);
@@ -315,6 +348,15 @@ const handleLogout = async () => {
   showUserDropdown.value = false;
 };
 
+// Add mobileNavRef
+const mobileNavRef = ref<HTMLElement | null>(null);
+
+// Add scrollHandling functionality specifically for mobile
+const handleMobileScroll = () => {
+  const scrollPosition = window.scrollY;
+  isScrolled.value = scrollPosition > 10;
+};
+
 onMounted(() => {
   // Check auth state when component mounts
   checkAuth().then(() => {
@@ -328,6 +370,7 @@ onMounted(() => {
         console.error('Error fetching menu items:', err);
       }
       await checkCartFeatureFlag();
+      await fetchMobileLogo();
     };
     
     init();
@@ -346,12 +389,18 @@ onMounted(() => {
       showMoreMenu.value = false;
     });
   }
+  
+  // Add scroll event listener for mobile menu
+  window.addEventListener('scroll', handleMobileScroll, { passive: true });
 });
 
 onUnmounted(() => {
   if (resizeObserver) {
     resizeObserver.disconnect();
   }
+  
+  // Remove scroll event listener
+  window.removeEventListener('scroll', handleMobileScroll);
 });
 
 // Watch for locale changes
@@ -364,7 +413,7 @@ watch(locale, () => {
   <div class="navbar-container">
     <!-- Top Menu -->
     <div 
-      class="w-full relative"
+      class="w-full relative hidden lg:block"
       :style="{
         backgroundColor: isDark ? props.settings?.darkMode?.menuBackgroundColor : 'rgb(var(--color-primary-DEFAULT))'
       }"
@@ -438,7 +487,7 @@ watch(locale, () => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-3 sm:h-4 lg:h-6 w-[1px] sm:w-[1px] lg:w-[2px] mx-1 sm:mx-1 lg:mx-2"
+                  class="h-3 sm:h-4 lg:h-6 w-[1px] sm:mx-1 lg:mx-2"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
@@ -596,6 +645,7 @@ watch(locale, () => {
                   <div
                     v-if="showUserDropdown"
                     class="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
+                    :style="{ zIndex: 65 }"
                     @click.outside="showUserDropdown = false"
                   >
                     <!-- Not Logged In -->
@@ -654,10 +704,135 @@ watch(locale, () => {
       </div>
     </div>
 
-    <!-- Navigation Section -->
+    <!-- Mobile Navbar - Simple Version -->
+    <div 
+      ref="mobileNavRef"
+      class="w-full fixed lg:hidden border-b"
+      :class="{ 'mobile-shadow': isScrolled }"
+      :style="{
+        backgroundColor: isDark ? props.settings?.darkMode?.menuBackgroundColor : 'rgb(var(--color-primary-500))',
+        borderColor: isDark ? props.settings?.darkMode?.borderColor : 'rgb(var(--color-primary-600))',
+        top: 0,
+        zIndex: 60
+      }"
+    >
+      <div class="w-full px-3 py-2">
+        <div class="flex items-center justify-between">
+          <!-- Mobile Logo -->
+          <div class="flex-shrink-0">
+            <NuxtLink to="/" class="flex items-center">
+              <img
+                v-if="mobileLogoUrl"
+                :src="mobileLogoUrl"
+                :alt="mobileLogo?.altText || 'Logo'"
+                class="h-10 w-auto object-contain max-w-[120px]"
+              />
+            </NuxtLink>
+          </div>
+          
+          <!-- Right Actions -->
+          <div class="flex items-center gap-2">
+            <!-- Phone Button -->
+            <a 
+              :href="`tel:${props.settings?.phoneButton?.numbers?.[0]?.number?.replace(/\s+/g, '') || ''}`"
+              class="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+            >
+              <Phone class="w-4 h-4 text-white" />
+            </a>
+            
+            <!-- Cart Icon -->
+            <CartIcon v-if="props.settings?.showCart && isCartEnabled" class="w-9 h-9" />
+            
+            <!-- User Button -->
+            <button
+              class="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+              @click="showUserDropdown = !showUserDropdown"
+            >
+              <User class="w-4 h-4 text-white" />
+            </button>
+            
+            <!-- Mobile Menu Button -->
+            <button
+              class="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+              @click="toggleMobileMenu"
+              aria-label="Toggle Menu"
+            >
+              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- User Dropdown for Mobile -->
+      <Transition
+        enter-active-class="transition ease-out duration-200"
+        enter-from-class="transform opacity-0 scale-95"
+        enter-to-class="transform opacity-100 scale-100"
+        leave-active-class="transition ease-in duration-150"
+        leave-from-class="transform opacity-100 scale-100"
+        leave-to-class="transform opacity-0 scale-95"
+      >
+        <div
+          v-if="showUserDropdown"
+          class="absolute right-3 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
+          :style="{ zIndex: 65 }"
+          @click.outside="showUserDropdown = false"
+        >
+          <!-- Not Logged In -->
+          <template v-if="!isAuthenticated">
+            <NuxtLink
+              to="/auth/login"
+              class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              @click="showUserDropdown = false"
+            >
+              <LogIn class="w-4 h-4" />
+              {{ t('Đăng nhập') }}
+            </NuxtLink>
+            <NuxtLink
+              to="/auth/register"
+              class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              @click="showUserDropdown = false"
+            >
+              <UserCircle class="w-4 h-4" />
+              {{ t('Đăng ký') }}
+            </NuxtLink>
+          </template>
+
+          <!-- Logged In -->
+          <template v-else>
+            <!-- User Info -->
+            <div class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
+              <div class="text-sm font-medium text-neutral-900 dark:text-white">
+                {{ userDisplayName }}
+              </div>
+              <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                {{ user?.email }}
+              </div>
+            </div>
+            <NuxtLink
+              to="/dashboard"
+              class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              @click="showUserDropdown = false"
+            >
+              <Settings class="w-4 h-4" />
+              {{ t('Dashboard') }}
+            </NuxtLink>
+            <button
+              class="flex items-center gap-2 w-full px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              @click="handleLogout"
+            >
+              <LogOut class="w-4 h-4" />
+              {{ t('Đăng xuất') }}
+            </button>
+          </template>
+        </div>
+      </Transition>
+    </div>
+
+    <!-- Navigation Section for Desktop -->
     <div 
       ref="navWrapperRef"
-      class="nav-wrapper w-full h-[90px]"
+      class="nav-wrapper w-full h-[90px] hidden lg:block"
       :class="{ 'nav-sticky': isScrolled }"
       :style="{
         backgroundColor: isDark ? props.settings?.darkMode?.menuBackgroundColor : props.settings?.menuBackgroundColor
@@ -896,19 +1071,21 @@ watch(locale, () => {
       <div
         v-if="isMobileMenuOpen"
         class="mobile-menu-overlay"
+        style="z-index: 9999 !important;"
         @click="isMobileMenuOpen = false"
       >
         <div 
           class="mobile-menu-content bg-white dark:bg-neutral-900"
+          style="z-index: 10000 !important;"
           @click.stop
         >
           <!-- Mobile Menu Header -->
           <div class="mobile-menu-header flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
             <NuxtLink to="/" class="flex-shrink-0" @click="isMobileMenuOpen = false">
               <img
-                v-if="currentLogoUrl"
-                :src="currentLogoUrl"
-                :alt="logo?.altText || 'Logo'"
+                v-if="mobileLogoUrl"
+                :src="mobileLogoUrl"
+                :alt="mobileLogo?.altText || 'Logo'"
                 class="h-10 w-auto object-contain"
               />
             </NuxtLink>
@@ -921,7 +1098,7 @@ watch(locale, () => {
             </button>
           </div>
 
-          <!-- Mobile Call Button -->
+          <!-- Mobile Call Button & Booking Button -->
           <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
             <div class="flex flex-col gap-2">
               <div class="flex items-center gap-3">
@@ -1236,7 +1413,6 @@ watch(locale, () => {
     inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-    z-index: 50;
 
     .mobile-menu-content {
       position: fixed;
@@ -1332,6 +1508,44 @@ watch(locale, () => {
   }
   to {
     transform: translateX(0);
+  }
+}
+
+.nav-wrapper-mobile {
+  position: relative;
+  z-index: 40;
+
+  &.nav-sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    animation: slideDown 0.3s ease-out;
+  }
+}
+
+.top-menu-mobile {
+  position: relative;
+  z-index: 50;
+  background-color: rgb(var(--color-primary-DEFAULT));
+}
+
+.mobile-shadow {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+// Add spacer for content below fixed menu
+.navbar-container {
+  &::before {
+    content: '';
+    display: block;
+    height: 57px; // Adjust based on your mobile menu height
+    
+    @media (min-width: 1024px) {
+      display: none;
+    }
   }
 }
 </style> 

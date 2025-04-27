@@ -1,10 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { GalleryTranslation } from './gallery-translation.entity';
-
-export enum GalleryType {
-  COMMON = 'common',
-  FOOD = 'food'
-}
+import { GalleryType } from '@ew/shared';
 
 @Entity('galleries')
 export class Gallery {
