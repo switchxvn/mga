@@ -19,7 +19,7 @@ import * as entities from '../../../apps/backend/src/modules/entities';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: Object.values(entities),
+        entities: entities.entities,
         synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
         logging: configService.get('NODE_ENV') === 'development',
         extra: configService.get('NODE_ENV') === 'production' ? {
