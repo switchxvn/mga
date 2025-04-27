@@ -48,12 +48,14 @@ const createOrderSchema = z.object({
 const refundItemSchema = z.object({
   orderItemId: z.number(),
   quantity: z.number().min(1),
-  reason: z.string().optional()
+  reason: z.string().optional(),
+  newDate: z.string().optional()
 });
 
 const createRefundSchema = z.object({
   orderCode: z.string(),
   requesterPhone: z.string(),
+  requesterPhoneCode: z.string(),
   requesterName: z.string(),
   requesterEmail: z.string().email().optional(),
   refundReason: z.nativeEnum(RefundReason),
@@ -330,6 +332,7 @@ export const orderRouter = router({
           orderCode: input.orderCode,
           requesterName: input.requesterName,
           requesterPhone: input.requesterPhone,
+          requesterPhoneCode: input.requesterPhoneCode,
           requesterEmail: input.requesterEmail,
           refundReason: input.refundReason,
           refundType: input.refundType,
@@ -337,7 +340,8 @@ export const orderRouter = router({
           items: input.items.map(item => ({
             orderItemId: item.orderItemId,
             quantity: item.quantity,
-            reason: item.reason
+            reason: item.reason,
+            newDate: item.newDate
           }))
         };
         

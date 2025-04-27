@@ -35,6 +35,7 @@ import { MailConfigSeeder } from '../seeders/mail-config.seeder';
 import { MailConfig } from '../../../../apps/backend/src/modules/mail/entities/mail-config.entity';
 import { MailTemplate } from '../../../../apps/backend/src/modules/mail/entities/mail-template.entity';
 import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
+import { RefundEmailTemplateSeeder } from '../seeders/refund-email-template.seeder';
 import { UploadConfigSeeder } from '../seeders/upload-config.seeder';
 import { Upload } from '../../../../apps/backend/src/modules/upload/entities/upload.entity';
 import { UploadConfig } from '../../../../apps/backend/src/modules/upload/entities/upload-config.entity';
@@ -85,6 +86,7 @@ import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modu
     FoodMenuSeeder,
     MailConfigSeeder,
     MailTemplateSeeder,
+    RefundEmailTemplateSeeder,
     UploadConfigSeeder,
     OrderTicketSectionSeeder,
   ],

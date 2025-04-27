@@ -12,6 +12,7 @@ import { MailConfigSeeder } from '../seeders/mail-config.seeder';
 import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
 import { UploadConfigSeeder } from '../seeders/upload-config.seeder';
 import { OrderTicketSectionSeeder } from '../seeders/order-ticket-section.seeder';
+import { RefundEmailTemplateSeeder } from '../seeders/refund-email-template.seeder';
 
 interface SeedCommandOptions {
   seeder?: string;
@@ -39,7 +40,8 @@ export class SeedCommand extends CommandRunner {
     private readonly mailConfigSeeder: MailConfigSeeder,
     private readonly mailTemplateSeeder: MailTemplateSeeder,
     private readonly uploadConfigSeeder: UploadConfigSeeder,
-    private readonly orderTicketSectionSeeder: OrderTicketSectionSeeder
+    private readonly orderTicketSectionSeeder: OrderTicketSectionSeeder,
+    private readonly refundEmailTemplateSeeder: RefundEmailTemplateSeeder,
   ) {
     super();
     this.logger.log('SeedCommand constructor called');
@@ -73,7 +75,7 @@ export class SeedCommand extends CommandRunner {
 
   @Option({
     flags: '-s, --seeder [seederName]',
-    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, contact-section, contact-section-new, mail-config, mail-template, upload-config, order-ticket)',
+    description: 'Specific seeder to run (country-phone-code, service, ticket-product, about, contact-section, contact-section-new, mail-config, mail-template, upload-config, order-ticket, refund-email-template)',
   })
   parseSeeder(val: string): string {
     this.logger.log(`parseSeeder called with value: ${val}`);
@@ -133,6 +135,11 @@ export class SeedCommand extends CommandRunner {
         await this.mailTemplateSeeder.seed();
         this.logger.log('Mail templates seeded successfully');
         break;
+      case 'refund-email-template':
+        this.logger.log('Seeding refund email templates...');
+        await this.refundEmailTemplateSeeder.seed();
+        this.logger.log('Refund email templates seeded successfully');
+        break;
       case 'upload-config':
         this.logger.log('Seeding upload configuration...');
         await this.uploadConfigSeeder.seed();
@@ -145,7 +152,7 @@ export class SeedCommand extends CommandRunner {
         break;
       default:
         this.logger.error(`Unknown seeder: ${seederName}`);
-        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, contact-section, contact-section-new, food-menu, mail-config, mail-template, upload-config, order-ticket');
+        this.logger.log('Available seeders: country-phone-code, service, ticket-product, about, contact-section, contact-section-new, food-menu, mail-config, mail-template, refund-email-template, upload-config, order-ticket');
         process.exit(1);
     }
   }
@@ -162,6 +169,10 @@ export class SeedCommand extends CommandRunner {
     this.logger.log('Seeding mail templates...');
     await this.mailTemplateSeeder.seed();
     this.logger.log('Mail templates seeded successfully');
+
+    this.logger.log('Seeding refund email templates...');
+    await this.refundEmailTemplateSeeder.seed();
+    this.logger.log('Refund email templates seeded successfully');
 
     this.logger.log('Seeding country phone codes...');
     await this.countryPhoneCodeSeeder.seed();

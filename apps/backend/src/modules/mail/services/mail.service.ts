@@ -125,23 +125,37 @@ export class MailService implements MailServiceInterface {
     refundAmount?: number;
   }): Promise<MailResponse> {
     try {
-      const templateId = 'refund_request';
-      const templateData = {
+      const templateCode = data.refundType === 'RESCHEDULE' ? 'REFUND_REQUEST_VI' : 'REFUND_REQUEST';
+      
+      const templateVars = {
         customerName: data.customerName,
         orderCode: data.orderCode,
         refundCode: data.refundCode,
         refundType: data.refundType,
-        refundAmount: data.refundAmount ? data.refundAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : 'N/A',
-        requestDate: new Date().toLocaleDateString('vi-VN')
+        refundAmount: data.refundAmount ? data.refundAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : undefined
       };
+
+      // Lấy template từ db
+      const template = await this.mailTemplateRepository.findOne({
+        where: { code: templateCode, is_active: true }
+      });
+
+      if (!template) {
+        throw new Error(`Email template ${templateCode} not found or not active`);
+      }
+
+      // Compile template với Handlebars
+      const subjectTemplate = Handlebars.compile(template.subject);
+      const htmlTemplate = Handlebars.compile(template.html);
+
+      // Apply data to templates
+      const subject = subjectTemplate(templateVars);
+      const html = htmlTemplate(templateVars);
 
       return this.sendMail({
         to: data.to,
-        subject: `Xác nhận yêu cầu hoàn trả đơn hàng #${data.orderCode}`,
-        template: {
-          id: templateId,
-          data: templateData
-        }
+        subject: subject,
+        html: html
       });
     } catch (error) {
       this.logger.error(`Failed to send refund request notification: ${error.message}`);

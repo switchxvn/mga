@@ -28,6 +28,9 @@ export class OrderRefundItem {
   @Column({ type: 'text', nullable: true })
   reason?: string;
 
+  @Column({ name: 'new_date', type: 'date', nullable: true })
+  newDate?: string;
+
   @ManyToOne(() => OrderRefund, refund => refund.items)
   @JoinColumn({ name: 'refund_id' })
   refund: OrderRefund;
