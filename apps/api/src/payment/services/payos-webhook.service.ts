@@ -176,7 +176,7 @@ export class PayOSWebhookService {
               // Send email
               await this.mailService.sendMail({
                 to: order.email,
-                subject: `Vé điện tử cho ${emailData.eventName}`,
+                subject: `Vé điện tử cho ${emailData.eventName} - Mã đơn hàng #${order.orderCode}`,
                 template: {
                   id: 'TICKET_QR_CODE_VI',
                   data: emailData
