@@ -467,6 +467,20 @@
       }
     }
   },
+  "orderStatus": {
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "processing": "Processing",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
+  },
+  "paymentStatus": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "failed": "Failed",
+    "refunded": "Refunded"
+  },
   "map": {
     "title": "Cable Car Nui Sam Tourism Area Map",
     "description": "Explore Nui Sam Cable Car Tourism Area with a detailed map of tourist attractions, services and highlight points.",

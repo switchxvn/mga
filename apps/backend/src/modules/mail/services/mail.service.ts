@@ -123,16 +123,25 @@ export class MailService implements MailServiceInterface {
     customerName: string;
     refundType: string;
     refundAmount?: number;
+    items?: Array<{
+      productName: string;
+      variantName?: string;
+      quantity: number;
+      oldDate?: string;
+      newDate?: string;
+    }>;
   }): Promise<MailResponse> {
     try {
-      const templateCode = data.refundType === 'RESCHEDULE' ? 'REFUND_REQUEST_VI' : 'REFUND_REQUEST';
+      // Sử dụng template TICKET_EXCHANGE_VI nếu là đổi vé, ngược lại dùng template thông thường
+      const templateCode = data.refundType === 'RESCHEDULE' ? 'TICKET_EXCHANGE_VI' : (data.refundType === 'MONEY_REFUND' ? 'REFUND_REQUEST' : 'REFUND_REQUEST_VI');
       
       const templateVars = {
         customerName: data.customerName,
         orderCode: data.orderCode,
         refundCode: data.refundCode,
         refundType: data.refundType,
-        refundAmount: data.refundAmount ? data.refundAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : undefined
+        refundAmount: data.refundAmount ? data.refundAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : undefined,
+        items: data.items
       };
 
       // Lấy template từ db

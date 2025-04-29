@@ -132,13 +132,21 @@ export class MailtrapService implements MailServiceInterface, OnModuleInit {
     customerName: string;
     refundType: string;
     refundAmount?: number;
+    items?: Array<{
+      productName: string;
+      variantName?: string;
+      quantity: number;
+      oldDate?: string;
+      newDate?: string;
+    }>;
   }): Promise<MailResponse> {
     const templateData = {
       customerName: data.customerName,
       orderCode: data.orderCode,
       refundCode: data.refundCode,
       refundType: data.refundType,
-      refundAmount: data.refundAmount
+      refundAmount: data.refundAmount,
+      items: data.items
     };
     
     return this.sendMail({
