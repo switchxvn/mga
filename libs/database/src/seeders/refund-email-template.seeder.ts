@@ -331,6 +331,191 @@ export class RefundEmailTemplateSeeder {
 </body>
 </html>`,
           is_active: true
+        },
+        {
+          code: 'TICKET_EXCHANGE_VI',
+          title: 'Xác Nhận Yêu Cầu Đổi Vé',
+          subject: 'Xác nhận yêu cầu đổi ngày sử dụng vé - Đơn hàng #{{orderCode}}',
+          from_email: 'support@yourdomain.com',
+          from_name: 'Hỗ Trợ Khách Hàng',
+          description: 'Mẫu email xác nhận yêu cầu đổi ngày sử dụng vé',
+          variables: {
+            customerName: 'Tên đầy đủ khách hàng',
+            orderCode: 'Mã đơn hàng',
+            refundCode: 'Mã yêu cầu đổi vé',
+            ticketDetails: 'Chi tiết về vé đổi ngày',
+            oldDate: 'Ngày cũ',
+            newDate: 'Ngày mới'
+          },
+          html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác Nhận Yêu Cầu Đổi Vé</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5 !important;
+        }
+        .wrapper {
+            padding: 40px 20px;
+            background: #f0f2f5 !important;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #1a73e8;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .info-box {
+            margin: 25px 0;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+        }
+        .info-box table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-box th {
+            text-align: left;
+            padding: 12px 0;
+            color: #666;
+            width: 35%;
+            font-weight: 600;
+        }
+        .info-box td {
+            padding: 12px 0;
+        }
+        .action-link {
+            display: block;
+            text-align: center;
+            margin: 25px 0;
+            padding: 12px 24px;
+            background-color: #1a73e8;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .action-link:hover {
+            background-color: #1557b0;
+        }
+        .ticket-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .ticket-item:last-child {
+            border-bottom: none;
+        }
+        .date-change {
+            margin-top: 8px;
+            color: #0066cc;
+            font-weight: 500;
+        }
+        .note-box {
+            background-color: #e6f7ff;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 4px solid #1890ff;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 35px;
+            padding: 25px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <h1>Xác Nhận Yêu Cầu Đổi Vé</h1>
+            </div>
+            <div class="content">
+                <p>Kính gửi {{customerName}},</p>
+                <p>Chúng tôi đã nhận được yêu cầu đổi ngày sử dụng vé cho đơn hàng <strong>#{{orderCode}}</strong>. Yêu cầu của bạn đang được xử lý.</p>
+                
+                <div class="info-box">
+                    <h3>Chi Tiết Yêu Cầu Đổi Vé</h3>
+                    <table>
+                        <tr>
+                            <th>Mã Đơn Hàng</th>
+                            <td>#{{orderCode}}</td>
+                        </tr>
+                        <tr>
+                            <th>Mã Yêu Cầu</th>
+                            <td>#{{refundCode}}</td>
+                        </tr>
+                        <tr>
+                            <th>Loại Yêu Cầu</th>
+                            <td>Đổi ngày sử dụng vé</td>
+                        </tr>
+                    </table>
+                    
+                    {{#if items}}
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Thông tin vé được đổi</h4>
+                    <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                        {{#each items}}
+                        <div class="ticket-item">
+                            <div><strong>{{productName}}</strong> {{#if variantName}}({{variantName}}){{/if}}</div>
+                            <div>Số lượng: {{quantity}}</div>
+                            <div class="date-change">
+                                Ngày cũ: {{oldDate}} → Ngày mới: <strong>{{newDate}}</strong>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                    {{/if}}
+                </div>
+                
+                <p>Yêu cầu đổi vé của bạn đã được ghi nhận trong hệ thống và đang được xử lý. Vui lòng giữ lại mã yêu cầu đổi vé để tra cứu trạng thái sau này.</p>
+                
+                <div class="note-box">
+                    <h3>Lưu ý quan trọng</h3>
+                    <ul style="padding-left: 20px; margin-top: 10px; margin-bottom: 10px;">
+                        <li>Yêu cầu đổi vé sẽ được xử lý trong vòng 24-48 giờ làm việc.</li>
+                        <li>Vé mới sẽ được gửi qua email khi yêu cầu được chấp nhận.</li>
+                        <li>Nếu có thay đổi về giá vé giữa ngày cũ và ngày mới, chúng tôi sẽ liên hệ với bạn.</li>
+                        <li>Mỗi vé chỉ được đổi ngày một lần.</li>
+                    </ul>
+                </div>
+                
+                <div class="footer">
+                    <p>Cần hỗ trợ? Liên hệ với chúng tôi:</p>
+                    <p>Email: admin@hmgavietnam.com | Điện thoại: 0869.519.679</p>
+                    <p>Đây là email tự động, vui lòng không trả lời trực tiếp.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`,
+          is_active: true
         }
       ];
 

@@ -387,13 +387,48 @@ export class OrderFrontendService {
 
     // Gửi email thông báo
     try {
+      // Chuẩn bị thông tin chi tiết về vé cho email đổi vé
+      let ticketItems = [];
+      if (refundData.refundType === RefundType.RESCHEDULE) {
+        // Lấy thông tin chi tiết vé từ orderItems
+        ticketItems = await Promise.all(refundData.items.map(async (item) => {
+          const orderItem = orderItems.find(oi => oi.id === item.orderItemId);
+          if (!orderItem) return null;
+          
+          // Lấy thông tin sản phẩm
+          const fullOrderItem = await this.orderItemRepository.findOne({
+            where: { id: item.orderItemId },
+            relations: ['product', 'product.translations']
+          });
+          
+          // Lấy tên sản phẩm từ translation
+          const viTranslation = fullOrderItem?.product?.translations?.find(t => t.locale === 'vi');
+          const productName = viTranslation?.title || 
+                             fullOrderItem?.productSnapshot?.title || 
+                             'Vé không xác định';
+          const variantName = fullOrderItem?.productSnapshot?.variant?.name || '';
+          
+          return {
+            productName,
+            variantName,
+            quantity: item.quantity,
+            oldDate: new Date().toLocaleDateString('vi-VN'), // Ví dụ, cần thay bằng ngày thực tế
+            newDate: item.newDate ? new Date(item.newDate).toLocaleDateString('vi-VN') : 'Chưa xác định'
+          };
+        }));
+        
+        // Lọc bỏ các item null
+        ticketItems = ticketItems.filter(item => item !== null);
+      }
+      
       await this.mailService.sendRefundRequestNotification({
         to: refundData.requesterEmail || order.email,
         orderCode: order.orderCode,
         refundCode: refundCode,
         customerName: refundData.requesterName,
         refundType: refundData.refundType,
-        refundAmount: totalRefundAmount
+        refundAmount: totalRefundAmount,
+        items: ticketItems.length > 0 ? ticketItems : undefined
       });
     } catch (error) {
       this.logger.error(`Failed to send refund notification email: ${error.message}`);

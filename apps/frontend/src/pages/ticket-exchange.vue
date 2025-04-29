@@ -542,8 +542,19 @@ onMounted(() => {
           </h2>
           
           <p class="text-gray-600 dark:text-gray-400 mb-6">
-            Chúng tôi đã nhận được yêu cầu đổi vé của bạn và sẽ xử lý trong thời gian sớm nhất. Bạn sẽ được thông báo qua email hoặc số điện thoại đã cung cấp về trạng thái yêu cầu.
+            Chúng tôi đã nhận được yêu cầu đổi vé của bạn và sẽ xử lý trong thời gian sớm nhất. Email xác nhận yêu cầu đổi vé đã được gửi đến địa chỉ email của bạn. Vui lòng kiểm tra hộp thư và thư rác (spam) nếu không tìm thấy.
           </p>
+          
+          <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
+            <p class="text-blue-800 dark:text-blue-300 flex items-start">
+              <span class="inline-block mr-2 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>
+              <span>Lưu ý: Bạn sẽ được thông báo qua email hoặc số điện thoại đã cung cấp về trạng thái yêu cầu. Vui lòng giữ lại mã yêu cầu đổi vé để tra cứu sau này.</span>
+            </p>
+          </div>
           
           <div class="flex flex-wrap justify-center gap-4 mt-6">
             <a href="/" class="px-6 py-3 bg-primary-600 text-white font-medium rounded-lg shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">

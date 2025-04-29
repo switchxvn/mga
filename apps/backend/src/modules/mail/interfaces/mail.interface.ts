@@ -11,6 +11,13 @@ export interface MailServiceInterface {
     customerName: string;
     refundType: string;
     refundAmount?: number;
+    items?: Array<{
+      productName: string;
+      variantName?: string;
+      quantity: number;
+      oldDate?: string;
+      newDate?: string;
+    }>;
   }): Promise<MailResponse>;
 }
 
