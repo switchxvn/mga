@@ -44,6 +44,11 @@ services:
       # Add other environment variables as needed
       # - DATABASE_URL=
       # - JWT_SECRET=
+    volumes:
+      # Mount necessary files for running migrations
+      - ./libs:/app/libs
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.base.json:/app/tsconfig.base.json
     networks:
       - app-network
 

@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AboutModule } from '../about/about.module';
 import { AuthModule } from '../auth/auth.module';
 import { CategoryModule } from '../category/category.module';
+import { CommentModule } from '../comment/comment.module';
 import { CommonModule } from '../common';
 import { ContactModule } from '../contact/contact.module';
 import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
@@ -81,6 +82,7 @@ import { DashboardModule } from '../dashboard/dashboard.module';
     FoodMenuModule,
     OrderModule,
     UploadModule,
+    CommentModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

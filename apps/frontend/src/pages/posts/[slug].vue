@@ -8,6 +8,7 @@ import PostDetailSidebar from '~/components/sidebar/PostDetailSidebar.vue';
 import Breadcrumb from '~/components/common/Breadcrumb.vue';
 import LazyImage from '~/components/ui/LazyImage.vue';
 import Icon from '~/components/ui/Icon.vue';
+import PostComments from '~/components/post/PostComments.vue';
 import { useI18n } from 'vue-i18n';
 import type { Post, Profile, Author, Tag } from '@ew/shared';
 import { usePost } from '~/composables/usePost';
@@ -274,6 +275,9 @@ useHead(() => {
                 </NuxtLink>
               </div>
             </div>
+            
+            <!-- Comments section -->
+            <PostComments v-if="postId" :postId="postId" />
           </article>
           
           <!-- Related posts -->

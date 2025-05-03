@@ -51,3 +51,7 @@ export * from './types/footer.type';
 
 // Utils
 export * from './lib/utils';
+
+// Comment
+export * from './lib/interfaces/comment.interface';
+export * from './lib/schemas/comment';

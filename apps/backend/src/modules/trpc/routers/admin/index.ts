@@ -8,6 +8,7 @@ import { categoryAdminRouter } from './category.router'
 import { usersAdminRouter } from './users.router'
 import { productAdminRouter } from './product.router'
 import { orderAdminRouter } from './order.router'
+import { adminCommentRouter } from './comment.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -18,5 +19,6 @@ export const adminRouter = router({
   category: categoryAdminRouter,
   users: usersAdminRouter,
   products: productAdminRouter,
-  order: orderAdminRouter
+  order: orderAdminRouter,
+  comments: adminCommentRouter
 }) 

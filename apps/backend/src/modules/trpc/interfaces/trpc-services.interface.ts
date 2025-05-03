@@ -58,6 +58,8 @@ import { UploadFrontendService } from '../../upload/frontend/services/upload-fro
 import { UploadAdminService } from '../../upload/admin/services/upload-admin.service';
 import { SettingsService } from '../../settings/services/settings.service';
 import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
+import { CommentAdminService } from '../../comment/admin/services/comment-admin.service';
+import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -120,4 +122,6 @@ export interface ITrpcServices {
   uploadAdminService: UploadAdminService;
   settingsService: SettingsService;
   dashboardAdminService: DashboardAdminService;
+  commentAdminService: CommentAdminService;
+  commentService: CommentFrontendService;
 } 

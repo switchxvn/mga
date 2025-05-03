@@ -441,7 +441,8 @@
     "phoneNumber": "Số điện thoại",
     "phonePlaceholder": "Nhập số điện thoại của bạn",
     "email": "Email",
-    "emailPlaceholder": "Nhập email của bạn (không bắt buộc)",
+    "emailPlaceholder": "Nhập email của bạn",
+    "emailPlaceholderTicket": "Nhập email để nhận vé",
     "paymentMethod": "Phương thức thanh toán",
     "proceedToPayment": "Tiến hành thanh toán",
     "noBookingData": "Không tìm thấy thông tin đặt vé",
@@ -519,5 +520,27 @@
     "paid": "Đã thanh toán",
     "failed": "Thanh toán thất bại",
     "refunded": "Đã hoàn tiền"
+  },
+  "comments": {
+    "title": "Bình luận",
+    "leave_comment": "Để lại bình luận",
+    "replying_to": "Đang trả lời bình luận của {name}",
+    "cancel_reply": "Hủy trả lời",
+    "name": "Tên",
+    "email": "Email",
+    "content": "Nội dung",
+    "name_placeholder": "Nhập tên của bạn",
+    "email_placeholder": "Nhập email của bạn",
+    "content_placeholder": "Nhập bình luận của bạn ở đây...",
+    "submit": "Gửi bình luận",
+    "loading": "Đang tải bình luận...",
+    "no_comments": "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!",
+    "reply": "Trả lời",
+    "anonymous": "Khách",
+    "moderation_notice": "Bình luận của bạn sẽ được kiểm duyệt trước khi hiển thị.",
+    "error_loading": "Có lỗi khi tải bình luận. Vui lòng thử lại sau.",
+    "error_submitting": "Có lỗi khi gửi bình luận. Vui lòng thử lại sau.",
+    "content_required": "Vui lòng nhập nội dung bình luận.",
+    "author_info_required": "Vui lòng nhập tên và email của bạn."
   }
 } 

@@ -60,6 +60,8 @@ import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/s
 import { SettingsService } from '../../settings/services/settings.service';
 import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
 import { ProductStockHistoryService } from '../../product/services/product-stock-history.service';
+import { CommentAdminService } from '../../comment/admin/services/comment-admin.service';
+import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
 
 @Injectable()
 export class ServiceContext {
@@ -126,6 +128,8 @@ export class ServiceContext {
     private readonly settingsService: SettingsService,
     private readonly dashboardAdminService: DashboardAdminService,
     private readonly productStockHistoryService: ProductStockHistoryService,
+    private readonly commentAdminService: CommentAdminService,
+    private readonly commentFrontendService: CommentFrontendService,
   ) {}
 
   public getServices(): ITrpcServices {
@@ -190,6 +194,8 @@ export class ServiceContext {
       settingsService: this.settingsService,
       dashboardAdminService: this.dashboardAdminService,
       productStockHistoryService: this.productStockHistoryService,
+      commentAdminService: this.commentAdminService,
+      commentService: this.commentFrontendService,
     };
   }
 } 

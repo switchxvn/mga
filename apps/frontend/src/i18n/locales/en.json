@@ -497,5 +497,27 @@
       "zoomOut": "Zoom out",
       "reset": "Reset"
     }
+  },
+  "comments": {
+    "title": "Comments",
+    "leave_comment": "Leave a comment",
+    "replying_to": "Replying to {name}",
+    "cancel_reply": "Cancel reply",
+    "name": "Name",
+    "email": "Email",
+    "content": "Content",
+    "name_placeholder": "Enter your name",
+    "email_placeholder": "Enter your email",
+    "content_placeholder": "Type your comment here...",
+    "submit": "Submit Comment",
+    "loading": "Loading comments...",
+    "no_comments": "No comments yet. Be the first to comment!",
+    "reply": "Reply",
+    "anonymous": "Anonymous",
+    "moderation_notice": "Your comment will be moderated before it appears.",
+    "error_loading": "Error loading comments. Please try again later.",
+    "error_submitting": "Error submitting comment. Please try again later.",
+    "content_required": "Please enter a comment.",
+    "author_info_required": "Please enter your name and email."
   }
 } 

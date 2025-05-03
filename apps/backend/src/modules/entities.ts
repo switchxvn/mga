@@ -114,6 +114,9 @@ import { ContactSectionTranslation } from './contact/entities/contact-section-tr
 import { TicketPricingSection } from './ticket-pricing/entities/ticket-pricing-section.entity';
 import { TicketPricingSectionTranslation } from './ticket-pricing/entities/ticket-pricing-section-translation.entity';
 
+// Comment
+import { Comment } from './comment/entities/comment.entity';
+
 // Dashboard
 import { DashboardStats } from './dashboard/entities/dashboard-stats.entity';
 
@@ -236,6 +239,9 @@ export const entities: (new () => any)[] = [
   // Ticket Pricing
   TicketPricingSection,
   TicketPricingSectionTranslation,
+  
+  // Comment
+  Comment,
   
   // Dashboard
   DashboardStats,
