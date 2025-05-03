@@ -60,6 +60,8 @@ import { SettingsService } from '../../settings/services/settings.service';
 import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
 import { CommentAdminService } from '../../comment/admin/services/comment-admin.service';
 import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
+import { AdminReviewService } from '../../review/admin/services/admin-review.service';
+import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -124,4 +126,65 @@ export interface ITrpcServices {
   dashboardAdminService: DashboardAdminService;
   commentAdminService: CommentAdminService;
   commentService: CommentFrontendService;
+  reviewAdminService: AdminReviewService;
+  reviewService: FrontendReviewService;
+  
+  // Grouped services
+  admin: {
+    review: AdminReviewService;
+    comment: CommentAdminService;
+    user: UserAdminService;
+    post: PostAdminService;
+    settings: SettingsAdminService;
+    seo: SeoAdminService;
+    footer: FooterAdminService;
+    category: CategoryAdminService;
+    service: ServiceAdminService;
+    product: ProductAdminService;
+    featureFlags: FeatureFlagsAdminService;
+    theme: ThemeAdminService;
+    componentStyleConfig: ComponentStyleConfigAdminService;
+    language: LanguageAdminService;
+    about: AboutAdminService;
+    logo: LogoAdminService;
+    customerLogo: CustomerLogoAdminService;
+    auth: AuthAdminService;
+    contact: ContactAdminService;
+    contactSection: ContactSectionAdminService;
+    ticketPricingSection: TicketPricingSectionAdminService;
+    foodMenu: FoodMenuAdminService;
+    payment: PaymentAdminService;
+    order: OrderAdminService;
+    upload: UploadAdminService;
+    orderTicketSection: OrderTicketSectionAdminService;
+    dashboard: DashboardAdminService;
+  };
+  
+  frontend: {
+    review: FrontendReviewService;
+    comment: CommentFrontendService;
+    post: PostFrontendService;
+    settings: SettingsFrontendService;
+    seo: SeoFrontendService;
+    footer: FooterFrontendService;
+    category: CategoryFrontendService;
+    service: ServiceFrontendService;
+    product: ProductFrontendService;
+    featureFlags: FeatureFlagsFrontendService;
+    theme: ThemeFrontendService;
+    componentStyleConfig: ComponentStyleConfigFrontendService;
+    language: LanguageFrontendService;
+    about: AboutFrontendService;
+    logo: LogoFrontendService;
+    customerLogo: CustomerLogoFrontendService;
+    auth: AuthFrontendService;
+    contact: ContactFrontendService;
+    contactSection: ContactSectionFrontendService;
+    ticketPricingSection: TicketPricingSectionFrontendService;
+    foodMenu: FoodMenuFrontendService;
+    payment: PaymentFrontendService;
+    order: OrderFrontendService;
+    upload: UploadFrontendService;
+    orderTicketSection: OrderTicketSectionFrontendService;
+  };
 } 

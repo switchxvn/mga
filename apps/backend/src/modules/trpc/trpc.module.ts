@@ -21,6 +21,7 @@ import { PostModule } from '../post/post.module';
 import { PriceRequestModule } from '../price-request/price-request.module';
 import { ProductModule } from '../product/product.module';
 import { ProfileModule } from '../profile/profile.module';
+import { ReviewModule } from '../review/review.module';
 import { SeoModule } from '../seo/seo.module';
 import { ServiceModule } from '../service/service.module';
 import { SettingsModule } from '../settings/settings.module';
@@ -83,6 +84,7 @@ import { DashboardModule } from '../dashboard/dashboard.module';
     OrderModule,
     UploadModule,
     CommentModule,
+    ReviewModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency
