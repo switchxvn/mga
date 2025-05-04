@@ -6,7 +6,7 @@ CONTAINER_NAME=${1:-"ecommerce-web-backend-1"}
 
 echo "Running migrations in container $CONTAINER_NAME..."
 
-# Execute the migration command inside the container with correct path resolution
-docker exec -it $CONTAINER_NAME /bin/bash -c "cd /app && yarn typeorm migration:run -d libs/database/src/config/typeorm.config.ts"
+# Execute the migration command inside the container - simplified command that doesn't rely on tsconfig
+docker exec -it $CONTAINER_NAME /bin/bash -c "cd /app && npx typeorm-ts-node-commonjs migration:run -d libs/database/src/config/typeorm.config.ts"
 
 echo "Migration completed." 
