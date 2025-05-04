@@ -7,6 +7,13 @@ import { computed, ref, reactive, onMounted, watch } from '../composables/useVue
 import { useAsyncData } from 'nuxt/app';
 import type { Seo, ReviewStatus } from '@ew/shared';
 import ReviewForm from '../components/ReviewForm.vue';
+// Import Swiper components
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { Navigation, Pagination, Zoom } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/zoom';
 
 interface ReviewTranslation {
   id: number;
@@ -75,6 +82,27 @@ const ratingDistribution = ref<Record<string, number>>({
   '2': 0,
   '1': 0,
 });
+
+// Selected review for modal
+const selectedReview = ref<Review | null>(null);
+const showModal = ref(false);
+const expandedContents = ref<Record<number, boolean>>({});
+
+// Swiper options
+const swiperOptions = {
+  modules: [Navigation, Pagination, Zoom],
+  navigation: {
+    nextEl: '.swiper-button-next',
+    prevEl: '.swiper-button-prev',
+  },
+  pagination: {
+    el: '.swiper-pagination',
+    clickable: true
+  },
+  zoom: true,
+  loop: false,
+  centeredSlides: true
+};
 
 // Pagination
 const pagination = reactive({
@@ -252,6 +280,34 @@ const getServiceTypeName = (serviceType: ReviewServiceType | undefined) => {
   
   const translation = serviceType.translations.find(t => t.locale === currentLocale.value);
   return translation?.name || serviceType.translations[0]?.name || '';
+};
+
+// Open avatar modal
+const openAvatarModal = (review: Review) => {
+  selectedReview.value = review;
+  showModal.value = true;
+  document.body.classList.add('overflow-hidden');
+};
+
+// Close avatar modal
+const closeAvatarModal = () => {
+  showModal.value = false;
+  document.body.classList.remove('overflow-hidden');
+};
+
+// Toggle content expansion
+const toggleContent = (reviewId: number) => {
+  expandedContents.value[reviewId] = !expandedContents.value[reviewId];
+};
+
+// Check if content is expanded
+const isContentExpanded = (reviewId: number) => {
+  return !!expandedContents.value[reviewId];
+};
+
+// Check if content needs "Read more" button
+const contentNeedsExpansion = (content?: string) => {
+  return content && content.length > 150;
 };
 
 // Watch for locale changes
@@ -479,11 +535,11 @@ onMounted(() => {
             >
               <div class="flex items-start">
                 <!-- Avatar -->
-                <div class="mr-3 flex-shrink-0">
-                  <div v-if="review.authorAvatar" class="h-10 w-10 rounded-full overflow-hidden">
+                <div class="mr-3 flex-shrink-0 cursor-pointer" @click="openAvatarModal(review)">
+                  <div v-if="review.authorAvatar" class="h-10 w-10 rounded-full overflow-hidden hover:ring-2 hover:ring-primary-400 transition">
                     <img :src="review.authorAvatar" :alt="review.authorName" class="h-full w-full object-cover" />
                   </div>
-                  <div v-else class="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center">
+                  <div v-else class="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center hover:ring-2 hover:ring-primary-400 transition">
                     <span class="text-sm font-medium text-primary-600 dark:text-primary-300">
                       {{ review.authorName.charAt(0).toUpperCase() }}
                     </span>
@@ -521,8 +577,17 @@ onMounted(() => {
                 <h4 v-if="review.translations[0]?.title" class="font-medium text-gray-900 dark:text-white text-sm mb-1">
                   {{ review.translations[0].title }}
                 </h4>
-                <div class="prose dark:prose-invert prose-sm max-w-none text-gray-600 dark:text-gray-300 text-sm line-clamp-3">
-                  {{ review.translations[0]?.content }}
+                <div class="prose dark:prose-invert prose-sm max-w-none text-gray-600 dark:text-gray-300 text-sm">
+                  <p :class="{ 'line-clamp-3': !isContentExpanded(review.id) && contentNeedsExpansion(review.translations[0]?.content) }">
+                    {{ review.translations[0]?.content }}
+                  </p>
+                  <button 
+                    v-if="contentNeedsExpansion(review.translations[0]?.content)" 
+                    @click="toggleContent(review.id)"
+                    class="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-xs font-medium mt-1"
+                  >
+                    {{ isContentExpanded(review.id) ? t('common.readLess') : t('common.readMore') }}
+                  </button>
                 </div>
               </div>
               
@@ -561,9 +626,122 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Avatar Modal -->
+    <Teleport to="body">
+      <div 
+        v-if="showModal && selectedReview" 
+        class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+        @click.self="closeAvatarModal"
+      >
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+          <div class="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              {{ selectedReview.authorName }}
+            </h3>
+            <button 
+              @click="closeAvatarModal"
+              class="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+            >
+              <i class="i-heroicons-x-mark w-6 h-6"></i>
+            </button>
+          </div>
+          
+          <div class="relative p-4">
+            <swiper v-bind="swiperOptions" class="w-full">
+              <swiper-slide>
+                <div class="swiper-zoom-container flex items-center justify-center">
+                  <img 
+                    v-if="selectedReview.authorAvatar" 
+                    :src="selectedReview.authorAvatar" 
+                    :alt="selectedReview.authorName" 
+                    class="max-w-full max-h-[60vh] object-contain"
+                  />
+                  <div 
+                    v-else 
+                    class="w-40 h-40 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center"
+                  >
+                    <span class="text-5xl font-medium text-primary-600 dark:text-primary-300">
+                      {{ selectedReview.authorName.charAt(0).toUpperCase() }}
+                    </span>
+                  </div>
+                </div>
+              </swiper-slide>
+              <div class="swiper-button-prev"></div>
+              <div class="swiper-button-next"></div>
+              <div class="swiper-pagination"></div>
+            </swiper>
+            
+            <div class="mt-6">
+              <div class="flex items-center mb-2">
+                <div class="flex text-primary-300">
+                  <template v-for="(isFilled, index) in getStars(selectedReview.rating)" :key="`modal-star-${index}`">
+                    <i v-if="isFilled" class="i-heroicons-star-solid"></i>
+                    <i v-else class="i-heroicons-star text-gray-300 dark:text-gray-600"></i>
+                  </template>
+                </div>
+                <span class="ml-2 text-gray-500 dark:text-gray-400 text-sm">
+                  {{ selectedReview.rating }}/5
+                </span>
+              </div>
+              
+              <h4 v-if="selectedReview.translations[0]?.title" class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                {{ selectedReview.translations[0].title }}
+              </h4>
+              
+              <p class="text-gray-600 dark:text-gray-300">
+                {{ selectedReview.translations[0]?.content }}
+              </p>
+              
+              <div v-if="selectedReview.profession" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ selectedReview.profession }}
+                </span>
+              </div>
+              
+              <div v-if="selectedReview.visitDate" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                <span class="font-medium">{{ t('reviews.visitDate') }}:</span> {{ formatDate(selectedReview.visitDate) }}
+              </div>
+              
+              <div v-if="selectedReview.serviceType" class="mt-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  {{ getServiceTypeName(selectedReview.serviceType) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
-/* Additional styles if needed */
+/* Swiper styles */
+:deep(.swiper-zoom-container) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+:deep(.swiper-button-next),
+:deep(.swiper-button-prev) {
+  color: theme('colors.primary.600');
+}
+
+:deep(.swiper-pagination-bullet-active) {
+  background-color: theme('colors.primary.600');
+}
+
+@media (prefers-color-scheme: dark) {
+  :deep(.swiper-button-next),
+  :deep(.swiper-button-prev) {
+    color: theme('colors.primary.400');
+  }
+
+  :deep(.swiper-pagination-bullet-active) {
+    background-color: theme('colors.primary.400');
+  }
+}
 </style> 
