@@ -54,24 +54,16 @@ export function useUpload() {
       
       onProgress(30)
       
-      // 2. Tạo FormData để gửi lên server Nuxt
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('presignedUrl', presignedData.presignedUrl)
-      formData.append('key', presignedData.key || '')
-      formData.append('uploadId', String(presignedData.uploadId || 0))
-      formData.append('url', presignedData.url)
-      
-      console.log('Uploading file to server middleware...')
-      
-      // 3. Upload file thông qua server-side API để tránh CORS - sử dụng axios thay vì $fetch
+      // 2. Upload trực tiếp sử dụng presignedUrl thay vì thông qua server middleware
       try {
         onProgress(50)
         
-        // Sử dụng axios thay vì $fetch
-        const response = await axios.post('/api/local/upload-image', formData, {
+        // Upload trực tiếp đến S3 với presignedUrl
+        const uploadResponse = await axios.put(presignedData.presignedUrl, file, {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': file.type,
+            'Content-Length': file.size.toString(),
+            'x-amz-acl': 'public-read'
           },
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
@@ -81,22 +73,18 @@ export function useUpload() {
           }
         })
         
-        const uploadResult = response.data
-        
-        console.log('Upload completed successfully', uploadResult)
+        console.log('Upload completed successfully', uploadResponse)
         onProgress(100)
         
-        if (!uploadResult || !uploadResult.url) {
-          throw new Error('Server returned invalid upload result')
+        const uploadResult = {
+          url: presignedData.url,
+          key: presignedData.key,
+          uploadId: presignedData.uploadId
         }
         
-        return {
-          url: uploadResult.url,
-          key: uploadResult.key,
-          uploadId: uploadResult.uploadId
-        }
+        return uploadResult
       } catch (uploadError: any) {
-        console.error('Error during server upload:', uploadError)
+        console.error('Error during upload to S3:', uploadError)
         
         // Hiển thị lỗi chi tiết hơn để debug
         const errorMessage = uploadError?.response?.data?.message || 
