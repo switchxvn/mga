@@ -38,6 +38,9 @@ export * from './lib/interfaces/post.interface';
 export * from './lib/interfaces/gallery.interface';
 export * from './lib/interfaces/seo.interface';
 
+// Enums
+export * from './lib/enums';
+
 // Admin Types
 export * from './types/admin/post.type';
 

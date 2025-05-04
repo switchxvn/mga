@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { adminProcedure, router } from '../../procedures/index';
+import { ReviewStatus } from '@ew/shared';
 
 const translationSchema = z.object({
   locale: z.string().length(2),
@@ -11,25 +12,27 @@ const translationSchema = z.object({
 const createSchema = z.object({
   authorName: z.string().min(2),
   authorAvatar: z.string().url().optional(),
+  profession: z.string().optional(),
   rating: z.number().min(1).max(5),
-  serviceType: z.string().optional(),
+  serviceTypeId: z.number().optional(),
   visitDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
   featured: z.boolean().optional(),
-  isActive: z.boolean().optional(),
+  status: z.nativeEnum(ReviewStatus).optional(),
   translations: z.array(translationSchema),
 });
 
 const updateSchema = z.object({
   authorName: z.string().min(2).optional(),
   authorAvatar: z.string().url().optional().nullable(),
+  profession: z.string().optional().nullable(),
   rating: z.number().min(1).max(5).optional(),
-  serviceType: z.string().optional().nullable(),
+  serviceTypeId: z.number().optional().nullable(),
   visitDate: z.string().optional().nullable().transform(val => {
     if (val === null) return null;
     return val ? new Date(val) : undefined;
   }),
   featured: z.boolean().optional(),
-  isActive: z.boolean().optional(),
+  status: z.nativeEnum(ReviewStatus).optional(),
   translations: z.array(translationSchema).optional(),
 });
 
@@ -38,10 +41,10 @@ const paginationSchema = z.object({
   limit: z.number().optional(),
   search: z.string().optional(),
   featured: z.boolean().optional(),
-  serviceType: z.string().optional(),
+  serviceTypeId: z.number().optional(),
   minRating: z.number().optional(),
   maxRating: z.number().optional(),
-  isActive: z.boolean().optional(),
+  status: z.nativeEnum(ReviewStatus).optional(),
   locale: z.string().optional(),
 });
 
@@ -116,13 +119,14 @@ export const adminReviewRouter = router({
       return updated;
     }),
 
-  toggleActive: adminProcedure
+  updateStatus: adminProcedure
     .input(z.object({
       id: z.number(),
+      status: z.nativeEnum(ReviewStatus),
     }))
     .mutation(async ({ ctx, input }) => {
       const adminReviewService = ctx.services.admin.review;
-      const updated = await adminReviewService.toggleActive(input.id);
+      const updated = await adminReviewService.updateStatus(input.id, input.status);
       
       if (!updated) {
         throw new TRPCError({

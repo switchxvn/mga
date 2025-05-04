@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useLocalization } from '../composables/useLocalization';
 import { useTrpc } from '../composables/useTrpc';
 import { useHead } from '@unhead/vue';
 import { computed, ref, reactive, onMounted, watch } from '../composables/useVueComposables';
 import { useAsyncData } from 'nuxt/app';
-import type { Seo } from '@ew/shared';
+import type { Seo, ReviewStatus } from '@ew/shared';
 import ReviewForm from '../components/ReviewForm.vue';
 
 interface ReviewTranslation {
@@ -18,15 +18,26 @@ interface ReviewTranslation {
   updatedAt: string;
 }
 
+interface ReviewServiceType {
+  id: number;
+  slug: string;
+  translations: {
+    locale: string;
+    name: string;
+  }[];
+}
+
 interface Review {
   id: number;
   authorName: string;
   authorAvatar?: string;
+  profession?: string;
   rating: number;
-  serviceType?: string;
+  serviceTypeId?: number;
+  serviceType?: ReviewServiceType;
   visitDate?: string;
   featured: boolean;
-  isActive: boolean;
+  status: ReviewStatus;
   createdAt: string;
   updatedAt: string;
   translations: ReviewTranslation[];
@@ -43,8 +54,14 @@ interface ReviewsResponse {
 }
 
 const route = useRoute();
+const router = useRouter();
 const trpc = useTrpc();
 const { t, locale } = useLocalization();
+
+// Create computed for current locale
+const currentLocale = computed(() => {
+  return typeof locale === 'object' && 'value' in locale ? locale.value : 'en';
+});
 
 // State
 const isLoading = ref(true);
@@ -71,8 +88,60 @@ const pagination = reactive({
 const filters = reactive({
   sortBy: 'latest',
   minRating: 0,
-  serviceType: '',
+  serviceTypeId: 0,
 });
+
+// Initialize filters and pagination from URL query parameters
+const initializeFromQuery = () => {
+  const query = route.query;
+  
+  // Initialize pagination
+  if (query.page && !isNaN(Number(query.page))) {
+    pagination.page = Number(query.page);
+  }
+  
+  // Initialize filters
+  if (query.sortBy && ['latest', 'highest_rating', 'lowest_rating'].includes(query.sortBy as string)) {
+    filters.sortBy = query.sortBy as string;
+  }
+  
+  if (query.minRating && !isNaN(Number(query.minRating))) {
+    filters.minRating = Number(query.minRating);
+  }
+  
+  if (query.serviceTypeId && !isNaN(Number(query.serviceTypeId))) {
+    filters.serviceTypeId = Number(query.serviceTypeId);
+  }
+};
+
+// Update URL query parameters
+const updateQueryParams = () => {
+  const query: Record<string, string> = {};
+  
+  // Add pagination params
+  if (pagination.page > 1) {
+    query.page = pagination.page.toString();
+  }
+  
+  // Add filter params
+  if (filters.sortBy !== 'latest') {
+    query.sortBy = filters.sortBy;
+  }
+  
+  if (filters.minRating > 0) {
+    query.minRating = filters.minRating.toString();
+  }
+  
+  if (filters.serviceTypeId > 0) {
+    query.serviceTypeId = filters.serviceTypeId.toString();
+  }
+  
+  // Update URL without reloading the page
+  router.replace({ query });
+};
+
+// Service types
+const serviceTypes = ref<ReviewServiceType[]>([]);
 
 // SEO data
 const seoData = ref<Seo | null>(null);
@@ -85,9 +154,9 @@ const loadReviews = async () => {
     const response = await trpc.review.list.query({
       page: pagination.page,
       limit: pagination.limit,
-      locale: locale.value,
+      locale: currentLocale.value,
       minRating: filters.minRating > 0 ? filters.minRating : undefined,
-      serviceType: filters.serviceType || undefined,
+      serviceTypeId: filters.serviceTypeId > 0 ? filters.serviceTypeId : undefined,
       sortBy: filters.sortBy as any,
     }) as ReviewsResponse;
     
@@ -103,18 +172,28 @@ const loadReviews = async () => {
   }
 };
 
+// Load service types
+const loadServiceTypes = async () => {
+  try {
+    const response = await trpc.review.getServiceTypes.query({ locale: currentLocale.value });
+    serviceTypes.value = response as ReviewServiceType[];
+  } catch (error) {
+    console.error('Error loading service types:', error);
+  }
+};
+
 // Load rating stats
 const loadRatingStats = async () => {
   try {
-    const serviceType = filters.serviceType || undefined;
+    const serviceTypeId = filters.serviceTypeId > 0 ? filters.serviceTypeId : undefined;
     
     // Get average rating
-    const ratingStats = await trpc.review.getAverageRating.query({ serviceType });
+    const ratingStats = await trpc.review.getAverageRating.query({ serviceTypeId });
     averageRating.value = ratingStats.averageRating;
     totalReviews.value = ratingStats.totalReviews;
     
     // Get rating distribution
-    const distribution = await trpc.review.getRatingDistribution.query({ serviceType });
+    const distribution = await trpc.review.getRatingDistribution.query({ serviceTypeId });
     ratingDistribution.value = distribution;
   } catch (error) {
     console.error('Error loading rating stats:', error);
@@ -124,20 +203,23 @@ const loadRatingStats = async () => {
 // Filter handlers
 const applyFilters = () => {
   pagination.page = 1;
+  updateQueryParams();
   loadReviews();
 };
 
 const clearFilters = () => {
   filters.sortBy = 'latest';
   filters.minRating = 0;
-  filters.serviceType = '';
+  filters.serviceTypeId = 0;
   pagination.page = 1;
+  updateQueryParams();
   loadReviews();
 };
 
 // Pagination handlers
 const goToPage = (page: number) => {
   pagination.page = page;
+  updateQueryParams();
   loadReviews();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
@@ -146,7 +228,7 @@ const goToPage = (page: number) => {
 const formatDate = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat(locale.value === 'vi' ? 'vi-VN' : 'en-US', {
+  return new Intl.DateTimeFormat(currentLocale.value === 'vi' ? 'vi-VN' : 'en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -164,10 +246,32 @@ const getStars = (rating: number) => {
   return Array.from({ length: 5 }, (_, i) => i < rating);
 };
 
+// Get service type name
+const getServiceTypeName = (serviceType: ReviewServiceType | undefined) => {
+  if (!serviceType) return '';
+  
+  const translation = serviceType.translations.find(t => t.locale === currentLocale.value);
+  return translation?.name || serviceType.translations[0]?.name || '';
+};
+
 // Watch for locale changes
-watch(locale, () => {
+watch(currentLocale, () => {
   loadReviews();
+  loadServiceTypes();
 });
+
+// Watch for route query changes
+watch(() => route.query, (newQuery) => {
+  if (
+    newQuery.page !== String(pagination.page) ||
+    newQuery.sortBy !== filters.sortBy ||
+    newQuery.minRating !== String(filters.minRating) ||
+    newQuery.serviceTypeId !== String(filters.serviceTypeId)
+  ) {
+    initializeFromQuery();
+    loadReviews();
+  }
+}, { deep: true });
 
 // Fetch SEO data
 useAsyncData('reviews-seo', () => 
@@ -197,7 +301,9 @@ useHead({
 
 // Load initial data
 onMounted(() => {
+  initializeFromQuery();
   loadReviews();
+  loadServiceTypes();
 });
 </script>
 
@@ -226,7 +332,7 @@ onMounted(() => {
             </h3>
             <div class="flex items-center justify-center gap-2">
               <span class="text-4xl font-bold text-gray-900 dark:text-white">{{ averageRating }}</span>
-              <div class="flex text-yellow-400 text-2xl">
+              <div class="flex text-primary-300 text-2xl">
                 <i class="i-heroicons-star-solid"></i>
               </div>
             </div>
@@ -242,10 +348,10 @@ onMounted(() => {
             </h3>
             <div class="space-y-3">
               <div v-for="i in 5" :key="`rating-${i}`" class="flex items-center">
-                <span class="w-8 text-sm text-gray-800 dark:text-gray-200">{{ i }} <i class="i-heroicons-star-solid text-yellow-400"></i></span>
+                <span class="w-8 text-sm text-gray-800 dark:text-gray-200">{{ i }} <i class="i-heroicons-star-solid text-primary-300"></i></span>
                 <div class="flex-1 h-4 mx-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div 
-                    class="h-full bg-yellow-400" 
+                    class="h-full bg-primary-300" 
                     :style="{ width: `${getRatingPercentage(i)}%` }"
                   ></div>
                 </div>
@@ -310,14 +416,13 @@ onMounted(() => {
                 {{ t('reviews.serviceType') }}
               </label>
               <select 
-                v-model="filters.serviceType" 
+                v-model="filters.serviceTypeId" 
                 class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-700 dark:text-gray-200"
               >
                 <option value="">{{ t('reviews.allServices') }}</option>
-                <option value="cable_car">{{ t('reviews.serviceTypes.cableCar') }}</option>
-                <option value="restaurant">{{ t('reviews.serviceTypes.restaurant') }}</option>
-                <option value="ticket_service">{{ t('reviews.serviceTypes.ticketService') }}</option>
-                <option value="customer_service">{{ t('reviews.serviceTypes.customerService') }}</option>
+                <option v-for="serviceType in serviceTypes" :key="serviceType.id" :value="serviceType.id">
+                  {{ getServiceTypeName(serviceType) }}
+                </option>
               </select>
             </div>
             
@@ -366,74 +471,77 @@ onMounted(() => {
           </div>
           
           <!-- Reviews -->
-          <div v-else class="space-y-6">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             <div 
               v-for="review in reviews" 
               :key="review.id"
-              class="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg p-6"
+              class="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col h-full"
             >
               <div class="flex items-start">
                 <!-- Avatar -->
-                <div class="mr-4 flex-shrink-0">
-                  <div v-if="review.authorAvatar" class="h-12 w-12 rounded-full overflow-hidden">
+                <div class="mr-3 flex-shrink-0">
+                  <div v-if="review.authorAvatar" class="h-10 w-10 rounded-full overflow-hidden">
                     <img :src="review.authorAvatar" :alt="review.authorName" class="h-full w-full object-cover" />
                   </div>
-                  <div v-else class="h-12 w-12 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center">
-                    <span class="text-lg font-medium text-primary-600 dark:text-primary-300">
+                  <div v-else class="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center">
+                    <span class="text-sm font-medium text-primary-600 dark:text-primary-300">
                       {{ review.authorName.charAt(0).toUpperCase() }}
                     </span>
                   </div>
                 </div>
                 
-                <!-- Content -->
-                <div class="flex-1">
-                  <div class="flex items-start justify-between">
-                    <div>
-                      <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-                        {{ review.authorName }}
-                      </h3>
-                      <div class="flex items-center mt-1">
-                        <div class="flex text-yellow-400">
-                          <template v-for="(isFilled, index) in getStars(review.rating)" :key="`star-${index}`">
-                            <i v-if="isFilled" class="i-heroicons-star-solid"></i>
-                            <i v-else class="i-heroicons-star text-gray-300 dark:text-gray-600"></i>
-                          </template>
-                        </div>
-                        <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                          {{ formatDate(review.createdAt) }}
-                        </span>
-                      </div>
+                <!-- Header Content -->
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-base font-medium text-gray-900 dark:text-white truncate">
+                    {{ review.authorName }}
+                  </h3>
+                  <div class="flex items-center mt-1">
+                    <div class="flex text-primary-300">
+                      <template v-for="(isFilled, index) in getStars(review.rating)" :key="`star-${index}`">
+                        <i v-if="isFilled" class="i-heroicons-star-solid text-sm"></i>
+                        <i v-else class="i-heroicons-star text-sm text-gray-300 dark:text-gray-600"></i>
+                      </template>
                     </div>
-                    
-                    <!-- Service type badge -->
-                    <div v-if="review.serviceType" class="ml-4">
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        {{ t(`reviews.serviceTypes.${review.serviceType}`) }}
-                      </span>
-                    </div>
+                    <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                      {{ formatDate(review.createdAt) }}
+                    </span>
                   </div>
-                  
-                  <!-- Review title and content -->
-                  <div class="mt-4">
-                    <h4 v-if="review.translations[0]?.title" class="font-medium text-gray-900 dark:text-white mb-2">
-                      {{ review.translations[0].title }}
-                    </h4>
-                    <div class="prose dark:prose-invert prose-sm max-w-none text-gray-600 dark:text-gray-300">
-                      {{ review.translations[0]?.content }}
-                    </div>
-                  </div>
-                  
-                  <!-- Visit date -->
-                  <div v-if="review.visitDate" class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                    <span class="font-medium">{{ t('reviews.visitDate') }}:</span> {{ formatDate(review.visitDate) }}
-                  </div>
+                </div>
+                
+                <!-- Service type badge -->
+                <div v-if="review.serviceType" class="ml-2 flex-shrink-0">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {{ getServiceTypeName(review.serviceType) }}
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Review title and content -->
+              <div class="mt-3 flex-grow">
+                <h4 v-if="review.translations[0]?.title" class="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                  {{ review.translations[0].title }}
+                </h4>
+                <div class="prose dark:prose-invert prose-sm max-w-none text-gray-600 dark:text-gray-300 text-sm line-clamp-3">
+                  {{ review.translations[0]?.content }}
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                <!-- Profession -->
+                <span v-if="review.profession" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ review.profession }}
+                </span>
+                
+                <!-- Visit date -->
+                <div v-if="review.visitDate" class="text-xs text-gray-500 dark:text-gray-400">
+                  <span class="font-medium">{{ t('reviews.visitDate') }}:</span> {{ formatDate(review.visitDate) }}
                 </div>
               </div>
             </div>
           </div>
           
           <!-- Pagination -->
-          <div v-if="pagination.totalPages > 1" class="mt-8 flex justify-center">
+          <div v-if="pagination.totalPages > 1" class="mt-6 flex justify-center">
             <UPagination
               v-model="pagination.page"
               :total="pagination.total"

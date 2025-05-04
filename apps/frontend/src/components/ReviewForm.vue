@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useLocalization } from '../composables/useLocalization';
 import { useTrpc } from '../composables/useTrpc';
-import { computed, ref, reactive } from '../composables/useVueComposables';
+import { computed, ref, reactive, onMounted } from '../composables/useVueComposables';
 import { useRouter } from 'vue-router';
 import { useToast } from '../composables/useToast';
+import { Star } from 'lucide-vue-next';
 
 const props = withDefaults(defineProps<{
   reviewSuccess?: boolean;
@@ -28,8 +29,9 @@ const toast = useToast();
 const formData = reactive({
   authorName: '',
   authorAvatar: '',
+  profession: '',
   rating: 5,
-  serviceType: '',
+  serviceTypeId: 0,
   visitDate: '',
   title: '',
   content: '',
@@ -39,7 +41,7 @@ const formErrors = reactive({
   authorName: '',
   rating: '',
   content: '',
-  serviceType: '',
+  serviceTypeId: '',
 });
 
 const isSubmitting = ref(false);
@@ -48,12 +50,45 @@ const uploadProgress = ref(0);
 const isUploading = ref(false);
 const showImagePreview = ref(false);
 
-const serviceTypes = computed(() => [
-  { value: 'cable_car', label: t('reviews.serviceTypes.cable_car') },
-  { value: 'restaurant', label: t('reviews.serviceTypes.restaurant') },
-  { value: 'ticket_service', label: t('reviews.serviceTypes.ticket_service') },
-  { value: 'customer_service', label: t('reviews.serviceTypes.customer_service') },
-]);
+// Create computed for current locale
+const currentLocale = computed(() => {
+  return typeof locale === 'object' && 'value' in locale ? locale.value : 'en';
+});
+
+// Load service types
+const serviceTypes = ref<any[]>([]);
+
+const loadServiceTypes = async () => {
+  try {
+    const response = await trpc.review.getServiceTypes.query({ locale: currentLocale.value });
+    serviceTypes.value = response as any[];
+  } catch (error) {
+    console.error('Error loading service types:', error);
+   
+  }
+};
+
+// Get service type name with better locale handling
+const getServiceTypeName = (serviceType: any) => {
+  if (!serviceType) return '';
+  
+  // Try to find a translation matching the current locale
+  const translation = serviceType.translations.find((t: any) => t.locale === currentLocale.value);
+  
+  // If found, return the name
+  if (translation?.name) return translation.name;
+  
+  // If not found but there are translations, return the first one
+  if (serviceType.translations.length > 0) return serviceType.translations[0].name;
+  
+  // Fallback to slug as last resort
+  return serviceType.slug ? t(`reviews.serviceTypes.${serviceType.slug}`) : '';
+};
+
+// Load service types on mounted
+onMounted(() => {
+  loadServiceTypes();
+});
 
 // Xử lý upload ảnh đại diện
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -93,22 +128,29 @@ const uploadImage = async (file: File) => {
     isUploading.value = true;
     uploadProgress.value = 0;
     
-    // Import useUpload động để tránh lỗi biên dịch khi không tìm thấy module
-    const { useUpload } = await import('../composables/useUpload');
-    const { uploadFile } = useUpload();
-    
-    const result = await uploadFile({
-      file,
-      folder: 'avatars',
-      onProgress: (percent) => {
-        uploadProgress.value = percent;
-      }
-    });
-    
-    formData.authorAvatar = result.url;
-    showImagePreview.value = true;
-    
-    toast.success(t('reviews.imageUploadSuccess'));
+    // Import useUpload động để tránh lỗi biên dịch
+    // Nếu không tìm thấy module, sẽ hiển thị lỗi cho người dùng
+    try {
+      const { useUpload } = await import('../composables/useUpload');
+      const { uploadFile } = useUpload();
+      
+      const result = await uploadFile({
+        file,
+        folder: 'avatars',
+        onProgress: (percent: number) => {
+          uploadProgress.value = percent;
+        }
+      });
+      
+      formData.authorAvatar = result.url;
+      showImagePreview.value = true;
+      
+      toast.success(t('reviews.imageUploadSuccess'));
+    } catch (importError) {
+      console.error('Error importing upload module:', importError);
+      toast.error('Upload module not available');
+      isUploading.value = false;
+    }
   } catch (error) {
     console.error('Error uploading image:', error);
     toast.error(t('reviews.imageUploadError'));
@@ -153,8 +195,8 @@ const validateForm = () => {
   }
 
   // Validate service type
-  if (!formData.serviceType) {
-    formErrors.serviceType = t('validation.required');
+  if (!formData.serviceTypeId) {
+    formErrors.serviceTypeId = t('validation.required');
     isValid = false;
   }
 
@@ -182,7 +224,7 @@ const submitForm = async () => {
       authorName: formData.authorName,
       authorAvatar: formData.authorAvatar || undefined,
       rating: formData.rating,
-      serviceType: formData.serviceType,
+      serviceTypeId: formData.serviceTypeId,
       visitDate: formData.visitDate ? new Date(formData.visitDate).toISOString() : undefined,
       translations: [
         {
@@ -219,7 +261,7 @@ const resetForm = () => {
   formData.authorName = '';
   formData.authorAvatar = '';
   formData.rating = 5;
-  formData.serviceType = '';
+  formData.serviceTypeId = 0;
   formData.visitDate = '';
   formData.title = '';
   formData.content = '';
@@ -245,6 +287,24 @@ const clearHoverRating = () => {
   hoverRating.value = 0;
 };
 const displayRating = computed(() => hoverRating.value || formData.rating);
+
+// Get rating label based on value
+const getRatingLabel = (rating: number): string => {
+  switch (rating) {
+    case 5:
+      return t('reviews.ratingExcellent');
+    case 4:
+      return t('reviews.ratingGood');
+    case 3:
+      return t('reviews.ratingAverage');
+    case 2:
+      return t('reviews.ratingPoor');
+    case 1:
+      return t('reviews.ratingBad');
+    default:
+      return '';
+  }
+};
 </script>
 
 <template>
@@ -271,20 +331,34 @@ const displayRating = computed(() => hoverRating.value || formData.rating);
 
     <form v-else @submit.prevent="submitForm" class="space-y-6">
       <!-- Author Name -->
-      <div>
-        <label for="authorName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {{ t('reviews.authorName') }} <span class="text-red-500">*</span>
+      <div class="mb-6">
+        <label for="authorName" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+          {{ t('reviews.nameLabel') }} <span class="text-red-500">*</span>
         </label>
         <input
           id="authorName"
           v-model="formData.authorName"
           type="text"
           class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md w-full px-4 py-2 text-gray-700 dark:text-gray-200"
-          :placeholder="t('reviews.authorNamePlaceholder')"
+          :placeholder="t('reviews.namePlaceholder')"
         />
         <p v-if="formErrors.authorName" class="mt-1 text-sm text-red-600 dark:text-red-400">
           {{ formErrors.authorName }}
         </p>
+      </div>
+
+      <!-- Profession input -->
+      <div class="mb-6">
+        <label for="profession" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+          {{ t('reviews.professionLabel') }}
+        </label>
+        <input
+          id="profession"
+          v-model="formData.profession"
+          type="text"
+          class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md w-full px-4 py-2 text-gray-700 dark:text-gray-200"
+          :placeholder="t('reviews.professionPlaceholder')"
+        />
       </div>
 
       <!-- Author Avatar Upload -->
@@ -353,24 +427,45 @@ const displayRating = computed(() => hoverRating.value || formData.rating);
       </div>
 
       <!-- Rating -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      <div class="mb-6">
+        <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
           {{ t('reviews.rating') }} <span class="text-red-500">*</span>
         </label>
-        <div 
-          class="flex items-center space-x-1 text-2xl cursor-pointer"
-          @mouseleave="clearHoverRating"
-        >
-          <span 
-            v-for="i in 5" 
-            :key="`star-${i}`"
-            @click="setRating(i)"
-            @mouseenter="setHoverRating(i)"
-            class="transition-colors duration-150"
-            :class="i <= displayRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'"
+        <div class="flex flex-col gap-2">
+          <div 
+            class="flex items-center space-x-2 text-2xl cursor-pointer"
+            @mouseleave="clearHoverRating"
           >
-            <i class="i-heroicons-star-solid"></i>
-          </span>
+            <div class="flex">
+              <span 
+                v-for="i in 5" 
+                :key="`star-${i}`"
+                @click="setRating(i)"
+                @mouseenter="setHoverRating(i)"
+                class="transition-colors duration-200 hover:scale-110 transform mr-1"
+                :aria-label="`${i} stars`"
+                role="button"
+                tabindex="0"
+                @keydown.enter="setRating(i)"
+                @keydown.space="setRating(i)"
+              >
+                <Star 
+                  :size="32" 
+                  :stroke-width="1.5"
+                  class="text-primary-300 dark:text-primary-400"
+                  :fill="i <= displayRating ? 'currentColor' : 'none'" 
+                  color="currentColor" 
+                />
+              </span>
+            </div>
+            
+            <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ displayRating }}/5 - 
+              <span class="text-primary-500 dark:text-primary-400 font-semibold">
+                {{ getRatingLabel(displayRating) }}
+              </span>
+            </span>
+          </div>
         </div>
         <p v-if="formErrors.rating" class="mt-1 text-sm text-red-600 dark:text-red-400">
           {{ formErrors.rating }}
@@ -384,20 +479,20 @@ const displayRating = computed(() => hoverRating.value || formData.rating);
         </label>
         <select
           id="serviceType"
-          v-model="formData.serviceType"
+          v-model="formData.serviceTypeId"
           class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md w-full px-4 py-2 text-gray-700 dark:text-gray-200"
         >
           <option value="">{{ t('reviews.selectServiceType') }}</option>
           <option 
             v-for="type in serviceTypes" 
-            :key="type.value" 
-            :value="type.value"
+            :key="type.id" 
+            :value="type.id"
           >
-            {{ type.label }}
+            {{ getServiceTypeName(type) }}
           </option>
         </select>
-        <p v-if="formErrors.serviceType" class="mt-1 text-sm text-red-600 dark:text-red-400">
-          {{ formErrors.serviceType }}
+        <p v-if="formErrors.serviceTypeId" class="mt-1 text-sm text-red-600 dark:text-red-400">
+          {{ formErrors.serviceTypeId }}
         </p>
       </div>
 

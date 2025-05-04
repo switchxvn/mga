@@ -3,15 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from '../../entities/review.entity';
 import { ReviewTranslation } from '../../entities/review-translation.entity';
+import { ReviewServiceType } from '../../entities/review-service-type.entity';
+import { ReviewStatus } from '@ew/shared';
 
 export interface CreateReviewInput {
   authorName: string;
   authorAvatar?: string;
+  profession?: string;
   rating: number;
-  serviceType?: string;
+  serviceTypeId?: number;
   visitDate?: Date;
   featured?: boolean;
-  isActive?: boolean;
+  status?: ReviewStatus;
   translations: {
     locale: string;
     title?: string;
@@ -22,11 +25,12 @@ export interface CreateReviewInput {
 export interface UpdateReviewInput {
   authorName?: string;
   authorAvatar?: string;
+  profession?: string;
   rating?: number;
-  serviceType?: string;
+  serviceTypeId?: number;
   visitDate?: Date;
   featured?: boolean;
-  isActive?: boolean;
+  status?: ReviewStatus;
   translations?: {
     locale: string;
     title?: string;
@@ -39,10 +43,10 @@ export interface ReviewsPaginationParams {
   limit?: number;
   search?: string;
   featured?: boolean;
-  serviceType?: string;
+  serviceTypeId?: number;
   minRating?: number;
   maxRating?: number;
-  isActive?: boolean;
+  status?: ReviewStatus;
   locale?: string;
 }
 
@@ -53,6 +57,8 @@ export class AdminReviewService {
     private readonly reviewRepository: Repository<Review>,
     @InjectRepository(ReviewTranslation)
     private readonly reviewTranslationRepository: Repository<ReviewTranslation>,
+    @InjectRepository(ReviewServiceType)
+    private readonly reviewServiceTypeRepository: Repository<ReviewServiceType>,
   ) {}
 
   async findAll(params: ReviewsPaginationParams = {}) {
@@ -61,15 +67,17 @@ export class AdminReviewService {
       limit = 10,
       search = '',
       featured,
-      serviceType,
+      serviceTypeId,
       minRating,
       maxRating,
-      isActive,
+      status,
       locale,
     } = params;
 
     const query = this.reviewRepository.createQueryBuilder('review')
-      .leftJoinAndSelect('review.translations', 'translations');
+      .leftJoinAndSelect('review.translations', 'translations')
+      .leftJoinAndSelect('review.serviceType', 'serviceType')
+      .leftJoinAndSelect('serviceType.translations', 'serviceTypeTranslations');
 
     if (locale) {
       query.andWhere('translations.locale = :locale', { locale });
@@ -86,8 +94,8 @@ export class AdminReviewService {
       query.andWhere('review.featured = :featured', { featured });
     }
 
-    if (serviceType) {
-      query.andWhere('review.serviceType = :serviceType', { serviceType });
+    if (serviceTypeId) {
+      query.andWhere('review.serviceTypeId = :serviceTypeId', { serviceTypeId });
     }
 
     if (minRating !== undefined) {
@@ -98,8 +106,8 @@ export class AdminReviewService {
       query.andWhere('review.rating <= :maxRating', { maxRating });
     }
 
-    if (isActive !== undefined) {
-      query.andWhere('review.isActive = :isActive', { isActive });
+    if (status !== undefined) {
+      query.andWhere('review.status = :status', { status });
     }
 
     const total = await query.getCount();
@@ -124,6 +132,8 @@ export class AdminReviewService {
   async findById(id: number, locale?: string) {
     const query = this.reviewRepository.createQueryBuilder('review')
       .leftJoinAndSelect('review.translations', 'translations')
+      .leftJoinAndSelect('review.serviceType', 'serviceType')
+      .leftJoinAndSelect('serviceType.translations', 'serviceTypeTranslations')
       .where('review.id = :id', { id });
 
     if (locale) {
@@ -137,11 +147,12 @@ export class AdminReviewService {
     const review = this.reviewRepository.create({
       authorName: data.authorName,
       authorAvatar: data.authorAvatar,
+      profession: data.profession,
       rating: data.rating,
-      serviceType: data.serviceType,
+      serviceTypeId: data.serviceTypeId,
       visitDate: data.visitDate,
       featured: data.featured,
-      isActive: data.isActive ?? true,
+      status: data.status ?? ReviewStatus.ACTIVE,
       translations: data.translations.map(translation => 
         this.reviewTranslationRepository.create({
           locale: translation.locale,
@@ -163,11 +174,12 @@ export class AdminReviewService {
 
     if (data.authorName !== undefined) review.authorName = data.authorName;
     if (data.authorAvatar !== undefined) review.authorAvatar = data.authorAvatar;
+    if (data.profession !== undefined) review.profession = data.profession;
     if (data.rating !== undefined) review.rating = data.rating;
-    if (data.serviceType !== undefined) review.serviceType = data.serviceType;
+    if (data.serviceTypeId !== undefined) review.serviceTypeId = data.serviceTypeId;
     if (data.visitDate !== undefined) review.visitDate = data.visitDate;
     if (data.featured !== undefined) review.featured = data.featured;
-    if (data.isActive !== undefined) review.isActive = data.isActive;
+    if (data.status !== undefined) review.status = data.status;
 
     // Handle translations update
     if (data.translations) {
@@ -216,14 +228,14 @@ export class AdminReviewService {
     return this.reviewRepository.save(review);
   }
 
-  async toggleActive(id: number) {
+  async updateStatus(id: number, status: ReviewStatus) {
     const review = await this.findById(id);
     
     if (!review) {
       return null;
     }
 
-    review.isActive = !review.isActive;
+    review.status = status;
     return this.reviewRepository.save(review);
   }
 

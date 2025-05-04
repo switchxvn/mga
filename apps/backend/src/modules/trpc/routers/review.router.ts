@@ -1,12 +1,13 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, router } from '../procedures/index';
+import { ReviewStatus } from '@ew/shared';
 
 const reviewsFilterSchema = z.object({
   page: z.number().optional(),
   limit: z.number().optional(),
   featured: z.boolean().optional(),
-  serviceType: z.string().optional(),
+  serviceTypeId: z.number().optional(),
   locale: z.string().optional(),
   minRating: z.number().optional(),
   sortBy: z.enum(['latest', 'highest_rating', 'lowest_rating']).optional(),
@@ -21,8 +22,9 @@ const translationSchema = z.object({
 const submitReviewSchema = z.object({
   authorName: z.string().min(2),
   authorAvatar: z.string().url().optional(),
+  profession: z.string().optional(),
   rating: z.number().min(1).max(5),
-  serviceType: z.string().min(1),
+  serviceTypeId: z.number().min(1),
   visitDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
   translations: z.array(translationSchema).min(1),
 });
@@ -69,20 +71,29 @@ export const reviewRouter = router({
 
   getAverageRating: publicProcedure
     .input(z.object({
-      serviceType: z.string().optional(),
+      serviceTypeId: z.number().optional(),
     }).optional())
     .query(async ({ ctx, input }) => {
       const frontendReviewService = ctx.services.frontend.review;
-      return frontendReviewService.getAverageRating(input?.serviceType);
+      return frontendReviewService.getAverageRating(input?.serviceTypeId);
     }),
 
   getRatingDistribution: publicProcedure
     .input(z.object({
-      serviceType: z.string().optional(),
+      serviceTypeId: z.number().optional(),
     }).optional())
     .query(async ({ ctx, input }) => {
       const frontendReviewService = ctx.services.frontend.review;
-      return frontendReviewService.getRatingDistribution(input?.serviceType);
+      return frontendReviewService.getRatingDistribution(input?.serviceTypeId);
+    }),
+
+  getServiceTypes: publicProcedure
+    .input(z.object({
+      locale: z.string().optional(),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      const frontendReviewService = ctx.services.frontend.review;
+      return frontendReviewService.getServiceTypes(input?.locale || 'vi');
     }),
 
   submitReview: publicProcedure
@@ -93,10 +104,11 @@ export const reviewRouter = router({
       const reviewData = {
         authorName: input.authorName,
         authorAvatar: input.authorAvatar,
+        profession: input.profession,
         rating: input.rating,
-        serviceType: input.serviceType,
+        serviceTypeId: input.serviceTypeId,
         visitDate: input.visitDate,
-        isActive: false,
+        status: ReviewStatus.PENDING,
         featured: false,
         translations: input.translations.map(t => ({
           locale: t.locale,

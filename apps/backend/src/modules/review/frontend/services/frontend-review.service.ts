@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from '../../entities/review.entity';
-import { ReviewTranslation } from '../../entities/review-translation.entity';
+import { ReviewServiceType } from '../../entities/review-service-type.entity';
+import { ReviewStatus } from '@ew/shared';
 
 export interface ReviewsFilterParams {
   page?: number;
   limit?: number;
   featured?: boolean;
-  serviceType?: string;
+  serviceTypeId?: number;
   locale?: string;
   minRating?: number;
   sortBy?: 'latest' | 'highest_rating' | 'lowest_rating';
@@ -19,6 +20,8 @@ export class FrontendReviewService {
   constructor(
     @InjectRepository(Review)
     private readonly reviewRepository: Repository<Review>,
+    @InjectRepository(ReviewServiceType)
+    private readonly reviewServiceTypeRepository: Repository<ReviewServiceType>,
   ) {}
 
   async findAll(params: ReviewsFilterParams = {}) {
@@ -26,7 +29,7 @@ export class FrontendReviewService {
       page = 1,
       limit = 10,
       featured,
-      serviceType,
+      serviceTypeId,
       locale = 'vi',
       minRating,
       sortBy = 'latest',
@@ -34,7 +37,9 @@ export class FrontendReviewService {
 
     const query = this.reviewRepository.createQueryBuilder('review')
       .leftJoinAndSelect('review.translations', 'translations')
-      .where('review.isActive = :isActive', { isActive: true });
+      .leftJoinAndSelect('review.serviceType', 'serviceType')
+      .leftJoinAndSelect('serviceType.translations', 'serviceTypeTranslations')
+      .where('review.status = :status', { status: ReviewStatus.ACTIVE });
 
     // Filter by locale
     if (locale) {
@@ -47,8 +52,8 @@ export class FrontendReviewService {
     }
 
     // Filter by service type
-    if (serviceType) {
-      query.andWhere('review.serviceType = :serviceType', { serviceType });
+    if (serviceTypeId) {
+      query.andWhere('review.serviceTypeId = :serviceTypeId', { serviceTypeId });
     }
 
     // Filter by minimum rating
@@ -98,7 +103,9 @@ export class FrontendReviewService {
   async findFeatured(limit: number = 6, locale: string = 'vi') {
     const query = this.reviewRepository.createQueryBuilder('review')
       .leftJoinAndSelect('review.translations', 'translations')
-      .where('review.isActive = :isActive', { isActive: true })
+      .leftJoinAndSelect('review.serviceType', 'serviceType')
+      .leftJoinAndSelect('serviceType.translations', 'serviceTypeTranslations')
+      .where('review.status = :status', { status: ReviewStatus.ACTIVE })
       .andWhere('review.featured = :featured', { featured: true });
 
     if (locale) {
@@ -117,8 +124,10 @@ export class FrontendReviewService {
   async findById(id: number, locale: string = 'vi') {
     const query = this.reviewRepository.createQueryBuilder('review')
       .leftJoinAndSelect('review.translations', 'translations')
+      .leftJoinAndSelect('review.serviceType', 'serviceType')
+      .leftJoinAndSelect('serviceType.translations', 'serviceTypeTranslations')
       .where('review.id = :id', { id })
-      .andWhere('review.isActive = :isActive', { isActive: true });
+      .andWhere('review.status = :status', { status: ReviewStatus.ACTIVE });
 
     if (locale) {
       query.andWhere('translations.locale = :locale', { locale });
@@ -127,12 +136,12 @@ export class FrontendReviewService {
     return query.getOne();
   }
 
-  async getAverageRating(serviceType?: string) {
+  async getAverageRating(serviceTypeId?: number) {
     const query = this.reviewRepository.createQueryBuilder('review')
-      .where('review.isActive = :isActive', { isActive: true });
+      .where('review.status = :status', { status: ReviewStatus.ACTIVE });
 
-    if (serviceType) {
-      query.andWhere('review.serviceType = :serviceType', { serviceType });
+    if (serviceTypeId) {
+      query.andWhere('review.serviceTypeId = :serviceTypeId', { serviceTypeId });
     }
 
     const result = await query
@@ -146,12 +155,12 @@ export class FrontendReviewService {
     };
   }
 
-  async getRatingDistribution(serviceType?: string) {
+  async getRatingDistribution(serviceTypeId?: number) {
     const query = this.reviewRepository.createQueryBuilder('review')
-      .where('review.isActive = :isActive', { isActive: true });
+      .where('review.status = :status', { status: ReviewStatus.ACTIVE });
 
-    if (serviceType) {
-      query.andWhere('review.serviceType = :serviceType', { serviceType });
+    if (serviceTypeId) {
+      query.andWhere('review.serviceTypeId = :serviceTypeId', { serviceTypeId });
     }
 
     const result = await query
@@ -176,5 +185,18 @@ export class FrontendReviewService {
     });
 
     return distribution;
+  }
+  
+  async getServiceTypes(locale: string = 'vi') {
+    const query = this.reviewServiceTypeRepository.createQueryBuilder('serviceType')
+      .leftJoinAndSelect('serviceType.translations', 'translations');
+    
+    if (locale) {
+      query.andWhere('translations.locale = :locale', { locale });
+    }
+    
+    return query
+      .orderBy('serviceType.id', 'ASC')
+      .getMany();
   }
 } 

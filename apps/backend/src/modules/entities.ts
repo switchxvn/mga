@@ -123,6 +123,8 @@ import { DashboardStats } from './dashboard/entities/dashboard-stats.entity';
 // Review
 import { Review } from './review/entities/review.entity';
 import { ReviewTranslation } from './review/entities/review-translation.entity';
+import { ReviewServiceType } from './review/entities/review-service-type.entity';
+import { ReviewServiceTypeTranslation } from './review/entities/review-service-type-translation.entity';
 
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
@@ -253,4 +255,6 @@ export const entities: (new () => any)[] = [
   // Review
   Review,
   ReviewTranslation,
+  ReviewServiceType,
+  ReviewServiceTypeTranslation,
 ]; 

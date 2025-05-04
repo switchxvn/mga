@@ -2,11 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { ReviewTranslation } from './review-translation.entity';
+import { ReviewStatus } from '@ew/shared';
+import { ReviewServiceType } from './review-service-type.entity';
 
 @Entity('reviews')
 export class Review {
@@ -19,11 +23,18 @@ export class Review {
   @Column({ name: 'author_avatar', nullable: true })
   authorAvatar?: string;
 
+  @Column({ nullable: true })
+  profession?: string;
+
   @Column()
   rating!: number;
 
-  @Column({ name: 'service_type', nullable: true })
-  serviceType?: string;
+  @Column({ name: 'service_type_id', nullable: true })
+  serviceTypeId?: number;
+
+  @ManyToOne(() => ReviewServiceType, (serviceType) => serviceType.reviews)
+  @JoinColumn({ name: 'service_type_id' })
+  serviceType?: ReviewServiceType;
 
   @Column({ name: 'visit_date', type: 'date', nullable: true })
   visitDate?: Date;
@@ -31,8 +42,8 @@ export class Review {
   @Column({ default: false })
   featured!: boolean;
 
-  @Column({ name: 'is_active', default: true })
-  isActive!: boolean;
+  @Column({ type: 'enum', enum: ReviewStatus, default: ReviewStatus.ACTIVE })
+  status!: ReviewStatus;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
@@ -57,5 +68,14 @@ export class Review {
 
   get locale(): string | undefined {
     return this.translations?.[0]?.locale;
+  }
+  
+  // Utility getter method for service type name
+  get serviceTypeName(): string | undefined {
+    return this.serviceType?.name;
+  }
+  
+  get serviceTypeSlug(): string | undefined {
+    return this.serviceType?.slug;
   }
 } 
