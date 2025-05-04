@@ -3,6 +3,7 @@ import { onMounted, computed, ref } from 'vue';
 import { useFooter } from '~/composables/useFooter';
 import { useColorMode } from '@vueuse/core';
 import type { Footer } from '~/interfaces/footer.interface';
+import FooterStatistics from './FooterStatistics.vue';
 
 // Kiểm tra môi trường phát triển
 const isDev = ref(process.env.NODE_ENV === 'development');
@@ -86,6 +87,9 @@ onMounted(async () => {
   <!-- Footer từ API -->
   <div>
     <footer v-if="activeFooter" class="footer text-md" :style="footerStyle">
+      <!-- Statistics Section -->
+      <FooterStatistics />
+      
       <div class="container mx-auto px-4 py-8">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           

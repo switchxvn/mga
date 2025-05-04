@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { adminProcedure, router } from '../../procedures/index';
 import { ReviewStatus } from '@ew/shared';
+import { CreateReviewInput, UpdateReviewInput } from '../../../review/admin/services/admin-review.service';
 
 const translationSchema = z.object({
   locale: z.string().length(2),
@@ -79,7 +80,7 @@ export const adminReviewRouter = router({
     .input(createSchema)
     .mutation(async ({ ctx, input }) => {
       const adminReviewService = ctx.services.admin.review;
-      return adminReviewService.create(input);
+      return adminReviewService.create(input as CreateReviewInput);
     }),
 
   update: adminProcedure
@@ -89,7 +90,7 @@ export const adminReviewRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const adminReviewService = ctx.services.admin.review;
-      const updated = await adminReviewService.update(input.id, input.data);
+      const updated = await adminReviewService.update(input.id, input.data as UpdateReviewInput);
       
       if (!updated) {
         throw new TRPCError({

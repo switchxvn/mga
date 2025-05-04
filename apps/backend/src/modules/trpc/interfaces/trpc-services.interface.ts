@@ -62,6 +62,10 @@ import { CommentAdminService } from '../../comment/admin/services/comment-admin.
 import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
 import { AdminReviewService } from '../../review/admin/services/admin-review.service';
 import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
+import { 
+  ISiteStatisticsAdminService, 
+  ISiteStatisticsFrontendService 
+} from '../../site-statistics/interfaces/site-statistics-services.interface';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -128,6 +132,8 @@ export interface ITrpcServices {
   commentService: CommentFrontendService;
   reviewAdminService: AdminReviewService;
   reviewService: FrontendReviewService;
+  siteStatisticsAdmin: ISiteStatisticsAdminService;
+  siteStatisticsFrontend: ISiteStatisticsFrontendService;
   
   // Grouped services
   admin: {

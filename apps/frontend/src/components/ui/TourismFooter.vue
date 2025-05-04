@@ -6,6 +6,7 @@ import { Link, MapPin, Phone, Mail } from 'lucide-vue-next';
 import type { Footer } from '~/interfaces/footer.interface';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/style.css';
+import FooterStatistics from './FooterStatistics.vue';
 
 const isDev = ref(process.env.NODE_ENV === 'development');
 const isImageModalOpen = ref(false);
@@ -113,6 +114,9 @@ onMounted(async () => {
 <template>
   <div>
     <footer v-if="activeFooter" class="tourism-footer relative" style="background: linear-gradient(180deg, #e53e3e 0%, #dc2626 100%) !important;">
+      <!-- Statistics Section -->
+      <FooterStatistics />
+      
       <!-- Main Content -->
       <div class="main-content flex-1">
         <div class="container mx-auto px-4 py-16 relative">

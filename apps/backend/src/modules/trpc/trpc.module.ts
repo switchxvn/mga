@@ -25,6 +25,7 @@ import { ReviewModule } from '../review/review.module';
 import { SeoModule } from '../seo/seo.module';
 import { ServiceModule } from '../service/service.module';
 import { SettingsModule } from '../settings/settings.module';
+import { SiteStatisticsModule } from '../site-statistics/site-statistics.module';
 import { ThemeModule } from '../theme/theme.module';
 import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
 import { UploadModule } from '../upload/upload.module';
@@ -85,6 +86,7 @@ import { DashboardModule } from '../dashboard/dashboard.module';
     UploadModule,
     CommentModule,
     ReviewModule,
+    SiteStatisticsModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

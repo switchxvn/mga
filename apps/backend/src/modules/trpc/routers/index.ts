@@ -30,6 +30,7 @@ import { commentRouter } from './comment.router';
 import { reviewRouter } from './review.router';
 import { adminRouter } from './admin';
 import { router } from '../procedures';
+import { siteStatisticsRouter } from './site-statistics.router';
 
 // Re-export all routers
 export {
@@ -99,6 +100,7 @@ export const appRouter = (commonRouter) => router({
   comment: commentRouter,
   review: reviewRouter,
   admin: adminRouter,
+  siteStatistics: siteStatisticsRouter,
 });
 
 export type AppRouter = ReturnType<typeof appRouter>; 

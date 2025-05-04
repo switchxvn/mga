@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ITrpcServices } from '../interfaces/trpc-services.interface';
 import { UserService } from '../../user/services/user.service';
 import { UserAdminService } from '../../user/admin/services/user-admin.service';
@@ -64,6 +64,8 @@ import { CommentAdminService } from '../../comment/admin/services/comment-admin.
 import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
 import { AdminReviewService } from '../../review/admin/services/admin-review.service';
 import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
+import { SiteStatisticsAdminService } from '../../site-statistics/admin/services/site-statistics-admin.service';
+import { SiteStatisticsFrontendService } from '../../site-statistics/frontend/services/site-statistics-frontend.service';
 
 @Injectable()
 export class ServiceContext {
@@ -134,6 +136,10 @@ export class ServiceContext {
     private readonly commentFrontendService: CommentFrontendService,
     private readonly adminReviewService: AdminReviewService,
     private readonly frontendReviewService: FrontendReviewService,
+    @Inject(forwardRef(() => SiteStatisticsAdminService))
+    private readonly siteStatisticsAdminService: SiteStatisticsAdminService,
+    @Inject(forwardRef(() => SiteStatisticsFrontendService))
+    private readonly siteStatisticsFrontendService: SiteStatisticsFrontendService,
   ) {}
 
   public getServices(): ITrpcServices {
@@ -202,6 +208,8 @@ export class ServiceContext {
       commentService: this.commentFrontendService,
       reviewAdminService: this.adminReviewService,
       reviewService: this.frontendReviewService,
+      siteStatisticsAdmin: this.siteStatisticsAdminService,
+      siteStatisticsFrontend: this.siteStatisticsFrontendService,
       
       // Grouped services by namespace
       admin: {
