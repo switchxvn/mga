@@ -5,11 +5,14 @@ import { useTrpc } from '../composables/useTrpc';
 import { useHead } from '@unhead/vue';
 import { computed, ref, reactive, onMounted, watch } from '../composables/useVueComposables';
 import { useAsyncData } from 'nuxt/app';
+import { useReviews } from '../composables/useReviews';
 import type { Seo, ReviewStatus } from '@ew/shared';
 import ReviewForm from '../components/ReviewForm.vue';
+import Pagination from '../components/common/Pagination.vue';
+import Loader from '../components/ui/Loader.vue';
 // Import Swiper components
 import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Navigation, Pagination, Zoom } from 'swiper/modules';
+import { Navigation, Pagination as SwiperPagination, Zoom } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -70,27 +73,41 @@ const currentLocale = computed(() => {
   return typeof locale === 'object' && 'value' in locale ? locale.value : 'en';
 });
 
-// State
-const isLoading = ref(true);
-const reviews = ref<Review[]>([]);
-const averageRating = ref<string>('0.0');
-const totalReviews = ref<number>(0);
-const ratingDistribution = ref<Record<string, number>>({
-  '5': 0,
-  '4': 0,
-  '3': 0,
-  '2': 0,
-  '1': 0,
-});
-
-// Selected review for modal
-const selectedReview = ref<Review | null>(null);
-const showModal = ref(false);
-const expandedContents = ref<Record<number, boolean>>({});
+// Sử dụng composable useReviews
+const {
+  reviews,
+  isLoading,
+  pagination,
+  filters,
+  serviceTypes,
+  averageRating,
+  totalReviews,
+  ratingDistribution,
+  selectedReview,
+  showModal,
+  expandedContents,
+  currentLocale: useReviewsCurrentLocale,
+  seoData,
+  
+  // Methods
+  applyFilters,
+  clearFilters,
+  goToPage,
+  formatDate,
+  getRatingPercentage,
+  getStars,
+  getServiceTypeName,
+  openAvatarModal,
+  closeAvatarModal,
+  toggleContent,
+  isContentExpanded,
+  contentNeedsExpansion,
+  setupInitialData
+} = useReviews();
 
 // Swiper options
 const swiperOptions = {
-  modules: [Navigation, Pagination, Zoom],
+  modules: [Navigation, SwiperPagination, Zoom],
   navigation: {
     nextEl: '.swiper-button-next',
     prevEl: '.swiper-button-prev',
@@ -104,262 +121,29 @@ const swiperOptions = {
   centeredSlides: true
 };
 
-// Pagination
-const pagination = reactive({
-  page: 1,
-  limit: 10,
-  totalPages: 1,
-  total: 0,
-});
-
-// Filters
-const filters = reactive({
-  sortBy: 'latest',
-  minRating: 0,
-  serviceTypeId: 0,
-});
-
-// Initialize filters and pagination from URL query parameters
-const initializeFromQuery = () => {
-  const query = route.query;
-  
-  // Initialize pagination
-  if (query.page && !isNaN(Number(query.page))) {
-    pagination.page = Number(query.page);
-  }
-  
-  // Initialize filters
-  if (query.sortBy && ['latest', 'highest_rating', 'lowest_rating'].includes(query.sortBy as string)) {
-    filters.sortBy = query.sortBy as string;
-  }
-  
-  if (query.minRating && !isNaN(Number(query.minRating))) {
-    filters.minRating = Number(query.minRating);
-  }
-  
-  if (query.serviceTypeId && !isNaN(Number(query.serviceTypeId))) {
-    filters.serviceTypeId = Number(query.serviceTypeId);
-  }
-};
-
-// Update URL query parameters
-const updateQueryParams = () => {
-  const query: Record<string, string> = {};
-  
-  // Add pagination params
-  if (pagination.page > 1) {
-    query.page = pagination.page.toString();
-  }
-  
-  // Add filter params
-  if (filters.sortBy !== 'latest') {
-    query.sortBy = filters.sortBy;
-  }
-  
-  if (filters.minRating > 0) {
-    query.minRating = filters.minRating.toString();
-  }
-  
-  if (filters.serviceTypeId > 0) {
-    query.serviceTypeId = filters.serviceTypeId.toString();
-  }
-  
-  // Update URL without reloading the page
-  router.replace({ query });
-};
-
-// Service types
-const serviceTypes = ref<ReviewServiceType[]>([]);
-
-// SEO data
-const seoData = ref<Seo | null>(null);
-
-// Load reviews
-const loadReviews = async () => {
-  isLoading.value = true;
-  
-  try {
-    const response = await trpc.review.list.query({
-      page: pagination.page,
-      limit: pagination.limit,
-      locale: currentLocale.value,
-      minRating: filters.minRating > 0 ? filters.minRating : undefined,
-      serviceTypeId: filters.serviceTypeId > 0 ? filters.serviceTypeId : undefined,
-      sortBy: filters.sortBy as any,
-    }) as ReviewsResponse;
-    
-    reviews.value = response.data;
-    pagination.total = response.meta.total;
-    pagination.totalPages = response.meta.totalPages;
-    
-    await loadRatingStats();
-  } catch (error) {
-    console.error('Error loading reviews:', error);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// Load service types
-const loadServiceTypes = async () => {
-  try {
-    const response = await trpc.review.getServiceTypes.query({ locale: currentLocale.value });
-    serviceTypes.value = response as ReviewServiceType[];
-  } catch (error) {
-    console.error('Error loading service types:', error);
-  }
-};
-
-// Load rating stats
-const loadRatingStats = async () => {
-  try {
-    const serviceTypeId = filters.serviceTypeId > 0 ? filters.serviceTypeId : undefined;
-    
-    // Get average rating
-    const ratingStats = await trpc.review.getAverageRating.query({ serviceTypeId });
-    averageRating.value = ratingStats.averageRating;
-    totalReviews.value = ratingStats.totalReviews;
-    
-    // Get rating distribution
-    const distribution = await trpc.review.getRatingDistribution.query({ serviceTypeId });
-    ratingDistribution.value = distribution;
-  } catch (error) {
-    console.error('Error loading rating stats:', error);
-  }
-};
-
-// Filter handlers
-const applyFilters = () => {
-  pagination.page = 1;
-  updateQueryParams();
-  loadReviews();
-};
-
-const clearFilters = () => {
-  filters.sortBy = 'latest';
-  filters.minRating = 0;
-  filters.serviceTypeId = 0;
-  pagination.page = 1;
-  updateQueryParams();
-  loadReviews();
-};
-
-// Pagination handlers
-const goToPage = (page: number) => {
-  pagination.page = page;
-  updateQueryParams();
-  loadReviews();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-// Format date
-const formatDate = (dateString: string) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat(currentLocale.value === 'vi' ? 'vi-VN' : 'en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date);
-};
-
-// Calculate rating percentage
-const getRatingPercentage = (rating: number) => {
-  if (totalReviews.value === 0) return 0;
-  return (ratingDistribution.value[rating] / totalReviews.value) * 100;
-};
-
-// Get rating stars array
-const getStars = (rating: number) => {
-  return Array.from({ length: 5 }, (_, i) => i < rating);
-};
-
-// Get service type name
-const getServiceTypeName = (serviceType: ReviewServiceType | undefined) => {
-  if (!serviceType) return '';
-  
-  const translation = serviceType.translations.find(t => t.locale === currentLocale.value);
-  return translation?.name || serviceType.translations[0]?.name || '';
-};
-
-// Open avatar modal
-const openAvatarModal = (review: Review) => {
-  selectedReview.value = review;
-  showModal.value = true;
-  document.body.classList.add('overflow-hidden');
-};
-
-// Close avatar modal
-const closeAvatarModal = () => {
-  showModal.value = false;
-  document.body.classList.remove('overflow-hidden');
-};
-
-// Toggle content expansion
-const toggleContent = (reviewId: number) => {
-  expandedContents.value[reviewId] = !expandedContents.value[reviewId];
-};
-
-// Check if content is expanded
-const isContentExpanded = (reviewId: number) => {
-  return !!expandedContents.value[reviewId];
-};
-
-// Check if content needs "Read more" button
-const contentNeedsExpansion = (content?: string) => {
-  return content && content.length > 150;
-};
-
-// Watch for locale changes
-watch(currentLocale, () => {
-  loadReviews();
-  loadServiceTypes();
-});
-
-// Watch for route query changes
-watch(() => route.query, (newQuery) => {
-  if (
-    newQuery.page !== String(pagination.page) ||
-    newQuery.sortBy !== filters.sortBy ||
-    newQuery.minRating !== String(filters.minRating) ||
-    newQuery.serviceTypeId !== String(filters.serviceTypeId)
-  ) {
-    initializeFromQuery();
-    loadReviews();
-  }
-}, { deep: true });
-
 // Fetch SEO data
-useAsyncData('reviews-seo', () => 
-  useTrpc().seo.getSeoByPath.query('/reviews'),
-  {
-    server: true,
-    lazy: false,
-    transform: (data) => {
-      seoData.value = data as Seo;
-      return data;
-    }
-  }
-);
+useAsyncData('reviews-seo', async () => {
+  const { useTrpc } = await import('../composables/useTrpc');
+  return useTrpc().seo.getSeoByPath.query('/reviews');
+}, {
+  server: true,
+  lazy: false
+});
 
 // Set page meta
 useHead({
-  title: computed(() => seoData.value?.title || t('reviews.title')),
-  meta: computed(() => [
-    { name: 'title', content: seoData.value?.title || t('reviews.title') },
-    { property: 'og:title', content: seoData.value?.ogTitle || seoData.value?.title || t('reviews.title') },
-    { name: 'description', content: seoData.value?.description || t('reviews.description') },
-    { property: 'og:description', content: seoData.value?.ogDescription || seoData.value?.description || t('reviews.description') },
-    { property: 'og:image', content: seoData.value?.ogImage },
-    { name: 'keywords', content: seoData.value?.keywords }
-  ])
+  title: t('reviews.title'),
+  meta: [
+    { name: 'title', content: t('reviews.title') },
+    { property: 'og:title', content: t('reviews.title') },
+    { name: 'description', content: t('reviews.description') },
+    { property: 'og:description', content: t('reviews.description') }
+  ]
 });
 
 // Load initial data
 onMounted(() => {
-  initializeFromQuery();
-  loadReviews();
-  loadServiceTypes();
+  setupInitialData();
 });
 </script>
 
@@ -512,7 +296,7 @@ onMounted(() => {
           
           <!-- Loading state -->
           <div v-if="isLoading" class="flex justify-center py-20">
-            <ULoader size="lg" />
+            <Loader size="lg" />
           </div>
           
           <!-- Empty state -->
@@ -527,7 +311,7 @@ onMounted(() => {
           </div>
           
           <!-- Reviews -->
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div 
               v-for="review in reviews" 
               :key="review.id"
@@ -574,15 +358,15 @@ onMounted(() => {
               
               <!-- Review title and content -->
               <div class="mt-3 flex-grow">
-                <h4 v-if="review.translations[0]?.title" class="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                <h4 v-if="review.translations?.[0]?.title" class="font-medium text-gray-900 dark:text-white text-sm mb-1">
                   {{ review.translations[0].title }}
                 </h4>
                 <div class="prose dark:prose-invert prose-sm max-w-none text-gray-600 dark:text-gray-300 text-sm">
-                  <p :class="{ 'line-clamp-3': !isContentExpanded(review.id) && contentNeedsExpansion(review.translations[0]?.content) }">
-                    {{ review.translations[0]?.content }}
+                  <p :class="{ 'line-clamp-3': !isContentExpanded(review.id) && contentNeedsExpansion(review.translations?.[0]?.content) }">
+                    {{ review.translations?.[0]?.content || '' }}
                   </p>
                   <button 
-                    v-if="contentNeedsExpansion(review.translations[0]?.content)" 
+                    v-if="contentNeedsExpansion(review.translations?.[0]?.content)" 
                     @click="toggleContent(review.id)"
                     class="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-xs font-medium mt-1"
                   >
@@ -607,21 +391,21 @@ onMounted(() => {
           
           <!-- Pagination -->
           <div v-if="pagination.totalPages > 1" class="mt-6 flex justify-center">
-            <UPagination
-              v-model="pagination.page"
+            <Pagination
+              :modelValue="Number(route.query.page || 1)"
               :total="pagination.total"
-              :page-count="pagination.totalPages"
-              :per-page="pagination.limit"
-              @change="goToPage"
+              :items-per-page="pagination.limit"
+              :max-visible-buttons="5"
+              @update:model-value="goToPage"
             />
           </div>
 
           <!-- Review Form Section -->
-          <div class="mt-16">
+          <div id="review-form" class="mt-16">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               {{ t('reviews.shareYourExperience') }}
             </h2>
-            <ReviewForm @success="loadReviews" />
+            <ReviewForm @success="setupInitialData" />
           </div>
         </div>
       </div>
@@ -685,12 +469,12 @@ onMounted(() => {
                 </span>
               </div>
               
-              <h4 v-if="selectedReview.translations[0]?.title" class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <h4 v-if="selectedReview.translations?.[0]?.title" class="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 {{ selectedReview.translations[0].title }}
               </h4>
               
               <p class="text-gray-600 dark:text-gray-300">
-                {{ selectedReview.translations[0]?.content }}
+                {{ selectedReview.translations?.[0]?.content || '' }}
               </p>
               
               <div v-if="selectedReview.profession" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">

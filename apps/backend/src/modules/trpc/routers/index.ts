@@ -65,6 +65,7 @@ export {
   commentRouter,
   reviewRouter,
   adminRouter,
+  siteStatisticsRouter,
 };
 
 export const appRouter = (commonRouter) => router({
