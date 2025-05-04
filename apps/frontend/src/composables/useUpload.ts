@@ -1,5 +1,4 @@
 import { ref } from 'vue'
-import axios from 'axios'
 import { useTrpc } from './useTrpc'
 import { useToast } from './useToast'
 
@@ -31,69 +30,31 @@ export function useUpload() {
       // Báo cáo tiến trình bắt đầu
       onProgress(10)
       
-      // 1. Lấy presigned URL từ API
-      console.log(`Getting presigned URL for: ${file.name}, type: ${file.type}, size: ${file.size} bytes, folder: ${folder}`)
-      const presignedData = await trpc.upload.getPresignedUrl.mutate({
+      // Chuyển đổi file thành base64 để gửi qua tRPC
+      const base64 = await fileToBase64(file)
+      onProgress(30)
+      
+      // Upload trực tiếp qua tRPC
+      console.log(`Uploading file through tRPC: ${file.name}, type: ${file.type}, size: ${file.size} bytes, folder: ${folder}`)
+      const uploadResult = await trpc.upload.uploadFile.mutate({
+        file: base64,
         filename: file.name,
         mimeType: file.type,
         size: file.size,
         folder
       })
       
-      if (!presignedData?.presignedUrl || !presignedData?.url) {
-        const errorMsg = 'Failed to get presigned URL from server'
-        console.error(errorMsg, presignedData)
-        throw new Error(errorMsg)
+      if (!uploadResult || !uploadResult.url) {
+        throw new Error('Server returned invalid upload result')
       }
       
-      console.log('Presigned URL obtained successfully', {
-        uploadId: presignedData.uploadId,
-        hasUrl: !!presignedData.url,
-        hasKey: !!presignedData.key
-      })
+      console.log('Upload completed successfully', uploadResult)
+      onProgress(100)
       
-      onProgress(30)
-      
-      // 2. Upload trực tiếp sử dụng presignedUrl thay vì thông qua server middleware
-      try {
-        onProgress(50)
-        
-        // Upload trực tiếp đến S3 với presignedUrl
-        const uploadResponse = await axios.put(presignedData.presignedUrl, file, {
-          headers: {
-            'Content-Type': file.type,
-            'Content-Length': file.size.toString(),
-            'x-amz-acl': 'public-read'
-          },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-              onProgress(50 + percentCompleted * 0.5) // 50% -> 100%
-            }
-          }
-        })
-        
-        console.log('Upload completed successfully', uploadResponse)
-        onProgress(100)
-        
-        const uploadResult = {
-          url: presignedData.url,
-          key: presignedData.key,
-          uploadId: presignedData.uploadId
-        }
-        
-        return uploadResult
-      } catch (uploadError: any) {
-        console.error('Error during upload to S3:', uploadError)
-        
-        // Hiển thị lỗi chi tiết hơn để debug
-        const errorMessage = uploadError?.response?.data?.message || 
-                            uploadError?.message || 
-                            'Unknown upload error'
-        const statusCode = uploadError?.response?.status || 'unknown'
-        
-        toast.error(`Upload failed (${statusCode}): ${errorMessage}`)
-        throw new Error(`Upload failed: ${errorMessage}`)
+      return {
+        url: uploadResult.url,
+        key: uploadResult.key,
+        uploadId: uploadResult.uploadId
       }
     } catch (error: any) {
       console.error('Upload failed:', error)
@@ -103,6 +64,16 @@ export function useUpload() {
     } finally {
       isUploading.value = false
     }
+  }
+
+  // Hàm tiện ích để chuyển đổi File thành Base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
   }
 
   const uploadImage = async (file: File, folder = 'avatars'): Promise<string> => {
