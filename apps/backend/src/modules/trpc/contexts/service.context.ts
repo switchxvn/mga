@@ -1,7 +1,7 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ITrpcServices } from '../interfaces/trpc-services.interface';
 import { UserService } from '../../user/services/user.service';
-import { UserAdminService } from '../../user/admin/services/user-admin.service';
+import { UserAdminService } from '../../user/services/admin/user-admin.service';
 import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../../post/admin/services/post-admin.service';
 import { ProfileService } from '../../profile/services/profile.service';
@@ -66,6 +66,7 @@ import { AdminReviewService } from '../../review/admin/services/admin-review.ser
 import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
 import { SiteStatisticsAdminService } from '../../site-statistics/admin/services/site-statistics-admin.service';
 import { SiteStatisticsFrontendService } from '../../site-statistics/frontend/services/site-statistics-frontend.service';
+import { MailService } from '../../mail/services/mail.service';
 
 @Injectable()
 export class ServiceContext {
@@ -94,7 +95,6 @@ export class ServiceContext {
     private readonly crossSellService: CrossSellService,
     private readonly productSpecificationService: ProductSpecificationService,
     private readonly productComboService: ProductComboService,
-    private readonly priceRequestService: PriceRequestService,
     private readonly featureFlagsAdminService: FeatureFlagsAdminService,
     private readonly featureFlagsFrontendService: FeatureFlagsFrontendService,
     private readonly heroService: HeroService,
@@ -136,10 +136,11 @@ export class ServiceContext {
     private readonly commentFrontendService: CommentFrontendService,
     private readonly adminReviewService: AdminReviewService,
     private readonly frontendReviewService: FrontendReviewService,
-    @Inject(forwardRef(() => SiteStatisticsAdminService))
     private readonly siteStatisticsAdminService: SiteStatisticsAdminService,
-    @Inject(forwardRef(() => SiteStatisticsFrontendService))
     private readonly siteStatisticsFrontendService: SiteStatisticsFrontendService,
+    private readonly mailService: MailService,
+    @Inject(forwardRef(() => PriceRequestService))
+    private readonly priceRequestService: PriceRequestService,
   ) {}
 
   public getServices(): ITrpcServices {
@@ -210,6 +211,7 @@ export class ServiceContext {
       reviewService: this.frontendReviewService,
       siteStatisticsAdmin: this.siteStatisticsAdminService,
       siteStatisticsFrontend: this.siteStatisticsFrontendService,
+      mailService: this.mailService,
       
       // Grouped services by namespace
       admin: {

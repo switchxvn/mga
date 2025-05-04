@@ -1,5 +1,5 @@
 import { UserService } from '../../user/services/user.service';
-import { UserAdminService } from '../../user/admin/services/user-admin.service';
+import { UserAdminService } from '../../user/services/admin/user-admin.service';
 import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../../post/admin/services/post-admin.service';
 import { ProfileService } from '../../profile/services/profile.service';
@@ -62,10 +62,8 @@ import { CommentAdminService } from '../../comment/admin/services/comment-admin.
 import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
 import { AdminReviewService } from '../../review/admin/services/admin-review.service';
 import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
-import { 
-  ISiteStatisticsAdminService, 
-  ISiteStatisticsFrontendService 
-} from '../../site-statistics/interfaces/site-statistics-services.interface';
+import { ISiteStatisticsAdminService, ISiteStatisticsFrontendService } from '../../site-statistics/interfaces/site-statistics-services.interface';
+import { MailService } from '../../mail/services/mail.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -134,6 +132,7 @@ export interface ITrpcServices {
   reviewService: FrontendReviewService;
   siteStatisticsAdmin: ISiteStatisticsAdminService;
   siteStatisticsFrontend: ISiteStatisticsFrontendService;
+  mailService: MailService;
   
   // Grouped services
   admin: {
