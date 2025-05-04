@@ -65,8 +65,17 @@ export class SiteStatisticsAdminService {
       throw new Error(`Statistic with key ${key} not found`);
     }
 
-    const valueNumber = (statistic.value_number || 0) + amount;
+    // Đảm bảo valueNumber là số bằng cách chuyển đổi tường minh
+    const currentValue = typeof statistic.value_number === 'number' 
+      ? statistic.value_number 
+      : parseInt(String(statistic.value_number || '0'), 10);
+    
+    // Tính toán giá trị mới
+    const valueNumber = currentValue + amount;
+    // Chuyển thành chuỗi sau khi đã tính toán
     const value = valueNumber.toString();
+
+    console.log(`Incrementing ${key} from ${currentValue} to ${valueNumber}`);
 
     await this.statisticsRepository.update(statistic.id, {
       value,

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, FunctionalComponent } from 'vue';
 import { useLocalization } from '~/composables/useLocalization';
 import { v4 as uuidv4 } from 'uuid';
 import { client } from '~/utils/trpc';
+// Import các component icon từ lucide-vue-next
+import { Eye, CalendarDays, Users, UserCircle, Clock, LucideProps } from 'lucide-vue-next';
 
 interface Statistic {
   id: number;
@@ -33,6 +35,10 @@ interface StyleSettings {
   titleFontSize: string;
   gap: string;
 }
+
+type IconComponentMap = {
+  [key: string]: FunctionalComponent<LucideProps>;
+};
 
 const { locale } = useLocalization();
 const currentLocale = ref(locale.value);
@@ -96,6 +102,19 @@ const statisticsStyles = computed(() => {
   };
 });
 
+// Map icon name từ DB sang component tương ứng
+const getIconComponent = (iconName: string) => {
+  const iconMap: IconComponentMap = {
+    'Eye': Eye,
+    'CalendarDays': CalendarDays,
+    'Users': Users,
+    'UserCircle': UserCircle,
+    'Clock': Clock,
+  };
+  
+  return iconMap[iconName] || null;
+};
+
 // Lấy hoặc tạo session ID
 const getOrCreateSessionId = (): string => {
   let id = localStorage.getItem('site_stats_session_id');
@@ -112,6 +131,7 @@ const fetchStatistics = async () => {
     isLoading.value = true;
     
     // Lấy cài đặt
+    // @ts-ignore - Bỏ qua lỗi kiểm tra kiểu vì router chưa được setup
     settings.value = await client.siteStatistics.getSettings.query();
     
     // Nếu không bật, không làm gì cả
@@ -121,6 +141,7 @@ const fetchStatistics = async () => {
     }
     
     // Lấy thống kê
+    // @ts-ignore - Bỏ qua lỗi kiểm tra kiểu vì router chưa được setup
     statistics.value = await client.siteStatistics.getVisibleStatistics.query({
       locale: currentLocale.value,
     });
@@ -139,6 +160,7 @@ const trackVisit = async () => {
       sessionId.value = getOrCreateSessionId();
     }
     
+    // @ts-ignore - Bỏ qua lỗi kiểm tra kiểu vì router chưa được setup
     await client.siteStatistics.trackVisit.mutate({
       sessionId: sessionId.value,
     });
@@ -154,6 +176,7 @@ const updateOnlineStatus = async () => {
       sessionId.value = getOrCreateSessionId();
     }
     
+    // @ts-ignore - Bỏ qua lỗi kiểm tra kiểu vì router chưa được setup
     await client.siteStatistics.registerOnlineUser.mutate({
       sessionId: sessionId.value,
     });
@@ -174,17 +197,16 @@ const getDisplayName = (stat: Statistic): string => {
 };
 
 // Format số cho dễ đọc
-const formatNumber = (value: string): string => {
-  const num = parseInt(value, 10);
-  if (isNaN(num)) return value;
+const formatNumber = (value: number): string => {
+  if (value === undefined || value === null || isNaN(value)) return '0';
   
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
+  if (value >= 1000000) {
+    return (value / 1000000).toFixed(1) + 'M';
+  } else if (value >= 1000) {
+    return (value / 1000).toFixed(1) + 'K';
   }
   
-  return num.toLocaleString();
+  return value.toLocaleString();
 };
 
 onMounted(async () => {
@@ -206,13 +228,21 @@ onMounted(async () => {
            :key="stat.id" 
            class="statistic-item text-center p-3 flex flex-col items-center justify-center"
            :style="`gap: ${statisticsStyles.gap}`">
-        <UIcon v-if="stat.icon" 
-              :name="stat.icon" 
-              class="statistic-icon" 
-              :style="statisticsStyles.icon" />
+        <!-- Sử dụng Lucide icons -->
+        <component 
+          v-if="getIconComponent(stat.icon)" 
+          :is="getIconComponent(stat.icon)" 
+          class="statistic-icon" 
+          :style="{
+            color: statisticsStyles.icon.color,
+            strokeWidth: 1.5,
+            width: statisticsStyles.icon.fontSize,
+            height: statisticsStyles.icon.fontSize
+          }" 
+        />
               
         <div class="statistic-value font-bold" :style="statisticsStyles.value">
-          {{ formatNumber(stat.value) }}
+          {{ formatNumber(stat.value_number) }}
         </div>
         
         <div class="statistic-title uppercase text-xs font-medium" :style="statisticsStyles.title">

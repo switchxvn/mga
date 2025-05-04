@@ -3,7 +3,7 @@ import { useAsyncData } from 'nuxt/app';
 import { useRouter } from 'vue-router';
 import { useLocalization } from '../composables/useLocalization';
 import { useTrpc } from '../composables/useTrpc';
-import { computed, ref } from '../composables/useVueComposables';
+import { computed, ref, watch } from '../composables/useVueComposables';
 import type { ReviewStatus } from '@ew/shared';
 // Import Swiper components
 import { Swiper, SwiperSlide } from 'swiper/vue';
@@ -40,14 +40,39 @@ interface Review {
   translations: ReviewTranslation[];
 }
 
-const props = withDefaults(defineProps<{
+// Interface for multi-language text props
+interface MultiLangText {
+  [key: string]: string;
+}
+
+// Type for props that can be either string or multi-language object
+type TextOrMultiLang = string | MultiLangText;
+
+// Config object from theme section
+interface SectionConfig {
   limit?: number;
-  sectionTitle?: string;
-  sectionDescription?: string;
+  sectionTitle?: TextOrMultiLang;
+  sectionDescription?: TextOrMultiLang;
   backgroundColor?: string;
   textColor?: string;
-  buttonText?: string;
+  buttonText?: TextOrMultiLang;
   buttonColor?: string;
+  [key: string]: any;
+}
+
+const props = withDefaults(defineProps<{
+  // Trực tiếp từ component props
+  limit?: number;
+  sectionTitle?: TextOrMultiLang;
+  sectionDescription?: TextOrMultiLang;
+  backgroundColor?: string;
+  textColor?: string;
+  buttonText?: TextOrMultiLang;
+  buttonColor?: string;
+  
+  // Từ theme section
+  section?: any;
+  config?: SectionConfig;
 }>(), {
   limit: 6,
   sectionTitle: '',
@@ -65,6 +90,27 @@ const { t, locale } = useLocalization();
 // Create computed for current locale
 const currentLocale = computed(() => {
   return typeof locale === 'object' && 'value' in locale ? locale.value : 'en';
+});
+
+// Get effective props, prioritizing direct props over config
+const effectiveProps = computed(() => {
+  console.log('Direct props:', { 
+    sectionTitle: props.sectionTitle,
+    sectionDescription: props.sectionDescription,
+    buttonText: props.buttonText,
+  });
+  
+  console.log('Config from section:', props.config);
+  
+  return {
+    limit: props.limit || props.config?.limit || 6,
+    sectionTitle: props.sectionTitle || props.config?.sectionTitle || '',
+    sectionDescription: props.sectionDescription || props.config?.sectionDescription || '',
+    backgroundColor: props.backgroundColor || props.config?.backgroundColor || 'bg-white dark:bg-gray-900',
+    textColor: props.textColor || props.config?.textColor || 'text-gray-900 dark:text-white',
+    buttonText: props.buttonText || props.config?.buttonText || '',
+    buttonColor: props.buttonColor || props.config?.buttonColor || 'bg-primary-600 hover:bg-primary-700 text-white',
+  };
 });
 
 const reviews = ref<Review[]>([]);
@@ -97,11 +143,11 @@ const swiperOptions = {
 const { data: featuredReviews, pending } = useAsyncData(
   'featured-reviews',
   () => trpc.review.featured.query({ 
-    limit: props.limit,
+    limit: effectiveProps.value.limit,
     locale: currentLocale.value 
   }),
   {
-    watch: [currentLocale],
+    watch: [currentLocale, effectiveProps],
     transform: (data) => {
       reviews.value = data as Review[];
       isLoading.value = false;
@@ -139,20 +185,71 @@ const viewAllReviews = () => {
 // Calculate if any reviews exist
 const hasReviews = computed(() => reviews.value?.length > 0);
 
-// Get formatted section title
-const formattedTitle = computed(() => 
-  props.sectionTitle || t('reviews.featuredReviewsTitle')
-);
+// Helper function to get localized text from props
+const getLocalizedText = (text: TextOrMultiLang, fallbackKey: string): string => {
+  // Debug
+  console.log('[getLocalizedText]', { 
+    text, 
+    type: typeof text, 
+    isObject: typeof text === 'object',
+    currentLocale: currentLocale.value,
+    fallbackKey
+  });
+  
+  // Trường hợp text là object
+  if (text && typeof text === 'object') {
+    // Thử lấy theo locale hiện tại
+    const localizedText = text[currentLocale.value];
+    if (localizedText) {
+      console.log('[getLocalizedText] Found localized text:', localizedText);
+      return localizedText;
+    }
+    
+    // Fallback sang tiếng Anh
+    if (text['en']) {
+      console.log('[getLocalizedText] Falling back to EN:', text['en']);
+      return text['en'];
+    }
+    
+    // Lấy giá trị đầu tiên nếu không có locale phù hợp
+    const firstKey = Object.keys(text)[0];
+    if (firstKey) {
+      console.log('[getLocalizedText] Using first available key:', firstKey, text[firstKey]);
+      return text[firstKey];
+    }
+  }
+  
+  // Trường hợp text là string
+  if (typeof text === 'string' && text.trim()) {
+    console.log('[getLocalizedText] Using string value:', text);
+    return text;
+  }
+  
+  // Fallback to translation
+  console.log('[getLocalizedText] Using translation key:', fallbackKey);
+  return t(fallbackKey);
+};
+
+// Get formatted section title 
+const formattedTitle = computed(() => {
+  const title = getLocalizedText(effectiveProps.value.sectionTitle, 'reviews.featuredReviewsTitle');
+  console.log('[formattedTitle]', title);
+  return title;
+});
 
 // Get formatted section description
-const formattedDescription = computed(() => 
-  props.sectionDescription || t('reviews.featuredReviewsDescription')
-);
+const formattedDescription = computed(() => {
+  const desc = getLocalizedText(effectiveProps.value.sectionDescription, 'reviews.featuredReviewsDescription');
+  console.log('[formattedDescription]', desc);
+  return desc;
+});
 
 // Get formatted button text
-const formattedButtonText = computed(() => 
-  props.buttonText || t('reviews.viewAllReviews')
-);
+const formattedButtonText = computed(() => {
+  const btnText = getLocalizedText(effectiveProps.value.buttonText, 'reviews.viewAllReviews');
+  console.log('[formattedButtonText]', btnText);
+  return btnText;
+});
 
 // Helper function to get service type name based on locale
 const getServiceTypeName = (serviceType?: ReviewServiceType) => {
@@ -191,11 +288,11 @@ const contentNeedsExpansion = (content?: string) => {
 </script>
 
 <template>
-  <section :class="backgroundColor" class="py-12 sm:py-16">
+  <section :class="effectiveProps.backgroundColor" class="py-12 sm:py-16">
     <div class="container mx-auto px-4">
       <!-- Section header -->
       <div class="text-center max-w-3xl mx-auto mb-10">
-        <h2 :class="textColor" class="text-3xl md:text-4xl font-bold mb-4 uppercase tracking-wider border-b-4 border-primary-500 pb-3 inline-block">
+        <h2 :class="effectiveProps.textColor" class="text-3xl md:text-4xl font-bold mb-4 uppercase tracking-wider border-b-4 border-primary-500 pb-3 inline-block">
           {{ formattedTitle }}
         </h2>
         <p class="text-primary-500 dark:text-primary-400 text-lg font-medium">
@@ -220,6 +317,18 @@ const contentNeedsExpansion = (content?: string) => {
               · {{ totalReviews }} đánh giá
             </div>
           </div>
+        </div>
+        
+        <!-- Nút đánh giá mới (tách rời) -->
+        <div class="text-center mt-4">
+          <UButton
+            size="md"
+            :to="'/reviews?page=1#review-form'"
+            variant="solid"
+            class="bg-primary-500 hover:bg-primary-600 text-white shadow-md"
+          >
+            {{ t('reviews.writeReview') }}
+          </UButton>
         </div>
       </div>
       
@@ -309,7 +418,7 @@ const contentNeedsExpansion = (content?: string) => {
       <!-- View all button -->
       <div v-if="hasReviews && formattedButtonText" class="text-center mt-10">
         <UButton
-          :class="buttonColor"
+          :class="effectiveProps.buttonColor"
           @click="viewAllReviews"
           size="lg"
           variant="solid"
