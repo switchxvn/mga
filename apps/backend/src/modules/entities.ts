@@ -126,6 +126,12 @@ import { ReviewTranslation } from './review/entities/review-translation.entity';
 import { ReviewServiceType } from './review/entities/review-service-type.entity';
 import { ReviewServiceTypeTranslation } from './review/entities/review-service-type-translation.entity';
 
+// Site Statistics
+import { SiteStatistics } from './site-statistics/entities/site-statistics.entity';
+import { SiteStatisticsTranslation } from './site-statistics/entities/site-statistics-translation.entity';
+import { SiteStatisticsHistory } from './site-statistics/entities/site-statistics-history.entity';
+import { SiteStatisticsSettings } from './site-statistics/entities/site-statistics-settings.entity';
+
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
 
@@ -257,4 +263,10 @@ export const entities: (new () => any)[] = [
   ReviewTranslation,
   ReviewServiceType,
   ReviewServiceTypeTranslation,
+  
+  // Site Statistics
+  SiteStatistics,
+  SiteStatisticsTranslation,
+  SiteStatisticsHistory,
+  SiteStatisticsSettings,
 ]; 

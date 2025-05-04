@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, router } from '../procedures/index';
 import { ReviewStatus } from '@ew/shared';
+import { CreateReviewInput } from '../../review/admin/services/admin-review.service';
 
 const reviewsFilterSchema = z.object({
   page: z.number().optional(),
@@ -101,7 +102,7 @@ export const reviewRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Mặc định đánh dấu là chưa kích hoạt và không nổi bật
       // để admin xem xét trước khi hiển thị
-      const reviewData = {
+      const reviewData: CreateReviewInput = {
         authorName: input.authorName,
         authorAvatar: input.authorAvatar,
         profession: input.profession,
