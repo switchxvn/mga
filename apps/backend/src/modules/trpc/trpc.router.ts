@@ -30,6 +30,8 @@ import {
   paymentRouter,
   orderRouter,
   uploadRouter,
+  commentRouter,
+  reviewRouter,
   adminRouter
 } from './routers';
 
@@ -70,6 +72,8 @@ export class TrpcRouter {
       payment: paymentRouter,
       order: orderRouter,
       upload: uploadRouter,
+      comment: commentRouter,
+      review: reviewRouter,
       admin: adminRouter,
     });
   }

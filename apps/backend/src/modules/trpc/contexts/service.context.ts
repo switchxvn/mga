@@ -60,6 +60,10 @@ import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/s
 import { SettingsService } from '../../settings/services/settings.service';
 import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
 import { ProductStockHistoryService } from '../../product/services/product-stock-history.service';
+import { CommentAdminService } from '../../comment/admin/services/comment-admin.service';
+import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
+import { AdminReviewService } from '../../review/admin/services/admin-review.service';
+import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
 
 @Injectable()
 export class ServiceContext {
@@ -126,6 +130,10 @@ export class ServiceContext {
     private readonly settingsService: SettingsService,
     private readonly dashboardAdminService: DashboardAdminService,
     private readonly productStockHistoryService: ProductStockHistoryService,
+    private readonly commentAdminService: CommentAdminService,
+    private readonly commentFrontendService: CommentFrontendService,
+    private readonly adminReviewService: AdminReviewService,
+    private readonly frontendReviewService: FrontendReviewService,
   ) {}
 
   public getServices(): ITrpcServices {
@@ -190,6 +198,69 @@ export class ServiceContext {
       settingsService: this.settingsService,
       dashboardAdminService: this.dashboardAdminService,
       productStockHistoryService: this.productStockHistoryService,
+      commentAdminService: this.commentAdminService,
+      commentService: this.commentFrontendService,
+      reviewAdminService: this.adminReviewService,
+      reviewService: this.frontendReviewService,
+      
+      // Grouped services by namespace
+      admin: {
+        review: this.adminReviewService,
+        comment: this.commentAdminService,
+        user: this.userAdminService,
+        post: this.postAdminService,
+        settings: this.settingsAdminService,
+        seo: this.seoAdminService,
+        footer: this.footerAdminService,
+        category: this.categoryAdminService,
+        service: this.serviceAdminService,
+        product: this.productAdminService,
+        featureFlags: this.featureFlagsAdminService,
+        theme: this.themeAdminService,
+        componentStyleConfig: this.componentStyleConfigAdminService,
+        language: this.languageAdminService,
+        about: this.aboutAdminService,
+        logo: this.logoAdminService,
+        customerLogo: this.customerLogoAdminService,
+        auth: this.authAdminService,
+        contact: this.contactAdminService,
+        contactSection: this.contactSectionAdminService,
+        ticketPricingSection: this.ticketPricingSectionAdminService,
+        foodMenu: this.foodMenuAdminService,
+        payment: this.paymentAdminService,
+        order: this.orderAdminService,
+        upload: this.uploadAdminService,
+        orderTicketSection: this.orderTicketSectionAdminService,
+        dashboard: this.dashboardAdminService,
+      },
+      
+      frontend: {
+        review: this.frontendReviewService,
+        comment: this.commentFrontendService,
+        post: this.postFrontendService,
+        settings: this.settingsFrontendService,
+        seo: this.seoFrontendService,
+        footer: this.footerFrontendService,
+        category: this.categoryFrontendService,
+        service: this.serviceFrontendService,
+        product: this.productFrontendService,
+        featureFlags: this.featureFlagsFrontendService,
+        theme: this.themeFrontendService,
+        componentStyleConfig: this.componentStyleConfigFrontendService,
+        language: this.languageFrontendService,
+        about: this.aboutFrontendService,
+        logo: this.logoFrontendService,
+        customerLogo: this.customerLogoFrontendService,
+        auth: this.authFrontendService,
+        contact: this.contactFrontendService,
+        contactSection: this.contactSectionFrontendService,
+        ticketPricingSection: this.ticketPricingSectionFrontendService,
+        foodMenu: this.foodMenuFrontendService,
+        payment: this.paymentFrontendService,
+        order: this.orderFrontendService,
+        upload: this.uploadFrontendService,
+        orderTicketSection: this.orderTicketSectionFrontendService,
+      }
     };
   }
 } 

@@ -45,7 +45,7 @@ const validationMessage = ref('');
 
 // Tạo quy tắc xác thực tùy chỉnh cho số điện thoại
 const isValidPhoneNumberRule = (value: string) => {
-  if (!value) return true; // Nếu không bắt buộc và không có giá trị, bỏ qua xác thực
+  if (!value) return true;
   
   const countryCode = getCountryCodeFromPhoneCode(selectedPhoneCode.value);
   if (!countryCode) return true; // Nếu không có mã quốc gia, bỏ qua xác thực

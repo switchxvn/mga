@@ -114,8 +114,17 @@ import { ContactSectionTranslation } from './contact/entities/contact-section-tr
 import { TicketPricingSection } from './ticket-pricing/entities/ticket-pricing-section.entity';
 import { TicketPricingSectionTranslation } from './ticket-pricing/entities/ticket-pricing-section-translation.entity';
 
+// Comment
+import { Comment } from './comment/entities/comment.entity';
+
 // Dashboard
 import { DashboardStats } from './dashboard/entities/dashboard-stats.entity';
+
+// Review
+import { Review } from './review/entities/review.entity';
+import { ReviewTranslation } from './review/entities/review-translation.entity';
+import { ReviewServiceType } from './review/entities/review-service-type.entity';
+import { ReviewServiceTypeTranslation } from './review/entities/review-service-type-translation.entity';
 
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
@@ -237,6 +246,15 @@ export const entities: (new () => any)[] = [
   TicketPricingSection,
   TicketPricingSectionTranslation,
   
+  // Comment
+  Comment,
+  
   // Dashboard
   DashboardStats,
+  
+  // Review
+  Review,
+  ReviewTranslation,
+  ReviewServiceType,
+  ReviewServiceTypeTranslation,
 ]; 

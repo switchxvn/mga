@@ -26,6 +26,8 @@ import { orderTicketSectionRouter } from './order-ticket-section.router';
 import { paymentRouter } from './payment.router';
 import { orderRouter } from './order.router';
 import { uploadRouter } from './upload.router';
+import { commentRouter } from './comment.router';
+import { reviewRouter } from './review.router';
 import { adminRouter } from './admin';
 import { router } from '../procedures';
 
@@ -59,6 +61,8 @@ export {
   paymentRouter,
   orderRouter,
   uploadRouter,
+  commentRouter,
+  reviewRouter,
   adminRouter,
 };
 
@@ -92,6 +96,8 @@ export const appRouter = (commonRouter) => router({
   payment: paymentRouter,
   order: orderRouter,
   upload: uploadRouter,
+  comment: commentRouter,
+  review: reviewRouter,
   admin: adminRouter,
 });
 

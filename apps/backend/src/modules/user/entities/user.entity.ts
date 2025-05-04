@@ -3,6 +3,7 @@ import { Post } from '../../post/entities/post.entity';
 import { UserProfile } from '../../profile/entities/user-profile.entity';
 import { Role } from './role.entity';
 import { Permission } from './permission.entity';
+import { Comment } from '../../comment/entities/comment.entity';
 
 @Entity('users')
 export class User {
@@ -29,6 +30,9 @@ export class User {
 
   @OneToMany(() => Post, post => post.author, { lazy: true })
   posts!: Promise<Post[]>;
+
+  @OneToMany(() => Comment, comment => comment.user, { lazy: true })
+  comments!: Promise<Comment[]>;
 
   @OneToOne(() => UserProfile, profile => profile.user, { lazy: true })
   profile!: Promise<UserProfile>;
