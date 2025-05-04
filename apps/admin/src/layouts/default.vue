@@ -2,9 +2,26 @@
 import type { DropdownItem } from '@nuxt/ui/dist/runtime/types'
 import { useUserStore } from '@/stores/useUserStore'
 import { storeToRefs } from 'pinia'
-import { Moon, Sun } from 'lucide-vue-next'
-import { ref, computed, inject, onMounted } from 'vue'
+import { 
+  Moon, 
+  Sun, 
+  Home, 
+  FileText, 
+  ShoppingBag, 
+  ShoppingCart, 
+  Users, 
+  Star, 
+  Tag, 
+  Settings, 
+  UserCircle, 
+  LogOut, 
+  ChevronDown, 
+  RotateCcw, 
+  Folder 
+} from 'lucide-vue-next'
+import { ref, computed, inject, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useColorMode, useHead, navigateTo } from '#imports'
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -27,14 +44,14 @@ onMounted(() => {
 })
 
 const navigation = [
-  { label: 'Dashboard', icon: 'i-heroicons-home', to: '/' },
+  { label: 'Dashboard', icon: Home, to: '/' },
   {
     label: 'Content',
-    icon: 'i-heroicons-document-text',
+    icon: FileText,
     children: [
       {
         label: 'Posts',
-        icon: 'i-heroicons-document-text',
+        icon: FileText,
         isOpen: ref(false),
         children: [
           { label: 'List All Posts', to: '/posts' },
@@ -43,7 +60,7 @@ const navigation = [
       },
       {
         label: 'Categories',
-        icon: 'i-heroicons-folder',
+        icon: Folder,
         isOpen: ref(false),
         children: [
           { label: 'List All Categories', to: '/categories' },
@@ -53,12 +70,36 @@ const navigation = [
     ]
   },
   {
+    label: 'User Management',
+    icon: Users,
+    children: [
+      {
+        label: 'Users',
+        icon: Users,
+        isOpen: ref(false),
+        children: [
+          { label: 'List All Users', to: '/users' },
+          { label: 'Create New User', to: '/users/create' }
+        ]
+      },
+      {
+        label: 'Roles',
+        icon: UserCircle,
+        isOpen: ref(false),
+        children: [
+          { label: 'List All Roles', to: '/roles' },
+          { label: 'Create New Role', to: '/roles/create' }
+        ]
+      }
+    ]
+  },
+  {
     label: 'E-commerce',
-    icon: 'i-heroicons-shopping-bag',
+    icon: ShoppingBag,
     children: [
       {
         label: 'Products',
-        icon: 'i-heroicons-shopping-bag',
+        icon: ShoppingBag,
         isOpen: ref(false),
         children: [
           { label: 'List All Products', to: '/products' },
@@ -67,23 +108,23 @@ const navigation = [
       },
       {
         label: 'Orders',
-        icon: 'i-heroicons-shopping-cart',
+        icon: ShoppingCart,
         isOpen: ref(false),
         children: [
           { label: 'List All Orders', to: '/orders' },
           { label: 'Pending Orders', to: '/orders?status=pending' }
         ]
       },
-      { label: 'Customers', icon: 'i-heroicons-users', to: '/customers' }
+      { label: 'Customers', icon: Users, to: '/customers' }
     ]
   },
   {
     label: 'Reviews',
-    icon: 'i-heroicons-star',
+    icon: Star,
     children: [
       {
         label: 'Customer Reviews',
-        icon: 'i-heroicons-star',
+        icon: Star,
         isOpen: ref(false),
         children: [
           { label: 'List All Reviews', to: '/reviews' },
@@ -92,7 +133,7 @@ const navigation = [
       },
       {
         label: 'Service Types',
-        icon: 'i-heroicons-tag',
+        icon: Tag,
         isOpen: ref(false),
         children: [
           { label: 'List All Types', to: '/reviews/service-types' },
@@ -101,7 +142,7 @@ const navigation = [
       }
     ]
   },
-  { label: 'Settings', icon: 'i-heroicons-cog-6-tooth', to: '/settings' }
+  { label: 'Settings', icon: Settings, to: '/settings' }
 ]
 
 // Recursive isActive function to handle nested routes
@@ -162,6 +203,10 @@ const getCurrentSection = () => {
   if (injectedTitle.value) return injectedTitle.value
   
   // Thêm handling cho các trường hợp cụ thể
+  if (path.includes('/users/create')) return 'Create User'
+  if (path.includes('/users/edit/')) return 'Edit User'
+  if (path.includes('/roles/create')) return 'Create Role'
+  if (path.includes('/roles/edit/')) return 'Edit Role'
   if (path.includes('/products/create')) return 'Create Product'
   if (path.includes('/products/edit/')) return 'Edit Product'
   if (path.includes('/reviews/add')) return 'Add Review'
@@ -213,6 +258,47 @@ const userMenuItems: DropdownItem[][] = [[
   }
 ]]
 
+// Theo dõi trạng thái mở của dropdown menu
+const isUserMenuOpen = ref(false)
+const userMenuRef = ref<HTMLElement | null>(null)
+const userDropdownButtonRef = ref<HTMLElement | null>(null)
+
+// Đóng dropdown khi click ra ngoài
+const handleClickOutside = (event: MouseEvent) => {
+  // Bỏ qua nếu click vào dropdown button
+  if (userDropdownButtonRef.value && userDropdownButtonRef.value.contains(event.target as Node)) {
+    return
+  }
+  
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
+    isUserMenuOpen.value = false
+  }
+}
+
+// Chuyển đổi trạng thái dropdown
+const toggleUserMenu = (event: MouseEvent) => {
+  event.stopPropagation() // Ngăn sự kiện lan tỏa để không kích hoạt handleClickOutside
+  isUserMenuOpen.value = !isUserMenuOpen.value
+}
+
+// Thêm/xóa event listener khi menu mở/đóng
+watch(isUserMenuOpen, (newVal) => {
+  if (newVal) {
+    // Đăng ký sự kiện click outside
+    setTimeout(() => {
+      window.addEventListener('click', handleClickOutside)
+    }, 0)
+  } else {
+    // Xóa sự kiện nếu menu đóng
+    window.removeEventListener('click', handleClickOutside)
+  }
+})
+
+// Xóa event listener khi component bị phá hủy
+onUnmounted(() => {
+  window.removeEventListener('click', handleClickOutside)
+})
+
 // Expands menu items based on current route
 onMounted(() => {
   // Set initial state based on current route
@@ -255,8 +341,35 @@ const expandActiveMenus = () => {
     // Kiểm tra các trường hợp đặc biệt trước
     let activeMenuFound = false;
     
+    // Xử lý trường hợp đặc biệt cho User Management
+    if (currentPath.startsWith('/users')) {
+      // Tìm và mở menu Users
+      navigation.forEach(item => {
+        if (item.label === 'User Management' && item.children) {
+          item.children.forEach((child: any) => {
+            if (child.label === 'Users' && child.isOpen) {
+              child.isOpen.value = true;
+              activeMenuFound = true;
+            }
+          });
+        }
+      });
+    }
+    else if (currentPath.startsWith('/roles')) {
+      // Tìm và mở menu Roles
+      navigation.forEach(item => {
+        if (item.label === 'User Management' && item.children) {
+          item.children.forEach((child: any) => {
+            if (child.label === 'Roles' && child.isOpen) {
+              child.isOpen.value = true;
+              activeMenuFound = true;
+            }
+          });
+        }
+      });
+    }
     // Xử lý trường hợp đặc biệt cho Products & Orders
-    if (currentPath.startsWith('/products')) {
+    else if (currentPath.startsWith('/products')) {
       // Tìm và mở menu Products
       navigation.forEach(item => {
         if (item.label === 'E-commerce' && item.children) {
@@ -358,8 +471,8 @@ const expandActiveMenus = () => {
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400'
             ]"
           >
-            <UIcon 
-              :name="item.icon"
+            <component
+              :is="item.icon"
               :class="[
                 'w-6 h-6',
                 isActive(item.to)
@@ -387,8 +500,8 @@ const expandActiveMenus = () => {
                   @click="toggleMenu(child)"
                 >
                   <div class="flex items-center gap-3">
-                    <UIcon
-                      :name="child.icon"
+                    <component
+                      :is="child.icon"
                       class="w-5 h-5 text-gray-500 dark:text-gray-400"
                       :class="{ 'text-primary-600 dark:text-primary-400': child.children.some(subItem => isActive(subItem.to)) }"
                     />
@@ -397,8 +510,7 @@ const expandActiveMenus = () => {
                       :class="{ 'text-primary-600 dark:text-primary-400': child.children.some(subItem => isActive(subItem.to)) }"
                     >{{ child.label }}</span>
                   </div>
-                  <UIcon 
-                    name="i-heroicons-chevron-down" 
+                  <ChevronDown 
                     class="w-4 h-4 transition-transform"
                     :class="{ 'transform rotate-180': child.isOpen?.value }"
                   />
@@ -437,8 +549,8 @@ const expandActiveMenus = () => {
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400'
                 ]"
               >
-                <UIcon 
-                  :name="child.icon"
+                <component 
+                  :is="child.icon"
                   :class="[
                     'w-5 h-5',
                     isActive(child.to)
@@ -461,7 +573,7 @@ const expandActiveMenus = () => {
         <div class="flex justify-between items-center px-6 py-4">
           <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
             <template v-if="isLoading">
-              <UIcon name="i-heroicons-arrow-path" class="animate-spin mr-2" />
+              <RotateCcw class="w-5 h-5 animate-spin mr-2 inline" />
               Loading...
             </template>
             <template v-else-if="user">
@@ -484,29 +596,13 @@ const expandActiveMenus = () => {
             >
               <component :is="isDark ? Moon : Sun" class="w-5 h-5" />
             </button>
-            <UDropdown
-              :items="userMenuItems"
-              :ui="{
-                wrapper: 'relative',
-                container: 'z-50 w-48',
-                width: 'w-48',
-                background: 'bg-white dark:bg-gray-800',
-                shadow: 'shadow-lg',
-                rounded: 'rounded-md',
-                ring: 'ring-1 ring-gray-200 dark:ring-gray-700',
-                base: 'overflow-hidden focus:outline-none',
-                button: {
-                  base: 'hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200'
-                },
-                item: {
-                  base: 'hover:bg-primary-50 dark:hover:bg-primary-900/20'
-                }
-              }"
-            >
-              <UButton
-                color="gray"
-                variant="ghost"
-                class="flex items-center space-x-2"
+            
+            <!-- Custom User Dropdown -->
+            <div class="relative">
+              <button
+                ref="userDropdownButtonRef"
+                class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                @click="toggleUserMenu"
               >
                 <UAvatar
                   :src="user?.avatar || ''"
@@ -514,9 +610,41 @@ const expandActiveMenus = () => {
                   size="sm"
                 />
                 <span class="font-medium">{{ user?.email }}</span>
-                <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
-              </UButton>
-            </UDropdown>
+                <ChevronDown class="w-4 h-4" />
+              </button>
+              
+              <!-- Dropdown Menu -->
+              <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="transform opacity-0 scale-95"
+                enter-to-class="transform opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="transform opacity-100 scale-100"
+                leave-to-class="transform opacity-0 scale-95"
+              >
+                <div 
+                  v-if="isUserMenuOpen" 
+                  class="absolute right-0 z-50 mt-2 w-48 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 focus:outline-none overflow-hidden"
+                  ref="userMenuRef"
+                >
+                  <NuxtLink
+                    to="/profile"
+                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400"
+                    @click="isUserMenuOpen = false"
+                  >
+                    <UserCircle class="w-5 h-5" />
+                    Profile
+                  </NuxtLink>
+                  <button
+                    class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400"
+                    @click="handleLogout(); isUserMenuOpen = false"
+                  >
+                    <LogOut class="w-5 h-5" />
+                    Logout
+                  </button>
+                </div>
+              </Transition>
+            </div>
           </div>
         </div>
       </header>
