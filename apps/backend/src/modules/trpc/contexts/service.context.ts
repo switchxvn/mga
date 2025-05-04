@@ -43,6 +43,7 @@ import { CustomerLogoAdminService } from '../../customer-logo/admin/services/cus
 import { ContactAdminService } from '../../contact/admin/services/contact-admin.service';
 import { ContactFrontendService } from '../../contact/frontend/services/contact-frontend.service';
 import { GalleryFrontendService } from '../../gallery/frontend/services/gallery-frontend.service';
+import { GalleryAdminService } from '../../gallery/admin/services/gallery-admin.service';
 import { ContactSectionAdminService } from '../../contact/admin/services/contact-section-admin.service';
 import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
 import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
@@ -115,6 +116,7 @@ export class ServiceContext {
     private readonly contactAdminService: ContactAdminService,
     private readonly contactFrontendService: ContactFrontendService,
     private readonly galleryFrontendService: GalleryFrontendService,
+    private readonly galleryAdminService: GalleryAdminService,
     private readonly contactSectionAdminService: ContactSectionAdminService,
     private readonly contactSectionFrontendService: ContactSectionFrontendService,
     private readonly ticketPricingSectionAdminService: TicketPricingSectionAdminService,
@@ -188,6 +190,7 @@ export class ServiceContext {
       contactAdminService: this.contactAdminService,
       contactFrontendService: this.contactFrontendService,
       galleryFrontendService: this.galleryFrontendService,
+      galleryAdminService: this.galleryAdminService,
       contactSectionAdminService: this.contactSectionAdminService,
       contactSectionFrontendService: this.contactSectionFrontendService,
       ticketPricingSectionAdminService: this.ticketPricingSectionAdminService,
@@ -242,6 +245,7 @@ export class ServiceContext {
         upload: this.uploadAdminService,
         orderTicketSection: this.orderTicketSectionAdminService,
         dashboard: this.dashboardAdminService,
+        gallery: this.galleryAdminService,
       },
       
       frontend: {
@@ -270,7 +274,8 @@ export class ServiceContext {
         order: this.orderFrontendService,
         upload: this.uploadFrontendService,
         orderTicketSection: this.orderTicketSectionFrontendService,
-      }
+        gallery: this.galleryFrontendService,
+      },
     };
   }
 } 

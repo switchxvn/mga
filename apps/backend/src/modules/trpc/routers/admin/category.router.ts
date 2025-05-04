@@ -26,8 +26,8 @@ const createCategorySchema = z.object({
   slug: z.string(),
   description: z.string().optional(),
   parentId: z.number().nullable().optional(),
-  isActive: z.boolean().default(true),
-  type: z.string().default('default'),
+  active: z.boolean().default(true),
+  type: z.enum(['news', 'product', 'both', 'gallery']).default('news'),
   translations: z.array(categoryTranslationSchema).optional(),
 });
 
@@ -131,7 +131,7 @@ export const categoryAdminRouter = router({
         limit: z.number().min(1).default(100),
         search: z.string().default(''),
         active: z.boolean().nullable().default(null),
-        type: z.enum(['news', 'product', 'both']).optional(),
+        type: z.enum(['news', 'product', 'both', 'gallery']).optional(),
         sortBy: z.string().optional(),
         sortOrder: z.enum(['asc', 'desc']).optional()
       })
@@ -207,6 +207,33 @@ export const categoryAdminRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create category',
+          cause: error,
+        });
+      }
+    }),
+
+  getByType: adminProcedure
+    .use(requirePermission(Permissions.VIEW_CONTENT))
+    .input(z.object({
+      type: z.enum(['news', 'product', 'both', 'gallery'])
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        console.log('getByType called with input:', input);
+        
+        const result = await ctx.services.categoryAdminService.getCategories({
+          page: 1,
+          limit: 100,
+          active: true,
+          type: input.type as CategoryType
+        });
+
+        return result.items;
+      } catch (error) {
+        ctx.logger.error('Failed to fetch categories by type:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch categories by type',
           cause: error,
         });
       }

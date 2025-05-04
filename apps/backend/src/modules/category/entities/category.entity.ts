@@ -3,6 +3,7 @@ import { Post } from '../../post/entities/post.entity';
 import { Product } from '../../product/entities/product.entity';
 import { CategoryTranslation } from './category-translation.entity';
 import { CategoryType } from '../../../../../../libs/shared/src/types/category.type';
+import { Gallery } from '../../gallery/entities/gallery.entity';
 
 @Entity('categories')
 export class Category {
@@ -55,6 +56,9 @@ export class Category {
 
   @ManyToMany(() => Product, (product) => product.categories)
   products!: Product[];
+
+  @ManyToMany(() => Gallery, (gallery) => gallery.categories)
+  galleries!: Gallery[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

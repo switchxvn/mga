@@ -108,22 +108,17 @@
         <div class="mb-8">
           <div class="flex flex-wrap gap-4 justify-center">
             <UButton
+              v-for="category in categories"
+              :key="category.id"
               variant="soft"
-              :color="galleryType === 'common' ? 'primary' : 'gray'"
-              @click="setGalleryType('common')"
+              :color="selectedCategoryId === category.id ? 'primary' : 'gray'"
+              @click="setSelectedCategory(category.id)"
               class="text-xl font-semibold uppercase tracking-wide"
             >
-              <Image class="w-6 h-6 mr-2" />
-              {{ t('gallery.commonGallery') }}
-            </UButton>
-            <UButton
-              variant="soft"
-              :color="galleryType === 'food' ? 'primary' : 'gray'"
-              @click="setGalleryType('food')"
-              class="text-xl font-semibold uppercase tracking-wide"
-            >
-              <Utensils class="w-6 h-6 mr-2" />
-              {{ t('gallery.foodGallery') }}
+              <Image v-if="category.name.toLowerCase().includes('common') || category.name.toLowerCase().includes('chung')" class="w-6 h-6 mr-2" />
+              <Utensils v-else-if="category.name.toLowerCase().includes('food') || category.name.toLowerCase().includes('thức ăn')" class="w-6 h-6 mr-2" />
+              <div v-else class="w-6 h-6 mr-2"></div>
+              {{ category.name }}
             </UButton>
           </div>
         </div>
@@ -352,7 +347,8 @@ const isLoading = ref(false);
 const isVideoLoading = ref(false);
 const hasError = ref(false);
 const hasVideoError = ref(false);
-const galleryType = ref<'common' | 'food'>('common');
+const selectedCategoryId = ref<number | null>(null);
+const categories = ref<Array<{id: number, name: string}>>([]);
 
 // Refs for DOM elements
 const galleryContainer = ref<HTMLElement | null>(null);
@@ -530,9 +526,9 @@ const getRowItems = (rowIndex: number) => {
   }));
 };
 
-// Change gallery type
-const setGalleryType = (type: 'common' | 'food') => {
-  galleryType.value = type;
+// Change selected category
+const setSelectedCategory = (categoryId: number) => {
+  selectedCategoryId.value = categoryId;
   fetchGalleries();
 };
 
@@ -585,7 +581,7 @@ const fetchGalleries = async () => {
     hasError.value = false;
     const result = await trpc.gallery.active.query({ 
       locale: locale.value,
-      type: galleryType.value
+      categoryId: selectedCategoryId.value || undefined
     });
     galleries.value = result;
     
@@ -630,11 +626,39 @@ const fetchVideos = async () => {
   }
 };
 
+// Trước hết, chúng ta cần lấy danh sách categories
+const fetchCategories = async () => {
+  try {
+    // Chỉ lấy các categories liên quan đến gallery, ví dụ có TYPE là GALLERY
+    const result = await trpc.category.getByType.query({ 
+      type: 'GALLERY', // Giả sử có CategoryType.GALLERY
+      locale: locale.value 
+    });
+    categories.value = result.map(cat => ({
+      id: cat.id,
+      name: cat.translations?.find(t => t.locale === locale.value)?.name || 'Unknown'
+    }));
+
+    // Nếu có ít nhất một category, chọn category đầu tiên
+    if (categories.value.length > 0) {
+      selectedCategoryId.value = categories.value[0].id;
+    }
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    useToast().add({
+      id: 'category-error',
+      title: t('common.error'),
+      description: t('gallery.fetchCategoryError'),
+      color: 'red'
+    });
+  }
+};
+
 // Add ResizeObserver
 let resizeObserver: ResizeObserver;
 
 onMounted(() => {
-  fetchGalleries();
+  fetchCategories();
   fetchVideos();
   
   if (galleryContainer.value) {

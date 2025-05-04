@@ -13,13 +13,13 @@ const createGallerySchema = z.object({
   image: z.string(),
   isActive: z.boolean().default(true),
   sequence: z.number().default(0),
-  type: z.nativeEnum(GalleryType).default(GalleryType.COMMON),
+  categoryIds: z.array(z.number()).optional(),
   translations: z.array(galleryTranslationSchema),
 }).transform((data) => ({
   image: data.image,
   isActive: data.isActive ?? true,
   sequence: data.sequence ?? 0,
-  type: data.type ?? GalleryType.COMMON,
+  categoryIds: data.categoryIds ?? [],
   translations: data.translations.map(t => ({
     locale: t.locale,
     title: t.title,
@@ -32,14 +32,14 @@ const updateGallerySchema = z.object({
   image: z.string().optional(),
   isActive: z.boolean().optional(),
   sequence: z.number().optional(),
-  type: z.nativeEnum(GalleryType).optional(),
+  categoryIds: z.array(z.number()).optional(),
   translations: z.array(galleryTranslationSchema).optional(),
 }).transform((data) => ({
   id: data.id,
   ...(data.image !== undefined && { image: data.image }),
   ...(data.isActive !== undefined && { isActive: data.isActive }),
   ...(data.sequence !== undefined && { sequence: data.sequence }),
-  ...(data.type !== undefined && { type: data.type }),
+  ...(data.categoryIds !== undefined && { categoryIds: data.categoryIds }),
   ...(data.translations && {
     translations: data.translations.map(t => ({
       locale: t.locale,
@@ -53,7 +53,7 @@ export const galleryRouter = router({
   latest: publicProcedure
     .input(z.object({
       locale: z.string(),
-      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
+      categoryId: z.number().optional()
     }))
     .query(async ({ ctx, input }) => {
       try {
@@ -62,10 +62,10 @@ export const galleryRouter = router({
         const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale);
         ctx.logger.log('Found galleries:', galleries);
         
-        // Filter by type if specified
-        const filteredGalleries = input.type ? galleries.filter(gallery => {
-          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: input.type });
-          return gallery.type === input.type;
+        // Filter by category if specified
+        const filteredGalleries = input.categoryId ? galleries.filter(gallery => {
+          ctx.logger.log('Gallery category check:', { galleryId: gallery.id, galleryCategories: gallery.categories, requestedCategoryId: input.categoryId });
+          return gallery.categories.some(category => category.id === input.categoryId);
         }) : galleries;
         
         ctx.logger.log('Filtered galleries:', filteredGalleries);
@@ -83,7 +83,7 @@ export const galleryRouter = router({
   byLocale: publicProcedure
     .input(z.object({ 
       locale: z.string(),
-      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
+      categoryId: z.number().optional()
     }))
     .query(async ({ ctx, input }) => {
       try {
@@ -92,10 +92,10 @@ export const galleryRouter = router({
         const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale);
         ctx.logger.log('Found galleries:', galleries);
         
-        // Filter by type if specified
-        const filteredGalleries = input.type ? galleries.filter(gallery => {
-          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: input.type });
-          return gallery.type === input.type;
+        // Filter by category if specified
+        const filteredGalleries = input.categoryId ? galleries.filter(gallery => {
+          ctx.logger.log('Gallery category check:', { galleryId: gallery.id, galleryCategories: gallery.categories, requestedCategoryId: input.categoryId });
+          return gallery.categories.some(category => category.id === input.categoryId);
         }) : galleries;
         
         ctx.logger.log('Filtered galleries:', filteredGalleries);
@@ -142,20 +142,20 @@ export const galleryRouter = router({
   active: publicProcedure
     .input(z.object({
       locale: z.string().optional(),
-      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
+      categoryId: z.number().optional()
     }))
     .query(async ({ input, ctx }) => {
       try {
-        const { locale = 'vi', type } = input || {};
-        ctx.logger.log('Fetching active galleries with params:', { locale, type });
+        const { locale = 'vi', categoryId } = input || {};
+        ctx.logger.log('Fetching active galleries with params:', { locale, categoryId });
         
         const galleries = await ctx.services.galleryFrontendService.findActiveByLocale(locale);
         ctx.logger.log('Found active galleries:', galleries);
         
-        // Filter by type if specified
-        const filteredGalleries = type ? galleries.filter(gallery => {
-          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: type });
-          return gallery.type === type;
+        // Filter by category if specified
+        const filteredGalleries = categoryId ? galleries.filter(gallery => {
+          ctx.logger.log('Gallery category check:', { galleryId: gallery.id, galleryCategories: gallery.categories, requestedCategoryId: categoryId });
+          return gallery.categories.some(category => category.id === categoryId);
         }) : galleries;
         
         ctx.logger.log('Filtered active galleries:', filteredGalleries);

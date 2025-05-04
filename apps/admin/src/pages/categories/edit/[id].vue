@@ -144,7 +144,8 @@
                       :options="[
                         { label: 'News', value: CategoryType.NEWS },
                         { label: 'Product', value: CategoryType.PRODUCT },
-                        { label: 'Both', value: CategoryType.BOTH }
+                        { label: 'Both', value: CategoryType.BOTH },
+                        { label: 'Gallery', value: CategoryType.GALLERY }
                       ]"
                       option-attribute="label"
                       required
@@ -243,7 +244,8 @@ interface CategoryTranslation {
 const CategoryType = {
   NEWS: 'news',
   PRODUCT: 'product',
-  BOTH: 'both'
+  BOTH: 'both',
+  GALLERY: 'gallery'
 }
 
 interface CategoryUpdateData {

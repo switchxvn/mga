@@ -11,6 +11,7 @@ import { orderAdminRouter } from './order.router'
 import { adminCommentRouter } from './comment.router'
 import { adminReviewRouter } from './review.router'
 import { adminSiteStatisticsRouter } from './site-statistics.router'
+import { galleryAdminRouter } from './gallery.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -25,4 +26,5 @@ export const adminRouter = router({
   comments: adminCommentRouter,
   review: adminReviewRouter,
   siteStatistics: adminSiteStatisticsRouter,
+  galleries: galleryAdminRouter,
 }) 

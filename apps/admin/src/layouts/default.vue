@@ -17,7 +17,8 @@ import {
   LogOut, 
   ChevronDown, 
   RotateCcw, 
-  Folder 
+  Folder,
+  Image
 } from 'lucide-vue-next'
 import { ref, computed, inject, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -65,6 +66,15 @@ const navigation = [
         children: [
           { label: 'List All Categories', to: '/categories' },
           { label: 'Create New Category', to: '/categories/create' }
+        ]
+      },
+      {
+        label: 'Gallery',
+        icon: Image,
+        isOpen: ref(false),
+        children: [
+          { label: 'List All Galleries', to: '/galleries' },
+          { label: 'Create New Gallery', to: '/galleries/create' }
         ]
       }
     ]
@@ -422,6 +432,20 @@ const expandActiveMenus = () => {
           }
         });
       }
+    }
+    // Xử lý trường hợp đặc biệt cho Gallery
+    else if (currentPath.startsWith('/galleries')) {
+      // Tìm và mở menu Gallery
+      navigation.forEach(item => {
+        if (item.label === 'Content' && item.children) {
+          item.children.forEach((child: any) => {
+            if (child.label === 'Gallery' && child.isOpen) {
+              child.isOpen.value = true;
+              activeMenuFound = true;
+            }
+          });
+        }
+      });
     }
     
     // Nếu không tìm thấy menu đặc biệt, dùng cách mặc định

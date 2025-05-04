@@ -32,7 +32,7 @@ interface Translation {
 
 interface CategoryForm {
   name: string
-  type: 'news' | 'product' | 'both'
+  type: 'news' | 'product' | 'both' | 'gallery'
   active: boolean
   translations: Record<string, Translation>
 }
@@ -247,7 +247,7 @@ const handleSubmit = async (saveAndContinue = false) => {
       name: form.value.name,
       slug: currentTranslation.value.slug,
       type: form.value.type,
-      isActive: form.value.active,
+      active: form.value.active,
       translations
     })
     
@@ -448,7 +448,8 @@ const onFlagImageError = (event: Event) => {
                     :options="[
                       { label: 'News', value: 'news' },
                       { label: 'Product', value: 'product' },
-                      { label: 'Both', value: 'both' }
+                      { label: 'Both', value: 'both' },
+                      { label: 'Gallery', value: 'gallery' }
                     ]"
                     option-attribute="label"
                     required
