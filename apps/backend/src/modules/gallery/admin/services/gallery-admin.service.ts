@@ -62,8 +62,8 @@ export class GalleryAdminService {
     // Apply pagination
     queryBuilder.skip(skip).take(limit);
 
-    // Order by sequence
-    queryBuilder.orderBy('gallery.sequence', 'ASC');
+    // Order by creation date (instead of sequence) - newer items first
+    queryBuilder.orderBy('gallery.createdAt', 'DESC');
 
     // Execute query
     const items = await queryBuilder.getMany();

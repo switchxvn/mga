@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Gallery } from '../../entities/gallery.entity';
 import { GalleryTranslation } from '../../entities/gallery-translation.entity';
-import { CreateGalleryInput, UpdateGalleryInput, GalleryType } from '@ew/shared';
+import { CreateGalleryInput, UpdateGalleryInput } from '@ew/shared';
 import { Gallery as IGallery } from '@ew/shared';
 import { Category } from '../../../category/entities/category.entity';
 
@@ -36,7 +36,6 @@ export class GalleryFrontendService {
       image: gallery.image,
       isActive: gallery.isActive,
       sequence: gallery.sequence,
-      type: gallery.type,
       createdAt: gallery.createdAt,
       updatedAt: gallery.updatedAt,
       translations: gallery.translations?.map(t => ({
@@ -162,7 +161,6 @@ export class GalleryFrontendService {
       // Create gallery entity with required fields
       const gallery = new Gallery();
       gallery.image = createGalleryInput.image;
-      gallery.type = createGalleryInput.type || GalleryType.COMMON;
       gallery.isActive = createGalleryInput.isActive ?? true;
       gallery.sequence = createGalleryInput.sequence ?? 0;
 
@@ -203,7 +201,6 @@ export class GalleryFrontendService {
 
       // Update gallery fields if provided
       if (updateGalleryInput.image !== undefined) gallery.image = updateGalleryInput.image;
-      if (updateGalleryInput.type !== undefined) gallery.type = updateGalleryInput.type;
       if (updateGalleryInput.isActive !== undefined) gallery.isActive = updateGalleryInput.isActive;
       if (updateGalleryInput.sequence !== undefined) gallery.sequence = updateGalleryInput.sequence;
 

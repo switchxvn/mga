@@ -13,7 +13,8 @@ import {
   PencilIcon,
   PlusCircleIcon,
   Trash2Icon,
-  ZoomInIcon
+  ZoomInIcon,
+  TagIcon
 } from 'lucide-vue-next';
 import Swal from 'sweetalert2';
 import 'swiper/css';
@@ -79,12 +80,14 @@ const sortOrder = ref<'asc' | 'desc'>('desc');
 
 const selectedImage = ref<string | null>(null);
 const isZoomModalOpen = ref(false);
+const isCategoryModalOpen = ref(false);
+const selectedCategoriesToUpdate = ref<number[]>([]);
 
 // Fetch categories
 const fetchCategories = async () => {
   try {
-    const result = await trpc.admin.categories.getByType.query({
-      type: 'GALLERY'
+    const result = await trpc.admin.category.getByType.query({
+      type: 'gallery'
     });
     categories.value = result.map(cat => ({
       id: cat.id,
@@ -218,6 +221,9 @@ async function handleBulkAction(action: string) {
         icon: 'warning' as const
       };
       break;
+    case 'updateCategories':
+      isCategoryModalOpen.value = true;
+      return;
   }
 
   const result = await Swal.fire(confirmConfig);
@@ -270,6 +276,63 @@ async function handleBulkAction(action: string) {
   } finally {
     isLoading.value = false;
   }
+}
+
+// New function to handle bulk category update
+async function handleBulkCategoryUpdate() {
+  if (!selectedGalleries.value.length || !selectedCategoriesToUpdate.value.length) {
+    isCategoryModalOpen.value = false;
+    return;
+  }
+
+  const selectedCount = selectedGalleries.value.length;
+  
+  try {
+    isLoading.value = true;
+    isCategoryModalOpen.value = false;
+    
+    // Update each gallery with the selected categories
+    await Promise.all(
+      selectedGalleries.value.map(galleryId => {
+        return trpc.admin.galleries.update.mutate({
+          id: galleryId,
+          categoryIds: selectedCategoriesToUpdate.value
+        });
+      })
+    );
+
+    // Refresh galleries list
+    await fetchGalleries();
+    
+    // Reset selected galleries and categories after update
+    selectedGalleries.value = [];
+    selectedCategoriesToUpdate.value = [];
+
+    Swal.fire({
+      title: 'Success!',
+      text: `Successfully updated categories for ${selectedCount} gallery items`,
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  } catch (err: any) {
+    error.value = err.message || 'Failed to update categories';
+    console.error('Error updating categories:', err);
+    
+    Swal.fire({
+      title: 'Error!',
+      text: err.message || 'Failed to update categories',
+      icon: 'error' as const
+    });
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// Function to close the category modal
+function closeCategoryModal() {
+  isCategoryModalOpen.value = false;
+  selectedCategoriesToUpdate.value = [];
 }
 
 // Debounced search
@@ -438,6 +501,18 @@ const getCategoryNames = (gallery: Gallery) => {
                   >
                     <ImageIcon class="h-4 w-4" :class="active ? 'text-slate-700' : 'text-gray-500'" />
                     Deactivate Selected
+                  </button>
+                </MenuItem>
+                <MenuItem v-slot="{ active }">
+                  <button
+                    @click="handleBulkAction('updateCategories')"
+                    :class="[
+                      active ? 'bg-blue-50 text-blue-700' : 'text-gray-900',
+                      'group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2'
+                    ]"
+                  >
+                    <TagIcon class="h-4 w-4" :class="active ? 'text-blue-700' : 'text-gray-500'" />
+                    Update Categories
                   </button>
                 </MenuItem>
               </div>
@@ -737,6 +812,81 @@ const getCategoryNames = (gallery: Gallery) => {
                   </div>
                 </swiper-slide>
               </swiper>
+            </div>
+          </div>
+        </div>
+      </div>
+    </TransitionRoot>
+    
+    <!-- Category Update Modal -->
+    <TransitionRoot as="template" :show="isCategoryModalOpen">
+      <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          
+          <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-neutral-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:max-w-lg sm:w-full sm:p-6">
+            <div class="absolute right-0 top-0 pr-4 pt-4">
+              <button
+                type="button"
+                class="rounded-md bg-white dark:bg-neutral-800 text-gray-400 hover:text-gray-500 focus:outline-none"
+                @click="closeCategoryModal"
+              >
+                <XMarkIcon class="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div class="mt-3 text-center sm:mt-0 sm:text-left">
+              <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+                Update Categories for {{ selectedGalleries.length }} Items
+              </h3>
+              
+              <div class="mt-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Select the categories you want to apply to all selected gallery items.
+                  This will replace their existing categories.
+                </p>
+                
+                <div class="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                  <div class="space-y-2">
+                    <div 
+                      v-for="category in categories" 
+                      :key="category.id"
+                      class="flex items-center"
+                    >
+                      <input
+                        type="checkbox"
+                        :id="`category-${category.id}`"
+                        :value="category.id"
+                        v-model="selectedCategoriesToUpdate"
+                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <label :for="`category-${category.id}`" class="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                        {{ category.name }}
+                      </label>
+                    </div>
+                    <div v-if="categories.length === 0" class="text-gray-500 dark:text-gray-400 text-sm py-2">
+                      No categories available
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+              <button
+                type="button"
+                class="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                @click="handleBulkCategoryUpdate"
+              >
+                Update Categories
+              </button>
+              <button
+                type="button"
+                class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                @click="closeCategoryModal"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
