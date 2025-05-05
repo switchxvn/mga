@@ -142,6 +142,11 @@
                     :error="!!errors.type"
                   />
                 </UFormGroup>
+
+                <IconSelector
+                  v-model="form.icon"
+                  :error="errors.icon"
+                />
               </div>
 
               <UFormGroup label="Slug" required :error="errors.slug">
@@ -197,7 +202,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import {
   FileTextIcon,
   SettingsIcon,
@@ -206,11 +211,14 @@ import {
   ChevronDownIcon,
   CheckIcon,
   SaveIcon,
-  WandIcon
+  WandIcon,
+  SearchIcon,
+  HelpCircleIcon
 } from 'lucide-vue-next'
 import { useTrpc } from '../../composables/useTrpc'
 import { useCategory } from '../../composables/useCategory'
 import PageHeader from '../../components/common/header/PageHeader.vue'
+import IconSelector from '../../components/common/IconSelector.vue'
 
 const trpc = useTrpc()
 
@@ -242,13 +250,6 @@ const tabs = [
     icon: SettingsIcon
   }
 ]
-
-const handleClickOutside = (event: Event) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.language-switcher')) {
-    isLanguageOpen.value = false;
-  }
-};
 
 onMounted(async () => {
   try {
@@ -312,6 +313,13 @@ watch(selectedLanguage, (newLang, oldLang) => {
 
 const handleSubmit = async (saveAndContinue = false) => {
   await createCategory(saveAndContinue)
+}
+
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest('.language-switcher')) {
+    isLanguageOpen.value = false;
+  }
 }
 
 const onFlagImageError = (event: Event) => {

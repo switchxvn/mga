@@ -117,7 +117,7 @@
             >
               <Image v-if="category.name.toLowerCase().includes('common') || category.name.toLowerCase().includes('chung')" class="w-6 h-6 mr-2" />
               <Utensils v-else-if="category.name.toLowerCase().includes('food') || category.name.toLowerCase().includes('thức ăn')" class="w-6 h-6 mr-2" />
-              <div v-else class="w-6 h-6 mr-2"></div>
+              <Route v-else class="w-6 h-6 mr-2" />
               {{ category.name }}
             </UButton>
           </div>
@@ -297,7 +297,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
-import { ChevronLeft, ChevronRight, Image, Utensils, PlayCircle } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, Image, Utensils, PlayCircle, Route } from 'lucide-vue-next';
 
 // Define SEO metadata
 useHead({
@@ -528,6 +528,8 @@ const getRowItems = (rowIndex: number) => {
 
 // Change selected category
 const setSelectedCategory = (categoryId: number) => {
+  if (selectedCategoryId.value === categoryId) return;
+  
   selectedCategoryId.value = categoryId;
   fetchGalleries();
 };
@@ -604,6 +606,41 @@ const fetchGalleries = async () => {
   }
 };
 
+// Lấy danh sách categories có type là gallery
+const fetchCategories = async () => {
+  try {
+    const result = await trpc.category.byType.query({ 
+      type: 'gallery',
+      locale: locale.value 
+    });
+
+    console.log('Fetched categories:', result);
+
+    categories.value = result.map(cat => ({
+      id: cat.id,
+      name: cat.translations?.find(t => t.locale === locale.value)?.name || 'Unknown'
+    }));
+
+    // Nếu có ít nhất một category, chọn category đầu tiên và fetch galleries
+    if (categories.value.length > 0) {
+      selectedCategoryId.value = categories.value[0].id;
+      fetchGalleries();
+    } else {
+      // Trường hợp không có category
+      console.log('No categories found');
+      galleries.value = [];
+    }
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    useToast().add({
+      id: 'category-error',
+      title: t('common.error'),
+      description: t('category.fetchError'),
+      color: 'red'
+    });
+  }
+};
+
 // Fetch videos
 const fetchVideos = async () => {
   try {
@@ -623,34 +660,6 @@ const fetchVideos = async () => {
     hasVideoError.value = true;
   } finally {
     isVideoLoading.value = false;
-  }
-};
-
-// Trước hết, chúng ta cần lấy danh sách categories
-const fetchCategories = async () => {
-  try {
-    // Chỉ lấy các categories liên quan đến gallery, ví dụ có TYPE là GALLERY
-    const result = await trpc.category.getByType.query({ 
-      type: 'GALLERY', // Giả sử có CategoryType.GALLERY
-      locale: locale.value 
-    });
-    categories.value = result.map(cat => ({
-      id: cat.id,
-      name: cat.translations?.find(t => t.locale === locale.value)?.name || 'Unknown'
-    }));
-
-    // Nếu có ít nhất một category, chọn category đầu tiên
-    if (categories.value.length > 0) {
-      selectedCategoryId.value = categories.value[0].id;
-    }
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    useToast().add({
-      id: 'category-error',
-      title: t('common.error'),
-      description: t('gallery.fetchCategoryError'),
-      color: 'red'
-    });
   }
 };
 

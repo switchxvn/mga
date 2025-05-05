@@ -18,10 +18,12 @@ import {
   PlusCircleIcon,
   Trash2Icon,
   TrashIcon,
-  ZoomInIcon
+  ZoomInIcon,
+  HelpCircleIcon
 } from 'lucide-vue-next';
+import * as lucideIcons from 'lucide-vue-next';
 import Swal from 'sweetalert2';
-import { onMounted, ref, watch, computed } from "vue";
+import { onMounted, ref, watch, computed, h } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import FilterContainer from '../../components/common/filter/FilterContainer.vue';
 import SearchFilter from '../../components/common/filter/SearchFilter.vue';
@@ -31,6 +33,24 @@ import DataTable from '../../components/common/table/DataTable.vue';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import { useAuth } from "../../composables/useAuth";
 import { useCategory } from "../../composables/useCategory";
+
+// Đăng ký $lucide để sử dụng trong template
+const $lucide = lucideIcons;
+
+// Helper function để lấy đúng icon component từ tên icon
+const getIconComponent = (iconName: string | undefined | null) => {
+  if (!iconName) return HelpCircleIcon;
+  
+  // Chuyển đổi tên icon sang PascalCase với "Icon" suffix
+  // Ví dụ: "credit-card" -> "CreditCardIcon"
+  const pascalCaseName = iconName
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('') + 'Icon';
+  
+  // Trả về icon component tương ứng hoặc HelpCircleIcon nếu không tìm thấy
+  return $lucide[pascalCaseName as keyof typeof $lucide] || HelpCircleIcon;
+};
 
 // These functions are provided by Nuxt at runtime
 // @ts-ignore
@@ -507,8 +527,18 @@ onMounted(async () => {
           {{ category.id }}
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
-          <div class="text-sm font-medium text-gray-900 dark:text-white">
-            {{ getCategoryName(category) }}
+          <div class="flex items-center gap-2">
+            <!-- Thay thế cách hiển thị icon hiện tại -->
+            <div v-if="category.icon" class="w-6 h-6 flex items-center justify-center">
+              <component 
+                :is="getIconComponent(category.icon)" 
+                class="w-4 h-4 text-gray-600 dark:text-gray-400"
+              />
+            </div>
+            <div v-else class="w-6 h-6"></div>
+            <div class="text-sm font-medium text-gray-900 dark:text-white">
+              {{ getCategoryName(category) }}
+            </div>
           </div>
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">

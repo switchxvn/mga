@@ -68,31 +68,28 @@ export class GalleryFrontendService {
     }
   }
 
-  async findByLocale(locale: string): Promise<IGallery[]> {
-    this.logger.debug(`Finding galleries for locale: ${locale}`);
+  async findByLocale(locale: string, categoryIds?: number[]): Promise<IGallery[]> {
+    this.logger.debug(`Finding galleries for locale: ${locale}${categoryIds ? ` and categories: ${categoryIds}` : ''}`);
 
     try {
-      const galleries = await this.galleryRepository.find({
-        where: { isActive: true },
-        relations: ['translations', 'categories'],
-        order: { sequence: 'ASC' }
-      });
+      const queryBuilder = this.galleryRepository.createQueryBuilder('gallery')
+        .leftJoinAndSelect('gallery.translations', 'translations')
+        .leftJoinAndSelect('gallery.categories', 'categories')
+        .where('translations.locale = :locale', { locale })
+        .orderBy('gallery.sequence', 'ASC');
 
-      this.logger.debug(`Found ${galleries.length} active galleries before filtering by locale`);
+      // Filter by categories if provided
+      if (categoryIds && categoryIds.length > 0) {
+        queryBuilder.andWhere('categories.id IN (:...categoryIds)', { categoryIds });
+      }
 
-      // Filter galleries that have translations in the requested locale
-      const galleriesWithTranslations = galleries.filter(gallery => {
-        return gallery.translations?.some(translation => translation.locale === locale);
-      });
-
-      this.logger.debug(`Found ${galleriesWithTranslations.length} galleries with translations in locale ${locale}`);
+      const galleries = await queryBuilder.getMany();
+      this.logger.debug(`Found ${galleries.length} galleries with locale ${locale}${categoryIds ? ` and matching categories` : ''}`);
 
       // Format each gallery
-      const formattedGalleries = await Promise.all(
-        galleriesWithTranslations.map(gallery => this.formatGalleryResponse(gallery, locale))
+      return Promise.all(
+        galleries.map(gallery => this.formatGalleryResponse(gallery, locale))
       );
-
-      return formattedGalleries;
     } catch (error) {
       this.logger.error(`Error finding galleries by locale ${locale}:`, error);
       throw error;
@@ -120,7 +117,6 @@ export class GalleryFrontendService {
   async findActive(): Promise<IGallery[]> {
     try {
       const galleries = await this.galleryRepository.find({
-        where: { isActive: true },
         relations: ['translations', 'categories'],
         order: { sequence: 'ASC' }
       });
@@ -132,23 +128,27 @@ export class GalleryFrontendService {
     }
   }
 
-  async findActiveByLocale(locale: string): Promise<IGallery[]> {
-    this.logger.debug(`Finding active galleries for locale: ${locale}`);
+  async findActiveByLocale(locale: string, categoryIds?: number[]): Promise<IGallery[]> {
+    this.logger.debug(`Finding active galleries for locale: ${locale}${categoryIds ? ` and categories: ${categoryIds}` : ''}`);
 
     try {
-      const galleries = await this.galleryRepository.find({
-        where: { isActive: true },
-        relations: ['translations', 'categories'],
-        order: { sequence: 'ASC' }
-      });
+      const queryBuilder = this.galleryRepository.createQueryBuilder('gallery')
+        .leftJoinAndSelect('gallery.translations', 'translations')
+        .leftJoinAndSelect('gallery.categories', 'categories')
+        .where('gallery.isActive = :isActive', { isActive: true })
+        .andWhere('translations.locale = :locale', { locale })
+        .orderBy('gallery.sequence', 'ASC');
 
-      // Filter galleries that have translations in the requested locale
-      const galleriesWithTranslations = galleries.filter(gallery => {
-        return gallery.translations?.some(translation => translation.locale === locale);
-      });
+      // Filter by categories if provided
+      if (categoryIds && categoryIds.length > 0) {
+        queryBuilder.andWhere('categories.id IN (:...categoryIds)', { categoryIds });
+      }
+
+      const galleries = await queryBuilder.getMany();
+      this.logger.debug(`Found ${galleries.length} active galleries with locale ${locale}${categoryIds ? ` and matching categories` : ''}`);
 
       return Promise.all(
-        galleriesWithTranslations.map(gallery => this.formatGalleryResponse(gallery, locale))
+        galleries.map(gallery => this.formatGalleryResponse(gallery, locale))
       );
     } catch (error) {
       this.logger.error(`Error finding active galleries by locale ${locale}:`, error);

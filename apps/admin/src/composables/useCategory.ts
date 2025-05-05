@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, h } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import { useTrpc } from './useTrpc'
@@ -33,6 +33,7 @@ interface CategoryForm {
   name: string
   type: CategoryTypeValue
   active: boolean
+  icon?: string
   translations: Record<string, Translation>
 }
 
@@ -40,6 +41,7 @@ interface ValidationErrors {
   name?: string
   slug?: string
   type?: string
+  icon?: string
 }
 
 interface CategoryFilter {
@@ -64,6 +66,7 @@ export function useCategory() {
     name: '',
     type: CategoryType.NEWS,
     active: true,
+    icon: '',
     translations: {}
   })
   const errors = ref<ValidationErrors>({})
@@ -94,11 +97,27 @@ export function useCategory() {
     return form.value.translations[selectedLanguage.value]
   })
 
+  // Thay đổi cách render icon để tránh lỗi
+  const safeIconRenderer = (iconName: string | undefined) => {
+    if (!iconName) return null;
+    
+    // Trả về text thay vì component
+    return () => h('div', { class: 'inline-flex items-center' }, [
+      h('span', { class: 'text-sm' }, iconName)
+    ]);
+  };
+
+  // Thay đổi cách hiển thị icon để tránh lỗi
+  const iconDisplay = computed(() => {
+    return safeIconRenderer(form.value.icon);
+  });
+
   const resetForm = () => {
     form.value = {
       name: '',
       type: CategoryType.NEWS,
       active: true,
+      icon: '',
       translations: {}
     }
     errors.value = {}
@@ -206,6 +225,7 @@ export function useCategory() {
           name: category.translations?.find((t: any) => t.locale === selectedLanguage.value)?.name || '',
           type: category.type as CategoryTypeValue,
           active: category.active,
+          icon: category.icon || '',
           translations
         }
       }
@@ -243,6 +263,7 @@ export function useCategory() {
         slug: currentTranslation.value.slug,
         type: form.value.type,
         active: form.value.active,
+        icon: form.value.icon,
         translations: Object.entries(form.value.translations).map(([locale, content]) => ({
           locale,
           name: content.name,
@@ -301,7 +322,7 @@ export function useCategory() {
       saveAndContinue.value = continueEditing
 
       if (selectedLanguage.value) {
-        // Save current content to translations before submitting
+        // Save current content to translations
         form.value.translations[selectedLanguage.value] = {
           name: form.value.name,
           slug: currentTranslation.value.slug,
@@ -309,24 +330,23 @@ export function useCategory() {
         }
       }
 
-      // Prepare minimal data for update that matches server schema
+      // Prepare update data với định dạng đúng: { id, data: { ... } }
       const updateData = {
-        name: form.value.name,
-        slug: currentTranslation.value.slug,
-        type: form.value.type,
-        active: form.value.active,
-        translations: Object.entries(form.value.translations).map(([locale, content]) => ({
-          locale,
-          name: content.name,
-          slug: content.slug,
-          description: content.description || undefined
-        }))
+        id,
+        data: {
+          type: form.value.type,
+          active: form.value.active,
+          icon: form.value.icon,
+          translations: Object.entries(form.value.translations).map(([locale, content]) => ({
+            locale,
+            name: content.name, 
+            slug: content.slug,
+            description: content.description || undefined
+          }))
+        }
       }
 
-      await trpc.admin.category.updateCategory.mutate({
-        id: id,
-        data: updateData
-      })
+      await trpc.admin.category.updateCategory.mutate(updateData)
       
       toast.success(`Category "${form.value.name}" updated successfully!`)
       
@@ -499,6 +519,7 @@ export function useCategory() {
     currentPage,
     itemsPerPage,
     filter,
+    iconDisplay,
     
     // Methods
     resetForm,
@@ -513,6 +534,7 @@ export function useCategory() {
     bulkAction,
     applyFilter,
     resetFilter,
-    changePage
+    changePage,
+    safeIconRenderer
   }
 } 

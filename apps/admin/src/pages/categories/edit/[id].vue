@@ -152,6 +152,13 @@
                       :error="!!errors.type"
                     />
                   </UFormGroup>
+
+                  <UFormGroup label="Icon">
+                    <IconSelector
+                      v-model="form.icon"
+                      :error="errors.icon"
+                    />
+                  </UFormGroup>
                 </div>
 
                 <UFormGroup label="Slug" required :error="errors.slug">
@@ -208,7 +215,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   FileTextIcon,
@@ -218,13 +225,15 @@ import {
   ChevronDownIcon,
   CheckIcon,
   SaveIcon,
-  WandIcon
+  WandIcon,
+  SearchIcon
 } from 'lucide-vue-next'
 import { useTrpc } from '../../../composables/useTrpc'
 import { useCategory } from '../../../composables/useCategory'
 
 // Import components
 import PageHeader from '../../../components/common/header/PageHeader.vue'
+import IconSelector from '../../../components/common/IconSelector.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -242,7 +251,9 @@ const {
   generateSlug,
   validateForm,
   fetchCategory,
-  updateCategory
+  updateCategory,
+  iconDisplay,
+  safeIconRenderer
 } = useCategory()
 
 const currentTab = ref('basic')

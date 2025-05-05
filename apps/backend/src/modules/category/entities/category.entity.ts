@@ -24,6 +24,9 @@ export class Category {
   })
   type!: CategoryType;
 
+  @Column({ nullable: true, length: 50 })
+  icon?: string;
+
   // Parent-child relationship
   @Column({ name: 'parent_id', nullable: true })
   parentId!: number | null;

@@ -28,6 +28,7 @@ const createCategorySchema = z.object({
   parentId: z.number().nullable().optional(),
   active: z.boolean().default(true),
   type: z.enum(['news', 'product', 'both', 'gallery']).default('news'),
+  icon: z.string().nullable().optional(),
   translations: z.array(categoryTranslationSchema).optional(),
 });
 
@@ -36,6 +37,7 @@ const updateCategorySchema = z.object({
   data: z.object({
     type: z.enum(['news', 'product', 'both', 'gallery']).optional(),
     active: z.boolean().optional(),
+    icon: z.string().nullable().optional(),
     translations: z.array(categoryTranslationSchema).optional(),
   })
 });
@@ -48,6 +50,7 @@ const transformCategory = (category: any) => {
     id: category.id,
     type: category.type,
     active: category.active,
+    icon: category.icon,
     createdAt: category.createdAt,
     updatedAt: category.updatedAt,
     translations: category.translations?.map((translation: any) => ({
@@ -63,6 +66,7 @@ const transformCategory = (category: any) => {
       id: category.parent.id,
       type: category.parent.type,
       active: category.parent.active,
+      icon: category.parent.icon,
       translations: category.parent.translations?.map((translation: any) => ({
         id: translation.id,
         locale: translation.locale,
@@ -75,6 +79,7 @@ const transformCategory = (category: any) => {
       id: child.id,
       type: child.type,
       active: child.active,
+      icon: child.icon,
       translations: child.translations?.map((translation: any) => ({
         id: translation.id,
         locale: translation.locale,
