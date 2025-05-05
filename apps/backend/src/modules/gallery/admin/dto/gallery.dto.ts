@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { GalleryType } from '@ew/shared';
 
 // DTO for gallery translation input
 export const galleryTranslationSchema = z.object({
@@ -14,6 +15,7 @@ export const createGallerySchema = z.object({
   image: z.string().url(),
   isActive: z.boolean().optional().default(true),
   sequence: z.number().int().min(0).optional().default(0),
+  type: z.nativeEnum(GalleryType).optional().default(GalleryType.COMMON),
   categoryIds: z.array(z.number().int().positive()).optional().default([]),
   translations: z.array(galleryTranslationSchema).min(1),
 });
@@ -26,6 +28,7 @@ export const updateGallerySchema = z.object({
   image: z.string().url().optional(),
   isActive: z.boolean().optional(),
   sequence: z.number().int().min(0).optional(),
+  type: z.nativeEnum(GalleryType).optional(),
   categoryIds: z.array(z.number().int().positive()).optional(),
   translations: z.array(galleryTranslationSchema).optional(),
 });

@@ -11,7 +11,7 @@
     <!-- Content Area -->
     <div v-else class="min-h-screen bg-slate-50">
       <div class="flex-1 overflow-y-auto">
-        <form @submit.prevent="updateCategory(false)" class="space-y-6">
+        <form @submit.prevent="handleUpdateCategory(false)" class="space-y-6">
           <!-- Header -->
           <PageHeader
             title="Edit Category"
@@ -84,7 +84,7 @@
               
               <button 
                 type="button"
-                @click.prevent="updateCategory(true)" 
+                @click.prevent="handleUpdateCategory(true)" 
                 :disabled="loading"
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
               >
@@ -208,10 +208,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
-import { useToast } from '@/composables/useToast'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import slugify from 'slugify'
 import {
   FileTextIcon,
   SettingsIcon,
@@ -222,64 +220,32 @@ import {
   SaveIcon,
   WandIcon
 } from 'lucide-vue-next'
-import { TYPE } from 'vue-toastification'
 import { useTrpc } from '../../../composables/useTrpc'
+import { useCategory } from '../../../composables/useCategory'
 
 // Import components
 import PageHeader from '../../../components/common/header/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { showToast } = useToast()
 const trpc = useTrpc()
 
-// Define types to match server schema
-interface CategoryTranslation {
-  locale: string
-  name: string
-  slug: string
-  description: string | null
-}
+// Use the new category composable
+const {
+  CategoryType,
+  loading,
+  form,
+  errors,
+  currentTranslation,
+  selectedLanguage,
+  saveAndContinue,
+  generateSlug,
+  validateForm,
+  fetchCategory,
+  updateCategory
+} = useCategory()
 
-const CategoryType = {
-  NEWS: 'news',
-  PRODUCT: 'product',
-  BOTH: 'both',
-  GALLERY: 'gallery'
-}
-
-interface CategoryUpdateData {
-  name?: string
-  type?: CategoryType
-  active?: boolean
-  translations?: CategoryTranslation[]
-}
-
-interface Translation {
-  name: string
-  slug: string
-  description: string
-}
-
-interface CategoryForm {
-  name: string
-  type: CategoryType
-  active: boolean
-  translations: Record<string, Translation>
-}
-
-// Add validation types and refs
-interface ValidationErrors {
-  name?: string;
-  slug?: string;
-  type?: string;
-}
-
-const errors = ref<ValidationErrors>({})
-const loading = ref(true)
-const saveAndContinue = ref(false)
 const currentTab = ref('basic')
-const selectedLanguage = ref('')
 const defaultLanguage = ref('')
 const isLanguageOpen = ref(false)
 const languages = ref<any[]>([])
@@ -296,25 +262,6 @@ const tabs = [
     icon: SettingsIcon
   }
 ]
-
-const form = ref<CategoryForm>({
-  name: '',
-  type: CategoryType.NEWS,
-  active: true,
-  translations: {}
-})
-
-// Computed property for current translation
-const currentTranslation = computed(() => {
-  if (!selectedLanguage.value || !form.value.translations[selectedLanguage.value]) {
-    return {
-      name: '',
-      slug: '',
-      description: ''
-    }
-  }
-  return form.value.translations[selectedLanguage.value]
-})
 
 const handleClickOutside = (event: Event) => {
   const target = event.target as HTMLElement;
@@ -338,7 +285,8 @@ onMounted(async () => {
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
   }
-  fetchCategory()
+  // Fetch category with id from route
+  fetchCategory(Number(route.params.id))
 })
 
 onBeforeUnmount(() => {
@@ -375,164 +323,9 @@ watch(selectedLanguage, (newLang, oldLang) => {
   }
 })
 
-// Add generateSlug function
-const generateSlug = () => {
-  if (form.value.name) {
-    if (!form.value.translations[selectedLanguage.value]) {
-      form.value.translations[selectedLanguage.value] = {
-        name: '',
-        slug: '',
-        description: ''
-      }
-    }
-    form.value.translations[selectedLanguage.value].slug = slugify(form.value.name, {
-      lower: true,
-      strict: true,
-      locale: selectedLanguage.value,
-      trim: true
-    })
-  }
-}
-
-// Add validation function
-const validateForm = (): boolean => {
-  errors.value = {}
-  let isValid = true
-
-  // Validate name
-  if (!form.value.name?.trim()) {
-    errors.value.name = 'Name is required'
-    isValid = false
-  }
-
-  // Validate slug
-  if (!currentTranslation.value.slug?.trim()) {
-    errors.value.slug = 'Slug is required'
-    isValid = false
-  }
-
-  // Validate type
-  if (!form.value.type) {
-    errors.value.type = 'Type is required'
-    isValid = false
-  }
-
-  return isValid
-}
-
-const fetchCategory = async () => {
-  try {
-    const category = await trpc.admin.category.getCategoryById.query(Number(route.params.id))
-    
-    if (category) {
-      // Initialize translations
-      const translations: Record<string, any> = {}
-      
-      category.translations?.forEach(translation => {
-        translations[translation.locale] = {
-          name: translation.name,
-          slug: translation.slug,
-          description: translation.description || ''
-        }
-      })
-
-      form.value = {
-        name: category.translations?.find(t => t.locale === selectedLanguage.value)?.name || category.name || '',
-        type: category.type as CategoryType,
-        active: category.active,
-        translations
-      }
-    }
-  } catch (error) {
-    console.error('Failed to fetch category:', error)
-    router.push('/categories')
-  } finally {
-    loading.value = false
-  }
-}
-
-const updateCategory = async (continueEditing = false) => {
-  try {
-    // Validate form before submitting
-    if (!validateForm()) {
-      showToast({
-        title: 'Validation Error',
-        description: 'Please check all required fields',
-        type: 'error'
-      })
-      return
-    }
-
-    loading.value = true
-    saveAndContinue.value = continueEditing
-
-    if (selectedLanguage.value) {
-      // Save current content to translations before submitting
-      form.value.translations[selectedLanguage.value] = {
-        name: form.value.name,
-        slug: currentTranslation.value.slug,
-        description: currentTranslation.value.description
-      }
-    }
-
-    // Prepare minimal data for update that matches server schema
-    const updateData: CategoryUpdateData = {
-      name: form.value.name,
-      type: form.value.type,
-      active: form.value.active,
-      translations: Object.entries(form.value.translations).map(([locale, content]): CategoryTranslation => ({
-        locale,
-        name: content.name,
-        slug: content.slug,
-        description: content.description || null
-      }))
-    }
-
-    await trpc.admin.category.updateCategory.mutate({
-      id: Number(route.params.id),
-      data: updateData
-    })
-    
-    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
-    const langName = currentLang?.nativeName || selectedLanguage.value
-
-    showToast({
-      title: 'Success',
-      description: `Category "${form.value.name}" (${langName}) updated successfully`,
-      type: 'success'
-    })
-    
-    if (!continueEditing) {
-      router.push('/categories')
-    } else {
-      // Refresh the category data
-      await fetchCategory()
-    }
-  } catch (error: any) {
-    console.error('Error updating category:', error)
-    
-    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
-    const langName = currentLang?.nativeName || selectedLanguage.value
-    
-    let errorMessage = `[${langName}] `
-    
-    if (error.cause) {
-      errorMessage += error.cause
-    } else if (error.message) {
-      errorMessage += error.message
-    } else {
-      errorMessage += 'Failed to update category. Please try again.'
-    }
-    
-    showToast({
-      title: 'Error',
-      description: errorMessage,
-      type: 'error'
-    })
-  } finally {
-    loading.value = false
-    saveAndContinue.value = false
-  }
+// Handle category update with route ID
+const handleUpdateCategory = async (continueEditing = false) => {
+  await updateCategory(Number(route.params.id), continueEditing)
 }
 
 const onFlagImageError = (event: Event) => {
@@ -545,7 +338,7 @@ const onFlagImageError = (event: Event) => {
       parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
     }
   }
-};
+}
 </script>
 
 <style scoped>

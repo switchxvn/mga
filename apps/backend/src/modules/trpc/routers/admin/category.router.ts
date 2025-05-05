@@ -33,7 +33,11 @@ const createCategorySchema = z.object({
 
 const updateCategorySchema = z.object({
   id: z.number(),
-  data: createCategorySchema.partial(),
+  data: z.object({
+    type: z.enum(['news', 'product', 'both', 'gallery']).optional(),
+    active: z.boolean().optional(),
+    translations: z.array(categoryTranslationSchema).optional(),
+  })
 });
 
 // Helper function to transform category data
@@ -89,7 +93,9 @@ export const categoryAdminRouter = router({
     .use(requirePermission(Permissions.VIEW_CONTENT))
     .query(async ({ ctx }) => {
       try {
-        return await ctx.services.categoryAdminService.findAll();
+        const categories = await ctx.services.categoryAdminService.findAll();
+        // Transform the categories to remove circular references
+        return categories.map(transformCategory);
       } catch (error) {
         ctx.logger.error('Failed to fetch categories:', error);
         throw new TRPCError({
@@ -112,7 +118,8 @@ export const categoryAdminRouter = router({
             message: `Category with ID ${input} not found`,
           });
         }
-        return category;
+        // Transform the category to remove circular references
+        return transformCategory(category);
       } catch (error) {
         ctx.logger.error('Failed to fetch category:', error);
         throw new TRPCError({
@@ -201,7 +208,9 @@ export const categoryAdminRouter = router({
     .input(createCategorySchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.categoryAdminService.create(input as CreateCategoryData);
+        const newCategory = await ctx.services.categoryAdminService.create(input as CreateCategoryData);
+        // Transform the category to remove circular references
+        return transformCategory(newCategory);
       } catch (error) {
         ctx.logger.error('Failed to create category:', error);
         throw new TRPCError({
@@ -228,7 +237,8 @@ export const categoryAdminRouter = router({
           type: input.type as CategoryType
         });
 
-        return result.items;
+        // Transform the categories to remove circular references
+        return result.items.map(transformCategory);
       } catch (error) {
         ctx.logger.error('Failed to fetch categories by type:', error);
         throw new TRPCError({
@@ -244,7 +254,9 @@ export const categoryAdminRouter = router({
     .input(updateCategorySchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.categoryAdminService.update(input.id, input.data as Partial<Category>);
+        const updatedCategory = await ctx.services.categoryAdminService.updateCategory(input.id, input.data as UpdateCategoryData);
+        // Transform the category to remove circular references
+        return transformCategory(updatedCategory);
       } catch (error) {
         ctx.logger.error('Failed to update category:', error);
         throw new TRPCError({

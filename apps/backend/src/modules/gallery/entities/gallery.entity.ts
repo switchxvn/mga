@@ -1,6 +1,7 @@
 import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { GalleryTranslation } from './gallery-translation.entity';
 import { Category } from '../../category/entities/category.entity';
+import { GalleryType } from '@ew/shared';
 
 @Entity('galleries')
 export class Gallery {
@@ -21,6 +22,9 @@ export class Gallery {
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', name: 'updated_at' })
   updatedAt: Date;
+
+  @Column({ type: 'enum', enum: GalleryType, default: GalleryType.COMMON })
+  type: GalleryType;
 
   @OneToMany(() => GalleryTranslation, translation => translation.gallery, {
     cascade: ['insert', 'update', 'remove'],

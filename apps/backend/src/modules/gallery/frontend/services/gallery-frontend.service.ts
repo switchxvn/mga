@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Gallery } from '../../entities/gallery.entity';
 import { GalleryTranslation } from '../../entities/gallery-translation.entity';
 import { CreateGalleryInput, UpdateGalleryInput, GalleryType } from '@ew/shared';
 import { Gallery as IGallery } from '@ew/shared';
+import { Category } from '../../../category/entities/category.entity';
 
 @Injectable()
 export class GalleryFrontendService {
@@ -46,6 +47,10 @@ export class GalleryFrontendService {
         galleryId: t.galleryId,
         createdAt: t.createdAt,
         updatedAt: t.updatedAt
+      })) || [],
+      categories: gallery.categories?.map(category => ({
+        id: category.id,
+        name: undefined // Explicitly set name as undefined to match the interface
       })) || []
     };
   }
@@ -53,7 +58,7 @@ export class GalleryFrontendService {
   async findAll(): Promise<IGallery[]> {
     try {
       const galleries = await this.galleryRepository.find({
-        relations: ['translations'],
+        relations: ['translations', 'categories'],
         order: { sequence: 'ASC' }
       });
 
@@ -70,7 +75,7 @@ export class GalleryFrontendService {
     try {
       const galleries = await this.galleryRepository.find({
         where: { isActive: true },
-        relations: ['translations'],
+        relations: ['translations', 'categories'],
         order: { sequence: 'ASC' }
       });
 
@@ -99,7 +104,7 @@ export class GalleryFrontendService {
     try {
       const gallery = await this.galleryRepository.findOne({
         where: { id },
-        relations: ['translations']
+        relations: ['translations', 'categories']
       });
 
       if (!gallery) {
@@ -117,7 +122,7 @@ export class GalleryFrontendService {
     try {
       const galleries = await this.galleryRepository.find({
         where: { isActive: true },
-        relations: ['translations'],
+        relations: ['translations', 'categories'],
         order: { sequence: 'ASC' }
       });
 
@@ -134,7 +139,7 @@ export class GalleryFrontendService {
     try {
       const galleries = await this.galleryRepository.find({
         where: { isActive: true },
-        relations: ['translations'],
+        relations: ['translations', 'categories'],
         order: { sequence: 'ASC' }
       });
 
@@ -170,6 +175,13 @@ export class GalleryFrontendService {
         return galleryTranslation;
       });
 
+      // If categoryIds are provided, add them to the gallery
+      if (createGalleryInput.categoryIds && createGalleryInput.categoryIds.length > 0) {
+        gallery.categories = createGalleryInput.categoryIds.map(id => ({ id } as Category));
+      } else {
+        gallery.categories = [];
+      }
+
       const savedGallery = await this.galleryRepository.save(gallery);
       return this.formatGalleryResponse(savedGallery);
     } catch (error) {
@@ -182,7 +194,7 @@ export class GalleryFrontendService {
     try {
       const gallery = await this.galleryRepository.findOne({
         where: { id },
-        relations: ['translations']
+        relations: ['translations', 'categories']
       });
 
       if (!gallery) {
@@ -208,6 +220,11 @@ export class GalleryFrontendService {
           galleryTranslation.description = translation.description;
           return galleryTranslation;
         });
+      }
+
+      // Update categories if provided
+      if (updateGalleryInput.categoryIds !== undefined) {
+        gallery.categories = updateGalleryInput.categoryIds.map(id => ({ id } as Category));
       }
 
       const updatedGallery = await this.galleryRepository.save(gallery);
