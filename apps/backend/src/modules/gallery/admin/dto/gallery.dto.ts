@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { GalleryType } from '@ew/shared';
 
 // DTO for gallery translation input
 export const galleryTranslationSchema = z.object({
