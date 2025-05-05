@@ -1,317 +1,3 @@
-<script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
-import { useToast } from '@/composables/useToast'
-import { useRouter } from 'vue-router'
-import slugify from 'slugify'
-import {
-  FileTextIcon,
-  SettingsIcon,
-  XIcon,
-  SaveAllIcon,
-  ChevronDownIcon,
-  CheckIcon,
-  SaveIcon,
-  WandIcon
-} from 'lucide-vue-next'
-import { TYPE } from 'vue-toastification'
-import { useTrpc } from '../../composables/useTrpc'
-
-// Import components
-import PageHeader from '../../components/common/header/PageHeader.vue'
-
-const router = useRouter()
-const { showToast } = useToast()
-const trpc = useTrpc()
-
-// Define types for translations
-interface Translation {
-  name: string
-  slug: string
-  description: string
-}
-
-interface CategoryForm {
-  name: string
-  type: 'news' | 'product' | 'both'
-  active: boolean
-  translations: Record<string, Translation>
-}
-
-// Add validation types and refs
-interface ValidationErrors {
-  name?: string;
-  slug?: string;
-  type?: string;
-}
-
-const errors = ref<ValidationErrors>({})
-
-const isSubmitting = ref(false)
-const currentTab = ref('basic')
-const selectedLanguage = ref('')
-const defaultLanguage = ref('')
-const isLanguageOpen = ref(false)
-const languages = ref<any[]>([])
-
-const tabs = [
-  { 
-    id: 'basic', 
-    name: 'Basic Info', 
-    icon: FileTextIcon
-  },
-  { 
-    id: 'settings', 
-    name: 'Settings', 
-    icon: SettingsIcon
-  }
-]
-
-const form = ref<CategoryForm>({
-  name: '',
-  type: 'news',
-  active: true,
-  translations: {}
-})
-
-// Computed property for current translation
-const currentTranslation = computed(() => {
-  if (!selectedLanguage.value || !form.value.translations[selectedLanguage.value]) {
-    return {
-      name: '',
-      slug: '',
-      description: ''
-    }
-  }
-  return form.value.translations[selectedLanguage.value]
-})
-
-const handleClickOutside = (event: Event) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.language-switcher')) {
-    isLanguageOpen.value = false;
-  }
-};
-
-onMounted(async () => {
-  try {
-    const [langs, defaultLang] = await Promise.all([
-      trpc.admin.languages.getLanguages.query(),
-      trpc.admin.languages.getDefaultLanguage.query()
-    ])
-    languages.value = langs
-    defaultLanguage.value = defaultLang?.code || ''
-    selectedLanguage.value = defaultLang?.code || ''
-
-    // Initialize translations for default language
-    if (selectedLanguage.value) {
-      form.value.translations[selectedLanguage.value] = {
-        name: '',
-        slug: '',
-        description: ''
-      }
-    }
-  } catch (error) {
-    console.error('Failed to fetch languages:', error)
-  }
-  if (process.client) {
-    document.addEventListener('click', handleClickOutside);
-  }
-})
-
-onBeforeUnmount(() => {
-  if (process.client) {
-    document.removeEventListener('click', handleClickOutside);
-  }
-})
-
-// Watch for language changes
-watch(selectedLanguage, (newLang, oldLang) => {
-  if (!newLang) return
-
-  if (oldLang) {
-    // Save current content to translations before switching
-    form.value.translations[oldLang] = {
-      name: form.value.name,
-      slug: currentTranslation.value.slug,
-      description: currentTranslation.value.description
-    }
-  }
-  
-  // Load content for new language
-  if (form.value.translations[newLang]) {
-    const translation = form.value.translations[newLang]
-    form.value.name = translation.name
-  } else {
-    // Initialize new translation
-    form.value.name = ''
-    form.value.translations[newLang] = {
-      name: '',
-      slug: '',
-      description: ''
-    }
-  }
-})
-
-// Add generateSlug function
-const generateSlug = () => {
-  if (form.value.name) {
-    if (!form.value.translations[selectedLanguage.value]) {
-      form.value.translations[selectedLanguage.value] = {
-        name: '',
-        slug: '',
-        description: ''
-      }
-    }
-    form.value.translations[selectedLanguage.value].slug = slugify(form.value.name, {
-      lower: true,
-      strict: true,
-      locale: selectedLanguage.value,
-      trim: true
-    })
-  }
-}
-
-const resetForm = () => {
-  form.value = {
-    name: '',
-    type: 'news',
-    active: true,
-    translations: {
-      [selectedLanguage.value]: {
-        name: '',
-        slug: '',
-        description: ''
-      }
-    }
-  }
-}
-
-// Add validation function
-const validateForm = (): boolean => {
-  errors.value = {}
-  let isValid = true
-
-  // Validate name
-  if (!form.value.name?.trim()) {
-    errors.value.name = 'Name is required'
-    isValid = false
-  }
-
-  // Validate slug
-  if (!currentTranslation.value.slug?.trim()) {
-    errors.value.slug = 'Slug is required'
-    isValid = false
-  }
-
-  // Validate type
-  if (!form.value.type) {
-    errors.value.type = 'Type is required'
-    isValid = false
-  }
-
-  return isValid
-}
-
-const handleSubmit = async (saveAndContinue = false) => {
-  try {
-    // Validate form before submitting
-    if (!validateForm()) {
-      showToast({
-        title: 'Validation Error',
-        description: 'Please check all required fields',
-        type: TYPE.ERROR
-      })
-      return
-    }
-
-    isSubmitting.value = true
-
-    if (selectedLanguage.value) {
-      // Save current content to translations before submitting
-      form.value.translations[selectedLanguage.value] = {
-        name: form.value.name,
-        slug: currentTranslation.value.slug,
-        description: currentTranslation.value.description
-      }
-    }
-
-    // Prepare translations array for API
-    const translations = Object.entries(form.value.translations).map(([locale, content]) => ({
-      locale,
-      name: content.name,
-      slug: content.slug,
-      description: content.description
-    }))
-
-    const result = await trpc.admin.category.createCategory.mutate({
-      name: form.value.name,
-      slug: currentTranslation.value.slug,
-      type: form.value.type,
-      isActive: form.value.active,
-      translations
-    })
-    
-    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
-    const langName = currentLang?.nativeName || selectedLanguage.value
-
-    showToast({
-      title: 'Success',
-      description: `Category "${form.value.name}" (${langName}) created successfully`,
-      type: TYPE.SUCCESS
-    })
-    
-    if (!saveAndContinue) {
-      router.push('/categories')
-    } else {
-      // Reset form for new entry
-      resetForm()
-      // Focus on name input after reset
-      nextTick(() => {
-        const nameInput = document.querySelector('input[name="name"]') as HTMLInputElement
-        if (nameInput) {
-          nameInput.focus()
-        }
-      })
-    }
-  } catch (error: any) {
-    console.error('Error creating category:', error)
-    
-    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
-    const langName = currentLang?.nativeName || selectedLanguage.value
-    
-    let errorMessage = `[${langName}] `
-    
-    if (error.cause) {
-      errorMessage += error.cause
-    } else if (error.message) {
-      errorMessage += error.message
-    } else {
-      errorMessage += 'Failed to create category. Please try again.'
-    }
-    
-    showToast({
-      title: 'Error',
-      description: errorMessage,
-      type: TYPE.ERROR
-    })
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-const onFlagImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  if (target) {
-    target.style.display = 'none';
-    const parent = target.parentElement;
-    if (parent) {
-      parent.textContent = selectedLanguage.value?.toUpperCase().slice(0, 2) || '';
-      parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
-    }
-  }
-};
-</script>
-
 <template>
   <div class="min-h-screen bg-slate-50">
     <div class="flex-1 overflow-y-auto">
@@ -389,20 +75,20 @@ const onFlagImageError = (event: Event) => {
             <button 
               type="button"
               @click.prevent="handleSubmit(true)" 
-              :disabled="isSubmitting"
+              :disabled="loading"
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
             >
               <SaveIcon class="w-4 h-4 mr-2" />
-              {{ isSubmitting ? 'Saving...' : 'Save & Create Another' }}
+              {{ loading ? 'Saving...' : 'Save & Create Another' }}
             </button>
 
             <button 
               type="submit"
-              :disabled="isSubmitting"
+              :disabled="loading"
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
             >
               <SaveAllIcon class="w-4 h-4 mr-2" />
-              {{ isSubmitting ? 'Saving...' : 'Save & Back to List' }}
+              {{ loading ? 'Saving...' : 'Save & Back to List' }}
             </button>
           </template>
         </PageHeader>
@@ -448,13 +134,19 @@ const onFlagImageError = (event: Event) => {
                     :options="[
                       { label: 'News', value: 'news' },
                       { label: 'Product', value: 'product' },
-                      { label: 'Both', value: 'both' }
+                      { label: 'Both', value: 'both' },
+                      { label: 'Gallery', value: 'gallery' }
                     ]"
                     option-attribute="label"
                     required
                     :error="!!errors.type"
                   />
                 </UFormGroup>
+
+                <IconSelector
+                  v-model="form.icon"
+                  :error="errors.icon"
+                />
               </div>
 
               <UFormGroup label="Slug" required :error="errors.slug">
@@ -508,6 +200,140 @@ const onFlagImageError = (event: Event) => {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import {
+  FileTextIcon,
+  SettingsIcon,
+  XIcon,
+  SaveAllIcon,
+  ChevronDownIcon,
+  CheckIcon,
+  SaveIcon,
+  WandIcon,
+  SearchIcon,
+  HelpCircleIcon
+} from 'lucide-vue-next'
+import { useTrpc } from '../../composables/useTrpc'
+import { useCategory } from '../../composables/useCategory'
+import PageHeader from '../../components/common/header/PageHeader.vue'
+import IconSelector from '../../components/common/IconSelector.vue'
+
+const trpc = useTrpc()
+
+// Use the category composable
+const {
+  form,
+  errors,
+  loading,
+  currentTranslation,
+  selectedLanguage,
+  generateSlug,
+  createCategory
+} = useCategory()
+
+const currentTab = ref('basic')
+const isLanguageOpen = ref(false)
+const languages = ref<any[]>([])
+const defaultLanguage = ref('')
+
+const tabs = [
+  { 
+    id: 'basic', 
+    name: 'Basic Info', 
+    icon: FileTextIcon
+  },
+  { 
+    id: 'settings', 
+    name: 'Settings', 
+    icon: SettingsIcon
+  }
+]
+
+onMounted(async () => {
+  try {
+    const [langs, defaultLang] = await Promise.all([
+      trpc.admin.languages.getLanguages.query(),
+      trpc.admin.languages.getDefaultLanguage.query()
+    ])
+    languages.value = langs
+    defaultLanguage.value = defaultLang?.code || ''
+    selectedLanguage.value = defaultLang?.code || ''
+
+    // Initialize translations for default language
+    if (selectedLanguage.value) {
+      form.value.translations[selectedLanguage.value] = {
+        name: '',
+        slug: '',
+        description: ''
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch languages:', error)
+  }
+  if (process.client) {
+    document.addEventListener('click', handleClickOutside);
+  }
+})
+
+onBeforeUnmount(() => {
+  if (process.client) {
+    document.removeEventListener('click', handleClickOutside);
+  }
+})
+
+// Watch for language changes
+watch(selectedLanguage, (newLang, oldLang) => {
+  if (!newLang) return
+
+  if (oldLang) {
+    // Save current content to translations before switching
+    form.value.translations[oldLang] = {
+      name: form.value.name,
+      slug: currentTranslation.value.slug,
+      description: currentTranslation.value.description
+    }
+  }
+  
+  // Load content for new language
+  if (form.value.translations[newLang]) {
+    const translation = form.value.translations[newLang]
+    form.value.name = translation.name
+  } else {
+    // Initialize new translation
+    form.value.name = ''
+    form.value.translations[newLang] = {
+      name: '',
+      slug: '',
+      description: ''
+    }
+  }
+})
+
+const handleSubmit = async (saveAndContinue = false) => {
+  await createCategory(saveAndContinue)
+}
+
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest('.language-switcher')) {
+    isLanguageOpen.value = false;
+  }
+}
+
+const onFlagImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.style.display = 'none';
+    const parent = target.parentElement;
+    if (parent) {
+      parent.textContent = selectedLanguage.value?.toUpperCase().slice(0, 2) || '';
+      parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
+    }
+  }
+};
+</script>
 
 <style scoped>
 .form-section {

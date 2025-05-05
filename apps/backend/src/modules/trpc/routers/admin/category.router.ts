@@ -26,14 +26,20 @@ const createCategorySchema = z.object({
   slug: z.string(),
   description: z.string().optional(),
   parentId: z.number().nullable().optional(),
-  isActive: z.boolean().default(true),
-  type: z.string().default('default'),
+  active: z.boolean().default(true),
+  type: z.enum(['news', 'product', 'both', 'gallery']).default('news'),
+  icon: z.string().nullable().optional(),
   translations: z.array(categoryTranslationSchema).optional(),
 });
 
 const updateCategorySchema = z.object({
   id: z.number(),
-  data: createCategorySchema.partial(),
+  data: z.object({
+    type: z.enum(['news', 'product', 'both', 'gallery']).optional(),
+    active: z.boolean().optional(),
+    icon: z.string().nullable().optional(),
+    translations: z.array(categoryTranslationSchema).optional(),
+  })
 });
 
 // Helper function to transform category data
@@ -44,6 +50,7 @@ const transformCategory = (category: any) => {
     id: category.id,
     type: category.type,
     active: category.active,
+    icon: category.icon,
     createdAt: category.createdAt,
     updatedAt: category.updatedAt,
     translations: category.translations?.map((translation: any) => ({
@@ -59,6 +66,7 @@ const transformCategory = (category: any) => {
       id: category.parent.id,
       type: category.parent.type,
       active: category.parent.active,
+      icon: category.parent.icon,
       translations: category.parent.translations?.map((translation: any) => ({
         id: translation.id,
         locale: translation.locale,
@@ -71,6 +79,7 @@ const transformCategory = (category: any) => {
       id: child.id,
       type: child.type,
       active: child.active,
+      icon: child.icon,
       translations: child.translations?.map((translation: any) => ({
         id: translation.id,
         locale: translation.locale,
@@ -89,7 +98,9 @@ export const categoryAdminRouter = router({
     .use(requirePermission(Permissions.VIEW_CONTENT))
     .query(async ({ ctx }) => {
       try {
-        return await ctx.services.categoryAdminService.findAll();
+        const categories = await ctx.services.categoryAdminService.findAll();
+        // Transform the categories to remove circular references
+        return categories.map(transformCategory);
       } catch (error) {
         ctx.logger.error('Failed to fetch categories:', error);
         throw new TRPCError({
@@ -112,7 +123,8 @@ export const categoryAdminRouter = router({
             message: `Category with ID ${input} not found`,
           });
         }
-        return category;
+        // Transform the category to remove circular references
+        return transformCategory(category);
       } catch (error) {
         ctx.logger.error('Failed to fetch category:', error);
         throw new TRPCError({
@@ -131,7 +143,7 @@ export const categoryAdminRouter = router({
         limit: z.number().min(1).default(100),
         search: z.string().default(''),
         active: z.boolean().nullable().default(null),
-        type: z.enum(['news', 'product', 'both']).optional(),
+        type: z.enum(['news', 'product', 'both', 'gallery']).optional(),
         sortBy: z.string().optional(),
         sortOrder: z.enum(['asc', 'desc']).optional()
       })
@@ -201,7 +213,9 @@ export const categoryAdminRouter = router({
     .input(createCategorySchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.categoryAdminService.create(input as CreateCategoryData);
+        const newCategory = await ctx.services.categoryAdminService.create(input as CreateCategoryData);
+        // Transform the category to remove circular references
+        return transformCategory(newCategory);
       } catch (error) {
         ctx.logger.error('Failed to create category:', error);
         throw new TRPCError({
@@ -212,12 +226,42 @@ export const categoryAdminRouter = router({
       }
     }),
 
+  getByType: adminProcedure
+    .use(requirePermission(Permissions.VIEW_CONTENT))
+    .input(z.object({
+      type: z.enum(['news', 'product', 'both', 'gallery'])
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        console.log('getByType called with input:', input);
+        
+        const result = await ctx.services.categoryAdminService.getCategories({
+          page: 1,
+          limit: 100,
+          active: true,
+          type: input.type as CategoryType
+        });
+
+        // Transform the categories to remove circular references
+        return result.items.map(transformCategory);
+      } catch (error) {
+        ctx.logger.error('Failed to fetch categories by type:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch categories by type',
+          cause: error,
+        });
+      }
+    }),
+
   updateCategory: adminProcedure
     .use(requirePermission(Permissions.EDIT_CONTENT))
     .input(updateCategorySchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.categoryAdminService.update(input.id, input.data as Partial<Category>);
+        const updatedCategory = await ctx.services.categoryAdminService.updateCategory(input.id, input.data as UpdateCategoryData);
+        // Transform the category to remove circular references
+        return transformCategory(updatedCategory);
       } catch (error) {
         ctx.logger.error('Failed to update category:', error);
         throw new TRPCError({

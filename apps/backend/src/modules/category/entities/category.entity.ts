@@ -3,6 +3,7 @@ import { Post } from '../../post/entities/post.entity';
 import { Product } from '../../product/entities/product.entity';
 import { CategoryTranslation } from './category-translation.entity';
 import { CategoryType } from '../../../../../../libs/shared/src/types/category.type';
+import { Gallery } from '../../gallery/entities/gallery.entity';
 
 @Entity('categories')
 export class Category {
@@ -22,6 +23,9 @@ export class Category {
     name: 'category_type'
   })
   type!: CategoryType;
+
+  @Column({ nullable: true, length: 50 })
+  icon?: string;
 
   // Parent-child relationship
   @Column({ name: 'parent_id', nullable: true })
@@ -55,6 +59,9 @@ export class Category {
 
   @ManyToMany(() => Product, (product) => product.categories)
   products!: Product[];
+
+  @ManyToMany(() => Gallery, (gallery) => gallery.categories)
+  galleries!: Gallery[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

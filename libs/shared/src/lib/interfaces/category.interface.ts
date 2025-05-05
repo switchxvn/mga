@@ -25,6 +25,7 @@ export interface Category {
   active: boolean;
   isFeatured: boolean;
   type: CategoryType;
+  icon?: string | null;
   parentId: number | null;
   parent: Category | null;
   children: Category[];
