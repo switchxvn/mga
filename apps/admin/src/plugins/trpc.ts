@@ -16,8 +16,18 @@ export default defineNuxtPlugin(() => {
     links: [
       httpBatchLink({
         url: `${baseUrl}/api/trpc`,
+        // Trong SSR chúng ta có thể gặp lỗi khi truy cập API, 
+        // nhưng điều này không quan trọng vì chúng ta sẽ 
+        // kiểm tra process.client trước khi thực hiện bất kỳ cuộc gọi API nào
+        fetch: process.server 
+          ? () => Promise.reject(new Error('API calls are skipped during SSR')) 
+          : undefined,
         headers() {
-          const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+          // Only access localStorage when on client-side
+          let token = null;
+          if (process.client && typeof window !== 'undefined') {
+            token = localStorage.getItem('accessToken');
+          }
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
       }),

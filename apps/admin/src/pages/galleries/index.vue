@@ -40,7 +40,8 @@ import PageHeader from '../../components/common/header/PageHeader.vue';
 import { useAuth } from "../../composables/useAuth";
 import { useTrpc } from "../../composables/useTrpc";
 import { useUpload } from "../../composables/useUpload";
-import { useToast } from 'vue-toastification';
+import { useNotification } from "../../composables/useNotification";
+import { useGallery } from "../../composables/useGallery";
 
 definePageMeta({
   middleware: ["auth"],
@@ -55,33 +56,31 @@ const route = useRoute();
 const { checkAuth } = useAuth();
 const trpc = useTrpc();
 const { uploadImage, isUploading } = useUpload();
-const toast = useToast();
+const { showSuccess, showError, showWarning, showInfo } = useNotification();
 
-const isLoading = ref(true);
-const error = ref<string | null>(null);
-const search = ref(route.query.search?.toString() || '');
-const activeFilter = ref<boolean | undefined>(
-  route.query.active === 'true' ? true : 
-  route.query.active === 'false' ? false : 
-  undefined
-);
-const categoryId = ref<number | undefined>(
-  route.query.categoryId ? Number(route.query.categoryId) : undefined
-);
-const page = ref(Number(route.query.page) || 1);
-const pageSize = ref(10);
-const galleries = ref<PaginatedResponse<Gallery>>({
-  items: [],
-  total: 0,
-  currentPage: 1,
-  limit: 10,
-  totalPages: 1
-});
-
-const categories = ref<{id: number, name: string}[]>([]);
-const selectedGalleries = ref<number[]>([]);
-const sortBy = ref('createdAt');
-const sortOrder = ref<'asc' | 'desc'>('desc');
+// Use the gallery composable
+const {
+  isLoading,
+  error,
+  galleries,
+  categories,
+  selectedGalleries,
+  search,
+  activeFilter,
+  categoryId,
+  page,
+  pageSize,
+  fetchGalleries,
+  fetchCategories,
+  deleteGallery,
+  toggleActive,
+  bulkAction,
+  toggleSelectAll,
+  toggleGallerySelection,
+  formatDate,
+  getCategoryNames,
+  updateCategories
+} = useGallery();
 
 const selectedImage = ref<string | null>(null);
 const isZoomModalOpen = ref(false);
@@ -114,97 +113,7 @@ watch([page, search, activeFilter, categoryId], () => {
   }
 }, { deep: true });
 
-async function fetchGalleries() {
-  try {
-    isLoading.value = true;
-    error.value = null;
-
-    // Thêm kiểm tra client side
-    if (!process.client) {
-      console.log('Skip fetchGalleries on server side to avoid localStorage error');
-      return;
-    }
-
-    const result = await trpc.admin.galleries.getAll.query({
-      page: page.value,
-      limit: pageSize.value,
-      search: search.value || undefined,
-      isActive: activeFilter.value,
-      categoryId: categoryId.value
-    });
-
-    // Log response for debugging
-    console.log('Gallery API response:', result);
-
-    // Chuyển đổi dữ liệu
-    if (result && typeof result === 'object' && 'items' in result && 'total' in result) {
-      const formattedItems = result.items.map(item => ({
-        ...item,
-        createdAt: new Date(item.createdAt),
-        updatedAt: new Date(item.updatedAt)
-      }));
-      
-      galleries.value = {
-        items: formattedItems,
-        total: result.total,
-        currentPage: result.currentPage,
-        limit: result.limit,
-        totalPages: result.totalPages
-      };
-    } else {
-      console.error('Unknown response structure:', result);
-      error.value = 'Không thể xử lý dữ liệu từ server';
-      
-      galleries.value = {
-        items: [],
-        total: 0,
-        currentPage: 1,
-        limit: 10,
-        totalPages: 1
-      };
-    }
-  } catch (err: any) {
-    error.value = err.message || "Failed to load galleries";
-    console.error("Error loading galleries:", err);
-    
-    // Reset to empty state on error
-    galleries.value = {
-      items: [],
-      total: 0,
-      currentPage: 1,
-      limit: 10, 
-      totalPages: 1
-    };
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Fetch categories
-const fetchCategories = async () => {
-  try {
-    // Thêm kiểm tra client side
-    if (!process.client) {
-      console.log('Skip fetchCategories on server side to avoid localStorage error');
-      return;
-    }
-
-    const result = await trpc.admin.category.getByType.query({
-      type: 'gallery'
-    });
-    categories.value = result
-      .filter(cat => cat !== null)
-      .map(cat => ({
-        id: cat.id,
-        name: cat.translations && cat.translations[0]?.name || `Category ${cat.id}`
-      }));
-  } catch (err: any) {
-    console.error("Error loading categories:", err);
-  }
-};
-
-// Update URL query parameters
-const updateQueryParams = () => {
+async function updateQueryParams() {
   const query: Record<string, string | undefined> = {
     page: page.value > 1 ? page.value.toString() : undefined,
     search: search.value || undefined,
@@ -216,7 +125,7 @@ const updateQueryParams = () => {
   Object.keys(query).forEach(key => query[key] === undefined && delete query[key]);
 
   router.replace({ query });
-};
+}
 
 async function handleDelete(id: number) {
   try {
@@ -254,105 +163,15 @@ async function handleDelete(id: number) {
   }
 }
 
-// Add bulk actions handler
+// Handle bulk action with categories modal
 async function handleBulkAction(action: string) {
-  const selectedCount = selectedGalleries.value.length;
-  if (!selectedCount) return;
-
-  let confirmConfig: any = {
-    icon: 'question' as const,
-    showCancelButton: true,
-    confirmButtonText: 'Yes, proceed',
-    cancelButtonText: 'Cancel',
-    title: '',
-    text: '',
-    confirmButtonColor: ''
-  };
-
-  switch (action) {
-    case 'activate':
-      confirmConfig = {
-        ...confirmConfig,
-        title: 'Activate Selected Items?',
-        text: `Are you sure you want to activate ${selectedCount} selected gallery items?`,
-        confirmButtonColor: '#10B981',
-        confirmButtonText: 'Yes, activate them'
-      };
-      break;
-    case 'deactivate':
-      confirmConfig = {
-        ...confirmConfig,
-        title: 'Deactivate Selected Items?',
-        text: `Are you sure you want to deactivate ${selectedCount} selected gallery items?`,
-        confirmButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, deactivate them'
-      };
-      break;
-    case 'delete':
-      confirmConfig = {
-        ...confirmConfig,
-        title: 'Delete Selected Items?',
-        text: `Are you sure you want to permanently delete ${selectedCount} selected gallery items? This action cannot be undone.`,
-        confirmButtonColor: '#DC2626',
-        confirmButtonText: 'Yes, delete them',
-        icon: 'warning' as const
-      };
-      break;
-    case 'updateCategories':
-      isCategoryModalOpen.value = true;
-      return;
+  if (action === 'updateCategories') {
+    isCategoryModalOpen.value = true;
+    return;
   }
-
-  const result = await Swal.fire(confirmConfig);
-  if (!result.isConfirmed) return;
-
-  try {
-    isLoading.value = true;
-
-    switch (action) {
-      case 'activate':
-      case 'deactivate':
-        await Promise.all(
-          selectedGalleries.value.map(galleryId => {
-            return trpc.admin.galleries.update.mutate({
-              id: galleryId,
-              isActive: action === 'activate'
-            });
-          })
-        );
-        break;
-      case 'delete':
-        await Promise.all(
-          selectedGalleries.value.map(galleryId => 
-            trpc.admin.galleries.delete.mutate(galleryId)
-          )
-        );
-        break;
-    }
-
-    // Refresh galleries list
-    await fetchGalleries();
-    selectedGalleries.value = [];
-
-    Swal.fire({
-      title: 'Success!',
-      text: `Successfully performed ${action} on ${selectedCount} gallery items`,
-      icon: 'success',
-      timer: 2000,
-      showConfirmButton: false
-    });
-  } catch (err: any) {
-    error.value = err.message || `Failed to ${action} gallery items`;
-    console.error(`Error performing ${action} on gallery items:`, err);
-    
-    Swal.fire({
-      title: 'Error!',
-      text: err.message || `Failed to ${action} gallery items`,
-      icon: 'error' as const
-    });
-  } finally {
-    isLoading.value = false;
-  }
+  
+  await bulkAction(action as 'activate' | 'deactivate' | 'delete', selectedGalleries.value);
+  selectedGalleries.value = [];
 }
 
 // New function to handle bulk category update
@@ -362,48 +181,15 @@ async function handleBulkCategoryUpdate() {
     return;
   }
 
-  const selectedCount = selectedGalleries.value.length;
+  const success = await updateCategories(selectedGalleries.value, selectedCategoriesToUpdate.value);
   
-  try {
-    isLoading.value = true;
-    isCategoryModalOpen.value = false;
-    
-    // Update each gallery with the selected categories
-    await Promise.all(
-      selectedGalleries.value.map(galleryId => {
-        return trpc.admin.galleries.update.mutate({
-          id: galleryId,
-          categoryIds: selectedCategoriesToUpdate.value
-        });
-      })
-    );
-
-    // Refresh galleries list
-    await fetchGalleries();
-    
+  if (success) {
     // Reset selected galleries and categories after update
     selectedGalleries.value = [];
     selectedCategoriesToUpdate.value = [];
-
-    Swal.fire({
-      title: 'Success!',
-      text: `Successfully updated categories for ${selectedCount} gallery items`,
-      icon: 'success',
-      timer: 2000,
-      showConfirmButton: false
-    });
-  } catch (err: any) {
-    error.value = err.message || 'Failed to update categories';
-    console.error('Error updating categories:', err);
-    
-    Swal.fire({
-      title: 'Error!',
-      text: err.message || 'Failed to update categories',
-      icon: 'error' as const
-    });
-  } finally {
-    isLoading.value = false;
   }
+  
+  isCategoryModalOpen.value = false;
 }
 
 // Function to close the category modal
@@ -434,30 +220,10 @@ onMounted(async () => {
   }
 });
 
-const formatDate = (date: string | Date) => {
-  const dateObj = date instanceof Date ? date : new Date(date);
-  return dateObj.toLocaleDateString();
-};
-
-// Add bulk selection handling
-const toggleSelectAll = () => {
-  if (selectedGalleries.value.length === galleries.value.items.length) {
-    selectedGalleries.value = [];
-  } else {
-    selectedGalleries.value = galleries.value.items.map((gallery: Gallery) => gallery.id);
-  }
-};
-
-const toggleGallerySelection = (galleryId: number) => {
-  const index = selectedGalleries.value.indexOf(galleryId);
-  if (index === -1) {
-    selectedGalleries.value.push(galleryId);
-  } else {
-    selectedGalleries.value.splice(index, 1);
-  }
-};
-
 // Add sorting function
+const sortBy = ref('createdAt');
+const sortOrder = ref<'asc' | 'desc'>('desc');
+
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
@@ -476,61 +242,6 @@ const openZoomModal = (image: string) => {
 const closeZoomModal = () => {
   selectedImage.value = null;
   isZoomModalOpen.value = false;
-};
-
-// Toggle active status
-async function toggleActive(gallery: Gallery) {
-  const newStatus = !gallery.isActive;
-  
-  const result = await Swal.fire({
-    title: `${newStatus ? 'Activate' : 'Deactivate'} Gallery Item?`,
-    text: `Are you sure you want to ${newStatus ? 'activate' : 'deactivate'} this gallery item?`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: `Yes, ${newStatus ? 'activate' : 'deactivate'} it!`,
-    cancelButtonText: 'Cancel',
-    confirmButtonColor: newStatus ? '#10B981' : '#6B7280',
-  });
-
-  if (!result.isConfirmed) return;
-
-  try {
-    await trpc.admin.galleries.update.mutate({
-      id: gallery.id,
-      isActive: newStatus
-    });
-    
-    gallery.isActive = newStatus;
-
-    Swal.fire({
-      title: 'Success!',
-      text: `Gallery item ${newStatus ? 'activated' : 'deactivated'} successfully`,
-      icon: 'success',
-      timer: 2000,
-      showConfirmButton: false
-    });
-  } catch (err: any) {
-    const errorMessage = err.message || "Failed to update gallery status";
-    error.value = errorMessage;
-    console.error("Error updating gallery status:", err);
-    
-    Swal.fire({
-      title: 'Error!',
-      text: errorMessage,
-      icon: 'error' as const
-    });
-  }
-}
-
-// Helper to get category name
-const getCategoryNames = (gallery: Gallery) => {
-  if (!gallery.categories || gallery.categories.length === 0) {
-    return '-';
-  }
-  
-  return gallery.categories
-    .map(cat => categories.value.find(c => c.id === cat.id)?.name || `Category ${cat.id}`)
-    .join(', ');
 };
 
 // Mở modal upload hàng loạt
@@ -710,7 +421,7 @@ const handleDrop = async (event: DragEvent) => {
   });
   
   if (files.length === 0) {
-    toast.warning('Vui lòng chỉ kéo thả các file ảnh');
+    showWarning('Vui lòng chỉ kéo thả các file ảnh');
     return;
   }
   
@@ -748,12 +459,12 @@ const removeFileFromUpload = (index: number) => {
 // Tải lên tất cả các ảnh đã chọn
 const processImageUploads = async () => {
   if (uploadingImages.value.length === 0) {
-    toast.warning('Vui lòng chọn ít nhất một ảnh để tải lên');
+    showWarning('Vui lòng chọn ít nhất một ảnh để tải lên');
     return;
   }
   
   if (!selectedCategoryForUpload.value) {
-    toast.warning('Vui lòng chọn danh mục cho các ảnh');
+    showWarning('Vui lòng chọn danh mục cho các ảnh');
     return;
   }
   
@@ -812,32 +523,19 @@ const processImageUploads = async () => {
     const errorCount = uploadingImages.value.filter(item => item.error !== null).length;
     
     if (successCount > 0) {
-      Swal.fire({
-        title: 'Hoàn tất!',
-        text: `Đã tải lên thành công ${successCount} ảnh${errorCount > 0 ? `, ${errorCount} ảnh bị lỗi` : ''}`,
-        icon: 'success'
-      });
+      showSuccess(`Đã tải lên thành công ${successCount} ảnh${errorCount > 0 ? `, ${errorCount} ảnh bị lỗi` : ''}`);
       
       // Đóng modal nếu tất cả thành công
       if (errorCount === 0) {
         // Không cần revoke object URL vì đã sử dụng FileReader với Data URL
-        isBulkUploadModalOpen.value = false;
-        uploadingImages.value = [];
+        closeBulkUploadModal();
       }
     } else {
-      Swal.fire({
-        title: 'Lỗi!',
-        text: 'Không có ảnh nào được tải lên thành công',
-        icon: 'error'
-      });
+      showError('Không có ảnh nào được tải lên thành công');
     }
   } catch (err: any) {
     console.error('Bulk upload error:', err);
-    Swal.fire({
-      title: 'Lỗi!',
-      text: err.message || 'Đã xảy ra lỗi khi tải lên ảnh',
-      icon: 'error'
-    });
+    showError(err.message || 'Đã xảy ra lỗi khi tải lên ảnh');
   } finally {
     isProcessingUploads.value = false;
   }
