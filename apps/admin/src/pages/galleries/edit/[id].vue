@@ -70,10 +70,12 @@ const fetchCategories = async () => {
     const result = await trpc.admin.category.getByType.query({
       type: 'gallery'
     });
-    categories.value = result.map(cat => ({
-      id: cat.id,
-      name: cat.translations[0]?.name || `Category ${cat.id}`
-    }));
+    categories.value = result
+      .filter(cat => cat !== null)
+      .map(cat => ({
+        id: cat.id,
+        name: cat.translations && cat.translations[0]?.name || `Category ${cat.id}`
+      }));
   } catch (err: any) {
     console.error("Error loading categories:", err);
     error.value = err.message || "Failed to load categories";
