@@ -148,6 +148,8 @@ const processUpload = async (file: File) => {
 
 // Create new gallery item
 const createGallery = async (saveAndContinue = false) => {
+  if (!process.client) return;
+
   if (!imageUrl.value) {
     error.value = "Please upload an image";
     return;
@@ -208,10 +210,9 @@ const createGallery = async (saveAndContinue = false) => {
 };
 
 onMounted(async () => {
-  await checkAuth();
-  
-  // Đảm bảo mã chỉ chạy ở client side
+  // Đảm bảo tất cả các cuộc gọi API chỉ xảy ra ở client-side
   if (process.client) {
+    await checkAuth();
     await fetchCategories();
   }
 });
