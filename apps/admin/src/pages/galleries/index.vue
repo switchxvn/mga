@@ -110,10 +110,12 @@ const fetchCategories = async () => {
     const result = await trpc.admin.category.getByType.query({
       type: 'gallery'
     });
-    categories.value = result.map(cat => ({
-      id: cat.id,
-      name: cat.translations[0]?.name || `Category ${cat.id}`
-    }));
+    categories.value = result
+      .filter(cat => cat !== null)
+      .map(cat => ({
+        id: cat.id,
+        name: cat.translations && cat.translations[0]?.name || `Category ${cat.id}`
+      }));
   } catch (err: any) {
     console.error("Error loading categories:", err);
   }
@@ -153,7 +155,33 @@ async function fetchGalleries() {
       categoryId: categoryId.value
     });
 
-    galleries.value = result;
+    // Chuyển đổi dữ liệu
+    if (result && typeof result === 'object' && 'items' in result && 'total' in result) {
+      const formattedItems = result.items.map(item => ({
+        ...item,
+        createdAt: new Date(item.createdAt),
+        updatedAt: new Date(item.updatedAt)
+      }));
+      
+      galleries.value = {
+        items: formattedItems,
+        total: result.total,
+        currentPage: result.currentPage,
+        limit: result.limit,
+        totalPages: result.totalPages
+      };
+    } else {
+      console.error('Unknown response structure:', result);
+      error.value = 'Không thể xử lý dữ liệu từ server';
+      
+      galleries.value = {
+        items: [],
+        total: 0,
+        currentPage: 1,
+        limit: 10,
+        totalPages: 1
+      };
+    }
   } catch (err: any) {
     error.value = err.message || "Failed to load galleries";
     console.error("Error loading galleries:", err);
@@ -383,8 +411,9 @@ onMounted(async () => {
   }
 });
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString();
+const formatDate = (date: string | Date) => {
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return dateObj.toLocaleDateString();
 };
 
 // Add bulk selection handling
