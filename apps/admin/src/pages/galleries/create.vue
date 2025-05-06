@@ -210,11 +210,12 @@ const createGallery = async (saveAndContinue = false) => {
 };
 
 onMounted(async () => {
-  // Đảm bảo tất cả các cuộc gọi API chỉ xảy ra ở client-side
-  if (process.client) {
-    await checkAuth();
-    await fetchCategories();
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    router.push("/auth/login");
+    return;
   }
+  await fetchCategories();
 });
 </script>
 

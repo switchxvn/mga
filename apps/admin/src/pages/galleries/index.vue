@@ -212,16 +212,17 @@ function handleSearch() {
 
 // Thay đổi cách onMounted hoạt động để đảm bảo các cuộc gọi API chỉ xảy ra ở client side
 onMounted(async () => {
-  // Đảm bảo checkAuth và các cuộc gọi API khác chỉ xảy ra ở client side
-  if (process.client) {
-    await checkAuth();
-    
-    // Đảm bảo các cuộc gọi API khác cũng chỉ xảy ra ở client side
-    await Promise.all([
-      fetchCategories(),
-      fetchGalleries()
-    ]);
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    router.push("/auth/login");
+    return;
   }
+  
+  // Đảm bảo các cuộc gọi API khác cũng chỉ xảy ra ở client side
+  await Promise.all([
+    fetchCategories(),
+    fetchGalleries()
+  ]);
 });
 
 // Add sorting function
