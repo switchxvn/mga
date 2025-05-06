@@ -65,6 +65,12 @@ const tabs = [
 // Fetch categories
 const fetchCategories = async () => {
   try {
+    // Kiểm tra client side
+    if (!process.client) {
+      console.log('Skip fetchCategories on server side to avoid localStorage error');
+      return;
+    }
+
     const result = await trpc.admin.category.getByType.query({
       type: 'gallery'
     });
@@ -202,17 +208,11 @@ const createGallery = async (saveAndContinue = false) => {
 };
 
 onMounted(async () => {
-  try {
-    const isAuthenticated = await checkAuth();
-    if (!isAuthenticated) {
-      router.push("/auth/login");
-      return;
-    }
-    
+  await checkAuth();
+  
+  // Đảm bảo mã chỉ chạy ở client side
+  if (process.client) {
     await fetchCategories();
-  } catch (err: any) {
-    console.error("Error initializing create gallery page:", err);
-    error.value = err.message || "Failed to initialize create gallery page";
   }
 });
 </script>
