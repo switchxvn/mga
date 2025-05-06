@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, provide, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { trpc } from '@/trpc'
-import { Palette, Layout, Plus, ArrowUp, ArrowDown, CheckCircle, XCircle } from 'lucide-vue-next'
+import { useTrpc } from '../../../../composables/useTrpc'
+import { Palette, Layout, Plus, ArrowUp, ArrowDown, CheckCircle, XCircle, Trash } from 'lucide-vue-next'
 import { PageType, Theme, ThemeSection } from '@ew/shared'
 import PageHeader from '../../../../components/common/header/PageHeader.vue'
 
 // Get route params
 const route = useRoute()
 const router = useRouter()
+const trpc = useTrpc()
 const themeId = computed(() => Number(route.params.id))
 
 // Set page title
@@ -22,6 +23,8 @@ const error = ref<string | null>(null)
 const selectedPageType = ref<string>('all')
 const isReordering = ref(false)
 const reorderSuccess = ref(false)
+const selectedSections = ref<number[]>([])
+const isDeleting = ref(false)
 
 // Fetch theme and sections
 const fetchData = async () => {
@@ -45,6 +48,9 @@ const fetchData = async () => {
     if (themeData.sections) {
       sections.value = themeData.sections.sort((a, b) => a.order - b.order)
     }
+    
+    // Reset selected sections
+    selectedSections.value = []
   } catch (err: any) {
     console.error('Failed to fetch theme sections:', err)
     error.value = err.message || 'Không thể tải thông tin sections'
@@ -189,6 +195,7 @@ const toggleSectionActive = async (section: ThemeSection) => {
 
 // Delete section
 const deleteSection = async (sectionId: number) => {
+  isDeleting.value = true
   try {
     await trpc.admin.theme.deleteThemeSection.mutate({
       id: sectionId,
@@ -197,6 +204,11 @@ const deleteSection = async (sectionId: number) => {
     
     // Remove section locally
     sections.value = sections.value.filter(s => s.id !== sectionId)
+    
+    // Remove from selected sections if present
+    if (selectedSections.value.includes(sectionId)) {
+      selectedSections.value = selectedSections.value.filter(id => id !== sectionId)
+    }
     
     UNotification.show({
       text: 'Xóa section thành công',
@@ -208,6 +220,71 @@ const deleteSection = async (sectionId: number) => {
       text: 'Không thể xóa section',
       type: 'error'
     })
+  } finally {
+    isDeleting.value = false
+  }
+}
+
+// Toggle selection of a section
+const toggleSelectSection = (sectionId: number) => {
+  if (selectedSections.value.includes(sectionId)) {
+    selectedSections.value = selectedSections.value.filter(id => id !== sectionId)
+  } else {
+    selectedSections.value.push(sectionId)
+  }
+}
+
+// Select all sections
+const selectAllSections = () => {
+  if (selectedSections.value.length === filteredSections.value.length) {
+    // If all are selected, deselect all
+    selectedSections.value = []
+  } else {
+    // Select all filtered sections
+    selectedSections.value = filteredSections.value.map(section => section.id)
+  }
+}
+
+// Check if all sections are selected
+const allSectionsSelected = computed(() => {
+  return filteredSections.value.length > 0 && 
+         selectedSections.value.length === filteredSections.value.length
+})
+
+// Delete multiple sections
+const deleteSelectedSections = async () => {
+  if (selectedSections.value.length === 0) return
+  
+  isDeleting.value = true
+  const count = selectedSections.value.length
+  
+  try {
+    // Delete each selected section
+    for (const sectionId of selectedSections.value) {
+      await trpc.admin.theme.deleteThemeSection.mutate({
+        id: sectionId,
+        themeId: themeId.value
+      })
+    }
+    
+    // Remove sections locally
+    sections.value = sections.value.filter(s => !selectedSections.value.includes(s.id))
+    
+    // Clear selection
+    selectedSections.value = []
+    
+    UNotification.show({
+      text: `Đã xóa ${count} section thành công`,
+      type: 'success'
+    })
+  } catch (error) {
+    console.error('Failed to delete sections:', error)
+    UNotification.show({
+      text: 'Không thể xóa các section đã chọn',
+      type: 'error'
+    })
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -231,6 +308,16 @@ onMounted(() => {
           @click="router.push(`/themes/${themeId}`)"
         >
           Quay lại
+        </UButton>
+        <UButton v-if="selectedSections.length > 0"
+          color="red"
+          variant="soft"
+          :loading="isDeleting"
+          :disabled="isDeleting"
+          @click="deleteSelectedSections"
+        >
+          <Trash class="w-4 h-4 mr-1" />
+          Xóa {{ selectedSections.length }} đã chọn
         </UButton>
         <UButton
           color="primary"
@@ -259,27 +346,61 @@ onMounted(() => {
       </UButton>
     </UCard>
     
-    <!-- Filter -->
-    <div v-else class="mb-6">
-      <UCard>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div class="flex-1">
-            <UFormGroup label="Lọc theo loại trang">
-              <USelect
-                v-model="selectedPageType"
-                :options="pageTypeOptions"
-                placeholder="Chọn loại trang"
+    <!-- Filter and bulk actions -->
+    <div v-else>
+      <!-- Filter card -->
+      <div class="mb-4">
+        <UCard>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex-1">
+              <UFormGroup label="Lọc theo loại trang">
+                <USelect
+                  v-model="selectedPageType"
+                  :options="pageTypeOptions"
+                  placeholder="Chọn loại trang"
+                />
+              </UFormGroup>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <!-- Reorder success message -->
+              <div v-if="reorderSuccess" class="flex items-center text-green-600 dark:text-green-400">
+                <CheckCircle class="w-5 h-5 mr-2" />
+                <span>Đã thay đổi thứ tự thành công</span>
+              </div>
+            </div>
+          </div>
+        </UCard>
+      </div>
+      
+      <!-- Bulk actions toolbar -->
+      <div v-if="filteredSections.length > 0" class="mb-4">
+        <UCard class="bg-gray-50 dark:bg-gray-800">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <UCheckbox 
+                :model-value="allSectionsSelected" 
+                @change="selectAllSections"
+                :disabled="filteredSections.length === 0"
               />
-            </UFormGroup>
+              <span class="text-sm font-medium">
+                Đã chọn {{ selectedSections.length }} / {{ filteredSections.length }} section
+              </span>
+            </div>
+            
+            <UButton 
+              v-if="selectedSections.length > 0" 
+              color="red" 
+              :loading="isDeleting"
+              :disabled="isDeleting"
+              @click="deleteSelectedSections"
+            >
+              <Trash class="w-4 h-4 mr-1" />
+              Xóa {{ selectedSections.length }} section đã chọn
+            </UButton>
           </div>
-          
-          <!-- Reorder success message -->
-          <div v-if="reorderSuccess" class="flex items-center text-green-600 dark:text-green-400">
-            <CheckCircle class="w-5 h-5 mr-2" />
-            <span>Đã thay đổi thứ tự thành công</span>
-          </div>
-        </div>
-      </UCard>
+        </UCard>
+      </div>
     </div>
     
     <!-- Sections list -->
@@ -310,11 +431,38 @@ onMounted(() => {
     </div>
     
     <div v-else-if="!loading" class="space-y-4">
+      <!-- Bulk delete toolbar -->
+      <div v-if="selectedSections.length > 0" class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium">
+            Đã chọn {{ selectedSections.length }} / {{ filteredSections.length }} section
+          </span>
+        </div>
+        <UButton 
+          color="red" 
+          variant="soft"
+          :loading="isDeleting"
+          :disabled="isDeleting"
+          @click="deleteSelectedSections"
+        >
+          <Trash class="w-4 h-4 mr-1" />
+          Xóa {{ selectedSections.length }} section đã chọn
+        </UButton>
+      </div>
       <UCard>
         <div class="overflow-x-auto">
           <table class="w-full text-left divide-y divide-gray-200 dark:divide-gray-700">
             <thead>
               <tr class="border-b border-gray-200 dark:border-gray-700">
+                <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400 w-10">
+                  <div class="flex items-center justify-center">
+                    <UCheckbox 
+                      :model-value="allSectionsSelected" 
+                      @change="selectAllSections"
+                      :disabled="filteredSections.length === 0"
+                    />
+                  </div>
+                </th>
                 <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Thứ tự</th>
                 <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Tiêu đề</th>
                 <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Loại</th>
@@ -325,6 +473,14 @@ onMounted(() => {
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-for="section in filteredSections" :key="section.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td class="whitespace-nowrap px-4 py-4 w-10">
+                  <div class="flex items-center justify-center">
+                    <UCheckbox 
+                      :model-value="selectedSections.includes(section.id)" 
+                      @change="toggleSelectSection(section.id)"
+                    />
+                  </div>
+                </td>
                 <td class="whitespace-nowrap px-4 py-4 text-sm font-medium">
                   <div class="flex items-center">
                     <span class="w-8 text-center">{{ section.order }}</span>
@@ -380,63 +536,44 @@ onMounted(() => {
                 </td>
                 <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
                   <div class="flex justify-end space-x-2">
-                    <UTooltip text="Sửa section">
-                      <UButton
-                        color="primary"
-                        variant="ghost"
-                        icon="i-heroicons-pencil"
-                        size="xs"
-                        @click="() => {
-                          const id = Number(route.params.id)
-                          console.log(`Navigating to edit section: theme=${id}, section=${section.id}`)
-                          router.push(`/themes/${id}/sections/${section.id}`)
-                        }"
-                        class="hover:text-primary-600"
-                      />
-                    </UTooltip>
+                    <UButton
+                      color="primary"
+                      variant="ghost"
+                      icon="i-heroicons-pencil"
+                      size="xs"
+                      @click="() => {
+                        const id = Number(route.params.id)
+                        router.push(`/themes/${id}/sections/${section.id}`)
+                      }"
+                      class="hover:text-primary-600"
+                    />
                     
-                    <UTooltip :text="section.isActive ? 'Ẩn section' : 'Hiển thị section'">
-                      <UButton
-                        :color="section.isActive ? 'amber' : 'green'"
-                        variant="ghost"
-                        size="xs"
-                        @click="toggleSectionActive(section)"
-                      >
-                        <template v-if="section.isActive">
-                          <XCircle class="w-5 h-5" />
-                        </template>
-                        <template v-else>
-                          <CheckCircle class="w-5 h-5" />
-                        </template>
-                      </UButton>
-                    </UTooltip>
-                    
-                    <UPopover>
-                      <UTooltip text="Xóa section">
-                        <UButton
-                          color="red"
-                          variant="ghost"
-                          icon="i-heroicons-trash"
-                          size="xs"
-                        />
-                      </UTooltip>
-                      
-                      <template #panel>
-                        <div class="p-4 max-w-sm">
-                          <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                            Bạn có chắc chắn muốn xóa section "{{ section.title }}"?
-                          </p>
-                          <div class="flex justify-end space-x-2">
-                            <UButton color="gray" variant="soft" size="sm" @click="() => {}">
-                              Hủy
-                            </UButton>
-                            <UButton color="red" size="sm" @click="deleteSection(section.id)">
-                              Xóa
-                            </UButton>
-                          </div>
-                        </div>
+                    <UButton
+                      :color="section.isActive ? 'amber' : 'green'"
+                      variant="ghost"
+                      size="xs"
+                      @click="toggleSectionActive(section)"
+                    >
+                      <template v-if="section.isActive">
+                        <XCircle class="w-5 h-5" />
                       </template>
-                    </UPopover>
+                      <template v-else>
+                        <CheckCircle class="w-5 h-5" />
+                      </template>
+                    </UButton>
+                    
+                    <UButton
+                      color="red"
+                      variant="soft"
+                      size="xs"
+                      @click="() => {
+                        if (confirm(`Bạn có chắc chắn muốn xóa section '${section.title}'?`)) {
+                          deleteSection(section.id)
+                        }
+                      }"
+                    >
+                      <Trash class="w-4 h-4" />
+                    </UButton>
                   </div>
                 </td>
               </tr>

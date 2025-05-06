@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, provide, computed } from 'vue'
+import { ref, reactive, onMounted, provide, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '../../../composables/useTrpc'
 import { useToast } from '../../../composables/useToast'
-import { Palette, Layout, Plus, Layers, Settings } from 'lucide-vue-next'
+import { Palette, Layout, Plus, Layers, Settings, Trash, CheckCircle, XCircle } from 'lucide-vue-next'
 import { PageType, ColorMode, Theme, ThemeSection } from '@ew/shared'
 import PageHeader from '../../../components/common/header/PageHeader.vue'
 
@@ -23,6 +23,27 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const isEditing = ref(false)
 const showSectionCreate = ref(false)
+const selectedSections = ref<number[]>([])
+const isDeleting = ref(false)
+const activeTab = ref<string>(route.query.tab as string || 'all')
+
+// Watch active tab change and update URL
+watch(activeTab, (newTab) => {
+  // Update URL without refreshing the page
+  router.replace({
+    query: { 
+      ...route.query,
+      tab: newTab === 'all' ? undefined : newTab 
+    }
+  })
+})
+
+// Watch route query change to update active tab
+watch(() => route.query.tab, (newTab) => {
+  if (newTab !== activeTab.value) {
+    activeTab.value = newTab as string || 'all'
+  }
+}, { immediate: true })
 
 // Form
 const themeForm = reactive({
@@ -55,6 +76,9 @@ const fetchTheme = async () => {
     themeForm.name = data.name
     themeForm.colors = data.colors
     themeForm.isActive = data.isActive
+    
+    // Reset selected sections
+    selectedSections.value = []
   } catch (err: any) {
     console.error('Failed to fetch theme:', err)
     error.value = err.message || 'Không thể tải thông tin theme'
@@ -109,6 +133,156 @@ const getPageTypeLabel = (type: string) => {
   }
   
   return types[type] || type
+}
+
+// Get all unique page types
+const getPageTypes = computed(() => {
+  if (!theme.value || !theme.value.sections) return []
+  
+  const types = new Set<string>()
+  types.add('all') // Add 'all' as default option
+  
+  theme.value.sections.forEach(section => {
+    if (section.pageType) {
+      types.add(section.pageType)
+    }
+  })
+  
+  return Array.from(types)
+})
+
+// Get tab items
+const tabItems = computed(() => {
+  return getPageTypes.value.map(type => ({
+    id: type,
+    label: type === 'all' ? 'Tất cả' : getPageTypeLabel(type),
+    slot: type
+  }))
+})
+
+// Get filtered sections
+const filteredSections = computed(() => {
+  if (!theme.value || !theme.value.sections) {
+    console.log('theme or sections is null/undefined', { theme: theme.value })
+    return []
+  }
+  
+  console.log('All sections:', theme.value.sections.length, theme.value.sections)
+  
+  if (activeTab.value === 'all') {
+    return [...theme.value.sections] // Return a copy to ensure reactivity
+  }
+  
+  const filtered = theme.value.sections.filter(section => section.pageType === activeTab.value)
+  console.log(`Filtered for ${activeTab.value}:`, filtered.length, filtered)
+  return filtered
+})
+
+// Debug logs to check data
+watch([() => theme.value?.sections, activeTab], ([sections, tab]) => {
+  console.log('Sections:', sections)
+  console.log('Active tab:', tab)
+  console.log('Filtered sections:', filteredSections.value)
+}, { immediate: true })
+
+// Delete section
+const deleteSection = async (sectionId: number) => {
+  if (!theme.value) return
+  
+  isDeleting.value = true
+  try {
+    await trpc.admin.theme.deleteThemeSection.mutate({
+      id: sectionId,
+      themeId: themeId.value
+    })
+    
+    // Remove section locally
+    if (theme.value.sections) {
+      theme.value.sections = theme.value.sections.filter(s => s.id !== sectionId)
+    }
+    
+    // Remove from selected sections if present
+    if (selectedSections.value.includes(sectionId)) {
+      selectedSections.value = selectedSections.value.filter(id => id !== sectionId)
+    }
+    
+    toast.success('Xóa section thành công')
+  } catch (error) {
+    console.error('Failed to delete section:', error)
+    toast.error('Không thể xóa section')
+  } finally {
+    isDeleting.value = false
+  }
+}
+
+// Toggle selection of a section
+const toggleSelectSection = (sectionId: number) => {
+  if (selectedSections.value.includes(sectionId)) {
+    selectedSections.value = selectedSections.value.filter(id => id !== sectionId)
+  } else {
+    selectedSections.value.push(sectionId)
+  }
+}
+
+// Select all sections (filtered by current tab)
+const selectAllSections = () => {
+  if (!filteredSections.value.length) return
+  
+  if (selectedSections.value.length === filteredSections.value.length) {
+    // If all filtered sections are selected, deselect them
+    const filteredIds = filteredSections.value.map(s => s.id)
+    selectedSections.value = selectedSections.value.filter(id => !filteredIds.includes(id))
+  } else {
+    // Select all filtered sections
+    const currentSelected = new Set(selectedSections.value)
+    filteredSections.value.forEach(section => {
+      if (!currentSelected.has(section.id)) {
+        selectedSections.value.push(section.id)
+      }
+    })
+  }
+}
+
+// Check if all sections in current tab are selected
+const allSectionsSelected = computed(() => {
+  if (!filteredSections.value.length) return false
+  
+  return filteredSections.value.every(section => 
+    selectedSections.value.includes(section.id)
+  )
+})
+
+// Delete multiple sections
+const deleteSelectedSections = async () => {
+  if (!theme.value || selectedSections.value.length === 0) return
+  
+  isDeleting.value = true
+  const count = selectedSections.value.length
+  
+  try {
+    // Delete each selected section
+    for (const sectionId of selectedSections.value) {
+      await trpc.admin.theme.deleteThemeSection.mutate({
+        id: sectionId,
+        themeId: themeId.value
+      })
+    }
+    
+    // Remove sections locally
+    if (theme.value.sections) {
+      theme.value.sections = theme.value.sections.filter(s => !selectedSections.value.includes(s.id))
+    }
+    
+    // Clear selection
+    selectedSections.value = []
+    
+    toast.success(`Đã xóa ${count} section thành công`)
+  } catch (error) {
+    console.error('Failed to delete sections:', error)
+    toast.error('Không thể xóa các section đã chọn')
+  } finally {
+    isDeleting.value = false
+  }
 }
 </script>
 
@@ -290,14 +464,28 @@ const getPageTypeLabel = (type: string) => {
           <template #header>
             <div class="flex items-center justify-between">
               <div class="font-medium">Theme Sections</div>
-              <UButton
-                color="primary"
-                icon="i-heroicons-plus"
-                size="sm"
-                @click="navigateToSectionCreate"
-              >
-                Thêm Section
-              </UButton>
+              <div class="flex items-center gap-2">
+                <UButton
+                  v-if="selectedSections.length > 0"
+                  color="red"
+                  variant="soft"
+                  size="sm"
+                  :loading="isDeleting"
+                  :disabled="isDeleting"
+                  @click="deleteSelectedSections"
+                >
+                  <Trash class="w-4 h-4 mr-1" />
+                  Xóa {{ selectedSections.length }} section
+                </UButton>
+                <UButton
+                  color="primary"
+                  icon="i-heroicons-plus"
+                  size="sm"
+                  @click="navigateToSectionCreate"
+                >
+                  Thêm Section
+                </UButton>
+              </div>
             </div>
           </template>
           
@@ -315,61 +503,125 @@ const getPageTypeLabel = (type: string) => {
             </div>
           </template>
           
-          <!-- Section list -->
+          <!-- Section list with tabs -->
           <template v-else>
-            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-              <li v-for="section in theme.sections" :key="section.id" class="py-4">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center mb-1">
-                      <Layout class="w-5 h-5 mr-2 text-primary-500" />
-                      <span class="font-medium text-gray-900 dark:text-white">{{ section.title }}</span>
-                      <UBadge
-                        :color="section.isActive ? 'green' : 'gray'"
-                        variant="soft"
-                        size="xs"
-                        class="ml-2"
-                      >
-                        {{ section.isActive ? 'Hiển thị' : 'Ẩn' }}
-                      </UBadge>
-                      <UBadge
-                        color="blue"
-                        variant="soft"
-                        size="xs"
-                        class="ml-2"
-                      >
-                        {{ getPageTypeLabel(section.pageType) }}
-                      </UBadge>
+            <div>
+           
+              <!-- Tab buttons -->
+              <div class="mb-4 flex border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <button
+                  v-for="type in getPageTypes"
+                  :key="type"
+                  class="flex-1 py-2 px-4 text-center"
+                  :class="activeTab === type ? 'bg-primary-50 text-primary-600 font-medium' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'"
+                  @click="activeTab = type"
+                >
+                  {{ type === 'all' ? 'Tất cả' : getPageTypeLabel(type) }}
+                </button>
+              </div>
+              
+              <!-- Simple direct display of filtered sections -->
+              <UCard class="mb-4">
+                <template #header>
+                  <div class="flex justify-between items-center">
+                    <div>
+                      {{ activeTab === 'all' ? 'Tất cả sections' : `Sections cho ${getPageTypeLabel(activeTab)}` }}
+                      ({{ filteredSections.length }})
                     </div>
-                    <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                      <div class="mr-4">
-                        <span class="font-medium text-gray-700 dark:text-gray-300">Loại:</span>
-                        {{ section.type }}
-                      </div>
-                      <div>
-                        <span class="font-medium text-gray-700 dark:text-gray-300">Thứ tự:</span>
-                        {{ section.order }}
-                      </div>
+                    <div v-if="selectedSections.length > 0" class="flex items-center gap-2">
+                      <span class="text-sm">Đã chọn: {{ selectedSections.length }}</span>
+                      <UButton
+                        color="red"
+                        variant="soft"
+                        size="sm"
+                        @click="deleteSelectedSections"
+                      >
+                        <Trash class="w-4 h-4 mr-1" />
+                        Xóa
+                      </UButton>
                     </div>
                   </div>
-                  <div class="flex space-x-2 ml-4">
-                    <UButton
-                      color="gray"
-                      variant="ghost"
-                      icon="i-heroicons-pencil"
-                      size="xs"
-                      @click="() => {
-                        const id = Number(route.params.id)
-                        console.log(`Navigating to section edit page: theme=${id}, section=${section.id}`)
-                        router.push(`/themes/${id}/sections/${section.id}`)
-                      }"
-                      class="hover:text-primary-600"
-                      :aria-label="`Chỉnh sửa section ${section.title}`"
-                    />
-                  </div>
+                </template>
+                
+                <!-- Empty state -->
+                <div v-if="filteredSections.length === 0" class="py-8 text-center">
+                  <p class="text-gray-500">Không có section nào được tìm thấy.</p>
                 </div>
-              </li>
-            </ul>
+                
+                <!-- Direct display of sections -->
+                <div v-else>
+                  <div class="border-b border-gray-200 dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-800">
+                    <UCheckbox 
+                      :model-value="allSectionsSelected" 
+                      @change="selectAllSections"
+                    >
+                      <span class="ml-2 text-sm">Chọn tất cả</span>
+                    </UCheckbox>
+                  </div>
+                  
+                  <table class="w-full">
+                    <tbody>
+                      <tr 
+                        v-for="section in filteredSections" 
+                        :key="section.id"
+                        class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <td class="py-3 px-4 w-10">
+                          <UCheckbox 
+                            :model-value="selectedSections.includes(section.id)" 
+                            @change="toggleSelectSection(section.id)"
+                          />
+                        </td>
+                        <td class="py-3 px-4">
+                          <div class="flex items-center">
+                            <Layout class="w-5 h-5 mr-2 text-primary-500" />
+                            <div>
+                              <div class="font-medium">{{ section.title }}</div>
+                              <div class="text-sm text-gray-500">
+                                {{ section.type }} 
+                                <span v-if="activeTab === 'all'" class="ml-2">
+                                  • {{ getPageTypeLabel(section.pageType) }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="py-3 px-4 w-24 text-center">
+                          <UBadge
+                            :color="section.isActive ? 'green' : 'gray'"
+                            variant="soft"
+                          >
+                            {{ section.isActive ? 'Hiển thị' : 'Ẩn' }}
+                          </UBadge>
+                        </td>
+                        <td class="py-3 px-4 w-24 text-center">
+                          <div class="text-sm">Thứ tự: {{ section.order }}</div>
+                        </td>
+                        <td class="py-3 px-4 w-20 text-right">
+                          <div class="flex justify-end space-x-2">
+                            <UButton
+                              color="gray"
+                              variant="ghost"
+                              icon="i-heroicons-pencil"
+                              size="xs"
+                              @click="router.push(`/themes/${themeId}/sections/${section.id}`)"
+                            />
+                            <UButton
+                              color="red"
+                              variant="soft"
+                              size="xs"
+                              @click="deleteSection(section.id)"
+                            >
+                              <Trash class="w-4 h-4" />
+                            </UButton>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </UCard>
+            </div>
           </template>
           
           <template #footer>

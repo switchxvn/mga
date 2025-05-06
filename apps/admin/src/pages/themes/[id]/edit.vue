@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, provide, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { trpc } from '@/trpc'
+import { useTrpc } from '../../../composables/useTrpc'
 import { Palette } from 'lucide-vue-next'
 import { Theme, ColorMode } from '@ew/shared'
 import PageHeader from '../../../components/common/header/PageHeader.vue'
@@ -10,6 +10,7 @@ import PageHeader from '../../../components/common/header/PageHeader.vue'
 const route = useRoute()
 const router = useRouter()
 const themeId = computed(() => Number(route.params.id))
+const trpc = useTrpc()
 
 // Set page title
 provide('pageTitle', 'Chỉnh sửa Theme')
