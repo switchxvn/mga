@@ -18,7 +18,8 @@ import {
   ChevronDown, 
   RotateCcw, 
   Folder,
-  Image
+  Image,
+  Palette
 } from 'lucide-vue-next'
 import { ref, computed, inject, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -152,7 +153,22 @@ const navigation = [
       }
     ]
   },
-  { label: 'Settings', icon: Settings, to: '/settings' }
+  { label: 'Settings', icon: Settings, to: '/settings' },
+  {
+    label: 'Theme Management',
+    icon: Palette,
+    children: [
+      {
+        label: 'Themes',
+        icon: Palette,
+        isOpen: ref(false),
+        children: [
+          { label: 'List All Themes', to: '/themes' },
+          { label: 'Create New Theme', to: '/themes/create' }
+        ]
+      }
+    ]
+  }
 ]
 
 // Recursive isActive function to handle nested routes
@@ -440,6 +456,20 @@ const expandActiveMenus = () => {
         if (item.label === 'Content' && item.children) {
           item.children.forEach((child: any) => {
             if (child.label === 'Gallery' && child.isOpen) {
+              child.isOpen.value = true;
+              activeMenuFound = true;
+            }
+          });
+        }
+      });
+    }
+    // Xử lý trường hợp đặc biệt cho Themes
+    else if (currentPath.startsWith('/themes')) {
+      // Tìm và mở menu Themes
+      navigation.forEach(item => {
+        if (item.label === 'Theme Management' && item.children) {
+          item.children.forEach((child: any) => {
+            if (child.label === 'Themes' && child.isOpen) {
               child.isOpen.value = true;
               activeMenuFound = true;
             }

@@ -30,6 +30,7 @@ import { HeroSliderService } from '../../hero/admin/services/hero-slider.service
 import { HeroVideoService } from '../../hero/services/hero-video.service';
 import { ThemeAdminService } from '../../theme/admin/services/theme-admin.service';
 import { ThemeFrontendService } from '../../theme/frontend/services/theme-frontend.service';
+import { ThemeSectionAdminService } from '../../theme/admin/services/theme-section-admin.service';
 import { ComponentStyleConfigAdminService } from '../../theme/admin/services/component-style-config-admin.service';
 import { ComponentStyleConfigFrontendService } from '../../theme/frontend/services/component-style-config-frontend.service';
 import { LanguageFrontendService } from '../../language/frontend/services/language-frontend.service';
@@ -103,6 +104,7 @@ export class ServiceContext {
     private readonly heroVideoService: HeroVideoService,
     private readonly themeAdminService: ThemeAdminService,
     private readonly themeFrontendService: ThemeFrontendService,
+    private readonly themeSectionAdminService: ThemeSectionAdminService,
     private readonly componentStyleConfigAdminService: ComponentStyleConfigAdminService,
     private readonly componentStyleConfigFrontendService: ComponentStyleConfigFrontendService,
     private readonly languageFrontendService: LanguageFrontendService,
@@ -177,6 +179,7 @@ export class ServiceContext {
       heroVideoService: this.heroVideoService,
       themeAdminService: this.themeAdminService,
       themeFrontendService: this.themeFrontendService,
+      themeSectionAdminService: this.themeSectionAdminService,
       componentStyleConfigAdminService: this.componentStyleConfigAdminService,
       componentStyleConfigFrontendService: this.componentStyleConfigFrontendService,
       languageFrontendService: this.languageFrontendService,
@@ -230,6 +233,7 @@ export class ServiceContext {
         product: this.productAdminService,
         featureFlags: this.featureFlagsAdminService,
         theme: this.themeAdminService,
+        themeSection: this.themeSectionAdminService,
         componentStyleConfig: this.componentStyleConfigAdminService,
         language: this.languageAdminService,
         about: this.aboutAdminService,

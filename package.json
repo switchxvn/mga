@@ -146,7 +146,7 @@
     "clsx": "^2.1.1",
     "concurrently": "^9.1.2",
     "dotenv": "^16.4.7",
-    "eslint": "^9.8.0",
+    "eslint": "8.56.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^10.1.0",
     "h3": "^1.8.2",

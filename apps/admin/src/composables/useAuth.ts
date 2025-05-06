@@ -131,15 +131,28 @@ export const useAuth = () => {
         }
         console.log('No user ID in response');
         return false;
-      } catch (profileError) {
+      } catch (profileError: any) {
         console.error('Error fetching profile:', profileError);
-        // Only remove token if it's an authentication error
-        if (profileError instanceof TRPCClientError && 
-            (profileError.message.includes('unauthorized') || 
-             profileError.message.includes('unauthenticated'))) {
+        
+        // Handle token expired error
+        const errorMessage = profileError?.message || '';
+        const isAuthError = profileError instanceof TRPCClientError && 
+                           (errorMessage.includes('unauthorized') || 
+                            errorMessage.includes('unauthenticated') ||
+                            errorMessage.includes('expired'));
+                           
+        if (isAuthError) {
+          // Clear invalid token
+          console.log('Auth error detected, removing token and redirecting to login');
           storage.removeItem('accessToken');
           user.value = null;
+          
+          // Redirect to login page if not already there
+          if (process.client && window.location.pathname !== '/auth/login') {
+            router.push('/auth/login');
+          }
         }
+        
         return false;
       }
     } catch (err) {

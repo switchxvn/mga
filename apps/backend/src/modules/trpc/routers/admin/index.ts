@@ -12,6 +12,8 @@ import { adminCommentRouter } from './comment.router'
 import { adminReviewRouter } from './review.router'
 import { adminSiteStatisticsRouter } from './site-statistics.router'
 import { galleryAdminRouter } from './gallery.router'
+import { themeAdminRouter } from './theme.router'
+import { themeSectionAdminRouter } from './theme-section.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -27,4 +29,6 @@ export const adminRouter = router({
   review: adminReviewRouter,
   siteStatistics: adminSiteStatisticsRouter,
   galleries: galleryAdminRouter,
+  theme: themeAdminRouter,
+  themeSection: themeSectionAdminRouter,
 }) 
