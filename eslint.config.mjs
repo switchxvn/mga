@@ -1,4 +1,5 @@
 import nx from '@nx/eslint-plugin';
+import vue from 'eslint-plugin-vue';
 
 export default [
   ...nx.configs['flat/base'],
@@ -8,7 +9,26 @@ export default [
     ignores: ['**/dist'],
   },
   {
-    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.vue'],
+    files: ['**/*.vue'],
+    languageOptions: {
+      parser: require.resolve('vue-eslint-parser'),
+      parserOptions: {
+        parser: require.resolve('@typescript-eslint/parser'),
+        ecmaVersion: 2020,
+        sourceType: 'module',
+        extraFileExtensions: ['.vue'],
+      },
+    },
+    plugins: {
+      vue,
+    },
+    rules: {
+      ...vue.configs.base.rules,
+      ...vue.configs['vue3-recommended'].rules,
+    },
+  },
+  {
+    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     rules: {
       '@nx/enforce-module-boundaries': [
         'error',
@@ -23,18 +43,7 @@ export default [
           ],
         },
       ],
+      'unicode-bom': 'off',
     },
-  },
-  {
-    files: [
-      '**/*.ts',
-      '**/*.tsx',
-      '**/*.js',
-      '**/*.jsx',
-      '**/*.cjs',
-      '**/*.mjs',
-    ],
-    // Override or add rules here
-    rules: {},
   },
 ];

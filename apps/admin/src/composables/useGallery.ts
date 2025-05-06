@@ -1,15 +1,22 @@
-import { ref, watch } from 'vue';
+import { ref, watch, Ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { Gallery, PaginatedResponse, CreateGalleryInput, UpdateGalleryInput } from '@ew/shared';
 import { useTrpc } from './useTrpc';
 import { useNotification } from './useNotification';
+import { useUpload } from './useUpload';
 import Swal from 'sweetalert2';
+
+export interface GalleryCategory {
+  id: number;
+  name: string;
+}
 
 export const useGallery = () => {
   const trpc = useTrpc();
   const router = useRouter();
   const route = useRoute();
   const { showSuccess, showError, showWarning } = useNotification();
+  const { uploadImage } = useUpload();
 
   // State
   const isLoading = ref(true);
@@ -33,10 +40,22 @@ export const useGallery = () => {
     totalPages: 1
   });
 
-  const categories = ref<{id: number, name: string}[]>([]);
+  const categories = ref<GalleryCategory[]>([]);
   const selectedGalleries = ref<number[]>([]);
   const sortBy = ref('createdAt');
   const sortOrder = ref<'asc' | 'desc'>('desc');
+
+  // Edit-specific state
+  const isFetchingData = ref(false);
+  const isUploadingImage = ref(false);
+  const title = ref('');
+  const description = ref('');
+  const imageUrl = ref('');
+  const isActive = ref(true);
+  const sequence = ref(0);
+  const selectedCategoryIds = ref<number[]>([]);
+  const isDragging = ref(false);
+  const currentTab = ref('basic');
 
   // Watch for changes in filters and update URL
   watch([page, search, activeFilter, categoryId], () => {
@@ -475,6 +494,191 @@ export const useGallery = () => {
       .join(', ');
   };
 
+  // --- Edit Gallery Methods ---
+
+  /**
+   * Fetch gallery item for editing
+   */
+  const fetchGalleryItem = async (galleryId: number) => {
+    try {
+      // Kiểm tra client side
+      if (!process.client) {
+        console.log('Skip fetchGalleryItem on server side to avoid localStorage error');
+        return;
+      }
+
+      isFetchingData.value = true;
+      error.value = null;
+
+      const result = await trpc.admin.galleries.getById.query(galleryId);
+      
+      if (!result) {
+        error.value = "Gallery item not found";
+        return;
+      }
+      
+      // Populate form fields
+      title.value = result.translations?.[0]?.title || '';
+      description.value = result.translations?.[0]?.description || '';
+      imageUrl.value = result.image || '';
+      isActive.value = result.isActive;
+      sequence.value = result.sequence;
+      selectedCategoryIds.value = result.categories?.map(cat => cat.id) || [];
+      
+    } catch (err: any) {
+      console.error("Error fetching gallery item:", err);
+      error.value = err.message || "Failed to fetch gallery item";
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message || "Failed to fetch gallery item"
+      }).then(() => {
+        router.push('/galleries');
+      });
+    } finally {
+      isFetchingData.value = false;
+    }
+  };
+
+  /**
+   * Handle image upload for gallery item
+   */
+  const handleImageUpload = async (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    
+    const file = input.files[0];
+    await processUpload(file);
+  };
+
+  /**
+   * Handle drop event for image upload
+   */
+  const handleDrop = async (event: DragEvent) => {
+    event.preventDefault();
+    isDragging.value = false;
+    
+    if (!event.dataTransfer?.files.length) return;
+    
+    const file = event.dataTransfer.files[0];
+    if (!file.type.startsWith('image/')) {
+      error.value = "Please drop an image file";
+      return;
+    }
+    
+    await processUpload(file);
+  };
+
+  /**
+   * Handle drag over event for image upload
+   */
+  const handleDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    isDragging.value = true;
+  };
+
+  /**
+   * Handle drag leave event for image upload
+   */
+  const handleDragLeave = (event: DragEvent) => {
+    event.preventDefault();
+    isDragging.value = false;
+  };
+
+  /**
+   * Process the image upload
+   */
+  const processUpload = async (file: File) => {
+    try {
+      isUploadingImage.value = true;
+      
+      // Upload using useUpload composable
+      const url = await uploadImage(file, 'gallery');
+      imageUrl.value = url;
+      
+    } catch (err: any) {
+      console.error("Error uploading image:", err);
+      error.value = err.message || "Failed to upload image";
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Upload Error',
+        text: err.message || "Failed to upload image"
+      });
+    } finally {
+      isUploadingImage.value = false;
+    }
+  };
+
+  /**
+   * Update gallery item from edit form
+   */
+  const updateGalleryForm = async (galleryId: number) => {
+    if (!imageUrl.value) {
+      error.value = "Please upload an image";
+      return;
+    }
+    
+    if (!title.value) {
+      error.value = "Please enter a title";
+      return;
+    }
+    
+    try {
+      isLoading.value = true;
+      error.value = null;
+      
+      await trpc.admin.galleries.update.mutate({
+        id: galleryId,
+        image: imageUrl.value,
+        isActive: isActive.value,
+        sequence: sequence.value,
+        categoryIds: selectedCategoryIds.value,
+        translations: [
+          {
+            locale: 'vi',
+            title: title.value,
+            description: description.value || undefined
+          }
+        ]
+      });
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Gallery item updated successfully',
+        timer: 1500,
+        showConfirmButton: false
+      }).then(() => {
+        router.push('/galleries');
+      });
+    } catch (err: any) {
+      console.error("Error updating gallery item:", err);
+      error.value = err.message || "Failed to update gallery item";
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message || "Failed to update gallery item"
+      });
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
+   * Initialize data for gallery edit
+   */
+  const initializeGalleryEdit = async (galleryId: number) => {
+    if (process.client) {
+      await Promise.all([
+        fetchCategories(),
+        fetchGalleryItem(galleryId)
+      ]);
+    }
+  };
+
   return {
     // State
     isLoading,
@@ -490,7 +694,19 @@ export const useGallery = () => {
     sortBy,
     sortOrder,
     
-    // Methods
+    // Edit-specific state
+    isFetchingData,
+    isUploadingImage,
+    title,
+    description,
+    imageUrl,
+    isActive,
+    sequence,
+    selectedCategoryIds,
+    isDragging,
+    currentTab,
+    
+    // List methods
     fetchGalleries,
     fetchCategories,
     deleteGallery,
@@ -504,6 +720,15 @@ export const useGallery = () => {
     toggleGallerySelection,
     formatDate,
     getCategoryNames,
-    updateQueryParams
+    updateQueryParams,
+    
+    // Edit methods
+    fetchGalleryItem,
+    handleImageUpload,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    updateGalleryForm,
+    initializeGalleryEdit
   };
 };
