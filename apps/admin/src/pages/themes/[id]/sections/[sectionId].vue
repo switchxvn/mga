@@ -12,6 +12,7 @@ import {
   Type
 } from 'lucide-vue-next'
 import { PageType, ThemeSection } from '@ew/shared'
+import PageHeader from '../../../../components/common/header/PageHeader.vue'
 
 // Route
 const route = useRoute()
@@ -234,28 +235,11 @@ const navigateToTheme = () => {
 
 <template>
   <div>
-    <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between">
-      <div class="flex items-center">
-        <Layout class="mr-2 w-8 h-8 text-primary-500" />
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          <template v-if="section">
-            {{ section.title }}
-            <UBadge
-              :color="section.isActive ? 'green' : 'gray'"
-              variant="soft"
-              size="sm"
-              class="ml-2"
-            >
-              {{ section.isActive ? 'Hiển thị' : 'Ẩn' }}
-            </UBadge>
-          </template>
-          <template v-else>
-            Chỉnh sửa Section
-          </template>
-        </h1>
-      </div>
-      
-      <div class="mt-4 flex flex-wrap gap-2 lg:mt-0">
+    <PageHeader
+      :title="section ? section.title : 'Chỉnh sửa Section'"
+      description="Chỉnh sửa thông tin và cài đặt của section"
+    >
+      <template #actions>
         <UButton
           color="gray"
           variant="soft"
@@ -272,7 +256,20 @@ const navigateToTheme = () => {
         >
           Về trang Theme
         </UButton>
-      </div>
+      </template>
+    </PageHeader>
+    
+    <!-- Status badge display -->
+    <div v-if="section && !loading" class="mb-6 flex items-center">
+      <UBadge
+        :color="section.isActive ? 'green' : 'gray'"
+        variant="soft"
+        size="md"
+        class="mr-2"
+      >
+        {{ section.isActive ? 'Hiển thị' : 'Ẩn' }}
+      </UBadge>
+      <span class="text-sm text-gray-500">ID: {{ section.id }}</span>
     </div>
     
     <!-- Loading state -->
@@ -293,7 +290,7 @@ const navigateToTheme = () => {
     </UCard>
     
     <!-- Section form -->
-    <div v-else-if="section" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div v-else-if="section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
       <!-- Form -->
       <div class="lg:col-span-2">
         <UCard>

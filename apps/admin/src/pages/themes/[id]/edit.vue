@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { trpc } from '@/trpc'
 import { Palette } from 'lucide-vue-next'
 import { Theme, ColorMode } from '@ew/shared'
+import PageHeader from '../../../components/common/header/PageHeader.vue'
 
 // Get route params
 const route = useRoute()
@@ -18,6 +19,7 @@ const loading = ref(true)
 const saving = ref(false)
 const error = ref<string | null>(null)
 const formErrors = ref<Record<string, string>>({})
+const theme = ref<Theme | null>(null)
 
 // Form
 const themeForm = reactive({
@@ -83,6 +85,7 @@ const fetchTheme = async () => {
   
   try {
     const data = await trpc.admin.theme.getTheme.query({ id: themeId.value })
+    theme.value = data
     
     // Copy data to form
     themeForm.name = data.name
@@ -228,23 +231,30 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- Header -->
-    <div class="mb-6 flex items-center justify-between">
-      <div class="flex items-center">
-        <Palette class="mr-2 w-7 h-7 text-primary-500" />
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Chỉnh sửa Theme</h1>
-      </div>
-      <div class="flex gap-2">
+    <PageHeader
+      :title="theme ? `Chỉnh sửa: ${theme.name}` : 'Chỉnh sửa Theme'"
+      description="Chỉnh sửa thông tin và cài đặt màu sắc cho theme"
+    >
+      <template #actions>
         <UButton
           color="gray"
           variant="soft"
           icon="i-heroicons-arrow-left"
-          @click="cancelForm"
+          @click="router.push(`/themes/${themeId}`)"
         >
           Quay lại
         </UButton>
-      </div>
-    </div>
+        <UButton
+          color="primary"
+          type="submit"
+          :loading="saving"
+          :disabled="saving"
+          form="theme-form"
+        >
+          Lưu thay đổi
+        </UButton>
+      </template>
+    </PageHeader>
     
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -264,128 +274,112 @@ onMounted(() => {
     </UCard>
     
     <!-- Edit form -->
-    <div v-else class="grid grid-cols-1 gap-6">
+    <form 
+      v-else 
+      id="theme-form"
+      @submit.prevent="submitForm" 
+      class="grid grid-cols-1 gap-6 mt-6"
+    >
       <UCard>
-        <form @submit.prevent="submitForm">
-          <div class="space-y-6">
-            <!-- Theme Name -->
-            <div class="space-y-2">
-              <UFormGroup
-                label="Tên Theme"
-                required
-                help="Nhập tên dễ nhớ để phân biệt với các theme khác"
-                :error="formErrors.name"
-              >
-                <UInput
-                  v-model="themeForm.name"
-                  placeholder="Ví dụ: Theme mặc định, Theme Mùa hè, ..."
-                  :error="!!formErrors.name"
-                />
-              </UFormGroup>
-            </div>
-            
-            <!-- Light Mode Colors -->
+        <div class="space-y-6">
+          <!-- Theme Name -->
+          <div class="space-y-2">
             <UFormGroup
-              label="Màu sắc Light Mode"
-              help="Chọn màu sắc chính cho giao diện sáng"
+              label="Tên Theme"
+              required
+              help="Nhập tên dễ nhớ để phân biệt với các theme khác"
+              :error="formErrors.name"
             >
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Màu chính (Primary)
-                  </label>
-                  <UColorPicker
-                    v-model="themeForm.colors.light.primary['500']"
-                    class="w-full"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Màu phụ (Secondary)
-                  </label>
-                  <UColorPicker
-                    v-model="themeForm.colors.light.secondary['500']"
-                    class="w-full"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Màu bổ sung (Tertiary)
-                  </label>
-                  <UColorPicker
-                    v-model="themeForm.colors.light.tertiary['500']"
-                    class="w-full"
-                  />
-                </div>
-              </div>
-            </UFormGroup>
-            
-            <!-- Dark Mode Colors -->
-            <UFormGroup
-              label="Màu sắc Dark Mode"
-              help="Chọn màu sắc chính cho giao diện tối"
-            >
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Màu chính (Primary)
-                  </label>
-                  <UColorPicker
-                    v-model="themeForm.colors.dark.primary['500']"
-                    class="w-full"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Màu phụ (Secondary)
-                  </label>
-                  <UColorPicker
-                    v-model="themeForm.colors.dark.secondary['500']"
-                    class="w-full"
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Màu bổ sung (Tertiary)
-                  </label>
-                  <UColorPicker
-                    v-model="themeForm.colors.dark.tertiary['500']"
-                    class="w-full"
-                  />
-                </div>
-              </div>
-            </UFormGroup>
-            
-            <!-- Active Status -->
-            <UFormGroup>
-              <UToggle
-                v-model="themeForm.isActive"
-                label="Kích hoạt theme này"
-                description="Theme sẽ được áp dụng ngay cho website khi được kích hoạt"
-                color="primary"
+              <UInput
+                v-model="themeForm.name"
+                placeholder="Ví dụ: Theme mặc định, Theme Mùa hè, ..."
+                :error="!!formErrors.name"
               />
             </UFormGroup>
-            
-            <!-- Form Actions -->
-            <div class="flex justify-end space-x-2">
-              <UButton
-                variant="ghost"
-                @click="cancelForm"
-                :disabled="saving"
-              >
-                Hủy
-              </UButton>
-              <UButton
-                type="submit"
-                color="primary"
-                :loading="saving"
-                :disabled="saving"
-              >
-                Lưu thay đổi
-              </UButton>
-            </div>
           </div>
-        </form>
+          
+          <!-- Light Mode Colors -->
+          <UFormGroup
+            label="Màu sắc Light Mode"
+            help="Chọn màu sắc chính cho giao diện sáng"
+          >
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Màu chính (Primary)
+                </label>
+                <UColorPicker
+                  v-model="themeForm.colors.light.primary['500']"
+                  class="w-full"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Màu phụ (Secondary)
+                </label>
+                <UColorPicker
+                  v-model="themeForm.colors.light.secondary['500']"
+                  class="w-full"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Màu bổ sung (Tertiary)
+                </label>
+                <UColorPicker
+                  v-model="themeForm.colors.light.tertiary['500']"
+                  class="w-full"
+                />
+              </div>
+            </div>
+          </UFormGroup>
+          
+          <!-- Dark Mode Colors -->
+          <UFormGroup
+            label="Màu sắc Dark Mode"
+            help="Chọn màu sắc chính cho giao diện tối"
+          >
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Màu chính (Primary)
+                </label>
+                <UColorPicker
+                  v-model="themeForm.colors.dark.primary['500']"
+                  class="w-full"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Màu phụ (Secondary)
+                </label>
+                <UColorPicker
+                  v-model="themeForm.colors.dark.secondary['500']"
+                  class="w-full"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Màu bổ sung (Tertiary)
+                </label>
+                <UColorPicker
+                  v-model="themeForm.colors.dark.tertiary['500']"
+                  class="w-full"
+                />
+              </div>
+            </div>
+          </UFormGroup>
+          
+          <!-- Active Status -->
+          <UFormGroup>
+            <UToggle
+              v-model="themeForm.isActive"
+              label="Kích hoạt theme này"
+              description="Theme sẽ được áp dụng ngay cho website khi được kích hoạt"
+              color="primary"
+            />
+          </UFormGroup>
+        </div>
       </UCard>
       
       <!-- Theme Preview -->
@@ -484,6 +478,6 @@ onMounted(() => {
           </div>
         </div>
       </UCard>
-    </div>
+    </form>
   </div>
 </template> 

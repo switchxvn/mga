@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { trpc } from '@/trpc'
 import { Palette, Layout, Plus, ArrowUp, ArrowDown, CheckCircle, XCircle } from 'lucide-vue-next'
 import { PageType, Theme, ThemeSection } from '@ew/shared'
+import PageHeader from '../../../../components/common/header/PageHeader.vue'
 
 // Get route params
 const route = useRoute()
@@ -218,19 +219,11 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- Header -->
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center">
-        <Layout class="mr-2 w-7 h-7 text-primary-500" />
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Quản lý Sections
-          <template v-if="theme">
-            - {{ theme.name }}
-          </template>
-        </h1>
-      </div>
-      
-      <div class="mt-4 flex flex-wrap gap-2 sm:mt-0">
+    <PageHeader
+      :title="theme ? `Sections: ${theme.name}` : 'Quản lý Theme Sections'"
+      description="Quản lý các thành phần hiển thị của theme theo từng trang"
+    >
+      <template #actions>
         <UButton
           color="gray"
           variant="soft"
@@ -244,25 +237,10 @@ onMounted(() => {
           icon="i-heroicons-plus"
           @click="navigateToCreate"
         >
-          Thêm Section
+          Thêm Section mới
         </UButton>
-      </div>
-    </div>
-    
-    <!-- Filter and controls -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-      <USelect
-        v-model="selectedPageType"
-        :options="pageTypeOptions"
-        placeholder="Trang"
-        class="w-full sm:w-auto sm:min-w-[200px]"
-      />
-      
-      <div v-if="reorderSuccess" class="flex items-center text-green-600 dark:text-green-400">
-        <CheckCircle class="w-5 h-5 mr-2" />
-        <span>Đã cập nhật thứ tự thành công</span>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
     
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -281,157 +259,191 @@ onMounted(() => {
       </UButton>
     </UCard>
     
-    <!-- Empty state -->
-    <UCard v-else-if="filteredSections.length === 0" class="flex flex-col items-center justify-center py-16">
-      <Layout class="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4" />
-      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Không có Section nào</h3>
-      <p class="text-gray-500 dark:text-gray-400 mb-6 text-center max-w-md">
-        <template v-if="sections.length === 0">
-          Theme này chưa có section nào. Hãy thêm các section mới để xây dựng giao diện website.
-        </template>
-        <template v-else>
-          Không tìm thấy section nào phù hợp với bộ lọc hiện tại.
-        </template>
-      </p>
-      <UButton color="primary" @click="navigateToCreate">
-        Thêm Section
-      </UButton>
-    </UCard>
+    <!-- Filter -->
+    <div v-else class="mb-6">
+      <UCard>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex-1">
+            <UFormGroup label="Lọc theo loại trang">
+              <USelect
+                v-model="selectedPageType"
+                :options="pageTypeOptions"
+                placeholder="Chọn loại trang"
+              />
+            </UFormGroup>
+          </div>
+          
+          <!-- Reorder success message -->
+          <div v-if="reorderSuccess" class="flex items-center text-green-600 dark:text-green-400">
+            <CheckCircle class="w-5 h-5 mr-2" />
+            <span>Đã thay đổi thứ tự thành công</span>
+          </div>
+        </div>
+      </UCard>
+    </div>
     
     <!-- Sections list -->
-    <UCard v-else>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left divide-y divide-gray-200 dark:divide-gray-700">
-          <thead>
-            <tr class="border-b border-gray-200 dark:border-gray-700">
-              <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Thứ tự</th>
-              <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Tiêu đề</th>
-              <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Loại</th>
-              <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Trang</th>
-              <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Trạng thái</th>
-              <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400 text-right">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="section in filteredSections" :key="section.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-              <td class="whitespace-nowrap px-4 py-4 text-sm font-medium">
-                <div class="flex items-center">
-                  <span class="w-8 text-center">{{ section.order }}</span>
-                  <div class="flex flex-col ml-2">
-                    <UButton
-                      color="gray"
-                      variant="ghost"
-                      :disabled="isReordering"
-                      size="xs"
-                      class="p-1"
-                      @click="moveSection(section.id, 'up')"
-                    >
-                      <ArrowUp class="w-4 h-4" />
-                    </UButton>
-                    <UButton
-                      color="gray"
-                      variant="ghost"
-                      :disabled="isReordering"
-                      size="xs"
-                      class="p-1"
-                      @click="moveSection(section.id, 'down')"
-                    >
-                      <ArrowDown class="w-4 h-4" />
-                    </UButton>
-                  </div>
-                </div>
-              </td>
-              <td class="whitespace-nowrap px-4 py-4">
-                <div class="flex items-center">
-                  <Layout class="w-5 h-5 mr-2 text-primary-500" />
-                  <span class="font-medium text-gray-900 dark:text-white">{{ section.title }}</span>
-                </div>
-              </td>
-              <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ section.type }}
-                <span v-if="section.componentName" class="text-xs text-gray-500 block">
-                  {{ section.componentName }}
-                </span>
-              </td>
-              <td class="whitespace-nowrap px-4 py-4 text-sm">
-                <UBadge color="blue" variant="soft" size="sm">
-                  {{ getPageTypeLabel(section.pageType) }}
-                </UBadge>
-              </td>
-              <td class="whitespace-nowrap px-4 py-4 text-sm">
-                <UBadge
-                  :color="section.isActive ? 'green' : 'gray'"
-                  variant="soft"
-                  size="sm"
-                >
-                  {{ section.isActive ? 'Hiển thị' : 'Ẩn' }}
-                </UBadge>
-              </td>
-              <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
-                <div class="flex justify-end space-x-2">
-                  <UTooltip text="Sửa section">
-                    <UButton
-                      color="primary"
-                      variant="ghost"
-                      icon="i-heroicons-pencil"
-                      size="xs"
-                      @click="() => {
-                        const id = Number(route.params.id)
-                        console.log(`Navigating to edit section: theme=${id}, section=${section.id}`)
-                        router.push(`/themes/${id}/sections/${section.id}`)
-                      }"
-                      class="hover:text-primary-600"
-                    />
-                  </UTooltip>
-                  
-                  <UTooltip :text="section.isActive ? 'Ẩn section' : 'Hiển thị section'">
-                    <UButton
-                      :color="section.isActive ? 'amber' : 'green'"
-                      variant="ghost"
-                      size="xs"
-                      @click="toggleSectionActive(section)"
-                    >
-                      <template v-if="section.isActive">
-                        <XCircle class="w-5 h-5" />
-                      </template>
-                      <template v-else>
-                        <CheckCircle class="w-5 h-5" />
-                      </template>
-                    </UButton>
-                  </UTooltip>
-                  
-                  <UPopover>
-                    <UTooltip text="Xóa section">
+    <div v-if="sections.length === 0 && !loading" class="py-20 text-center">
+      <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+        <Layout class="w-12 h-12 text-gray-400 dark:text-gray-500" />
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Không có Sections nào</h3>
+      <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+        Theme này chưa có sections nào. Hãy thêm section đầu tiên để bắt đầu thiết kế giao diện.
+      </p>
+      <UButton color="primary" @click="navigateToCreate">
+        Thêm Section mới
+      </UButton>
+    </div>
+    
+    <div v-else-if="filteredSections.length === 0 && !loading" class="py-20 text-center">
+      <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+        <Layout class="w-12 h-12 text-gray-400 dark:text-gray-500" />
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Không có Sections cho loại trang này</h3>
+      <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+        Không tìm thấy sections nào cho loại trang đã chọn.
+      </p>
+      <UButton color="primary" @click="navigateToCreate">
+        Thêm Section mới
+      </UButton>
+    </div>
+    
+    <div v-else-if="!loading" class="space-y-4">
+      <UCard>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left divide-y divide-gray-200 dark:divide-gray-700">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700">
+                <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Thứ tự</th>
+                <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Tiêu đề</th>
+                <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Loại</th>
+                <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Trang</th>
+                <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400">Trạng thái</th>
+                <th scope="col" class="px-4 py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              <tr v-for="section in filteredSections" :key="section.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td class="whitespace-nowrap px-4 py-4 text-sm font-medium">
+                  <div class="flex items-center">
+                    <span class="w-8 text-center">{{ section.order }}</span>
+                    <div class="flex flex-col ml-2">
                       <UButton
-                        color="red"
+                        color="gray"
                         variant="ghost"
-                        icon="i-heroicons-trash"
+                        :disabled="isReordering"
                         size="xs"
+                        class="p-1"
+                        @click="moveSection(section.id, 'up')"
+                      >
+                        <ArrowUp class="w-4 h-4" />
+                      </UButton>
+                      <UButton
+                        color="gray"
+                        variant="ghost"
+                        :disabled="isReordering"
+                        size="xs"
+                        class="p-1"
+                        @click="moveSection(section.id, 'down')"
+                      >
+                        <ArrowDown class="w-4 h-4" />
+                      </UButton>
+                    </div>
+                  </div>
+                </td>
+                <td class="whitespace-nowrap px-4 py-4">
+                  <div class="flex items-center">
+                    <Layout class="w-5 h-5 mr-2 text-primary-500" />
+                    <span class="font-medium text-gray-900 dark:text-white">{{ section.title }}</span>
+                  </div>
+                </td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
+                  {{ section.type }}
+                  <span v-if="section.componentName" class="text-xs text-gray-500 block">
+                    {{ section.componentName }}
+                  </span>
+                </td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm">
+                  <UBadge color="blue" variant="soft" size="sm">
+                    {{ getPageTypeLabel(section.pageType) }}
+                  </UBadge>
+                </td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm">
+                  <UBadge
+                    :color="section.isActive ? 'green' : 'gray'"
+                    variant="soft"
+                    size="sm"
+                  >
+                    {{ section.isActive ? 'Hiển thị' : 'Ẩn' }}
+                  </UBadge>
+                </td>
+                <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
+                  <div class="flex justify-end space-x-2">
+                    <UTooltip text="Sửa section">
+                      <UButton
+                        color="primary"
+                        variant="ghost"
+                        icon="i-heroicons-pencil"
+                        size="xs"
+                        @click="() => {
+                          const id = Number(route.params.id)
+                          console.log(`Navigating to edit section: theme=${id}, section=${section.id}`)
+                          router.push(`/themes/${id}/sections/${section.id}`)
+                        }"
+                        class="hover:text-primary-600"
                       />
                     </UTooltip>
                     
-                    <template #panel>
-                      <div class="p-4 max-w-sm">
-                        <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                          Bạn có chắc chắn muốn xóa section "{{ section.title }}"?
-                        </p>
-                        <div class="flex justify-end space-x-2">
-                          <UButton color="gray" variant="soft" size="sm" @click="() => {}">
-                            Hủy
-                          </UButton>
-                          <UButton color="red" size="sm" @click="deleteSection(section.id)">
-                            Xóa
-                          </UButton>
+                    <UTooltip :text="section.isActive ? 'Ẩn section' : 'Hiển thị section'">
+                      <UButton
+                        :color="section.isActive ? 'amber' : 'green'"
+                        variant="ghost"
+                        size="xs"
+                        @click="toggleSectionActive(section)"
+                      >
+                        <template v-if="section.isActive">
+                          <XCircle class="w-5 h-5" />
+                        </template>
+                        <template v-else>
+                          <CheckCircle class="w-5 h-5" />
+                        </template>
+                      </UButton>
+                    </UTooltip>
+                    
+                    <UPopover>
+                      <UTooltip text="Xóa section">
+                        <UButton
+                          color="red"
+                          variant="ghost"
+                          icon="i-heroicons-trash"
+                          size="xs"
+                        />
+                      </UTooltip>
+                      
+                      <template #panel>
+                        <div class="p-4 max-w-sm">
+                          <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                            Bạn có chắc chắn muốn xóa section "{{ section.title }}"?
+                          </p>
+                          <div class="flex justify-end space-x-2">
+                            <UButton color="gray" variant="soft" size="sm" @click="() => {}">
+                              Hủy
+                            </UButton>
+                            <UButton color="red" size="sm" @click="deleteSection(section.id)">
+                              Xóa
+                            </UButton>
+                          </div>
                         </div>
-                      </div>
-                    </template>
-                  </UPopover>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </UCard>
+                      </template>
+                    </UPopover>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </UCard>
+    </div>
   </div>
 </template> 

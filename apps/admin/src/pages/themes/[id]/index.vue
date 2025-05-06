@@ -5,6 +5,7 @@ import { useTrpc } from '../../../composables/useTrpc'
 import { useToast } from '../../../composables/useToast'
 import { Palette, Layout, Plus, Layers, Settings } from 'lucide-vue-next'
 import { PageType, ColorMode, Theme, ThemeSection } from '@ew/shared'
+import PageHeader from '../../../components/common/header/PageHeader.vue'
 
 // Get route params
 const route = useRoute()
@@ -114,28 +115,11 @@ const getPageTypeLabel = (type: string) => {
 <template>
   <div>
     <!-- Header -->
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center">
-        <Palette class="mr-2 w-8 h-8 text-primary-500" />
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          <template v-if="theme">
-            {{ theme.name }}
-            <UBadge
-              :color="theme.isActive ? 'green' : 'gray'"
-              variant="soft"
-              size="sm"
-              class="ml-2"
-            >
-              {{ theme.isActive ? 'Hoạt động' : 'Không hoạt động' }}
-            </UBadge>
-          </template>
-          <template v-else>
-            Chi tiết Theme
-          </template>
-        </h1>
-      </div>
-      
-      <div class="mt-4 flex flex-wrap gap-2 sm:mt-0">
+    <PageHeader
+      :title="theme ? theme.name : 'Chi tiết Theme'"
+      description="Xem thông tin chi tiết và quản lý theme"
+    >
+      <template #actions>
         <UButton
           color="gray"
           variant="soft"
@@ -159,7 +143,20 @@ const getPageTypeLabel = (type: string) => {
         >
           Quản lý Sections
         </UButton>
-      </div>
+      </template>
+    </PageHeader>
+    
+    <!-- Status badge display -->
+    <div v-if="theme && !loading" class="mb-6 flex items-center">
+      <UBadge
+        :color="theme.isActive ? 'green' : 'gray'"
+        variant="soft"
+        size="md"
+        class="mr-2"
+      >
+        {{ theme.isActive ? 'Hoạt động' : 'Không hoạt động' }}
+      </UBadge>
+      <span class="text-sm text-gray-500">ID: {{ theme.id }}</span>
     </div>
     
     <!-- Loading state -->

@@ -5,6 +5,7 @@ import { PlusCircle, Edit, Trash2, Eye, Check, X, Palette } from 'lucide-vue-nex
 import { useTrpc } from '../../composables/useTrpc'
 import { useToast } from '../../composables/useToast'
 import { Theme } from '@ew/shared'
+import PageHeader from '../../components/common/header/PageHeader.vue'
 
 // Set page title
 provide('pageTitle', 'Quản lý Theme')
@@ -119,18 +120,17 @@ const formatDate = (date: Date | string) => {
 
 <template>
   <div>
-    <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-        <Palette class="inline-block mr-2 w-7 h-7" />
-        Quản lý Theme
-      </h1>
-      <div class="mt-4 flex flex-col sm:flex-row sm:space-x-3 lg:mt-0">
+    <PageHeader 
+      title="Quản lý Theme"
+      description="Quản lý các giao diện và bố cục cho website của bạn"
+    >
+      <template #actions>
         <UInput
           v-model="searchQuery"
           placeholder="Tìm kiếm theme..."
           icon="i-heroicons-magnifying-glass-20-solid"
           @keyup.enter="handleSearch"
-          class="mb-3 sm:mb-0"
+          class="md:w-64"
         />
         <UButton
           color="primary"
@@ -139,8 +139,8 @@ const formatDate = (date: Date | string) => {
         >
           Thêm Theme mới
         </UButton>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-10">

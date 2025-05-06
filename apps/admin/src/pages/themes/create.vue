@@ -5,6 +5,7 @@ import { useTrpc } from '../../composables/useTrpc'
 import { useToast } from '../../composables/useToast'
 import { Palette } from 'lucide-vue-next'
 import { ColorMode } from '@ew/shared'
+import PageHeader from '../../components/common/header/PageHeader.vue'
 
 // Set page title
 provide('pageTitle', 'Tạo Theme mới')
@@ -126,14 +127,22 @@ const cancelForm = () => {
 
 <template>
   <div>
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-        <Palette class="inline-block mr-2 w-7 h-7" />
-        Tạo Theme mới
-      </h1>
-    </div>
+    <PageHeader
+      title="Tạo Theme mới"
+      description="Tạo theme mới với các màu sắc và cấu hình riêng"
+    >
+      <template #actions>
+        <UButton
+          color="secondary"
+          variant="soft"
+          @click="cancelForm"
+        >
+          Hủy
+        </UButton>
+      </template>
+    </PageHeader>
     
-    <div class="grid grid-cols-1 gap-6">
+    <div class="grid grid-cols-1 gap-6 mt-6">
       <UCard>
         <form @submit.prevent="submitForm">
           <div class="space-y-6">
@@ -243,13 +252,6 @@ const cancelForm = () => {
                 :disabled="isSubmitting"
               >
                 Xóa hết
-              </UButton>
-              <UButton
-                variant="ghost"
-                @click="cancelForm"
-                :disabled="isSubmitting"
-              >
-                Hủy
               </UButton>
               <UButton
                 type="submit"

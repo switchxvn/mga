@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { trpc } from '@/trpc'
 import { Palette, Layout, Plus } from 'lucide-vue-next'
 import { PageType } from '@ew/shared'
+import PageHeader from '../../../../components/common/header/PageHeader.vue'
 
 // Get route params
 const route = useRoute()
@@ -275,18 +276,11 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- Header -->
-    <div class="mb-6 flex items-center justify-between">
-      <div class="flex items-center">
-        <Layout class="mr-2 w-7 h-7 text-primary-500" />
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Thêm Section mới
-          <template v-if="theme">
-            - {{ theme.name }}
-          </template>
-        </h1>
-      </div>
-      <div class="flex gap-2">
+    <PageHeader
+      :title="theme ? `Thêm Section - ${theme.name}` : 'Thêm Section mới'"
+      description="Tạo section mới cho theme và định cấu hình hiển thị"
+    >
+      <template #actions>
         <UButton
           color="gray"
           variant="soft"
@@ -295,8 +289,8 @@ onMounted(() => {
         >
           Quay lại
         </UButton>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
     
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -316,7 +310,7 @@ onMounted(() => {
     </UCard>
     
     <!-- Create form -->
-    <div v-else class="grid grid-cols-1 gap-6">
+    <div v-else class="grid grid-cols-1 gap-6 mt-6">
       <UCard>
         <form @submit.prevent="submitForm">
           <div class="space-y-6">
@@ -437,13 +431,6 @@ onMounted(() => {
             
             <!-- Form Actions -->
             <div class="flex justify-end space-x-2">
-              <UButton
-                variant="ghost"
-                @click="cancelForm"
-                :disabled="saving"
-              >
-                Hủy
-              </UButton>
               <UButton
                 type="submit"
                 color="primary"
