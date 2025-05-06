@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useTrpc } from './useTrpc'
-import { useToast } from 'vue-toastification'
+import { useNotification } from './useNotification'
 
 export interface UploadOptions {
   file: File
@@ -18,7 +18,7 @@ export interface UploadResult {
 export function useUpload() {
   const trpc = useTrpc()
   const isUploading = ref(false)
-  const toast = useToast()
+  const { showError } = useNotification()
 
   const uploadFile = async ({
     file,
@@ -104,13 +104,13 @@ export function useUpload() {
                             'Unknown upload error'
         const statusCode = uploadError?.response?.status || 'unknown'
         
-        toast.error(`Upload failed (${statusCode}): ${errorMessage}`)
+        showError(`Upload failed (${statusCode}): ${errorMessage}`)
         throw new Error(`Upload failed: ${errorMessage}`)
       }
     } catch (error: any) {
       console.error('Upload failed:', error)
       const errorMessage = error?.message || 'Unknown error occurred'
-      toast.error(`Upload failed: ${errorMessage}`)
+      showError(`Upload failed: ${errorMessage}`)
       throw error
     } finally {
       isUploading.value = false

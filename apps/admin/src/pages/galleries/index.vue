@@ -128,6 +128,9 @@ async function updateQueryParams() {
 }
 
 async function handleDelete(id: number) {
+  // Đảm bảo chỉ gọi API ở client-side
+  if (!process.client) return;
+
   try {
     const result = await Swal.fire({
       title: 'Delete Gallery Item?',
@@ -209,10 +212,11 @@ function handleSearch() {
 
 // Thay đổi cách onMounted hoạt động để đảm bảo các cuộc gọi API chỉ xảy ra ở client side
 onMounted(async () => {
-  await checkAuth();
-  
-  // Đảm bảo mã chỉ chạy ở client side
+  // Đảm bảo checkAuth và các cuộc gọi API khác chỉ xảy ra ở client side
   if (process.client) {
+    await checkAuth();
+    
+    // Đảm bảo các cuộc gọi API khác cũng chỉ xảy ra ở client side
     await Promise.all([
       fetchCategories(),
       fetchGalleries()

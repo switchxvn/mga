@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
-import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import { useTrpc } from './useTrpc'
+import { useNotification } from './useNotification'
 import slugify from 'slugify'
 
 interface PostTranslation {
@@ -39,7 +39,7 @@ interface PostForm {
 
 export function usePost() {
   const router = useRouter()
-  const toast = useToast()
+  const { showSuccess, showError } = useNotification()
   const trpc = useTrpc()
 
   const loading = ref(false)
@@ -188,7 +188,7 @@ export function usePost() {
         }
       })
 
-      toast.success('Post updated successfully!')
+      showSuccess('Post updated successfully!')
 
       if (!continueEditing) {
         router.push('/posts')
@@ -210,12 +210,10 @@ export function usePost() {
         errorMessage += 'Failed to update post. Please try again.'
       }
       
-      toast.error(errorMessage, {
+      showError(errorMessage, {
+        title: 'Update Failed',
         timeout: 8000,
-        closeButton: true,
-        icon: true,
-        closeOnClick: false,
-        pauseOnHover: true
+        closable: true
       })
     } finally {
       loading.value = false
