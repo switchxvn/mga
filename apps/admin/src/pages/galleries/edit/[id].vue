@@ -64,27 +64,15 @@ const tabs = [
   }
 ];
 
-// Fetch categories
-const fetchCategories = async () => {
-  try {
-    const result = await trpc.admin.category.getByType.query({
-      type: 'gallery'
-    });
-    categories.value = result
-      .filter(cat => cat !== null)
-      .map(cat => ({
-        id: cat.id,
-        name: cat.translations && cat.translations[0]?.name || `Category ${cat.id}`
-      }));
-  } catch (err: any) {
-    console.error("Error loading categories:", err);
-    error.value = err.message || "Failed to load categories";
-  }
-};
-
 // Fetch gallery item
 const fetchGalleryItem = async () => {
   try {
+    // Kiểm tra client side
+    if (!process.client) {
+      console.log('Skip fetchGalleryItem on server side to avoid localStorage error');
+      return;
+    }
+
     isFetchingData.value = true;
     error.value = null;
 
@@ -116,6 +104,30 @@ const fetchGalleryItem = async () => {
     });
   } finally {
     isFetchingData.value = false;
+  }
+};
+
+// Fetch categories
+const fetchCategories = async () => {
+  try {
+    // Kiểm tra client side
+    if (!process.client) {
+      console.log('Skip fetchCategories on server side to avoid localStorage error');
+      return;
+    }
+
+    const result = await trpc.admin.category.getByType.query({
+      type: 'gallery'
+    });
+    categories.value = result
+      .filter(cat => cat !== null)
+      .map(cat => ({
+        id: cat.id,
+        name: cat.translations && cat.translations[0]?.name || `Category ${cat.id}`
+      }));
+  } catch (err: any) {
+    console.error("Error loading categories:", err);
+    error.value = err.message || "Failed to load categories";
   }
 };
 
@@ -233,19 +245,16 @@ const updateGallery = async () => {
   }
 };
 
+// Cập nhật onMounted để chỉ chạy ở client side
 onMounted(async () => {
-  try {
-    const isAuthenticated = await checkAuth();
-    if (!isAuthenticated) {
-      router.push("/auth/login");
-      return;
-    }
-    
-    await fetchCategories();
-    await fetchGalleryItem();
-  } catch (err: any) {
-    console.error("Error initializing edit gallery page:", err);
-    error.value = err.message || "Failed to initialize edit gallery page";
+  await checkAuth();
+  
+  // Đảm bảo mã chỉ chạy ở client side
+  if (process.client) {
+    await Promise.all([
+      fetchCategories(),
+      fetchGalleryItem()
+    ]);
   }
 });
 </script>

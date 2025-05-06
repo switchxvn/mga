@@ -104,48 +104,26 @@ const isProcessingUploads = ref(false);
 
 const DEFAULT_IMAGE = '/images/default/default-image.jpg'; // Ảnh mặc định
 
-// Fetch categories
-const fetchCategories = async () => {
-  try {
-    const result = await trpc.admin.category.getByType.query({
-      type: 'gallery'
-    });
-    categories.value = result
-      .filter(cat => cat !== null)
-      .map(cat => ({
-        id: cat.id,
-        name: cat.translations && cat.translations[0]?.name || `Category ${cat.id}`
-      }));
-  } catch (err: any) {
-    console.error("Error loading categories:", err);
-  }
-};
-
-// Update URL query parameters
-const updateQueryParams = () => {
-  const query: Record<string, string | undefined> = {
-    page: page.value > 1 ? page.value.toString() : undefined,
-    search: search.value || undefined,
-    active: activeFilter.value !== undefined ? activeFilter.value.toString() : undefined,
-    categoryId: categoryId.value !== undefined ? categoryId.value.toString() : undefined
-  };
-
-  // Remove undefined values
-  Object.keys(query).forEach(key => query[key] === undefined && delete query[key]);
-
-  router.replace({ query });
-};
-
 // Watch for changes in filters and update URL
 watch([page, search, activeFilter, categoryId], () => {
   updateQueryParams();
-  fetchGalleries();
+  
+  // Chỉ fetch khi đang ở client side
+  if (process.client) {
+    fetchGalleries();
+  }
 }, { deep: true });
 
 async function fetchGalleries() {
   try {
     isLoading.value = true;
     error.value = null;
+
+    // Thêm kiểm tra client side
+    if (!process.client) {
+      console.log('Skip fetchGalleries on server side to avoid localStorage error');
+      return;
+    }
 
     const result = await trpc.admin.galleries.getAll.query({
       page: page.value,
@@ -154,6 +132,9 @@ async function fetchGalleries() {
       isActive: activeFilter.value,
       categoryId: categoryId.value
     });
+
+    // Log response for debugging
+    console.log('Gallery API response:', result);
 
     // Chuyển đổi dữ liệu
     if (result && typeof result === 'object' && 'items' in result && 'total' in result) {
@@ -185,10 +166,57 @@ async function fetchGalleries() {
   } catch (err: any) {
     error.value = err.message || "Failed to load galleries";
     console.error("Error loading galleries:", err);
+    
+    // Reset to empty state on error
+    galleries.value = {
+      items: [],
+      total: 0,
+      currentPage: 1,
+      limit: 10, 
+      totalPages: 1
+    };
   } finally {
     isLoading.value = false;
   }
 }
+
+// Fetch categories
+const fetchCategories = async () => {
+  try {
+    // Thêm kiểm tra client side
+    if (!process.client) {
+      console.log('Skip fetchCategories on server side to avoid localStorage error');
+      return;
+    }
+
+    const result = await trpc.admin.category.getByType.query({
+      type: 'gallery'
+    });
+    categories.value = result
+      .filter(cat => cat !== null)
+      .map(cat => ({
+        id: cat.id,
+        name: cat.translations && cat.translations[0]?.name || `Category ${cat.id}`
+      }));
+  } catch (err: any) {
+    console.error("Error loading categories:", err);
+  }
+};
+
+// Update URL query parameters
+const updateQueryParams = () => {
+  const query: Record<string, string | undefined> = {
+    page: page.value > 1 ? page.value.toString() : undefined,
+    search: search.value || undefined,
+    active: activeFilter.value !== undefined ? activeFilter.value.toString() : undefined,
+    categoryId: categoryId.value !== undefined ? categoryId.value.toString() : undefined
+  };
+
+  // Remove undefined values
+  Object.keys(query).forEach(key => query[key] === undefined && delete query[key]);
+
+  router.replace({ query });
+};
 
 async function handleDelete(id: number) {
   try {
@@ -393,21 +421,16 @@ function handleSearch() {
   }, 300);
 }
 
+// Thay đổi cách onMounted hoạt động để đảm bảo các cuộc gọi API chỉ xảy ra ở client side
 onMounted(async () => {
-  try {
-    // Check authentication first
-    const isAuthenticated = await checkAuth();
-    if (!isAuthenticated) {
-      router.push("/auth/login");
-      return;
-    }
-
-    await fetchCategories();
-    await fetchGalleries();
-  } catch (err: any) {
-    error.value = err.message || "Failed to initialize galleries page";
-    console.error("Error initializing galleries page:", err);
-    isLoading.value = false;
+  await checkAuth();
+  
+  // Đảm bảo mã chỉ chạy ở client side
+  if (process.client) {
+    await Promise.all([
+      fetchCategories(),
+      fetchGalleries()
+    ]);
   }
 });
 
