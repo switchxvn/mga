@@ -245,11 +245,13 @@ const updateGallery = async () => {
   }
 };
 
-// Cập nhật onMounted để chỉ chạy ở client side
 onMounted(async () => {
-  await checkAuth();
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    router.push("/auth/login");
+    return;
+  }
   
-  // Đảm bảo mã chỉ chạy ở client side
   if (process.client) {
     await Promise.all([
       fetchCategories(),
