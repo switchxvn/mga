@@ -84,11 +84,35 @@ export class ReviewsSectionSeeder {
         }
       },
       {
+        type: 'review_gallery',
+        title: 'Review Gallery Section',
+        componentName: 'ReviewGallerySection',
+        pageType: 'reviews_page',
+        order: 4,
+        settings: {
+          title: 'KHÁCH HÀNG CHECKIN',
+          description: 'Hình ảnh khách hàng tại cửa hàng của chúng tôi',
+          backgroundColor: 'bg-gray-50 dark:bg-gray-800',
+          textColor: 'text-gray-900 dark:text-white',
+          titleColor: 'text-primary-600 dark:text-primary-400',
+          borderColor: 'border-gray-200 dark:border-gray-700',
+          paddingY: 'py-16',
+          useSlider: true,
+          sliderPerView: 3,
+          sliderAutoplay: true,
+          sliderDelay: 3000,
+          maxGalleries: 12,
+          columns: 4,
+          categoryIds: [1, 2], // ID của category hình ảnh khách hàng
+          showTitle: true
+        }
+      },
+      {
         type: 'review_form',
         title: 'Review Form Section',
         componentName: 'ReviewFormSection',
         pageType: 'reviews_page',
-        order: 4,
+        order: 5,
         settings: {
           title: 'Gửi đánh giá của bạn',
           description: 'Chia sẻ trải nghiệm của bạn với chúng tôi',

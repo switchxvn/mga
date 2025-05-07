@@ -28,11 +28,11 @@ const paddingBottom = settings.paddingBottom || '';
 <template>
   <div :class="[backgroundColor, paddingTop, paddingBottom]" 
        :style="backgroundImage ? `background-image: url(${backgroundImage}); background-size: cover; background-position: center;` : ''">
-    <div class="container mx-auto px-4" :class="textAlignment">
-      <h1 class="text-3xl md:text-4xl font-bold mb-4" :class="textColor">
+    <div class="container mx-auto px-4 flex flex-col items-center justify-center">
+      <h1 class="text-3xl md:text-4xl font-bold mb-4 text-center" :class="textColor">
         {{ title }}
       </h1>
-      <p class="text-lg max-w-3xl mx-auto" :class="textColor === 'text-gray-900 dark:text-white' ? 'text-gray-600 dark:text-gray-300' : textColor">
+      <p class="text-lg max-w-3xl text-center" :class="textColor === 'text-gray-900 dark:text-white' ? 'text-gray-600 dark:text-gray-300' : textColor">
         {{ description }}
       </p>
     </div>
