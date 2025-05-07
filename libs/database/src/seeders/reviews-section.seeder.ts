@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { PageType } from '@ew/backend/theme/entities/theme-section.entity';
 
 @Injectable()
 export class ReviewsSectionSeeder {
@@ -13,7 +12,7 @@ export class ReviewsSectionSeeder {
 
     // Lấy theme mặc định
     const defaultTheme = await this.dataSource.query(
-      `SELECT id FROM themes WHERE is_default = true LIMIT 1`
+      `SELECT id FROM themes WHERE is_active = true LIMIT 1`
     );
 
     if (!defaultTheme || defaultTheme.length === 0) {
@@ -29,7 +28,7 @@ export class ReviewsSectionSeeder {
         type: 'review_hero',
         title: 'Review Hero Section',
         componentName: 'ReviewHeroSection',
-        pageType: PageType.REVIEWS_PAGE,
+        pageType: 'reviews_page',
         order: 1,
         settings: {
           title: 'Đánh giá khách hàng',
@@ -46,7 +45,7 @@ export class ReviewsSectionSeeder {
         type: 'review_statistics',
         title: 'Review Statistics Section',
         componentName: 'ReviewStatisticsSection',
-        pageType: PageType.REVIEWS_PAGE,
+        pageType: 'reviews_page',
         order: 2,
         settings: {
           title: 'Thống kê đánh giá',
@@ -63,7 +62,7 @@ export class ReviewsSectionSeeder {
         type: 'review_list',
         title: 'Review List Section',
         componentName: 'ReviewListSection',
-        pageType: PageType.REVIEWS_PAGE,
+        pageType: 'reviews_page',
         order: 3,
         settings: {
           title: 'Danh sách đánh giá',
@@ -88,7 +87,7 @@ export class ReviewsSectionSeeder {
         type: 'review_form',
         title: 'Review Form Section',
         componentName: 'ReviewFormSection',
-        pageType: PageType.REVIEWS_PAGE,
+        pageType: 'reviews_page',
         order: 4,
         settings: {
           title: 'Gửi đánh giá của bạn',

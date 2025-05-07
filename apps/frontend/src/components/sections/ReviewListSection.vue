@@ -2,7 +2,8 @@
 import { useLocalization } from '../../composables/useLocalization';
 import { useReviews } from '../../composables/useReviews';
 import { useRoute } from 'vue-router';
-import { ref, computed } from '../../composables/useVueComposables';
+import { ref, computed, onMounted } from '../../composables/useVueComposables';
+import { useTrpc } from '../../composables/useTrpc';
 import Pagination from '../common/Pagination.vue';
 import Loader from '../ui/Loader.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
@@ -22,6 +23,7 @@ const props = defineProps({
 
 const route = useRoute();
 const { t, locale } = useLocalization();
+const trpc = useTrpc();
 
 // Lấy settings từ section
 const settings = props.section.settings || {};
@@ -49,6 +51,7 @@ const {
   selectedReview,
   showModal,
   expandedContents,
+  currentLocale,
   
   // Methods
   applyFilters,
@@ -61,8 +64,16 @@ const {
   closeAvatarModal,
   toggleContent,
   isContentExpanded,
-  contentNeedsExpansion
+  contentNeedsExpansion,
+  loadReviews
 } = useReviews();
+
+// Kiểm tra mount và tự động tải dữ liệu nếu cần
+onMounted(async () => {
+  if (!reviews.value || reviews.value.length === 0) {
+    await loadReviews();
+  }
+});
 
 // Swiper options
 const swiperOptions = {
@@ -185,7 +196,7 @@ const gridClass = computed(() => {
         </div>
         
         <!-- Empty state -->
-        <div v-else-if="reviews.length === 0" :class="[backgroundColor, shadowLevel, 'border rounded-lg', borderColor, 'p-8 text-center']">
+        <div v-if="!isLoading && (!reviews || reviews.length === 0)" :class="[backgroundColor, shadowLevel, 'border rounded-lg', borderColor, 'p-8 text-center']">
           <i class="i-heroicons-chat-bubble-bottom-center-text text-5xl text-gray-400 dark:text-gray-500 mb-3"></i>
           <h3 class="text-xl font-medium mb-2" :class="textColor">
             {{ t('reviews.noReviews') }}
@@ -196,7 +207,7 @@ const gridClass = computed(() => {
         </div>
         
         <!-- Reviews -->
-        <div v-else :class="['grid gap-4', gridClass]">
+        <div v-if="!isLoading && reviews && reviews.length > 0" :class="['grid gap-4', gridClass]">
           <div 
             v-for="review in reviews" 
             :key="review.id"
