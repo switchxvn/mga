@@ -42,6 +42,9 @@ import { UploadConfig } from '../../../../apps/backend/src/modules/upload/entiti
 import { OrderTicketSectionSeeder } from '../seeders/order-ticket-section.seeder';
 import { OrderTicketSection } from '../../../../apps/backend/src/modules/order-ticket/entities/order-ticket-section.entity';
 import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modules/order-ticket/entities/order-ticket-section-translation.entity';
+import { ReviewsSectionSeeder } from '../seeders/reviews-section.seeder';
+import { Theme } from '../../../../apps/backend/src/modules/theme/entities/theme.entity';
+import { ThemeSection } from '../../../../apps/backend/src/modules/theme/entities/theme-section.entity';
 
 @Module({
   imports: [
@@ -72,6 +75,8 @@ import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modu
       UploadConfig,
       OrderTicketSection,
       OrderTicketSectionTranslation,
+      Theme,
+      ThemeSection,
     ]),
   ],
   providers: [
@@ -89,6 +94,7 @@ import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modu
     RefundEmailTemplateSeeder,
     UploadConfigSeeder,
     OrderTicketSectionSeeder,
+    ReviewsSectionSeeder,
   ],
 })
 class SeedModule {}

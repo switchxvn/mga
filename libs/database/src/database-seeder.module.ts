@@ -7,6 +7,7 @@ import { FoodCategoryTranslation } from '../../../apps/backend/src/modules/food-
 import { FoodItem } from '../../../apps/backend/src/modules/food-menu/entities/food-item.entity';
 import { FoodItemTranslation } from '../../../apps/backend/src/modules/food-menu/entities/food-item-translation.entity';
 import { MailConfig } from '../../../apps/backend/src/modules/mail/entities/mail-config.entity';
+import { ReviewsSectionSeeder } from './seeders/reviews-section.seeder';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { MailConfig } from '../../../apps/backend/src/modules/mail/entities/mail
       MailConfig,
     ]),
   ],
-  providers: [FoodMenuSeeder, MailConfigSeeder],
-  exports: [FoodMenuSeeder, MailConfigSeeder],
+  providers: [FoodMenuSeeder, MailConfigSeeder, ReviewsSectionSeeder],
+  exports: [FoodMenuSeeder, MailConfigSeeder, ReviewsSectionSeeder],
 })
 export class DatabaseSeederModule {} 

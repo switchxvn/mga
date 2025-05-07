@@ -1,4 +1,4 @@
-import { computed, ref, reactive, watch } from 'vue';
+import { computed, ref, reactive, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useLocalization } from './useLocalization';
 import { useTrpc } from './useTrpc';
@@ -73,6 +73,10 @@ export function useReviews() {
     '1': 0,
   });
 
+  // Trạng thái ứng dụng
+  const isDataInitialized = ref(false);
+  const hasLoadingError = ref(false);
+
   // Selected review for modal
   const selectedReview = ref<Review | null>(null);
   const showModal = ref(false);
@@ -98,6 +102,37 @@ export function useReviews() {
 
   // SEO data
   const seoData = ref<Seo | null>(null);
+
+  // Thêm helper function cho retry
+  const waitFor = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  const retryTrpcRequest = async <T>(
+    requestFn: () => Promise<T>, 
+    maxRetries = 3, 
+    delay = 1000
+  ): Promise<T> => {
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await Promise.race([
+          requestFn(),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), 15000)
+          )
+        ]);
+        return result as T;
+      } catch (error) {
+        lastError = error;
+        if (attempt < maxRetries) {
+          const backoffDelay = delay * Math.pow(2, attempt - 1);
+          await waitFor(backoffDelay);
+        }
+      }
+    }
+    
+    throw lastError;
+  };
 
   // Initialize filters and pagination from URL query parameters
   const initializeFromQuery = () => {
@@ -141,14 +176,21 @@ export function useReviews() {
       // Cập nhật state để đồng bộ với URL
       pagination.page = currentPage;
       
-      const result = await trpc.review.list.query({
+      const requestParams = {
         page: currentPage,
         limit: pagination.limit,
         locale: currentLocale.value,
         minRating: filters.minRating > 0 ? filters.minRating : undefined,
         serviceTypeId: filters.serviceTypeId > 0 ? filters.serviceTypeId : undefined,
         sortBy: filters.sortBy as any,
-      });
+      };
+      
+      // Sử dụng retry function cho request
+      const result = await retryTrpcRequest(
+        () => trpc.review.list.query(requestParams),
+        3,  // maxRetries
+        1000 // initial delay in ms
+      );
       
       // Extract data from the correct structure
       let reviewsData = null;
@@ -173,6 +215,10 @@ export function useReviews() {
       else if (Array.isArray(result)) {
         reviewsData = result;
       }
+      // Case 5: No recognized structure
+      else {
+        reviewsData = [];
+      }
       
       // Ensure we have valid data
       reviews.value = Array.isArray(reviewsData) ? reviewsData : [];
@@ -184,7 +230,6 @@ export function useReviews() {
       
       await loadRatingStats();
     } catch (error) {
-      console.error('Error loading reviews:', error);
       // Reset to empty state on error
       reviews.value = [];
       pagination.total = 0;
@@ -216,7 +261,6 @@ export function useReviews() {
       
       serviceTypes.value = Array.isArray(serviceTypesData) ? serviceTypesData : [];
     } catch (error) {
-      console.error('Error loading service types:', error);
       serviceTypes.value = [];
     }
   };
@@ -269,7 +313,6 @@ export function useReviews() {
         '5': 0, '4': 0, '3': 0, '2': 0, '1': 0
       };
     } catch (error) {
-      console.error('Error loading rating stats:', error);
       // Reset to default values on error
       averageRating.value = '0.0';
       totalReviews.value = 0;
@@ -299,7 +342,7 @@ export function useReviews() {
     
     // Cập nhật URL
     router.push({ query }).catch(err => {
-      console.error('Router navigation error after applying filters:', err);
+      // Error handling
     });
   };
 
@@ -314,7 +357,7 @@ export function useReviews() {
     
     // Cập nhật URL
     router.push({ query }).catch(err => {
-      console.error('Router navigation error after clearing filters:', err);
+      // Error handling
     });
   };
 
@@ -332,7 +375,7 @@ export function useReviews() {
     
     // Thay router.replace bằng router.push
     router.push({ query }).catch(err => {
-      console.error('Router navigation error:', err);
+      // Error handling
     });
     
     // Scroll to top
@@ -420,11 +463,29 @@ export function useReviews() {
   });
   
   // Setup initial data
-  const setupInitialData = () => {
-    initializeFromQuery();
-    loadReviews();
-    loadServiceTypes();
+  const setupInitialData = async () => {
+    try {
+      initializeFromQuery();
+      await Promise.all([
+        loadReviews(),
+        loadServiceTypes()
+      ]);
+      isDataInitialized.value = true;
+      return true;
+    } catch (error) {
+      reviews.value = [];
+      pagination.total = 0;
+      pagination.totalPages = 1;
+      throw error;
+    }
   };
+
+  // Initialize on client-side mounting
+  if (process.client) {
+    nextTick(() => {
+      setupInitialData();
+    });
+  }
 
   return {
     reviews,

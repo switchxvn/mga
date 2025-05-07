@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import Swal from 'sweetalert2';
-import { useTrpc } from '../../../composables/useTrpc';
-import { useAuth } from '../../../composables/useAuth';
-import { useUpload } from '../../../composables/useUpload';
-import { Gallery } from '@ew/shared';
-import PageHeader from '../../../components/common/header/PageHeader.vue';
 import {
-  XIcon,
-  SaveAllIcon,
   FileTextIcon,
-  SettingsIcon
+  SaveAllIcon,
+  SettingsIcon,
+  XIcon
 } from 'lucide-vue-next';
+import { onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import PageHeader from '../../../components/common/header/PageHeader.vue';
+import { useAuth } from '../../../composables/useAuth';
+import { GalleryCategory, useGallery } from '../../../composables/useGallery';
 
 // These functions are provided by Nuxt at runtime
 // @ts-ignore
@@ -32,25 +29,9 @@ const router = useRouter();
 const route = useRoute();
 const galleryId = Number(route.params.id);
 const { checkAuth } = useAuth();
-const trpc = useTrpc();
-const { uploadImage } = useUpload();
-
-const isLoading = ref(false);
-const isFetchingData = ref(true);
-const isUploadingImage = ref(false);
-const error = ref<string | null>(null);
-
-const title = ref('');
-const description = ref('');
-const imageUrl = ref('');
-const isActive = ref(true);
-const sequence = ref(0);
-const categories = ref<Array<{id: number, name: string}>>([]);
-const selectedCategoryIds = ref<number[]>([]);
-const isDragging = ref(false);
+const galleryManager = useGallery();
 
 // Tab management
-const currentTab = ref('basic');
 const tabs = [
   { 
     id: 'basic', 
@@ -64,185 +45,22 @@ const tabs = [
   }
 ];
 
-// Fetch gallery item
-const fetchGalleryItem = async () => {
-  try {
-    // Kiểm tra client side
-    if (!process.client) {
-      console.log('Skip fetchGalleryItem on server side to avoid localStorage error');
-      return;
-    }
-
-    isFetchingData.value = true;
-    error.value = null;
-
-    const result = await trpc.admin.galleries.getById.query(galleryId);
-    
-    if (!result) {
-      error.value = "Gallery item not found";
-      return;
-    }
-    
-    // Populate form fields
-    title.value = result.translations?.[0]?.title || '';
-    description.value = result.translations?.[0]?.description || '';
-    imageUrl.value = result.image || '';
-    isActive.value = result.isActive;
-    sequence.value = result.sequence;
-    selectedCategoryIds.value = result.categories?.map(cat => cat.id) || [];
-    
-  } catch (err: any) {
-    console.error("Error fetching gallery item:", err);
-    error.value = err.message || "Failed to fetch gallery item";
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: err.message || "Failed to fetch gallery item"
-    }).then(() => {
-      router.push('/galleries');
-    });
-  } finally {
-    isFetchingData.value = false;
-  }
+// Helper functions to safely work with reactive values
+const isSelected = (category: GalleryCategory) => {
+  return galleryManager.selectedCategoryIds.value.includes(category.id);
 };
 
-// Fetch categories
-const fetchCategories = async () => {
-  try {
-    // Kiểm tra client side
-    if (!process.client) {
-      console.log('Skip fetchCategories on server side to avoid localStorage error');
-      return;
-    }
-
-    const result = await trpc.admin.category.getByType.query({
-      type: 'gallery'
-    });
-    categories.value = result
-      .filter(cat => cat !== null)
-      .map(cat => ({
-        id: cat.id,
-        name: cat.translations && cat.translations[0]?.name || `Category ${cat.id}`
-      }));
-  } catch (err: any) {
-    console.error("Error loading categories:", err);
-    error.value = err.message || "Failed to load categories";
-  }
-};
-
-// Handle image upload
-const handleImageUpload = async (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (!input.files || input.files.length === 0) return;
+const toggleCategory = (category: GalleryCategory) => {
+  const ids = [...galleryManager.selectedCategoryIds.value];
+  const index = ids.indexOf(category.id);
   
-  const file = input.files[0];
-  await processUpload(file);
-};
-
-// Handle drop event
-const handleDrop = async (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = false;
-  
-  if (!event.dataTransfer?.files.length) return;
-  
-  const file = event.dataTransfer.files[0];
-  if (!file.type.startsWith('image/')) {
-    error.value = "Please drop an image file";
-    return;
+  if (index === -1) {
+    ids.push(category.id);
+  } else {
+    ids.splice(index, 1);
   }
   
-  await processUpload(file);
-};
-
-// Handle drag over event
-const handleDragOver = (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = true;
-};
-
-// Handle drag leave event
-const handleDragLeave = (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = false;
-};
-
-// Process the upload
-const processUpload = async (file: File) => {
-  try {
-    isUploadingImage.value = true;
-    
-    // Upload using useUpload composable
-    const url = await uploadImage(file, 'gallery');
-    imageUrl.value = url;
-    
-  } catch (err: any) {
-    console.error("Error uploading image:", err);
-    error.value = err.message || "Failed to upload image";
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Upload Error',
-      text: err.message || "Failed to upload image"
-    });
-  } finally {
-    isUploadingImage.value = false;
-  }
-};
-
-// Update gallery item
-const updateGallery = async () => {
-  if (!imageUrl.value) {
-    error.value = "Please upload an image";
-    return;
-  }
-  
-  if (!title.value) {
-    error.value = "Please enter a title";
-    return;
-  }
-  
-  try {
-    isLoading.value = true;
-    error.value = null;
-    
-    await trpc.admin.galleries.update.mutate({
-      id: galleryId,
-      image: imageUrl.value,
-      isActive: isActive.value,
-      sequence: sequence.value,
-      categoryIds: selectedCategoryIds.value,
-      translations: [
-        {
-          locale: 'vi',
-          title: title.value,
-          description: description.value || undefined
-        }
-      ]
-    });
-    
-    Swal.fire({
-      icon: 'success',
-      title: 'Success',
-      text: 'Gallery item updated successfully',
-      timer: 1500,
-      showConfirmButton: false
-    }).then(() => {
-      router.push('/galleries');
-    });
-  } catch (err: any) {
-    console.error("Error updating gallery item:", err);
-    error.value = err.message || "Failed to update gallery item";
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: err.message || "Failed to update gallery item"
-    });
-  } finally {
-    isLoading.value = false;
-  }
+  galleryManager.selectedCategoryIds.value = ids;
 };
 
 onMounted(async () => {
@@ -253,10 +71,7 @@ onMounted(async () => {
   }
   
   if (process.client) {
-    await Promise.all([
-      fetchCategories(),
-      fetchGalleryItem()
-    ]);
+    await galleryManager.initializeGalleryEdit(galleryId);
   }
 });
 </script>
@@ -264,7 +79,7 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen bg-slate-50">
     <div class="flex-1 overflow-y-auto">
-      <form @submit.prevent="updateGallery" class="space-y-6">
+      <form @submit.prevent="galleryManager.updateGalleryForm(galleryId)" class="space-y-6">
         <!-- Header -->
         <PageHeader
           title="Edit Gallery Item"
@@ -282,17 +97,17 @@ onMounted(async () => {
 
             <button 
               type="submit"
-              :disabled="isLoading"
+              :disabled="galleryManager.isLoading.value"
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
             >
               <SaveAllIcon class="w-4 h-4 mr-2" />
-              {{ isLoading ? 'Saving...' : 'Save Changes' }}
+              {{ galleryManager.isLoading.value ? 'Saving...' : 'Save Changes' }}
             </button>
           </template>
         </PageHeader>
         
         <!-- Loading State -->
-        <div v-if="isFetchingData" class="bg-white dark:bg-neutral-800 shadow rounded-lg p-6">
+        <div v-if="galleryManager.isFetchingData.value" class="bg-white dark:bg-neutral-800 shadow rounded-lg p-6">
           <div class="animate-pulse space-y-4">
             <div class="h-32 bg-gray-200 dark:bg-neutral-700 rounded w-64 mx-auto"></div>
             <div class="h-4 bg-gray-200 dark:bg-neutral-700 rounded w-full"></div>
@@ -303,7 +118,7 @@ onMounted(async () => {
         
         <div v-else>
           <!-- Error Banner -->
-          <div v-if="error" class="p-4 rounded-md bg-red-50 dark:bg-red-900/30">
+          <div v-if="galleryManager.error.value" class="p-4 rounded-md bg-red-50 dark:bg-red-900/30">
             <div class="flex">
               <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-red-400 dark:text-red-500" fill="currentColor" viewBox="0 0 20 20">
@@ -311,7 +126,7 @@ onMounted(async () => {
                 </svg>
               </div>
               <div class="ml-3">
-                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">{{ error }}</h3>
+                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">{{ galleryManager.error.value }}</h3>
               </div>
             </div>
           </div>
@@ -322,11 +137,11 @@ onMounted(async () => {
               type="button"
               v-for="tab in tabs"
               :key="tab.id"
-              @click="currentTab = tab.id"
+              @click="galleryManager.currentTab.value = tab.id"
               class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
               :class="{
-                'bg-primary text-white': currentTab === tab.id,
-                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id
+                'bg-primary text-white': galleryManager.currentTab.value === tab.id,
+                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': galleryManager.currentTab.value !== tab.id
               }"
             >
               <component :is="tab.icon" class="w-4 h-4" />
@@ -336,7 +151,7 @@ onMounted(async () => {
           
           <div class="grid gap-6">
             <!-- Basic Info Tab -->
-            <div v-show="currentTab === 'basic'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div v-show="galleryManager.currentTab.value === 'basic'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
               <div class="space-y-4">
                 <h2 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h2>
                 
@@ -346,12 +161,12 @@ onMounted(async () => {
                     Image <span class="text-red-500">*</span>
                   </label>
                   <div class="flex flex-col items-center space-y-4">
-                    <div v-if="imageUrl" class="relative w-64 h-64 border rounded-lg overflow-hidden">
-                      <img :src="imageUrl" alt="Gallery preview" class="w-full h-full object-cover" />
+                    <div v-if="galleryManager.imageUrl.value" class="relative w-64 h-64 border rounded-lg overflow-hidden">
+                      <img :src="galleryManager.imageUrl.value" alt="Gallery preview" class="w-full h-full object-cover" />
                       <button 
                         type="button"
                         class="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                        @click="imageUrl = ''"
+                        @click="galleryManager.imageUrl.value = ''"
                       >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -362,12 +177,12 @@ onMounted(async () => {
                       v-else 
                       class="border-2 border-dashed rounded-lg p-6 w-full flex flex-col items-center justify-center transition-colors"
                       :class="{
-                        'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20': isDragging,
-                        'border-gray-300 dark:border-gray-600': !isDragging
+                        'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20': galleryManager.isDragging.value,
+                        'border-gray-300 dark:border-gray-600': !galleryManager.isDragging.value
                       }"
-                      @dragover="handleDragOver"
-                      @dragleave="handleDragLeave"
-                      @drop="handleDrop"
+                      @dragover="galleryManager.handleDragOver"
+                      @dragleave="galleryManager.handleDragLeave"
+                      @drop="galleryManager.handleDrop"
                     >
                       <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -379,9 +194,9 @@ onMounted(async () => {
                     </div>
                     
                     <div>
-                      <label v-if="!isUploadingImage" class="cursor-pointer bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                        {{ imageUrl ? 'Change Image' : 'Upload Image' }}
-                        <input type="file" class="hidden" accept="image/*" @change="handleImageUpload" />
+                      <label v-if="!galleryManager.isUploadingImage.value" class="cursor-pointer bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                        {{ galleryManager.imageUrl.value ? 'Change Image' : 'Upload Image' }}
+                        <input type="file" class="hidden" accept="image/*" @change="galleryManager.handleImageUpload" />
                       </label>
                       <div v-else class="flex items-center space-x-2">
                         <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -401,7 +216,7 @@ onMounted(async () => {
                   </label>
                   <input
                     id="title"
-                    v-model="title"
+                    v-model="galleryManager.title.value"
                     type="text"
                     required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
@@ -415,7 +230,7 @@ onMounted(async () => {
                   </label>
                   <textarea
                     id="description"
-                    v-model="description"
+                    v-model="galleryManager.description.value"
                     rows="3"
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
                   ></textarea>
@@ -428,28 +243,20 @@ onMounted(async () => {
                   </label>
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div
-                      v-for="category in categories"
+                      v-for="category in galleryManager.categories.value"
                       :key="category.id"
                       :class="{
                         'flex items-center rounded-lg border p-3 cursor-pointer transition-colors': true,
-                        'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30': selectedCategoryIds.includes(category.id),
-                        'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-neutral-700': !selectedCategoryIds.includes(category.id)
+                        'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30': isSelected(category),
+                        'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-neutral-700': !isSelected(category)
                       }"
-                      @click="
-                        selectedCategoryIds.includes(category.id) 
-                          ? selectedCategoryIds = selectedCategoryIds.filter(id => id !== category.id)
-                          : selectedCategoryIds.push(category.id)
-                      "
+                      @click="toggleCategory(category)"
                     >
                       <input
                         type="checkbox"
-                        :checked="selectedCategoryIds.includes(category.id)"
+                        :checked="isSelected(category)"
                         class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        @change="
-                          selectedCategoryIds.includes(category.id) 
-                            ? selectedCategoryIds = selectedCategoryIds.filter(id => id !== category.id)
-                            : selectedCategoryIds.push(category.id)
-                        "
+                        @change="toggleCategory(category)"
                       />
                       <label class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ category.name }}
@@ -461,7 +268,7 @@ onMounted(async () => {
             </div>
             
             <!-- Settings Tab -->
-            <div v-show="currentTab === 'settings'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <div v-show="galleryManager.currentTab.value === 'settings'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
               <div class="space-y-4">
                 <h2 class="text-lg font-medium text-gray-900 dark:text-white">Settings</h2>
                 
@@ -472,7 +279,7 @@ onMounted(async () => {
                   </label>
                   <input
                     id="sequence"
-                    v-model="sequence"
+                    v-model="galleryManager.sequence.value"
                     type="number"
                     min="0"
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
@@ -486,7 +293,7 @@ onMounted(async () => {
                 <div class="flex items-center">
                   <input
                     id="isActive"
-                    v-model="isActive"
+                    v-model="galleryManager.isActive.value"
                     type="checkbox"
                     class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />

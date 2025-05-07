@@ -13,6 +13,7 @@ export * from './types/contact';
 export * from './types/food.type';
 export * from './types/profile.type';
 export * from './types/upload.type';
+export * from './types/theme.type';
 // Re-export ProductType from lib/types/product.type
 export { ProductType as LibProductType } from './lib/types/product.type';
 // Re-export other items from lib/types/product.type except ProductType

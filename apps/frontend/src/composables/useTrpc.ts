@@ -23,9 +23,18 @@ export const createTRPCClient = () => {
       httpBatchLink({
         url: apiUrl,
         fetch(url, options) {
+          console.log('Making TRPC API request to:', url);
           return fetch(url, {
             ...options,
             credentials: 'include',
+            headers: {
+              ...options?.headers,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache, no-store',
+            },
+            // Điều này tương đương với timeout
+            signal: options?.signal || AbortSignal.timeout(30000),
           });
         },
       }),

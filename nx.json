@@ -16,12 +16,6 @@
   "nxCloudId": "67a2dab353ae8b35f2ccbaf9",
   "plugins": [
     {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "lint"
-      }
-    },
-    {
       "plugin": "@nx/vite/plugin",
       "options": {
         "buildTargetName": "build",

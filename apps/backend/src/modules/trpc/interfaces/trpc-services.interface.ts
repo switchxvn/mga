@@ -27,6 +27,7 @@ import { HeroSliderService } from '../../hero/admin/services/hero-slider.service
 import { HeroVideoService } from '../../hero/services/hero-video.service';
 import { ThemeAdminService } from '../../theme/admin/services/theme-admin.service';
 import { ThemeFrontendService } from '../../theme/frontend/services/theme-frontend.service';
+import { ThemeSectionAdminService } from '../../theme/admin/services/theme-section-admin.service';
 import { ComponentStyleConfigAdminService } from '../../theme/admin/services/component-style-config-admin.service';
 import { ComponentStyleConfigFrontendService } from '../../theme/frontend/services/component-style-config-frontend.service';
 import { LanguageFrontendService } from '../../language/frontend/services/language-frontend.service';
@@ -96,6 +97,7 @@ export interface ITrpcServices {
   heroVideoService: HeroVideoService;
   themeAdminService: ThemeAdminService;
   themeFrontendService: ThemeFrontendService;
+  themeSectionAdminService: ThemeSectionAdminService;
   componentStyleConfigAdminService: ComponentStyleConfigAdminService;
   componentStyleConfigFrontendService: ComponentStyleConfigFrontendService;
   languageFrontendService: LanguageFrontendService;
@@ -150,6 +152,7 @@ export interface ITrpcServices {
     product: ProductAdminService;
     featureFlags: FeatureFlagsAdminService;
     theme: ThemeAdminService;
+    themeSection: ThemeSectionAdminService;
     componentStyleConfig: ComponentStyleConfigAdminService;
     language: LanguageAdminService;
     about: AboutAdminService;
