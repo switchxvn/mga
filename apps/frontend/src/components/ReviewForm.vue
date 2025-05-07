@@ -5,15 +5,24 @@ import { computed, ref, reactive, onMounted } from '../composables/useVueComposa
 import { useRouter } from 'vue-router';
 import { useToast } from '../composables/useToast';
 import { Star } from 'lucide-vue-next';
+import { ReviewStatus } from '@ew/shared';
+import Loader from './ui/Loader.vue';
+import { useReviews } from '../composables/useReviews';
 
 const props = withDefaults(defineProps<{
   reviewSuccess?: boolean;
   postSubmitAction?: 'reset' | 'redirect' | 'none';
   redirectUrl?: string;
+  showServiceType?: boolean;
+  showProfession?: boolean;
+  showVisitDate?: boolean;
 }>(), {
   reviewSuccess: false,
   postSubmitAction: 'reset',
   redirectUrl: '/reviews',
+  showServiceType: true,
+  showProfession: true,
+  showVisitDate: true,
 });
 
 const emit = defineEmits<{
@@ -348,7 +357,7 @@ const getRatingLabel = (rating: number): string => {
       </div>
 
       <!-- Profession input -->
-      <div class="mb-6">
+      <div class="mb-6" v-if="showProfession">
         <label for="profession" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
           {{ t('reviews.professionLabel') }}
         </label>
@@ -473,7 +482,7 @@ const getRatingLabel = (rating: number): string => {
       </div>
 
       <!-- Service Type -->
-      <div>
+      <div v-if="showServiceType">
         <label for="serviceType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {{ t('reviews.serviceType') }} <span class="text-red-500">*</span>
         </label>
@@ -497,7 +506,7 @@ const getRatingLabel = (rating: number): string => {
       </div>
 
       <!-- Visit Date -->
-      <div>
+      <div v-if="showVisitDate">
         <label for="visitDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {{ t('reviews.visitDate') }}
         </label>
