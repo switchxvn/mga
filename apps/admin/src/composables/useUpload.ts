@@ -69,7 +69,7 @@ export function useUpload() {
         onProgress(50)
         
         // Sử dụng axios thay vì $fetch
-        const response = await axios.post('/api/local/upload-image', formData, {
+        const response = await axios.post('/admin-upload/upload-image', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
