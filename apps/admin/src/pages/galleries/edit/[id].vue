@@ -71,7 +71,13 @@ onMounted(async () => {
   }
   
   if (process.client) {
+    console.log('Before initialize - isLoading:', galleryManager.isLoading.value);
     await galleryManager.initializeGalleryEdit(galleryId);
+    console.log('After initialize - isLoading:', galleryManager.isLoading.value);
+    
+    // Force isLoading to false (workaround)
+    galleryManager.isLoading.value = false;
+    console.log('After force reset - isLoading:', galleryManager.isLoading.value);
   }
 });
 </script>

@@ -629,7 +629,8 @@ export const useGallery = () => {
       isLoading.value = true;
       error.value = null;
       
-      await trpc.admin.galleries.update.mutate({
+      // Chỉ gửi các trường trong interface UpdateGalleryInput
+      const updateData = {
         id: galleryId,
         image: imageUrl.value,
         isActive: isActive.value,
@@ -642,7 +643,9 @@ export const useGallery = () => {
             description: description.value || undefined
           }
         ]
-      });
+      };
+      
+      await trpc.admin.galleries.update.mutate(updateData);
       
       Swal.fire({
         icon: 'success',
@@ -663,6 +666,7 @@ export const useGallery = () => {
         text: err.message || "Failed to update gallery item"
       });
     } finally {
+      // Đảm bảo isLoading luôn được reset về false dù có lỗi hay không
       isLoading.value = false;
     }
   };
@@ -671,11 +675,24 @@ export const useGallery = () => {
    * Initialize data for gallery edit
    */
   const initializeGalleryEdit = async (galleryId: number) => {
-    if (process.client) {
-      await Promise.all([
-        fetchCategories(),
-        fetchGalleryItem(galleryId)
-      ]);
+    try {
+      // Đặt isLoading về true khi bắt đầu
+      console.debug('initializeGalleryEdit - setting isLoading to true');
+      isLoading.value = true;
+      
+      if (process.client) {
+        await Promise.all([
+          fetchCategories(),
+          fetchGalleryItem(galleryId)
+        ]);
+      }
+    } catch (err) {
+      console.error('Error initializing gallery edit:', err);
+      error.value = 'Failed to initialize gallery data';
+    } finally {
+      // Đảm bảo reset isLoading về false khi hoàn thành
+      console.debug('initializeGalleryEdit - setting isLoading to false');
+      isLoading.value = false;
     }
   };
 
