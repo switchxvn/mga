@@ -66,6 +66,8 @@ import { AdminReviewService } from '../../review/admin/services/admin-review.ser
 import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
 import { ISiteStatisticsAdminService, ISiteStatisticsFrontendService } from '../../site-statistics/interfaces/site-statistics-services.interface';
 import { MailService } from '../../mail/services/mail.service';
+import { AdminMenuAdminService } from '../../admin-menu/admin/services/admin-menu-admin.service';
+import { AdminMenuFrontendService } from '../../admin-menu/frontend/services/admin-menu-frontend.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -137,6 +139,8 @@ export interface ITrpcServices {
   siteStatisticsAdmin: ISiteStatisticsAdminService;
   siteStatisticsFrontend: ISiteStatisticsFrontendService;
   mailService: MailService;
+  adminMenuAdminService: AdminMenuAdminService;
+  adminMenuFrontendService: AdminMenuFrontendService;
   
   // Grouped services
   admin: {
@@ -169,6 +173,7 @@ export interface ITrpcServices {
     orderTicketSection: OrderTicketSectionAdminService;
     dashboard: DashboardAdminService;
     gallery: GalleryAdminService;
+    adminMenu: AdminMenuAdminService;
   };
   
   frontend: {
@@ -198,5 +203,6 @@ export interface ITrpcServices {
     upload: UploadFrontendService;
     orderTicketSection: OrderTicketSectionFrontendService;
     gallery: GalleryFrontendService;
+    adminMenu: AdminMenuFrontendService;
   };
 } 

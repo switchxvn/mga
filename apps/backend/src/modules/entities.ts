@@ -132,6 +132,9 @@ import { SiteStatisticsTranslation } from './site-statistics/entities/site-stati
 import { SiteStatisticsHistory } from './site-statistics/entities/site-statistics-history.entity';
 import { SiteStatisticsSettings } from './site-statistics/entities/site-statistics-settings.entity';
 
+// Admin Menu
+import { AdminMenuItem } from './admin-menu/entities/admin-menu-item.entity';
+
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
 
@@ -269,4 +272,7 @@ export const entities: (new () => any)[] = [
   SiteStatisticsTranslation,
   SiteStatisticsHistory,
   SiteStatisticsSettings,
+  
+  // Admin Menu
+  AdminMenuItem,
 ]; 

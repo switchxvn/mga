@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AdminMenuModule } from './modules/admin-menu/admin-menu.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CategoryModule } from './modules/category/category.module';
 import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
@@ -65,6 +66,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     CustomerLogoModule,
     ContactModule,
     DashboardModule,
+    AdminMenuModule,
   ],
   controllers: [AppController],
   providers: [AppService],
