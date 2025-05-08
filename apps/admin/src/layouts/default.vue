@@ -21,9 +21,44 @@ import {
   Image,
   Palette
 } from 'lucide-vue-next'
-import { ref, computed, inject, onMounted, watch, onUnmounted } from 'vue'
+import { ref, computed, inject, onMounted, watch, onUnmounted, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useColorMode, useHead, navigateTo } from '#imports'
+// @ts-ignore
+import { useColorMode, useHead, navigateTo, useNuxtApp } from '#imports'
+import { useTrpc } from "@/composables/useTrpc"
+
+// Define interfaces for menu items
+interface MenuItem {
+  id: number;
+  code: string;
+  name: string;
+  icon: string | null;
+  path: string | null;
+  parentId: number | null;
+  order: number;
+  isActive: boolean;
+  availableForRoles: string | null;
+}
+
+interface UserRole {
+  code: string;
+  name: string;
+}
+
+interface User {
+  id: number;
+  email: string;
+  roles: UserRole[];
+}
+
+interface NavigationItem {
+  label: string;
+  icon: any;
+  to?: string;
+  children?: NavigationItem[];
+  isOpen?: Ref<boolean>;
+  availableForRoles?: string;
+}
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -32,144 +67,274 @@ const { user, isLoading } = storeToRefs(userStore)
 const route = useRoute()
 const router = useRouter()
 const currentPath = ref(route.path)
+const trpc = useTrpc()
 
 // Try to get injected page title from child components
 const injectedTitle = inject('pageTitle', ref(''))
 
-// Watch for route changes
-onMounted(() => {
+// Admin menu data from API
+const menuItems = ref<MenuItem[]>([])
+const isLoadingMenu = ref(true)
+const menuError = ref<Error | null>(null)
+
+// Load menu items from API
+const loadMenuItems = async () => {
+  isLoadingMenu.value = true
+  try {
+    console.log('Calling admin menu API...');
+    // Sử dụng đúng endpoint từ adminMenuAdminRouter
+    const response = await trpc.admin.adminMenu.getAdminMenuItems.query({ 
+      includeInactive: false 
+    });
+    console.log('API response:', response);
+    menuItems.value = response as MenuItem[];
+    console.log('Loaded admin menu items successfully, items count:', menuItems.value.length);
+    console.log('Menu items:', JSON.stringify(menuItems.value, null, 2));
+  } catch (error) {
+    console.error('Failed to load admin menu:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    menuError.value = error as Error;
+    
+    // Fallback to default menu if API fails
+    menuItems.value = [
+      {
+        id: 1,
+        code: 'dashboard',
+        name: 'Dashboard',
+        icon: 'Home',
+        path: '/',
+        parentId: null,
+        order: 1,
+        isActive: true,
+        availableForRoles: null
+      },
+      {
+        id: 2,
+        code: 'settings',
+        name: 'Settings',
+        icon: 'Settings',
+        path: '/settings',
+        parentId: null,
+        order: 99,
+        isActive: true,
+        availableForRoles: 'SUPER_ADMIN'
+      }
+    ];
+  } finally {
+    console.log('Menu loading complete, have error:', !!menuError.value);
+    isLoadingMenu.value = false;
+  }
+}
+
+// Watch for route changes and initialize data
+onMounted(async () => {
   currentPath.value = route.path
   // Listen to route changes
   router.afterEach((to) => {
     currentPath.value = to.path
   })
+  
+  try {
+    // Fetch user data first
+    await userStore.fetchUser()
+    // Then load menu items
+    await loadMenuItems()
+  } catch (error) {
+    console.error('Failed to initialize:', error)
+  }
+  
+  // Set initial state based on current route
+  expandActiveMenus()
+  
+  // Update on route changes
+  router.afterEach(() => {
+    expandActiveMenus()
+  })
 })
 
-const navigation = [
-  { label: 'Dashboard', icon: Home, to: '/' },
-  {
-    label: 'Content',
-    icon: FileText,
-    children: [
-      {
-        label: 'Posts',
-        icon: FileText,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Posts', to: '/posts' },
-          { label: 'Create New Post', to: '/posts/create' }
-        ]
-      },
-      {
-        label: 'Categories',
-        icon: Folder,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Categories', to: '/categories' },
-          { label: 'Create New Category', to: '/categories/create' }
-        ]
-      },
-      {
-        label: 'Gallery',
-        icon: Image,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Galleries', to: '/galleries' },
-          { label: 'Create New Gallery', to: '/galleries/create' }
-        ]
-      }
-    ]
-  },
-  {
-    label: 'User Management',
-    icon: Users,
-    children: [
-      {
-        label: 'Users',
-        icon: Users,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Users', to: '/users' },
-          { label: 'Create New User', to: '/users/create' }
-        ]
-      },
-      {
-        label: 'Roles',
-        icon: UserCircle,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Roles', to: '/roles' },
-          { label: 'Create New Role', to: '/roles/create' }
-        ]
-      }
-    ]
-  },
-  {
-    label: 'E-commerce',
-    icon: ShoppingBag,
-    children: [
-      {
-        label: 'Products',
-        icon: ShoppingBag,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Products', to: '/products' },
-          { label: 'Create New Product', to: '/products/create' }
-        ]
-      },
-      {
-        label: 'Orders',
-        icon: ShoppingCart,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Orders', to: '/orders' },
-          { label: 'Pending Orders', to: '/orders?status=pending' }
-        ]
-      },
-      { label: 'Customers', icon: Users, to: '/customers' }
-    ]
-  },
-  {
-    label: 'Reviews',
-    icon: Star,
-    children: [
-      {
-        label: 'Customer Reviews',
-        icon: Star,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Reviews', to: '/reviews' },
-          { label: 'Add New Review', to: '/reviews/add' }
-        ]
-      },
-      {
-        label: 'Service Types',
-        icon: Tag,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Types', to: '/reviews/service-types' },
-          { label: 'Add New Type', to: '/reviews/service-types/add' }
-        ]
-      }
-    ]
-  },
-  { label: 'Settings', icon: Settings, to: '/settings' },
-  {
-    label: 'Theme Management',
-    icon: Palette,
-    children: [
-      {
-        label: 'Themes',
-        icon: Palette,
-        isOpen: ref(false),
-        children: [
-          { label: 'List All Themes', to: '/themes' },
-          { label: 'Create New Theme', to: '/themes/create' }
-        ]
-      }
-    ]
+// Check if user has SUPER_ADMIN role
+const isSuperAdmin = computed(() => {
+  if (!user.value || !user.value.roles) return false
+  // Type assertion tới unknown trước để tránh lỗi TypeScript
+  const roles = (user.value.roles as unknown) as UserRole[]
+  return roles.some(role => role.code === 'SUPER_ADMIN')
+})
+
+// Filter items based on user roles
+const hasRequiredRole = (requiredRoles: string) => {
+  if (!user.value || !user.value.roles) {
+    console.log('User or user roles not available');
+    return false;
   }
-]
+  
+  // Type assertion tới unknown trước để tránh lỗi TypeScript
+  const roles = (user.value.roles as unknown) as UserRole[];
+  
+  // SUPER_ADMIN có thể thấy tất cả các menu
+  if (roles.some(role => role.code === 'SUPER_ADMIN')) {
+    console.log('User is SUPER_ADMIN, granting access to all menus');
+    return true;
+  }
+  
+  const allowedRoles = requiredRoles.split(',');
+  console.log('Checking roles:', allowedRoles, 'against user roles:', roles.map(r => r.code));
+  
+  return roles.some(role => allowedRoles.includes(role.code));
+}
+
+// Function to map icon string to icon component
+const getIconComponent = (iconName: string | null) => {
+  const iconMap: Record<string, any> = {
+    'Home': Home,
+    'FileText': FileText,
+    'ShoppingBag': ShoppingBag,
+    'ShoppingCart': ShoppingCart,
+    'Users': Users,
+    'Star': Star,
+    'Tag': Tag,
+    'Settings': Settings,
+    'Folder': Folder,
+    'Image': Image,
+    'Palette': Palette
+  }
+  
+  if (!iconName) return Home
+  return iconMap[iconName] || Home // Default to Home icon if not found
+}
+
+// Group menu items by parent
+const processMenuItems = (items: MenuItem[]): NavigationItem[] => {
+  console.log('processMenuItems called with items count:', items.length);
+  
+  // First, filter to get only active items
+  const activeItems = items.filter(item => item.isActive);
+  console.log('Active items count:', activeItems.length);
+  
+  // Find root items (no parent)
+  const rootItems = activeItems.filter(item => !item.parentId);
+  console.log('Root items count:', rootItems.length);
+  console.log('Root items:', JSON.stringify(rootItems, null, 2));
+  
+  // Create a map of child items by parentId
+  const childItemsByParent: Record<number, MenuItem[]> = {};
+  activeItems.forEach(item => {
+    if (item.parentId) {
+      if (!childItemsByParent[item.parentId]) {
+        childItemsByParent[item.parentId] = [];
+      }
+      childItemsByParent[item.parentId].push(item);
+    }
+  });
+  
+  console.log('Children map keys:', Object.keys(childItemsByParent));
+  
+  // Sort children by order
+  Object.keys(childItemsByParent).forEach(parentId => {
+    childItemsByParent[Number(parentId)].sort((a, b) => a.order - b.order);
+  });
+  
+  // Function to recursively build menu tree
+  const buildMenuItem = (item: MenuItem): NavigationItem => {
+    console.log('Building menu item:', item.name);
+    const menuItem: NavigationItem = {
+      label: item.name,
+      icon: getIconComponent(item.icon),
+      to: item.path || undefined,
+      isOpen: ref(false), // For expandable state
+      availableForRoles: item.availableForRoles || undefined
+    };
+    
+    // Add children if any
+    const children = childItemsByParent[item.id];
+    if (children && children.length > 0) {
+      console.log(`Found ${children.length} children for ${item.name}`);
+      menuItem.children = children.map(child => buildMenuItem(child));
+    }
+    
+    return menuItem;
+  };
+  
+  // Sort root items by order
+  rootItems.sort((a, b) => a.order - b.order);
+  
+  // Build the full menu tree
+  const result = rootItems.map(item => buildMenuItem(item));
+  console.log('Final processed items count:', result.length);
+  return result;
+}
+
+// Define navigation items
+const navigation = computed((): NavigationItem[] => {
+  console.log('Navigation computed executing...');
+  console.log('isLoadingMenu:', isLoadingMenu.value);
+  console.log('menuError exists:', !!menuError.value);
+  console.log('menuItems exists:', !!menuItems.value);
+  console.log('menuItems length:', menuItems.value?.length || 0);
+  
+  // If menu items are loading or there's an error, use default items
+  if (isLoadingMenu.value || menuError.value || !menuItems.value || menuItems.value.length === 0) {
+    console.log('Using default navigation items due to:', 
+      isLoadingMenu.value ? 'loading' : 
+      menuError.value ? 'error' : 
+      !menuItems.value ? 'no items array' : 
+      'empty items array'
+    );
+    
+    const items: NavigationItem[] = [
+      { label: 'Dashboard', icon: Home, to: '/' }
+    ]
+    
+    // Only show Settings for SUPER_ADMIN
+    if (isSuperAdmin.value) {
+      items.push({ label: 'Settings', icon: Settings, to: '/settings' })
+    }
+    
+    return items
+  }
+  
+  console.log('Processing API menu items...');
+  // Process API menu items with parent-child structure
+  const processedItems = processMenuItems(menuItems.value)
+  console.log('Processed items:', processedItems.length);
+  
+  // Nếu là SUPER_ADMIN, trả về tất cả menu không lọc
+  if (isSuperAdmin.value) {
+    console.log('User is SUPER_ADMIN, showing all menu items without filtering');
+    
+    // Always include dashboard as first item if not already included
+    const hasDashboard = processedItems.some(item => item.to === '/')
+    if (!hasDashboard) {
+      console.log('Adding dashboard item as it was not included');
+      processedItems.unshift({ label: 'Dashboard', icon: Home, to: '/' })
+    }
+    
+    return processedItems;
+  }
+  
+  // Đối với người dùng thường, vẫn áp dụng bộ lọc
+  // Filter items based on user roles
+  const filteredItems = processedItems.filter(item => {
+    // Filter by role if availableForRoles is specified and user is logged in
+    if (item.availableForRoles) {
+      const hasRole = hasRequiredRole(item.availableForRoles);
+      console.log(`Item ${item.label} requires roles: ${item.availableForRoles}, user has role: ${hasRole}`);
+      return hasRole;
+    }
+    console.log(`Item ${item.label} has no role restrictions, showing`);
+    return true
+  });
+  console.log('Filtered items count:', filteredItems.length);
+  
+  // Always include dashboard as first item if not already included
+  const hasDashboard = filteredItems.some(item => item.to === '/')
+  if (!hasDashboard) {
+    console.log('Adding dashboard item as it was not included');
+    filteredItems.unshift({ label: 'Dashboard', icon: Home, to: '/' })
+  }
+  
+  console.log('Final navigation items count:', filteredItems.length);
+  return filteredItems
+})
 
 // Recursive isActive function to handle nested routes
 const isActive = (path: string | undefined) => {
@@ -238,7 +403,7 @@ const getCurrentSection = () => {
   if (path.includes('/reviews/add')) return 'Add Review'
   if (path.includes('/reviews/edit/')) return 'Edit Review'
   
-  const currentRoute = navigation.find(item => isActive(item.to))
+  const currentRoute = navigation.value.find(item => isActive(item.to))
   return currentRoute?.label || 'Admin Dashboard'
 }
 
@@ -254,16 +419,6 @@ const pageTitle = computed(() => {
 useHead(() => ({
   title: pageTitle.value
 }))
-
-// Fetch user data when component mounts
-onMounted(async () => {
-  try {
-    await userStore.fetchUser()
-    console.log('User data in component:', user.value)
-  } catch (error) {
-    console.error('Failed to fetch user:', error)
-  }
-})
 
 const handleLogout = async () => {
   userStore.clearUser()
@@ -345,369 +500,295 @@ const toggleMenu = (child: any) => {
 
 // Function to expand active menu items
 const expandActiveMenus = () => {
-  // Đóng tất cả menu trước khi mở menu hiện tại
-  navigation.forEach(item => {
-    if (item.children) {
-      item.children.forEach((child: any) => {
-        if (child.children && child.isOpen) {
-          // Đặt về false cho tất cả
-          child.isOpen.value = false;
-        }
-      });
-    }
-  });
-
-  // Chỉ mở menu chứa route hiện tại nếu tùy chọn này được bật
-  const shouldExpandActive = true; // Tùy chọn này có thể được lưu trong user settings
+  if (!menuItems.value || menuItems.value.length === 0) return;
   
-  if (shouldExpandActive) {
-    // Tìm menu đang active dựa trên path hiện tại
-    const currentPath = route.path;
-    
-    // Kiểm tra các trường hợp đặc biệt trước
-    let activeMenuFound = false;
-    
-    // Xử lý trường hợp đặc biệt cho User Management
-    if (currentPath.startsWith('/users')) {
-      // Tìm và mở menu Users
-      navigation.forEach(item => {
-        if (item.label === 'User Management' && item.children) {
-          item.children.forEach((child: any) => {
-            if (child.label === 'Users' && child.isOpen) {
-              child.isOpen.value = true;
-              activeMenuFound = true;
-            }
-          });
-        }
-      });
-    }
-    else if (currentPath.startsWith('/roles')) {
-      // Tìm và mở menu Roles
-      navigation.forEach(item => {
-        if (item.label === 'User Management' && item.children) {
-          item.children.forEach((child: any) => {
-            if (child.label === 'Roles' && child.isOpen) {
-              child.isOpen.value = true;
-              activeMenuFound = true;
-            }
-          });
-        }
-      });
-    }
-    // Xử lý trường hợp đặc biệt cho Products & Orders
-    else if (currentPath.startsWith('/products')) {
-      // Tìm và mở menu Products
-      navigation.forEach(item => {
-        if (item.label === 'E-commerce' && item.children) {
-          item.children.forEach((child: any) => {
-            if (child.label === 'Products' && child.isOpen) {
-              child.isOpen.value = true;
-              activeMenuFound = true;
-            }
-          });
-        }
-      });
-    }
-    else if (currentPath.startsWith('/orders') && !currentPath.includes('/orders/items')) {
-      // Tìm và mở menu Orders
-      navigation.forEach(item => {
-        if (item.label === 'E-commerce' && item.children) {
-          item.children.forEach((child: any) => {
-            if (child.label === 'Orders' && child.isOpen) {
-              child.isOpen.value = true;
-              activeMenuFound = true;
-            }
-          });
-        }
-      });
-    }
-    // Xử lý trường hợp đặc biệt cho Reviews
-    else if (currentPath.startsWith('/reviews')) {
-      if (currentPath.includes('/service-types')) {
-        // Tìm và mở menu Service Types
-        navigation.forEach(item => {
-          if (item.label === 'Reviews' && item.children) {
-            item.children.forEach((child: any) => {
-              if (child.label === 'Service Types' && child.isOpen) {
-                child.isOpen.value = true;
-                activeMenuFound = true;
+  const currentPath = route.path;
+  console.log('Expanding active menus for path:', currentPath);
+  
+  // Tìm và cập nhật trạng thái mở cho menu đang active
+  const processedItems = navigation.value;
+  
+  // Trước tiên, đóng tất cả menu (reset state)
+  const resetAllMenus = (items: NavigationItem[]) => {
+    items.forEach(item => {
+      if (item.isOpen) {
+        item.isOpen.value = false;
+      }
+      if (item.children) {
+        resetAllMenus(item.children);
+      }
+    });
+  };
+  
+  resetAllMenus(processedItems);
+  
+  // Hàm đệ quy để tìm và mở menu tương ứng
+  const findAndExpandActiveMenu = (items: NavigationItem[]) => {
+    for (const item of items) {
+      // Kiểm tra xem item hiện tại có phù hợp với path hiện tại
+      if (item.to && isActive(item.to)) {
+        console.log('Found active menu item:', item.label);
+        
+        // Tìm item cha và mở nó
+        const findParentAndExpand = (allItems: NavigationItem[], targetItem: NavigationItem): boolean => {
+          for (const parentItem of allItems) {
+            if (parentItem.children) {
+              // Kiểm tra xem targetItem có phải là con của parentItem
+              const isChild = parentItem.children.some(child => child === targetItem);
+              if (isChild && parentItem.isOpen) {
+                console.log('Opening parent menu:', parentItem.label);
+                parentItem.isOpen.value = true;
+                return true;
               }
-            });
-          }
-        });
-      } else {
-        // Tìm và mở menu Customer Reviews
-        navigation.forEach(item => {
-          if (item.label === 'Reviews' && item.children) {
-            item.children.forEach((child: any) => {
-              if (child.label === 'Customer Reviews' && child.isOpen) {
-                child.isOpen.value = true;
-                activeMenuFound = true;
+              
+              // Tìm kiếm đệ quy trong các con của parentItem
+              const foundInChildren = findParentAndExpand(parentItem.children, targetItem);
+              if (foundInChildren && parentItem.isOpen) {
+                console.log('Opening parent menu (recursive):', parentItem.label);
+                parentItem.isOpen.value = true;
+                return true;
               }
-            });
+            }
           }
+          return false;
+        };
+        
+        findParentAndExpand(processedItems, item);
+      }
+      
+      // Kiểm tra xem con của item hiện tại có phù hợp với path hiện tại không
+      if (item.children) {
+        const hasActiveChild = item.children.some(child => {
+          if (child.to && isActive(child.to)) {
+            return true;
+          }
+          if (child.children) {
+            return child.children.some(grandchild => grandchild.to && isActive(grandchild.to));
+          }
+          return false;
         });
+        
+        if (hasActiveChild && item.isOpen) {
+          console.log('Opening menu with active child:', item.label);
+          item.isOpen.value = true;
+        }
+        
+        // Tiếp tục tìm kiếm đệ quy trong các con
+        findAndExpandActiveMenu(item.children);
       }
     }
-    // Xử lý trường hợp đặc biệt cho Gallery
-    else if (currentPath.startsWith('/galleries')) {
-      // Tìm và mở menu Gallery
-      navigation.forEach(item => {
-        if (item.label === 'Content' && item.children) {
-          item.children.forEach((child: any) => {
-            if (child.label === 'Gallery' && child.isOpen) {
-              child.isOpen.value = true;
-              activeMenuFound = true;
-            }
-          });
-        }
-      });
-    }
-    // Xử lý trường hợp đặc biệt cho Themes
-    else if (currentPath.startsWith('/themes')) {
-      // Tìm và mở menu Themes
-      navigation.forEach(item => {
-        if (item.label === 'Theme Management' && item.children) {
-          item.children.forEach((child: any) => {
-            if (child.label === 'Themes' && child.isOpen) {
-              child.isOpen.value = true;
-              activeMenuFound = true;
-            }
-          });
-        }
-      });
-    }
-    
-    // Nếu không tìm thấy menu đặc biệt, dùng cách mặc định
-    if (!activeMenuFound) {
-      navigation.forEach(item => {
-        if (item.children) {
-          item.children.forEach((child: any) => {
-            if (child.children) {
-              // Check if any children match the current route
-              const isChildActive = child.children.some((subItem: any) => 
-                isActive(subItem.to)
-              );
-              
-              if (isChildActive && child.isOpen) {
-                child.isOpen.value = true;
-              }
-            }
-          });
-        }
-      });
-    }
-  }
+  };
+  
+  findAndExpandActiveMenu(processedItems);
 };
 </script>
 
 <template>
-  <div class="flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
-    <!-- Sidebar -->
-    <aside class="w-72 h-full flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-lg">
-      <!-- Logo/Header -->
-      <div class="shrink-0 p-6 border-b border-gray-200 dark:border-gray-700">
-        <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">Admin Dashboard</h1>
-      </div>
-      
-      <!-- Navigation Menu -->
-      <nav class="flex-1 overflow-y-auto p-4 space-y-4">
-        <!-- First Level Menu -->
-        <div v-for="(item, index) in navigation" :key="index" class="space-y-1">
-          <!-- If no children, just show as a simple link -->
-          <NuxtLink
-            v-if="!item.children"
-            :to="item.to"
-            :class="[
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-              isActive(item.to)
-                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400'
-            ]"
-          >
-            <component
-              :is="item.icon"
-              :class="[
-                'w-6 h-6',
-                isActive(item.to)
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-gray-500 dark:text-gray-400'
-              ]"
-            />
-            <span class="text-[16px] font-medium">{{ item.label }}</span>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+      <div class="flex items-center justify-between px-4 py-2">
+        <div class="flex items-center">
+          <NuxtLink to="/" class="flex items-center text-gray-800 dark:text-white">
+            <span class="text-xl font-semibold ml-2">Admin Dashboard</span>
           </NuxtLink>
+        </div>
+        
+        <div class="flex items-center gap-2 relative">
+          <!-- Color Mode Toggle -->
+          <UButton 
+            icon
+            color="gray" 
+            variant="ghost" 
+            aria-label="Toggle color mode"
+            @click="colorMode = colorMode === 'dark' ? 'light' : 'dark'"
+          >
+            <template #leading>
+              <component :is="isDark ? Sun : Moon" class="w-5 h-5" />
+            </template>
+          </UButton>
           
-          <!-- First level with children -->
-          <div v-else class="space-y-1">
-            <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-3">
-              {{ item.label }}
+          <!-- User Menu -->
+          <UDropdown :items="userMenuItems" :open="isUserMenuOpen" :popper="{ placement: 'bottom-end', offsetDistance: 8 }">
+            <div 
+              class="flex items-center cursor-pointer"
+              ref="userDropdownButtonRef"
+              @click="toggleUserMenu"
+            >
+              <div v-if="!isLoading && user" class="relative">
+                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center uppercase">
+                  {{ user.email ? user.email[0] : 'U' }}
+                </div>
+                <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-white"></span>
+              </div>
+              <div v-else class="w-8 h-8 rounded-full bg-gray-300 animate-pulse"></div>
+              <ChevronDown class="w-4 h-4 ml-1 text-gray-500" />
+            </div>
+          </UDropdown>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Sidebar -->
+      <aside class="w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto hidden md:block">
+        <div class="py-4">
+          <div class="px-4 mb-4">
+            <span class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Main Navigation</span>
+          </div>
+          
+          <!-- Navigation Links -->
+          <nav>
+            <!-- Loading state for menu -->
+            <div v-if="isLoadingMenu" class="animate-pulse space-y-4 px-4 py-2">
+              <div v-for="i in 5" :key="i" class="h-8 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
             </div>
             
-            <!-- Second Level Items -->
-            <div v-for="(child, childIndex) in item.children" :key="childIndex" class="mb-1">
-              <!-- If second level has children, make it a dropdown -->
-              <div v-if="child.children" class="relative">
-                <!-- Dropdown Trigger -->
-                <button 
-                  class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  :class="{ 'bg-gray-100 dark:bg-gray-700': child.children.some(subItem => isActive(subItem.to)) }"
-                  @click="toggleMenu(child)"
+            <!-- Error state -->
+            <div v-else-if="menuError" class="px-4 py-3 text-sm text-red-600 dark:text-red-400">
+              Failed to load menu. Please try again later.
+            </div>
+            
+            <!-- Loaded menu items -->
+            <template v-else v-for="(item, i) in navigation" :key="i">
+              <!-- Single Item (no children) -->
+              <template v-if="!item.children || item.children.length === 0">
+                <!-- Link if has path -->
+                <NuxtLink 
+                  v-if="item.to" 
+                  :to="item.to" 
+                  class="flex items-center px-4 py-2.5 text-sm font-medium transition-colors"
+                  :class="[
+                    isActive(item.to) 
+                      ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                  ]"
                 >
-                  <div class="flex items-center gap-3">
-                    <component
-                      :is="child.icon"
-                      class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                      :class="{ 'text-primary-600 dark:text-primary-400': child.children.some(subItem => isActive(subItem.to)) }"
-                    />
-                    <span 
-                      class="text-[15px] font-medium"
-                      :class="{ 'text-primary-600 dark:text-primary-400': child.children.some(subItem => isActive(subItem.to)) }"
-                    >{{ child.label }}</span>
+                  <component 
+                    :is="item.icon" 
+                    class="mr-3 h-5 w-5" 
+                    :class="isActive(item.to) ? 'text-primary-600 dark:text-primary-400' : ''"
+                  />
+                  {{ item.label }}
+                </NuxtLink>
+                
+                <!-- Non-link if no path -->
+                <div 
+                  v-else
+                  class="flex items-center px-4 py-2.5 text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
+                >
+                  <component 
+                    :is="item.icon" 
+                    class="mr-3 h-5 w-5"
+                  />
+                  {{ item.label }}
+                </div>
+              </template>
+              
+              <!-- Menu with children -->
+              <div v-else class="mb-1">
+                <div 
+                  class="flex items-center justify-between px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                  @click="() => { if (item.isOpen) item.isOpen.value = !item.isOpen.value }"
+                >
+                  <div class="flex items-center">
+                    <component :is="item.icon" class="mr-3 h-5 w-5" />
+                    {{ item.label }}
                   </div>
                   <ChevronDown 
-                    class="w-4 h-4 transition-transform"
-                    :class="{ 'transform rotate-180': child.isOpen?.value }"
+                    class="h-4 w-4 transition-transform" 
+                    :class="{ 'transform rotate-180': item.isOpen?.value }"
                   />
-                </button>
+                </div>
                 
-                <!-- Dropdown Content -->
-                <div 
-                  v-show="child.isOpen?.value"
-                  class="pl-8 mt-1 space-y-1"
-                >
-                  <NuxtLink
-                    v-for="subitem in child.children"
-                    :key="subitem.to"
-                    :to="subitem.to"
-                    :class="[
-                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors duration-200',
-                      isActive(subitem.to)
-                        ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400'
-                    ]"
-                  >
-                    <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                    {{ subitem.label }}
-                  </NuxtLink>
+                <!-- Submenu -->
+                <div v-if="item.isOpen && item.isOpen.value" class="pl-4 mt-1">
+                  <template v-for="(child, j) in item.children" :key="j">
+                    <!-- Link if has path -->
+                    <NuxtLink 
+                      v-if="child.to"
+                      :to="child.to" 
+                      class="flex items-center px-4 py-2 text-sm transition-colors rounded-md"
+                      :class="[
+                        isActive(child.to) 
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                      ]"
+                    >
+                      <component 
+                        :is="child.icon" 
+                        class="mr-3 h-4 w-4" 
+                        :class="isActive(child.to) ? 'text-primary-600 dark:text-primary-400' : ''"
+                      />
+                      {{ child.label }}
+                    </NuxtLink>
+                    
+                    <!-- Child item with its own children (3rd level) -->
+                    <div v-else-if="child.children && child.children.length > 0" class="mb-1">
+                      <div 
+                        class="flex items-center justify-between px-4 py-2 text-sm transition-colors rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
+                        @click="toggleMenu(child)"
+                      >
+                        <div class="flex items-center">
+                          <component 
+                            :is="child.icon" 
+                            class="mr-3 h-4 w-4"
+                          />
+                          {{ child.label }}
+                        </div>
+                        <ChevronDown 
+                          class="h-3 w-3 transition-transform" 
+                          :class="{ 'transform rotate-180': child.isOpen?.value }"
+                        />
+                      </div>
+                      
+                      <!-- 3rd level items -->
+                      <div v-if="child.isOpen && child.isOpen.value" class="pl-4 mt-1">
+                        <template v-for="(grandchild, k) in child.children" :key="k">
+                          <NuxtLink 
+                            v-if="grandchild.to"
+                            :to="grandchild.to" 
+                            class="flex items-center px-4 py-1.5 text-xs transition-colors rounded-md"
+                            :class="[
+                              isActive(grandchild.to) 
+                                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                            ]"
+                          >
+                            <span class="w-1.5 h-1.5 mr-2 rounded-full bg-current"></span>
+                            {{ grandchild.label }}
+                          </NuxtLink>
+                        </template>
+                      </div>
+                    </div>
+                    
+                    <!-- Non-link if no path and no children -->
+                    <div 
+                      v-else
+                      class="flex items-center px-4 py-2 text-sm transition-colors rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
+                    >
+                      <component 
+                        :is="child.icon" 
+                        class="mr-3 h-4 w-4"
+                      />
+                      {{ child.label }}
+                    </div>
+                  </template>
                 </div>
               </div>
-              
-              <!-- Second level without children -->
-              <NuxtLink
-                v-else
-                :to="child.to"
-                :class="[
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-                  isActive(child.to)
-                    ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400'
-                ]"
-              >
-                <component 
-                  :is="child.icon"
-                  :class="[
-                    'w-5 h-5',
-                    isActive(child.to)
-                      ? 'text-primary-600 dark:text-primary-400'
-                      : 'text-gray-500 dark:text-gray-400'
-                  ]"
-                />
-                <span class="text-[15px] font-medium">{{ child.label }}</span>
-              </NuxtLink>
-            </div>
-          </div>
-        </div>
-      </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden">
-      <!-- Header -->
-      <header class="shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div class="flex justify-between items-center px-6 py-4">
-          <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            <template v-if="isLoading">
-              <RotateCcw class="w-5 h-5 animate-spin mr-2 inline" />
-              Loading...
             </template>
-            <template v-else-if="user">
-              Welcome, 
-              <span class="text-primary-600 dark:text-primary-400">{{ user.email }}</span>
-              <span v-if="user.roles?.length" class="text-sm text-gray-500 dark:text-gray-400 ml-2 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
-                {{ user.roles[0] }}
-              </span>
-            </template>
-          </h2>
-          <div class="flex items-center gap-4">
-            <button
-              class="p-2.5 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-              :class="[
-                isDark 
-                  ? 'text-gray-400 hover:text-primary-400' 
-                  : 'text-gray-600 hover:text-primary-600'
-              ]"
-              @click="colorMode.preference = isDark ? 'light' : 'dark'"
-            >
-              <component :is="isDark ? Moon : Sun" class="w-5 h-5" />
-            </button>
-            
-            <!-- Custom User Dropdown -->
-            <div class="relative">
-              <button
-                ref="userDropdownButtonRef"
-                class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                @click="toggleUserMenu"
-              >
-                <UAvatar
-                  :src="user?.avatar || ''"
-                  :alt="user?.email || ''"
-                  size="sm"
-                />
-                <span class="font-medium">{{ user?.email }}</span>
-                <ChevronDown class="w-4 h-4" />
-              </button>
-              
-              <!-- Dropdown Menu -->
-              <Transition
-                enter-active-class="transition ease-out duration-200"
-                enter-from-class="transform opacity-0 scale-95"
-                enter-to-class="transform opacity-100 scale-100"
-                leave-active-class="transition ease-in duration-150"
-                leave-from-class="transform opacity-100 scale-100"
-                leave-to-class="transform opacity-0 scale-95"
-              >
-                <div 
-                  v-if="isUserMenuOpen" 
-                  class="absolute right-0 z-50 mt-2 w-48 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 focus:outline-none overflow-hidden"
-                  ref="userMenuRef"
-                >
-                  <NuxtLink
-                    to="/profile"
-                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400"
-                    @click="isUserMenuOpen = false"
-                  >
-                    <UserCircle class="w-5 h-5" />
-                    Profile
-                  </NuxtLink>
-                  <button
-                    class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400"
-                    @click="handleLogout(); isUserMenuOpen = false"
-                  >
-                    <LogOut class="w-5 h-5" />
-                    Logout
-                  </button>
-                </div>
-              </Transition>
-            </div>
-          </div>
+          </nav>
         </div>
-      </header>
-
-      <!-- Page Content -->
-      <div class="flex-1 overflow-y-auto p-6">
-        <slot />
-      </div>
-    </main>
+      </aside>
+      
+      <!-- Content Area -->
+      <main class="flex-grow p-6 overflow-y-auto">
+        <div class="container mx-auto">
+          <slot />
+        </div>
+      </main>
+    </div>
   </div>
 </template>
 
