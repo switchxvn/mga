@@ -17,6 +17,15 @@ if [ -z "$GITHUB_USERNAME" ] || [ -z "$REGISTRY" ] || [ -z "$GITHUB_TOKEN" ]; th
     exit 1
 fi
 
+# Set default container name prefix if not defined in .env
+APP_NAME="${APP_NAME:-cable-car}"
+
+# Set default ports if not defined in .env
+FRONTEND_PORT="${FRONTEND_PORT:-3000}"
+ADMIN_PORT="${ADMIN_PORT:-3001}"
+BACKEND_PORT="${BACKEND_PORT:-3333}"
+API_PORT="${API_PORT:-4000}"
+
 # Check and login to GitHub Container Registry
 echo "Checking GitHub Container Registry authentication..."
 if ! docker info | grep -q "ghcr.io"; then
@@ -61,15 +70,20 @@ wait_for_container() {
 }
 
 # Setup variables
-NETWORK_NAME="app-network"
+NETWORK_NAME="${NETWORK_NAME:-app-network}"
+FRONTEND_CONTAINER="${APP_NAME}-frontend"
+ADMIN_CONTAINER="${APP_NAME}-admin"
+BACKEND_CONTAINER="${APP_NAME}-backend"
+API_CONTAINER="${APP_NAME}-api"
+NGINX_CONTAINER="${APP_NAME}-nginx"
 
 # Stop and remove existing containers first
 echo "Cleaning up existing containers..."
-stop_container "cable-car-frontend"
-stop_container "cable-car-admin"
-stop_container "cable-car-backend"
-stop_container "cable-car-api"
-stop_container "cable-car-nginx"
+stop_container "$FRONTEND_CONTAINER"
+stop_container "$ADMIN_CONTAINER"
+stop_container "$BACKEND_CONTAINER"
+stop_container "$API_CONTAINER"
+stop_container "$NGINX_CONTAINER"
 
 # Clean up network after containers are stopped
 echo "Setting up docker network..."
@@ -91,99 +105,99 @@ docker network create $NETWORK_NAME
 
 # Pull latest images with platform specification
 echo "Pulling latest images..."
-docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:latest
-docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-admin:latest
-docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest
-docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
-docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-frontend:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-admin:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-backend:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-api:latest
+docker pull --platform linux/amd64 $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-nginx:latest
 
 # Start backend
 echo "Starting backend..."
 docker run -d \
     --platform linux/amd64 \
-    --name cable-car-backend \
-    --network app-network \
+    --name $BACKEND_CONTAINER \
+    --network $NETWORK_NAME \
     --network-alias backend \
-    -p 3333:3333 \
+    -p $BACKEND_PORT:$BACKEND_PORT \
     --env-file apps/backend/.env.production \
     -e NODE_ENV=production \
     --restart unless-stopped \
-    $REGISTRY/$GITHUB_USERNAME/cable-car-backend:latest
+    $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-backend:latest
 
 # Wait for backend to be ready
-wait_for_container "cable-car-backend"
+wait_for_container "$BACKEND_CONTAINER"
 
 # Start api
 echo "Starting api..."
 docker run -d \
     --platform linux/amd64 \
-    --name cable-car-api \
-    --network app-network \
+    --name $API_CONTAINER \
+    --network $NETWORK_NAME \
     --network-alias api \
-    -p 4000:4000 \
+    -p $API_PORT:$API_PORT \
     --env-file apps/api/.env.production \
     -e NODE_ENV=production \
     --restart unless-stopped \
-    $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
+    $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-api:latest
 
 # Wait for api to be ready
-wait_for_container "cable-car-api"
+wait_for_container "$API_CONTAINER"
 
 # Start frontend
 echo "Starting frontend..."
 docker run -d \
     --platform linux/amd64 \
-    --name cable-car-frontend \
-    --network app-network \
+    --name $FRONTEND_CONTAINER \
+    --network $NETWORK_NAME \
     --network-alias frontend \
-    -p 3000:3000 \
+    -p $FRONTEND_PORT:$FRONTEND_PORT \
     --env-file apps/frontend/.env.production \
     -e NODE_ENV=production \
     -e HOST=0.0.0.0 \
     --restart unless-stopped \
-    $REGISTRY/$GITHUB_USERNAME/cable-car-frontend:latest
+    $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-frontend:latest
 
 # Wait for frontend to be ready
-wait_for_container "cable-car-frontend"
+wait_for_container "$FRONTEND_CONTAINER"
 
 # Start admin
 echo "Starting admin..."
 docker run -d \
     --platform linux/amd64 \
-    --name cable-car-admin \
-    --network app-network \
+    --name $ADMIN_CONTAINER \
+    --network $NETWORK_NAME \
     --network-alias admin \
-    -p 3001:3001 \
+    -p $ADMIN_PORT:$ADMIN_PORT \
     --env-file apps/admin/.env.production \
     -e NODE_ENV=production \
     -e HOST=0.0.0.0 \
     --restart unless-stopped \
-    $REGISTRY/$GITHUB_USERNAME/cable-car-admin:latest
+    $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-admin:latest
 
 # Wait for admin to be ready
-wait_for_container "cable-car-admin"
+wait_for_container "$ADMIN_CONTAINER"
 
 # Start nginx
 echo "Starting nginx..."
 docker run -d \
     --platform linux/amd64 \
-    --name cable-car-nginx \
-    --network app-network \
+    --name $NGINX_CONTAINER \
+    --network $NETWORK_NAME \
     -p 80:80 \
     -p 443:443 \
     -v /etc/nginx/ssl:/etc/nginx/ssl:ro \
     --restart unless-stopped \
-    $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
+    $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-nginx:latest
 
 # Wait for nginx to be ready
-wait_for_container "cable-car-nginx"
+wait_for_container "$NGINX_CONTAINER"
 
 echo "Deployment completed successfully!"
 echo "Services:"
-echo "- Frontend: http://localhost:3000"
-echo "- Admin: http://localhost:3001"
-echo "- Backend: http://localhost:3333"
-echo "- API: http://localhost:4000"
+echo "- Frontend: http://localhost:$FRONTEND_PORT"
+echo "- Admin: http://localhost:$ADMIN_PORT"
+echo "- Backend: http://localhost:$BACKEND_PORT"
+echo "- API: http://localhost:$API_PORT"
 echo "- Nginx: http://localhost (80) and https://localhost (443)"
 
 # Show running containers and their networks
@@ -191,4 +205,4 @@ echo -e "\nRunning containers:"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 echo -e "\nNetwork information:"
-docker network inspect app-network 
+docker network inspect $NETWORK_NAME 

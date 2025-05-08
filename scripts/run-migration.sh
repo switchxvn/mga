@@ -1,8 +1,16 @@
 #!/bin/bash
 set -e
 
-# Name of the backend container (defaults to "ecommerce-web-backend-1" if no parameter is provided)
-CONTAINER_NAME=${1:-"cable-car-backend"}
+# Load environment variables
+if [ -f ".env" ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+fi
+
+# Set default app name if not defined
+APP_NAME="${APP_NAME:-cable-car}"
+
+# Name of the backend container (defaults to APP_NAME-backend if no parameter is provided)
+CONTAINER_NAME=${1:-"${APP_NAME}-backend"}
 
 echo "Running migrations in container $CONTAINER_NAME..."
 
