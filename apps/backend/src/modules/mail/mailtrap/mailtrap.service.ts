@@ -49,18 +49,29 @@ export class MailtrapService implements MailServiceInterface, OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const mailConfig = await this.mailConfigRepository.findOne({
-      where: { code: 'MAILTRAP', isActive: true },
-    });
+    try {
+      const mailConfig = await this.mailConfigRepository.findOne({
+        where: { code: 'MAILTRAP', isActive: true },
+      });
 
-    if (!mailConfig) {
-      throw new Error('Mailtrap configuration not found or not active');
+      if (mailConfig) {
+        this.config = {
+          apiToken: mailConfig.config.apiToken as string,
+          from: mailConfig.config.from as string,
+          fromName: mailConfig.config.fromName as string,
+        };
+        return;
+      }
+    } catch (error) {
+      console.warn('Không thể đọc cấu hình Mailtrap từ database, sử dụng cấu hình mặc định từ env', 
+        error instanceof Error ? error.message : error);
     }
 
+    // Fallback to environment variables if database config is not available
     this.config = {
-      apiToken: mailConfig.config.apiToken as string,
-      from: mailConfig.config.from as string,
-      fromName: mailConfig.config.fromName as string,
+      apiToken: this.configService.get<string>('MAILTRAP_API_TOKEN', ''),
+      from: this.configService.get<string>('MAILTRAP_FROM_EMAIL', 'noreply@example.com'),
+      fromName: this.configService.get<string>('MAILTRAP_FROM_NAME', 'System'),
     };
   }
 
