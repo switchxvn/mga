@@ -458,11 +458,11 @@ const isValidImage = computed(() => {
           <swiper v-bind="swiperOptions" class="gallery-swiper">
             <swiper-slide v-for="(gallery, index) in galleries" :key="`mobile-${gallery.id}-${index}`" class="h-full">
               <div :class="['overflow-hidden rounded-lg h-full', borderColor, 'border']">
-                <div class="relative aspect-square overflow-hidden">
+                <div class="relative aspect-square overflow-hidden gallery-image-container">
                   <img 
                     :src="isValidImage(gallery.image) ? gallery.image : placeholderImageUrl"
                     :alt="getGalleryTitle(gallery)"
-                    class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                    class="w-full h-full object-contain transition-transform duration-500 hover:scale-105"
                     :class="{ 'image-error': !isValidImage(gallery.image) }"
                     loading="lazy"
                     @error="handleImageError"
@@ -487,11 +487,11 @@ const isValidImage = computed(() => {
           <swiper v-bind="swiperOptions" class="gallery-swiper">
             <swiper-slide v-for="(gallery, index) in galleries" :key="`desktop-${gallery.id}-${index}`" class="h-full">
               <div :class="['overflow-hidden rounded-lg h-full', borderColor, 'border']">
-                <div class="relative aspect-square overflow-hidden">
+                <div class="relative aspect-square overflow-hidden gallery-image-container">
                   <img 
                     :src="isValidImage(gallery.image) ? gallery.image : placeholderImageUrl"
                     :alt="getGalleryTitle(gallery)"
-                    class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                    class="w-full h-full object-contain transition-transform duration-500 hover:scale-105"
                     :class="{ 'image-error': !isValidImage(gallery.image) }"
                     loading="lazy"
                     @error="handleImageError"
@@ -514,11 +514,11 @@ const isValidImage = computed(() => {
         <!-- Grid view -->
         <div v-else-if="!useSlider" class="hidden md:grid gap-6" :class="gridClass">
           <div v-for="(gallery, index) in galleries" :key="`grid-${gallery.id}-${index}`" :class="['overflow-hidden rounded-lg', borderColor, 'border']">
-            <div class="relative aspect-square overflow-hidden">
+            <div class="relative aspect-square overflow-hidden gallery-image-container">
               <img 
                 :src="isValidImage(gallery.image) ? gallery.image : placeholderImageUrl"
                 :alt="getGalleryTitle(gallery)"
-                class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                class="w-full h-full object-contain transition-transform duration-500 hover:scale-105"
                 :class="{ 'image-error': !isValidImage(gallery.image) }"
                 loading="lazy"
                 @error="handleImageError"
@@ -556,6 +556,11 @@ const isValidImage = computed(() => {
   background-color: theme('colors.gray.100');
 }
 
+.gallery-image-container {
+  background-color: theme('colors.gray.50');
+  height: 300px; /* Cố định chiều cao cho tất cả ảnh */
+}
+
 @media (prefers-color-scheme: dark) {
   .swiper-button-next,
   .swiper-button-prev {
@@ -568,6 +573,23 @@ const isValidImage = computed(() => {
   
   .image-error {
     background-color: theme('colors.gray.800');
+  }
+  
+  .gallery-image-container {
+    background-color: theme('colors.gray.800');
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .gallery-image-container {
+    height: 250px;
+  }
+}
+
+@media (max-width: 640px) {
+  .gallery-image-container {
+    height: 200px;
   }
 }
 </style> 
