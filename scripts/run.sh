@@ -17,9 +17,14 @@ if [ -z "$GITHUB_USERNAME" ] || [ -z "$REGISTRY" ]; then
     fi
 fi
 
-# Set default version if not specified
+# Set default app name and version if not defined
+APP_NAME="${APP_NAME:-cable-car}"
 VERSION="${VERSION:-latest}"
-NETWORK_NAME="app-network"
+NETWORK_NAME="${NETWORK_NAME:-app-network}"
+
+# Set default ports if not defined
+FRONTEND_PORT="${FRONTEND_PORT:-3000}"
+BACKEND_PORT="${BACKEND_PORT:-3333}"
 
 # Create network if it doesn't exist
 if ! docker network inspect $NETWORK_NAME >/dev/null 2>&1; then
@@ -35,36 +40,36 @@ pull_and_run() {
     local EXTRA_ARGS=$4
 
     echo "Pulling $SERVICE image..."
-    docker pull $REGISTRY/$GITHUB_USERNAME/cable-car-$SERVICE:$VERSION
+    docker pull $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-$SERVICE:$VERSION
 
     echo "Stopping existing $SERVICE container if running..."
-    docker stop cable-car-$SERVICE 2>/dev/null || true
-    docker rm cable-car-$SERVICE 2>/dev/null || true
+    docker stop ${APP_NAME}-$SERVICE 2>/dev/null || true
+    docker rm ${APP_NAME}-$SERVICE 2>/dev/null || true
 
     echo "Starting $SERVICE container..."
     if [ -n "$ENV_FILE" ]; then
         docker run -d \
-            --name cable-car-$SERVICE \
+            --name ${APP_NAME}-$SERVICE \
             --network $NETWORK_NAME \
             $PORTS \
             --env-file $ENV_FILE \
             $EXTRA_ARGS \
-            $REGISTRY/$GITHUB_USERNAME/cable-car-$SERVICE:$VERSION
+            $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-$SERVICE:$VERSION
     else
         docker run -d \
-            --name cable-car-$SERVICE \
+            --name ${APP_NAME}-$SERVICE \
             --network $NETWORK_NAME \
             $PORTS \
             $EXTRA_ARGS \
-            $REGISTRY/$GITHUB_USERNAME/cable-car-$SERVICE:$VERSION
+            $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-$SERVICE:$VERSION
     fi
 }
 
 # Pull and run backend
-pull_and_run "backend" "-p 3333:3333" "apps/backend/.env" "-e NODE_ENV=production"
+pull_and_run "backend" "-p $BACKEND_PORT:$BACKEND_PORT" "apps/backend/.env" "-e NODE_ENV=production"
 
 # Pull and run frontend
-pull_and_run "frontend" "-p 3000:4201" "apps/frontend/.env" "-e NODE_ENV=production -e HOST=0.0.0.0"
+pull_and_run "frontend" "-p $FRONTEND_PORT:4201" "apps/frontend/.env" "-e NODE_ENV=production -e HOST=0.0.0.0"
 
 # Pull and run nginx
 pull_and_run "nginx" "-p 80:80 -p 443:443" "" "-v /etc/nginx/ssl:/etc/nginx/ssl:ro"
