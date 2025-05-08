@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { useLocalization } from '../../composables/useLocalization';
 import { useTrpc } from '../../composables/useTrpc';
-import { ref, computed, onMounted, watch } from '../../composables/useVueComposables';
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
+import { ref, computed, onMounted, watch, nextTick } from '../../composables/useVueComposables';
 import Loader from '../ui/Loader.vue';
 
 // Định nghĩa interface cho Gallery và ThemeSection
@@ -23,6 +18,7 @@ interface Gallery {
   isActive: boolean;
   sequence: number;
   translations: GalleryTranslation[];
+  width?: string;
 }
 
 interface ThemeSection {
@@ -54,12 +50,7 @@ const defaultSettings = {
   titleColor: 'text-primary-600 dark:text-primary-400',
   borderColor: 'border-gray-200 dark:border-gray-700',
   paddingY: 'py-16',
-  useSlider: true,
-  sliderPerView: 3,
-  sliderAutoplay: true,
-  sliderDelay: 3000,
   maxGalleries: 12,
-  columns: 4,
   categoryIds: [],
   showTitle: true
 };
@@ -78,12 +69,7 @@ const textColor = computed(() => settings.value.textColor);
 const titleColor = computed(() => settings.value.titleColor);
 const borderColor = computed(() => settings.value.borderColor);
 const paddingY = computed(() => settings.value.paddingY);
-const useSlider = computed(() => settings.value.useSlider);
-const sliderPerView = computed(() => settings.value.sliderPerView);
-const sliderAutoplay = computed(() => settings.value.sliderAutoplay);
-const sliderDelay = computed(() => settings.value.sliderDelay);
 const maxGalleries = computed(() => settings.value.maxGalleries);
-const columns = computed(() => settings.value.columns);
 const showTitle = computed(() => settings.value.showTitle);
 
 // State
@@ -91,51 +77,25 @@ const galleries = ref<Gallery[]>([]);
 const isLoading = ref(true);
 const hasError = ref(false);
 
-// Mẫu data giả cho trường hợp API không trả về dữ liệu
-const mockGalleries: Gallery[] = [
-  {
-    id: 1,
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80',
-    isActive: true,
-    sequence: 1,
-    translations: [
-      {
-        id: 1,
-        locale: 'vi',
-        title: 'Khách hàng checkin tại nhà hàng',
-        description: 'Khách hàng thưởng thức món ăn ngon'
-      }
-    ]
-  },
-  {
-    id: 2,
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80',
-    isActive: true,
-    sequence: 2,
-    translations: [
-      {
-        id: 2,
-        locale: 'vi',
-        title: 'Bữa tiệc gia đình',
-        description: 'Thưởng thức các món ăn cùng người thân'
-      }
-    ]
-  },
-  {
-    id: 3,
-    image: 'https://images.unsplash.com/photo-1539066070536-063381e744e7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=874&q=80',
-    isActive: true,
-    sequence: 3,
-    translations: [
-      {
-        id: 3,
-        locale: 'vi',
-        title: 'Kỷ niệm sinh nhật',
-        description: 'Bữa tối sinh nhật đáng nhớ'
-      }
-    ]
-  }
-];
+// Đo lường scrolling
+const galleryContainer = ref<HTMLElement | null>(null);
+const galleryWrapper = ref<HTMLElement | null>(null);
+const scrollPosition = ref(0);
+const maxScroll = ref(0);
+
+// Thêm tính năng kéo cuộn
+const isDragging = ref(false);
+const startX = ref(0);
+const dragScrollLeft = ref(0);
+
+// Thêm một URL placeholder từ một nguồn có sẵn trên internet
+const placeholderImageUrl = 'https://placehold.co/600x400/e2e8f0/a0aec0?text=Image+Not+Found';
+
+// Thêm vào một Set để theo dõi những ảnh đã bị lỗi
+const erroredImages = ref(new Set());
+
+// Biến để kiểm soát việc xử lý lỗi ảnh
+const processingImageErrors = ref(false);
 
 // Cờ để kiểm soát việc sử dụng dữ liệu mẫu
 const useMockData = ref(false);
@@ -159,51 +119,112 @@ const categoryIds = computed(() => {
   return props.section?.settings?.categoryIds || [];
 });
 
-// Tạo dynamic class cho grid columns
-const gridClass = computed(() => {
-  return {
-    [`grid-cols-2 md:grid-cols-3 lg:grid-cols-${columns.value}`]: true
-  };
-});
-
-// Swiper options
-const swiperOptions = computed(() => ({
-  modules: [Navigation, Pagination, Autoplay],
-  spaceBetween: 16,
-  slidesPerView: sliderPerView.value,
-  navigation: {
-    nextEl: '.swiper-button-next',
-    prevEl: '.swiper-button-prev',
-  },
-  pagination: {
-    el: '.swiper-pagination',
-    clickable: true
-  },
-  autoplay: sliderAutoplay.value ? {
-    delay: sliderDelay.value,
-    disableOnInteraction: false
-  } : false,
-  breakpoints: {
-    320: {
-      slidesPerView: 1,
-    },
-    640: {
-      slidesPerView: 2,
-    },
-    1024: {
-      slidesPerView: sliderPerView.value,
-    }
+// Helper function to get fixed width based on index
+const getItemWidth = (index: number) => {
+  // Pattern repeats every 6 images for consistent layout
+  const pattern = index % 6;
+  
+  switch (pattern) {
+    case 0: // Large landscape
+      return '500px';
+    case 1: // Portrait
+      return '300px';
+    case 2: // Square
+      return '300px';
+    case 3: // Wide landscape
+      return '600px';
+    case 4: // Small square
+      return '400px';
+    case 5: // Medium landscape
+      return '500px';
+    default:
+      return '400px';
   }
-}));
+};
 
-// Thêm một URL placeholder từ một nguồn có sẵn trên internet
-const placeholderImageUrl = 'https://placehold.co/600x400/e2e8f0/a0aec0?text=Image+Not+Found';
+// Scroll methods
+const handleScrollLeft = () => {
+  if (!galleryContainer.value) return;
+  const containerWidth = galleryContainer.value.clientWidth;
+  const newPosition = Math.max(0, scrollPosition.value - containerWidth);
+  galleryContainer.value.scrollTo({
+    left: newPosition,
+    behavior: 'smooth'
+  });
+};
 
-// Thêm vào một Set để theo dõi những ảnh đã bị lỗi
-const erroredImages = ref(new Set());
+const handleScrollRight = () => {
+  if (!galleryContainer.value || !galleryWrapper.value) return;
+  const containerWidth = galleryContainer.value.clientWidth;
+  const scrollWidth = galleryWrapper.value.scrollWidth;
+  const currentScroll = galleryContainer.value.scrollLeft;
+  
+  // Calculate the maximum scroll position
+  const maxScrollPosition = scrollWidth - containerWidth;
+  
+  // Calculate new scroll position
+  const newPosition = Math.min(maxScrollPosition, currentScroll + containerWidth);
+  
+  // Update scroll position
+  galleryContainer.value.scrollTo({
+    left: newPosition,
+    behavior: 'smooth'
+  });
+};
 
-// Biến để kiểm soát việc xử lý lỗi ảnh
-const processingImageErrors = ref(false);
+// Add drag scroll functionality
+const startDragging = (e: MouseEvent) => {
+  if (!galleryContainer.value) return;
+  isDragging.value = true;
+  startX.value = e.pageX - galleryContainer.value.offsetLeft;
+  dragScrollLeft.value = galleryContainer.value.scrollLeft;
+};
+
+const stopDragging = () => {
+  isDragging.value = false;
+};
+
+const onDrag = (e: MouseEvent) => {
+  if (!isDragging.value || !galleryContainer.value) return;
+  e.preventDefault();
+  const x = e.pageX - galleryContainer.value.offsetLeft;
+  const walk = (x - startX.value) * 2;
+  galleryContainer.value.scrollLeft = dragScrollLeft.value - walk;
+  scrollPosition.value = galleryContainer.value.scrollLeft;
+};
+
+// Update scroll position on scroll
+const onScroll = () => {
+  if (!galleryContainer.value || !galleryWrapper.value) return;
+  const containerWidth = galleryContainer.value.clientWidth;
+  const scrollWidth = galleryWrapper.value.scrollWidth;
+  
+  scrollPosition.value = galleryContainer.value.scrollLeft;
+  maxScroll.value = scrollWidth - containerWidth;
+};
+
+// Update max scroll value
+const updateMaxScroll = () => {
+  if (!galleryContainer.value || !galleryWrapper.value) return;
+  const containerWidth = galleryContainer.value.clientWidth;
+  const scrollWidth = galleryWrapper.value.scrollWidth;
+  
+  maxScroll.value = scrollWidth - containerWidth;
+  scrollPosition.value = galleryContainer.value.scrollLeft;
+};
+
+// Helper functions for row management
+const getRowItems = (rowIndex: number) => {
+  const itemsPerRow = Math.ceil(galleries.value.length / 3);
+  const start = rowIndex * itemsPerRow;
+  const items = galleries.value.slice(start, start + itemsPerRow);
+  
+  // Add fixed width based on position in overall gallery
+  return items.map((item, indexInRow) => ({
+    ...item,
+    width: getItemWidth(start + indexInRow)
+  }));
+};
 
 // Thiết lập lại môi trường trước khi fetch data
 const resetEnvironment = () => {
@@ -345,6 +366,11 @@ const fetchGalleries = async () => {
       }
       
       console.log('[Gallery API] Final data count:', galleries.value.length);
+      
+      // Update scroll values after images are loaded
+      nextTick(() => {
+        updateMaxScroll();
+      });
     } else {
       // Hiển thị thông báo không có dữ liệu thay vì dùng mock
       console.log('[Gallery API] No valid gallery data found');
@@ -407,6 +433,18 @@ const handleImageError = (event: Event) => {
 // Load dữ liệu khi component mounted
 onMounted(() => {
   fetchGalleries();
+  
+  if (galleryContainer.value) {
+    // Add scroll event listener
+    galleryContainer.value.addEventListener('scroll', onScroll);
+  }
+});
+
+// Cleanup event listeners
+onUnmounted(() => {
+  if (galleryContainer.value) {
+    galleryContainer.value.removeEventListener('scroll', onScroll);
+  }
 });
 
 // Sửa lại cách watch để tránh gọi API liên tục
@@ -415,9 +453,6 @@ watch(locale, () => {
   console.log('Locale changed, fetching galleries again');
   fetchGalleries();
 });
-
-// Không theo dõi categoryIds vì nó không thay đổi sau khi component mounted
-// Chỉ gọi API một lần khi component mounted thay vì theo dõi nhiều giá trị
 
 // Kiểm tra ảnh có hợp lệ hay không
 const isValidImage = computed(() => {
@@ -452,83 +487,97 @@ const isValidImage = computed(() => {
       </div>
       
       <!-- Gallery content -->
-      <div v-else>
-        <!-- Mobile Swiper View (Small screens) -->
-        <div class="md:hidden">
-          <swiper v-bind="swiperOptions" class="gallery-swiper">
-            <swiper-slide v-for="(gallery, index) in galleries" :key="`mobile-${gallery.id}-${index}`" class="h-full">
-              <div :class="['overflow-hidden rounded-lg h-full', borderColor, 'border']">
-                <div class="relative aspect-square overflow-hidden gallery-image-container">
-                  <img 
-                    :src="isValidImage(gallery.image) ? gallery.image : placeholderImageUrl"
-                    :alt="getGalleryTitle(gallery)"
-                    class="w-full h-full object-contain transition-transform duration-500 hover:scale-105"
-                    :class="{ 'image-error': !isValidImage(gallery.image) }"
+      <div v-else class="gallery-outer-container relative">
+        <!-- Navigation Buttons -->
+        <button 
+          @click="handleScrollLeft" 
+          class="nav-button left-button"
+          :class="{ 'opacity-0': scrollPosition <= 0 }"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span class="sr-only">Previous images</span>
+        </button>
+
+        <button 
+          @click="handleScrollRight" 
+          class="nav-button right-button"
+          :class="{ 'opacity-0': scrollPosition >= maxScroll }"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+          <span class="sr-only">Next images</span>
+        </button>
+
+        <!-- Gallery Content -->
+        <div 
+          class="gallery-container cursor-grab active:cursor-grabbing" 
+          ref="galleryContainer"
+          @mousedown="startDragging"
+          @mouseleave="stopDragging"
+          @mouseup="stopDragging"
+          @mousemove="onDrag"
+        >
+          <div class="gallery-wrapper" ref="galleryWrapper">
+            <div class="gallery-grid">
+              <!-- Row 1 -->
+              <div class="gallery-row">
+                <figure 
+                  v-for="(item, itemIndex) in getRowItems(0)"
+                  :key="`row0-${item.id}-${itemIndex}`"
+                  class="gallery-item"
+                  :style="{ width: item.width }"
+                >
+                  <img
+                    :src="isValidImage(item.image) ? item.image : placeholderImageUrl"
+                    :alt="getGalleryTitle(item)"
+                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105"
+                    :class="{ 'image-error': !isValidImage(item.image) }"
                     loading="lazy"
                     @error="handleImageError"
                   />
-                </div>
-                <div v-if="getGalleryTitle(gallery)" class="p-4">
-                  <h3 :class="[textColor, 'font-medium text-lg mb-1']">{{ getGalleryTitle(gallery) }}</h3>
-                  <p v-if="getGalleryDescription(gallery)" :class="[textColor === 'text-gray-900 dark:text-white' ? 'text-gray-600 dark:text-gray-400' : '', 'text-sm']">
-                    {{ getGalleryDescription(gallery) }}
-                  </p>
-                </div>
+                </figure>
               </div>
-            </swiper-slide>
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-button-next"></div>
-            <div class="swiper-pagination"></div>
-          </swiper>
-        </div>
-        
-        <!-- Desktop View (Slider or Grid) -->
-        <div v-if="useSlider" class="hidden md:block">
-          <swiper v-bind="swiperOptions" class="gallery-swiper">
-            <swiper-slide v-for="(gallery, index) in galleries" :key="`desktop-${gallery.id}-${index}`" class="h-full">
-              <div :class="['overflow-hidden rounded-lg h-full', borderColor, 'border']">
-                <div class="relative aspect-square overflow-hidden gallery-image-container">
-                  <img 
-                    :src="isValidImage(gallery.image) ? gallery.image : placeholderImageUrl"
-                    :alt="getGalleryTitle(gallery)"
-                    class="w-full h-full object-contain transition-transform duration-500 hover:scale-105"
-                    :class="{ 'image-error': !isValidImage(gallery.image) }"
+              
+              <!-- Row 2 -->
+              <div class="gallery-row">
+                <figure 
+                  v-for="(item, itemIndex) in getRowItems(1)"
+                  :key="`row1-${item.id}-${itemIndex}`"
+                  class="gallery-item"
+                  :style="{ width: item.width }"
+                >
+                  <img
+                    :src="isValidImage(item.image) ? item.image : placeholderImageUrl"
+                    :alt="getGalleryTitle(item)"
+                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105"
+                    :class="{ 'image-error': !isValidImage(item.image) }"
                     loading="lazy"
                     @error="handleImageError"
                   />
-                </div>
-                <div v-if="getGalleryTitle(gallery)" class="p-4">
-                  <h3 :class="[textColor, 'font-medium text-lg mb-1']">{{ getGalleryTitle(gallery) }}</h3>
-                  <p v-if="getGalleryDescription(gallery)" :class="[textColor === 'text-gray-900 dark:text-white' ? 'text-gray-600 dark:text-gray-400' : '', 'text-sm']">
-                    {{ getGalleryDescription(gallery) }}
-                  </p>
-                </div>
+                </figure>
               </div>
-            </swiper-slide>
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-button-next"></div>
-            <div class="swiper-pagination"></div>
-          </swiper>
-        </div>
-        
-        <!-- Grid view -->
-        <div v-else-if="!useSlider" class="hidden md:grid gap-6" :class="gridClass">
-          <div v-for="(gallery, index) in galleries" :key="`grid-${gallery.id}-${index}`" :class="['overflow-hidden rounded-lg', borderColor, 'border']">
-            <div class="relative aspect-square overflow-hidden gallery-image-container">
-              <img 
-                :src="isValidImage(gallery.image) ? gallery.image : placeholderImageUrl"
-                :alt="getGalleryTitle(gallery)"
-                class="w-full h-full object-contain transition-transform duration-500 hover:scale-105"
-                :class="{ 'image-error': !isValidImage(gallery.image) }"
-                loading="lazy"
-                @error="handleImageError"
-              />
-            </div>
-            <div v-if="getGalleryTitle(gallery)" class="p-4">
-              <h3 :class="[textColor, 'font-medium text-lg mb-1']">{{ getGalleryTitle(gallery) }}</h3>
-              <p v-if="getGalleryDescription(gallery)" :class="[textColor === 'text-gray-900 dark:text-white' ? 'text-gray-600 dark:text-gray-400' : '', 'text-sm']">
-                {{ getGalleryDescription(gallery) }}
-              </p>
+              
+              <!-- Row 3 -->
+              <div class="gallery-row">
+                <figure 
+                  v-for="(item, itemIndex) in getRowItems(2)"
+                  :key="`row2-${item.id}-${itemIndex}`"
+                  class="gallery-item"
+                  :style="{ width: item.width }"
+                >
+                  <img
+                    :src="isValidImage(item.image) ? item.image : placeholderImageUrl"
+                    :alt="getGalleryTitle(item)"
+                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105"
+                    :class="{ 'image-error': !isValidImage(item.image) }"
+                    loading="lazy"
+                    @error="handleImageError"
+                  />
+                </figure>
+              </div>
             </div>
           </div>
         </div>
@@ -538,17 +587,108 @@ const isValidImage = computed(() => {
 </template>
 
 <style scoped>
-.gallery-swiper {
-  padding-bottom: 3rem;
+.gallery-outer-container {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  min-height: 300px;
+  padding: 0 48px;
 }
 
-.swiper-button-next,
-.swiper-button-prev {
-  color: theme('colors.primary.600');
+.gallery-container {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  cursor: grab;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  
+  &:active {
+    cursor: grabbing;
+  }
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.swiper-pagination-bullet-active {
-  background-color: theme('colors.primary.600');
+.gallery-wrapper {
+  display: inline-flex;
+  min-width: min-content;
+  padding: 0 48px;
+}
+
+.gallery-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 48px; /* Add padding to ensure last items are reachable */
+}
+
+.gallery-row {
+  display: flex;
+  gap: 16px;
+  min-height: 250px;
+  
+  .gallery-item {
+    flex: none;
+    height: 250px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    transition: all 0.3s ease-in-out;
+    
+    &:hover {
+      z-index: 1;
+      transform: translateY(-4px);
+      
+      img {
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+/* Navigation buttons */
+.nav-button {
+  background-color: rgb(255 255 255 / 0.8);
+  backdrop-filter: blur(4px);
+  color: rgb(55 65 81);
+  border-radius: 9999px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgb(229 231 235);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-button.left-button {
+  left: 0;
+}
+
+.nav-button.right-button {
+  right: 0;
+}
+
+.nav-button:hover {
+  transform: translateY(-50%) scale(1.1);
+  background-color: rgb(239 246 255);
 }
 
 .image-error {
@@ -556,40 +696,98 @@ const isValidImage = computed(() => {
   background-color: theme('colors.gray.100');
 }
 
-.gallery-image-container {
-  background-color: theme('colors.gray.50');
-  height: 300px; /* Cố định chiều cao cho tất cả ảnh */
-}
-
 @media (prefers-color-scheme: dark) {
-  .swiper-button-next,
-  .swiper-button-prev {
-    color: theme('colors.primary.400');
+  .nav-button {
+    background-color: rgb(31 41 55 / 0.8);
+    color: rgb(229 231 235);
+    border-color: rgb(55 65 81);
   }
-
-  .swiper-pagination-bullet-active {
-    background-color: theme('colors.primary.400');
+  
+  .nav-button:hover {
+    background-color: rgb(15 23 42 / 0.8);
   }
   
   .image-error {
     background-color: theme('colors.gray.800');
   }
-  
-  .gallery-image-container {
-    background-color: theme('colors.gray.800');
-  }
 }
 
-/* Responsive adjustments */
+/* Media queries for responsive design */
 @media (max-width: 768px) {
-  .gallery-image-container {
-    height: 250px;
+  .gallery-outer-container {
+    padding: 0 36px;
+  }
+
+  .gallery-container {
+    margin: 0 -36px;
+    padding: 0 36px;
+  }
+
+  .gallery-grid {
+    flex-direction: row !important;
+    gap: 12px !important;
+  }
+
+  .gallery-row {
+    display: none !important;
+    
+    &:first-child {
+      display: flex !important;
+      gap: 12px;
+      
+      .gallery-item {
+        width: 280px !important;
+        min-width: 280px !important;
+        height: 200px !important;
+        
+        &:last-child {
+          width: 320px !important;
+          min-width: 320px !important;
+        }
+      }
+    }
+  }
+
+  .nav-button {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .nav-button svg {
+    width: 20px;
+    height: 20px;
   }
 }
 
 @media (max-width: 640px) {
-  .gallery-image-container {
-    height: 200px;
+  .gallery-outer-container {
+    padding: 0 24px;
+  }
+
+  .gallery-container {
+    margin: 0 -24px;
+    padding: 0 24px;
+  }
+
+  .gallery-row:first-child .gallery-item {
+    width: 240px !important;
+    min-width: 240px !important;
+    height: 180px !important;
+  }
+  
+  .gallery-row:first-child .gallery-item:last-child {
+    width: 280px !important;
+    min-width: 280px !important;
+  }
+
+  .nav-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .nav-button svg {
+    width: 16px;
+    height: 16px;
   }
 }
 </style> 

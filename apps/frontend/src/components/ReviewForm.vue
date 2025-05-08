@@ -16,6 +16,8 @@ const props = withDefaults(defineProps<{
   showServiceType?: boolean;
   showProfession?: boolean;
   showVisitDate?: boolean;
+  showCard?: boolean;
+  showFormTitle?: boolean;
 }>(), {
   reviewSuccess: false,
   postSubmitAction: 'reset',
@@ -23,6 +25,8 @@ const props = withDefaults(defineProps<{
   showServiceType: true,
   showProfession: true,
   showVisitDate: true,
+  showCard: false,
+  showFormTitle: false,
 });
 
 const emit = defineEmits<{
@@ -317,8 +321,8 @@ const getRatingLabel = (rating: number): string => {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
+  <div :class="{ 'bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6': showCard }">
+    <h3 v-if="showFormTitle" class="text-xl font-bold text-gray-900 dark:text-white mb-6">
       {{ t('reviews.submitReview') }}
     </h3>
 
