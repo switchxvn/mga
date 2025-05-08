@@ -41,6 +41,13 @@ const props = defineProps<{
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
 
+// Lightbox state
+const isLightboxOpen = ref(false);
+const lightboxIndex = ref(0);
+const touchStartX = ref(0);
+const touchEndX = ref(0);
+const allGalleryItems = ref<Gallery[]>([]);
+
 // Default settings
 const defaultSettings = {
   title: 'KHÁCH HÀNG CHECKIN',
@@ -367,6 +374,9 @@ const fetchGalleries = async () => {
       
       console.log('[Gallery API] Final data count:', galleries.value.length);
       
+      // Prepare data for lightbox
+      allGalleryItems.value = createFlatGalleryList();
+      
       // Update scroll values after images are loaded
       nextTick(() => {
         updateMaxScroll();
@@ -430,6 +440,89 @@ const handleImageError = (event: Event) => {
   console.log(`Image load failed for: ${originalSrc}, replaced with placeholder`);
 };
 
+// Tạo danh sách phẳng các items từ 3 rows
+const createFlatGalleryList = (): Gallery[] => {
+  const flatList: Gallery[] = [];
+  
+  // Add all rows to the flat list
+  for (let i = 0; i < 3; i++) {
+    const rowItems = getRowItems(i);
+    flatList.push(...rowItems);
+  }
+  
+  return flatList;
+};
+
+// Lightbox methods
+const openLightbox = (rowIndex: number, itemIndex: number) => {
+  const itemsPerRow = Math.ceil(galleries.value.length / 3);
+  const flatIndex = rowIndex * itemsPerRow + itemIndex;
+  
+  lightboxIndex.value = flatIndex;
+  isLightboxOpen.value = true;
+  
+  // Disable body scroll
+  document.body.style.overflow = 'hidden';
+  
+  // Add key event listener
+  window.addEventListener('keydown', handleLightboxKeydown);
+};
+
+const closeLightbox = () => {
+  isLightboxOpen.value = false;
+  
+  // Enable body scroll
+  document.body.style.overflow = '';
+  
+  // Remove key event listener
+  window.removeEventListener('keydown', handleLightboxKeydown);
+};
+
+const showNextImage = () => {
+  if (allGalleryItems.value.length === 0) return;
+  lightboxIndex.value = (lightboxIndex.value + 1) % allGalleryItems.value.length;
+};
+
+const showPreviousImage = () => {
+  if (allGalleryItems.value.length === 0) return;
+  lightboxIndex.value = (lightboxIndex.value - 1 + allGalleryItems.value.length) % allGalleryItems.value.length;
+};
+
+const handleLightboxKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    closeLightbox();
+  } else if (e.key === 'ArrowRight') {
+    showNextImage();
+  } else if (e.key === 'ArrowLeft') {
+    showPreviousImage();
+  }
+};
+
+// Touch handlers for swipe functionality
+const handleTouchStart = (e: TouchEvent) => {
+  touchStartX.value = e.touches[0].clientX;
+};
+
+const handleTouchEnd = (e: TouchEvent) => {
+  touchEndX.value = e.changedTouches[0].clientX;
+  handleSwipe();
+};
+
+const handleSwipe = () => {
+  const swipeThreshold = 50; // Minimum distance to detect swipe
+  const swipeDistance = touchEndX.value - touchStartX.value;
+  
+  if (Math.abs(swipeDistance) < swipeThreshold) return;
+  
+  if (swipeDistance > 0) {
+    // Swipe right (show previous)
+    showPreviousImage();
+  } else {
+    // Swipe left (show next)
+    showNextImage();
+  }
+};
+
 // Load dữ liệu khi component mounted
 onMounted(() => {
   fetchGalleries();
@@ -438,13 +531,18 @@ onMounted(() => {
     // Add scroll event listener
     galleryContainer.value.addEventListener('scroll', onScroll);
   }
-});
-
-// Cleanup event listeners
-onUnmounted(() => {
-  if (galleryContainer.value) {
-    galleryContainer.value.removeEventListener('scroll', onScroll);
-  }
+  
+  // Add key event listener for lightbox
+  window.addEventListener('keydown', handleLightboxKeydown);
+  
+  // Cleanup event listeners
+  return () => {
+    if (galleryContainer.value) {
+      galleryContainer.value.removeEventListener('scroll', onScroll);
+    }
+    // Remove lightbox event listener
+    window.removeEventListener('keydown', handleLightboxKeydown);
+  };
 });
 
 // Sửa lại cách watch để tránh gọi API liên tục
@@ -533,10 +631,11 @@ const isValidImage = computed(() => {
                   <img
                     :src="isValidImage(item.image) ? item.image : placeholderImageUrl"
                     :alt="getGalleryTitle(item)"
-                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105"
+                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105 cursor-pointer"
                     :class="{ 'image-error': !isValidImage(item.image) }"
                     loading="lazy"
                     @error="handleImageError"
+                    @click="openLightbox(0, itemIndex)"
                   />
                 </figure>
               </div>
@@ -552,10 +651,11 @@ const isValidImage = computed(() => {
                   <img
                     :src="isValidImage(item.image) ? item.image : placeholderImageUrl"
                     :alt="getGalleryTitle(item)"
-                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105"
+                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105 cursor-pointer"
                     :class="{ 'image-error': !isValidImage(item.image) }"
                     loading="lazy"
                     @error="handleImageError"
+                    @click="openLightbox(1, itemIndex)"
                   />
                 </figure>
               </div>
@@ -571,15 +671,61 @@ const isValidImage = computed(() => {
                   <img
                     :src="isValidImage(item.image) ? item.image : placeholderImageUrl"
                     :alt="getGalleryTitle(item)"
-                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105"
+                    class="w-full h-full object-cover rounded-lg transition-transform duration-500 hover:scale-105 cursor-pointer"
                     :class="{ 'image-error': !isValidImage(item.image) }"
                     loading="lazy"
                     @error="handleImageError"
+                    @click="openLightbox(2, itemIndex)"
                   />
                 </figure>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Lightbox Modal -->
+    <div 
+      v-if="isLightboxOpen" 
+      class="lightbox-overlay" 
+      @click="closeLightbox"
+      @touchstart="handleTouchStart"
+      @touchend="handleTouchEnd"
+    >
+      <div class="lightbox-container" @click.stop>
+        <!-- Close button -->
+        <button class="lightbox-close-btn" @click="closeLightbox">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        
+        <!-- Navigation buttons -->
+        <button class="lightbox-nav-btn lightbox-prev-btn" @click.stop="showPreviousImage">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-10 w-10">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        
+        <button class="lightbox-nav-btn lightbox-next-btn" @click.stop="showNextImage">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-10 w-10">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+        
+        <!-- Image container -->
+        <div class="lightbox-image-container">
+          <img 
+            v-if="allGalleryItems.length > 0"
+            :src="isValidImage(allGalleryItems[lightboxIndex].image) ? 
+              allGalleryItems[lightboxIndex].image : placeholderImageUrl"
+            :alt="getGalleryTitle(allGalleryItems[lightboxIndex])"
+            class="lightbox-image"
+          />
+          
+     
         </div>
       </div>
     </div>
@@ -696,6 +842,118 @@ const isValidImage = computed(() => {
   background-color: theme('colors.gray.100');
 }
 
+/* Lightbox Styles */
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.lightbox-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-image-container {
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: calc(100vh - 150px);
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-caption {
+  margin-top: 16px;
+  color: white;
+  text-align: center;
+  width: 100%;
+  padding: 0 16px;
+}
+
+.lightbox-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.lightbox-description {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.lightbox-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.lightbox-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.lightbox-prev-btn {
+  left: 16px;
+}
+
+.lightbox-next-btn {
+  right: 16px;
+}
+
+.lightbox-nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
 @media (prefers-color-scheme: dark) {
   .nav-button {
     background-color: rgb(31 41 55 / 0.8);
@@ -757,6 +1015,16 @@ const isValidImage = computed(() => {
     width: 20px;
     height: 20px;
   }
+  
+  .lightbox-nav-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .lightbox-nav-btn svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -788,6 +1056,28 @@ const isValidImage = computed(() => {
   .nav-button svg {
     width: 16px;
     height: 16px;
+  }
+  
+  .lightbox-caption {
+    margin-top: 8px;
+  }
+  
+  .lightbox-title {
+    font-size: 1rem;
+  }
+  
+  .lightbox-description {
+    font-size: 0.875rem;
+  }
+  
+  .lightbox-nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .lightbox-nav-btn svg {
+    width: 20px;
+    height: 20px;
   }
 }
 </style> 
