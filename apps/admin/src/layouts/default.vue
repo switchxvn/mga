@@ -26,6 +26,8 @@ import { useRoute, useRouter } from 'vue-router'
 // @ts-ignore
 import { useColorMode, useHead, navigateTo, useNuxtApp } from '#imports'
 import { useTrpc } from "@/composables/useTrpc"
+import { useI18n } from 'vue-i18n'
+import SidebarNavigation from '@/components/common/SidebarNavigation.vue'
 
 // Define interfaces for menu items
 interface MenuItem {
@@ -68,6 +70,7 @@ const route = useRoute()
 const router = useRouter()
 const currentPath = ref(route.path)
 const trpc = useTrpc()
+const { t } = useI18n()
 
 // Try to get injected page title from child components
 const injectedTitle = inject('pageTitle', ref(''))
@@ -581,6 +584,7 @@ const expandActiveMenus = () => {
   
   findAndExpandActiveMenu(processedItems);
 };
+
 </script>
 
 <template>
@@ -651,132 +655,138 @@ const expandActiveMenus = () => {
             </div>
             
             <!-- Loaded menu items -->
-            <template v-else v-for="(item, i) in navigation" :key="i">
-              <!-- Single Item (no children) -->
-              <template v-if="!item.children || item.children.length === 0">
-                <!-- Link if has path -->
-                <NuxtLink 
-                  v-if="item.to" 
-                  :to="item.to" 
-                  class="flex items-center px-4 py-2.5 text-sm font-medium transition-colors"
-                  :class="[
-                    isActive(item.to) 
-                      ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
-                  ]"
-                >
-                  <component 
-                    :is="item.icon" 
-                    class="mr-3 h-5 w-5" 
-                    :class="isActive(item.to) ? 'text-primary-600 dark:text-primary-400' : ''"
-                  />
-                  {{ item.label }}
-                </NuxtLink>
+            <template v-else>
+              <!-- API-driven menu items -->
+              <template v-for="(item, i) in navigation" :key="i">
+                <!-- Single Item (no children) -->
+                <template v-if="!item.children || item.children.length === 0">
+                  <!-- Link if has path -->
+                  <NuxtLink 
+                    v-if="item.to" 
+                    :to="item.to" 
+                    class="flex items-center px-4 py-2.5 text-sm font-medium transition-colors"
+                    :class="[
+                      isActive(item.to) 
+                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                    ]"
+                  >
+                    <component 
+                      :is="item.icon" 
+                      class="mr-3 h-5 w-5" 
+                      :class="isActive(item.to) ? 'text-primary-600 dark:text-primary-400' : ''"
+                    />
+                    {{ item.label }}
+                  </NuxtLink>
+                  
+                  <!-- Non-link if no path -->
+                  <div 
+                    v-else
+                    class="flex items-center px-4 py-2.5 text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
+                  >
+                    <component 
+                      :is="item.icon" 
+                      class="mr-3 h-5 w-5"
+                    />
+                    {{ item.label }}
+                  </div>
+                </template>
                 
-                <!-- Non-link if no path -->
-                <div 
-                  v-else
-                  class="flex items-center px-4 py-2.5 text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
-                >
-                  <component 
-                    :is="item.icon" 
-                    class="mr-3 h-5 w-5"
-                  />
-                  {{ item.label }}
+                <!-- Menu with children -->
+                <div v-else class="mb-1">
+                  <div 
+                    class="flex items-center justify-between px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                    @click="() => { if (item.isOpen) item.isOpen.value = !item.isOpen.value }"
+                  >
+                    <div class="flex items-center">
+                      <component :is="item.icon" class="mr-3 h-5 w-5" />
+                      {{ item.label }}
+                    </div>
+                    <ChevronDown 
+                      class="h-4 w-4 transition-transform" 
+                      :class="{ 'transform rotate-180': item.isOpen?.value }"
+                    />
+                  </div>
+                  
+                  <!-- Submenu -->
+                  <div v-if="item.isOpen && item.isOpen.value" class="pl-4 mt-1">
+                    <template v-for="(child, j) in item.children" :key="j">
+                      <!-- Link if has path -->
+                      <NuxtLink 
+                        v-if="child.to"
+                        :to="child.to" 
+                        class="flex items-center px-4 py-2 text-sm transition-colors rounded-md"
+                        :class="[
+                          isActive(child.to) 
+                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                        ]"
+                      >
+                        <component 
+                          :is="child.icon" 
+                          class="mr-3 h-4 w-4" 
+                          :class="isActive(child.to) ? 'text-primary-600 dark:text-primary-400' : ''"
+                        />
+                        {{ child.label }}
+                      </NuxtLink>
+                      
+                      <!-- Child item with its own children (3rd level) -->
+                      <div v-else-if="child.children && child.children.length > 0" class="mb-1">
+                        <div 
+                          class="flex items-center justify-between px-4 py-2 text-sm transition-colors rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
+                          @click="toggleMenu(child)"
+                        >
+                          <div class="flex items-center">
+                            <component 
+                              :is="child.icon" 
+                              class="mr-3 h-4 w-4"
+                            />
+                            {{ child.label }}
+                          </div>
+                          <ChevronDown 
+                            class="h-3 w-3 transition-transform" 
+                            :class="{ 'transform rotate-180': child.isOpen?.value }"
+                          />
+                        </div>
+                        
+                        <!-- 3rd level items -->
+                        <div v-if="child.isOpen && child.isOpen.value" class="pl-4 mt-1">
+                          <template v-for="(grandchild, k) in child.children" :key="k">
+                            <NuxtLink 
+                              v-if="grandchild.to"
+                              :to="grandchild.to" 
+                              class="flex items-center px-4 py-1.5 text-xs transition-colors rounded-md"
+                              :class="[
+                                isActive(grandchild.to) 
+                                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                              ]"
+                            >
+                              <span class="w-1.5 h-1.5 mr-2 rounded-full bg-current"></span>
+                              {{ grandchild.label }}
+                            </NuxtLink>
+                          </template>
+                        </div>
+                      </div>
+                      
+                      <!-- Non-link if no path and no children -->
+                      <div 
+                        v-else
+                        class="flex items-center px-4 py-2 text-sm transition-colors rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
+                      >
+                        <component 
+                          :is="child.icon" 
+                          class="mr-3 h-4 w-4"
+                        />
+                        {{ child.label }}
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </template>
               
-              <!-- Menu with children -->
-              <div v-else class="mb-1">
-                <div 
-                  class="flex items-center justify-between px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                  @click="() => { if (item.isOpen) item.isOpen.value = !item.isOpen.value }"
-                >
-                  <div class="flex items-center">
-                    <component :is="item.icon" class="mr-3 h-5 w-5" />
-                    {{ item.label }}
-                  </div>
-                  <ChevronDown 
-                    class="h-4 w-4 transition-transform" 
-                    :class="{ 'transform rotate-180': item.isOpen?.value }"
-                  />
-                </div>
-                
-                <!-- Submenu -->
-                <div v-if="item.isOpen && item.isOpen.value" class="pl-4 mt-1">
-                  <template v-for="(child, j) in item.children" :key="j">
-                    <!-- Link if has path -->
-                    <NuxtLink 
-                      v-if="child.to"
-                      :to="child.to" 
-                      class="flex items-center px-4 py-2 text-sm transition-colors rounded-md"
-                      :class="[
-                        isActive(child.to) 
-                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
-                      ]"
-                    >
-                      <component 
-                        :is="child.icon" 
-                        class="mr-3 h-4 w-4" 
-                        :class="isActive(child.to) ? 'text-primary-600 dark:text-primary-400' : ''"
-                      />
-                      {{ child.label }}
-                    </NuxtLink>
-                    
-                    <!-- Child item with its own children (3rd level) -->
-                    <div v-else-if="child.children && child.children.length > 0" class="mb-1">
-                      <div 
-                        class="flex items-center justify-between px-4 py-2 text-sm transition-colors rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
-                        @click="toggleMenu(child)"
-                      >
-                        <div class="flex items-center">
-                          <component 
-                            :is="child.icon" 
-                            class="mr-3 h-4 w-4"
-                          />
-                          {{ child.label }}
-                        </div>
-                        <ChevronDown 
-                          class="h-3 w-3 transition-transform" 
-                          :class="{ 'transform rotate-180': child.isOpen?.value }"
-                        />
-                      </div>
-                      
-                      <!-- 3rd level items -->
-                      <div v-if="child.isOpen && child.isOpen.value" class="pl-4 mt-1">
-                        <template v-for="(grandchild, k) in child.children" :key="k">
-                          <NuxtLink 
-                            v-if="grandchild.to"
-                            :to="grandchild.to" 
-                            class="flex items-center px-4 py-1.5 text-xs transition-colors rounded-md"
-                            :class="[
-                              isActive(grandchild.to) 
-                                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' 
-                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
-                            ]"
-                          >
-                            <span class="w-1.5 h-1.5 mr-2 rounded-full bg-current"></span>
-                            {{ grandchild.label }}
-                          </NuxtLink>
-                        </template>
-                      </div>
-                    </div>
-                    
-                    <!-- Non-link if no path and no children -->
-                    <div 
-                      v-else
-                      class="flex items-center px-4 py-2 text-sm transition-colors rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer"
-                    >
-                      <component 
-                        :is="child.icon" 
-                        class="mr-3 h-4 w-4"
-                      />
-                      {{ child.label }}
-                    </div>
-                  </template>
-                </div>
-              </div>
+              <!-- Manual Ticket Scanner Menu -->
+              <SidebarNavigation />
             </template>
           </nav>
         </div>
