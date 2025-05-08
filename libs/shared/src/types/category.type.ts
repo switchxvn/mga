@@ -1,5 +1,6 @@
 export enum CategoryType {
   NEWS = 'news',
   PRODUCT = 'product',
-  BOTH = 'both'
+  BOTH = 'both',
+  GALLERY = 'gallery'
 }

@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Gallery } from '../../entities/gallery.entity';
 import { GalleryTranslation } from '../../entities/gallery-translation.entity';
-import { CreateGalleryInput, UpdateGalleryInput, GalleryType } from '@ew/shared';
+import { CreateGalleryInput, UpdateGalleryInput } from '@ew/shared';
 import { Gallery as IGallery } from '@ew/shared';
+import { Category } from '../../../category/entities/category.entity';
 
 @Injectable()
 export class GalleryFrontendService {
@@ -35,7 +36,6 @@ export class GalleryFrontendService {
       image: gallery.image,
       isActive: gallery.isActive,
       sequence: gallery.sequence,
-      type: gallery.type,
       createdAt: gallery.createdAt,
       updatedAt: gallery.updatedAt,
       translations: gallery.translations?.map(t => ({
@@ -46,6 +46,10 @@ export class GalleryFrontendService {
         galleryId: t.galleryId,
         createdAt: t.createdAt,
         updatedAt: t.updatedAt
+      })) || [],
+      categories: gallery.categories?.map(category => ({
+        id: category.id,
+        name: undefined // Explicitly set name as undefined to match the interface
       })) || []
     };
   }
@@ -53,7 +57,7 @@ export class GalleryFrontendService {
   async findAll(): Promise<IGallery[]> {
     try {
       const galleries = await this.galleryRepository.find({
-        relations: ['translations'],
+        relations: ['translations', 'categories'],
         order: { sequence: 'ASC' }
       });
 
@@ -64,31 +68,28 @@ export class GalleryFrontendService {
     }
   }
 
-  async findByLocale(locale: string): Promise<IGallery[]> {
-    this.logger.debug(`Finding galleries for locale: ${locale}`);
+  async findByLocale(locale: string, categoryIds?: number[]): Promise<IGallery[]> {
+    this.logger.debug(`Finding galleries for locale: ${locale}${categoryIds ? ` and categories: ${categoryIds}` : ''}`);
 
     try {
-      const galleries = await this.galleryRepository.find({
-        where: { isActive: true },
-        relations: ['translations'],
-        order: { sequence: 'ASC' }
-      });
+      const queryBuilder = this.galleryRepository.createQueryBuilder('gallery')
+        .leftJoinAndSelect('gallery.translations', 'translations')
+        .leftJoinAndSelect('gallery.categories', 'categories')
+        .where('translations.locale = :locale', { locale })
+        .orderBy('gallery.sequence', 'ASC');
 
-      this.logger.debug(`Found ${galleries.length} active galleries before filtering by locale`);
+      // Filter by categories if provided
+      if (categoryIds && categoryIds.length > 0) {
+        queryBuilder.andWhere('categories.id IN (:...categoryIds)', { categoryIds });
+      }
 
-      // Filter galleries that have translations in the requested locale
-      const galleriesWithTranslations = galleries.filter(gallery => {
-        return gallery.translations?.some(translation => translation.locale === locale);
-      });
-
-      this.logger.debug(`Found ${galleriesWithTranslations.length} galleries with translations in locale ${locale}`);
+      const galleries = await queryBuilder.getMany();
+      this.logger.debug(`Found ${galleries.length} galleries with locale ${locale}${categoryIds ? ` and matching categories` : ''}`);
 
       // Format each gallery
-      const formattedGalleries = await Promise.all(
-        galleriesWithTranslations.map(gallery => this.formatGalleryResponse(gallery, locale))
+      return Promise.all(
+        galleries.map(gallery => this.formatGalleryResponse(gallery, locale))
       );
-
-      return formattedGalleries;
     } catch (error) {
       this.logger.error(`Error finding galleries by locale ${locale}:`, error);
       throw error;
@@ -99,7 +100,7 @@ export class GalleryFrontendService {
     try {
       const gallery = await this.galleryRepository.findOne({
         where: { id },
-        relations: ['translations']
+        relations: ['translations', 'categories']
       });
 
       if (!gallery) {
@@ -116,8 +117,7 @@ export class GalleryFrontendService {
   async findActive(): Promise<IGallery[]> {
     try {
       const galleries = await this.galleryRepository.find({
-        where: { isActive: true },
-        relations: ['translations'],
+        relations: ['translations', 'categories'],
         order: { sequence: 'ASC' }
       });
 
@@ -128,23 +128,27 @@ export class GalleryFrontendService {
     }
   }
 
-  async findActiveByLocale(locale: string): Promise<IGallery[]> {
-    this.logger.debug(`Finding active galleries for locale: ${locale}`);
+  async findActiveByLocale(locale: string, categoryIds?: number[]): Promise<IGallery[]> {
+    this.logger.debug(`Finding active galleries for locale: ${locale}${categoryIds ? ` and categories: ${categoryIds}` : ''}`);
 
     try {
-      const galleries = await this.galleryRepository.find({
-        where: { isActive: true },
-        relations: ['translations'],
-        order: { sequence: 'ASC' }
-      });
+      const queryBuilder = this.galleryRepository.createQueryBuilder('gallery')
+        .leftJoinAndSelect('gallery.translations', 'translations')
+        .leftJoinAndSelect('gallery.categories', 'categories')
+        .where('gallery.isActive = :isActive', { isActive: true })
+        .andWhere('translations.locale = :locale', { locale })
+        .orderBy('gallery.sequence', 'ASC');
 
-      // Filter galleries that have translations in the requested locale
-      const galleriesWithTranslations = galleries.filter(gallery => {
-        return gallery.translations?.some(translation => translation.locale === locale);
-      });
+      // Filter by categories if provided
+      if (categoryIds && categoryIds.length > 0) {
+        queryBuilder.andWhere('categories.id IN (:...categoryIds)', { categoryIds });
+      }
+
+      const galleries = await queryBuilder.getMany();
+      this.logger.debug(`Found ${galleries.length} active galleries with locale ${locale}${categoryIds ? ` and matching categories` : ''}`);
 
       return Promise.all(
-        galleriesWithTranslations.map(gallery => this.formatGalleryResponse(gallery, locale))
+        galleries.map(gallery => this.formatGalleryResponse(gallery, locale))
       );
     } catch (error) {
       this.logger.error(`Error finding active galleries by locale ${locale}:`, error);
@@ -157,7 +161,6 @@ export class GalleryFrontendService {
       // Create gallery entity with required fields
       const gallery = new Gallery();
       gallery.image = createGalleryInput.image;
-      gallery.type = createGalleryInput.type || GalleryType.COMMON;
       gallery.isActive = createGalleryInput.isActive ?? true;
       gallery.sequence = createGalleryInput.sequence ?? 0;
 
@@ -169,6 +172,13 @@ export class GalleryFrontendService {
         galleryTranslation.description = translation.description;
         return galleryTranslation;
       });
+
+      // If categoryIds are provided, add them to the gallery
+      if (createGalleryInput.categoryIds && createGalleryInput.categoryIds.length > 0) {
+        gallery.categories = createGalleryInput.categoryIds.map(id => ({ id } as Category));
+      } else {
+        gallery.categories = [];
+      }
 
       const savedGallery = await this.galleryRepository.save(gallery);
       return this.formatGalleryResponse(savedGallery);
@@ -182,7 +192,7 @@ export class GalleryFrontendService {
     try {
       const gallery = await this.galleryRepository.findOne({
         where: { id },
-        relations: ['translations']
+        relations: ['translations', 'categories']
       });
 
       if (!gallery) {
@@ -191,7 +201,6 @@ export class GalleryFrontendService {
 
       // Update gallery fields if provided
       if (updateGalleryInput.image !== undefined) gallery.image = updateGalleryInput.image;
-      if (updateGalleryInput.type !== undefined) gallery.type = updateGalleryInput.type;
       if (updateGalleryInput.isActive !== undefined) gallery.isActive = updateGalleryInput.isActive;
       if (updateGalleryInput.sequence !== undefined) gallery.sequence = updateGalleryInput.sequence;
 
@@ -208,6 +217,11 @@ export class GalleryFrontendService {
           galleryTranslation.description = translation.description;
           return galleryTranslation;
         });
+      }
+
+      // Update categories if provided
+      if (updateGalleryInput.categoryIds !== undefined) {
+        gallery.categories = updateGalleryInput.categoryIds.map(id => ({ id } as Category));
       }
 
       const updatedGallery = await this.galleryRepository.save(gallery);

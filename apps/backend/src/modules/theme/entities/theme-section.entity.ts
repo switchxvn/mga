@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Theme } from './theme.entity';
 
-// Define PageType enum locally for migrations
+// Define PageType enum locally for application code only
 export enum PageType {
   HOME_PAGE = 'home_page',
   NEWS_PAGE = 'news_page',
@@ -17,6 +17,7 @@ export enum PageType {
   ABOUT_PAGE = 'about_page',
   SERVICE_PAGE = 'service_page',
   CONTACT_PAGE = 'contact_page',
+  REVIEWS_PAGE = 'reviews_page',
   COMMON = 'common'
 }
 
@@ -40,8 +41,8 @@ export class ThemeSection {
   @Column({ type: 'int', default: 0 })
   order!: number;
 
-  @Column({ type: 'enum', enum: PageType, name: 'page_type', default: PageType.HOME_PAGE })
-  pageType!: PageType;
+  @Column({ name: 'page_type', type: 'varchar', length: 50, default: PageType.HOME_PAGE })
+  pageType!: string;
 
   @Column({ type: 'jsonb', default: {
     layout: '', // 'split-columns' | 'stacked-rows'

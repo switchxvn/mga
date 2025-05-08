@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AboutModule } from '../about/about.module';
 import { AuthModule } from '../auth/auth.module';
 import { CategoryModule } from '../category/category.module';
+import { CommentModule } from '../comment/comment.module';
 import { CommonModule } from '../common';
 import { ContactModule } from '../contact/contact.module';
 import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
@@ -20,9 +21,11 @@ import { PostModule } from '../post/post.module';
 import { PriceRequestModule } from '../price-request/price-request.module';
 import { ProductModule } from '../product/product.module';
 import { ProfileModule } from '../profile/profile.module';
+import { ReviewModule } from '../review/review.module';
 import { SeoModule } from '../seo/seo.module';
 import { ServiceModule } from '../service/service.module';
 import { SettingsModule } from '../settings/settings.module';
+import { SiteStatisticsModule } from '../site-statistics/site-statistics.module';
 import { ThemeModule } from '../theme/theme.module';
 import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
 import { UploadModule } from '../upload/upload.module';
@@ -81,6 +84,9 @@ import { DashboardModule } from '../dashboard/dashboard.module';
     FoodMenuModule,
     OrderModule,
     UploadModule,
+    CommentModule,
+    ReviewModule,
+    SiteStatisticsModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

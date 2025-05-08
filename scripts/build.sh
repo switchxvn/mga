@@ -96,17 +96,6 @@ echo "Pushing api image..."
 docker push $REGISTRY/$GITHUB_USERNAME/cable-car-api:$VERSION
 docker push $REGISTRY/$GITHUB_USERNAME/cable-car-api:latest
 
-# Build and push nginx
-echo "Building nginx image..."
-docker build --platform linux/amd64 \
-    -t $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:$VERSION \
-    -t $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest \
-    -f nginx/Dockerfile .
-
-echo "Pushing nginx image..."
-docker push $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:$VERSION
-docker push $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
-
 # Build and push admin
 echo "Building admin image..."
 docker build --platform linux/amd64 \
@@ -118,6 +107,17 @@ docker build --platform linux/amd64 \
 echo "Pushing admin image..."
 docker push $REGISTRY/$GITHUB_USERNAME/cable-car-admin:$VERSION
 docker push $REGISTRY/$GITHUB_USERNAME/cable-car-admin:latest
+
+# Build and push nginx
+echo "Building nginx image..."
+docker build --platform linux/amd64 \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:$VERSION \
+    -t $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest \
+    -f nginx/Dockerfile .
+
+echo "Pushing nginx image..."
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:$VERSION
+docker push $REGISTRY/$GITHUB_USERNAME/cable-car-nginx:latest
 
 echo "Build and push completed successfully!"
 echo "Version: $VERSION"

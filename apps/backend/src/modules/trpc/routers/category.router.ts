@@ -27,7 +27,7 @@ export const categoryRouter = router({
   // Thêm phương thức mới để lấy danh mục theo loại
   byType: publicProcedure
     .input(z.object({
-      type: z.enum(['news', 'product', 'both']),
+      type: z.enum(['news', 'product', 'both', 'gallery']),
       locale: z.string().default('vi')
     }))
     .query(async ({ input, ctx }) => {

@@ -108,22 +108,17 @@
         <div class="mb-8">
           <div class="flex flex-wrap gap-4 justify-center">
             <UButton
+              v-for="category in categories"
+              :key="category.id"
               variant="soft"
-              :color="galleryType === 'common' ? 'primary' : 'gray'"
-              @click="setGalleryType('common')"
+              :color="selectedCategoryId === category.id ? 'primary' : 'gray'"
+              @click="setSelectedCategory(category.id)"
               class="text-xl font-semibold uppercase tracking-wide"
             >
-              <Image class="w-6 h-6 mr-2" />
-              {{ t('gallery.commonGallery') }}
-            </UButton>
-            <UButton
-              variant="soft"
-              :color="galleryType === 'food' ? 'primary' : 'gray'"
-              @click="setGalleryType('food')"
-              class="text-xl font-semibold uppercase tracking-wide"
-            >
-              <Utensils class="w-6 h-6 mr-2" />
-              {{ t('gallery.foodGallery') }}
+              <Image v-if="category.name.toLowerCase().includes('common') || category.name.toLowerCase().includes('chung')" class="w-6 h-6 mr-2" />
+              <Utensils v-else-if="category.name.toLowerCase().includes('food') || category.name.toLowerCase().includes('thức ăn')" class="w-6 h-6 mr-2" />
+              <Route v-else class="w-6 h-6 mr-2" />
+              {{ category.name }}
             </UButton>
           </div>
         </div>
@@ -302,7 +297,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
-import { ChevronLeft, ChevronRight, Image, Utensils, PlayCircle } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, Image, Utensils, PlayCircle, Route } from 'lucide-vue-next';
 
 // Define SEO metadata
 useHead({
@@ -352,7 +347,8 @@ const isLoading = ref(false);
 const isVideoLoading = ref(false);
 const hasError = ref(false);
 const hasVideoError = ref(false);
-const galleryType = ref<'common' | 'food'>('common');
+const selectedCategoryId = ref<number | null>(null);
+const categories = ref<Array<{id: number, name: string}>>([]);
 
 // Refs for DOM elements
 const galleryContainer = ref<HTMLElement | null>(null);
@@ -530,9 +526,11 @@ const getRowItems = (rowIndex: number) => {
   }));
 };
 
-// Change gallery type
-const setGalleryType = (type: 'common' | 'food') => {
-  galleryType.value = type;
+// Change selected category
+const setSelectedCategory = (categoryId: number) => {
+  if (selectedCategoryId.value === categoryId) return;
+  
+  selectedCategoryId.value = categoryId;
   fetchGalleries();
 };
 
@@ -585,7 +583,7 @@ const fetchGalleries = async () => {
     hasError.value = false;
     const result = await trpc.gallery.active.query({ 
       locale: locale.value,
-      type: galleryType.value
+      categoryId: selectedCategoryId.value || undefined
     });
     galleries.value = result;
     
@@ -605,6 +603,41 @@ const fetchGalleries = async () => {
     hasError.value = true;
   } finally {
     isLoading.value = false;
+  }
+};
+
+// Lấy danh sách categories có type là gallery
+const fetchCategories = async () => {
+  try {
+    const result = await trpc.category.byType.query({ 
+      type: 'gallery',
+      locale: locale.value 
+    });
+
+    console.log('Fetched categories:', result);
+
+    categories.value = result.map(cat => ({
+      id: cat.id,
+      name: cat.translations?.find(t => t.locale === locale.value)?.name || 'Unknown'
+    }));
+
+    // Nếu có ít nhất một category, chọn category đầu tiên và fetch galleries
+    if (categories.value.length > 0) {
+      selectedCategoryId.value = categories.value[0].id;
+      fetchGalleries();
+    } else {
+      // Trường hợp không có category
+      console.log('No categories found');
+      galleries.value = [];
+    }
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    useToast().add({
+      id: 'category-error',
+      title: t('common.error'),
+      description: t('category.fetchError'),
+      color: 'red'
+    });
   }
 };
 
@@ -634,7 +667,7 @@ const fetchVideos = async () => {
 let resizeObserver: ResizeObserver;
 
 onMounted(() => {
-  fetchGalleries();
+  fetchCategories();
   fetchVideos();
   
   if (galleryContainer.value) {

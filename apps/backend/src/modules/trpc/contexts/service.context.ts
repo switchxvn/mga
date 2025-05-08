@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ITrpcServices } from '../interfaces/trpc-services.interface';
 import { UserService } from '../../user/services/user.service';
-import { UserAdminService } from '../../user/admin/services/user-admin.service';
+import { UserAdminService } from '../../user/services/admin/user-admin.service';
 import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../../post/admin/services/post-admin.service';
 import { ProfileService } from '../../profile/services/profile.service';
@@ -30,6 +30,7 @@ import { HeroSliderService } from '../../hero/admin/services/hero-slider.service
 import { HeroVideoService } from '../../hero/services/hero-video.service';
 import { ThemeAdminService } from '../../theme/admin/services/theme-admin.service';
 import { ThemeFrontendService } from '../../theme/frontend/services/theme-frontend.service';
+import { ThemeSectionAdminService } from '../../theme/admin/services/theme-section-admin.service';
 import { ComponentStyleConfigAdminService } from '../../theme/admin/services/component-style-config-admin.service';
 import { ComponentStyleConfigFrontendService } from '../../theme/frontend/services/component-style-config-frontend.service';
 import { LanguageFrontendService } from '../../language/frontend/services/language-frontend.service';
@@ -43,6 +44,7 @@ import { CustomerLogoAdminService } from '../../customer-logo/admin/services/cus
 import { ContactAdminService } from '../../contact/admin/services/contact-admin.service';
 import { ContactFrontendService } from '../../contact/frontend/services/contact-frontend.service';
 import { GalleryFrontendService } from '../../gallery/frontend/services/gallery-frontend.service';
+import { GalleryAdminService } from '../../gallery/admin/services/gallery-admin.service';
 import { ContactSectionAdminService } from '../../contact/admin/services/contact-section-admin.service';
 import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
 import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
@@ -60,6 +62,13 @@ import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/s
 import { SettingsService } from '../../settings/services/settings.service';
 import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
 import { ProductStockHistoryService } from '../../product/services/product-stock-history.service';
+import { CommentAdminService } from '../../comment/admin/services/comment-admin.service';
+import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
+import { AdminReviewService } from '../../review/admin/services/admin-review.service';
+import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
+import { SiteStatisticsAdminService } from '../../site-statistics/admin/services/site-statistics-admin.service';
+import { SiteStatisticsFrontendService } from '../../site-statistics/frontend/services/site-statistics-frontend.service';
+import { MailService } from '../../mail/services/mail.service';
 
 @Injectable()
 export class ServiceContext {
@@ -88,7 +97,6 @@ export class ServiceContext {
     private readonly crossSellService: CrossSellService,
     private readonly productSpecificationService: ProductSpecificationService,
     private readonly productComboService: ProductComboService,
-    private readonly priceRequestService: PriceRequestService,
     private readonly featureFlagsAdminService: FeatureFlagsAdminService,
     private readonly featureFlagsFrontendService: FeatureFlagsFrontendService,
     private readonly heroService: HeroService,
@@ -96,6 +104,7 @@ export class ServiceContext {
     private readonly heroVideoService: HeroVideoService,
     private readonly themeAdminService: ThemeAdminService,
     private readonly themeFrontendService: ThemeFrontendService,
+    private readonly themeSectionAdminService: ThemeSectionAdminService,
     private readonly componentStyleConfigAdminService: ComponentStyleConfigAdminService,
     private readonly componentStyleConfigFrontendService: ComponentStyleConfigFrontendService,
     private readonly languageFrontendService: LanguageFrontendService,
@@ -109,6 +118,7 @@ export class ServiceContext {
     private readonly contactAdminService: ContactAdminService,
     private readonly contactFrontendService: ContactFrontendService,
     private readonly galleryFrontendService: GalleryFrontendService,
+    private readonly galleryAdminService: GalleryAdminService,
     private readonly contactSectionAdminService: ContactSectionAdminService,
     private readonly contactSectionFrontendService: ContactSectionFrontendService,
     private readonly ticketPricingSectionAdminService: TicketPricingSectionAdminService,
@@ -126,6 +136,15 @@ export class ServiceContext {
     private readonly settingsService: SettingsService,
     private readonly dashboardAdminService: DashboardAdminService,
     private readonly productStockHistoryService: ProductStockHistoryService,
+    private readonly commentAdminService: CommentAdminService,
+    private readonly commentFrontendService: CommentFrontendService,
+    private readonly adminReviewService: AdminReviewService,
+    private readonly frontendReviewService: FrontendReviewService,
+    private readonly siteStatisticsAdminService: SiteStatisticsAdminService,
+    private readonly siteStatisticsFrontendService: SiteStatisticsFrontendService,
+    private readonly mailService: MailService,
+    @Inject(forwardRef(() => PriceRequestService))
+    private readonly priceRequestService: PriceRequestService,
   ) {}
 
   public getServices(): ITrpcServices {
@@ -160,6 +179,7 @@ export class ServiceContext {
       heroVideoService: this.heroVideoService,
       themeAdminService: this.themeAdminService,
       themeFrontendService: this.themeFrontendService,
+      themeSectionAdminService: this.themeSectionAdminService,
       componentStyleConfigAdminService: this.componentStyleConfigAdminService,
       componentStyleConfigFrontendService: this.componentStyleConfigFrontendService,
       languageFrontendService: this.languageFrontendService,
@@ -173,6 +193,7 @@ export class ServiceContext {
       contactAdminService: this.contactAdminService,
       contactFrontendService: this.contactFrontendService,
       galleryFrontendService: this.galleryFrontendService,
+      galleryAdminService: this.galleryAdminService,
       contactSectionAdminService: this.contactSectionAdminService,
       contactSectionFrontendService: this.contactSectionFrontendService,
       ticketPricingSectionAdminService: this.ticketPricingSectionAdminService,
@@ -190,6 +211,75 @@ export class ServiceContext {
       settingsService: this.settingsService,
       dashboardAdminService: this.dashboardAdminService,
       productStockHistoryService: this.productStockHistoryService,
+      commentAdminService: this.commentAdminService,
+      commentService: this.commentFrontendService,
+      reviewAdminService: this.adminReviewService,
+      reviewService: this.frontendReviewService,
+      siteStatisticsAdmin: this.siteStatisticsAdminService,
+      siteStatisticsFrontend: this.siteStatisticsFrontendService,
+      mailService: this.mailService,
+      
+      // Grouped services by namespace
+      admin: {
+        review: this.adminReviewService,
+        comment: this.commentAdminService,
+        user: this.userAdminService,
+        post: this.postAdminService,
+        settings: this.settingsAdminService,
+        seo: this.seoAdminService,
+        footer: this.footerAdminService,
+        category: this.categoryAdminService,
+        service: this.serviceAdminService,
+        product: this.productAdminService,
+        featureFlags: this.featureFlagsAdminService,
+        theme: this.themeAdminService,
+        themeSection: this.themeSectionAdminService,
+        componentStyleConfig: this.componentStyleConfigAdminService,
+        language: this.languageAdminService,
+        about: this.aboutAdminService,
+        logo: this.logoAdminService,
+        customerLogo: this.customerLogoAdminService,
+        auth: this.authAdminService,
+        contact: this.contactAdminService,
+        contactSection: this.contactSectionAdminService,
+        ticketPricingSection: this.ticketPricingSectionAdminService,
+        foodMenu: this.foodMenuAdminService,
+        payment: this.paymentAdminService,
+        order: this.orderAdminService,
+        upload: this.uploadAdminService,
+        orderTicketSection: this.orderTicketSectionAdminService,
+        dashboard: this.dashboardAdminService,
+        gallery: this.galleryAdminService,
+      },
+      
+      frontend: {
+        review: this.frontendReviewService,
+        comment: this.commentFrontendService,
+        post: this.postFrontendService,
+        settings: this.settingsFrontendService,
+        seo: this.seoFrontendService,
+        footer: this.footerFrontendService,
+        category: this.categoryFrontendService,
+        service: this.serviceFrontendService,
+        product: this.productFrontendService,
+        featureFlags: this.featureFlagsFrontendService,
+        theme: this.themeFrontendService,
+        componentStyleConfig: this.componentStyleConfigFrontendService,
+        language: this.languageFrontendService,
+        about: this.aboutFrontendService,
+        logo: this.logoFrontendService,
+        customerLogo: this.customerLogoFrontendService,
+        auth: this.authFrontendService,
+        contact: this.contactFrontendService,
+        contactSection: this.contactSectionFrontendService,
+        ticketPricingSection: this.ticketPricingSectionFrontendService,
+        foodMenu: this.foodMenuFrontendService,
+        payment: this.paymentFrontendService,
+        order: this.orderFrontendService,
+        upload: this.uploadFrontendService,
+        orderTicketSection: this.orderTicketSectionFrontendService,
+        gallery: this.galleryFrontendService,
+      },
     };
   }
 } 

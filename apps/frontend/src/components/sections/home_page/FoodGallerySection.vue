@@ -24,145 +24,168 @@
         </div>
       </div>
 
-      <!-- Mobile Swiper View -->
-      <div class="md:hidden">
-        <Swiper v-if="galleries?.length"
-          :modules="[Pagination, Navigation, Autoplay]"
-          :slides-per-view="2"
-          :space-between="16"
-          :pagination="{ 
-            el: '.food-swiper-pagination',
-            clickable: true,
-            type: 'bullets'
-          }"
-          :autoplay="{
-            delay: 5000,
-            disableOnInteraction: false,
-            pauseOnMouseEnter: true
-          }"
-          class="pb-12"
-        >
-          <SwiperSlide v-for="(item, index) in galleries" :key="item.id">
-            <div
-              class="relative group cursor-pointer"
-              :class="[settings.card.rounded, settings.card.shadow]"
-              @click="openGallery(index)"
-            >
-              <!-- Image Container -->
-              <div class="relative overflow-hidden" :class="settings.card.rounded">
-                <NuxtImg
-                  :src="item.image"
-                  :alt="item.translations?.[0]?.title || ''"
-                  class="w-full h-full object-cover transition-transform duration-300"
-                  :class="settings.card.animation"
-                  :style="{
-                    aspectRatio: settings.card.aspectRatio
-                  }"
-                  loading="lazy"
-                />
-                
-                <!-- Overlay -->
-                <div v-if="settings.card.overlay.show"
-                  class="absolute inset-0 transition-all duration-300 transform translate-y-full group-hover:translate-y-0"
-                  :class="[
-                    settings.card.overlay.opacity,
-                    'group-hover:opacity-100',
-                    settings.card.overlay.content.position === 'bottom' ? 'bg-gradient-to-t from-black/60 to-transparent' : ''
-                  ]"
-                >
-                  <div class="absolute bottom-0 left-0 right-0"
-                    :class="settings.card.overlay.content.padding"
+      <!-- Empty State - No Data -->
+      <div v-if="!isLoading && (!galleries || galleries.length === 0)" class="py-8 text-center">
+        <div class="inline-flex justify-center items-center p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+          <UtensilsCrossed class="text-gray-400 dark:text-gray-500 w-12 h-12" />
+        </div>
+        <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          {{ $t('gallery.noImagesFound') }}
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+          {{ $t('gallery.noImagesDescription') }}
+        </p>
+      </div>
+
+      <!-- Loading State -->
+      <div v-else-if="isLoading" class="flex justify-center items-center py-12">
+        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
+      </div>
+
+      <!-- Content - Has Data -->
+      <template v-else>
+        <!-- Mobile Swiper View -->
+        <div class="md:hidden">
+          <Swiper v-if="galleries?.length"
+            :modules="[Pagination, Navigation, Autoplay]"
+            :slides-per-view="2"
+            :space-between="16"
+            :pagination="{ 
+              el: '.food-swiper-pagination',
+              clickable: true,
+              type: 'bullets'
+            }"
+            :autoplay="{
+              delay: 5000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true
+            }"
+            class="pb-12"
+          >
+            <SwiperSlide v-for="(item, index) in galleries" :key="item.id">
+              <div
+                class="relative group cursor-pointer"
+                :class="[settings.card.rounded, settings.card.shadow]"
+                @click="openGallery(index)"
+              >
+                <!-- Image Container -->
+                <div class="relative overflow-hidden" :class="settings.card.rounded">
+                  <NuxtImg
+                    :src="item.image"
+                    :alt="item.translations?.[0]?.title || ''"
+                    class="w-full h-full object-cover transition-transform duration-300"
+                    :class="settings.card.animation"
+                    :style="{
+                      aspectRatio: settings.card.aspectRatio
+                    }"
+                    loading="lazy"
+                    @error="handleImageError"
+                  />
+                  
+                  <!-- Overlay -->
+                  <div v-if="settings.card.overlay.show"
+                    class="absolute inset-0 transition-all duration-300 transform translate-y-full group-hover:translate-y-0"
+                    :class="[
+                      settings.card.overlay.opacity,
+                      'group-hover:opacity-100',
+                      settings.card.overlay.content.position === 'bottom' ? 'bg-gradient-to-t from-black/60 to-transparent' : ''
+                    ]"
                   >
-                    <h3 class="text-white font-semibold mb-1"
-                      :class="settings.card.overlay.content.titleSize"
+                    <div class="absolute bottom-0 left-0 right-0"
+                      :class="settings.card.overlay.content.padding"
                     >
-                      {{ item.translations?.[0]?.title }}
-                    </h3>
-                    <p v-if="item.translations?.[0]?.description"
-                      class="text-white/90"
-                      :class="settings.card.overlay.content.descriptionSize"
-                    >
-                      {{ item.translations?.[0]?.description }}
-                    </p>
+                      <h3 class="text-white font-semibold mb-1"
+                        :class="settings.card.overlay.content.titleSize"
+                      >
+                        {{ item.translations?.[0]?.title }}
+                      </h3>
+                      <p v-if="item.translations?.[0]?.description"
+                        class="text-white/90"
+                        :class="settings.card.overlay.content.descriptionSize"
+                      >
+                        {{ item.translations?.[0]?.description }}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </SwiperSlide>
+            </SwiperSlide>
 
-          <!-- Pagination -->
-          <div class="food-swiper-pagination flex justify-center w-full mt-6"></div>
-        </Swiper>
-      </div>
+            <!-- Pagination -->
+            <div class="food-swiper-pagination flex justify-center w-full mt-6"></div>
+          </Swiper>
+        </div>
 
-      <!-- Desktop Grid View -->
-      <div v-if="galleries?.length" class="hidden md:grid gap-6"
-        :class="{
-          'grid-cols-1': currentColumns === 1,
-          'grid-cols-2': currentColumns === 2,
-          'grid-cols-3': currentColumns === 3,
-          'grid-cols-4': currentColumns === 4
-        }"
-      >
-        <div
-          v-for="(item, index) in galleries"
-          :key="item.id"
-          class="relative group cursor-pointer"
-          :class="[settings.card.rounded, settings.card.shadow]"
-          @click="openGallery(index)"
+        <!-- Desktop Grid View -->
+        <div v-if="galleries?.length" class="hidden md:grid gap-6"
+          :class="{
+            'grid-cols-1': currentColumns === 1,
+            'grid-cols-2': currentColumns === 2,
+            'grid-cols-3': currentColumns === 3,
+            'grid-cols-4': currentColumns === 4
+          }"
         >
-          <!-- Image Container -->
-          <div class="relative overflow-hidden" :class="settings.card.rounded">
-            <NuxtImg
-              :src="item.image"
-              :alt="item.translations?.[0]?.title || ''"
-              class="w-full h-full object-cover transition-transform duration-300"
-              :class="settings.card.animation"
-              :style="{
-                aspectRatio: settings.card.aspectRatio
-              }"
-              loading="lazy"
-            />
-            
-            <!-- Overlay -->
-            <div v-if="settings.card.overlay.show"
-              class="absolute inset-0 transition-all duration-300 transform translate-y-full group-hover:translate-y-0"
-              :class="[
-                settings.card.overlay.opacity,
-                'group-hover:opacity-100',
-                settings.card.overlay.content.position === 'bottom' ? 'bg-gradient-to-t from-black/60 to-transparent' : ''
-              ]"
-            >
-              <div class="absolute bottom-0 left-0 right-0"
-                :class="settings.card.overlay.content.padding"
+          <div
+            v-for="(item, index) in galleries"
+            :key="item.id"
+            class="relative group cursor-pointer"
+            :class="[settings.card.rounded, settings.card.shadow]"
+            @click="openGallery(index)"
+          >
+            <!-- Image Container -->
+            <div class="relative overflow-hidden" :class="settings.card.rounded">
+              <NuxtImg
+                :src="item.image"
+                :alt="item.translations?.[0]?.title || ''"
+                class="w-full h-full object-cover transition-transform duration-300"
+                :class="settings.card.animation"
+                :style="{
+                  aspectRatio: settings.card.aspectRatio
+                }"
+                loading="lazy"
+                @error="handleImageError"
+              />
+              
+              <!-- Overlay -->
+              <div v-if="settings.card.overlay.show"
+                class="absolute inset-0 transition-all duration-300 transform translate-y-full group-hover:translate-y-0"
+                :class="[
+                  settings.card.overlay.opacity,
+                  'group-hover:opacity-100',
+                  settings.card.overlay.content.position === 'bottom' ? 'bg-gradient-to-t from-black/60 to-transparent' : ''
+                ]"
               >
-                <h3 class="text-white font-semibold mb-1"
-                  :class="settings.card.overlay.content.titleSize"
+                <div class="absolute bottom-0 left-0 right-0"
+                  :class="settings.card.overlay.content.padding"
                 >
-                  {{ item.translations?.[0]?.title }}
-                </h3>
-                <p v-if="item.translations?.[0]?.description"
-                  class="text-white/90"
-                  :class="settings.card.overlay.content.descriptionSize"
-                >
-                  {{ item.translations?.[0]?.description }}
-                </p>
+                  <h3 class="text-white font-semibold mb-1"
+                    :class="settings.card.overlay.content.titleSize"
+                  >
+                    {{ item.translations?.[0]?.title }}
+                  </h3>
+                  <p v-if="item.translations?.[0]?.description"
+                    class="text-white/90"
+                    :class="settings.card.overlay.content.descriptionSize"
+                  >
+                    {{ item.translations?.[0]?.description }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Load More Button -->
-      <div v-if="settings.loadMoreButton.show && hasMoreItems" class="text-center mt-8">
-        <UButton
-          variant="solid"
-          color="primary"
-          :label="settings.loadMoreButton.text"
-          @click="loadMore"
-          :loading="isLoading"
-        />
-      </div>
+        <!-- Load More Button -->
+        <div v-if="settings.loadMoreButton.show && hasMoreItems" class="text-center mt-8">
+          <UButton
+            variant="solid"
+            color="primary"
+            :label="settings.loadMoreButton.text"
+            @click="loadMore"
+            :loading="isLoading"
+          />
+        </div>
+      </template>
     </div>
 
     <!-- PhotoSwipe Root Element -->
@@ -210,6 +233,7 @@ import PhotoSwipe from 'photoswipe';
 import type { PhotoSwipeOptions } from 'photoswipe';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Pagination, Navigation, Autoplay } from 'swiper/modules';
+import { UtensilsCrossed } from 'lucide-vue-next';
 // CSS is already imported globally in nuxt.config.ts
 
 interface GalleryTranslation {
@@ -233,6 +257,7 @@ interface ThemeSection {
   type: string;
   title: string;
   settings?: Record<string, any>;
+  categoryIds?: number[];
 }
 
 const props = defineProps<{
@@ -264,6 +289,7 @@ const defaultSettings = {
     style: 'primary'
   },
   useUppercase: true,
+  categoryIds: [],
   card: {
     aspectRatio: '1/1',
     rounded: 'rounded-xl',
@@ -387,24 +413,43 @@ const fetchGalleries = async () => {
   try {
     isLoading.value = true;
     const { locale } = useI18n();
+    
+    // Get categoryIds from section settings or defaults
+    const categoryIds = props.section?.categoryIds || 
+                       settings.value.categoryIds || 
+                       (props.section?.settings?.categoryIds || []);
+    
+    // Call active galleries endpoint with categoryIds
     const result = await trpc.gallery.active.query({ 
       locale: locale.value,
-      type: 'food'
+      categoryIds: categoryIds.length > 0 ? categoryIds : undefined
     });
-    // Filter to only include food galleries and map to match Gallery interface
-    galleries.value = result.map(item => ({
-      id: item.id,
-      image: item.image,
-      isActive: item.isActive,
-      sequence: item.sequence,
-      type: 'food',
-      translations: item.translations.map(t => ({
-        id: t.id,
-        locale: t.locale,
-        title: t.title,
-        description: t.description
-      }))
-    }));
+    
+    // Map API response to Gallery interface
+    // Filter by type if available, otherwise include all galleries returned from the API
+    const foodGalleries = result
+      .filter(item => {
+        // Nếu không có type hoặc giá trị khác undefined, giả định tất cả là hợp lệ
+        // Trong trường hợp có type, chỉ lấy các gallery có type là 'food'
+        if (typeof item.type === 'undefined') return true;
+        return item.type === 'food';
+      })
+      .map(item => ({
+        id: item.id,
+        image: item.image,
+        isActive: item.isActive,
+        sequence: item.sequence,
+        // Nếu không có trường type trong API response, mặc định là 'food' cho component này
+        type: item.type || 'food',
+        translations: item.translations.map(t => ({
+          id: t.id,
+          locale: t.locale,
+          title: t.title,
+          description: t.description
+        }))
+      }));
+      
+    galleries.value = foodGalleries;
     totalItems.value = galleries.value.length;
   } catch (error) {
     console.error('Error fetching galleries:', error);
@@ -432,6 +477,12 @@ const loadMore = async () => {
 onMounted(() => {
   fetchGalleries();
 });
+
+// Handle image error
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement;
+  img.src = '/images/placeholder-image.jpg'; // Fallback image
+};
 </script>
 
 <style lang="scss" scoped>

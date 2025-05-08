@@ -1,5 +1,5 @@
 import { UserService } from '../../user/services/user.service';
-import { UserAdminService } from '../../user/admin/services/user-admin.service';
+import { UserAdminService } from '../../user/services/admin/user-admin.service';
 import { PostFrontendService } from '../../post/frontend/services/post-frontend.service';
 import { PostAdminService } from '../../post/admin/services/post-admin.service';
 import { ProfileService } from '../../profile/services/profile.service';
@@ -27,6 +27,7 @@ import { HeroSliderService } from '../../hero/admin/services/hero-slider.service
 import { HeroVideoService } from '../../hero/services/hero-video.service';
 import { ThemeAdminService } from '../../theme/admin/services/theme-admin.service';
 import { ThemeFrontendService } from '../../theme/frontend/services/theme-frontend.service';
+import { ThemeSectionAdminService } from '../../theme/admin/services/theme-section-admin.service';
 import { ComponentStyleConfigAdminService } from '../../theme/admin/services/component-style-config-admin.service';
 import { ComponentStyleConfigFrontendService } from '../../theme/frontend/services/component-style-config-frontend.service';
 import { LanguageFrontendService } from '../../language/frontend/services/language-frontend.service';
@@ -42,6 +43,7 @@ import { AuthAdminService } from '../../auth/admin/services/auth-admin.service';
 import { ContactAdminService } from '../../contact/admin/services/contact-admin.service';
 import { ContactFrontendService } from '../../contact/frontend/services/contact-frontend.service';
 import { GalleryFrontendService } from '../../gallery/frontend/services/gallery-frontend.service';
+import { GalleryAdminService } from '../../gallery/admin/services/gallery-admin.service';
 import { ContactSectionAdminService } from '../../contact/admin/services/contact-section-admin.service';
 import { ContactSectionFrontendService } from '../../contact/frontend/services/contact-section-frontend.service';
 import { TicketPricingSectionAdminService } from '../../ticket-pricing/admin/services/ticket-pricing-section-admin.service';
@@ -58,6 +60,12 @@ import { UploadFrontendService } from '../../upload/frontend/services/upload-fro
 import { UploadAdminService } from '../../upload/admin/services/upload-admin.service';
 import { SettingsService } from '../../settings/services/settings.service';
 import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
+import { CommentAdminService } from '../../comment/admin/services/comment-admin.service';
+import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
+import { AdminReviewService } from '../../review/admin/services/admin-review.service';
+import { FrontendReviewService } from '../../review/frontend/services/frontend-review.service';
+import { ISiteStatisticsAdminService, ISiteStatisticsFrontendService } from '../../site-statistics/interfaces/site-statistics-services.interface';
+import { MailService } from '../../mail/services/mail.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -89,6 +97,7 @@ export interface ITrpcServices {
   heroVideoService: HeroVideoService;
   themeAdminService: ThemeAdminService;
   themeFrontendService: ThemeFrontendService;
+  themeSectionAdminService: ThemeSectionAdminService;
   componentStyleConfigAdminService: ComponentStyleConfigAdminService;
   componentStyleConfigFrontendService: ComponentStyleConfigFrontendService;
   languageFrontendService: LanguageFrontendService;
@@ -104,6 +113,7 @@ export interface ITrpcServices {
   contactAdminService: ContactAdminService;
   contactFrontendService: ContactFrontendService;
   galleryFrontendService: GalleryFrontendService;
+  galleryAdminService: GalleryAdminService;
   contactSectionAdminService: ContactSectionAdminService;
   contactSectionFrontendService: ContactSectionFrontendService;
   ticketPricingSectionAdminService: TicketPricingSectionAdminService;
@@ -120,4 +130,73 @@ export interface ITrpcServices {
   uploadAdminService: UploadAdminService;
   settingsService: SettingsService;
   dashboardAdminService: DashboardAdminService;
+  commentAdminService: CommentAdminService;
+  commentService: CommentFrontendService;
+  reviewAdminService: AdminReviewService;
+  reviewService: FrontendReviewService;
+  siteStatisticsAdmin: ISiteStatisticsAdminService;
+  siteStatisticsFrontend: ISiteStatisticsFrontendService;
+  mailService: MailService;
+  
+  // Grouped services
+  admin: {
+    review: AdminReviewService;
+    comment: CommentAdminService;
+    user: UserAdminService;
+    post: PostAdminService;
+    settings: SettingsAdminService;
+    seo: SeoAdminService;
+    footer: FooterAdminService;
+    category: CategoryAdminService;
+    service: ServiceAdminService;
+    product: ProductAdminService;
+    featureFlags: FeatureFlagsAdminService;
+    theme: ThemeAdminService;
+    themeSection: ThemeSectionAdminService;
+    componentStyleConfig: ComponentStyleConfigAdminService;
+    language: LanguageAdminService;
+    about: AboutAdminService;
+    logo: LogoAdminService;
+    customerLogo: CustomerLogoAdminService;
+    auth: AuthAdminService;
+    contact: ContactAdminService;
+    contactSection: ContactSectionAdminService;
+    ticketPricingSection: TicketPricingSectionAdminService;
+    foodMenu: FoodMenuAdminService;
+    payment: PaymentAdminService;
+    order: OrderAdminService;
+    upload: UploadAdminService;
+    orderTicketSection: OrderTicketSectionAdminService;
+    dashboard: DashboardAdminService;
+    gallery: GalleryAdminService;
+  };
+  
+  frontend: {
+    review: FrontendReviewService;
+    comment: CommentFrontendService;
+    post: PostFrontendService;
+    settings: SettingsFrontendService;
+    seo: SeoFrontendService;
+    footer: FooterFrontendService;
+    category: CategoryFrontendService;
+    service: ServiceFrontendService;
+    product: ProductFrontendService;
+    featureFlags: FeatureFlagsFrontendService;
+    theme: ThemeFrontendService;
+    componentStyleConfig: ComponentStyleConfigFrontendService;
+    language: LanguageFrontendService;
+    about: AboutFrontendService;
+    logo: LogoFrontendService;
+    customerLogo: CustomerLogoFrontendService;
+    auth: AuthFrontendService;
+    contact: ContactFrontendService;
+    contactSection: ContactSectionFrontendService;
+    ticketPricingSection: TicketPricingSectionFrontendService;
+    foodMenu: FoodMenuFrontendService;
+    payment: PaymentFrontendService;
+    order: OrderFrontendService;
+    upload: UploadFrontendService;
+    orderTicketSection: OrderTicketSectionFrontendService;
+    gallery: GalleryFrontendService;
+  };
 } 

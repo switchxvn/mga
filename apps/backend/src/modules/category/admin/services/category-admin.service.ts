@@ -25,12 +25,14 @@ export interface CategoryTranslationData {
 export interface CreateCategoryData {
   type: CategoryType;
   active: boolean;
+  icon?: string | null;
   translations: CategoryTranslationData[];
 }
 
 export interface UpdateCategoryData {
   type?: CategoryType;
   active?: boolean;
+  icon?: string | null;
   translations?: CategoryTranslationData[];
 }
 
@@ -141,6 +143,7 @@ export class CategoryAdminService {
     const category = this.categoryRepository.create({
       type: data.type,
       active: data.active,
+      icon: data.icon,
       translations: data.translations.map(translation => {
         const newTranslation = new CategoryTranslation();
         newTranslation.locale = translation.locale;
@@ -259,6 +262,7 @@ export class CategoryAdminService {
     // Update basic fields
     if (data.type !== undefined) category.type = data.type;
     if (data.active !== undefined) category.active = data.active;
+    if (data.icon !== undefined) category.icon = data.icon;
 
     // Update translations if provided
     if (data.translations) {

@@ -9,6 +9,7 @@ import { ThemeAdminController } from './admin/controllers/theme-admin.controller
 import { ThemeFrontendController } from './frontend/controllers/theme-frontend.controller';
 import { ComponentStyleConfigAdminService } from './admin/services/component-style-config-admin.service';
 import { ComponentStyleConfigFrontendService } from './frontend/services/component-style-config-frontend.service';
+import { ThemeSectionAdminService } from './admin/services/theme-section-admin.service';
 
 @Module({
   imports: [
@@ -19,13 +20,15 @@ import { ComponentStyleConfigFrontendService } from './frontend/services/compone
     ThemeAdminService, 
     ThemeFrontendService, 
     ComponentStyleConfigAdminService, 
-    ComponentStyleConfigFrontendService
+    ComponentStyleConfigFrontendService,
+    ThemeSectionAdminService
   ],
   exports: [
     ThemeAdminService, 
     ThemeFrontendService, 
     ComponentStyleConfigAdminService, 
-    ComponentStyleConfigFrontendService
+    ComponentStyleConfigFrontendService,
+    ThemeSectionAdminService
   ]
 })
 export class ThemeModule {} 

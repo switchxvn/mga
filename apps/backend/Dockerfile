@@ -47,6 +47,7 @@ COPY nx.json tsconfig.base.json ./
 COPY tsconfig.json ./
 COPY eslint.config.mjs ./
 COPY .prettierrc .prettierignore ./
+COPY libs/database/tsconfig.migration.json ./libs/database/tsconfig.migration.json
 
 # Copy source code
 COPY libs ./libs
@@ -83,6 +84,16 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built application
 COPY --from=builder /app/dist/apps/backend ./dist
+
+# Copy necessary files for migrations
+COPY --from=builder /app/libs/database/tsconfig.migration.json ./libs/database/tsconfig.migration.json
+COPY --from=builder /app/tsconfig.base.json ./tsconfig.base.json
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+
+# Copy the migrations and config directories
+COPY --from=builder /app/libs/database/src/migrations ./libs/database/src/migrations
+COPY --from=builder /app/libs/database/src/config ./libs/database/src/config
+COPY --from=builder /app/libs/shared ./libs/shared
 
 # Copy environment file
 COPY --from=builder /app/apps/backend/.env .env

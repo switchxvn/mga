@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Category, PaginatedResponse } from '@ew/shared';
-import { CategoryType } from '@ew/shared';
 import { Menu, MenuButton, MenuItem, MenuItems, TransitionRoot } from '@headlessui/vue';
 import {
   ChevronDownIcon,
@@ -19,10 +18,12 @@ import {
   PlusCircleIcon,
   Trash2Icon,
   TrashIcon,
-  ZoomInIcon
+  ZoomInIcon,
+  HelpCircleIcon
 } from 'lucide-vue-next';
+import * as lucideIcons from 'lucide-vue-next';
 import Swal from 'sweetalert2';
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, computed, h } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import FilterContainer from '../../components/common/filter/FilterContainer.vue';
 import SearchFilter from '../../components/common/filter/SearchFilter.vue';
@@ -31,7 +32,25 @@ import PageSizeFilter from '../../components/common/filter/PageSizeFilter.vue';
 import DataTable from '../../components/common/table/DataTable.vue';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import { useAuth } from "../../composables/useAuth";
-import { useTrpc } from "../../composables/useTrpc";
+import { useCategory } from "../../composables/useCategory";
+
+// Đăng ký $lucide để sử dụng trong template
+const $lucide = lucideIcons;
+
+// Helper function để lấy đúng icon component từ tên icon
+const getIconComponent = (iconName: string | undefined | null) => {
+  if (!iconName) return HelpCircleIcon;
+  
+  // Chuyển đổi tên icon sang PascalCase với "Icon" suffix
+  // Ví dụ: "credit-card" -> "CreditCardIcon"
+  const pascalCaseName = iconName
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('') + 'Icon';
+  
+  // Trả về icon component tương ứng hoặc HelpCircleIcon nếu không tìm thấy
+  return $lucide[pascalCaseName as keyof typeof $lucide] || HelpCircleIcon;
+};
 
 // These functions are provided by Nuxt at runtime
 // @ts-ignore
@@ -45,32 +64,97 @@ const router = useRouter();
 const route = useRoute();
 const { checkAuth } = useAuth();
 
-const trpc = useTrpc();
+// Use the category composable
+const {
+  loading: isLoading,
+  categories: categoryData,
+  filter,
+  totalItems,
+  totalPages,
+  currentPage,
+  fetchCategories,
+  deleteCategory,
+  applyFilter,
+  resetFilter,
+  changePage,
+  toggleActive,
+  bulkAction
+} = useCategory();
 
-const isLoading = ref(true);
+// Initialize search from URL query params
+if (route.query.search) {
+  filter.value.search = route.query.search.toString();
+}
+
+// Initialize active filter from URL query params
+if (route.query.active) {
+  const activeParam = route.query.active.toString();
+  filter.value.active = 
+    activeParam === 'active' || activeParam === 'true' ? true :
+    activeParam === 'inactive' || activeParam === 'false' ? false :
+    null;
+}
+
+// Initialize page from URL query params
+if (route.query.page) {
+  filter.value.page = Number(route.query.page) || 1;
+}
+
+// Initialize sort from URL query params
+if (route.query.sortBy) {
+  filter.value.sortBy = route.query.sortBy.toString();
+}
+
+if (route.query.sortOrder) {
+  filter.value.sortOrder = (route.query.sortOrder.toString() as 'asc' | 'desc');
+}
+
+// Local state for UI
 const error = ref<string | null>(null);
-const search = ref(route.query.search?.toString() || '');
-const activeFilter = ref(
-  route.query.active === 'active' ? 'true' :
-  route.query.active === 'inactive' ? 'false' :
-  route.query.active === 'true' ? 'true' :
-  route.query.active === 'false' ? 'false' :
-  ''
-);
-const page = ref(Number(route.query.page) || 1);
-const pageSize = ref(10);
-const categories = ref({
-  items: [] as Category[],
-  total: 0,
-  totalPages: 1,
-  currentPage: 1,
-  limit: pageSize.value
-});
-
 const selectedCategories = ref<number[]>([]);
 const showBulkActions = ref(false);
-const sortBy = ref('createdAt');
-const sortOrder = ref<'asc' | 'desc'>('desc');
+
+// Computed properties for UI binding
+const search = computed({
+  get: () => filter.value.search,
+  set: (value) => { filter.value.search = value; }
+});
+
+const activeFilter = computed({
+  get: () => filter.value.active === true ? 'true' : filter.value.active === false ? 'false' : '',
+  set: (value) => { 
+    filter.value.active = value === 'true' ? true : value === 'false' ? false : null; 
+  }
+});
+
+const page = computed({
+  get: () => filter.value.page,
+  set: (value) => { filter.value.page = value; }
+});
+
+const pageSize = computed({
+  get: () => filter.value.limit,
+  set: (value) => { filter.value.limit = value; }
+});
+
+const sortBy = computed({
+  get: () => filter.value.sortBy || 'createdAt',
+  set: (value) => { filter.value.sortBy = value; }
+});
+
+const sortOrder = computed({
+  get: () => filter.value.sortOrder || 'desc',
+  set: (value) => { filter.value.sortOrder = value; }
+});
+
+// Categories for UI with proper typing
+const categories = computed(() => ({
+  items: categoryData.value,
+  total: totalItems.value,
+  totalPages: totalPages.value,
+  currentPage: currentPage.value,
+  limit: filter.value.limit
+}));
 
 // Update URL query parameters
 const updateQueryParams = () => {
@@ -99,52 +183,6 @@ const updateQueryParams = () => {
   }, { replace: true });
 };
 
-// Get categories data
-async function fetchCategories() {
-  try {
-    isLoading.value = true;
-    error.value = null;
-
-    // Parse the active filter correctly
-    let activeFilterValue: boolean | null = null;
-    if (activeFilter.value === 'true') {
-      activeFilterValue = true;
-    } else if (activeFilter.value === 'false') {
-      activeFilterValue = false;
-    }
-    
-    console.log('Fetching categories with filter:', { 
-      active: activeFilterValue, 
-      activeFilter: activeFilter.value,
-      originalQuery: route.query.active
-    });
-
-    const result = await trpc.admin.category.getAllCategories.query({
-      page: page.value,
-      limit: pageSize.value,
-      search: search.value,
-      active: activeFilterValue,
-      sortBy: sortBy.value,
-      sortOrder: sortOrder.value
-    });
-
-    if (result) {
-      categories.value = {
-        items: result.categories || [],
-        total: result.total || 0,
-        totalPages: result.totalPages || 1,
-        currentPage: result.currentPage || 1,
-        limit: result.limit || pageSize.value
-      };
-    }
-  } catch (err: any) {
-    error.value = err.message || "Failed to fetch categories";
-    console.error('Error fetching categories:', err);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
 // Watch for changes in filters and update URL
 watch([page, search, activeFilter, sortBy, sortOrder], () => {
   console.log('Filters changed:', {
@@ -156,7 +194,7 @@ watch([page, search, activeFilter, sortBy, sortOrder], () => {
   });
   
   updateQueryParams();
-  fetchCategories();
+  applyFilter();
 }, { deep: true });
 
 async function handleDelete(id: number) {
@@ -172,7 +210,7 @@ async function handleDelete(id: number) {
 
   if (result.isConfirmed) {
     try {
-      await trpc.admin.category.deleteCategory.mutate(id);
+      await deleteCategory(id);
       
       Swal.fire({
         title: 'Success!',
@@ -181,9 +219,6 @@ async function handleDelete(id: number) {
         timer: 2000,
         showConfirmButton: false
       });
-      
-      // Refetch data
-      await fetchCategories();
     } catch (err: any) {
       console.error('Error deleting category:', err);
       
@@ -198,59 +233,68 @@ async function handleDelete(id: number) {
 
 // Handle bulk actions
 const handleBulkAction = async (action: string) => {
-  if (!selectedCategories.value.length) {
-    error.value = 'Please select at least one category';
+  if (selectedCategories.value.length === 0) {
     return;
   }
 
-  try {
-    if (action === 'delete') {
-      for (const id of selectedCategories.value) {
-        await trpc.admin.category.deleteCategory.mutate(id);
-      }
-    } else if (action === 'activate' || action === 'deactivate') {
-      const isActive = action === 'activate';
-      for (const id of selectedCategories.value) {
-        await trpc.admin.category.updateCategory.mutate({
-          id,
-          data: { isActive }
-        });
-      }
+  let confirmMessage = '';
+  let confirmButtonText = '';
+  let confirmButtonColor = '';
+
+  if (action === 'delete') {
+    confirmMessage = 'Are you sure you want to delete the selected categories? This action cannot be undone.';
+    confirmButtonText = 'Yes, delete them!';
+    confirmButtonColor = '#DC2626';
+  } else if (action === 'activate') {
+    confirmMessage = 'Are you sure you want to activate the selected categories?';
+    confirmButtonText = 'Yes, activate them!';
+    confirmButtonColor = '#10B981';
+  } else if (action === 'deactivate') {
+    confirmMessage = 'Are you sure you want to deactivate the selected categories?';
+    confirmButtonText = 'Yes, deactivate them!';
+    confirmButtonColor = '#EF4444';
+  }
+
+  const result = await Swal.fire({
+    title: `${action.charAt(0).toUpperCase() + action.slice(1)} Selected Categories`,
+    text: confirmMessage,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText,
+    cancelButtonText: 'Cancel',
+    confirmButtonColor,
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await bulkAction(action, selectedCategories.value);
+      
+      // Show success message and reset selected categories
+      selectedCategories.value = [];
+      showBulkActions.value = false;
+    } catch (err: any) {
+      console.error(`Error during bulk ${action}:`, err);
+      
+      Swal.fire({
+        title: 'Error!',
+        text: err.message || `Failed to ${action} selected categories`,
+        icon: 'error'
+      });
     }
-    
-    await fetchCategories();
-    selectedCategories.value = [];
-  } catch (err: any) {
-    console.error('Error performing bulk action:', err);
-    error.value = err.message;
   }
 };
 
-const formatDate = (date: string) => {
+// Format date for display
+const formatDate = (date: string | Date) => {
   return new Date(date).toLocaleDateString();
-};
-
-// Handle category deletion
-const deleteCategory = async (id: number) => {
-  try {
-    await trpc.admin.category.deleteCategory.mutate(id);
-    await fetchCategories();
-  } catch (err: any) {
-    console.error('Error deleting category:', err);
-    error.value = err.message;
-  }
 };
 
 // Handle category activation/deactivation
 const toggleCategoryStatus = async (id: number, active: boolean) => {
   try {
-    await trpc.admin.category.updateCategory.mutate({
-      id,
-      data: { isActive: active }
-    });
-    await fetchCategories();
+    await toggleActive(id, active);
   } catch (err: any) {
-    console.error('Error updating category status:', err);
+    console.error('Error toggling category status:', err);
     error.value = err.message;
   }
 };
@@ -483,8 +527,18 @@ onMounted(async () => {
           {{ category.id }}
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
-          <div class="text-sm font-medium text-gray-900 dark:text-white">
-            {{ getCategoryName(category) }}
+          <div class="flex items-center gap-2">
+            <!-- Thay thế cách hiển thị icon hiện tại -->
+            <div v-if="category.icon" class="w-6 h-6 flex items-center justify-center">
+              <component 
+                :is="getIconComponent(category.icon)" 
+                class="w-4 h-4 text-gray-600 dark:text-gray-400"
+              />
+            </div>
+            <div v-else class="w-6 h-6"></div>
+            <div class="text-sm font-medium text-gray-900 dark:text-white">
+              {{ getCategoryName(category) }}
+            </div>
           </div>
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -521,7 +575,7 @@ onMounted(async () => {
               <PencilIcon class="h-5 w-5" />
             </NuxtLink>
             <button
-              @click="deleteCategory(category.id)"
+              @click="handleDelete(category.id)"
               class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
               title="Delete category"
             >

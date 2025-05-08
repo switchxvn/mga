@@ -28,6 +28,7 @@ import { ProductAttribute } from './product/entities/product-attribute.entity';
 import { ProductAttributeValue } from './product/entities/product-attribute-value.entity';
 import { ProductAttributeTranslation } from './product/entities/product-attribute-translation.entity';
 import { ProductAttributeValueTranslation } from './product/entities/product-attribute-value-translation.entity';
+import { ProductStockHistory } from './product/entities/product-stock-history.entity';
 
 // Category
 import { Category } from './category/entities/category.entity';
@@ -113,8 +114,23 @@ import { ContactSectionTranslation } from './contact/entities/contact-section-tr
 import { TicketPricingSection } from './ticket-pricing/entities/ticket-pricing-section.entity';
 import { TicketPricingSectionTranslation } from './ticket-pricing/entities/ticket-pricing-section-translation.entity';
 
+// Comment
+import { Comment } from './comment/entities/comment.entity';
+
 // Dashboard
 import { DashboardStats } from './dashboard/entities/dashboard-stats.entity';
+
+// Review
+import { Review } from './review/entities/review.entity';
+import { ReviewTranslation } from './review/entities/review-translation.entity';
+import { ReviewServiceType } from './review/entities/review-service-type.entity';
+import { ReviewServiceTypeTranslation } from './review/entities/review-service-type-translation.entity';
+
+// Site Statistics
+import { SiteStatistics } from './site-statistics/entities/site-statistics.entity';
+import { SiteStatisticsTranslation } from './site-statistics/entities/site-statistics-translation.entity';
+import { SiteStatisticsHistory } from './site-statistics/entities/site-statistics-history.entity';
+import { SiteStatisticsSettings } from './site-statistics/entities/site-statistics-settings.entity';
 
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
@@ -150,6 +166,7 @@ export const entities: (new () => any)[] = [
   ProductAttributeValue,
   ProductAttributeTranslation,
   ProductAttributeValueTranslation,
+  ProductStockHistory,
   
   // Category
   Category,
@@ -235,6 +252,21 @@ export const entities: (new () => any)[] = [
   TicketPricingSection,
   TicketPricingSectionTranslation,
   
+  // Comment
+  Comment,
+  
   // Dashboard
   DashboardStats,
+  
+  // Review
+  Review,
+  ReviewTranslation,
+  ReviewServiceType,
+  ReviewServiceTypeTranslation,
+  
+  // Site Statistics
+  SiteStatistics,
+  SiteStatisticsTranslation,
+  SiteStatisticsHistory,
+  SiteStatisticsSettings,
 ]; 

@@ -43,6 +43,9 @@ export class OrderRefund {
   @Column({ name: 'requester_phone', length: 50 })
   requesterPhone: string;
 
+  @Column({ name: 'requester_phone_code', length: 10, nullable: true })
+  requesterPhoneCode?: string;
+
   @Column({ name: 'requester_email', length: 255, nullable: true })
   requesterEmail?: string;
 

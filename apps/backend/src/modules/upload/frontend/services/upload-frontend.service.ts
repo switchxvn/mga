@@ -101,6 +101,68 @@ export class UploadFrontendService {
     }
   }
 
+  async uploadFileDirectly(options: {
+    buffer: Buffer;
+    filename: string;
+    mimeType: string;
+    size: number;
+    folder: string;
+  }) {
+    try {
+      await this.initializeS3Client();
+
+      // Validate options
+      if (!options.buffer || !options.filename || !options.mimeType) {
+        throw new Error('Missing required file parameters');
+      }
+
+      const folder = options.folder || 'uploads';
+      const ext = path.extname(options.filename) || '.png';
+      const key = `${folder}/${randomUUID()}${ext}`;
+      
+      // Upload directly to S3
+      const command = new PutObjectCommand({
+        Bucket: this.uploadConfig.bucket,
+        Key: key,
+        Body: options.buffer,
+        ContentType: options.mimeType,
+        ACL: 'public-read',
+      });
+
+      // Execute upload command
+      await this.s3Client.send(command);
+      
+      const publicUrl = `${this.uploadConfig.publicUrl}/${key}`;
+
+      // Create upload record
+      const upload = this.uploadRepository.create({
+        originalName: options.filename,
+        filename: path.basename(key),
+        path: key,
+        mimeType: options.mimeType,
+        size: options.size,
+        url: publicUrl,
+        acl: 'public-read',
+      });
+
+      await this.uploadRepository.save(upload);
+
+      this.logger.log(`File uploaded successfully: ${key}`);
+      
+      return {
+        uploadId: upload.id,
+        url: publicUrl,
+        key,
+      };
+    } catch (error) {
+      this.logger.error('Direct upload failed:', {
+        error: error.message,
+        filename: options.filename,
+      });
+      throw new Error(`Direct upload failed: ${error.message}`);
+    }
+  }
+
   async findUploadById(id: number) {
     return this.uploadRepository.findOne({
       where: { id },

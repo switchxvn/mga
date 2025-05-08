@@ -17,6 +17,7 @@ import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import type { Component } from 'vue';
 import { defineAsyncComponent, markRaw } from 'vue';
 import { useTheme } from '../composables/useTheme';
+import ReviewsSection from '../components/ReviewsSection.vue';
 
 // Định nghĩa kiểu dữ liệu cho bài viết
 interface PostTranslation {
@@ -332,7 +333,8 @@ const registeredComponents = {
   'StyledNewsSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledNewsSection.vue")),
   'CustomerReviewsSection': defineAsyncComponent(() => import("../components/sections/home_page/CustomerReviewsSection.vue")),
   'HorizontalGallerySection': defineAsyncComponent(() => import("../components/sections/home_page/HorizontalGallerySection.vue")),
-  'TravelServicesSection': defineAsyncComponent(() => import("../components/sections/home_page/TravelServicesSection.vue"))
+  'TravelServicesSection': defineAsyncComponent(() => import("../components/sections/home_page/TravelServicesSection.vue")),
+  'ReviewsSection': ReviewsSection,
 } as ComponentRegistry;
 
 // Modify the resolveComponent function
@@ -368,7 +370,8 @@ const resolveComponent = (section: ThemeSection): ComponentType | null => {
     'styled_news': 'StyledNewsSection',
     'customer_reviews': 'CustomerReviewsSection',
     'horizontal_gallery': 'HorizontalGallerySection',
-    'travel_services': 'TravelServicesSection'
+    'travel_services': 'TravelServicesSection',
+    'reviews': 'ReviewsSection',
   };
 
   const componentName = typeToComponentName[section.type];

@@ -35,12 +35,16 @@ import { MailConfigSeeder } from '../seeders/mail-config.seeder';
 import { MailConfig } from '../../../../apps/backend/src/modules/mail/entities/mail-config.entity';
 import { MailTemplate } from '../../../../apps/backend/src/modules/mail/entities/mail-template.entity';
 import { MailTemplateSeeder } from '../seeders/mail-template.seeder';
+import { RefundEmailTemplateSeeder } from '../seeders/refund-email-template.seeder';
 import { UploadConfigSeeder } from '../seeders/upload-config.seeder';
 import { Upload } from '../../../../apps/backend/src/modules/upload/entities/upload.entity';
 import { UploadConfig } from '../../../../apps/backend/src/modules/upload/entities/upload-config.entity';
 import { OrderTicketSectionSeeder } from '../seeders/order-ticket-section.seeder';
 import { OrderTicketSection } from '../../../../apps/backend/src/modules/order-ticket/entities/order-ticket-section.entity';
 import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modules/order-ticket/entities/order-ticket-section-translation.entity';
+import { ReviewsSectionSeeder } from '../seeders/reviews-section.seeder';
+import { Theme } from '../../../../apps/backend/src/modules/theme/entities/theme.entity';
+import { ThemeSection } from '../../../../apps/backend/src/modules/theme/entities/theme-section.entity';
 
 @Module({
   imports: [
@@ -71,6 +75,8 @@ import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modu
       UploadConfig,
       OrderTicketSection,
       OrderTicketSectionTranslation,
+      Theme,
+      ThemeSection,
     ]),
   ],
   providers: [
@@ -85,8 +91,10 @@ import { OrderTicketSectionTranslation } from '../../../../apps/backend/src/modu
     FoodMenuSeeder,
     MailConfigSeeder,
     MailTemplateSeeder,
+    RefundEmailTemplateSeeder,
     UploadConfigSeeder,
     OrderTicketSectionSeeder,
+    ReviewsSectionSeeder,
   ],
 })
 class SeedModule {}

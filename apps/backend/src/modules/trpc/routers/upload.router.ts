@@ -23,6 +23,37 @@ export const uploadRouter = router({
       return ctx.services.uploadFrontendService.getPresignedUrl(serviceInput);
     }),
 
+  uploadFile: publicProcedure
+    .input(z.object({
+      file: z.string(), // Base64 encoded file
+      filename: z.string().min(1),
+      mimeType: z.string().min(1),
+      size: z.number().positive(),
+      folder: z.string().optional(),
+    }).strict())
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Decode base64 string to buffer
+        const fileBuffer = Buffer.from(input.file.split(';base64,').pop() || '', 'base64');
+        
+        // Call service to handle direct upload
+        return ctx.services.uploadFrontendService.uploadFileDirectly({
+          buffer: fileBuffer,
+          filename: input.filename,
+          mimeType: input.mimeType,
+          size: input.size,
+          folder: input.folder || 'uploads'
+        });
+      } catch (error) {
+        console.error('Upload file failed:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Upload failed: ${error.message}`,
+          cause: error,
+        });
+      }
+    }),
+
   getUploadById: publicProcedure
     .input(z.number())
     .query(async ({ ctx, input }) => {

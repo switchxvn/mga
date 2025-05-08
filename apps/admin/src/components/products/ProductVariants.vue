@@ -348,7 +348,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, reactive, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, nextTick, shallowRef } from 'vue'
 import { PlusIcon, TrashIcon, XIcon, PackageIcon } from 'lucide-vue-next'
 import { Switch } from '@headlessui/vue'
 import { useRoute } from 'vue-router'
@@ -385,14 +385,16 @@ const options = ref<Option[]>([])
 const processExistingVariants = () => {
   if (!props.modelValue || props.modelValue.length === 0) return
   
-  console.log('Processing existing variants:', props.modelValue)
+  // Không log trong production
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Processing existing variants')
+  }
   
   // Extract all option names and values from variants
   const optionMap = new Map<string, Set<string>>()
   
   // Go through all variants and collect unique option names and values
   props.modelValue.forEach(variant => {
-    console.log('Variant:', variant.name, 'Options:', variant.options)
     Object.entries(variant.options).forEach(([name, value]) => {
       if (!optionMap.has(name)) {
         optionMap.set(name, new Set<string>())
@@ -408,47 +410,45 @@ const processExistingVariants = () => {
     newValue: ''
   }))
   
-  console.log('Extracted options:', extractedOptions)
   options.value = extractedOptions
 }
 
-// Call when component mounts
+// Chỉ gọi processExistingVariants một lần khi component mounts
+let processedVariants = false
 onMounted(() => {
-  console.log('ProductVariants mounted, hasVariants:', props.hasVariants, 'modelValue:', props.modelValue)
-  processExistingVariants()
-  
-  // Nếu không thể xử lý, ít nhất hãy đảm bảo rằng variants được hiển thị
-  if (options.value.length === 0 && props.modelValue && props.modelValue.length > 0) {
-    console.log('Unable to extract options automatically, but will display existing variants')
+  if (!processedVariants && props.hasVariants && props.modelValue && props.modelValue.length > 0) {
+    processExistingVariants()
+    processedVariants = true
   }
   
-  // Khởi tạo store với modelValue
+  // Khởi tạo store với modelValue một lần duy nhất
   variantsStore.initVariants(props.modelValue)
 })
 
-// Also watch for changes in the modelValue
-watch(() => props.modelValue, (newValue) => {
-  console.log('ProductVariants: modelValue changed:', newValue)
-  if (options.value.length === 0 && newValue && newValue.length > 0) {
-    console.log('Processing existing variants from updated modelValue')
+// Thay đổi cách watch modelValue để tránh re-renders không cần thiết
+watch(() => props.modelValue, (newValue, oldValue) => {
+  // Chỉ thực hiện khi modelValue thay đổi thực sự
+  if (JSON.stringify(newValue) === JSON.stringify(oldValue)) return
+
+  // Ngăn xử lý nếu đã xử lý
+  if (!processedVariants && options.value.length === 0 && newValue && newValue.length > 0) {
     processExistingVariants()
+    processedVariants = true
   }
-  
-  // Khi modelValue thay đổi, cập nhật lại displayVariants
-  console.log('modelValue changed, updating displayVariants');
   
   // Cập nhật store
   variantsStore.updateAllVariants(newValue)
-}, { immediate: true, deep: true })
+}, { deep: true })
 
-// Watch hasVariants to initialize options when turned on
-watch(() => props.hasVariants, (hasVariants) => {
-  console.log('hasVariants changed:', hasVariants)
-  if (hasVariants && options.value.length === 0 && props.modelValue && props.modelValue.length > 0) {
-    console.log('hasVariants is true but no options yet, processing existing variants')
+// Watch hasVariants để xử lý chỉ khi thay đổi thật sự
+watch(() => props.hasVariants, (hasVariants, oldValue) => {
+  if (hasVariants === oldValue) return
+  
+  if (hasVariants && !processedVariants && options.value.length === 0 && props.modelValue && props.modelValue.length > 0) {
     processExistingVariants()
+    processedVariants = true
   }
-}, { immediate: true })
+}, { immediate: false })
 
 // Add new option
 const addOption = () => {
@@ -478,14 +478,20 @@ const removeValue = (optionIndex: number, valueIndex: number) => {
   options.value[optionIndex].values.splice(valueIndex, 1)
 }
 
-// Generate all possible variants from options
-const variants = computed(() => {
+// Generate all possible variants from options - Cải thiện để tránh tính toán lại liên tục
+// Sử dụng shallowRef để tránh reactivity sâu không cần thiết
+const variantCombinations = shallowRef<Record<string, string>[]>([])
+
+// Chỉ tính toán lại khi options thay đổi thật sự
+watch(() => options.value, () => {
   if (!options.value.length) {
-    console.log('No options found, returning modelValue directly:', props.modelValue)
-    return props.modelValue
+    variantCombinations.value = []
+    return
   }
 
-  console.log('Generating combinations from options:', options.value)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Recalculating variant combinations')
+  }
   
   const generateCombinations = (
     optionIndex: number,
@@ -510,12 +516,23 @@ const variants = computed(() => {
     return combinations
   }
 
-  const combinations = generateCombinations(0, {})
+  variantCombinations.value = generateCombinations(0, {})
+}, { deep: true })
+
+// Sử dụng computed đơn giản hơn để thay thế variants
+const variants = computed(() => {
+  if (!options.value.length) {
+    return props.modelValue || []
+  }
+
+  if (!variantCombinations.value.length) {
+    return props.modelValue || []
+  }
   
-  return combinations.map(combo => {
+  return variantCombinations.value.map(combo => {
     const existingVariant = props.modelValue.find(v => {
-      return Object.entries(v.options).every(
-        ([key, value]) => combo[key] === value
+      return Object.entries(combo).every(
+        ([key, value]) => v.options[key] === value
       )
     })
 
@@ -533,9 +550,14 @@ const variants = computed(() => {
   })
 })
 
-// Update variants when they change
+// Gửi cập nhật variants đến parent chỉ khi có thay đổi thực sự
+let previousVariantsJson = ''
 watch(variants, (newVariants) => {
-  emit('update:modelValue', newVariants)
+  const newVariantsJson = JSON.stringify(newVariants)
+  if (newVariantsJson !== previousVariantsJson) {
+    previousVariantsJson = newVariantsJson
+    emit('update:modelValue', newVariants)
+  }
 }, { deep: true })
 
 // Computed để hiển thị variants (từ dynamic combinations hoặc từ props)
@@ -547,37 +569,44 @@ const displayVariants = computed(() => {
   
   // Nếu không có options nhưng có modelValue, trả về modelValue trực tiếp
   if (props.modelValue && props.modelValue.length > 0) {
-    console.log('Using modelValue for displayVariants:', props.modelValue)
     return props.modelValue
   }
   
   return []
 })
 
-// Function to load variant stock history
-const loadVariantStockHistory = async (variantId: number) => {
-  try {
-    if (!variantId) {
-      console.log('No variant ID available, cannot load stock history')
+// Function to load variant stock history - Thêm debounce để tránh gọi nhiều lần
+const loadVariantStockHistory = (() => {
+  let lastCallTime = 0;
+  const DEBOUNCE_TIME = 500; // ms
+  
+  return async (variantId: number) => {
+    if (!variantId) return [];
+    
+    const now = Date.now();
+    if (now - lastCallTime < DEBOUNCE_TIME) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Debouncing stock history call');
+      }
+      return [];
+    }
+    
+    lastCallTime = now;
+    
+    try {
+      const response = await trpc.admin.products.getVariantStockHistory.query({
+        variantId,
+        limit: 10,
+        offset: 0
+      })
+      
+      return response.data || []
+    } catch (error) {
+      console.error('Error loading variant stock history');
       return []
     }
-    
-    const response = await trpc.admin.products.getVariantStockHistory.query({
-      variantId,
-      limit: 10,
-      offset: 0
-    })
-    
-    return response.data || []
-  } catch (error) {
-    console.error('Error loading variant stock history:', error)
-    // Chỉ hiển thị toast cho lỗi hệ thống thực sự, không phải lỗi do thiếu ID
-    if (variantId) {
-      toast.error('Failed to load variant stock history')
-    }
-    return []
   }
-}
+})();
 
 // Format date function
 const formatDate = (dateString: string) => {
@@ -618,7 +647,10 @@ const getAdjustmentTypeClass = (type: string) => {
   return classes[type] || 'bg-slate-100 text-slate-800'
 }
 
-// Stock history modal
+// Stock history modal với kiểm soát mở/đóng tốt hơn
+let isModalOpen = false;
+
+// Định nghĩa stockHistoryModal đã bị xóa nhầm
 const stockHistoryModal = ref({
   show: false,
   variant: {} as VariantItem,
@@ -626,12 +658,22 @@ const stockHistoryModal = ref({
   adjustmentNote: '',
   history: [] as any[],
   loading: false
-})
+});
 
 const openStockHistoryModal = async (variant: VariantItem) => {
-  stockHistoryModal.value.show = true
-  stockHistoryModal.value.variant = { ...variant } // Clone variant để tránh tham chiếu trực tiếp
-  stockHistoryModal.value.loading = true
+  // Tránh mở lại modal khi đã mở
+  if (isModalOpen) return;
+  isModalOpen = true;
+  
+  // Reset modal state trước khi mở
+  stockHistoryModal.value = {
+    show: true,
+    variant: { ...variant }, // Clone variant để tránh tham chiếu trực tiếp
+    adjustmentQuantity: 0,
+    adjustmentNote: '',
+    history: [],
+    loading: true
+  };
   
   try {
     if (variant.id) {
@@ -658,9 +700,6 @@ const openStockHistoryModal = async (variant: VariantItem) => {
           // Đồng bộ giá trị từ history vào store
           if (variant.id) {
             variantsStore.updateVariantStock(variant.id, latestRecord.quantityAfter);
-            
-            // Cập nhật modelValue
-            emit('update:modelValue', [...variantsStore.allVariants]);
           }
         }
       }
@@ -668,15 +707,17 @@ const openStockHistoryModal = async (variant: VariantItem) => {
       stockHistoryModal.value.history = [];
     }
   } catch (error) {
-    console.error('Error loading variant data:', error)
-    toast.error('Failed to load variant data')
+    console.error('Error loading variant data');
   } finally {
     stockHistoryModal.value.loading = false
   }
 }
 
 const closeStockHistoryModal = () => {
+  if (!stockHistoryModal.value.show) return;
+  
   stockHistoryModal.value.show = false
+  isModalOpen = false;
   
   // Đảm bảo giá trị stock được cập nhật trên UI
   if (stockHistoryModal.value.variant.id) {
@@ -684,85 +725,118 @@ const closeStockHistoryModal = () => {
     const updatedVariant = variantsStore.getVariantById(stockHistoryModal.value.variant.id)
     
     if (updatedVariant) {
-      // Cập nhật variant trong tất cả các vị trí hiển thị
-      const updatedVariants = props.modelValue.map(v => 
-        v.id === updatedVariant.id ? {...v, stock: updatedVariant.stock, quantity: updatedVariant.stock} : v
-      );
+      // Kiểm tra xem có thực sự thay đổi không
+      let hasChanges = false;
       
-      // Emit để cập nhật lên component cha
-      emit('update:modelValue', updatedVariants)
-      console.log("Emitted updated variants after closing modal");
+      const updatedVariants = props.modelValue.map(v => {
+        if (v.id === updatedVariant.id && 
+            (v.stock !== updatedVariant.stock || v.quantity !== updatedVariant.stock)) {
+          hasChanges = true;
+          return {...v, stock: updatedVariant.stock, quantity: updatedVariant.stock};
+        }
+        return v;
+      });
+      
+      // Chỉ emit nếu có thay đổi thực sự
+      if (hasChanges) {
+        // Đảm bảo chỉ emit một lần sau khi đóng modal
+        nextTick(() => {
+          emit('update:modelValue', updatedVariants);
+        });
+      }
     }
   }
   
   // Reset modal data
-  stockHistoryModal.value.adjustmentQuantity = 0
-  stockHistoryModal.value.adjustmentNote = ''
+  setTimeout(() => {
+    if (!stockHistoryModal.value.show) {
+      stockHistoryModal.value.adjustmentQuantity = 0;
+      stockHistoryModal.value.adjustmentNote = '';
+      stockHistoryModal.value.history = [];
+      stockHistoryModal.value.variant = {} as VariantItem;
+    }
+  }, 200);
 }
 
 const applyVariantStockAdjustment = async () => {
-  stockHistoryModal.value.loading = true
+  // Tránh gọi nhiều lần khi đang xử lý
+  if (stockHistoryModal.value.loading) return;
+  stockHistoryModal.value.loading = true;
   
   // Lưu lại ID của variant đang xử lý
-  const variantId = stockHistoryModal.value.variant.id
+  const variantId = stockHistoryModal.value.variant.id;
   if (!variantId) {
-    toast.error('Invalid variant ID')
-    stockHistoryModal.value.loading = false
-    return
+    toast.error('Invalid variant ID');
+    stockHistoryModal.value.loading = false;
+    return;
   }
   
   // Lưu lại adjustmentQuantity trước khi bất kỳ API calls nào
-  const adjustmentQuantity = stockHistoryModal.value.adjustmentQuantity
+  const adjustmentQuantity = stockHistoryModal.value.adjustmentQuantity;
   
   // Sử dụng store để adjust stock
-  const result = await variantsStore.adjustVariantStock(
-    variantId, 
-    adjustmentQuantity, 
-    stockHistoryModal.value.adjustmentNote
-  )
-  
-  if (result) {
-    // Cập nhật giá trị của variant hiện tại
-    const currentQuantity = stockHistoryModal.value.variant.quantity || stockHistoryModal.value.variant.stock || 0;
-    const newQuantity = currentQuantity + adjustmentQuantity;
+  try {
+    const result = await variantsStore.adjustVariantStock(
+      variantId, 
+      adjustmentQuantity, 
+      stockHistoryModal.value.adjustmentNote
+    );
     
-    // Cập nhật cả stock và quantity trong variant hiện tại trong modal
-    stockHistoryModal.value.variant.stock = newQuantity;
-    stockHistoryModal.value.variant.quantity = newQuantity;
-    
-    // Cập nhật tất cả các variant trong modelValue
-    const updatedVariants = props.modelValue.map(v => {
-      if (v.id === variantId) {
-        return {
-          ...v,
-          stock: newQuantity,
-          quantity: newQuantity
-        };
+    if (result) {
+      // Cập nhật giá trị của variant hiện tại
+      const currentQuantity = stockHistoryModal.value.variant.quantity || stockHistoryModal.value.variant.stock || 0;
+      const newQuantity = currentQuantity + adjustmentQuantity;
+      
+      // Cập nhật cả stock và quantity trong variant hiện tại trong modal
+      stockHistoryModal.value.variant.stock = newQuantity;
+      stockHistoryModal.value.variant.quantity = newQuantity;
+      
+      // Kiểm tra xem đã có thay đổi thực sự chưa
+      let hasChanges = false;
+      
+      // Cập nhật tất cả các variant trong modelValue
+      const updatedVariants = props.modelValue.map(v => {
+        if (v.id === variantId && (v.stock !== newQuantity || v.quantity !== newQuantity)) {
+          hasChanges = true;
+          return {
+            ...v,
+            stock: newQuantity,
+            quantity: newQuantity
+          };
+        }
+        return v;
+      });
+      
+      // Chỉ emit nếu có thay đổi thực sự
+      if (hasChanges) {
+        emit('update:modelValue', updatedVariants);
       }
-      return v;
-    });
-    
-    // Emit để cập nhật lên component cha
-    emit('update:modelValue', updatedVariants);
-    console.log("Emitted updated variants after stock adjustment:", newQuantity);
-    
-    // Đóng modal và reset các giá trị
-    stockHistoryModal.value.show = false;
+      
+      // Hiển thị thông báo thành công
+      toast.success(`Stock adjusted to ${newQuantity}`);
+      
+      // Tải lại history
+      const history = await loadVariantStockHistory(variantId);
+      stockHistoryModal.value.history = history || [];
+    }
+  } catch (error) {
+    console.error('Error adjusting stock');
+    toast.error('Failed to adjust stock');
+  } finally {
+    stockHistoryModal.value.loading = false;
     stockHistoryModal.value.adjustmentQuantity = 0;
     stockHistoryModal.value.adjustmentNote = '';
-    
-    // Hiển thị thông báo thành công
-    toast.success(`Stock adjusted successfully to ${newQuantity}`);
   }
-  
-  stockHistoryModal.value.loading = false;
 }
 
 const removeVariant = (variant: VariantItem) => {
   // Implement the logic to remove the variant
-  console.log('Removing variant:', variant)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Removing variant');
+  }
 }
 
+// Tránh việc gọi emit liên tục trong onStockInputChange
 const onStockInputChange = (variant: VariantItem) => {
   if (variant.id) {
     // Cập nhật trong store
@@ -771,26 +845,24 @@ const onStockInputChange = (variant: VariantItem) => {
     // Đồng bộ giá trị quantity với stock
     variant.quantity = variant.stock;
     
-    // Cập nhật lên component cha
+    // Đảm bảo chỉ gọi emit một lần sau khi DOM cập nhật
     nextTick(() => {
-      // Tạo bản sao mới của modelValue với variant đã cập nhật
+      // Clone array để tạo một reference mới
       const updatedVariants = props.modelValue.map(v => 
-        v.id === variant.id ? {...v, stock: variant.stock, quantity: variant.stock} : v
+        v.id === variant.id ? {...v, stock: variant.stock, quantity: variant.stock} : {...v}
       );
       
-      // Emit để cập nhật
-      emit('update:modelValue', updatedVariants);
+      // Kiểm tra khác biệt trước khi emit
+      const currentJson = JSON.stringify(props.modelValue)
+      const newJson = JSON.stringify(updatedVariants)
       
-      console.log("Emitted updated variants after stock change");
+      if (currentJson !== newJson) {
+        emit('update:modelValue', updatedVariants);
+      }
     });
   } else {
     // Nếu không có ID (variant mới), đồng bộ quantity với stock
     variant.quantity = variant.stock;
-    
-    // Cập nhật lên component cha
-    nextTick(() => {
-      emit('update:modelValue', [...props.modelValue]);
-    });
   }
 }
 

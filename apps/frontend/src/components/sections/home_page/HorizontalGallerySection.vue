@@ -32,7 +32,7 @@
       </div>
 
       <!-- Gallery Container -->
-      <div class="gallery-outer-container relative">
+      <div class="gallery-outer-container relative" v-if="galleries.length > 0">
         <!-- Navigation Buttons -->
         <button 
           @click="handleScrollLeft" 
@@ -139,6 +139,21 @@
         </div>
       </div>
 
+      <!-- Empty State - No Data -->
+      <div v-else class="empty-state py-16 text-center bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div class="max-w-md mx-auto px-4">
+          <div class="mb-6">
+            <ImageIcon class="h-16 w-16 mx-auto text-gray-400 dark:text-gray-500" />
+          </div>
+          <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {{ t("gallery.noImages") || 'Không có hình ảnh' }}
+          </h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            {{ t("gallery.emptyDescription") || 'Hiện chưa có hình ảnh nào trong thư viện này.' }}
+          </p>
+        </div>
+      </div>
+
       <!-- Load More Button -->
       <div v-if="settings.loadMoreButton.show && hasMoreItems" class="text-center mt-8">
         <UButton
@@ -196,7 +211,7 @@ import { useI18n } from 'vue-i18n';
 import Masonry from 'masonry-layout';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, ArrowRight, Image as ImageIcon } from 'lucide-vue-next';
 
 interface GalleryTranslation {
   id: number;
@@ -242,7 +257,8 @@ const defaultSettings = {
   maxItems: 12,
   showTitle: true,
   colors: {
-    background: 'bg-white dark:bg-gray-900'
+    background: 'bg-white dark:bg-gray-900',
+    emptyState: 'bg-gray-50 dark:bg-gray-800'
   },
   loadMoreButton: {
     show: true,
@@ -260,7 +276,8 @@ const defaultSettings = {
     interval: 5000,
     slidesPerView: 3,
     rows: 3
-  }
+  },
+  categoryIds: []
 };
 
 const settings = computed(() => ({
@@ -503,10 +520,17 @@ const fetchGalleries = async () => {
   try {
     isLoading.value = true;
     const { locale } = useI18n();
-    const result = await trpc.gallery.active.query({ 
-      locale: locale.value,
-      type: 'common'
-    });
+    
+    // Sử dụng API đã được cập nhật để hỗ trợ mảng categoryIds
+    const params: any = { locale: locale.value };
+    
+    // Thêm categoryIds vào params nếu có
+    if (settings.value.categoryIds && settings.value.categoryIds.length > 0) {
+      params.categoryIds = settings.value.categoryIds;
+    }
+    
+    const result = await trpc.gallery.active.query(params);
+    
     galleries.value = result;
     totalItems.value = result.length;
     

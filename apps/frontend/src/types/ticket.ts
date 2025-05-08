@@ -88,7 +88,7 @@ export const defaultSettings: Settings = {
   },
   variants: [],
   form: {
-    maxGuests: 10,
+    maxGuests: 999,
     minGuests: 1,
     buttonText: "Đặt vé ngay",
     buttonColor: "bg-primary-600 hover:bg-primary-700",

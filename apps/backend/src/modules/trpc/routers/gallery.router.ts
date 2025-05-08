@@ -1,4 +1,3 @@
-import { GalleryType } from '@ew/shared';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../procedures';
@@ -13,13 +12,13 @@ const createGallerySchema = z.object({
   image: z.string(),
   isActive: z.boolean().default(true),
   sequence: z.number().default(0),
-  type: z.nativeEnum(GalleryType).default(GalleryType.COMMON),
+  categoryIds: z.array(z.number()).optional(),
   translations: z.array(galleryTranslationSchema),
 }).transform((data) => ({
   image: data.image,
   isActive: data.isActive ?? true,
   sequence: data.sequence ?? 0,
-  type: data.type ?? GalleryType.COMMON,
+  categoryIds: data.categoryIds ?? [],
   translations: data.translations.map(t => ({
     locale: t.locale,
     title: t.title,
@@ -32,14 +31,14 @@ const updateGallerySchema = z.object({
   image: z.string().optional(),
   isActive: z.boolean().optional(),
   sequence: z.number().optional(),
-  type: z.nativeEnum(GalleryType).optional(),
+  categoryIds: z.array(z.number()).optional(),
   translations: z.array(galleryTranslationSchema).optional(),
 }).transform((data) => ({
   id: data.id,
   ...(data.image !== undefined && { image: data.image }),
   ...(data.isActive !== undefined && { isActive: data.isActive }),
   ...(data.sequence !== undefined && { sequence: data.sequence }),
-  ...(data.type !== undefined && { type: data.type }),
+  ...(data.categoryIds !== undefined && { categoryIds: data.categoryIds }),
   ...(data.translations && {
     translations: data.translations.map(t => ({
       locale: t.locale,
@@ -53,23 +52,20 @@ export const galleryRouter = router({
   latest: publicProcedure
     .input(z.object({
       locale: z.string(),
-      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
+      categoryId: z.number().optional()
     }))
     .query(async ({ ctx, input }) => {
       try {
         ctx.logger.log('Fetching latest galleries with params:', input);
         
-        const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale);
-        ctx.logger.log('Found galleries:', galleries);
+        // Convert single categoryId to array if provided
+        const categoryIds = input.categoryId ? [input.categoryId] : undefined;
         
-        // Filter by type if specified
-        const filteredGalleries = input.type ? galleries.filter(gallery => {
-          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: input.type });
-          return gallery.type === input.type;
-        }) : galleries;
+        // Use optimized method that filters at database level
+        const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale, categoryIds);
         
-        ctx.logger.log('Filtered galleries:', filteredGalleries);
-        return filteredGalleries;
+        ctx.logger.log('Found galleries:', galleries.length);
+        return galleries;
       } catch (error) {
         ctx.logger.error('Failed to fetch latest galleries:', error);
         throw new TRPCError({
@@ -83,23 +79,20 @@ export const galleryRouter = router({
   byLocale: publicProcedure
     .input(z.object({ 
       locale: z.string(),
-      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
+      categoryId: z.number().optional()
     }))
     .query(async ({ ctx, input }) => {
       try {
         ctx.logger.log('Fetching galleries by locale with params:', input);
         
-        const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale);
-        ctx.logger.log('Found galleries:', galleries);
+        // Convert single categoryId to array if provided
+        const categoryIds = input.categoryId ? [input.categoryId] : undefined;
         
-        // Filter by type if specified
-        const filteredGalleries = input.type ? galleries.filter(gallery => {
-          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: input.type });
-          return gallery.type === input.type;
-        }) : galleries;
+        // Use optimized method that filters at database level
+        const galleries = await ctx.services.galleryFrontendService.findByLocale(input.locale, categoryIds);
         
-        ctx.logger.log('Filtered galleries:', filteredGalleries);
-        return filteredGalleries;
+        ctx.logger.log('Found galleries:', galleries.length);
+        return galleries;
       } catch (error) {
         ctx.logger.error(`Failed to fetch galleries by locale ${input.locale}:`, error);
         throw new TRPCError({
@@ -142,24 +135,32 @@ export const galleryRouter = router({
   active: publicProcedure
     .input(z.object({
       locale: z.string().optional(),
-      type: z.enum(['common', 'food'] as [GalleryType, GalleryType]).optional()
+      categoryId: z.number().optional(),
+      categoryIds: z.array(z.number()).optional()
     }))
     .query(async ({ input, ctx }) => {
       try {
-        const { locale = 'vi', type } = input || {};
-        ctx.logger.log('Fetching active galleries with params:', { locale, type });
+        const { locale = 'vi', categoryId, categoryIds } = input || {};
         
-        const galleries = await ctx.services.galleryFrontendService.findActiveByLocale(locale);
-        ctx.logger.log('Found active galleries:', galleries);
+        // Combine single categoryId with categoryIds array if both provided
+        let combinedCategoryIds: number[] | undefined;
+        if (categoryIds?.length || categoryId) {
+          combinedCategoryIds = [...(categoryIds || [])];
+          if (categoryId && !combinedCategoryIds.includes(categoryId)) {
+            combinedCategoryIds.push(categoryId);
+          }
+        }
         
-        // Filter by type if specified
-        const filteredGalleries = type ? galleries.filter(gallery => {
-          ctx.logger.log('Gallery type check:', { galleryId: gallery.id, galleryType: gallery.type, requestedType: type });
-          return gallery.type === type;
-        }) : galleries;
+        ctx.logger.log('Fetching active galleries with params:', { 
+          locale, 
+          combinedCategoryIds: combinedCategoryIds?.join(',') 
+        });
         
-        ctx.logger.log('Filtered active galleries:', filteredGalleries);
-        return filteredGalleries;
+        // Use optimized method that filters at database level
+        const galleries = await ctx.services.galleryFrontendService.findActiveByLocale(locale, combinedCategoryIds);
+        
+        ctx.logger.log('Found active galleries:', galleries.length);
+        return galleries;
       } catch (error) {
         ctx.logger.error('Failed to fetch active galleries:', error);
         throw new TRPCError({

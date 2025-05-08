@@ -1,8 +1,8 @@
+import { TRPCClientError } from '@trpc/client'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { TRPCClientError } from '@trpc/client'
+import type { ProfileResponseExtended, User } from '../types/user'
 import { useTrpc } from './useTrpc'
-import type { User } from '../types/user'
 
 export interface LoginCredentials {
   email: string
@@ -38,15 +38,15 @@ export const useAuth = () => {
         }
         
         // Get user info and transform to match User interface
-        const userInfo = await trpc.profile.getMyProfile.query()
+        const userInfo = await trpc.profile.getMyProfile.query() as ProfileResponseExtended;
         user.value = {
           id: String(userInfo.id),
           email: userInfo.email,
           name: userInfo.profile?.firstName || 'Unknown',
           role: 'admin', // Set appropriate role based on your auth logic
           permissions: userInfo.permissions?.map(p => p.code) || [],
-          createdAt: userInfo.createdAt,
-          updatedAt: userInfo.updatedAt
+          createdAt: userInfo.createdAt instanceof Date ? userInfo.createdAt.toISOString() : String(userInfo.createdAt),
+          updatedAt: userInfo.updatedAt instanceof Date ? userInfo.updatedAt.toISOString() : String(userInfo.updatedAt)
         }
 
         // Redirect to dashboard
@@ -112,7 +112,7 @@ export const useAuth = () => {
       try {
         console.log('Fetching profile...');
         // Get user info and transform to match User interface
-        const userInfo = await trpc.profile.getMyProfile.query();
+        const userInfo = await trpc.profile.getMyProfile.query() as ProfileResponseExtended;
         console.log('Profile response:', userInfo);
         
         // If we got a successful response
@@ -122,24 +122,37 @@ export const useAuth = () => {
             email: userInfo.email,
             name: userInfo.email.split('@')[0], // Use email as name if no profile
             role: 'admin',
-            permissions: [], // We'll handle permissions later if needed
-            createdAt: userInfo.createdAt || new Date().toISOString(),
-            updatedAt: userInfo.updatedAt || new Date().toISOString()
+            permissions: userInfo.permissions?.map(p => p.code) || [],
+            createdAt: userInfo.createdAt instanceof Date ? userInfo.createdAt.toISOString() : String(userInfo.createdAt),
+            updatedAt: userInfo.updatedAt instanceof Date ? userInfo.updatedAt.toISOString() : String(userInfo.updatedAt)
           };
           console.log('Auth check successful');
           return true;
         }
         console.log('No user ID in response');
         return false;
-      } catch (profileError) {
+      } catch (profileError: any) {
         console.error('Error fetching profile:', profileError);
-        // Only remove token if it's an authentication error
-        if (profileError instanceof TRPCClientError && 
-            (profileError.message.includes('unauthorized') || 
-             profileError.message.includes('unauthenticated'))) {
+        
+        // Handle token expired error
+        const errorMessage = profileError?.message || '';
+        const isAuthError = profileError instanceof TRPCClientError && 
+                           (errorMessage.includes('unauthorized') || 
+                            errorMessage.includes('unauthenticated') ||
+                            errorMessage.includes('expired'));
+                           
+        if (isAuthError) {
+          // Clear invalid token
+          console.log('Auth error detected, removing token and redirecting to login');
           storage.removeItem('accessToken');
           user.value = null;
+          
+          // Redirect to login page if not already there
+          if (process.client && window.location.pathname !== '/auth/login') {
+            router.push('/auth/login');
+          }
         }
+        
         return false;
       }
     } catch (err) {

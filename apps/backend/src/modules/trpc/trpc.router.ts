@@ -30,7 +30,10 @@ import {
   paymentRouter,
   orderRouter,
   uploadRouter,
-  adminRouter
+  commentRouter,
+  reviewRouter,
+  adminRouter,
+  siteStatisticsRouter
 } from './routers';
 
 @Injectable()
@@ -70,7 +73,10 @@ export class TrpcRouter {
       payment: paymentRouter,
       order: orderRouter,
       upload: uploadRouter,
+      comment: commentRouter,
+      review: reviewRouter,
       admin: adminRouter,
+      siteStatistics: siteStatisticsRouter,
     });
   }
 

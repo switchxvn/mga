@@ -1,6 +1,7 @@
-import type { AppRouter } from '../types/trpc';
+import type { AppRouter } from '@backend/modules/trpc/routers';
 import { useNuxtApp } from 'nuxt/app';
 import type { inferRouterProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
 /**
  * Composable for accessing the tRPC client
@@ -9,4 +10,34 @@ import type { inferRouterProxyClient } from '@trpc/client';
 export const useTrpc = () => {
   const { $trpc } = useNuxtApp();
   return $trpc as inferRouterProxyClient<AppRouter>;
+};
+
+/**
+ * Tạo tRPC client với cấu hình tùy chỉnh
+ */
+export const createTRPCClient = () => {
+  const apiUrl = process.env.NUXT_PUBLIC_TRPC_API_URL || '/api/trpc';
+  
+  return createTRPCProxyClient<AppRouter>({
+    links: [
+      httpBatchLink({
+        url: apiUrl,
+        fetch(url, options) {
+          console.log('Making TRPC API request to:', url);
+          return fetch(url, {
+            ...options,
+            credentials: 'include',
+            headers: {
+              ...options?.headers,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache, no-store',
+            },
+            // Điều này tương đương với timeout
+            signal: options?.signal || AbortSignal.timeout(30000),
+          });
+        },
+      }),
+    ],
+  });
 }; 

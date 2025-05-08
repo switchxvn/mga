@@ -59,7 +59,7 @@ const props = withDefaults(defineProps<Props>(), {
     backgroundColor: 'bg-gray-200',
     textColor: 'text-gray-900',
     accentColor: 'primary',
-    maxGuests: 10
+    maxGuests: 999
   })
 });
 
@@ -150,7 +150,7 @@ const decreaseCount = (variantId: number) => {
 
 const increaseCount = (variantId: number) => {
   const currentCount = variantCounts.value[variantId] || 0;
-  if (currentCount < (props.settings?.maxGuests || 10)) {
+  if (currentCount < (props.settings?.maxGuests || 999)) {
     variantCounts.value[variantId] = currentCount + 1;
   }
 };
@@ -329,7 +329,7 @@ watch(locale, () => {
                         <button
                           type="button"
                           class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                          :disabled="(variantCounts[variant.id] || 0) >= (settings?.maxGuests || 10)"
+                          :disabled="(variantCounts[variant.id] || 0) >= (settings?.maxGuests || 999)"
                           @click="increaseCount(variant.id)"
                         >
                           <PlusIcon class="w-5 h-5" />

@@ -5,6 +5,7 @@ import { ProductSnapshot, ProductType } from '../../order/entities/order-item.en
 import { OrderStatus, PaymentStatus } from '../../order/entities/order.entity';
 import { RefundReason, RefundStatus, RefundType } from '../../order/entities/order-refund.entity';
 import { generateOrderCode } from '../../order/utils/order-code.util';
+import { CreateRefundDto } from '../../order/frontend/services/order-frontend.service';
 import { adminProcedure, publicProcedure, router } from '../procedures';
 
 const addressSchema = z.object({
@@ -47,12 +48,14 @@ const createOrderSchema = z.object({
 const refundItemSchema = z.object({
   orderItemId: z.number(),
   quantity: z.number().min(1),
-  reason: z.string().optional()
+  reason: z.string().optional(),
+  newDate: z.string().optional()
 });
 
 const createRefundSchema = z.object({
   orderCode: z.string(),
   requesterPhone: z.string(),
+  requesterPhoneCode: z.string(),
   requesterName: z.string(),
   requesterEmail: z.string().email().optional(),
   refundReason: z.nativeEnum(RefundReason),
@@ -324,7 +327,25 @@ export const orderRouter = router({
     .input(createRefundSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const result = await ctx.services.orderFrontendService.createRefundRequest(input);
+        // Sử dụng type assertion để chỉ định rõ ràng input là CreateRefundDto
+        const createRefundDto: CreateRefundDto = {
+          orderCode: input.orderCode,
+          requesterName: input.requesterName,
+          requesterPhone: input.requesterPhone,
+          requesterPhoneCode: input.requesterPhoneCode,
+          requesterEmail: input.requesterEmail,
+          refundReason: input.refundReason,
+          refundType: input.refundType,
+          details: input.details,
+          items: input.items.map(item => ({
+            orderItemId: item.orderItemId,
+            quantity: item.quantity,
+            reason: item.reason,
+            newDate: item.newDate
+          }))
+        };
+        
+        const result = await ctx.services.orderFrontendService.createRefundRequest(createRefundDto);
         return result;
       } catch (error) {
         throw new TRPCError({

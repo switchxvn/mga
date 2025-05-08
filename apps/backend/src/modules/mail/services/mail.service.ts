@@ -123,25 +123,48 @@ export class MailService implements MailServiceInterface {
     customerName: string;
     refundType: string;
     refundAmount?: number;
+    items?: Array<{
+      productName: string;
+      variantName?: string;
+      quantity: number;
+      oldDate?: string;
+      newDate?: string;
+    }>;
   }): Promise<MailResponse> {
     try {
-      const templateId = 'refund_request';
-      const templateData = {
+      // Sử dụng template TICKET_EXCHANGE_VI nếu là đổi vé, ngược lại dùng template thông thường
+      const templateCode = data.refundType === 'RESCHEDULE' ? 'TICKET_EXCHANGE_VI' : (data.refundType === 'MONEY_REFUND' ? 'REFUND_REQUEST' : 'REFUND_REQUEST_VI');
+      
+      const templateVars = {
         customerName: data.customerName,
         orderCode: data.orderCode,
         refundCode: data.refundCode,
         refundType: data.refundType,
-        refundAmount: data.refundAmount ? data.refundAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : 'N/A',
-        requestDate: new Date().toLocaleDateString('vi-VN')
+        refundAmount: data.refundAmount ? data.refundAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : undefined,
+        items: data.items
       };
+
+      // Lấy template từ db
+      const template = await this.mailTemplateRepository.findOne({
+        where: { code: templateCode, is_active: true }
+      });
+
+      if (!template) {
+        throw new Error(`Email template ${templateCode} not found or not active`);
+      }
+
+      // Compile template với Handlebars
+      const subjectTemplate = Handlebars.compile(template.subject);
+      const htmlTemplate = Handlebars.compile(template.html);
+
+      // Apply data to templates
+      const subject = subjectTemplate(templateVars);
+      const html = htmlTemplate(templateVars);
 
       return this.sendMail({
         to: data.to,
-        subject: `Xác nhận yêu cầu hoàn trả đơn hàng #${data.orderCode}`,
-        template: {
-          id: templateId,
-          data: templateData
-        }
+        subject: subject,
+        html: html
       });
     } catch (error) {
       this.logger.error(`Failed to send refund request notification: ${error.message}`);

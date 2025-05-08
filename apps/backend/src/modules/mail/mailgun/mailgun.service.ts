@@ -139,12 +139,41 @@ export class MailgunService implements MailServiceInterface {
   }
 
   async sendOrderConfirmation(email: string, orderDetails: any): Promise<void> {
-    const mailOptions: TemplateMailOptions = {
+    await this.sendMail({
       to: email,
-      subject: 'Order Confirmation',
-      text: `Thank you for your order! Order details: ${JSON.stringify(orderDetails)}`,
-    };
+      template: { id: 'order-confirmation', data: orderDetails },
+      subject: 'Xác nhận đơn hàng'
+    });
+  }
 
-    await this.sendMail(mailOptions);
+  async sendRefundRequestNotification(data: {
+    to: string;
+    orderCode: string;
+    refundCode: string;
+    customerName: string;
+    refundType: string;
+    refundAmount?: number;
+    items?: Array<{
+      productName: string;
+      variantName?: string;
+      quantity: number;
+      oldDate?: string;
+      newDate?: string;
+    }>;
+  }): Promise<MailResponse> {
+    const templateData = {
+      customerName: data.customerName,
+      orderCode: data.orderCode,
+      refundCode: data.refundCode,
+      refundType: data.refundType,
+      refundAmount: data.refundAmount,
+      items: data.items
+    };
+    
+    return this.sendMail({
+      to: data.to,
+      template: { id: 'refund-request', data: templateData },
+      subject: `Xác nhận yêu cầu hoàn trả #${data.refundCode}`
+    });
   }
 } 

@@ -1,6 +1,6 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { GalleryTranslation } from './gallery-translation.entity';
-import { GalleryType } from '@ew/shared';
+import { Category } from '../../category/entities/category.entity';
 
 @Entity('galleries')
 export class Gallery {
@@ -9,14 +9,6 @@ export class Gallery {
 
   @Column({ type: 'varchar', length: 255 })
   image: string;
-
-  @Column({
-    type: 'varchar',
-    length: 50,
-    default: GalleryType.COMMON,
-    enum: GalleryType
-  })
-  type: GalleryType;
 
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
@@ -35,4 +27,18 @@ export class Gallery {
     eager: true
   })
   translations: GalleryTranslation[];
+
+  @ManyToMany(() => Category)
+  @JoinTable({
+    name: 'gallery_categories',
+    joinColumn: {
+      name: 'gallery_id',
+      referencedColumnName: 'id'
+    },
+    inverseJoinColumn: {
+      name: 'category_id',
+      referencedColumnName: 'id'
+    }
+  })
+  categories: Category[];
 } 
