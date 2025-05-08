@@ -16,6 +16,9 @@ else
     exit 1
 fi
 
+# Set default app name if not defined
+APP_NAME="${APP_NAME:-cable-car}"
+
 # Validate required environment variables
 if [ -z "$GITHUB_USERNAME" ] || [ -z "$REGISTRY" ]; then
     echo "Error: GITHUB_USERNAME and REGISTRY must be set in .env file"
@@ -49,8 +52,12 @@ show_help() {
 # Stop function
 stop_containers() {
     echo "Stopping containers..."
-    docker stop cable-car-frontend cable-car-backend cable-car-nginx 2>/dev/null || true
-    docker rm cable-car-frontend cable-car-backend cable-car-nginx 2>/dev/null || true
+    FRONTEND_CONTAINER="${APP_NAME}-frontend"
+    BACKEND_CONTAINER="${APP_NAME}-backend"
+    NGINX_CONTAINER="${APP_NAME}-nginx"
+    
+    docker stop $FRONTEND_CONTAINER $BACKEND_CONTAINER $NGINX_CONTAINER 2>/dev/null || true
+    docker rm $FRONTEND_CONTAINER $BACKEND_CONTAINER $NGINX_CONTAINER 2>/dev/null || true
     echo "Containers stopped and removed."
 }
 
@@ -104,7 +111,7 @@ case $COMMAND in
         ;;
     "status")
         echo "Container Status:"
-        docker ps --filter "name=cable-car-"
+        docker ps --filter "name=${APP_NAME}-"
         ;;
     *)
         show_help

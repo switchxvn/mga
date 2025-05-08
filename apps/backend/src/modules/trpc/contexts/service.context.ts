@@ -69,6 +69,8 @@ import { FrontendReviewService } from '../../review/frontend/services/frontend-r
 import { SiteStatisticsAdminService } from '../../site-statistics/admin/services/site-statistics-admin.service';
 import { SiteStatisticsFrontendService } from '../../site-statistics/frontend/services/site-statistics-frontend.service';
 import { MailService } from '../../mail/services/mail.service';
+import { AdminMenuAdminService } from '../../admin-menu/admin/services/admin-menu-admin.service';
+import { AdminMenuFrontendService } from '../../admin-menu/frontend/services/admin-menu-frontend.service';
 
 @Injectable()
 export class ServiceContext {
@@ -143,6 +145,8 @@ export class ServiceContext {
     private readonly siteStatisticsAdminService: SiteStatisticsAdminService,
     private readonly siteStatisticsFrontendService: SiteStatisticsFrontendService,
     private readonly mailService: MailService,
+    private readonly adminMenuAdminService: AdminMenuAdminService,
+    private readonly adminMenuFrontendService: AdminMenuFrontendService,
     @Inject(forwardRef(() => PriceRequestService))
     private readonly priceRequestService: PriceRequestService,
   ) {}
@@ -218,6 +222,8 @@ export class ServiceContext {
       siteStatisticsAdmin: this.siteStatisticsAdminService,
       siteStatisticsFrontend: this.siteStatisticsFrontendService,
       mailService: this.mailService,
+      adminMenuAdminService: this.adminMenuAdminService,
+      adminMenuFrontendService: this.adminMenuFrontendService,
       
       // Grouped services by namespace
       admin: {
@@ -250,6 +256,7 @@ export class ServiceContext {
         orderTicketSection: this.orderTicketSectionAdminService,
         dashboard: this.dashboardAdminService,
         gallery: this.galleryAdminService,
+        adminMenu: this.adminMenuAdminService,
       },
       
       frontend: {
@@ -279,6 +286,7 @@ export class ServiceContext {
         upload: this.uploadFrontendService,
         orderTicketSection: this.orderTicketSectionFrontendService,
         gallery: this.galleryFrontendService,
+        adminMenu: this.adminMenuFrontendService,
       },
     };
   }
