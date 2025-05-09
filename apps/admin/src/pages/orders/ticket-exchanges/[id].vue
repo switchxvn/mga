@@ -183,7 +183,7 @@ const loadRefundDetails = async () => {
   try {
     console.log('Sending request to getRefundById:', refundId.value);
     const result = await trpc.order.admin.getRefundById.query(refundId.value);
-    console.log('Received refund data:', result);
+    console.log('Received refund data:', JSON.stringify(result, null, 2));
     
     // Kiểm tra kết quả
     if (!result) {
@@ -193,8 +193,17 @@ const loadRefundDetails = async () => {
       return;
     }
     
+    // Kiểm tra trạng thái
+    if (result.status === undefined) {
+      console.error('Missing status in result:', result);
+      toast.error('Dữ liệu yêu cầu đổi vé không hợp lệ');
+      router.push('/orders/ticket-exchanges');
+      return;
+    }
+    
     refund.value = result;
     console.log('Refund data set:', refund.value);
+    console.log('Refund status:', refund.value.status);
     
     // Initialize form values
     newStatus.value = result.status;
@@ -260,7 +269,13 @@ const updateStatus = async () => {
 
 // Confirm status update
 const confirmStatusUpdate = () => {
-  if (!newStatus.value || !refund.value) return;
+  if (!newStatus.value || !refund.value) {
+    console.log('Cannot update status: newStatus or refund is missing', { 
+      newStatus: newStatus.value, 
+      hasRefund: !!refund.value 
+    });
+    return;
+  }
   
   const statusLabel = getStatusLabel(newStatus.value);
   let message = `Bạn có chắc chắn muốn cập nhật trạng thái thành "${statusLabel}" không?`;
@@ -468,10 +483,10 @@ watch(refundId, (newId, oldId) => {
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="item in refund.items" :key="item.id" class="hover:bg-gray-50">
+              <tr v-for="item in refund?.items || []" :key="item.id" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div>
-                    {{ item.orderItem?.product?.translations?.find((t) => t.locale === 'vi')?.title || 
+                    {{ item.orderItem?.product?.translations?.find((t: any) => t.locale === 'vi')?.title || 
                        item.orderItem?.product?.title || 
                        'Sản phẩm không xác định' }}
                   </div>
@@ -523,14 +538,14 @@ watch(refundId, (newId, oldId) => {
                 {{ option.label }}
               </option>
             </select>
-            <p v-if="!canUpdateStatus && refund?.status && (refund.status === RefundStatus.COMPLETED || refund.status === RefundStatus.CANCELLED)" class="mt-1 text-sm text-red-500">
+            <p v-if="!canUpdateStatus && (refund?.status === RefundStatus.COMPLETED || refund?.status === RefundStatus.CANCELLED)" class="mt-1 text-sm text-red-500">
               Không thể cập nhật trạng thái khi đã hoàn tất hoặc đã hủy
             </p>
-            <p v-else-if="!canUpdateStatus && refund?.refundType && refund?.status && refund?.newOrderId && refund.refundType === RefundType.RESCHEDULE && refund.status === RefundStatus.APPROVED" class="mt-1 text-sm text-red-500">
+            <p v-else-if="!canUpdateStatus && refund?.refundType === RefundType.RESCHEDULE && refund?.status === RefundStatus.APPROVED && refund?.newOrderId" class="mt-1 text-sm text-red-500">
               Không thể thay đổi trạng thái vì đã duyệt đổi vé và tạo đơn hàng mới
             </p>
             
-            <div v-if="refund?.refundType && newStatus && refund.refundType === RefundType.RESCHEDULE && newStatus === RefundStatus.APPROVED" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div v-if="refund?.refundType === RefundType.RESCHEDULE && newStatus === RefundStatus.APPROVED" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p class="text-sm text-blue-800">
                 <AlertTriangle class="h-4 w-4 inline-block mr-1" />
                 Khi duyệt đổi vé, hệ thống sẽ tự động tạo một đơn hàng mới với vé có ngày mới.
