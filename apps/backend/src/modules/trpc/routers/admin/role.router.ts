@@ -102,7 +102,13 @@ export const roleAdminRouter = router({
     .input(createRoleSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.admin.role.createRole(input)
+        return await ctx.services.admin.role.createRole({
+          name: input.name,
+          code: input.code,
+          groupName: input.groupName,
+          description: input.description,
+          permissionIds: input.permissionIds
+        })
       } catch (error) {
         if (error instanceof TRPCError) throw error
         

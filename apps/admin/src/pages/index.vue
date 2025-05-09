@@ -92,7 +92,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <PermissionGate :permissions="['VIEW_DASHBOARD']">
+  <PermissionGate :permissions="[]">
     <div class="space-y-6">
       <div class="md:flex md:items-center md:justify-between mb-8">
         <div class="min-w-0 flex-1">

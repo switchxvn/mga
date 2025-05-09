@@ -4,15 +4,7 @@ import { useAuth } from '../composables/useAuth';
 
 // Định nghĩa quyền truy cập cho từng route
 const routePermissions: Record<string, string[]> = {
-  '/': ['VIEW_DASHBOARD'],
-  '/posts': ['VIEW_POSTS'],
-  '/posts/create': ['CREATE_POSTS'],
-  '/products': ['VIEW_PRODUCTS'],
-  '/products/create': ['CREATE_PRODUCTS'],
-  '/orders': ['VIEW_ORDERS'],
-  '/users': ['VIEW_USERS'],
-  '/categories': ['VIEW_CATEGORIES'],
-  '/roles': ['VIEW_ROLES'],
+ 
   // Thêm nhiều route khác ở đây
 };
 

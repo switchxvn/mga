@@ -485,7 +485,7 @@ async function togglePublished(post: AdminPost) {
       </TransitionRoot>
 
       <!-- Permission Check -->
-      <PermissionGate :permissions="['VIEW_POSTS']">
+      <PermissionGate :permissions="[]">
         <!-- Permission Denied Alert -->
         <template v-slot:default>
           <!-- Search and Filter -->

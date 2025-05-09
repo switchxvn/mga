@@ -1,6 +1,6 @@
 <template>
   <AuthWrapper>
-    <PermissionGate :permissions="['CREATE_POSTS']">
+    <PermissionGate :permissions="[]">
       <div class="min-h-screen bg-slate-50">
         <!-- Loading State -->
         <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
