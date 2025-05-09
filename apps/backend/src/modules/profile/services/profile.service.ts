@@ -87,7 +87,21 @@ export class ProfileService {
     }
   }
 
-  async createUserProfile(data: { userId: string, firstName?: string, lastName?: string }): Promise<UserProfile> {
+  async createUserProfile(data: { 
+    userId: string, 
+    firstName?: string, 
+    lastName?: string,
+    phoneNumber?: string,
+    phoneCode?: string,
+    bio?: string,
+    address?: {
+      street: string | null;
+      city: string | null;
+      state: string | null;
+      country: string | null;
+      zipCode: string | null;
+    } | null
+  }): Promise<UserProfile> {
     try {
       let profile = await this.profileRepository.findOne({
         where: { userId: data.userId },
@@ -98,12 +112,29 @@ export class ProfileService {
         // Profile already exists, update it
         profile.firstName = data.firstName || profile.firstName;
         profile.lastName = data.lastName || profile.lastName;
+        profile.phoneNumber = data.phoneNumber || profile.phoneNumber;
+        profile.phoneCode = data.phoneCode || profile.phoneCode;
+        profile.bio = data.bio || profile.bio;
+        
+        if (data.address) {
+          profile.address = {
+            street: data.address.street ?? profile.address?.street ?? null,
+            city: data.address.city ?? profile.address?.city ?? null,
+            state: data.address.state ?? profile.address?.state ?? null,
+            country: data.address.country ?? profile.address?.country ?? null,
+            zipCode: data.address.zipCode ?? profile.address?.zipCode ?? null,
+          };
+        }
       } else {
         // Create new profile
         profile = this.profileRepository.create({
           userId: data.userId,
           firstName: data.firstName || '',
           lastName: data.lastName || '',
+          phoneNumber: data.phoneNumber || '',
+          phoneCode: data.phoneCode || '',
+          bio: data.bio || '',
+          address: data.address || null
         });
       }
 

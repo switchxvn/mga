@@ -25,7 +25,17 @@ const updateUserSchema = z.object({
   lastName: z.string().optional(),
   isActive: z.boolean().optional(),
   isEmailVerified: z.boolean().optional(),
-  roleIds: z.array(z.string()).optional()
+  roleIds: z.array(z.string()).optional(),
+  phoneNumber: z.string().optional(),
+  phoneCode: z.string().optional(),
+  bio: z.string().optional(),
+  address: z.object({
+    street: z.string().optional().nullable(),
+    city: z.string().optional().nullable(),
+    state: z.string().optional().nullable(),
+    country: z.string().optional().nullable(),
+    zipCode: z.string().optional().nullable()
+  }).optional()
 })
 
 export const usersAdminRouter = router({
@@ -216,11 +226,20 @@ export const usersAdminRouter = router({
         const updatedUser = await ctx.services.userAdminService.update(id, updateData);
 
         // Cập nhật thông tin profile
-        if (updateData.firstName || updateData.lastName) {
+        if (updateData.firstName !== undefined || updateData.lastName !== undefined || 
+            updateData.phoneNumber !== undefined || updateData.phoneCode !== undefined || 
+            updateData.bio !== undefined || updateData.address !== undefined) {
+          // Tìm profile hiện tại của user (nếu có)
+          const existingProfile = await ctx.services.profileService.findOne(id);
+          
           await ctx.services.profileService.createUserProfile({
             userId: id,
-            firstName: updateData.firstName,
-            lastName: updateData.lastName,
+            firstName: updateData.firstName !== undefined ? updateData.firstName : (existingProfile?.firstName || ''),
+            lastName: updateData.lastName !== undefined ? updateData.lastName : (existingProfile?.lastName || ''),
+            phoneNumber: updateData.phoneNumber !== undefined ? updateData.phoneNumber : (existingProfile?.phoneNumber || ''),
+            phoneCode: updateData.phoneCode !== undefined ? updateData.phoneCode : (existingProfile?.phoneCode || ''),
+            bio: updateData.bio !== undefined ? updateData.bio : (existingProfile?.bio || ''),
+            address: updateData.address !== undefined ? updateData.address : (existingProfile?.address || null)
           });
         }
 

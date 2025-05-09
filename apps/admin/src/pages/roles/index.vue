@@ -4,6 +4,16 @@ import { useTrpc } from "../../composables/useTrpc";
 import LoadingIcon from "../../components/LoadingIcon.vue";
 import PageHeader from "../../components/common/header/PageHeader.vue";
 import FilterContainer from "../../components/common/filter/FilterContainer.vue";
+import Swal from 'sweetalert2';
+import {
+  PencilIcon,
+  Trash2Icon,
+  SearchIcon,
+  PlusIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  UserMinusIcon
+} from 'lucide-vue-next';
 
 interface Role {
   id: string;
@@ -97,12 +107,36 @@ const toggleSort = (field: string) => {
 };
 
 const deleteRole = async (roleId: string) => {
-  if (confirm('Bạn có chắc chắn muốn xóa vai trò này không?')) {
+  const result = await Swal.fire({
+    title: 'Xóa vai trò',
+    text: 'Cảnh báo: Tất cả người dùng đang có vai trò này sẽ bị unset khỏi vai trò nếu bạn xóa. Bạn có chắc chắn muốn xóa vai trò này không?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Có, xóa ngay!',
+    cancelButtonText: 'Hủy bỏ',
+    confirmButtonColor: '#DC2626',
+  });
+
+  if (result.isConfirmed) {
     try {
       await trpc.admin.roles.deleteRole.mutate(roleId);
       fetchRoles();
+      
+      Swal.fire({
+        title: 'Thành công!',
+        text: 'Vai trò đã được xóa thành công',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (error: any) {
       console.error('Lỗi khi xóa vai trò:', error);
+      
+      Swal.fire({
+        title: 'Lỗi!',
+        text: error.message || 'Không thể xóa vai trò',
+        icon: 'error'
+      });
     }
   }
 };
@@ -141,7 +175,7 @@ onMounted(() => {
           to="/roles/create"
           class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          <i class="fas fa-plus mr-2"></i>Thêm vai trò mới
+          <PlusIcon class="w-4 h-4 mr-2" />Thêm vai trò mới
         </NuxtLink>
       </template>
     </PageHeader>
@@ -152,7 +186,7 @@ onMounted(() => {
           <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tìm kiếm vai trò</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <i class="fas fa-search text-gray-400"></i>
+              <SearchIcon class="w-4 h-4 text-gray-400" />
             </div>
             <input
               id="search"
@@ -203,7 +237,7 @@ onMounted(() => {
       </div>
       
       <div v-else-if="filteredRoles.length === 0" class="text-center py-16">
-        <i class="fas fa-user-slash text-gray-400 text-5xl mb-4"></i>
+        <UserMinusIcon class="w-16 h-16 text-gray-400 mx-auto mb-4" />
         <p class="text-gray-500 dark:text-gray-400 text-lg">Không tìm thấy vai trò nào</p>
       </div>
       
@@ -252,18 +286,25 @@ onMounted(() => {
               <td class="px-6 py-4">
                 {{ new Date(role.createdAt).toLocaleDateString() }}
               </td>
-              <td class="px-6 py-4 text-right space-x-2">
-                <NuxtLink :to="`/roles/${role.id}`" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-                  <i class="fas fa-edit"></i>
-                </NuxtLink>
-                <button 
-                  class="font-medium text-red-600 dark:text-red-400 hover:underline" 
-                  :disabled="role.code === 'SUPER_ADMIN'"
-                  :class="{ 'opacity-50 cursor-not-allowed': role.code === 'SUPER_ADMIN' }"
-                  @click="deleteRole(role.id)"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                  <NuxtLink
+                    :to="`/roles/${role.id}`"
+                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                    title="Chỉnh sửa vai trò"
+                  >
+                    <PencilIcon class="h-5 w-5" />
+                  </NuxtLink>
+                  <button 
+                    class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                    :disabled="role.code === 'SUPER_ADMIN'"
+                    :class="{ 'opacity-50 cursor-not-allowed': role.code === 'SUPER_ADMIN' }"
+                    @click="deleteRole(role.id)"
+                    title="Xóa vai trò"
+                  >
+                    <Trash2Icon class="h-5 w-5" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -286,7 +327,7 @@ onMounted(() => {
                   : 'bg-gray-200 dark:bg-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-neutral-500'
               ]"
             >
-              <i class="fas fa-chevron-left"></i>
+              <ChevronLeftIcon class="w-4 h-4" />
             </button>
             
             <template v-for="page in totalPages" :key="page">
@@ -324,7 +365,7 @@ onMounted(() => {
                   : 'bg-gray-200 dark:bg-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-neutral-500'
               ]"
             >
-              <i class="fas fa-chevron-right"></i>
+              <ChevronRightIcon class="w-4 h-4" />
             </button>
           </div>
         </div>

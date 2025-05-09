@@ -3,8 +3,14 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTrpc } from "../../composables/useTrpc";
 import { useToast } from 'vue-toastification';
+import Swal from 'sweetalert2';
 import LoadingIcon from "../../components/LoadingIcon.vue";
 import PageHeader from "../../components/common/header/PageHeader.vue";
+import {
+  XIcon,
+  SaveIcon,
+  SaveAllIcon
+} from 'lucide-vue-next';
 
 const router = useRouter();
 const trpc = useTrpc();
@@ -142,11 +148,18 @@ const createRole = async (continueEditing = false) => {
       permissionIds: selectedPermissionIds.value
     });
     
-    toast.success('Tạo vai trò thành công!');
+    // Hiển thị thông báo thành công bằng SweetAlert2
+    Swal.fire({
+      title: 'Thành công!',
+      text: 'Tạo vai trò thành công',
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
     
     if (continueEditing) {
       // Redirect to role edit page
-      router.push(`/roles/edit/${newRole.id}`);
+      router.push(`/roles/${newRole.id}`);
     } else {
       // Redirect to role list page
       router.push('/roles');
@@ -156,10 +169,11 @@ const createRole = async (continueEditing = false) => {
     console.error('Lỗi khi tạo vai trò mới:', error);
     formError.value = error.message || 'Không thể tạo vai trò mới. Vui lòng thử lại sau.';
     
-    toast.error(formError.value, {
-      timeout: 8000,
-      position: 'top-right',
-      closeButton: true
+    // Hiển thị thông báo lỗi bằng SweetAlert2
+    Swal.fire({
+      title: 'Lỗi!',
+      text: error.message || 'Không thể tạo vai trò mới',
+      icon: 'error'
     });
   } finally {
     isSaving.value = false;
@@ -195,11 +209,30 @@ onMounted(() => {
         description="Tạo vai trò và chỉ định các quyền hạn"
       >
         <template #actions>
-          <button 
-            @click="goBack"
-            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600 dark:hover:bg-neutral-600"
+          <NuxtLink 
+            to="/roles"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
           >
-            <i class="fas fa-arrow-left mr-2"></i>Quay lại
+            <XIcon class="w-4 h-4 mr-2" />
+            Hủy
+          </NuxtLink>
+          <button 
+            @click="createRole(true)" 
+            :disabled="!isFormValid || isSaving"
+            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSaving }"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
+          >
+            <SaveIcon class="w-4 h-4 mr-2" />
+            {{ isSaving && saveAndContinue ? 'Đang lưu...' : 'Lưu & Tiếp tục' }}
+          </button>
+          <button 
+            @click="createRole(false)" 
+            :disabled="!isFormValid || isSaving"
+            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSaving }"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
+          >
+            <SaveAllIcon class="w-4 h-4 mr-2" />
+            {{ isSaving && !saveAndContinue ? 'Đang lưu...' : 'Lưu & Quay lại' }}
           </button>
         </template>
       </PageHeader>
@@ -303,42 +336,6 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-          </div>
-          
-          <!-- Nút lưu -->
-          <div class="flex justify-end space-x-2 mt-8">
-            <button 
-              type="button"
-              @click="goBack"
-              class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-neutral-700 dark:text-gray-300 dark:border-neutral-600 dark:hover:bg-neutral-600"
-            >
-              Hủy
-            </button>
-            <button 
-              type="button"
-              @click="createRole(true)"
-              :disabled="!isFormValid || isSaving"
-              :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSaving }"
-              class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-neutral-700 dark:text-gray-300 dark:border-neutral-600 dark:hover:bg-neutral-600"
-            >
-              <i v-if="isSaving && saveAndContinue" class="fas fa-spinner fa-spin mr-2"></i>
-              <span v-else class="mr-2">
-                <i class="fas fa-save"></i>
-              </span>
-              Lưu & Tiếp tục
-            </button>
-            <button 
-              type="submit"
-              :disabled="!isFormValid || isSaving"
-              :class="{ 'opacity-50 cursor-not-allowed': !isFormValid || isSaving }"
-              class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <i v-if="isSaving && !saveAndContinue" class="fas fa-spinner fa-spin mr-2"></i>
-              <span v-else class="mr-2">
-                <i class="fas fa-save"></i>
-              </span>
-              Lưu & Quay lại
-            </button>
           </div>
         </form>
       </div>

@@ -71,6 +71,7 @@ export const useAuth = () => {
           role: userRole, // Set role based on API response
           permissions: userInfo.permissions?.map(p => p.code) || [],
           roles: userInfo.roles || [], // Lưu trữ roles từ API
+          profile: userInfo.profile || null, // Lưu profile thông tin
           createdAt: userInfo.createdAt instanceof Date ? userInfo.createdAt.toISOString() : String(userInfo.createdAt),
           updatedAt: userInfo.updatedAt instanceof Date ? userInfo.updatedAt.toISOString() : String(userInfo.updatedAt)
         }
@@ -174,6 +175,7 @@ export const useAuth = () => {
             role: userRole, // Use actual role instead of hardcoded 'admin'
             permissions: userInfo.permissions?.map(p => p.code) || [],
             roles: userInfo.roles || [], // Lưu trữ roles từ API
+            profile: userInfo.profile || null, // Lưu profile thông tin
             createdAt: userInfo.createdAt instanceof Date ? userInfo.createdAt.toISOString() : String(userInfo.createdAt),
             updatedAt: userInfo.updatedAt instanceof Date ? userInfo.updatedAt.toISOString() : String(userInfo.updatedAt)
           };

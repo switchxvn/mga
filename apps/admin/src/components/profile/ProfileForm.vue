@@ -2,9 +2,42 @@
   <div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
     <h2 class="text-2xl font-semibold mb-6">Thông tin cá nhân</h2>
     
+    <!-- Profile Information Form -->
+    <div class="mb-8">
+      <h3 class="text-lg font-medium mb-4">Thông tin cơ bản</h3>
+      <form @submit.prevent="handleUpdateProfile" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Họ</label>
+            <input
+              v-model="profileForm.lastName"
+              type="text"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Tên</label>
+            <input
+              v-model="profileForm.firstName"
+              type="text"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+        </div>
+        
+        <button
+          type="submit"
+          class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          :disabled="isUpdatingProfile"
+        >
+          {{ isUpdatingProfile ? 'Đang cập nhật...' : 'Cập nhật thông tin' }}
+        </button>
+      </form>
+    </div>
+    
     <!-- Change Name Form -->
     <div class="mb-8">
-      <h3 class="text-lg font-medium mb-4">Đổi tên</h3>
+      <h3 class="text-lg font-medium mb-4">Đổi tên đăng nhập</h3>
       <form @submit.prevent="handleUpdateName" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700">Tên mới</label>
@@ -69,12 +102,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useToast } from 'vue-toastification'
-import { useProfile } from '~/composables/useProfile'
+import { useProfile } from '@/composables/useProfile'
+import { useTrpc } from '@/composables/useTrpc'
+import { useAuth } from '@/composables/useAuth'
+import { User, UserProfile } from '@/types/user'
 
 const toast = useToast()
+const trpc = useTrpc()
+const { user } = useAuth()
 const { updateName, updatePassword, isUpdatingName, isUpdatingPassword, error } = useProfile()
+
+const isUpdatingProfile = ref(false)
+
+const profileForm = ref({
+  firstName: '',
+  lastName: ''
+})
 
 const nameForm = ref({
   newName: ''
@@ -85,6 +130,36 @@ const passwordForm = ref({
   newPassword: '',
   confirmPassword: ''
 })
+
+onMounted(() => {
+  if (user.value?.profile) {
+    profileForm.value.firstName = user.value.profile.firstName || ''
+    profileForm.value.lastName = user.value.profile.lastName || ''
+  }
+})
+
+const handleUpdateProfile = async () => {
+  isUpdatingProfile.value = true
+  try {
+    // Gọi API để cập nhật profile
+    await trpc.profile.updateProfile.mutate({
+      firstName: profileForm.value.firstName,
+      lastName: profileForm.value.lastName
+    })
+    
+    toast.success('Cập nhật thông tin cá nhân thành công')
+    
+    // Cập nhật lại thông tin user
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  } catch (err) {
+    console.error('Error updating profile:', err)
+    toast.error('Có lỗi xảy ra khi cập nhật thông tin cá nhân')
+  } finally {
+    isUpdatingProfile.value = false
+  }
+}
 
 const handleUpdateName = async () => {
   const success = await updateName(nameForm.value.newName)
@@ -139,7 +214,7 @@ const handleUpdatePassword = async () => {
     const errorMessage = err?.message || error.value || 'Có lỗi xảy ra khi cập nhật mật khẩu';
     toast.error(errorMessage, {
       timeout: 5000, // Hiển thị lâu hơn cho người dùng đọc
-      position: 'top-center'
+      position: 'top-center' as const
     });
     
     // Focus vào field có lỗi

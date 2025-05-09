@@ -1201,6 +1201,162 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
               </div>
             </div>
           </div>
+
+          <!-- Scan History Section -->
+          <div v-if="showHistory && historyOrderItemId" class="mt-6 bg-white p-6 rounded-md border border-gray-200">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-xl">{{ t('Lịch sử quét vé') }}</h3>
+              
+              <!-- Tìm kiếm trong lịch sử quét -->
+              <div class="flex space-x-2">
+                <input
+                  v-model="historySearchQuery"
+                  type="text"
+                  class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  :placeholder="t('Tìm theo người quét')"
+                />
+                <button
+                  @click="searchHistoryScans"
+                  class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <SearchIcon class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            <!-- Filter by date -->
+            <div class="flex flex-wrap gap-4 mb-4">
+              <div class="flex-1 min-w-[240px]">
+                <label for="history-date-from" class="block text-sm font-bold text-gray-700 mb-1">
+                  {{ t('Từ ngày') }}
+                </label>
+                <input
+                  id="history-date-from"
+                  v-model="historyScanDateRange.start"
+                  type="date"
+                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div class="flex-1 min-w-[240px]">
+                <label for="history-date-to" class="block text-sm font-bold text-gray-700 mb-1">
+                  {{ t('Đến ngày') }}
+                </label>
+                <input
+                  id="history-date-to"
+                  v-model="historyScanDateRange.end"
+                  type="date"
+                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div class="flex items-end space-x-2">
+                <button
+                  @click="searchHistoryScans"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  {{ t('Lọc') }}
+                </button>
+                
+                <button
+                  @click="clearHistorySearch"
+                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                >
+                  {{ t('Xóa bộ lọc') }}
+                </button>
+              </div>
+            </div>
+            
+            <!-- Loading state -->
+            <div v-if="isLoadingHistory" class="text-center py-8">
+              <i class="fas fa-spinner fa-spin mr-2"></i>
+              {{ t('Đang tải...') }}
+            </div>
+            
+            <!-- No history found -->
+            <div v-else-if="scanHistories.length === 0" class="text-center py-8 bg-gray-50 rounded-md">
+              <p class="text-gray-500">{{ t('Chưa có lịch sử quét nào cho vé này') }}</p>
+            </div>
+            
+            <!-- History table -->
+            <div v-else class="overflow-x-auto border rounded-md">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {{ t('Thời gian quét') }}
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {{ t('Người quét') }}
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {{ t('Lần quét thứ #') }}
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {{ t('Vị trí') }}
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      {{ t('Trạng thái') }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr v-for="history in scanHistories" :key="history.id">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {{ formatDate(history.scannedAt) }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {{ formatUserName(history) }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                      <span class="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                        {{ history.scanCount || '?' }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {{ history.location || t('Không xác định') }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                      <span
+                        :class="[
+                          'px-2 py-1 rounded-full text-xs font-bold',
+                          history.isFirstScan ? 'bg-green-100 text-green-800 border border-green-500' : 'bg-orange-100 text-orange-800 border border-orange-500'
+                        ]"
+                      >
+                        {{ history.isFirstScan ? t('LẦN ĐẦU') : t('ĐÃ DÙNG') }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination for history -->
+            <div v-if="historyTotalItems > 0" class="mt-4 flex justify-between items-center">
+              <div class="text-sm text-gray-500">
+                {{ t('Hiển thị {0} đến {1} của {2} lượt quét', [
+                  (historyPage - 1) * historyPageSize + 1,
+                  Math.min(historyPage * historyPageSize, historyTotalItems),
+                  historyTotalItems
+                ]) }}
+              </div>
+              <div class="flex space-x-1">
+                <button
+                  v-for="p in Math.ceil(historyTotalItems / historyPageSize)"
+                  :key="p"
+                  @click="onHistoryPageChange(p)"
+                  :class="[
+                    'px-3 py-1 rounded-md text-sm font-medium',
+                    p === historyPage
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ]"
+                >
+                  {{ p }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1315,7 +1471,7 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                     {{ history.orderItem?.qrCode || t('N/A') }}
                   </td>
                   <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
-                    <span class="px-3 py-1 rounded-full text-base font-bold inline-block bg-blue-100 text-blue-800 border border-blue-500">
+                    <span class="px-2 py-1 rounded-full text-base font-bold inline-block bg-blue-100 text-blue-800 border border-blue-300">
                       {{ history.scanCount || '?' }}
                     </span>
                   </td>
@@ -1325,7 +1481,7 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                   <td class="px-4 py-3 whitespace-nowrap text-sm">
                     <span
                       :class="[
-                        'px-2 py-1 font-bold rounded-full text-xs',
+                        'px-2 py-1 rounded-full text-xs font-bold',
                         history.isFirstScan ? 'bg-green-100 text-green-800 border border-green-500' : 'bg-orange-100 text-orange-800 border border-orange-500'
                       ]"
                     >

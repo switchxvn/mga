@@ -62,7 +62,7 @@
       </PageHeader>
 
       <!-- Chế độ xem thông tin -->
-      <div v-if="!isEditing">
+      <div v-if="!isEditing" class="space-y-6">
         <!-- Tabs Navigation (Chế độ xem) -->
         <nav class="flex items-center space-x-1 rounded-lg bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 p-1 w-fit">
           <button
@@ -81,25 +81,25 @@
         </nav>
 
         <!-- Nội dung tab (Chế độ xem) -->
-        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-6">
           <!-- Thông tin cơ bản -->
           <div v-show="currentTab === 'basic'">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-neutral-700">
+            <div class="mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">
               <div class="flex items-center space-x-4">
                 <div class="h-14 w-14 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-gray-600 text-xl font-semibold">
                   {{ getUserInitials(user) }}
                 </div>
                 <div>
                   <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
-                    {{ user.username || 'N/A' }}
+                    {{ getFullName(user) || user.username || user.email }}
                   </h2>
                   <p class="text-gray-600 dark:text-neutral-400">{{ user.email }}</p>
                 </div>
               </div>
             </div>
 
-            <div class="p-6 space-y-6">
-              <h3 class="text-lg font-medium text-gray-900 dark:text-neutral-200 mb-3 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin tài khoản</h3>
+            <div class="space-y-6">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin tài khoản</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p class="text-sm text-gray-500 dark:text-neutral-400">ID</p>
@@ -149,30 +149,58 @@
 
           <!-- Thông tin cá nhân -->
           <div v-show="currentTab === 'profile'">
-            <div class="p-6 space-y-6">
-              <h3 class="text-lg font-medium text-gray-900 dark:text-neutral-200 mb-3 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin cá nhân</h3>
+            <div class="space-y-6">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin cá nhân</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p class="text-sm text-gray-500 dark:text-neutral-400">Họ</p>
                   <p class="font-medium text-gray-900 dark:text-neutral-200">
-                    {{ user.profile && user.profile.lastName ? user.profile.lastName : 'N/A' }}
+                    {{ getUserProfile(user)?.lastName ? getUserProfile(user).lastName : 'N/A' }}
                   </p>
                 </div>
                 <div>
                   <p class="text-sm text-gray-500 dark:text-neutral-400">Tên</p>
                   <p class="font-medium text-gray-900 dark:text-neutral-200">
-                    {{ user.profile && user.profile.firstName ? user.profile.firstName : 'N/A' }}
+                    {{ getUserProfile(user)?.firstName ? getUserProfile(user).firstName : 'N/A' }}
                   </p>
                 </div>
                 <div>
                   <p class="text-sm text-gray-500 dark:text-neutral-400">Họ và tên</p>
                   <p class="font-medium text-gray-900 dark:text-neutral-200">
                     {{ 
-                      (user.profile && (user.profile.firstName || user.profile.lastName))
-                        ? `${user.profile.firstName || ''} ${user.profile.lastName || ''}`.trim()
+                      (getUserProfile(user) && (getUserProfile(user).firstName || getUserProfile(user).lastName))
+                        ? `${getUserProfile(user).lastName || ''} ${getUserProfile(user).firstName || ''}`.trim()
                         : 'N/A'
                     }}
                   </p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Số điện thoại</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">
+                    {{ 
+                      (getUserProfile(user) && getUserProfile(user).phoneCode && getUserProfile(user).phoneNumber)
+                        ? `(+${getUserProfile(user).phoneCode}) ${getUserProfile(user).phoneNumber}`
+                        : (getUserProfile(user) && getUserProfile(user).phoneNumber ? getUserProfile(user).phoneNumber : 'N/A')
+                    }}
+                  </p>
+                </div>
+                <div class="col-span-2">
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Giới thiệu</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">
+                    {{ getUserProfile(user)?.bio ? getUserProfile(user).bio : 'N/A' }}
+                  </p>
+                </div>
+                <div v-if="getUserProfile(user) && getUserProfile(user).address" class="col-span-2">
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Địa chỉ</p>
+                  <div class="mt-1 text-gray-900 dark:text-neutral-200">
+                    <p v-if="getUserProfile(user).address.street">{{ getUserProfile(user).address.street }}</p>
+                    <p>
+                      <span v-if="getUserProfile(user).address.city">{{ getUserProfile(user).address.city }}, </span>
+                      <span v-if="getUserProfile(user).address.state">{{ getUserProfile(user).address.state }} </span>
+                      <span v-if="getUserProfile(user).address.zipCode">{{ getUserProfile(user).address.zipCode }}</span>
+                    </p>
+                    <p v-if="getUserProfile(user).address.country">{{ getUserProfile(user).address.country }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,11 +208,13 @@
 
           <!-- Phân quyền -->
           <div v-show="currentTab === 'permissions'">
-            <div class="p-6 space-y-6">
-              <h3 class="text-lg font-medium text-gray-900 dark:text-neutral-200 mb-3 pb-2 border-b border-gray-200 dark:border-neutral-700">Phân quyền</h3>
+            <div class="space-y-6">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">Phân quyền</h3>
               <div>
-                <p class="text-sm text-gray-500 dark:text-neutral-400 mb-2">Vai trò</p>
-                <div class="flex flex-wrap gap-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  Vai trò
+                </label>
+                <div class="mt-1 flex flex-wrap gap-2">
                   <span 
                     v-for="role in user.roles" 
                     :key="role.id" 
@@ -203,8 +233,8 @@
 
           <!-- Cài đặt -->
           <div v-show="currentTab === 'settings'">
-            <div class="p-6 space-y-6">
-              <h3 class="text-lg font-medium text-gray-900 dark:text-neutral-200 mb-3 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin hệ thống</h3>
+            <div class="space-y-6">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin hệ thống</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p class="text-sm text-gray-500 dark:text-neutral-400">Ngày tạo</p>
@@ -217,7 +247,7 @@
               </div>
 
               <div class="mt-6">
-                <h4 class="font-medium text-gray-900 dark:text-neutral-200 mb-3">Thao tác tài khoản</h4>
+                <h4 class="font-medium text-gray-900 dark:text-white mb-4">Thao tác tài khoản</h4>
                 <div class="flex flex-wrap gap-2">
                   <button
                     @click="sendPasswordResetEmail"
@@ -255,7 +285,7 @@
       </div>
 
       <!-- Chế độ chỉnh sửa -->
-      <div v-else>
+      <div v-else class="space-y-6">
         <!-- Tabs Navigation (Chế độ chỉnh sửa) -->
         <nav class="flex items-center space-x-1 rounded-lg bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 p-1 w-fit">
           <button
@@ -274,7 +304,7 @@
         </nav>
 
         <!-- Tab Contents (Edit mode) -->
-        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-6">
           <form @submit.prevent="updateUser">
             <!-- Thông tin cơ bản -->
             <div v-show="currentTab === 'basic'">
@@ -382,6 +412,124 @@
                     class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                   />
                 </div>
+
+                <!-- Phone Code & Phone Number -->
+                <div>
+                  <label for="phoneCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Mã quốc gia
+                  </label>
+                  <input
+                    id="phoneCode"
+                    v-model="form.phoneCode"
+                    type="text"
+                    placeholder="Ví dụ: 84"
+                    class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                  />
+                </div>
+
+                <div>
+                  <label for="phoneNumber" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Số điện thoại
+                  </label>
+                  <input
+                    id="phoneNumber"
+                    v-model="form.phoneNumber"
+                    type="text"
+                    placeholder="Nhập số điện thoại"
+                    class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                  />
+                </div>
+
+                <!-- Bio -->
+                <div class="col-span-1 md:col-span-2">
+                  <label for="bio" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Giới thiệu
+                  </label>
+                  <textarea
+                    id="bio"
+                    v-model="form.bio"
+                    placeholder="Nhập giới thiệu"
+                    rows="3"
+                    class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                  ></textarea>
+                </div>
+
+                <!-- Address -->
+                <div class="col-span-1 md:col-span-2">
+                  <h4 class="font-medium text-gray-900 dark:text-white mb-4">Địa chỉ</h4>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Street -->
+                    <div class="col-span-1 md:col-span-2">
+                      <label for="street" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Địa chỉ đường
+                      </label>
+                      <input
+                        id="street"
+                        v-model="form.address.street"
+                        type="text"
+                        placeholder="Nhập địa chỉ đường"
+                        class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      />
+                    </div>
+                    
+                    <!-- City -->
+                    <div>
+                      <label for="city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Thành phố
+                      </label>
+                      <input
+                        id="city"
+                        v-model="form.address.city"
+                        type="text"
+                        placeholder="Nhập thành phố"
+                        class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      />
+                    </div>
+                    
+                    <!-- State -->
+                    <div>
+                      <label for="state" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Tỉnh/Thành
+                      </label>
+                      <input
+                        id="state"
+                        v-model="form.address.state"
+                        type="text"
+                        placeholder="Nhập tỉnh/thành"
+                        class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      />
+                    </div>
+                    
+                    <!-- Country -->
+                    <div>
+                      <label for="country" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Quốc gia
+                      </label>
+                      <input
+                        id="country"
+                        v-model="form.address.country"
+                        type="text"
+                        placeholder="Nhập quốc gia"
+                        class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      />
+                    </div>
+                    
+                    <!-- Zip Code -->
+                    <div>
+                      <label for="zipCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Mã bưu điện
+                      </label>
+                      <input
+                        id="zipCode"
+                        v-model="form.address.zipCode"
+                        type="text"
+                        placeholder="Nhập mã bưu điện"
+                        class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -391,7 +539,7 @@
               
               <!-- Roles -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   Vai trò
                 </label>
                 <div class="mt-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -427,7 +575,7 @@
               
               <!-- Active status -->
               <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   Trạng thái tài khoản
                 </label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -466,7 +614,7 @@
 
               <!-- Email verified status -->
               <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   Trạng thái xác thực email
                 </label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -606,7 +754,17 @@ const form = reactive({
   lastName: '',
   isActive: true,
   isEmailVerified: false,
-  roleIds: []
+  roleIds: [],
+  phoneCode: '',
+  phoneNumber: '',
+  bio: '',
+  address: {
+    street: '',
+    city: '',
+    state: '',
+    country: '',
+    zipCode: ''
+  }
 })
 
 const validationErrors = reactive({
@@ -615,13 +773,21 @@ const validationErrors = reactive({
   password: ''
 })
 
+// Helper function to get user profile data (from either profile or __profile__)
+const getUserProfile = (user) => {
+  return user?.profile || user?.__profile__ || null
+}
+
 // Fetch user details
 const fetchUser = async () => {
   loading.value = true
   error.value = null
   
   try {
-    user.value = await trpc.admin.users.getUserById.query(userId.value)
+    const userData = await trpc.admin.users.getUserById.query(userId.value)
+    
+    // Normalize data to fix profile field
+    user.value = normalizeUserData(userData)
     
     // Initialize form with user data
     form.email = user.value.email
@@ -630,9 +796,16 @@ const fetchUser = async () => {
     form.isEmailVerified = user.value.isEmailVerified
     
     // Handle profile data
-    if (user.value.profile) {
-      form.firstName = user.value.profile.firstName || ''
-      form.lastName = user.value.profile.lastName || ''
+    const profile = getUserProfile(user.value)
+    if (profile) {
+      form.firstName = profile.firstName || ''
+      form.lastName = profile.lastName || ''
+      form.phoneCode = profile.phoneCode || ''
+      form.phoneNumber = profile.phoneNumber || ''
+      form.bio = profile.bio || ''
+      if (profile.address) {
+        form.address = { ...profile.address }
+      }
     }
     
     // Handle roles
@@ -645,6 +818,20 @@ const fetchUser = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// Helper function to normalize user data from API
+const normalizeUserData = (userData) => {
+  // If __profile__ exists but profile doesn't, move it to profile
+  if (userData.__profile__ && !userData.profile) {
+    userData = {
+      ...userData,
+      profile: userData.__profile__
+    }
+    // Delete the original field to avoid duplication
+    delete userData.__profile__
+  }
+  return userData
 }
 
 // Fetch available roles
@@ -675,6 +862,12 @@ const formatDate = (dateString) => {
 
 // Get user initials for avatar
 const getUserInitials = (user) => {
+  // Check both possible profile locations
+  const profile = getUserProfile(user)
+  
+  if (profile && profile.firstName && profile.lastName) {
+    return `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase()
+  }
   if (user.username) {
     return user.username.charAt(0).toUpperCase()
   }
@@ -682,6 +875,23 @@ const getUserInitials = (user) => {
     return user.email.charAt(0).toUpperCase()
   }
   return 'U'
+}
+
+// Get full name from profile
+const getFullName = (user) => {
+  // Check both possible profile locations
+  const profile = getUserProfile(user)
+  
+  if (profile) {
+    if (profile.lastName && profile.firstName) {
+      return `${profile.lastName} ${profile.firstName}`.trim()
+    } else if (profile.lastName) {
+      return profile.lastName
+    } else if (profile.firstName) {
+      return profile.firstName
+    }
+  }
+  return null
 }
 
 // Cancel edit mode
@@ -696,12 +906,23 @@ const cancelEdit = () => {
   form.isActive = user.value.isActive
   form.isEmailVerified = user.value.isEmailVerified
   
-  if (user.value.profile) {
-    form.firstName = user.value.profile.firstName || ''
-    form.lastName = user.value.profile.lastName || ''
+  const profile = getUserProfile(user.value)
+  if (profile) {
+    form.firstName = profile.firstName || ''
+    form.lastName = profile.lastName || ''
+    form.phoneCode = profile.phoneCode || ''
+    form.phoneNumber = profile.phoneNumber || ''
+    form.bio = profile.bio || ''
+    if (profile.address) {
+      form.address = { ...profile.address }
+    }
   } else {
     form.firstName = ''
     form.lastName = ''
+    form.phoneCode = ''
+    form.phoneNumber = ''
+    form.bio = ''
+    form.address = { street: '', city: '', state: '', country: '', zipCode: '' }
   }
   
   if (user.value.roles) {
@@ -771,8 +992,12 @@ const updateUser = async () => {
       isActive: form.isActive,
       isEmailVerified: form.isEmailVerified,
       roleIds: form.roleIds,
-      firstName: form.firstName || undefined,
-      lastName: form.lastName || undefined
+      firstName: form.firstName || '',
+      lastName: form.lastName || '',
+      phoneCode: form.phoneCode || '',
+      phoneNumber: form.phoneNumber || '',
+      bio: form.bio || '',
+      address: form.address || {}
     }
     
     // Only include password if it was changed
