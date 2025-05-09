@@ -29,32 +29,61 @@ export default defineNuxtPlugin(() => {
     }
   };
 
-  /**
-   * createTRPCNuxtClient adds a `useQuery` composable
-   * built on top of `useAsyncData`.
-   */
+  // SSR handling - return mock client that does nothing
+  if (process.server) {
+    // Create mock client
+    const mockClient = new Proxy({}, {
+      get(_, property) {
+        // Handle nested properties
+        if (typeof property === 'string' && property !== 'then') {
+          return new Proxy({}, {
+            get(_, nestedProperty) {
+              // For query and mutate methods
+              if (nestedProperty === 'query' || nestedProperty === 'mutate') {
+                return () => Promise.resolve(null);
+              }
+              
+              // For other nested properties
+              return new Proxy({}, {
+                get() {
+                  return () => Promise.resolve(null);
+                }
+              });
+            }
+          });
+        }
+        return undefined;
+      }
+    });
+
+    return {
+      provide: {
+        trpc: mockClient
+      }
+    };
+  }
+
+  // Client-side TRPC client
   const client = createTRPCProxyClient<AppRouter>({
     links: [
       httpBatchLink({
         url: `${baseUrl}/api/trpc`,
-        fetch: process.server 
-          ? () => Promise.reject(new Error('API calls are skipped during SSR')) 
-          : (url, options) => {
-              // Use custom fetch to catch errors
-              return fetch(url, options).then(response => {
-                if (!response.ok) {
-                  // Xử lý lỗi HTTP response
-                  if (response.status === 401) {
-                    handleAuthError({ message: 'Unauthorized' });
-                  }
-                }
-                return response;
-              }).catch(error => {
-                // Xử lý lỗi fetch
-                handleAuthError(error);
-                throw error;
-              });
-            },
+        fetch: (url, options) => {
+          // Use custom fetch to catch errors
+          return fetch(url, options).then(response => {
+            if (!response.ok) {
+              // Xử lý lỗi HTTP response
+              if (response.status === 401) {
+                handleAuthError({ message: 'Unauthorized' });
+              }
+            }
+            return response;
+          }).catch(error => {
+            // Xử lý lỗi fetch
+            handleAuthError(error);
+            throw error;
+          });
+        },
         headers() {
           // Only access localStorage when on client-side
           let token = null;
