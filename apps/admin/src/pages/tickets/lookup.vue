@@ -2,12 +2,35 @@
 import { ref, onMounted } from 'vue';
 import { useTrpc } from '@/composables/useTrpc';
 import { useI18n } from 'vue-i18n';
-import { useToast } from 'vue-toastification';
 import { navigateTo } from 'nuxt/app';
 import { TicketIcon, SearchIcon, UserIcon, PrinterIcon, ArrowLeftIcon } from 'lucide-vue-next';
 import { OrderStatus } from '@ew/shared';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import PhoneInput from '../../components/form/PhoneInput.vue';
+
+// Mock toast function để tránh lỗi SSR với vue-toastification
+const toast = {
+  success: (msg: string) => console.log('SUCCESS:', msg),
+  error: (msg: string) => console.log('ERROR:', msg),
+  warning: (msg: string) => console.log('WARNING:', msg),
+  info: (msg: string) => console.log('INFO:', msg)
+};
+
+// Nếu chạy ở client side, thì mới import useToast
+if (process.client) {
+  import('vue-toastification').then((module) => {
+    const useToast = module.useToast;
+    if (typeof useToast === 'function') {
+      const clientToast = useToast();
+      toast.success = clientToast.success;
+      toast.error = clientToast.error;
+      toast.warning = clientToast.warning;
+      toast.info = clientToast.info;
+    }
+  }).catch(err => {
+    console.error('Failed to load toast module:', err);
+  });
+}
 
 // Định nghĩa kiểu dữ liệu
 interface ScanResult {
@@ -109,7 +132,6 @@ interface Setting {
 
 const { t } = useI18n();
 const trpc = useTrpc();
-const toast = useToast();
 
 // State refs
 const qrCode = ref('');
