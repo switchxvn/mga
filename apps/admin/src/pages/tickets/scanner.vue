@@ -174,6 +174,13 @@ const scanTicket = async () => {
 
   console.log('Scanning QR code:', qrCode.value);
   isLoading.value = true;
+  
+  // Lưu qrCode tạm thời để xử lý
+  const scannedQrCode = qrCode.value;
+  
+  // Reset input ngay lập tức để sẵn sàng cho lần quét tiếp theo
+  qrCode.value = '';
+  
   try {
     // Lấy thông tin thiết bị
     const deviceInfo = {
@@ -183,11 +190,11 @@ const scanTicket = async () => {
       browser: navigator.appName,
     };
 
-    console.log('Calling API with:', { qrCode: qrCode.value, deviceInfo });
+    console.log('Calling API with:', { qrCode: scannedQrCode, deviceInfo });
     
     // Kiểm tra vé trước, không lưu log ngay
     const orderItem = await trpc.admin.ticketScanner.getTicketByQrCode.query({
-      qrCode: qrCode.value
+      qrCode: scannedQrCode
     });
     
     if (orderItem) {
@@ -278,13 +285,10 @@ const scanTicket = async () => {
       };
       
       // Lưu QR code hiện tại để khi xác nhận mới lưu log
-      currentQrCode.value = qrCode.value;
+      currentQrCode.value = scannedQrCode;
       
       // Hiển thị modal xác nhận
       showConfirmModal.value = true;
-      
-      // Reset QR code input
-      qrCode.value = '';
       
       // Luôn tải lịch sử quét của vé này để hiển thị
       if (orderItem.id) {
@@ -295,6 +299,14 @@ const scanTicket = async () => {
     } else {
       errorMessage.value = t('Không tìm thấy vé với mã QR này');
       toast.error(errorMessage.value);
+      
+      // Focus lại vào input sau khi hiển thị lỗi
+      setTimeout(() => {
+        const qrInput = document.getElementById('qr-input');
+        if (qrInput) {
+          qrInput.focus();
+        }
+      }, 100);
     }
   } catch (error: any) {
     console.error('Error scanning ticket:', error);
@@ -318,10 +330,18 @@ const scanTicket = async () => {
     if (!msg.includes('chưa được thanh toán')) {
       toast.error(msg);
     }
+    
+    // Focus lại vào input sau khi hiển thị lỗi
+    setTimeout(() => {
+      const qrInput = document.getElementById('qr-input');
+      if (qrInput) {
+        qrInput.focus();
+      }
+    }, 100);
   } finally {
     isLoading.value = false;
     
-    // Focus lại vào input sau khi xử lý xong
+    // Focus lại vào input sau khi xử lý xong nếu không hiển thị modal xác nhận
     if (!showConfirmModal.value) {
       setTimeout(() => {
         const qrInput = document.getElementById('qr-input');
@@ -981,32 +1001,32 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
             <!-- Kết quả tìm kiếm -->
             <div v-if="customerTickets.length > 0" class="mt-4">
               <h4 class="font-semibold text-gray-700 mb-3">{{ t('Vé của khách hàng') }}</h4>
-              <div class="border rounded-md overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200">
+              <div class="border rounded-md overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 table-fixed">
                   <thead class="bg-gray-50">
                     <tr>
-                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Mã đơn hàng') }}</th>
-                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Sản phẩm') }}</th>
-                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Trạng thái vé') }}</th>
-                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Lượt quét') }}</th>
-                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Trạng thái đơn') }}</th>
-                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Ngày mua') }}</th>
-                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Thông tin KH') }}</th>
-                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Hành động') }}</th>
+                      <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">{{ t('Mã đơn hàng') }}</th>
+                      <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-40">{{ t('Sản phẩm') }}</th>
+                      <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-28">{{ t('Trạng thái vé') }}</th>
+                      <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-20">{{ t('Lượt quét') }}</th>
+                      <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">{{ t('Trạng thái đơn') }}</th>
+                      <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-44">{{ t('Ngày mua') }}</th>
+                      <th class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-40">{{ t('Thông tin KH') }}</th>
+                      <th class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-36 bg-gray-100">{{ t('Hành động') }}</th>
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-200">
                     <tr v-for="ticket in customerTickets" :key="ticket.id">
-                      <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                         {{ ticket.order?.orderCode || t('N/A') }}
                       </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      <td class="px-3 py-3 text-sm text-gray-500">
                         {{ ticket.product?.translations?.[0]?.title || t('Unknown Product') }}
                       </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-sm">
+                      <td class="px-3 py-3 whitespace-nowrap text-sm">
                         <span
                           :class="[
-                            'px-2 py-1 rounded-full text-xs font-bold',
+                            'px-2 py-1 rounded-full text-xs font-bold inline-block',
                             ticket.isUsed 
                               ? 'bg-orange-100 text-orange-800 border border-orange-500' 
                               : 'bg-green-100 text-green-800 border border-green-500'
@@ -1015,12 +1035,12 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                           {{ ticket.isUsed ? t('ĐÃ SỬ DỤNG') : t('CHƯA SỬ DỤNG') }}
                         </span>
                       </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold">
+                      <td class="px-3 py-3 whitespace-nowrap text-sm font-semibold">
                         <span class="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
                           {{ ticket.scanCount || 0 }}
                         </span>
                       </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-sm">
+                      <td class="px-3 py-3 whitespace-nowrap text-sm">
                         <span
                           :class="[
                             'px-2 py-1 rounded-full text-xs font-bold',
@@ -1032,7 +1052,7 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                           {{ ticket.order?.paymentStatus === 'paid' ? t('ĐÃ THANH TOÁN') : t('CHƯA THANH TOÁN') }}
                         </span>
                       </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                         {{ formatDate(ticket.order?.createdAt) }}
                         <div v-if="ticket.travelDate" class="mt-1">
                           <span class="text-xs font-bold">{{ t('Ngày đi') }}: </span>
@@ -1060,27 +1080,29 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                           </span>
                         </div>
                       </td>
-                      <td class="px-4 py-3 text-sm text-gray-500">
+                      <td class="px-3 py-3 text-sm text-gray-500">
                         <div class="space-y-1">
                           <p class="font-medium">{{ ticket.order?.customerName || t('N/A') }}</p>
                           <p v-if="ticket.order?.customerEmail" class="text-xs">{{ ticket.order.customerEmail }}</p>
                           <p v-if="ticket.order?.customerPhone" class="text-xs">{{ ticket.order.customerPhone }}</p>
                         </div>
                       </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-sm text-right">
-                        <button 
-                          @click="useCustomerTicket(ticket.qrCode)"
-                          :disabled="Boolean(ticket.order?.paymentStatus !== 'paid' || (ticket.travelDate && isDateInFuture(ticket.travelDate)))"
-                          :class="[
-                            'px-3 py-1 rounded text-white text-xs font-bold',
-                            ticket.order?.paymentStatus === 'paid' && !(ticket.travelDate && isDateInFuture(ticket.travelDate))
-                              ? 'bg-blue-600 hover:bg-blue-700'
-                              : 'bg-gray-400 cursor-not-allowed'
-                          ]"
-                          :title="getTicketButtonTitle(ticket)"
-                        >
-                          {{ t('Sử dụng vé này') }}
-                        </button>
+                      <td class="px-3 py-3 whitespace-nowrap text-sm border-l border-gray-200 bg-gray-50">
+                        <div class="flex justify-center">
+                          <button 
+                            @click="useCustomerTicket(ticket.qrCode)"
+                            :disabled="Boolean(ticket.order?.paymentStatus !== 'paid' || (ticket.travelDate && isDateInFuture(ticket.travelDate)))"
+                            :class="[
+                              'px-4 py-2 rounded-md text-white font-medium shadow-sm',
+                              ticket.order?.paymentStatus === 'paid' && !(ticket.travelDate && isDateInFuture(ticket.travelDate))
+                                ? 'bg-blue-600 hover:bg-blue-700 font-bold'
+                                : 'bg-gray-400 cursor-not-allowed'
+                            ]"
+                            :title="getTicketButtonTitle(ticket)"
+                          >
+                            {{ t('Sử dụng vé này') }}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   </tbody>

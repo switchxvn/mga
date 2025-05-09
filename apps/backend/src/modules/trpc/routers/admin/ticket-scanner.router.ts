@@ -240,6 +240,10 @@ export const ticketScannerRouter = router({
         }
 
         const entityManager = ctx.services.orderAdminService['orderRepository'].manager;
+        
+        // Thêm ORDER BY vào câu truy vấn để sắp xếp theo ngày tạo mới nhất (giảm dần)
+        searchQuery += ` ORDER BY "order"."created_at" DESC`;
+        
         const rawResults = await entityManager.query(searchQuery, params);
         
         if (!rawResults || rawResults.length === 0) {
