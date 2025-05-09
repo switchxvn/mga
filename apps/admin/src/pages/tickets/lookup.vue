@@ -205,10 +205,17 @@ const scanTicket = async () => {
 
   console.log('Tra cứu mã QR:', qrCode.value);
   isLoading.value = true;
+  
+  // Lưu giá trị QR tạm thời
+  const scannedQrCode = qrCode.value;
+  
+  // Reset input ngay lập tức để sẵn sàng cho lần quét tiếp theo
+  qrCode.value = '';
+  
   try {
     // Kiểm tra vé 
     const orderItem = await trpc.admin.ticketScanner.getTicketByQrCode.query({
-      qrCode: qrCode.value
+      qrCode: scannedQrCode
     });
     
     if (orderItem) {
@@ -221,9 +228,6 @@ const scanTicket = async () => {
         isFirstScan: !orderItem.isUsed,
         scanCount: orderItem.scanCount || 0
       };
-      
-      // Reset QR code input
-      qrCode.value = '';
       
       // Tải lịch sử quét của vé này để hiển thị
       if (orderItem.id) {
