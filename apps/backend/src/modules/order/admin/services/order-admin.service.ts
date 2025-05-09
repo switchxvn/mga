@@ -103,6 +103,20 @@ export class OrderAdminService {
     return this.findOrderById(id);
   }
 
+  async updateOrderDetails(id: number, data: {
+    customerName?: string;
+    email?: string;
+    phoneCode?: string;
+    phoneNumber?: string;
+    notes?: string;
+    shippingAddress?: any;
+    billingAddress?: any;
+    paymentMethod?: string;
+  }): Promise<Order> {
+    await this.orderRepository.update(id, data);
+    return this.findOrderById(id);
+  }
+
   async updatePaymentStatus(id: number, status: PaymentStatus): Promise<Order | null> {
     const order = await this.orderRepository.findOne({
       where: { id },

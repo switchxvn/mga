@@ -239,7 +239,13 @@ export const usersAdminRouter = router({
             phoneNumber: updateData.phoneNumber !== undefined ? updateData.phoneNumber : (existingProfile?.phoneNumber || ''),
             phoneCode: updateData.phoneCode !== undefined ? updateData.phoneCode : (existingProfile?.phoneCode || ''),
             bio: updateData.bio !== undefined ? updateData.bio : (existingProfile?.bio || ''),
-            address: updateData.address !== undefined ? updateData.address : (existingProfile?.address || null)
+            address: updateData.address !== undefined ? {
+              street: updateData.address.street ?? null,
+              city: updateData.address.city ?? null,
+              state: updateData.address.state ?? null,
+              country: updateData.address.country ?? null,
+              zipCode: updateData.address.zipCode ?? null
+            } : (existingProfile?.address || null)
           });
         }
 

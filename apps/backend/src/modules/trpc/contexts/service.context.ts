@@ -72,7 +72,6 @@ import { MailService } from '../../mail/services/mail.service';
 import { AdminMenuAdminService } from '../../admin-menu/admin/services/admin-menu-admin.service';
 import { AdminMenuFrontendService } from '../../admin-menu/frontend/services/admin-menu-frontend.service';
 import { RoleAdminService } from '../../user/admin/services/role-admin.service';
-
 @Injectable()
 export class ServiceContext {
   private readonly logger = new Logger(ServiceContext.name);

@@ -25,6 +25,7 @@ export const Permissions = {
   // Settings Management
   VIEW_SETTINGS: 'VIEW_SETTINGS',
   EDIT_SETTINGS: 'EDIT_SETTINGS',
+  DELETE_SETTINGS: 'DELETE_SETTINGS',
 
   // Menu Management
   VIEW_MENUS: 'VIEW_MENUS',
@@ -38,6 +39,23 @@ export const Permissions = {
   VIEW_SCAN_HISTORY: 'VIEW_SCAN_HISTORY',
   SEARCH_TICKETS: 'SEARCH_TICKETS',
   MANAGE_TICKETS: 'MANAGE_TICKETS',
+
+  // Venue Management
+  VIEW_VENUES: 'VIEW_VENUES',
+  CREATE_VENUES: 'CREATE_VENUES',
+  EDIT_VENUES: 'EDIT_VENUES',
+  DELETE_VENUES: 'DELETE_VENUES',
+
+  // Event Management
+  VIEW_EVENTS: 'VIEW_EVENTS',
+  CREATE_EVENTS: 'CREATE_EVENTS',
+  EDIT_EVENTS: 'EDIT_EVENTS',
+  DELETE_EVENTS: 'DELETE_EVENTS',
+
+  // Upload Management
+  UPLOAD_FILES: 'UPLOAD_FILES',
+  VIEW_UPLOADS: 'VIEW_UPLOADS',
+  DELETE_UPLOADS: 'DELETE_UPLOADS',
 
   // Add other permissions as needed...
 } as const; 

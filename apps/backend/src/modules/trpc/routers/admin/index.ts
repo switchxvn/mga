@@ -17,6 +17,7 @@ import { themeSectionAdminRouter } from './theme-section.router'
 import { adminMenuAdminRouter } from './admin-menu.router'
 import { ticketScannerRouter } from './ticket-scanner.router'
 import { roleAdminRouter } from './role.router'
+import { paymentAdminRouter } from './payment.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -37,4 +38,5 @@ export const adminRouter = router({
   adminMenu: adminMenuAdminRouter,
   ticketScanner: ticketScannerRouter,
   roles: roleAdminRouter,
+  payment: paymentAdminRouter,
 }) 
