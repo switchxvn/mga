@@ -4,6 +4,7 @@ export interface User {
   name: string;
   role: string;
   permissions: string[];
+  roles?: string[] | any[]; // Có thể là mảng string hoặc mảng object
   createdAt: string;
   updatedAt: string;
 }
@@ -25,11 +26,18 @@ export interface Permission {
   description?: string;
 }
 
+// Interface cho Role khi là object
+export interface Role {
+  id: string;
+  code: string;
+  name: string;
+}
+
 // Interface mở rộng từ ProfileResponse để bao gồm permissions
 export interface ProfileResponseExtended {
   id: string;
   email: string;
-  roles: string[];
+  roles: (string | Role)[];  // Có thể là mảng string hoặc mảng Role
   isEmailVerified: boolean;
   createdAt: string | Date;
   updatedAt: string | Date;

@@ -28,6 +28,7 @@ interface ScanHistory {
   };
   orderItem?: any;
   isFirstScan?: boolean;
+  scanCount?: number;
 }
 
 const { t } = useI18n();
@@ -293,6 +294,9 @@ onMounted(() => {
                     {{ t('QR Code') }}
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    {{ t('Lần quét thứ #') }}
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     {{ t('Scanned By') }}
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -313,6 +317,11 @@ onMounted(() => {
                   </td>
                   <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-blue-600">
                     {{ history.orderItem?.qrCode || t('N/A') }}
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
+                    <span class="px-3 py-1 rounded-full text-base font-bold inline-block bg-blue-100 text-blue-800 border border-blue-500">
+                      {{ history.scanCount || '?' }}
+                    </span>
                   </td>
                   <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ formatUserName(history) }}

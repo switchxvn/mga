@@ -54,6 +54,7 @@ interface ScanHistory {
   };
   orderItem?: any;
   isFirstScan?: boolean;
+  scanCount?: number;
 }
 
 interface CustomerTicket {
@@ -193,6 +194,24 @@ const scanTicket = async () => {
         // Reset thời gian về 00:00:00 để chỉ so sánh ngày
         currentDate.setHours(0, 0, 0, 0);
         travelDate.setHours(0, 0, 0, 0);
+        
+        // Kiểm tra nếu ngày đi lớn hơn ngày hiện tại (chưa tới ngày)
+        if (travelDate > currentDate) {
+          // Vé chưa tới ngày đi - không hiển thị popup và thông tin vé
+          const formattedDate = formatVietnameseDate(travelDate);
+          errorMessage.value = t('Vé chưa tới ngày sử dụng. Ngày đi hợp lệ: ') + formattedDate;
+          toast.error(errorMessage.value);
+          
+          // Focus lại vào input sau khi hiển thị lỗi
+          setTimeout(() => {
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+              qrInput.focus();
+            }
+          }, 100);
+          
+          return;
+        }
         
         if (travelDate < currentDate) {
           // Vé đã hết hạn - không hiển thị popup và thông tin vé
@@ -428,6 +447,40 @@ const formatVietnameseDate = (date: Date): string => {
   return `${day} tháng ${month < 10 ? '0' + month : month} năm ${year} (${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year})`;
 };
 
+// Kiểm tra xem ngày có phải là ngày hôm nay không
+const isDateToday = (dateStr: string | Date): boolean => {
+  const date = new Date(dateStr);
+  const today = new Date();
+  
+  return date.getDate() === today.getDate() && 
+         date.getMonth() === today.getMonth() && 
+         date.getFullYear() === today.getFullYear();
+};
+
+// Kiểm tra xem ngày có phải là ngày trong tương lai không
+const isDateInFuture = (dateStr: string | Date): boolean => {
+  const date = new Date(dateStr);
+  const today = new Date();
+  
+  // Reset thời gian về 00:00:00 để chỉ so sánh ngày
+  date.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  
+  return date > today;
+};
+
+// Kiểm tra xem ngày có phải là ngày trong quá khứ không
+const isDateInPast = (dateStr: string | Date): boolean => {
+  const date = new Date(dateStr);
+  const today = new Date();
+  
+  // Reset thời gian về 00:00:00 để chỉ so sánh ngày
+  date.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  
+  return date < today;
+};
+
 // Handle pagination change
 const onPageChange = (newPage: number) => {
   page.value = newPage;
@@ -493,6 +546,17 @@ const closeConfirmModal = async () => {
         // Reset thời gian về 00:00:00 để chỉ so sánh ngày
         currentDate.setHours(0, 0, 0, 0);
         travelDate.setHours(0, 0, 0, 0);
+        
+        // Kiểm tra nếu ngày đi lớn hơn ngày hiện tại (chưa tới ngày)
+        if (travelDate > currentDate) {
+          // Vé chưa tới ngày đi
+          const formattedDate = formatVietnameseDate(travelDate);
+          errorMessage.value = t('Vé chưa tới ngày sử dụng. Ngày đi hợp lệ: ') + formattedDate;
+          toast.error(errorMessage.value);
+          isLoading.value = false;
+          currentQrCode.value = '';
+          return;
+        }
         
         if (travelDate < currentDate) {
           // Vé đã hết hạn
@@ -681,6 +745,17 @@ const clearHistorySearch = () => {
   historySearchQuery.value = '';
   historyScanDateRange.value = { start: null, end: null };
   searchHistoryScans();
+};
+
+// Lấy title cho nút sử dụng vé
+const getTicketButtonTitle = (ticket: CustomerTicket): string => {
+  if (ticket.order?.paymentStatus !== 'paid') {
+    return t('Vé chưa thanh toán');
+  }
+  if (ticket.travelDate && isDateInFuture(ticket.travelDate)) {
+    return t('Vé chưa tới ngày sử dụng');
+  }
+  return '';
 };
 </script>
 
@@ -937,6 +1012,31 @@ const clearHistorySearch = () => {
                       </td>
                       <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {{ formatDate(ticket.order?.createdAt) }}
+                        <div v-if="ticket.travelDate" class="mt-1">
+                          <span class="text-xs font-bold">{{ t('Ngày đi') }}: </span>
+                          <span 
+                            v-if="ticket.travelDate" 
+                            :class="[
+                              'px-2 py-1 rounded-full text-xs',
+                              isDateInFuture(ticket.travelDate) 
+                                ? 'bg-blue-100 text-blue-800 border border-blue-300' 
+                                : isDateToday(ticket.travelDate)
+                                  ? 'bg-green-100 text-green-800 border border-green-500'
+                                  : 'bg-gray-100 text-gray-800 border border-gray-300'
+                            ]"
+                          >
+                            {{ formatDate(ticket.travelDate) }}
+                            <span v-if="isDateToday(ticket.travelDate)">
+                              ({{ t('Hôm nay') }})
+                            </span>
+                            <span v-else-if="isDateInFuture(ticket.travelDate)">
+                              ({{ t('Chưa tới ngày') }})
+                            </span>
+                            <span v-else>
+                              ({{ t('Đã qua') }})
+                            </span>
+                          </span>
+                        </div>
                       </td>
                       <td class="px-4 py-3 text-sm text-gray-500">
                         <div class="space-y-1">
@@ -948,13 +1048,14 @@ const clearHistorySearch = () => {
                       <td class="px-4 py-3 whitespace-nowrap text-sm text-right">
                         <button 
                           @click="useCustomerTicket(ticket.qrCode)"
-                          :disabled="ticket.order?.paymentStatus !== 'paid'"
+                          :disabled="ticket.order?.paymentStatus !== 'paid' || (ticket.travelDate && isDateInFuture(ticket.travelDate))"
                           :class="[
                             'px-3 py-1 rounded text-white text-xs font-bold',
-                            ticket.order?.paymentStatus === 'paid'
+                            ticket.order?.paymentStatus === 'paid' && !(ticket.travelDate && isDateInFuture(ticket.travelDate))
                               ? 'bg-blue-600 hover:bg-blue-700'
                               : 'bg-gray-400 cursor-not-allowed'
                           ]"
+                          :title="getTicketButtonTitle(ticket)"
                         >
                           {{ t('Sử dụng vé này') }}
                         </button>
@@ -975,11 +1076,15 @@ const clearHistorySearch = () => {
             </div>
             <div class="ml-3">
               <h3 class="text-lg font-bold">
-                {{ errorMessage.includes('chưa được thanh toán') ? 'VÉ CHƯA THANH TOÁN' : 'LỖI QUÉT VÉ' }}
+                {{ errorMessage.includes('chưa được thanh toán') ? 'VÉ CHƯA THANH TOÁN' : 
+                   errorMessage.includes('chưa tới ngày sử dụng') ? 'VÉ CHƯA TỚI NGÀY ĐI' : 'LỖI QUÉT VÉ' }}
               </h3>
               <p class="mt-1">{{ errorMessage }}</p>
               <p v-if="errorMessage.includes('chưa được thanh toán')" class="mt-2 font-semibold">
                 Vui lòng kiểm tra trạng thái thanh toán của đơn hàng trước khi cho phép người dùng vào.
+              </p>
+              <p v-if="errorMessage.includes('chưa tới ngày sử dụng')" class="mt-2 font-semibold">
+                Vui lòng kiểm tra ngày đi trên vé và thông báo cho khách hàng quay lại đúng ngày.
               </p>
             </div>
           </div>
@@ -1045,8 +1150,15 @@ const clearHistorySearch = () => {
                 <div>
                   <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Lượt quét') }}</p>
                   <p class="font-bold text-lg mt-1">
-                    <span class="px-3 py-1 rounded-full text-base font-bold inline-block bg-blue-100 text-blue-800 border border-blue-500">
-                      {{ scanResult.scanCount || 0 }}
+                    <span 
+                      :class="[
+                        'px-3 py-1 rounded-full text-base font-bold inline-block',
+                        scanResult.isFirstScan 
+                          ? 'bg-green-100 text-green-800 border border-green-500' 
+                          : 'bg-blue-100 text-blue-800 border border-blue-500'
+                      ]"
+                    >
+                      {{ scanResult.isFirstScan ? t('MỚI #1') : scanResult.scanCount || 0 }}
                     </span>
                   </p>
                 </div>
@@ -1156,6 +1268,9 @@ const clearHistorySearch = () => {
                     {{ t('QR Code') }}
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    {{ t('Lần quét thứ #') }}
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     {{ t('Scanned By') }}
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -1176,6 +1291,11 @@ const clearHistorySearch = () => {
                   </td>
                   <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-blue-600">
                     {{ history.orderItem?.qrCode || t('N/A') }}
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
+                    <span class="px-3 py-1 rounded-full text-base font-bold inline-block bg-blue-100 text-blue-800 border border-blue-500">
+                      {{ history.scanCount || '?' }}
+                    </span>
                   </td>
                   <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ formatUserName(history) }}

@@ -18,6 +18,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useColorMode, useHead, navigateTo, useNuxtApp } from '#imports'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
+import { usePermissions } from '@/composables/usePermissions'
 import SidebarNavigation from '@/components/common/SidebarNavigation.vue'
 
 // Minimal interfaces needed
@@ -31,6 +32,7 @@ const isDark = computed(() => colorMode.value === 'dark')
 const userStore = useUserStore()
 const { user, isLoading } = storeToRefs(userStore)
 const { checkAuth, user: authUser } = useAuth()
+const { isSuperAdmin, hasPermission } = usePermissions()
 const route = useRoute()
 const router = useRouter()
 const currentPath = ref(route.path)
@@ -90,24 +92,6 @@ const avatarInitial = computed(() => {
   }
   
   return 'U';
-});
-
-// Check if user has SUPER_ADMIN role
-const isSuperAdmin = computed(() => {
-  // Kiểm tra từ userStore
-  if (user.value && user.value.roles) {
-    const roles = (user.value.roles as unknown) as UserRole[];
-    if (roles.some(role => role.code === 'SUPER_ADMIN')) {
-      return true;
-    }
-  }
-  
-  // Kiểm tra từ authUser
-  if (authUser.value && authUser.value.permissions) {
-    return authUser.value.permissions.includes('SUPER_ADMIN');
-  }
-  
-  return false;
 });
 
 // Get current section from route
@@ -262,7 +246,10 @@ onUnmounted(() => {
                   <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-white"></span>
                 </div>
                 <div class="ml-2 hidden sm:block">
-                  <div class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ displayName }}</div>
+                  <div class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {{ displayName }}
+                    <span v-if="isSuperAdmin" class="ml-1 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded-full">SUPER</span>
+                  </div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">{{ userEmail }}</div>
                 </div>
               </div>

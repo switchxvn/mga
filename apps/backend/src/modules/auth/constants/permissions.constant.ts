@@ -32,5 +32,12 @@ export const Permissions = {
   EDIT_MENUS: 'EDIT_MENUS',
   DELETE_MENUS: 'DELETE_MENUS',
 
+  // Ticket Management
+  VIEW_TICKETS: 'VIEW_TICKETS',
+  SCAN_TICKETS: 'SCAN_TICKETS',
+  VIEW_SCAN_HISTORY: 'VIEW_SCAN_HISTORY',
+  SEARCH_TICKETS: 'SEARCH_TICKETS',
+  MANAGE_TICKETS: 'MANAGE_TICKETS',
+
   // Add other permissions as needed...
 } as const; 

@@ -6,7 +6,6 @@ import { requirePermission } from '../../middlewares/permission.middleware';
 
 export const adminMenuAdminRouter = router({
   getAdminMenuItems: adminProcedure
-    .use(requirePermission(Permissions.VIEW_SETTINGS))
     .input(
       z.object({
         includeInactive: z.boolean().optional().default(false),

@@ -2,6 +2,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { router, adminProcedure } from '../../procedures';
 import { PaymentStatus } from '@ew/shared';
+import { Permissions } from '../../../auth/constants/permissions.constant';
+import { requirePermission } from '../../middlewares/permission.middleware';
 
 // Schema for device info
 const deviceInfoSchema = z.object({
@@ -15,6 +17,7 @@ const deviceInfoSchema = z.object({
 export const ticketScannerRouter = router({
   // Quét QR code vé
   scanTicket: adminProcedure
+    .use(requirePermission(Permissions.SCAN_TICKETS))
     .input(z.object({
       qrCode: z.string(),
       location: z.string().optional(),
@@ -46,6 +49,32 @@ export const ticketScannerRouter = router({
           });
         }
         
+        // Kiểm tra thông tin vé trước khi quét
+        const ticketInfo = await ctx.services.orderAdminService.findTicketByQrCode(input.qrCode);
+        
+        if (ticketInfo && ticketInfo.travelDate) {
+          const travelDate = new Date(ticketInfo.travelDate);
+          const currentDate = new Date();
+          
+          // Reset thời gian về 00:00:00 để chỉ so sánh ngày
+          currentDate.setHours(0, 0, 0, 0);
+          travelDate.setHours(0, 0, 0, 0);
+          
+          // Kiểm tra nếu ngày đi lớn hơn ngày hiện tại (chưa tới ngày)
+          if (travelDate > currentDate) {
+            const formattedDate = travelDate.toLocaleDateString('vi-VN', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+            
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Vé chưa tới ngày sử dụng. Ngày đi hợp lệ: ${formattedDate}`,
+            });
+          }
+        }
+        
         const result = await ctx.services.orderAdminService.scanTicket(
           input.qrCode,
           userId,
@@ -66,6 +95,7 @@ export const ticketScannerRouter = router({
     
   // Lấy thông tin vé từ QR code
   getTicketByQrCode: adminProcedure
+    .use(requirePermission(Permissions.VIEW_TICKETS))
     .input(z.object({
       qrCode: z.string()
     }))
@@ -75,6 +105,30 @@ export const ticketScannerRouter = router({
         const ticket = await ctx.services.orderAdminService.findTicketByQrCode(input.qrCode);
         
         if (ticket) {
+          // Kiểm tra ngày đi
+          if (ticket.travelDate) {
+            const travelDate = new Date(ticket.travelDate);
+            const currentDate = new Date();
+            
+            // Reset thời gian về 00:00:00 để chỉ so sánh ngày
+            currentDate.setHours(0, 0, 0, 0);
+            travelDate.setHours(0, 0, 0, 0);
+            
+            // Kiểm tra nếu ngày đi lớn hơn ngày hiện tại (chưa tới ngày)
+            if (travelDate > currentDate) {
+              const formattedDate = travelDate.toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              });
+              
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message: `Vé chưa tới ngày sử dụng. Ngày đi hợp lệ: ${formattedDate}`,
+              });
+            }
+          }
+          
           // Lấy số lượt quét vé
           const scanCount = await ctx.services.orderAdminService.getTicketScanCount(ticket.id);
           
@@ -97,6 +151,14 @@ export const ticketScannerRouter = router({
           });
         }
         
+        // Kiểm tra nếu là lỗi chưa tới ngày đi
+        if (error.message && error.message.includes('chưa tới ngày sử dụng')) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        
         // Lỗi mặc định khi không tìm thấy vé
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -107,6 +169,7 @@ export const ticketScannerRouter = router({
     
   // Tìm kiếm vé theo thông tin khách hàng (email hoặc số điện thoại)
   searchCustomerTickets: adminProcedure
+    .use(requirePermission(Permissions.SEARCH_TICKETS))
     .input(z.object({
       searchTerm: z.string().min(3),
       ticketStatus: z.string().optional(),
@@ -139,6 +202,7 @@ export const ticketScannerRouter = router({
             "item"."qr_code" as "qrCode",
             "item"."is_used" as "isUsed",
             "item"."product_type" as "productType",
+            "item"."travel_date" as "travelDate",
             "product"."id" as "productId",
             "translation"."title" as "productTitle"
           FROM 
@@ -204,6 +268,7 @@ export const ticketScannerRouter = router({
             isUsed: row.isUsed,
             productType: row.productType,
             scanCount: scanCount,
+            travelDate: row.travelDate,
             product: {
               id: row.productId,
               translations: [{ title: row.productTitle }]
@@ -232,6 +297,7 @@ export const ticketScannerRouter = router({
     
   // Lấy lịch sử quét vé
   getTicketScanHistory: adminProcedure
+    .use(requirePermission(Permissions.VIEW_SCAN_HISTORY))
     .input(z.object({
       orderItemId: z.number(),
       page: z.number().optional().default(1),
@@ -267,6 +333,7 @@ export const ticketScannerRouter = router({
     
   // Lấy tất cả lịch sử soát vé với phân trang
   getAllTicketScans: adminProcedure
+    .use(requirePermission(Permissions.VIEW_SCAN_HISTORY))
     .input(z.object({
       page: z.number().optional(),
       pageSize: z.number().optional(),
@@ -290,6 +357,7 @@ export const ticketScannerRouter = router({
     
   // Lấy lịch sử quét vé với phân trang
   getScanHistory: adminProcedure
+    .use(requirePermission(Permissions.VIEW_SCAN_HISTORY))
     .input(z.object({
       page: z.number().default(1),
       limit: z.number().default(10),
@@ -330,6 +398,7 @@ export const ticketScannerRouter = router({
     
   // Lấy lịch sử quét cho một vé cụ thể
   getScanHistoryForOrderItem: adminProcedure
+    .use(requirePermission(Permissions.VIEW_SCAN_HISTORY))
     .input(z.object({
       orderItemId: z.number()
     }))

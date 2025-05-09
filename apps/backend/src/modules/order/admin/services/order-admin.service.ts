@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { Order } from '../../entities/order.entity';
 import { OrderItem, ProductType } from '../../entities/order-item.entity';
 import { OrderRefund, RefundStatus } from '../../entities/order-refund.entity';
@@ -31,7 +31,7 @@ export interface DeviceInfo {
 
 // Interface cho lịch sử quét vé
 export interface ScanHistoryResponse {
-  items: OrderTicketScanHistory[];
+  items: (OrderTicketScanHistory & { scanCount?: number })[];
   total: number;
 }
 
@@ -425,7 +425,26 @@ export class OrderAdminService {
       .take(pageSize)
       .getManyAndCount();
 
-    return { items, total };
+    // Tính toán scanCount cho mỗi bản ghi
+    const enhancedItems = await Promise.all(
+      items.map(async (scanHistory) => {
+        // Đếm số lần quét cho vé (orderItemId) tính đến thời điểm của lượt quét này
+        const scanPosition = await this.scanHistoryRepository.count({
+          where: {
+            orderItemId: scanHistory.orderItemId,
+            scannedAt: LessThanOrEqual(scanHistory.scannedAt),
+          },
+        });
+
+        // Trả về bản ghi đã được tính scanCount
+        return {
+          ...scanHistory,
+          scanCount: scanPosition,
+        };
+      })
+    );
+
+    return { items: enhancedItems, total };
   }
 
   /**
@@ -488,7 +507,26 @@ export class OrderAdminService {
         order: { scannedAt: 'DESC' }
       });
       
-      return histories;
+      // Tính toán scanCount cho mỗi bản ghi
+      const enhancedHistories = await Promise.all(
+        histories.map(async (scanHistory) => {
+          // Đếm số lần quét cho vé (orderItemId) tính đến thời điểm của lượt quét này
+          const scanPosition = await this.scanHistoryRepository.count({
+            where: {
+              orderItemId: scanHistory.orderItemId,
+              scannedAt: LessThanOrEqual(scanHistory.scannedAt),
+            },
+          });
+
+          // Trả về bản ghi đã được tính scanCount
+          return {
+            ...scanHistory,
+            scanCount: scanPosition,
+          };
+        })
+      );
+      
+      return enhancedHistories;
     } catch (error) {
       console.error('Error in getScanHistoryForOrderItem:', error);
       throw error;
@@ -557,6 +595,25 @@ export class OrderAdminService {
       .take(pageSize)
       .getMany();
 
-    return { items, total };
+    // Tính toán scanCount cho mỗi bản ghi
+    const enhancedItems = await Promise.all(
+      items.map(async (scanHistory) => {
+        // Đếm số lần quét cho vé (orderItemId) tính đến thời điểm của lượt quét này
+        const scanPosition = await this.scanHistoryRepository.count({
+          where: {
+            orderItemId: scanHistory.orderItemId,
+            scannedAt: LessThanOrEqual(scanHistory.scannedAt),
+          },
+        });
+
+        // Trả về bản ghi đã được tính scanCount
+        return {
+          ...scanHistory,
+          scanCount: scanPosition,
+        };
+      })
+    );
+
+    return { items: enhancedItems, total };
   }
 } 
