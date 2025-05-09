@@ -122,18 +122,17 @@ const validateOrder = async () => {
     });
     
     order.value = result;
-    // Chỉ lấy các sản phẩm là vé
-    orderItems.value = result.items
-      .filter(item => item.productType === ProductType.TICKET)
-      .map(item => ({
-        ...item,
-        selected: false,
-        refundQuantity: 1,
-        reason: 'Cần thay đổi ngày sử dụng vé',
-        newDate: '',
-        variantName: item.productSnapshot?.variant?.name || '',
-        productName: getLocalizedName(item.productSnapshot)
-      }));
+    
+    // Xử lý các vé đã được lọc từ backend
+    orderItems.value = result.items.map(item => ({
+      ...item,
+      selected: false,
+      refundQuantity: 1,
+      reason: 'Cần thay đổi ngày sử dụng vé',
+      newDate: '',
+      variantName: item.productSnapshot?.variant?.name || '',
+      productName: getLocalizedName(item.productSnapshot)
+    }));
     
     // Tự động điền thông tin người yêu cầu
     exchangeForm.requesterName = result.shippingAddress?.fullName || '';
@@ -146,8 +145,8 @@ const validateOrder = async () => {
   } catch (error) {
     console.error('Error validating order:', error);
     notification.error({ 
-      title: 'Không tìm thấy đơn hàng', 
-      description: 'Vui lòng kiểm tra lại mã đơn hàng và số điện thoại' 
+      title: 'Lỗi xác thực đơn hàng', 
+      description: error.message || 'Vui lòng kiểm tra lại mã đơn hàng và số điện thoại' 
     });
   } finally {
     isLoading.value = false;
@@ -350,7 +349,7 @@ onMounted(() => {
               </div>
               <div>
                 <p class="text-sm text-gray-500 dark:text-gray-400">Trạng thái thanh toán</p>
-                <p class="font-medium">{{ order?.paymentStatus ? t(`paymentStatus.${order.paymentStatus}`) : '--' }}</p>
+                <p class="font-medium text-green-600 dark:text-green-400">{{ order?.paymentStatus ? t(`paymentStatus.${order.paymentStatus}`) : '--' }}</p>
               </div>
             </div>
           </div>

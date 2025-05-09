@@ -18,6 +18,8 @@ interface ScanResult {
     qrCode: string;
     orderId: number;
     isUsed: boolean;
+    travelDate?: string;
+    productType?: string;
     product?: {
       translations?: {
         title: string;
@@ -25,6 +27,7 @@ interface ScanResult {
     };
     order?: {
       orderCode: string;
+      status?: string;
     };
   };
   scanHistory?: any;
@@ -58,6 +61,8 @@ interface CustomerTicket {
   qrCode: string;
   orderId: number;
   isUsed: boolean;
+  travelDate?: string;
+  productType?: string;
   product?: {
     translations?: {
       title: string;
@@ -131,6 +136,8 @@ const orderDateRange = ref({
   end: null as string | null,
 });
 
+const debounceTimer = ref<NodeJS.Timeout | null>(null);
+
 // Methods
 const scanTicket = async () => {
   if (!qrCode.value) {
@@ -166,6 +173,56 @@ const scanTicket = async () => {
         // Không hiển thị modal và thông tin vé nếu đơn hàng chưa xác nhận
         errorMessage.value = t('Đơn hàng chưa được xác nhận. Vui lòng liên hệ admin để xác nhận đơn hàng.');
         toast.error(errorMessage.value);
+        
+        // Focus lại vào input sau khi hiển thị lỗi
+        setTimeout(() => {
+          const qrInput = document.getElementById('qr-input');
+          if (qrInput) {
+            qrInput.focus();
+          }
+        }, 100);
+        
+        return;
+      }
+      
+      // Kiểm tra travel_date
+      if (orderItem.travelDate) {
+        const travelDate = new Date(orderItem.travelDate);
+        const currentDate = new Date();
+        
+        // Reset thời gian về 00:00:00 để chỉ so sánh ngày
+        currentDate.setHours(0, 0, 0, 0);
+        travelDate.setHours(0, 0, 0, 0);
+        
+        if (travelDate < currentDate) {
+          // Vé đã hết hạn - không hiển thị popup và thông tin vé
+          const formattedDate = formatVietnameseDate(travelDate);
+          errorMessage.value = t('Vé đã hết hạn sử dụng. Ngày đi: ') + formattedDate;
+          toast.error(errorMessage.value);
+          
+          // Focus lại vào input sau khi hiển thị lỗi
+          setTimeout(() => {
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+              qrInput.focus();
+            }
+          }, 100);
+          
+          return;
+        }
+      } else if (orderItem.productType === 'TICKET') {
+        // Nếu là vé tham quan mà không có ngày đi - không hiển thị popup và thông tin vé
+        errorMessage.value = t('Vé không có thông tin ngày đi. Vui lòng kiểm tra lại.');
+        toast.warning(errorMessage.value);
+        
+        // Focus lại vào input sau khi hiển thị lỗi
+        setTimeout(() => {
+          const qrInput = document.getElementById('qr-input');
+          if (qrInput) {
+            qrInput.focus();
+          }
+        }, 100);
+        
         return;
       }
       
@@ -222,6 +279,16 @@ const scanTicket = async () => {
     }
   } finally {
     isLoading.value = false;
+    
+    // Focus lại vào input sau khi xử lý xong
+    if (!showConfirmModal.value) {
+      setTimeout(() => {
+        const qrInput = document.getElementById('qr-input');
+        if (qrInput) {
+          qrInput.focus();
+        }
+      }, 100);
+    }
   }
 };
 
@@ -351,6 +418,16 @@ const formatDate = (date: string | undefined) => {
   return new Date(date).toLocaleString();
 };
 
+// Format ngày theo kiểu Việt Nam
+const formatVietnameseDate = (date: Date): string => {
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  
+  // Định dạng "22 tháng 03 năm 2023 (22/03/2023)"
+  return `${day} tháng ${month < 10 ? '0' + month : month} năm ${year} (${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year})`;
+};
+
 // Handle pagination change
 const onPageChange = (newPage: number) => {
   page.value = newPage;
@@ -406,6 +483,26 @@ const closeConfirmModal = async () => {
         isLoading.value = false;
         currentQrCode.value = '';
         return;
+      }
+      
+      // Kiểm tra lại travel_date trước khi gọi API scan
+      if (orderItem && orderItem.travelDate) {
+        const travelDate = new Date(orderItem.travelDate);
+        const currentDate = new Date();
+        
+        // Reset thời gian về 00:00:00 để chỉ so sánh ngày
+        currentDate.setHours(0, 0, 0, 0);
+        travelDate.setHours(0, 0, 0, 0);
+        
+        if (travelDate < currentDate) {
+          // Vé đã hết hạn
+          const formattedDate = formatVietnameseDate(travelDate);
+          errorMessage.value = t('Vé đã hết hạn sử dụng. Ngày đi: ') + formattedDate;
+          toast.error(errorMessage.value);
+          isLoading.value = false;
+          currentQrCode.value = '';
+          return;
+        }
       }
       
       // Gọi API để lưu log quét vé
@@ -480,6 +577,14 @@ const cancelAction = () => {
   currentQrCode.value = '';
   errorMessage.value = '';
   
+  // Focus lại vào input sau khi đóng modal
+  setTimeout(() => {
+    const qrInput = document.getElementById('qr-input');
+    if (qrInput) {
+      qrInput.focus();
+    }
+  }, 100);
+  
   // Vẫn giữ lịch sử quét hiển thị, không reset lại
   // Chỉ cần đảm bảo không gọi API lưu log
 };
@@ -496,8 +601,31 @@ const handleInput = () => {
     resetError();
   }
   
-  // Chỉ tự động quét khi không có modal đang hiển thị
-  if (qrCode.value.length > 10 && !showConfirmModal.value) {
+  // Hủy timer cũ nếu có
+  if (debounceTimer.value) {
+    clearTimeout(debounceTimer.value);
+  }
+  
+  // Chỉ tự động quét khi không có modal đang hiển thị và đủ số ký tự
+  if (!showConfirmModal.value && qrCode.value.length >= 15) {
+    // Đặt một timer để đợi máy quét hoàn thành (500ms)
+    debounceTimer.value = setTimeout(() => {
+      scanTicket();
+    }, 500);
+  }
+};
+
+// Thêm handler cho sự kiện keydown
+const handleKeyDown = (e: KeyboardEvent) => {
+  // Nếu nhấn Enter, thực hiện quét ngay lập tức
+  if (e.key === 'Enter' && qrCode.value) {
+    // Hủy timer debounce nếu có
+    if (debounceTimer.value) {
+      clearTimeout(debounceTimer.value);
+      debounceTimer.value = null;
+    }
+    
+    // Thực hiện quét ngay
     scanTicket();
   }
 };
@@ -598,6 +726,7 @@ const clearHistorySearch = () => {
               id="qr-input"
               v-model="qrCode"
               @input="handleInput"
+              @keydown="handleKeyDown"
               type="text"
               class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               :placeholder="t('Enter or scan QR code')"
@@ -614,6 +743,9 @@ const clearHistorySearch = () => {
           </div>
           <p class="text-sm text-gray-500 mt-2">
             {{ t('Use a QR code scanner or manually enter the code') }}
+          </p>
+          <p class="text-sm font-medium text-blue-600 mt-1">
+            {{ t('Nếu sử dụng máy quét mã vạch, vui lòng nhấn Enter sau khi quét hoặc đợi hệ thống tự xử lý.') }}
           </p>
         </div>
 
@@ -711,7 +843,7 @@ const clearHistorySearch = () => {
                 
                 <!-- Ngày đặt hàng filter -->
                 <div>
-                  <label for="order-date-from" class="block text-sm font-medium text-gray-700 mb-1">
+                  <label for="order-date-from" class="block text-sm font-bold text-gray-700 mb-1">
                     {{ t('Từ ngày') }}
                   </label>
                   <input
@@ -724,7 +856,7 @@ const clearHistorySearch = () => {
                 </div>
                 
                 <div>
-                  <label for="order-date-to" class="block text-sm font-medium text-gray-700 mb-1">
+                  <label for="order-date-to" class="block text-sm font-bold text-gray-700 mb-1">
                     {{ t('Đến ngày') }}
                   </label>
                   <input
@@ -920,145 +1052,18 @@ const clearHistorySearch = () => {
                 </div>
               </div>
               
-              <div class="mt-4">
-                <button
-                  @click="showHistory = !showHistory"
-                  class="text-blue-600 hover:text-blue-800 text-sm flex items-center"
-                >
-                  <span>{{ showHistory ? t('Hide Scan History') : t('Show Scan History') }}</span>
-                  <i :class="['ml-1 fas', showHistory ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
-                </button>
-                
-                <!-- Scan History -->
-                <div v-if="showHistory" class="mt-3">
-                  <div class="mb-4 bg-white p-4 rounded-md border border-gray-200">
-                    <h4 class="font-bold text-lg mb-3">{{ t('Scan History') }}</h4>
-                    
-                    <!-- Tìm kiếm và lọc -->
-                    <div class="mb-4 space-y-4">
-                      <div class="flex flex-wrap gap-3">
-                        <div class="flex-1 min-w-[200px]">
-                          <label class="block text-sm font-bold text-gray-700 mb-1">{{ t('Search Scanner') }}</label>
-                          <input 
-                            v-model="historySearchQuery" 
-                            type="text" 
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            :placeholder="t('Search by name or email')"
-                          />
-                        </div>
-                        
-                        <div class="flex-1 min-w-[200px]">
-                          <label class="block text-sm font-bold text-gray-700 mb-1">{{ t('Date Range') }}</label>
-                          <div class="flex items-center space-x-2">
-                            <input 
-                              v-model="historyScanDateRange.start" 
-                              type="date" 
-                              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            <span class="text-gray-500">-</span>
-                            <input 
-                              v-model="historyScanDateRange.end" 
-                              type="date" 
-                              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="flex justify-end space-x-2">
-                        <button
-                          @click="clearHistorySearch"
-                          class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                        >
-                          {{ t('Clear') }}
-                        </button>
-                        <button
-                          @click="searchHistoryScans"
-                          class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        >
-                          {{ t('Search') }}
-                        </button>
-                      </div>
-                    </div>
-                  
-                    <div v-if="isLoadingHistory" class="text-center py-3">
-                      <i class="fas fa-spinner fa-spin mr-2"></i>
-                      {{ t('Loading...') }}
-                    </div>
-                    <div v-else-if="scanHistories.length === 0" class="text-gray-500 text-sm text-center py-4">
-                      {{ t('No scan history found') }}
-                    </div>
-                    <div v-else class="border rounded-md overflow-hidden">
-                      <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                          <tr>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                              {{ t('Time') }}
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                              {{ t('Scanned By') }}
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                              {{ t('Location') }}
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                              {{ t('Status') }}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                          <tr v-for="history in scanHistories" :key="history.id">
-                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {{ formatDate(history.scannedAt) }}
-                            </td>
-                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {{ formatUserName(history) }}
-                            </td>
-                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {{ history.location || t('Not specified') }}
-                            </td>
-                            <td class="px-4 py-2 whitespace-nowrap text-sm">
-                              <span
-                                :class="[
-                                  'px-2 py-1 rounded-full text-xs font-bold',
-                                  history.isFirstScan ? 'bg-green-100 text-green-800 border border-green-500' : 'bg-orange-100 text-orange-800 border border-orange-500'
-                                ]"
-                              >
-                                {{ history.isFirstScan ? t('LẦN ĐẦU') : t('ĐÃ DÙNG') }}
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    
-                    <!-- Phân trang cho history -->
-                    <div v-if="historyTotalItems > 0" class="mt-4 flex justify-between items-center">
-                      <div class="text-sm text-gray-500">
-                        {{ t('Showing {0} to {1} of {2} entries', [
-                          (historyPage - 1) * historyPageSize + 1,
-                          Math.min(historyPage * historyPageSize, historyTotalItems),
-                          historyTotalItems
-                        ]) }}
-                      </div>
-                      <div class="flex space-x-1">
-                        <button
-                          v-for="p in Math.ceil(historyTotalItems / historyPageSize)"
-                          :key="p"
-                          @click="onHistoryPageChange(p)"
-                          :class="[
-                            'px-3 py-1 rounded-md text-sm font-medium',
-                            p === historyPage
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          ]"
-                        >
-                          {{ p }}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- Hiển thị ngày đi cho vé -->
+              <div v-if="scanResult.orderItem.travelDate" class="mt-2 border-t border-gray-200 pt-4">
+                <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Ngày đi') }}</p>
+                <p class="font-medium text-base">
+                  {{ formatVietnameseDate(new Date(scanResult.orderItem.travelDate)) }}
+                  <span 
+                    v-if="new Date(scanResult.orderItem.travelDate).setHours(0,0,0,0) === new Date().setHours(0,0,0,0)" 
+                    class="ml-2 px-2 py-1 rounded-md text-xs font-bold bg-green-100 text-green-800 border border-green-500"
+                  >
+                    {{ t('HÔM NAY') }}
+                  </span>
+                </p>
               </div>
             </div>
           </div>
@@ -1265,6 +1270,25 @@ const clearHistorySearch = () => {
                     ]"
                   >
                     {{ scanResult.isFirstScan ? t('LẦN ĐẦU SỬ DỤNG') : t('ĐÃ SỬ DỤNG TRƯỚC ĐÓ') }}
+                  </span>
+                </p>
+                <p v-if="!scanResult?.isFirstScan" class="mt-3">
+                  <strong class="mr-2">{{ t('Số lần quét trước đó') }}:</strong> 
+                  <span class="font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full text-sm border border-blue-300 ml-1 inline-block">
+                    {{ scanResult?.scanCount || 0 }}
+                  </span>
+                </p>
+                <!-- Hiển thị ngày đi trong modal xác nhận -->
+                <p v-if="scanResult?.orderItem?.travelDate" class="mt-3">
+                  <strong>{{ t('Ngày đi') }}:</strong> 
+                  <span class="font-bold ml-1">
+                    {{ formatVietnameseDate(new Date(scanResult.orderItem.travelDate)) }}
+                  </span>
+                  <span 
+                    v-if="new Date(scanResult.orderItem.travelDate).setHours(0,0,0,0) === new Date().setHours(0,0,0,0)" 
+                    class="ml-2 px-2 py-1 rounded-md text-xs font-bold bg-green-100 text-green-800 border border-green-500"
+                  >
+                    {{ t('HÔM NAY') }}
                   </span>
                 </p>
               </div>

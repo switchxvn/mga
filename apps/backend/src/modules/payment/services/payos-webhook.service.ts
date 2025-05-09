@@ -6,7 +6,7 @@ import * as crypto from 'crypto';
 import { PayOSException } from '../exceptions/payos.exception';
 import { OrderAdminService } from '../../order/admin/services/order-admin.service';
 import { PaymentFrontendService } from '../frontend/services/payment-frontend.service';
-import { PaymentStatus } from '../../order/entities/order.entity';
+import { PaymentStatus } from '@ew/shared';
 import { PaymentMethod } from '../entities/payment-method.entity';
 import { MailService } from '../../mail/services/mail.service';
 import { format } from 'date-fns';
