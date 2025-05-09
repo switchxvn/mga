@@ -4,6 +4,8 @@ import { useTrpc } from '@/composables/useTrpc';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
 import { navigateTo } from 'nuxt/app';
+import { TicketIcon, HistoryIcon } from 'lucide-vue-next';
+import PageHeader from '../../components/common/header/PageHeader.vue';
 
 // Định nghĩa kiểu dữ liệu
 interface ScanResult {
@@ -62,6 +64,7 @@ const historyOrderItemId = ref<number | null>(null);
 const isLoadingHistory = ref(false);
 const showConfirmModal = ref(false);
 const currentQrCode = ref('');
+const errorMessage = ref('');
 
 // Trang hiển thị trong tab
 const activeTab = ref('scanner');
@@ -94,6 +97,10 @@ const scanTicket = async () => {
     toast.error(t('Please enter QR code'));
     return;
   }
+
+  // Reset trạng thái lỗi và kết quả trước đó
+  errorMessage.value = '';
+  scanResult.value = null;
 
   console.log('Scanning QR code:', qrCode.value);
   isLoading.value = true;
@@ -139,12 +146,31 @@ const scanTicket = async () => {
         showHistory.value = true;
       }
     } else {
-      toast.error(t('Không tìm thấy vé với mã QR này'));
+      errorMessage.value = t('Không tìm thấy vé với mã QR này');
+      toast.error(errorMessage.value);
     }
   } catch (error: any) {
     console.error('Error scanning ticket:', error);
     console.error('Error details:', error?.data?.httpStatus, error?.message);
-    toast.error(t('Failed to scan ticket: ') + (error?.message || 'Unknown error'));
+    
+    // Hiển thị thông báo lỗi cụ thể từ server nếu có
+    let msg = t('Failed to scan ticket');
+    
+    if (error?.message) {
+      // Hiển thị thông báo lỗi cụ thể từ server
+      msg = error.message;
+    } else if (error?.data?.message) {
+      // Hiển thị thông báo lỗi từ TRPC response
+      msg = error.data.message;
+    }
+    
+    // Lưu thông báo lỗi để hiển thị trong UI
+    errorMessage.value = msg;
+    
+    // Hiển thị thông báo trong toast nếu không phải lỗi vé chưa thanh toán
+    if (!msg.includes('chưa được thanh toán')) {
+      toast.error(msg);
+    }
   } finally {
     isLoading.value = false;
   }
@@ -298,13 +324,24 @@ const cancelAction = () => {
   showConfirmModal.value = false;
   toast.warning(t('Đã hủy quét vé - không lưu thông tin'));
   currentQrCode.value = '';
+  errorMessage.value = '';
   
   // Vẫn giữ lịch sử quét hiển thị, không reset lại
   // Chỉ cần đảm bảo không gọi API lưu log
 };
 
+// Reset error message
+const resetError = () => {
+  errorMessage.value = '';
+};
+
 // Auto-scan on paste or when the value is long enough (for barcode scanners)
 const handleInput = () => {
+  // Reset error message khi người dùng nhập mã QR mới
+  if (errorMessage.value) {
+    resetError();
+  }
+  
   // Chỉ tự động quét khi không có modal đang hiển thị
   if (qrCode.value.length > 10 && !showConfirmModal.value) {
     scanTicket();
@@ -366,43 +403,32 @@ const clearHistorySearch = () => {
 </script>
 
 <template>
-  <div class="p-4">
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold mb-4">{{ t('Ticket Scanner') }}</h1>
-      <p class="text-gray-600">{{ t('Scan tickets for admission') }}</p>
-    </div>
+  <div class="p-4 space-y-6">
+    <!-- Header -->
+    <PageHeader
+      :title="t('Ticket Scanner')"
+      :description="t('Scan tickets for admission and view scan history')"
+    />
 
     <!-- Tabs -->
-    <div class="mb-6 border-b border-gray-200">
-      <ul class="flex flex-wrap -mb-px">
-        <li class="mr-2">
-          <a
-            @click="switchTab('scanner')"
-            :class="[
-              'inline-block p-4 cursor-pointer',
-              activeTab === 'scanner'
-                ? 'border-b-2 border-blue-500 text-blue-500'
-                : 'text-gray-500 hover:text-gray-700'
-            ]"
-          >
-            {{ t('Scanner') }}
-          </a>
-        </li>
-        <li class="mr-2">
-          <a
-            @click="switchTab('history')"
-            :class="[
-              'inline-block p-4 cursor-pointer',
-              activeTab === 'history'
-                ? 'border-b-2 border-blue-500 text-blue-500'
-                : 'text-gray-500 hover:text-gray-700'
-            ]"
-          >
-            {{ t('Scan History') }}
-          </a>
-        </li>
-      </ul>
-    </div>
+    <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">
+      <button
+        v-for="tab in [
+          { id: 'scanner', name: 'Scanner', icon: TicketIcon },
+          { id: 'history', name: 'Scan History', icon: HistoryIcon }
+        ]"
+        :key="tab.id"
+        @click="switchTab(tab.id)"
+        class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
+        :class="{
+          'bg-primary text-white': activeTab === tab.id,
+          'text-slate-600 hover:text-slate-900 hover:bg-slate-50': activeTab !== tab.id
+        }"
+      >
+        <component :is="tab.icon" class="w-4 h-4" />
+        {{ t(tab.name) }}
+      </button>
+    </nav>
 
     <!-- Scanner Tab -->
     <div v-if="activeTab === 'scanner'" class="space-y-6">
@@ -435,6 +461,24 @@ const clearHistorySearch = () => {
           <p class="text-sm text-gray-500 mt-2">
             {{ t('Use a QR code scanner or manually enter the code') }}
           </p>
+        </div>
+
+        <!-- Thông báo lỗi vé chưa thanh toán -->
+        <div v-if="errorMessage" class="mb-6 p-4 rounded-lg border-2 border-red-500 bg-red-50 text-red-800">
+          <div class="flex items-start">
+            <div class="flex-shrink-0 mt-0.5">
+              <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-lg font-bold">
+                {{ errorMessage.includes('chưa được thanh toán') ? 'VÉ CHƯA THANH TOÁN' : 'LỖI QUÉT VÉ' }}
+              </h3>
+              <p class="mt-1">{{ errorMessage }}</p>
+              <p v-if="errorMessage.includes('chưa được thanh toán')" class="mt-2 font-semibold">
+                Vui lòng kiểm tra trạng thái thanh toán của đơn hàng trước khi cho phép người dùng vào.
+              </p>
+            </div>
+          </div>
         </div>
 
         <!-- Scan Result -->

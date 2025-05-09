@@ -243,10 +243,17 @@ export class OrderAdminService {
 
       // Kiểm tra trạng thái đơn hàng
       console.log('Order status:', orderItem.order?.status, 'Payment status:', orderItem.order?.paymentStatus);
-      if (orderItem.order?.status !== OrderStatus.CONFIRMED && orderItem.order?.paymentStatus !== PaymentStatus.PAID) {
+      if (orderItem.order?.paymentStatus !== PaymentStatus.PAID) {
         return {
           success: false,
-          message: 'Đơn hàng chưa được xác nhận hoặc chưa thanh toán.'
+          message: 'Vé này chưa được thanh toán. Vui lòng yêu cầu khách hàng thanh toán đơn hàng trước khi sử dụng vé.'
+        };
+      }
+      
+      if (orderItem.order?.status !== OrderStatus.CONFIRMED) {
+        return {
+          success: false,
+          message: 'Đơn hàng chưa được xác nhận.'
         };
       }
 
@@ -310,6 +317,11 @@ export class OrderAdminService {
 
     if (!orderItem) {
       throw new NotFoundException('Không tìm thấy vé với mã QR này');
+    }
+
+    // Kiểm tra trạng thái thanh toán
+    if (orderItem.order?.paymentStatus !== PaymentStatus.PAID) {
+      throw new Error('Vé này chưa được thanh toán. Vui lòng yêu cầu khách hàng thanh toán đơn hàng trước khi sử dụng vé.');
     }
 
     return orderItem;

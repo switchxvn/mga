@@ -73,6 +73,16 @@ export const ticketScannerRouter = router({
         return await ctx.services.orderAdminService.findTicketByQrCode(input.qrCode);
       } catch (error) {
         console.error('Error in getTicketByQrCode:', error);
+        
+        // Kiểm tra nếu là lỗi thanh toán 
+        if (error.message && error.message.includes('chưa được thanh toán')) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        
+        // Lỗi mặc định khi không tìm thấy vé
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Không tìm thấy vé với mã QR này',

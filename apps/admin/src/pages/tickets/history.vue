@@ -4,6 +4,8 @@ import { useTrpc } from '@/composables/useTrpc';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
 import { navigateTo } from 'nuxt/app';
+import { TicketIcon, HistoryIcon } from 'lucide-vue-next';
+import PageHeader from '../../components/common/header/PageHeader.vue';
 
 // Định nghĩa kiểu dữ liệu
 interface ScanHistory {
@@ -33,6 +35,12 @@ const toast = useToast();
 
 // Active tab for navigation
 const activeTab = ref('history');
+
+// Tab definitions
+const tabs = [
+  { id: 'scanner', name: 'Scanner', icon: TicketIcon },
+  { id: 'history', name: 'Scan History', icon: HistoryIcon }
+];
 
 // Scan history pagination
 const page = ref(1);
@@ -143,43 +151,29 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4">
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold mb-4">{{ t('Ticket Scanner') }}</h1>
-      <p class="text-gray-600">{{ t('Scan tickets for admission') }}</p>
-    </div>
+  <div class="p-4 space-y-6">
+    <!-- Header -->
+    <PageHeader
+      :title="t('Ticket Scanner')"
+      :description="t('Scan tickets for admission and view scan history')"
+    />
 
     <!-- Tabs -->
-    <div class="mb-6 border-b border-gray-200">
-      <ul class="flex flex-wrap -mb-px">
-        <li class="mr-2">
-          <a
-            @click="switchTab('scanner')"
-            :class="[
-              'inline-block p-4 cursor-pointer',
-              activeTab === 'scanner'
-                ? 'border-b-2 border-blue-500 text-blue-500'
-                : 'text-gray-500 hover:text-gray-700'
-            ]"
-          >
-            {{ t('Scanner') }}
-          </a>
-        </li>
-        <li class="mr-2">
-          <a
-            @click="switchTab('history')"
-            :class="[
-              'inline-block p-4 cursor-pointer',
-              activeTab === 'history'
-                ? 'border-b-2 border-blue-500 text-blue-500'
-                : 'text-gray-500 hover:text-gray-700'
-            ]"
-          >
-            {{ t('Scan History') }}
-          </a>
-        </li>
-      </ul>
-    </div>
+    <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        @click="switchTab(tab.id)"
+        class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
+        :class="{
+          'bg-primary text-white': activeTab === tab.id,
+          'text-slate-600 hover:text-slate-900 hover:bg-slate-50': activeTab !== tab.id
+        }"
+      >
+        <component :is="tab.icon" class="w-4 h-4" />
+        {{ t(tab.name) }}
+      </button>
+    </nav>
 
     <!-- History Tab -->
     <div class="space-y-6">
@@ -343,11 +337,7 @@ onMounted(() => {
           <!-- Pagination -->
           <div v-if="totalItems > 0" class="mt-4 flex justify-between items-center">
             <div class="text-sm text-gray-500">
-              {{ t('Showing {start} to {end} of {total} entries', {
-                start: (page - 1) * pageSize + 1,
-                end: Math.min(page * pageSize, totalItems),
-                total: totalItems
-              }) }}
+              {{ t('Showing') + ' ' + ((page - 1) * pageSize + 1) + ' ' + t('to') + ' ' + Math.min(page * pageSize, totalItems) + ' ' + t('of') + ' ' + totalItems + ' ' + t('entries') }}
             </div>
             <div class="flex space-x-1">
               <button
