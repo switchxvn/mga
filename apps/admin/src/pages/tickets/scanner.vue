@@ -423,6 +423,16 @@ const closeConfirmModal = async () => {
         // Cập nhật lại kết quả với thông tin mới nhất
         scanResult.value = result;
         
+        // Cập nhật scanCount trong customerTickets nếu vé được quét từ danh sách tìm kiếm khách hàng
+        if (customerTickets.value.length > 0 && result.orderItem) {
+          const ticketIndex = customerTickets.value.findIndex(ticket => ticket.qrCode === currentQrCode.value);
+          if (ticketIndex !== -1) {
+            // Cập nhật scanCount và isUsed cho vé tương ứng
+            customerTickets.value[ticketIndex].scanCount = (result.scanCount || 0);
+            customerTickets.value[ticketIndex].isUsed = true;
+          }
+        }
+        
         // Tự động lấy lịch sử quét của vé này
         if (result.orderItem) {
           historyOrderItemId.value = result.orderItem.id;
