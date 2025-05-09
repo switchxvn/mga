@@ -22,7 +22,7 @@ export * from './lib/types/product.type';
 // Order enums - these are not interfaces/types but values
 export { 
   RefundReason, RefundType, RefundStatus,
-  OrderStatus, PaymentStatus, ProductType
+  OrderStatus, PaymentStatus, ProductType, OrderType
 } from './types/order.type';
 
 // Order interfaces and types

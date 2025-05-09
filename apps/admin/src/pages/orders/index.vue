@@ -20,6 +20,7 @@ import {
   TrashIcon,
   PackageIcon,
   MoreHorizontalIcon,
+  ListChecksIcon,
   ChevronDownIcon as LucideChevronDownIcon,
   ChevronUpIcon as LucideChevronUpIcon
 } from 'lucide-vue-next';
@@ -422,21 +423,22 @@ onMounted(async () => {
           
           <NuxtLink
             to="/orders/create"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            <PlusCircleIcon class="h-4 w-4" />
+            <PlusCircleIcon class="h-5 w-5 mr-2" />
             Create Order
           </NuxtLink>
         </div>
       </template>
     </PageHeader>
 
-    <!-- Search and Filter -->
+    <!-- Filter Container -->
     <FilterContainer>
       <template #search>
         <SearchFilter
-          v-model:search="search"
+          :search="search"
           search-placeholder="Search orders..."
+          @update:search="search = $event"
         />
       </template>
       
@@ -476,7 +478,8 @@ onMounted(async () => {
       
       <template #pageSize>
         <PageSizeFilter
-          v-model:modelValue="pageSize"
+          :modelValue="pageSize"
+          @update:modelValue="pageSize = $event"
         />
       </template>
     </FilterContainer>
@@ -500,7 +503,7 @@ onMounted(async () => {
       @page-change="page = $event"
       @clear-error="error = null"
     >
-      <template #headers>
+      <template #header>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           ORDER INFO
         </th>
@@ -552,15 +555,8 @@ onMounted(async () => {
         <!-- STATUS Column -->
         <td class="px-6 py-4 whitespace-nowrap">
           <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-               :class="{
-                 'bg-yellow-100 text-yellow-800': order.status === OrderStatus.PENDING,
-                 'bg-blue-100 text-blue-800': order.status === OrderStatus.CONFIRMED,
-                 'bg-indigo-100 text-indigo-800': order.status === OrderStatus.PROCESSING,
-                 'bg-purple-100 text-purple-800': order.status === OrderStatus.SHIPPED,
-                 'bg-green-100 text-green-800': order.status === OrderStatus.DELIVERED,
-                 'bg-red-100 text-red-800': order.status === OrderStatus.CANCELLED,
-               }">
-            {{ capitalize(order.status.toLowerCase()) }}
+               :class="getStatusBadgeClass(order.status)">
+            {{ capitalize(order.status) }}
           </div>
           <Menu as="div" class="relative inline-block text-left mt-1">
             <MenuButton class="inline-flex w-full justify-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
@@ -576,7 +572,7 @@ onMounted(async () => {
                       'block px-4 py-2 text-sm w-full text-left'
                     ]"
                   >
-                    {{ capitalize(status.toLowerCase()) }}
+                    {{ capitalize(status) }}
                   </button>
                 </MenuItem>
               </div>
@@ -587,14 +583,8 @@ onMounted(async () => {
         <!-- PAYMENT STATUS Column -->
         <td class="px-6 py-4 whitespace-nowrap">
           <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-               :class="{
-                 'bg-yellow-100 text-yellow-800': order.paymentStatus === PaymentStatus.PENDING,
-                 'bg-green-100 text-green-800': order.paymentStatus === PaymentStatus.PAID,
-                 'bg-red-100 text-red-800': order.paymentStatus === PaymentStatus.FAILED,
-                 'bg-gray-100 text-gray-800': order.paymentStatus === PaymentStatus.CANCELLED,
-                 'bg-purple-100 text-purple-800': order.paymentStatus === PaymentStatus.REFUNDED,
-               }">
-            {{ capitalize(order.paymentStatus.toLowerCase().replace('_', ' ')) }}
+               :class="getPaymentStatusBadgeClass(order.paymentStatus)">
+            {{ capitalize(order.paymentStatus.replace('_', ' ')) }}
           </div>
           <Menu as="div" class="relative inline-block text-left mt-1">
             <MenuButton class="inline-flex w-full justify-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
@@ -610,7 +600,7 @@ onMounted(async () => {
                       'block px-4 py-2 text-sm w-full text-left'
                     ]"
                   >
-                    {{ capitalize(status.toLowerCase().replace('_', ' ')) }}
+                    {{ capitalize(status.replace('_', ' ')) }}
                   </button>
                 </MenuItem>
               </div>

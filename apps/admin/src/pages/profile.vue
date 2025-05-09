@@ -18,15 +18,15 @@
                 <div class="flex items-center gap-4 mb-6">
                   <div class="h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center">
                     <span class="text-2xl font-semibold text-gray-600">
-                      {{ checkAuth?.user?.name?.[0]?.toUpperCase() || 'A' }}
+                      {{ getUserInitials() }}
                     </span>
                   </div>
                   <div>
                     <h3 class="text-xl font-semibold text-gray-900">
-                      {{ checkAuth?.user?.name || 'Admin' }}
+                      {{ getFullName() || userData?.name || 'Admin' }}
                     </h3>
                     <p class="text-sm text-gray-500">
-                      {{ checkAuth?.user?.email || 'admin@example.com' }}
+                      {{ userData?.email || 'admin@example.com' }}
                     </p>
                   </div>
                 </div>
@@ -91,19 +91,50 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useAuth } from "@/composables/useAuth";
 import { useRouter } from "vue-router";
 import ProfileForm from '@/components/profile/ProfileForm.vue';
 import PageHeader from '@/components/common/header/PageHeader.vue';
+import { User } from '@/types/user';
 
 const router = useRouter();
-const { checkAuth } = useAuth();
+const { user, checkAuth } = useAuth();
+const userData = ref<User | null>(null);
 
+// Thêm các hàm helper để hiển thị tên
+const getUserInitials = () => {
+  if (userData.value?.profile?.firstName && userData.value?.profile?.lastName) {
+    return `${userData.value.profile.firstName.charAt(0)}${userData.value.profile.lastName.charAt(0)}`.toUpperCase();
+  }
+  if (userData.value?.name) {
+    return userData.value.name.charAt(0).toUpperCase();
+  }
+  if (userData.value?.email) {
+    return userData.value.email.charAt(0).toUpperCase();
+  }
+  return 'A';
+};
+
+const getFullName = () => {
+  if (userData.value?.profile) {
+    if (userData.value.profile.lastName && userData.value.profile.firstName) {
+      return `${userData.value.profile.lastName} ${userData.value.profile.firstName}`.trim();
+    } else if (userData.value.profile.lastName) {
+      return userData.value.profile.lastName;
+    } else if (userData.value.profile.firstName) {
+      return userData.value.profile.firstName;
+    }
+  }
+  return null;
+};
+
+// @ts-ignore
 definePageMeta({
   middleware: ["auth"],
 });
 
+// @ts-ignore
 useHead({
   title: 'Profile - Admin Panel'
 })
@@ -115,7 +146,9 @@ onMounted(async () => {
       router.push("/auth/login");
       return;
     }
-  } catch (err: any) {
+    userData.value = user.value;
+    console.log('User profile data:', userData.value?.profile); // Kiểm tra dữ liệu profile
+  } catch (err) {
     console.error("Error checking auth:", err);
   }
 });

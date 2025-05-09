@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatPrice, ProductType } from "@ew/shared";
+import { formatPrice, ProductType, OrderType } from "@ew/shared";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import PhoneInput from "~/components/form/PhoneInput.vue";
@@ -126,6 +126,8 @@ const handleSubmit = async () => {
       phoneCode: formData.value.phoneCode,
       phoneNumber: formData.value.phoneNumber,
       email: formData.value.email || undefined,
+      customerName: formData.value.fullName,
+      orderType: OrderType.TICKET,
       paymentMethod:
         paymentMethods.value.find((m) => m.id === formData.value.paymentMethodId)?.code ||
         "",

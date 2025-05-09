@@ -13,6 +13,11 @@ export enum PaymentStatus {
   FAILED = 'failed'
 }
 
+export enum OrderType {
+  STANDARD = 'standard',
+  TICKET = 'ticket'
+}
+
 export enum ProductType {
   PHYSICAL = 'PHYSICAL',
   DIGITAL = 'DIGITAL',
