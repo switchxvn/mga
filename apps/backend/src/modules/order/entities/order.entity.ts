@@ -1,33 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 import { CountryPhoneCode } from '../../common/entities/country-phone-code.entity';
-
-export enum OrderStatus {
-  PENDING = 'pending',
-  CONFIRMED = 'confirmed',
-  PROCESSING = 'processing',
-  SHIPPED = 'shipped',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled'
-}
-
-export enum PaymentStatus {
-  PENDING = 'pending',
-  PAID = 'paid',
-  FAILED = 'failed',
-  REFUNDED = 'refunded'
-}
-
-export interface Address {
-  fullName: string;
-  phone: string;
-  email?: string;
-  address: string;
-  city: string;
-  state?: string;
-  country: string;
-  postalCode?: string;
-}
+import { OrderStatus, PaymentStatus, Address } from '@ew/shared';
 
 @Entity('orders')
 export class Order {

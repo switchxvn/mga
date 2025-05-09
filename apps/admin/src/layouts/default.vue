@@ -71,6 +71,12 @@ const displayName = computed(() => {
   return combinedUser.value.email?.split('@')[0] || 'U';
 });
 
+// Lấy email của người dùng
+const userEmail = computed(() => {
+  if (!combinedUser.value) return '';
+  return combinedUser.value.email || '';
+});
+
 // Chữ cái đầu tiên cho avatar
 const avatarInitial = computed(() => {
   if (!combinedUser.value) return 'U';
@@ -248,11 +254,17 @@ onUnmounted(() => {
               ref="userDropdownButtonRef"
               @click="toggleUserMenu"
             >
-              <div v-if="combinedUser" class="relative">
-                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center uppercase">
-                  {{ avatarInitial }}
+              <div v-if="combinedUser" class="flex items-center">
+                <div class="relative">
+                  <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center uppercase">
+                    {{ avatarInitial }}
+                  </div>
+                  <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-white"></span>
                 </div>
-                <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-white"></span>
+                <div class="ml-2 hidden sm:block">
+                  <div class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ displayName }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ userEmail }}</div>
+                </div>
               </div>
               <div v-else class="w-8 h-8 rounded-full bg-gray-300 animate-pulse"></div>
               <ChevronDown class="w-4 h-4 ml-1 text-gray-500" />

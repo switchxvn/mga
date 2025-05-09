@@ -4,8 +4,10 @@ import { useTrpc } from '@/composables/useTrpc';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
 import { navigateTo } from 'nuxt/app';
-import { TicketIcon, HistoryIcon } from 'lucide-vue-next';
+import { TicketIcon, HistoryIcon, SearchIcon, UserIcon } from 'lucide-vue-next';
+import { OrderStatus } from '@ew/shared';
 import PageHeader from '../../components/common/header/PageHeader.vue';
+import PhoneInput from '../../components/form/PhoneInput.vue';
 
 // Định nghĩa kiểu dữ liệu
 interface ScanResult {
@@ -27,6 +29,7 @@ interface ScanResult {
   };
   scanHistory?: any;
   isFirstScan?: boolean;
+  scanCount?: number;
 }
 
 interface ScanHistory {
@@ -48,6 +51,28 @@ interface ScanHistory {
   };
   orderItem?: any;
   isFirstScan?: boolean;
+}
+
+interface CustomerTicket {
+  id: number;
+  qrCode: string;
+  orderId: number;
+  isUsed: boolean;
+  product?: {
+    translations?: {
+      title: string;
+    }[];
+  };
+  order?: {
+    orderCode: string;
+    status: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    createdAt: string;
+    paymentStatus: string;
+  };
+  scanCount?: number;
 }
 
 const { t } = useI18n();
@@ -91,6 +116,21 @@ const historyScanDateRange = ref({
   end: null as string | null,
 });
 
+// Tìm kiếm khách hàng
+const customerSearch = ref('');
+const customerEmail = ref('');
+const customerPhone = ref('');
+const customerPhoneCode = ref('+84');
+const isSearchingCustomer = ref(false);
+const customerTickets = ref<CustomerTicket[]>([]);
+const showCustomerSearch = ref(false);
+const customerTip = ref(true);
+const ticketStatus = ref('');
+const orderDateRange = ref({
+  start: null as string | null,
+  end: null as string | null,
+});
+
 // Methods
 const scanTicket = async () => {
   if (!qrCode.value) {
@@ -121,13 +161,22 @@ const scanTicket = async () => {
     });
     
     if (orderItem) {
+      // Kiểm tra trạng thái đơn hàng
+      if (orderItem.order && orderItem.order.status !== OrderStatus.CONFIRMED) {
+        // Không hiển thị modal và thông tin vé nếu đơn hàng chưa xác nhận
+        errorMessage.value = t('Đơn hàng chưa được xác nhận. Vui lòng liên hệ admin để xác nhận đơn hàng.');
+        toast.error(errorMessage.value);
+        return;
+      }
+      
       scanResult.value = {
         success: true,
         message: orderItem.isUsed 
           ? 'Vé hợp lệ nhưng đã được quét trước đó.'
           : 'Vé hợp lệ và đây là lần đầu tiên sử dụng.',
         orderItem: orderItem,
-        isFirstScan: !orderItem.isUsed
+        isFirstScan: !orderItem.isUsed,
+        scanCount: orderItem.scanCount || 0
       };
       
       // Lưu QR code hiện tại để khi xác nhận mới lưu log
@@ -174,6 +223,69 @@ const scanTicket = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+// Tìm kiếm vé theo thông tin khách hàng (email hoặc số điện thoại)
+const searchCustomerTickets = async () => {
+  if (!customerEmail.value && !customerPhone.value) {
+    toast.error(t('Vui lòng nhập email hoặc số điện thoại của khách hàng'));
+    return;
+  }
+
+  customerTickets.value = [];
+  isSearchingCustomer.value = true;
+  errorMessage.value = '';
+
+  try {
+    const searchTerm = customerEmail.value || (customerPhone.value ? customerPhone.value : '');
+    const result = await trpc.admin.ticketScanner.searchCustomerTickets.query({
+      searchTerm: searchTerm,
+      ticketStatus: ticketStatus.value || undefined,
+      startOrderDate: orderDateRange.value.start || undefined,
+      endOrderDate: orderDateRange.value.end || undefined
+    });
+
+    if (result && result.length > 0) {
+      customerTickets.value = result as CustomerTicket[];
+    } else {
+      toast.warning(t('Không tìm thấy vé nào cho khách hàng này'));
+    }
+  } catch (error: any) {
+    console.error('Error searching customer tickets:', error);
+    let errorMsg = t('Lỗi khi tìm kiếm thông tin vé của khách hàng');
+    
+    if (error?.message) {
+      errorMsg = error.message;
+    } else if (error?.data?.message) {
+      errorMsg = error.data.message;
+    }
+    
+    toast.error(errorMsg);
+  } finally {
+    isSearchingCustomer.value = false;
+  }
+};
+
+// Sử dụng vé được tìm thấy từ khách hàng
+const useCustomerTicket = (ticketQrCode: string) => {
+  qrCode.value = ticketQrCode;
+  scanTicket();
+};
+
+// Toggle hiển thị phần tìm kiếm khách hàng
+const toggleCustomerSearch = () => {
+  showCustomerSearch.value = !showCustomerSearch.value;
+  if (showCustomerSearch.value) {
+    // Reset dữ liệu khi hiển thị form tìm kiếm
+    customerEmail.value = '';
+    customerPhone.value = '';
+    customerTickets.value = [];
+  }
+};
+
+// Đóng phần tip hướng dẫn
+const closeTip = () => {
+  customerTip.value = false;
 };
 
 // Load scan history for a specific ticket
@@ -234,7 +346,7 @@ const loadAllScanHistory = async () => {
 };
 
 // Format date
-const formatDate = (date: string) => {
+const formatDate = (date: string | undefined) => {
   if (!date) return '';
   return new Date(date).toLocaleString();
 };
@@ -267,7 +379,7 @@ const switchTab = (tab: string) => {
   }
 };
 
-    // Đóng confirm modal và thực hiện quét vé (lưu log)
+// Đóng confirm modal và thực hiện quét vé (lưu log)
 const closeConfirmModal = async () => {
   showConfirmModal.value = false;
   
@@ -282,6 +394,20 @@ const closeConfirmModal = async () => {
         browser: navigator.appName,
       };
       
+      // Kiểm tra lại trạng thái đơn hàng trước khi gọi API (đề phòng trường hợp trạng thái đơn hàng bị thay đổi)
+      const orderItem = await trpc.admin.ticketScanner.getTicketByQrCode.query({
+        qrCode: currentQrCode.value
+      });
+      
+      if (orderItem && orderItem.order && orderItem.order.status !== OrderStatus.CONFIRMED) {
+        // Hiển thị lỗi nếu đơn hàng chưa xác nhận
+        errorMessage.value = t('Đơn hàng chưa được xác nhận. Vui lòng liên hệ admin để xác nhận đơn hàng.');
+        toast.error(errorMessage.value);
+        isLoading.value = false;
+        currentQrCode.value = '';
+        return;
+      }
+      
       // Gọi API để lưu log quét vé
       const result = await trpc.admin.ticketScanner.scanTicket.mutate({
         qrCode: currentQrCode.value,
@@ -289,29 +415,47 @@ const closeConfirmModal = async () => {
         deviceInfo
       });
       
-      // Hiển thị thông báo thành công
-      toast.success(t('Đã lưu thông tin quét vé thành công'));
-      
-      // Cập nhật lại kết quả với thông tin mới nhất
-      scanResult.value = result;
-      
-      // Tự động lấy lịch sử quét của vé này
-      if (result.orderItem) {
-        historyOrderItemId.value = result.orderItem.id;
-        loadScanHistory(result.orderItem.id);
-        showHistory.value = true;
-      }
-      
-      // Reset focus về ô input sau khi đóng modal để sẵn sàng quét tiếp
-      setTimeout(() => {
-        const qrInput = document.getElementById('qr-input');
-        if (qrInput) {
-          qrInput.focus();
+      // Kiểm tra kết quả từ API
+      if (result.success) {
+        // Hiển thị thông báo thành công
+        toast.success(t('Đã lưu thông tin quét vé thành công'));
+        
+        // Cập nhật lại kết quả với thông tin mới nhất
+        scanResult.value = result;
+        
+        // Tự động lấy lịch sử quét của vé này
+        if (result.orderItem) {
+          historyOrderItemId.value = result.orderItem.id;
+          loadScanHistory(result.orderItem.id);
+          showHistory.value = true;
         }
-      }, 100);
+        
+        // Reset focus về ô input sau khi đóng modal để sẵn sàng quét tiếp
+        setTimeout(() => {
+          const qrInput = document.getElementById('qr-input');
+          if (qrInput) {
+            qrInput.focus();
+          }
+        }, 100);
+      } else {
+        // Hiển thị thông báo lỗi
+        errorMessage.value = result.message;
+        toast.error(result.message);
+      }
     } catch (error: any) {
       console.error('Error saving scan log:', error);
-      toast.error(t('Lỗi khi lưu thông tin quét vé: ') + (error?.message || 'Unknown error'));
+      
+      // Xử lý thông báo lỗi
+      let errorMsg = t('Lỗi khi lưu thông tin quét vé: ') + (error?.message || 'Unknown error');
+      
+      // Nếu lỗi có data.message thì hiển thị
+      if (error?.data?.message) {
+        errorMsg = error.data.message;
+      }
+      
+      // Lưu và hiển thị thông báo lỗi
+      errorMessage.value = errorMsg;
+      toast.error(errorMsg);
     } finally {
       isLoading.value = false;
       currentQrCode.value = '';
@@ -463,6 +607,224 @@ const clearHistorySearch = () => {
           </p>
         </div>
 
+        <!-- Nút chuyển đổi sang tìm kiếm theo thông tin khách hàng -->
+        <button 
+          @click="toggleCustomerSearch" 
+          class="mb-6 flex items-center space-x-2 text-blue-600 hover:text-blue-800"
+        >
+          <UserIcon class="w-4 h-4" />
+          <span>{{ showCustomerSearch ? t('Quay lại quét mã QR') : t('Tìm theo thông tin khách hàng') }}</span>
+        </button>
+
+        <!-- Tìm kiếm theo thông tin khách hàng -->
+        <div v-if="showCustomerSearch" class="mb-6 p-6 bg-blue-50 rounded-lg border border-blue-100">
+          <h3 class="text-lg font-semibold mb-4 text-blue-800">{{ t('Tìm vé theo thông tin khách hàng') }}</h3>
+          
+          <!-- Hướng dẫn nhân viên soát vé -->
+          <div v-if="customerTip" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg relative">
+            <button @click="closeTip" class="absolute top-2 right-2 text-yellow-500 hover:text-yellow-700">
+              <span class="sr-only">Close</span>
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="flex items-start">
+              <div class="flex-shrink-0 text-yellow-500">
+                <i class="fas fa-lightbulb text-xl"></i>
+              </div>
+              <div class="ml-3">
+                <h4 class="text-sm font-bold text-yellow-800">{{ t('Mẹo cho nhân viên soát vé:') }}</h4>
+                <ul class="mt-1 text-sm text-yellow-700 list-disc pl-5 space-y-1">
+                  <li>{{ t('Yêu cầu khách hàng xuất trình CMND/CCCD để đối chiếu thông tin') }}</li>
+                  <li>{{ t('Kiểm tra tên, email, SĐT trên đơn hàng có khớp với thông tin của khách') }}</li>
+                  <li>{{ t('Chỉ sử dụng vé có trạng thái "Đã thanh toán"') }}</li>
+                  <li>{{ t('Ưu tiên kiểm tra mã QR nếu khách hàng có mã') }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Form tìm kiếm -->
+          <div class="space-y-4">
+            <p class="text-sm text-gray-600">{{ t('Nhập email hoặc số điện thoại để tìm vé, có thể tìm theo 1 trong 2 thông tin') }}</p>
+            
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <!-- Email input -->
+              <div>
+                <label for="customer-email" class="block text-sm font-medium text-gray-700 mb-1">
+                  {{ t('Email khách hàng') }}
+                </label>
+                <input
+                  id="customer-email"
+                  v-model="customerEmail"
+                  type="email"
+                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-[42px]"
+                  :placeholder="t('Nhập email khách hàng')"
+                  :disabled="isSearchingCustomer"
+                />
+              </div>
+              
+              <!-- Phone input -->
+              <div>
+                <label for="customer-phone" class="block text-sm font-medium text-gray-700 mb-1">
+                  {{ t('Số điện thoại khách hàng') }}
+                </label>
+                <PhoneInput
+                  v-model="customerPhone"
+                  v-model:phoneCode="customerPhoneCode"
+                  :disabled="isSearchingCustomer"
+                  :placeholder="t('Nhập số điện thoại')"
+                  class="phone-input-scanner"
+                />
+              </div>
+            </div>
+            
+            <!-- Bộ lọc bổ sung -->
+            <div class="mt-4 border-t pt-4 border-blue-200">
+              <h4 class="font-medium text-blue-800 mb-3">{{ t('Bộ lọc bổ sung') }}</h4>
+              
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <!-- Trạng thái vé filter -->
+                <div>
+                  <label for="ticket-status" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ t('Trạng thái vé') }}
+                  </label>
+                  <select
+                    id="ticket-status"
+                    v-model="ticketStatus"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-[42px]"
+                    :disabled="isSearchingCustomer"
+                  >
+                    <option value="">{{ t('Tất cả') }}</option>
+                    <option value="used">{{ t('Đã sử dụng') }}</option>
+                    <option value="unused">{{ t('Chưa sử dụng') }}</option>
+                  </select>
+                </div>
+                
+                <!-- Ngày đặt hàng filter -->
+                <div>
+                  <label for="order-date-from" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ t('Từ ngày') }}
+                  </label>
+                  <input
+                    id="order-date-from"
+                    v-model="orderDateRange.start"
+                    type="date"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-[42px]"
+                    :disabled="isSearchingCustomer"
+                  />
+                </div>
+                
+                <div>
+                  <label for="order-date-to" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ t('Đến ngày') }}
+                  </label>
+                  <input
+                    id="order-date-to"
+                    v-model="orderDateRange.end"
+                    type="date"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-[42px]"
+                    :disabled="isSearchingCustomer"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex justify-end">
+              <button
+                @click="searchCustomerTickets"
+                :disabled="isSearchingCustomer || (!customerEmail && !customerPhone)"
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+              >
+                <span v-if="isSearchingCustomer">{{ t('Đang tìm...') }}</span>
+                <span v-else>{{ t('Tìm kiếm') }}</span>
+              </button>
+            </div>
+            
+            <!-- Kết quả tìm kiếm -->
+            <div v-if="customerTickets.length > 0" class="mt-4">
+              <h4 class="font-semibold text-gray-700 mb-3">{{ t('Vé của khách hàng') }}</h4>
+              <div class="border rounded-md overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Mã đơn hàng') }}</th>
+                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Sản phẩm') }}</th>
+                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Trạng thái vé') }}</th>
+                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Lượt quét') }}</th>
+                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Trạng thái đơn') }}</th>
+                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Ngày mua') }}</th>
+                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Thông tin KH') }}</th>
+                      <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Hành động') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <tr v-for="ticket in customerTickets" :key="ticket.id">
+                      <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ ticket.order?.orderCode || t('N/A') }}
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {{ ticket.product?.translations?.[0]?.title || t('Unknown Product') }}
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <span
+                          :class="[
+                            'px-2 py-1 rounded-full text-xs font-bold',
+                            ticket.isUsed 
+                              ? 'bg-orange-100 text-orange-800 border border-orange-500' 
+                              : 'bg-green-100 text-green-800 border border-green-500'
+                          ]"
+                        >
+                          {{ ticket.isUsed ? t('ĐÃ SỬ DỤNG') : t('CHƯA SỬ DỤNG') }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold">
+                        <span class="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                          {{ ticket.scanCount || 0 }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <span
+                          :class="[
+                            'px-2 py-1 rounded-full text-xs font-bold',
+                            ticket.order?.paymentStatus === 'paid' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          ]"
+                        >
+                          {{ ticket.order?.paymentStatus === 'paid' ? t('ĐÃ THANH TOÁN') : t('CHƯA THANH TOÁN') }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {{ formatDate(ticket.order?.createdAt) }}
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-500">
+                        <div class="space-y-1">
+                          <p class="font-medium">{{ ticket.order?.customerName || t('N/A') }}</p>
+                          <p v-if="ticket.order?.customerEmail" class="text-xs">{{ ticket.order.customerEmail }}</p>
+                          <p v-if="ticket.order?.customerPhone" class="text-xs">{{ ticket.order.customerPhone }}</p>
+                        </div>
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-sm text-right">
+                        <button 
+                          @click="useCustomerTicket(ticket.qrCode)"
+                          :disabled="ticket.order?.paymentStatus !== 'paid'"
+                          :class="[
+                            'px-3 py-1 rounded text-white text-xs font-bold',
+                            ticket.order?.paymentStatus === 'paid'
+                              ? 'bg-blue-600 hover:bg-blue-700'
+                              : 'bg-gray-400 cursor-not-allowed'
+                          ]"
+                        >
+                          {{ t('Sử dụng vé này') }}
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Thông báo lỗi vé chưa thanh toán -->
         <div v-if="errorMessage" class="mb-6 p-4 rounded-lg border-2 border-red-500 bg-red-50 text-red-800">
           <div class="flex items-start">
@@ -516,7 +878,7 @@ const clearHistorySearch = () => {
           <div v-if="scanResult.success && scanResult.orderItem" class="bg-gray-50 p-6 rounded-md border border-gray-200">
             <h3 class="font-bold text-xl mb-4">{{ t('Ticket Details') }}</h3>
             <div class="space-y-4">
-              <div class="grid grid-cols-3 gap-6">
+              <div class="grid grid-cols-4 gap-6">
                 <div class="border-r border-gray-200 pr-4">
                   <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Product') }}</p>
                   <p class="font-medium text-base">{{ scanResult.orderItem.product?.translations?.[0]?.title || 'Unknown Product' }}</p>
@@ -525,7 +887,7 @@ const clearHistorySearch = () => {
                   <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Order ID') }}</p>
                   <p class="font-medium text-base">#{{ scanResult.orderItem.order?.orderCode || scanResult.orderItem.orderId }}</p>
                 </div>
-                <div>
+                <div class="border-r border-gray-200 pr-4">
                   <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Status') }}</p>
                   <div class="mt-1">
                     <span 
@@ -537,6 +899,14 @@ const clearHistorySearch = () => {
                       {{ scanResult.isFirstScan ? t('LẦN ĐẦU SỬ DỤNG') : t('ĐÃ SỬ DỤNG TRƯỚC ĐÓ') }}
                     </span>
                   </div>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Lượt quét') }}</p>
+                  <p class="font-bold text-lg mt-1">
+                    <span class="px-3 py-1 rounded-full text-base font-bold inline-block bg-blue-100 text-blue-800 border border-blue-500">
+                      {{ scanResult.scanCount || 0 }}
+                    </span>
+                  </p>
                 </div>
               </div>
               
@@ -910,4 +1280,14 @@ const clearHistorySearch = () => {
       </div>
     </div>
   </div>
-</template> 
+</template>
+
+<style scoped>
+.phone-input-scanner :deep(input) {
+  height: 42px !important;
+}
+
+.phone-input-scanner :deep(.phone-code-selector button) {
+  height: 42px !important;
+}
+</style> 

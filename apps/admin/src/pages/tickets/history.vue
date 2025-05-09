@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
 import { navigateTo } from 'nuxt/app';
 import { TicketIcon, HistoryIcon } from 'lucide-vue-next';
+import { OrderStatus } from '@ew/shared';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 
 // Định nghĩa kiểu dữ liệu

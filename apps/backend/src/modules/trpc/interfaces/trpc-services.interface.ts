@@ -68,6 +68,7 @@ import { ISiteStatisticsAdminService, ISiteStatisticsFrontendService } from '../
 import { MailService } from '../../mail/services/mail.service';
 import { AdminMenuAdminService } from '../../admin-menu/admin/services/admin-menu-admin.service';
 import { AdminMenuFrontendService } from '../../admin-menu/frontend/services/admin-menu-frontend.service';
+import { RoleAdminService } from '../../user/admin/services/role-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -141,6 +142,7 @@ export interface ITrpcServices {
   mailService: MailService;
   adminMenuAdminService: AdminMenuAdminService;
   adminMenuFrontendService: AdminMenuFrontendService;
+  roleAdminService: RoleAdminService;
   
   // Grouped services
   admin: {
@@ -174,6 +176,7 @@ export interface ITrpcServices {
     dashboard: DashboardAdminService;
     gallery: GalleryAdminService;
     adminMenu: AdminMenuAdminService;
+    role: RoleAdminService;
   };
   
   frontend: {

@@ -1,124 +1,199 @@
 <template>
-  <div class="container mx-auto py-6">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-semibold text-gray-800">
-        {{ isEditing ? 'Chỉnh sửa người dùng' : 'Chi tiết người dùng' }}
-      </h1>
-      <div class="flex space-x-3">
-        <button
-          v-if="!isEditing"
-          @click="isEditing = true"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Chỉnh sửa
-        </button>
-        <NuxtLink 
-          to="/users" 
-          class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors"
-        >
-          Quay lại
-        </NuxtLink>
+  <div class="min-h-screen bg-slate-50 dark:bg-neutral-900">
+    <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
+      <div class="flex flex-col items-center gap-2">
+        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-r-transparent"></div>
+        <p class="text-sm text-slate-500 dark:text-neutral-400">Đang tải...</p>
       </div>
     </div>
 
-    <div v-if="loading" class="bg-white rounded-lg shadow-md p-8 flex justify-center">
-      <LoadingIcon class="w-10 h-10 text-blue-600" />
-    </div>
+    <div v-else-if="error" class="container mx-auto py-6 space-y-6">
+      <PageHeader 
+        title="Chi tiết người dùng" 
+        description="Quản lý thông tin và quyền hạn của người dùng"
+      >
+        <template #actions>
+          <NuxtLink 
+            to="/users" 
+            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600 dark:hover:bg-neutral-600"
+          >
+            <ArrowLeft class="w-4 h-4 mr-2" />
+            Quay lại
+          </NuxtLink>
+        </template>
+      </PageHeader>
 
-    <div v-else-if="error" class="bg-white rounded-lg shadow-md p-8">
-      <div class="text-center text-red-600">
-        <p>{{ error }}</p>
-        <button
-          @click="fetchUser"
-          class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Thử lại
-        </button>
-      </div>
-    </div>
-
-    <template v-else>
-      <!-- Read-only view -->
-      <div v-if="!isEditing" class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <div class="flex items-center space-x-4">
-            <div class="h-14 w-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xl font-semibold">
-              {{ getUserInitials(user) }}
-            </div>
-            <div>
-              <h2 class="text-xl font-semibold text-gray-800">
-                {{ user.username || 'N/A' }}
-              </h2>
-              <p class="text-gray-600">{{ user.email }}</p>
-            </div>
-          </div>
+      <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-8">
+        <div class="text-center text-red-600 dark:text-red-400">
+          <p>{{ error }}</p>
+          <button
+            @click="fetchUser"
+            class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+          >
+            Thử lại
+          </button>
         </div>
+      </div>
+    </div>
 
-        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 class="text-lg font-medium text-gray-900 mb-3">Thông tin tài khoản</h3>
-            <div class="space-y-3">
-              <div>
-                <p class="text-sm text-gray-500">ID</p>
-                <p class="font-medium">{{ user.id }}</p>
+    <div v-else class="container mx-auto py-6 space-y-6">
+      <!-- Header -->
+      <PageHeader 
+        :title="isEditing ? 'Chỉnh sửa người dùng' : 'Chi tiết người dùng'" 
+        description="Quản lý thông tin và quyền hạn của người dùng"
+      >
+        <template #actions>
+          <button
+            v-if="!isEditing"
+            @click="isEditing = true"
+            class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <Pencil class="w-4 h-4 mr-2" />
+            Chỉnh sửa
+          </button>
+          <NuxtLink 
+            to="/users" 
+            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600 dark:hover:bg-neutral-600"
+          >
+            <ArrowLeft class="w-4 h-4 mr-2" />
+            Quay lại
+          </NuxtLink>
+        </template>
+      </PageHeader>
+
+      <!-- Chế độ xem thông tin -->
+      <div v-if="!isEditing">
+        <!-- Tabs Navigation (Chế độ xem) -->
+        <nav class="flex items-center space-x-1 rounded-lg bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 p-1 w-fit">
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            @click="currentTab = tab.id"
+            class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
+            :class="{
+              'bg-primary-600 text-white': currentTab === tab.id,
+              'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700': currentTab !== tab.id
+            }"
+          >
+            <component :is="tab.icon" class="w-4 h-4" />
+            {{ tab.name }}
+          </button>
+        </nav>
+
+        <!-- Nội dung tab (Chế độ xem) -->
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden">
+          <!-- Thông tin cơ bản -->
+          <div v-show="currentTab === 'basic'">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-neutral-700">
+              <div class="flex items-center space-x-4">
+                <div class="h-14 w-14 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-gray-600 text-xl font-semibold">
+                  {{ getUserInitials(user) }}
+                </div>
+                <div>
+                  <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+                    {{ user.username || 'N/A' }}
+                  </h2>
+                  <p class="text-gray-600 dark:text-neutral-400">{{ user.email }}</p>
+                </div>
               </div>
-              <div>
-                <p class="text-sm text-gray-500">Trạng thái</p>
-                <p class="font-medium">
-                  <span 
-                    :class="[
-                      'px-2 py-1 text-xs rounded-full', 
-                      user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    ]"
-                  >
-                    {{ user.isActive ? 'Hoạt động' : 'Bị khóa' }}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-500">Email đã xác thực</p>
-                <p class="font-medium">
-                  <span 
-                    :class="[
-                      'px-2 py-1 text-xs rounded-full', 
-                      user.isEmailVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    ]"
-                  >
-                    {{ user.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực' }}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-500">Lần đăng nhập cuối</p>
-                <p class="font-medium">{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Chưa đăng nhập' }}</p>
+            </div>
+
+            <div class="p-6 space-y-6">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-neutral-200 mb-3 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin tài khoản</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">ID</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">{{ user.id }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Email</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">{{ user.email }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Tên người dùng</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">{{ user.username || 'N/A' }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Trạng thái</p>
+                  <p class="font-medium">
+                    <span 
+                      :class="[
+                        'px-2 py-1 text-xs rounded-full', 
+                        user.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                      ]"
+                    >
+                      {{ user.isActive ? 'Hoạt động' : 'Bị khóa' }}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Email đã xác thực</p>
+                  <p class="font-medium">
+                    <span 
+                      :class="[
+                        'px-2 py-1 text-xs rounded-full', 
+                        user.isEmailVerified ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                      ]"
+                    >
+                      {{ user.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực' }}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Lần đăng nhập cuối</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Chưa đăng nhập' }}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <h3 class="text-lg font-medium text-gray-900 mb-3">Thông tin cá nhân</h3>
-            <div class="space-y-3">
-              <div>
-                <p class="text-sm text-gray-500">Họ và tên</p>
-                <p class="font-medium">
-                  {{ 
-                    (user.profile && (user.profile.firstName || user.profile.lastName))
-                      ? `${user.profile.firstName || ''} ${user.profile.lastName || ''}`.trim()
-                      : 'N/A'
-                  }}
-                </p>
+          <!-- Thông tin cá nhân -->
+          <div v-show="currentTab === 'profile'">
+            <div class="p-6 space-y-6">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-neutral-200 mb-3 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin cá nhân</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Họ</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">
+                    {{ user.profile && user.profile.lastName ? user.profile.lastName : 'N/A' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Tên</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">
+                    {{ user.profile && user.profile.firstName ? user.profile.firstName : 'N/A' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Họ và tên</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">
+                    {{ 
+                      (user.profile && (user.profile.firstName || user.profile.lastName))
+                        ? `${user.profile.firstName || ''} ${user.profile.lastName || ''}`.trim()
+                        : 'N/A'
+                    }}
+                  </p>
+                </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Phân quyền -->
+          <div v-show="currentTab === 'permissions'">
+            <div class="p-6 space-y-6">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-neutral-200 mb-3 pb-2 border-b border-gray-200 dark:border-neutral-700">Phân quyền</h3>
               <div>
-                <p class="text-sm text-gray-500">Vai trò</p>
-                <div class="flex flex-wrap gap-1 mt-1">
+                <p class="text-sm text-gray-500 dark:text-neutral-400 mb-2">Vai trò</p>
+                <div class="flex flex-wrap gap-2">
                   <span 
                     v-for="role in user.roles" 
                     :key="role.id" 
-                    class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800"
+                    class="px-3 py-1.5 text-xs rounded-full bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300 flex items-center"
                   >
+                    <UserCircle2 class="w-3.5 h-3.5 mr-1" />
                     {{ role.name }}
                   </span>
-                  <span v-if="!user.roles || !user.roles.length" class="text-gray-500">
+                  <span v-if="!user.roles || !user.roles.length" class="text-gray-500 dark:text-gray-400">
                     Không có vai trò
                   </span>
                 </div>
@@ -126,258 +201,357 @@
             </div>
           </div>
 
-          <div class="md:col-span-2">
-            <h3 class="text-lg font-medium text-gray-900 mb-3">Thông tin hệ thống</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <p class="text-sm text-gray-500">Ngày tạo</p>
-                <p class="font-medium">{{ formatDate(user.createdAt) }}</p>
+          <!-- Cài đặt -->
+          <div v-show="currentTab === 'settings'">
+            <div class="p-6 space-y-6">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-neutral-200 mb-3 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin hệ thống</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Ngày tạo</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">{{ formatDate(user.createdAt) }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-neutral-400">Cập nhật lần cuối</p>
+                  <p class="font-medium text-gray-900 dark:text-neutral-200">{{ formatDate(user.updatedAt) }}</p>
+                </div>
               </div>
-              <div>
-                <p class="text-sm text-gray-500">Cập nhật lần cuối</p>
-                <p class="font-medium">{{ formatDate(user.updatedAt) }}</p>
+
+              <div class="mt-6">
+                <h4 class="font-medium text-gray-900 dark:text-neutral-200 mb-3">Thao tác tài khoản</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    @click="sendPasswordResetEmail"
+                    class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                    :disabled="loading"
+                  >
+                    <Key class="w-4 h-4 mr-2" />
+                    Gửi email đặt lại mật khẩu
+                  </button>
+                  
+                  <button
+                    v-if="user.isActive"
+                    @click="updateUserStatus(false)"
+                    class="inline-flex items-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                    :disabled="loading"
+                  >
+                    <Lock class="w-4 h-4 mr-2" />
+                    Khóa tài khoản
+                  </button>
+                  
+                  <button
+                    v-else
+                    @click="updateUserStatus(true)"
+                    class="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                    :disabled="loading"
+                  >
+                    <Unlock class="w-4 h-4 mr-2" />
+                    Kích hoạt tài khoản
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <div class="px-6 py-4 border-t border-gray-200 flex gap-2">
-          <button
-            @click="sendPasswordResetEmail"
-            class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
-            :disabled="loading"
-          >
-            Gửi email đặt lại mật khẩu
-          </button>
-          
-          <button
-            v-if="user.isActive"
-            @click="updateUserStatus(false)"
-            class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-            :disabled="loading"
-          >
-            Khóa tài khoản
-          </button>
-          
-          <button
-            v-else
-            @click="updateUserStatus(true)"
-            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-            :disabled="loading"
-          >
-            Kích hoạt tài khoản
-          </button>
-        </div>
       </div>
 
-      <!-- Edit form -->
-      <div v-else class="bg-white rounded-lg shadow-md p-6">
-        <form @submit.prevent="updateUser">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Email -->
-            <div class="col-span-1 md:col-span-2">
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-                Email <span class="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                v-model="form.email"
-                type="email"
-                placeholder="Nhập email người dùng"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                :class="{ 'border-red-500': validationErrors.email }"
-              />
-              <p v-if="validationErrors.email" class="mt-1 text-sm text-red-600">
-                {{ validationErrors.email }}
-              </p>
+      <!-- Chế độ chỉnh sửa -->
+      <div v-else>
+        <!-- Tabs Navigation (Chế độ chỉnh sửa) -->
+        <nav class="flex items-center space-x-1 rounded-lg bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 p-1 w-fit">
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            @click="currentTab = tab.id"
+            class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
+            :class="{
+              'bg-primary-600 text-white': currentTab === tab.id,
+              'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700': currentTab !== tab.id
+            }"
+          >
+            <component :is="tab.icon" class="w-4 h-4" />
+            {{ tab.name }}
+          </button>
+        </nav>
+
+        <!-- Tab Contents (Edit mode) -->
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6">
+          <form @submit.prevent="updateUser">
+            <!-- Thông tin cơ bản -->
+            <div v-show="currentTab === 'basic'">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin cơ bản</h3>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Email -->
+                <div class="col-span-1 md:col-span-2">
+                  <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    v-model="form.email"
+                    type="email"
+                    placeholder="Nhập email người dùng"
+                    required
+                    class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                    :class="{ 'border-red-500 dark:border-red-500': validationErrors.email }"
+                  />
+                  <p v-if="validationErrors.email" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ validationErrors.email }}
+                  </p>
+                </div>
+
+                <!-- Username -->
+                <div class="col-span-1">
+                  <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tên người dùng
+                  </label>
+                  <input
+                    id="username"
+                    v-model="form.username"
+                    type="text"
+                    placeholder="Nhập tên người dùng dạng slug không dấu"
+                    class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                    :class="{ 'border-red-500 dark:border-red-500': validationErrors.username }"
+                  />
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Sử dụng các ký tự a-z, 0-9, gạch ngang (-), không dấu, không khoảng trắng (vd: john-doe)
+                  </p>
+                  <p v-if="validationErrors.username" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ validationErrors.username }}
+                  </p>
+                </div>
+
+                <!-- Password (optional for update) -->
+                <div class="col-span-1">
+                  <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Mật khẩu <span class="text-sm text-gray-500 dark:text-gray-400">(để trống nếu không thay đổi)</span>
+                  </label>
+                  <div class="relative">
+                    <input
+                      id="password"
+                      v-model="form.password"
+                      :type="showPassword ? 'text' : 'password'"
+                      placeholder="Nhập mật khẩu mới"
+                      class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      :class="{ 'border-red-500 dark:border-red-500': validationErrors.password }"
+                    />
+                    <button
+                      type="button"
+                      class="absolute inset-y-0 right-0 px-3 flex items-center"
+                      @click="showPassword = !showPassword"
+                    >
+                      <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    </button>
+                  </div>
+                  <p v-if="validationErrors.password" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ validationErrors.password }}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <!-- Username -->
-            <div class="col-span-1">
-              <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
-                Tên người dùng
-              </label>
-              <input
-                id="username"
-                v-model="form.username"
-                type="text"
-                placeholder="Nhập tên người dùng"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                :class="{ 'border-red-500': validationErrors.username }"
-              />
-              <p v-if="validationErrors.username" class="mt-1 text-sm text-red-600">
-                {{ validationErrors.username }}
-              </p>
+            <!-- Thông tin cá nhân -->
+            <div v-show="currentTab === 'profile'">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">Thông tin cá nhân</h3>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- First Name -->
+                <div>
+                  <label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tên
+                  </label>
+                  <input
+                    id="firstName"
+                    v-model="form.firstName"
+                    type="text"
+                    placeholder="Nhập tên"
+                    class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                  />
+                </div>
+
+                <!-- Last Name -->
+                <div>
+                  <label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Họ
+                  </label>
+                  <input
+                    id="lastName"
+                    v-model="form.lastName"
+                    type="text"
+                    placeholder="Nhập họ"
+                    class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                  />
+                </div>
+              </div>
             </div>
 
-            <!-- Password (optional for update) -->
-            <div class="col-span-1">
-              <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-                Mật khẩu <span class="text-sm text-gray-500">(để trống nếu không thay đổi)</span>
-              </label>
-              <div class="relative">
-                <input
-                  id="password"
-                  v-model="form.password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="Nhập mật khẩu mới"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  :class="{ 'border-red-500': validationErrors.password }"
-                />
+            <!-- Phân quyền -->
+            <div v-show="currentTab === 'permissions'">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">Phân quyền</h3>
+              
+              <!-- Roles -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Vai trò
+                </label>
+                <div class="mt-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div v-if="rolesLoading" class="text-gray-500 dark:text-gray-400 col-span-3">
+                    <Loader2 class="w-4 h-4 mr-2 inline-block animate-spin" />
+                    Đang tải vai trò...
+                  </div>
+                  <template v-else>
+                    <div
+                      v-for="role in roles"
+                      :key="role.id"
+                      class="inline-flex items-center p-2 border border-gray-200 dark:border-neutral-700 rounded-md hover:bg-gray-50 dark:hover:bg-neutral-700"
+                    >
+                      <input
+                        :id="`role-${role.id}`"
+                        type="checkbox"
+                        :value="role.id"
+                        v-model="form.roleIds"
+                        class="h-4 w-4 text-primary-600 bg-gray-100 dark:bg-neutral-600 rounded border-gray-300 dark:border-neutral-500 focus:ring-primary-500"
+                      />
+                      <label :for="`role-${role.id}`" class="ml-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer w-full">
+                        {{ role.name }}
+                      </label>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cài đặt -->
+            <div v-show="currentTab === 'settings'">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-neutral-700">Cài đặt tài khoản</h3>
+              
+              <!-- Active status -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Trạng thái tài khoản
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex items-center p-4 bg-gray-50 dark:bg-neutral-700 rounded-lg cursor-pointer" @click="form.isActive = true">
+                    <input
+                      type="radio"
+                      id="status-active"
+                      v-model="form.isActive"
+                      :value="true"
+                      class="h-4 w-4 text-primary-600 bg-gray-100 dark:bg-neutral-600 rounded border-gray-300 dark:border-neutral-500 focus:ring-primary-500"
+                    />
+                    <div class="ml-3">
+                      <label for="status-active" class="font-medium text-gray-700 dark:text-gray-300">
+                        Hoạt động
+                      </label>
+                      <p class="text-sm text-gray-500 dark:text-gray-400">Người dùng có thể đăng nhập và sử dụng hệ thống</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center p-4 bg-gray-50 dark:bg-neutral-700 rounded-lg cursor-pointer" @click="form.isActive = false">
+                    <input
+                      type="radio"
+                      id="status-inactive"
+                      v-model="form.isActive"
+                      :value="false"
+                      class="h-4 w-4 text-primary-600 bg-gray-100 dark:bg-neutral-600 rounded border-gray-300 dark:border-neutral-500 focus:ring-primary-500"
+                    />
+                    <div class="ml-3">
+                      <label for="status-inactive" class="font-medium text-gray-700 dark:text-gray-300">
+                        Bị khóa
+                      </label>
+                      <p class="text-sm text-gray-500 dark:text-gray-400">Người dùng không thể đăng nhập vào hệ thống</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Email verified status -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Trạng thái xác thực email
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex items-center p-4 bg-gray-50 dark:bg-neutral-700 rounded-lg cursor-pointer" @click="form.isEmailVerified = true">
+                    <input
+                      type="radio"
+                      id="email-verified"
+                      v-model="form.isEmailVerified"
+                      :value="true"
+                      class="h-4 w-4 text-primary-600 bg-gray-100 dark:bg-neutral-600 rounded border-gray-300 dark:border-neutral-500 focus:ring-primary-500"
+                    />
+                    <div class="ml-3">
+                      <label for="email-verified" class="font-medium text-gray-700 dark:text-gray-300">
+                        Đã xác thực
+                      </label>
+                      <p class="text-sm text-gray-500 dark:text-gray-400">Email của người dùng đã được xác thực</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center p-4 bg-gray-50 dark:bg-neutral-700 rounded-lg cursor-pointer" @click="form.isEmailVerified = false">
+                    <input
+                      type="radio"
+                      id="email-not-verified"
+                      v-model="form.isEmailVerified"
+                      :value="false"
+                      class="h-4 w-4 text-primary-600 bg-gray-100 dark:bg-neutral-600 rounded border-gray-300 dark:border-neutral-500 focus:ring-primary-500"
+                    />
+                    <div class="ml-3">
+                      <label for="email-not-verified" class="font-medium text-gray-700 dark:text-gray-300">
+                        Chưa xác thực
+                      </label>
+                      <p class="text-sm text-gray-500 dark:text-gray-400">Email của người dùng chưa được xác thực</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nút điều hướng và nút submit -->
+            <div class="mt-8 border-t border-gray-200 dark:border-neutral-700 pt-6 flex justify-between">
+              <div>
                 <button
                   type="button"
-                  class="absolute inset-y-0 right-0 px-3 flex items-center"
-                  @click="showPassword = !showPassword"
+                  v-if="getPreviousTab()"
+                  @click="currentTab = getPreviousTab()"
+                  class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-gray-300 dark:border-neutral-600 dark:hover:bg-neutral-600"
                 >
-                  <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
+                  <ChevronLeft class="w-4 h-4 mr-2" />
+                  Quay lại
                 </button>
               </div>
-              <p v-if="validationErrors.password" class="mt-1 text-sm text-red-600">
-                {{ validationErrors.password }}
-              </p>
-            </div>
-
-            <!-- First Name -->
-            <div class="col-span-1">
-              <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">
-                Tên
-              </label>
-              <input
-                id="firstName"
-                v-model="form.firstName"
-                type="text"
-                placeholder="Nhập tên"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <!-- Last Name -->
-            <div class="col-span-1">
-              <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">
-                Họ
-              </label>
-              <input
-                id="lastName"
-                v-model="form.lastName"
-                type="text"
-                placeholder="Nhập họ"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <!-- Active status -->
-            <div class="col-span-1">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Trạng thái
-              </label>
-              <div class="flex items-center space-x-4">
-                <label class="inline-flex items-center">
-                  <input
-                    type="radio"
-                    v-model="form.isActive"
-                    :value="true"
-                    class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Hoạt động</span>
-                </label>
-                <label class="inline-flex items-center">
-                  <input
-                    type="radio"
-                    v-model="form.isActive"
-                    :value="false"
-                    class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Khóa</span>
-                </label>
+              
+              <div class="flex space-x-3">
+                <button
+                  type="button"
+                  class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-gray-300 dark:border-neutral-600 dark:hover:bg-neutral-600"
+                  @click="cancelEdit"
+                >
+                  Hủy
+                </button>
+                
+                <button
+                  v-if="getNextTab()"
+                  type="button"
+                  @click="currentTab = getNextTab()"
+                  class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  Tiếp theo
+                  <ChevronRight class="w-4 h-4 ml-2" />
+                </button>
+                
+                <button
+                  v-else
+                  type="submit"
+                  :disabled="isSubmitting"
+                  class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  <Loader2 v-if="isSubmitting" class="w-4 h-4 mr-2 animate-spin" />
+                  <span v-else>Cập nhật</span>
+                </button>
               </div>
             </div>
-
-            <!-- Email verified status -->
-            <div class="col-span-1">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Trạng thái xác thực email
-              </label>
-              <div class="flex items-center space-x-4">
-                <label class="inline-flex items-center">
-                  <input
-                    type="radio"
-                    v-model="form.isEmailVerified"
-                    :value="true"
-                    class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Đã xác thực</span>
-                </label>
-                <label class="inline-flex items-center">
-                  <input
-                    type="radio"
-                    v-model="form.isEmailVerified"
-                    :value="false"
-                    class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Chưa xác thực</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Roles -->
-            <div class="col-span-1 md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Vai trò
-              </label>
-              <div class="mt-1 flex flex-wrap gap-2">
-                <div v-if="rolesLoading" class="text-gray-500">
-                  Đang tải vai trò...
-                </div>
-                <template v-else>
-                  <div
-                    v-for="role in roles"
-                    :key="role.id"
-                    class="inline-flex items-center"
-                  >
-                    <input
-                      :id="`role-${role.id}`"
-                      type="checkbox"
-                      :value="role.id"
-                      v-model="form.roleIds"
-                      class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <label :for="`role-${role.id}`" class="ml-2 text-sm text-gray-700">
-                      {{ role.name }}
-                    </label>
-                  </div>
-                </template>
-              </div>
-            </div>
-          </div>
-
-          <!-- Submit buttons -->
-          <div class="mt-8 flex justify-end space-x-3">
-            <button
-              type="button"
-              class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors"
-              @click="cancelEdit"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              :disabled="isSubmitting"
-            >
-              <span v-if="isSubmitting">Đang xử lý...</span>
-              <span v-else>Cập nhật</span>
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -386,6 +560,8 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '~/composables/useTrpc'
 import { useToast } from '~/composables/useToast'
+import PageHeader from "../../components/common/header/PageHeader.vue"
+import { User, IdCard, Lock, Settings, ChevronLeft, ChevronRight, ArrowLeft, Eye, EyeOff, Loader2, Pencil, Key, UserCircle2, Unlock } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -401,6 +577,26 @@ const isSubmitting = ref(false)
 const rolesLoading = ref(false)
 const showPassword = ref(false)
 const roles = ref([])
+
+// Tab management
+const tabs = [
+  { id: 'basic', name: 'Thông tin cơ bản', icon: User },
+  { id: 'profile', name: 'Thông tin cá nhân', icon: IdCard },
+  { id: 'permissions', name: 'Phân quyền', icon: Lock },
+  { id: 'settings', name: 'Cài đặt', icon: Settings }
+]
+const currentTab = ref('basic')
+
+// Helper functions for tab navigation
+const getPreviousTab = () => {
+  const currentIndex = tabs.findIndex(tab => tab.id === currentTab.value)
+  return currentIndex > 0 ? tabs[currentIndex - 1].id : null
+}
+
+const getNextTab = () => {
+  const currentIndex = tabs.findIndex(tab => tab.id === currentTab.value)
+  return currentIndex < tabs.length - 1 ? tabs[currentIndex + 1].id : null
+}
 
 const form = reactive({
   email: '',
@@ -491,6 +687,7 @@ const getUserInitials = (user) => {
 // Cancel edit mode
 const cancelEdit = () => {
   isEditing.value = false
+  currentTab.value = 'basic' // Reset tab position
   
   // Reset form to current user data
   form.email = user.value.email
@@ -538,9 +735,14 @@ const validateForm = () => {
   }
   
   // Username validation (if provided)
-  if (form.username && form.username.length < 3) {
-    validationErrors.username = 'Tên người dùng phải có ít nhất 3 ký tự'
-    isValid = false
+  if (form.username) {
+    if (form.username.length < 3) {
+      validationErrors.username = 'Tên người dùng phải có ít nhất 3 ký tự'
+      isValid = false
+    } else if (!/^[a-z0-9-]+$/.test(form.username)) {
+      validationErrors.username = 'Tên người dùng chỉ chấp nhận chữ thường a-z, số 0-9 và dấu gạch ngang (-)'
+      isValid = false
+    }
   }
   
   // Password validation (only if provided)
@@ -555,6 +757,8 @@ const validateForm = () => {
 // Update user
 const updateUser = async () => {
   if (!validateForm()) {
+    // Navigate to the basic tab if there are validation errors
+    currentTab.value = 'basic'
     return
   }
   
@@ -588,6 +792,7 @@ const updateUser = async () => {
     
     if (err.message === 'Email đã được sử dụng bởi người dùng khác') {
       validationErrors.email = 'Email đã được sử dụng bởi người dùng khác'
+      currentTab.value = 'basic' // Return to basic tab for email error
     } else {
       toast.error(err.message || 'Không thể cập nhật người dùng')
     }

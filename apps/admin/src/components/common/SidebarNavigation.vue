@@ -18,7 +18,8 @@ import {
   Folder,
   Image,
   Palette,
-  ChevronDown
+  ChevronDown,
+  UserCircle
 } from 'lucide-vue-next';
 
 // Define interfaces for menu items
@@ -259,7 +260,8 @@ const getIconComponent = (iconName: string | null) => {
     'Settings': Settings,
     'Folder': Folder,
     'Image': Image,
-    'Palette': Palette
+    'Palette': Palette,
+    'UserCircle': UserCircle
   }
   
   if (!iconName) return Home;

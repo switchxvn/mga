@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Order, OrderStatus, PaymentStatus } from '../../entities/order.entity';
+import { Order } from '../../entities/order.entity';
 import { OrderItem, ProductType } from '../../entities/order-item.entity';
 import { OrderRefund, RefundStatus } from '../../entities/order-refund.entity';
 import { OrderRefundItem } from '../../entities/order-refund-item.entity';
 import { OrderTicketScanHistory } from '../../entities/order-ticket-scan-history.entity';
 import { Product } from '../../../product/entities/product.entity';
+import { OrderStatus, PaymentStatus } from '@ew/shared';
 
 // Interface cho thông tin quét vé
 export interface ScanTicketResult {
@@ -15,6 +16,7 @@ export interface ScanTicketResult {
   orderItem?: OrderItem;
   scanHistory?: OrderTicketScanHistory;
   isFirstScan?: boolean;
+  scanCount?: number;
 }
 
 // Interface cho thông tin thiết bị quét
@@ -206,6 +208,22 @@ export class OrderAdminService {
   }
 
   /**
+   * Đếm số lượt quét/sử dụng vé
+   */
+  async getTicketScanCount(orderItemId: number): Promise<number> {
+    try {
+      const count = await this.scanHistoryRepository.count({
+        where: { orderItemId }
+      });
+      
+      return count;
+    } catch (error) {
+      console.error('Error in getTicketScanCount:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Quét mã QR vé và cập nhật trạng thái sử dụng
    */
   async scanTicket(
@@ -287,6 +305,9 @@ export class OrderAdminService {
           await this.orderItemRepository.save(orderItem);
         }
 
+        // Đếm số lượt quét vé (bao gồm cả lượt mới thêm)
+        const scanCount = scanHistories.length + 1;
+
         return {
           success: true,
           message: isFirstScan 
@@ -294,7 +315,8 @@ export class OrderAdminService {
             : 'Vé hợp lệ nhưng đã được quét trước đó.',
           orderItem,
           scanHistory,
-          isFirstScan
+          isFirstScan,
+          scanCount
         };
       } catch (error) {
         console.error('Error in scanTicket while saving data:', error);

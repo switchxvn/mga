@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { router, adminProcedure } from '../../procedures';
+import { PaymentStatus } from '@ew/shared';
 
 // Schema for device info
 const deviceInfoSchema = z.object({
@@ -70,7 +71,21 @@ export const ticketScannerRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       try {
-        return await ctx.services.orderAdminService.findTicketByQrCode(input.qrCode);
+        // Lấy thông tin vé
+        const ticket = await ctx.services.orderAdminService.findTicketByQrCode(input.qrCode);
+        
+        if (ticket) {
+          // Lấy số lượt quét vé
+          const scanCount = await ctx.services.orderAdminService.getTicketScanCount(ticket.id);
+          
+          // Gắn thêm thông tin số lượt quét vào kết quả
+          return {
+            ...ticket,
+            scanCount
+          };
+        }
+        
+        return ticket;
       } catch (error) {
         console.error('Error in getTicketByQrCode:', error);
         
@@ -86,6 +101,131 @@ export const ticketScannerRouter = router({
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Không tìm thấy vé với mã QR này',
+        });
+      }
+    }),
+    
+  // Tìm kiếm vé theo thông tin khách hàng (email hoặc số điện thoại)
+  searchCustomerTickets: adminProcedure
+    .input(z.object({
+      searchTerm: z.string().min(3),
+      ticketStatus: z.string().optional(),
+      startOrderDate: z.string().optional(),
+      endOrderDate: z.string().optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        if (!ctx.services.orderAdminService) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Service không khả dụng, vui lòng thử lại sau',
+          });
+        }
+
+        // Tìm kiếm các đơn hàng có chứa vé (TICKET) dựa trên email hoặc số điện thoại
+        // đã bỏ điều kiện lọc paymentStatus để hiển thị cả vé chưa thanh toán
+        let searchQuery = `
+          SELECT 
+            "order"."id" as "orderId",
+            "order"."order_code" as "orderCode",
+            "order"."status" as "status",
+            "order"."customer_name" as "customerName",
+            "order"."email" as "email",
+            "order"."phone_code" as "phoneCode",
+            "order"."phone_number" as "phoneNumber",
+            "order"."payment_status" as "paymentStatus",
+            "order"."created_at" as "createdAt",
+            "item"."id" as "itemId",
+            "item"."qr_code" as "qrCode",
+            "item"."is_used" as "isUsed",
+            "item"."product_type" as "productType",
+            "product"."id" as "productId",
+            "translation"."title" as "productTitle"
+          FROM 
+            "orders" "order"
+            INNER JOIN "order_items" "item" ON "item"."order_id" = "order"."id"
+            INNER JOIN "products" "product" ON "item"."product_id" = "product"."id"
+            LEFT JOIN "product_translations" "translation" ON "translation"."product_id" = "product"."id"
+          WHERE 
+            "item"."product_type" = 'TICKET'
+            AND ("order"."email" ILIKE $1 OR "order"."phone_number" ILIKE $1)
+        `;
+        
+        // Thêm điều kiện lọc trạng thái vé
+        if (input.ticketStatus) {
+          if (input.ticketStatus === 'used') {
+            searchQuery += ` AND "item"."is_used" = true`;
+          } else if (input.ticketStatus === 'unused') {
+            searchQuery += ` AND "item"."is_used" = false`;
+          }
+        }
+        
+        // Thêm điều kiện lọc ngày đơn hàng
+        const params = [`%${input.searchTerm}%`];
+        let paramCount = 2;
+        
+        if (input.startOrderDate) {
+          searchQuery += ` AND "order"."created_at" >= $${paramCount}`;
+          params.push(input.startOrderDate);
+          paramCount++;
+        }
+        
+        if (input.endOrderDate) {
+          searchQuery += ` AND "order"."created_at" <= $${paramCount}`;
+          params.push(input.endOrderDate);
+        }
+
+        const entityManager = ctx.services.orderAdminService['orderRepository'].manager;
+        const rawResults = await entityManager.query(searchQuery, params);
+        
+        if (!rawResults || rawResults.length === 0) {
+          return [];
+        }
+
+        // Chuyển đổi dữ liệu thô thành định dạng mong muốn
+        const tickets = [];
+        const processedItemIds = new Set(); // Để tránh trùng lặp
+
+        for (const row of rawResults) {
+          // Bỏ qua nếu đã xử lý item này rồi
+          if (processedItemIds.has(row.itemId)) {
+            continue;
+          }
+          
+          processedItemIds.add(row.itemId);
+          
+          // Lấy số lượt quét vé
+          const scanCount = await ctx.services.orderAdminService.getTicketScanCount(row.itemId);
+          
+          tickets.push({
+            id: row.itemId,
+            qrCode: row.qrCode,
+            orderId: row.orderId,
+            isUsed: row.isUsed,
+            productType: row.productType,
+            scanCount: scanCount,
+            product: {
+              id: row.productId,
+              translations: [{ title: row.productTitle }]
+            },
+            order: {
+              orderCode: row.orderCode,
+              status: row.status,
+              customerName: row.customerName,
+              customerEmail: row.email,
+              customerPhone: row.phoneCode + row.phoneNumber,
+              createdAt: row.createdAt,
+              paymentStatus: row.paymentStatus
+            }
+          });
+        }
+
+        return tickets;
+      } catch (error) {
+        console.error('Error in searchCustomerTickets:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Lỗi khi tìm kiếm vé theo thông tin khách hàng: ' + (error.message || 'Unknown error'),
         });
       }
     }),
