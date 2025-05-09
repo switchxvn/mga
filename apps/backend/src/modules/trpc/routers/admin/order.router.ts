@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { OrderStatus, PaymentStatus } from '../../../order/entities/order.entity';
+import { OrderStatus, PaymentStatus } from '@ew/shared';
 import { RefundStatus } from '../../../order/entities/order-refund.entity';
 import { adminProcedure, router } from '../../procedures';
 

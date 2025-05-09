@@ -1,185 +1,192 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
-    <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
-      <div class="flex flex-col items-center gap-2">
-        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
-        <p class="text-sm text-slate-500">Loading...</p>
-      </div>
-    </div>
+  <AuthWrapper>
+    <PermissionGate :permissions="[]">
+      <div class="min-h-screen bg-slate-50">
+        <!-- Loading State -->
+        <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div class="flex flex-col items-center gap-2">
+            <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
+            <p class="text-sm text-slate-500">Loading...</p>
+          </div>
+        </div>
 
-    <!-- Content Area -->
-    <div v-else class="min-h-screen bg-slate-50">
-      <div class="flex-1 overflow-y-auto">
-        <div class="space-y-6">
-          <!-- Header -->
-          <PageHeader
-            title="Create Post"
-            description="Create a new post with translations"
-          >
-            <template #actions>
-              <!-- Language Switcher -->
-              <div class="language-switcher relative">
-                <button 
-                  @click.stop="isLanguageOpen = !isLanguageOpen"
-                  class="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-                >
-                  <div class="w-5 h-5 flex items-center justify-center">
-                    <img 
-                      v-if="selectedLanguage"
-                      :src="`/images/flag/${languages.find(l => l.code === selectedLanguage)?.flagCode.toLowerCase()}.svg`"
-                      :alt="`${languages.find(l => l.code === selectedLanguage)?.nativeName} flag`"
-                      class="w-5 h-5 rounded-sm object-cover"
-                      @error="onFlagImageError"
-                    />
-                  </div>
-                  <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
-                  <ChevronDownIcon 
-                    class="h-4 w-4 transition-transform"
-                    :class="{ 'rotate-180': isLanguageOpen }"
-                  />
-                </button>
-
-                <!-- Dropdown menu -->
-                <div 
-                  v-if="isLanguageOpen" 
-                  class="absolute z-50 mt-1 min-w-[240px] rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none"
-                >
-                  <div class="py-1">
-                    <button
-                      v-for="lang in languages"
-                      :key="lang.code"
-                      @click="selectedLanguage = lang.code; isLanguageOpen = false"
-                      class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
-                      :class="{ 'bg-slate-50': selectedLanguage === lang.code }"
+        <!-- Content Area -->
+        <div v-else class="min-h-screen bg-slate-50">
+          <div class="flex-1 overflow-y-auto">
+            <div class="space-y-6">
+              <!-- Header -->
+              <PageHeader
+                title="Create Post"
+                description="Create a new post with translations"
+              >
+                <template #actions>
+                  <!-- Language Switcher -->
+                  <div class="language-switcher relative">
+                    <button 
+                      @click.stop="isLanguageOpen = !isLanguageOpen"
+                      class="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                     >
-                      <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center mr-2">
+                      <div class="w-5 h-5 flex items-center justify-center">
                         <img 
-                          :src="`/images/flag/${lang.flagCode.toLowerCase()}.svg`"
-                          :alt="`${lang.nativeName} flag`"
+                          v-if="selectedLanguage"
+                          :src="`/images/flag/${languages.find(l => l.code === selectedLanguage)?.flagCode.toLowerCase()}.svg`"
+                          :alt="`${languages.find(l => l.code === selectedLanguage)?.nativeName} flag`"
                           class="w-5 h-5 rounded-sm object-cover"
                           @error="onFlagImageError"
                         />
                       </div>
-                      <span class="truncate">{{ lang.nativeName }}</span>
-                      <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
-                      <CheckIcon
-                        v-if="selectedLanguage === lang.code"
-                        class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
+                      <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
+                      <ChevronDownIcon 
+                        class="h-4 w-4 transition-transform"
+                        :class="{ 'rotate-180': isLanguageOpen }"
                       />
                     </button>
+
+                    <!-- Dropdown menu -->
+                    <div 
+                      v-if="isLanguageOpen" 
+                      class="absolute z-50 mt-1 min-w-[240px] rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none"
+                    >
+                      <div class="py-1">
+                        <button
+                          v-for="lang in languages"
+                          :key="lang.code"
+                          @click="selectedLanguage = lang.code; isLanguageOpen = false"
+                          class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
+                          :class="{ 'bg-slate-50': selectedLanguage === lang.code }"
+                        >
+                          <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center mr-2">
+                            <img 
+                              :src="`/images/flag/${lang.flagCode.toLowerCase()}.svg`"
+                              :alt="`${lang.nativeName} flag`"
+                              class="w-5 h-5 rounded-sm object-cover"
+                              @error="onFlagImageError"
+                            />
+                          </div>
+                          <span class="truncate">{{ lang.nativeName }}</span>
+                          <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
+                          <CheckIcon
+                            v-if="selectedLanguage === lang.code"
+                            class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
+                          />
+                        </button>
+                      </div>
+                    </div>
                   </div>
+
+                  <NuxtLink 
+                    to="/posts" 
+                    class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
+                  >
+                    <XIcon class="w-4 h-4 mr-2" />
+                    Cancel
+                  </NuxtLink>
+                  
+                  <button 
+                    @click="createPost(true)" 
+                    :disabled="loading"
+                    class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
+                  >
+                    <SaveIcon class="w-4 h-4 mr-2" />
+                    {{ loading && saveAndContinue ? 'Saving...' : 'Save & Continue' }}
+                  </button>
+
+                  <button 
+                    @click="createPost(false)" 
+                    :disabled="loading"
+                    class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
+                  >
+                    <SaveAllIcon class="w-4 h-4 mr-2" />
+                    {{ loading && !saveAndContinue ? 'Saving...' : 'Save & Back to List' }}
+                  </button>
+                </template>
+              </PageHeader>
+
+              <!-- Tabs -->
+              <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.id"
+                  @click="currentTab = tab.id"
+                  class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
+                  :class="{
+                    'bg-primary text-white': currentTab === tab.id,
+                    'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id
+                  }"
+                >
+                  <component :is="tab.icon" class="w-4 h-4" />
+                  {{ tab.name }}
+                </button>
+              </nav>
+
+              <div class="grid gap-6">
+                <!-- Basic Info Tab -->
+                <div v-show="currentTab === 'basic'">
+                  <PostEditor
+                    v-model:title="form.title"
+                    v-model:slug="form.slug"
+                    v-model:content="form.content"
+                    v-model:shortDescription="form.shortDescription"
+                    :editor-options="editorOptions"
+                    @generate-slug="generateSlug"
+                    :show-generate-slug="true"
+                    :errors="errors"
+                    required
+                  />
+                </div>
+
+                <!-- Media Tab -->
+                <div v-show="currentTab === 'media'">
+                  <PostMedia
+                    v-model:thumbnail="form.thumbnail"
+                  />
+                </div>
+
+                <!-- Categories Tab -->
+                <div v-show="currentTab === 'categories'">
+                  <PostCategories
+                    v-model="form.categoryIds"
+                  />
+                </div>
+
+                <!-- SEO Tab -->
+                <div v-show="currentTab === 'seo'">
+                  <PostSEO
+                    v-model:meta-description="form.metaDescription"
+                    v-model:tags-input="tagsInput"
+                    :tags="form.tags"
+                    @tag-input="handleTagInput"
+                    @remove-tag="removeTag"
+                  />
+                </div>
+
+                <!-- Settings Tab -->
+                <div v-show="currentTab === 'settings'">
+                  <PostSettings
+                    v-model:published="form.published"
+                    :updated-at="form.updatedAt"
+                  />
                 </div>
               </div>
-
-              <NuxtLink 
-                to="/posts" 
-                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
-              >
-                <XIcon class="w-4 h-4 mr-2" />
-                Cancel
-              </NuxtLink>
-              
-              <button 
-                @click="createPost(true)" 
-                :disabled="loading"
-                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
-              >
-                <SaveIcon class="w-4 h-4 mr-2" />
-                {{ loading && saveAndContinue ? 'Saving...' : 'Save & Continue' }}
-              </button>
-
-              <button 
-                @click="createPost(false)" 
-                :disabled="loading"
-                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
-              >
-                <SaveAllIcon class="w-4 h-4 mr-2" />
-                {{ loading && !saveAndContinue ? 'Saving...' : 'Save & Back to List' }}
-              </button>
-            </template>
-          </PageHeader>
-
-          <!-- Tabs -->
-          <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              @click="currentTab = tab.id"
-              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
-              :class="{
-                'bg-primary text-white': currentTab === tab.id,
-                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id
-              }"
-            >
-              <component :is="tab.icon" class="w-4 h-4" />
-              {{ tab.name }}
-            </button>
-          </nav>
-
-          <div class="grid gap-6">
-            <!-- Basic Info Tab -->
-            <div v-show="currentTab === 'basic'">
-              <PostEditor
-                v-model:title="form.title"
-                v-model:slug="form.slug"
-                v-model:content="form.content"
-                v-model:shortDescription="form.shortDescription"
-                :editor-options="editorOptions"
-                @generate-slug="generateSlug"
-                :show-generate-slug="true"
-                :errors="errors"
-                required
-              />
-            </div>
-
-            <!-- Media Tab -->
-            <div v-show="currentTab === 'media'">
-              <PostMedia
-                v-model:thumbnail="form.thumbnail"
-              />
-            </div>
-
-            <!-- Categories Tab -->
-            <div v-show="currentTab === 'categories'">
-              <PostCategories
-                v-model="form.categoryIds"
-              />
-            </div>
-
-            <!-- SEO Tab -->
-            <div v-show="currentTab === 'seo'">
-              <PostSEO
-                v-model:meta-description="form.metaDescription"
-                v-model:tags-input="tagsInput"
-                :tags="form.tags"
-                @tag-input="handleTagInput"
-                @remove-tag="removeTag"
-              />
-            </div>
-
-            <!-- Settings Tab -->
-            <div v-show="currentTab === 'settings'">
-              <PostSettings
-                v-model:published="form.published"
-                :updated-at="form.updatedAt"
-              />
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </PermissionGate>
+  </AuthWrapper>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '@/composables/useTrpc'
 import slugify from 'slugify'
 import { useHead } from 'nuxt/app'
 import { useToast } from 'vue-toastification'
 import { useI18n } from "vue-i18n";
+import { useAuth } from '@/composables/useAuth'
+import PermissionGate from '@/components/common/PermissionGate.vue'
+import AuthWrapper from '@/components/common/AuthWrapper.vue'
 
 // Import Lucide icons
 import {
@@ -203,11 +210,14 @@ import PostMedia from '@/components/posts/PostMedia.vue'
 import PostSEO from '@/components/posts/PostSEO.vue'
 import PostSettings from '@/components/posts/PostSettings.vue'
 import PostCategories from '@/components/posts/PostCategories.vue'
+import PermissionAlert from '@/components/common/PermissionAlert.vue'
 
 const trpc = useTrpc()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
+const { user } = useAuth()
 const loading = ref(false)
 const saveAndContinue = ref(false)
 
@@ -597,6 +607,15 @@ const onFlagImageError = (event: Event) => {
     }
   }
 };
+
+const hasCreatePostsPermission = computed(() => {
+  return user.value?.permissions?.includes('CREATE_POSTS') || false;
+});
+
+// Add middleware
+definePageMeta({
+  middleware: ["auth", "permission"],
+});
 </script>
 
 <style>

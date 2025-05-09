@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { ProductSnapshot, ProductType } from '../../order/entities/order-item.entity';
-import { OrderStatus, PaymentStatus } from '../../order/entities/order.entity';
+import { OrderStatus, PaymentStatus } from '@ew/shared';
 import { RefundReason, RefundStatus, RefundType } from '../../order/entities/order-refund.entity';
 import { generateOrderCode } from '../../order/utils/order-code.util';
 import { CreateRefundDto } from '../../order/frontend/services/order-frontend.service';
@@ -26,6 +26,7 @@ const orderItemSchema = z.object({
   unitPrice: z.number(),
   totalPrice: z.number(),
   productType: z.nativeEnum(ProductType),
+  travelDate: z.string().transform((str) => new Date(str)).optional(),
 });
 
 const createOrderSchema = z.object({
@@ -153,7 +154,8 @@ export const orderRouter = router({
           ...item,
           productCode: isDigitalProduct ? randomUUID() : null,
           qrCode: item.productType === ProductType.TICKET ? randomUUID() : null,
-          productSnapshot
+          productSnapshot,
+          travelDate: item.travelDate
         };
       });
 
@@ -308,19 +310,123 @@ export const orderRouter = router({
       phoneNumber: z.string()
     }))
     .query(async ({ ctx, input }) => {
-      const order = await ctx.services.orderFrontendService.findOrderByCodeAndPhone(
-        input.orderCode,
-        input.phoneNumber
-      );
-
-      if (!order) {
+      try {
+        let order;
+        
+        // Kiểm tra xem phương thức findOrderByCodeAndPhone có tồn tại không
+        if (typeof ctx.services.orderFrontendService.findOrderByCodeAndPhone === 'function') {
+          order = await ctx.services.orderFrontendService.findOrderByCodeAndPhone(
+            input.orderCode,
+            input.phoneNumber
+          );
+        } else {
+          // Nếu không tồn tại thì sử dụng findOrderByCode và kiểm tra số điện thoại
+          order = await ctx.services.orderFrontendService.findOrderByCode(input.orderCode);
+          
+          if (order && order.phoneNumber !== input.phoneNumber) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Số điện thoại không chính xác cho đơn hàng này',
+            });
+          }
+        }
+        
+        if (!order) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Không tìm thấy đơn hàng với mã đơn và số điện thoại này',
+          });
+        }
+        
+        // Kiểm tra trạng thái thanh toán
+        if (order.paymentStatus !== PaymentStatus.PAID) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Đơn hàng chưa thanh toán. Chỉ có thể đổi vé cho đơn hàng đã thanh toán',
+          });
+        }
+        
+        // Lọc các vé hợp lệ để đổi
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Lọc ticket items và kiểm tra điều kiện
+        const validItems = [];
+        const invalidItems = [];
+        
+        for (const item of order.items) {
+          if (item.productType !== ProductType.TICKET) {
+            continue;
+          }
+          
+          // Kiểm tra xem vé đã được sử dụng chưa
+          if (item.isUsed) {
+            invalidItems.push({
+              ...item,
+              invalidReason: 'Vé đã được sử dụng'
+            });
+            continue;
+          }
+          
+          // Kiểm tra ngày sử dụng vé
+          const travelDate = item.travelDate ? new Date(item.travelDate) : null;
+          if (travelDate && travelDate < today) {
+            invalidItems.push({
+              ...item,
+              invalidReason: 'Vé đã hết hạn sử dụng'
+            });
+            continue;
+          }
+          
+          // Kiểm tra lịch sử quét vé
+          const scanHistory = await ctx.services.orderFrontendService.getTicketScanHistory(item.id);
+          if (scanHistory && scanHistory.length > 0) {
+            invalidItems.push({
+              ...item,
+              invalidReason: 'Vé đã được sử dụng (đã có lịch sử quét)'
+            });
+            continue;
+          }
+          
+          validItems.push(item);
+        }
+        
+        // Nếu không có vé hợp lệ
+        if (validItems.length === 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Không có vé hợp lệ để đổi. Các vé trong đơn hàng đã được sử dụng hoặc đã hết hạn',
+          });
+        }
+        
+        // Trả về đơn hàng với chỉ các vé hợp lệ
+        order.items = validItems;
+        return order;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Không tìm thấy đơn hàng với mã đơn và số điện thoại này',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Đã xảy ra lỗi khi xác thực đơn hàng',
         });
       }
+    }),
 
-      return order;
+  getTicketScanHistory: publicProcedure
+    .input(z.object({
+      orderItemId: z.number()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await ctx.services.orderFrontendService.getTicketScanHistory(input.orderItemId);
+      } catch (error) {
+        console.error('Error getting ticket scan history:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Không thể lấy lịch sử quét vé, vui lòng thử lại sau',
+        });
+      }
     }),
 
   createRefundRequest: publicProcedure

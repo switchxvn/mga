@@ -65,6 +65,7 @@ export interface OrderItem {
   isUsed: boolean;
   productCode?: string;
   qrCode?: string;
+  travelDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -103,6 +104,7 @@ export interface CreateOrderInput {
     unitPrice: number;
     totalPrice: number;
     productType: ProductType;
+    travelDate?: Date;
   }>;
   totalAmount: number;
 }

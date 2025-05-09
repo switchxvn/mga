@@ -34,6 +34,13 @@ const isLoadingPaymentMethods = ref(false);
 // Booking data
 const bookingData = ref(loadBookingData());
 
+// Helper function to properly format dates for API
+const formatDate = (dateString: string): Date => {
+  const date = new Date(dateString);
+  // Ensure it's a valid date
+  return isNaN(date.getTime()) ? new Date() : date;
+};
+
 // Computed
 const canProceed = computed(() => {
   return (
@@ -130,6 +137,7 @@ const handleSubmit = async () => {
         unitPrice: Number(variant.unitPrice),
         totalPrice: Number(variant.totalPrice),
         productType: ProductType.TICKET,
+        travelDate: formatDate(bookingData.value!.date),
       })),
       totalAmount: Number(bookingData.value.totalAmount),
       returnUrl: `${window.location.origin}/checkout/success`,

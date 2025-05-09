@@ -5,6 +5,7 @@ import { PaymentTransaction } from './payment/entities/payment-transaction.entit
 // Order
 import { Order } from './order/entities/order.entity';
 import { OrderItem } from './order/entities/order-item.entity';
+import { OrderTicketScanHistory } from './order/entities/order-ticket-scan-history.entity';
 
 // Mail
 import { MailConfig } from './mail/entities/mail-config.entity';
@@ -146,6 +147,7 @@ export const entities: (new () => any)[] = [
   // Order
   Order,
   OrderItem,
+  OrderTicketScanHistory,
   
   // Mail
   MailConfig,

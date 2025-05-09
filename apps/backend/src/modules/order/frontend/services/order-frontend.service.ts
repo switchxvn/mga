@@ -5,9 +5,10 @@ import { Order } from '../../entities/order.entity';
 import { OrderItem, ProductType } from '../../entities/order-item.entity';
 import { OrderRefund, RefundStatus, RefundType, RefundReason } from '../../entities/order-refund.entity';
 import { OrderRefundItem } from '../../entities/order-refund-item.entity';
+import { OrderTicketScanHistory } from '../../entities/order-ticket-scan-history.entity';
 import { PaymentGatewayInterface, CreatePaymentRequest, PaymentItem } from '../../../payment-gateway/interfaces/payment-gateway.interface';
 import { PAYMENT_GATEWAY_TOKEN } from '../../../payment-gateway/payment-gateway.module';
-import { Address } from '../../entities/order.entity';
+import { OrderStatus, PaymentStatus, Address as OrderAddress } from '@ew/shared';
 import { PaymentFrontendService } from '../../../payment/frontend/services/payment-frontend.service';
 import { MailService } from '../../../mail/services/mail.service';
 import { UploadFrontendService } from '../../../upload/frontend/services/upload-frontend.service';
@@ -23,8 +24,8 @@ export interface CreateOrderDto {
   phoneCode: string;
   phoneNumber: string;
   email?: string;
-  shippingAddress?: Partial<Address>;
-  billingAddress?: Partial<Address>;
+  shippingAddress?: Partial<OrderAddress>;
+  billingAddress?: Partial<OrderAddress>;
   paymentMethod: string;
   payment_method_id: number;
   notes?: string;
@@ -32,6 +33,10 @@ export interface CreateOrderDto {
   return_url: string;
   cancel_url: string;
   payment_description: string;
+}
+
+export interface OrderItemInput extends Partial<OrderItem> {
+  travelDate?: Date;
 }
 
 export interface CreateRefundDto {
@@ -64,6 +69,8 @@ export class OrderFrontendService {
     private readonly orderRefundRepository: Repository<OrderRefund>,
     @InjectRepository(OrderRefundItem)
     private readonly orderRefundItemRepository: Repository<OrderRefundItem>,
+    @InjectRepository(OrderTicketScanHistory)
+    private readonly scanHistoryRepository: Repository<OrderTicketScanHistory>,
     @Inject(PAYMENT_GATEWAY_TOKEN)
     private readonly paymentGateway: PaymentGatewayInterface,
     @Inject(forwardRef(() => PaymentFrontendService))
@@ -167,12 +174,17 @@ export class OrderFrontendService {
     return this.orderRepository.save(order);
   }
 
-  async createOrderItems(items: Partial<OrderItem>[], orderId: number): Promise<OrderItem[]> {
+  async createOrderItems(items: OrderItemInput[], orderId: number): Promise<OrderItem[]> {
     const orderItems = await Promise.all(items.map(async (item) => {
       const orderItem = this.orderItemRepository.create({
         ...item,
         orderId
       });
+
+      // Set travel date for ticket items if provided
+      if (item.productType === ProductType.TICKET && item.travelDate) {
+        orderItem.travelDate = item.travelDate;
+      }
 
       // Generate QR code for ticket items
       if (item.productType === ProductType.TICKET) {
@@ -220,8 +232,8 @@ export class OrderFrontendService {
       phoneCode: string;
       phoneNumber: string;
       email?: string;
-      shippingAddress?: Partial<Address>;
-      billingAddress?: Partial<Address>;
+      shippingAddress?: Partial<OrderAddress>;
+      billingAddress?: Partial<OrderAddress>;
       paymentMethod: string;
       notes?: string;
       totalAmount: number;
@@ -230,14 +242,14 @@ export class OrderFrontendService {
       cancel_url: string;
       payment_description: string;
     },
-    items: Partial<OrderItem>[],
+    items: OrderItemInput[],
     paymentRequest: Omit<CreatePaymentRequest, 'order_id' | 'amount'>
   ) {
     // Convert input to Order type
     const orderData: Partial<Order> = {
       ...orderInput,
-      shippingAddress: orderInput.shippingAddress as Address,
-      billingAddress: orderInput.billingAddress as Address,
+      shippingAddress: orderInput.shippingAddress as OrderAddress,
+      billingAddress: orderInput.billingAddress as OrderAddress,
     };
 
     // Create order and items in a transaction
@@ -449,5 +461,12 @@ export class OrderFrontendService {
     }
     
     return refund;
+  }
+
+  async getTicketScanHistory(orderItemId: number): Promise<OrderTicketScanHistory[]> {
+    return this.scanHistoryRepository.find({
+      where: { orderItemId },
+      order: { scannedAt: 'DESC' }
+    });
   }
 } 

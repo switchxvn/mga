@@ -89,6 +89,14 @@ export class OrderItem {
   imageQrCode: string;
 
   @Column({
+    name: 'travel_date',
+    type: 'timestamp',
+    nullable: true,
+    comment: 'Ngày đi dành cho vé tham quan'
+  })
+  travelDate: Date;
+
+  @Column({
     name: 'product_snapshot',
     type: 'jsonb',
     nullable: true

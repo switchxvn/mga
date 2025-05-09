@@ -71,6 +71,7 @@ import { SiteStatisticsFrontendService } from '../../site-statistics/frontend/se
 import { MailService } from '../../mail/services/mail.service';
 import { AdminMenuAdminService } from '../../admin-menu/admin/services/admin-menu-admin.service';
 import { AdminMenuFrontendService } from '../../admin-menu/frontend/services/admin-menu-frontend.service';
+import { RoleAdminService } from '../../user/admin/services/role-admin.service';
 
 @Injectable()
 export class ServiceContext {
@@ -147,6 +148,7 @@ export class ServiceContext {
     private readonly mailService: MailService,
     private readonly adminMenuAdminService: AdminMenuAdminService,
     private readonly adminMenuFrontendService: AdminMenuFrontendService,
+    private readonly roleAdminService: RoleAdminService,
     @Inject(forwardRef(() => PriceRequestService))
     private readonly priceRequestService: PriceRequestService,
   ) {}
@@ -224,6 +226,7 @@ export class ServiceContext {
       mailService: this.mailService,
       adminMenuAdminService: this.adminMenuAdminService,
       adminMenuFrontendService: this.adminMenuFrontendService,
+      roleAdminService: this.roleAdminService,
       
       // Grouped services by namespace
       admin: {
@@ -257,6 +260,7 @@ export class ServiceContext {
         dashboard: this.dashboardAdminService,
         gallery: this.galleryAdminService,
         adminMenu: this.adminMenuAdminService,
+        role: this.roleAdminService,
       },
       
       frontend: {
