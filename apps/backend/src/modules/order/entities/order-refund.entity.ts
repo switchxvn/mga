@@ -34,6 +34,9 @@ export class OrderRefund {
   @Column({ name: 'order_id' })
   orderId: number;
 
+  @Column({ name: 'new_order_id' })
+  newOrderId: number;
+
   @Column({ name: 'refund_code', length: 50, unique: true })
   refundCode: string;
 

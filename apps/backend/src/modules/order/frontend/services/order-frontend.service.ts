@@ -8,7 +8,7 @@ import { OrderRefundItem } from '../../entities/order-refund-item.entity';
 import { OrderTicketScanHistory } from '../../entities/order-ticket-scan-history.entity';
 import { PaymentGatewayInterface, CreatePaymentRequest, PaymentItem } from '../../../payment-gateway/interfaces/payment-gateway.interface';
 import { PAYMENT_GATEWAY_TOKEN } from '../../../payment-gateway/payment-gateway.module';
-import { OrderStatus, PaymentStatus, Address as OrderAddress } from '@ew/shared';
+import { OrderStatus, PaymentStatus, Address as OrderAddress, OrderType } from '@ew/shared';
 import { PaymentFrontendService } from '../../../payment/frontend/services/payment-frontend.service';
 import { MailService } from '../../../mail/services/mail.service';
 import { UploadFrontendService } from '../../../upload/frontend/services/upload-frontend.service';
@@ -24,12 +24,14 @@ export interface CreateOrderDto {
   phoneCode: string;
   phoneNumber: string;
   email?: string;
+  customerName?: string;
   shippingAddress?: Partial<OrderAddress>;
   billingAddress?: Partial<OrderAddress>;
   paymentMethod: string;
   payment_method_id: number;
   notes?: string;
   totalAmount: number;
+  orderType?: OrderType;
   return_url: string;
   cancel_url: string;
   payment_description: string;
@@ -232,11 +234,13 @@ export class OrderFrontendService {
       phoneCode: string;
       phoneNumber: string;
       email?: string;
+      customerName?: string;
       shippingAddress?: Partial<OrderAddress>;
       billingAddress?: Partial<OrderAddress>;
       paymentMethod: string;
       notes?: string;
       totalAmount: number;
+      orderType?: OrderType;
       payment_method_id: number;
       return_url: string;
       cancel_url: string;
@@ -334,6 +338,11 @@ export class OrderFrontendService {
     
     if (!order) {
       throw new Error(`Không tìm thấy đơn hàng với mã ${refundData.orderCode}`);
+    }
+
+    // Kiểm tra loại đơn hàng, chỉ cho phép đơn hàng vé (TICKET) được đổi
+    if (order.orderType !== OrderType.TICKET) {
+      throw new Error('Chỉ cho phép đổi ngày cho đơn hàng loại vé');
     }
 
     // Kiểm tra các orderItem có tồn tại không

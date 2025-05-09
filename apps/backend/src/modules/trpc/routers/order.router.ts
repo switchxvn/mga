@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { ProductSnapshot, ProductType } from '../../order/entities/order-item.entity';
-import { OrderStatus, PaymentStatus } from '@ew/shared';
+import { OrderStatus, PaymentStatus, OrderType } from '@ew/shared';
 import { RefundReason, RefundStatus, RefundType } from '../../order/entities/order-refund.entity';
 import { generateOrderCode } from '../../order/utils/order-code.util';
 import { CreateRefundDto } from '../../order/frontend/services/order-frontend.service';
@@ -34,6 +34,8 @@ const createOrderSchema = z.object({
   phoneCode: z.string(),
   phoneNumber: z.string(),
   email: z.string().email().optional(),
+  customerName: z.string().optional(),
+  orderType: z.nativeEnum(OrderType).optional(),
   shippingAddress: addressSchema.optional(),
   billingAddress: addressSchema.optional(),
   paymentMethod: z.string(),
@@ -166,6 +168,8 @@ export const orderRouter = router({
           phoneNumber: orderData.phoneNumber,
           email: orderData.email,
           userId: orderData.userId,
+          customerName: orderData.customerName,
+          orderType: orderData.orderType,
           shippingAddress: orderData.shippingAddress,
           billingAddress: orderData.billingAddress,
           paymentMethod: orderData.paymentMethod,
@@ -335,6 +339,14 @@ export const orderRouter = router({
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: 'Không tìm thấy đơn hàng với mã đơn và số điện thoại này',
+          });
+        }
+        
+        // Kiểm tra loại đơn hàng - chỉ cho phép đơn hàng vé (TICKET) được đổi
+        if (order.orderType !== OrderType.TICKET) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Chỉ cho phép đổi ngày cho đơn hàng loại vé',
           });
         }
         

@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 import { CountryPhoneCode } from '../../common/entities/country-phone-code.entity';
-import { OrderStatus, PaymentStatus, Address } from '@ew/shared';
+import { OrderStatus, PaymentStatus, Address, OrderType } from '@ew/shared';
 
 @Entity('orders')
 export class Order {
@@ -37,6 +37,14 @@ export class Order {
   })
   status: OrderStatus;
 
+  @Column({
+    type: 'enum',
+    enum: OrderType,
+    default: OrderType.STANDARD,
+    name: 'order_type'
+  })
+  orderType: OrderType;
+
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_amount' })
   totalAmount: number;
 
@@ -68,4 +76,7 @@ export class Order {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @Column({ nullable: true, name: 'exchange_for_order_id' })
+  exchangeForOrderId: number;
 } 
