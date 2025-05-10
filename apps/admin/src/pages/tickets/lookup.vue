@@ -210,14 +210,14 @@ const ticketSettings = ref({
   footer: 'Vui lòng giữ vé cẩn thận và trình cho nhân viên khi vào cổng',
   thankYou: 'Cảm ơn quý khách đã lựa chọn dịch vụ của chúng tôi!',
   logo: '',
-  qrSize: '250',
+  qrSize: '175',
   backgroundColor: '#ffffff',
   textColor: '#000000',
   borderColor: '#cccccc',
   label: {
     title: 'VÉ THAM QUAN',
     footer: 'Vui lòng giữ vé cẩn thận',
-    qrSize: '100',
+    qrSize: '70',
     fontSize: '6',
     padding: '3mm',
     headerFontSize: '8'
@@ -412,7 +412,7 @@ const formatVietnameseDate = (date: Date): string => {
   const year = date.getFullYear();
   
   // Định dạng "22 tháng 03 năm 2023 (22/03/2023)"
-  return `${day} tháng ${month < 10 ? '0' + month : month} năm ${year} (${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year})`;
+  return `${day} tháng ${month < 10 ? '0' + month : month} năm ${year}`;
 };
 
 // Mở modal in vé
@@ -481,14 +481,14 @@ const loadTicketPrintSettings = async () => {
         footer: settingsMap.footer || 'Vui lòng giữ vé cẩn thận và trình cho nhân viên khi vào cổng',
         thankYou: settingsMap.thankYou || 'Cảm ơn quý khách đã lựa chọn dịch vụ của chúng tôi!',
         logo: settingsMap.logo || '',
-        qrSize: settingsMap.qrSize || '250',
+        qrSize: settingsMap.qrSize || '175',
         backgroundColor: settingsMap.backgroundColor || '#ffffff',
         textColor: settingsMap.textColor || '#000000',
         borderColor: settingsMap.borderColor || '#cccccc',
         label: {
           title: labelSettingsMap.title || 'VÉ THAM QUAN',
           footer: labelSettingsMap.footer || 'Vui lòng giữ vé cẩn thận',
-          qrSize: labelSettingsMap.qrSize || '100',
+          qrSize: labelSettingsMap.qrSize || '70',
           fontSize: labelSettingsMap.fontSize || '6',
           padding: labelSettingsMap.padding || '3mm',
           headerFontSize: labelSettingsMap.headerFontSize || '8'
@@ -563,13 +563,13 @@ const printTicket = async (size: string) => {
         color: ${ticketSettings.value.textColor};
       }
       .ticket-header h2 {
-        font-size: ${isLabel ? '7pt' : isXPPrinter ? '11pt' : '14pt'};
+        font-size: ${isLabel ? '5.6pt' : isXPPrinter ? '11pt' : '14pt'};
         margin: ${isLabel ? '1mm' : '2mm'} 0;
         font-weight: normal;
         color: ${ticketSettings.value.textColor};
       }
       .ticket-header div {
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '10pt' : '12pt'};
+        font-size: ${isLabel ? '4.8pt' : isXPPrinter ? '10pt' : '12pt'};
       }
       .ticket-info {
         margin-bottom: ${isLabel ? '2mm' : '5mm'};
@@ -577,7 +577,7 @@ const printTicket = async (size: string) => {
       .info-row {
         display: flex;
         margin-bottom: ${isLabel ? '1mm' : '2mm'};
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '10pt' : '11pt'};
+        font-size: ${isLabel ? '4.8pt' : isXPPrinter ? '10pt' : '11pt'};
       }
       .info-label {
         font-weight: bold;
@@ -602,7 +602,7 @@ const printTicket = async (size: string) => {
         height: auto;
         margin: 0 auto;
         display: block;
-        ${isXPPrinter ? 'width: 180px; height: 180px;' : ''}
+        ${isXPPrinter ? 'width: 126px; height: 126px;' : ''}
       }
       .ticket-qr .mt-2 {
         margin-top: ${isLabel ? '1mm' : isXPPrinter ? '1.5mm' : '2mm'};
@@ -612,12 +612,12 @@ const printTicket = async (size: string) => {
       }
       .ticket-qr .font-bold {
         font-weight: bold;
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '8pt' : '9pt'};
+        font-size: ${isLabel ? '4.8pt' : isXPPrinter ? '8pt' : '9pt'};
       }
       .ticket-footer {
         margin-top: ${isLabel ? '2mm' : isXPPrinter ? '3mm' : '5mm'};
         text-align: center;
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '8pt' : '9pt'};
+        font-size: ${isLabel ? '4.8pt' : isXPPrinter ? '8pt' : '9pt'};
         color: #666;
         border-top: ${isLabel ? 'none' : '1px solid #ddd'};
         padding-top: ${isLabel ? '1mm' : isXPPrinter ? '1.5mm' : '3mm'};
@@ -632,19 +632,19 @@ const printTicket = async (size: string) => {
       .customer-info-title {
         font-weight: bold;
         margin-bottom: ${isLabel ? '1mm' : isXPPrinter ? '1.5mm' : '2mm'};
-        font-size: ${isLabel ? `${Number(ticketSettings.value.label.fontSize) + 1}pt` : isXPPrinter ? '10pt' : '12pt'};
+        font-size: ${isLabel ? '5.6pt' : isXPPrinter ? '10pt' : '12pt'};
         text-align: center;
         color: #444;
       }
       .customer-detail {
         margin-bottom: ${isLabel ? '1mm' : isXPPrinter ? '1mm' : '2mm'};
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '9pt' : '11pt'};
+        font-size: ${isLabel ? '4.8pt' : isXPPrinter ? '9pt' : '11pt'};
       }
     `;
     
     // Tạo nội dung HTML cho trang in
     const ticket = selectedTicket.value;
-    const qrCodeSize = isLabel ? ticketSettings.value.label.qrSize : isXPPrinter ? '180' : ticketSettings.value.qrSize;
+    const qrCodeSize = isLabel ? ticketSettings.value.label.qrSize : isXPPrinter ? '126' : ticketSettings.value.qrSize;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrCodeSize}x${qrCodeSize}&data=${encodeURIComponent(ticket.qrCode)}`;
     
     // Format ngày đi nếu có
@@ -711,7 +711,7 @@ const printTicket = async (size: string) => {
           ${!isLabel ? `
           <div class="ticket-info">
             <div class="info-row">
-              <div class="info-label">Mã đơn hàng:</div>
+              <div class="info-label">Mã ĐH:</div>
               <div class="info-value">${ticket.order?.orderCode || ''}</div>
             </div>
            
@@ -735,7 +735,7 @@ const printTicket = async (size: string) => {
 
             ${ticket.order?.customerName ? `
             <div class="info-row">
-              <div class="info-label">Khách hàng:</div>
+              <div class="info-label">KH:</div>
               <div class="info-value">${ticket.order.customerName}</div>
             </div>
             ` : ''}
@@ -747,7 +747,7 @@ const printTicket = async (size: string) => {
             ` : ''}
             ${ticket.order?.phoneNumber ? `
             <div class="info-row">
-              <div class="info-label">Số điện thoại:</div>
+              <div class="info-label">SĐT:</div>
               <div class="info-value">${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>
             </div>
             ` : ''}
@@ -1019,6 +1019,38 @@ const getVariantInfo = (item: any): string => {
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
+
+// Thêm hàm kiểm tra vé quá hạn
+const isTicketExpired = (ticket: any): boolean => {
+  if (!ticket.travelDate) return false;
+  const travelDate = new Date(ticket.travelDate);
+  const today = new Date();
+  // Reset time to compare dates only
+  travelDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  return travelDate < today;
+};
+
+// Thêm hàm kiểm tra vé chưa thanh toán
+const isTicketUnpaid = (ticket: any): boolean => {
+  return ticket.order?.paymentStatus !== 'paid';
+};
+
+// Thêm hàm kiểm tra vé có thể in được không
+const canPrintTicket = (ticket: any): boolean => {
+  return !isTicketExpired(ticket) && !isTicketUnpaid(ticket);
+};
+
+// Thêm hàm lấy thông báo lý do không thể in vé
+const getPrintDisabledReason = (ticket: any): string => {
+  if (isTicketExpired(ticket)) {
+    return t('Không thể in vé quá hạn');
+  }
+  if (isTicketUnpaid(ticket)) {
+    return t('Không thể in vé chưa thanh toán');
+  }
+  return t('In vé');
+};
 </script>
 
 <template>
@@ -1227,12 +1259,18 @@ const formatCurrency = (amount: number): string => {
                       <span
                         :class="[
                           'px-2 py-1 rounded-full text-xs font-bold',
-                          ticket.isUsed 
-                            ? 'bg-orange-100 text-orange-800 border border-orange-500' 
-                            : 'bg-green-100 text-green-800 border border-green-500'
+                          isTicketExpired(ticket)
+                            ? 'bg-red-100 text-red-800 border border-red-500'
+                            : ticket.isUsed 
+                              ? 'bg-orange-100 text-orange-800 border border-orange-500' 
+                              : 'bg-green-100 text-green-800 border border-green-500'
                         ]"
                       >
-                        {{ ticket.isUsed ? t('ĐÃ SỬ DỤNG') : t('CHƯA SỬ DỤNG') }}
+                        {{ isTicketExpired(ticket) 
+                            ? t('QUÁ HẠN') 
+                            : ticket.isUsed 
+                              ? t('ĐÃ SỬ DỤNG') 
+                              : t('CHƯA SỬ DỤNG') }}
                       </span>
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold">
@@ -1274,8 +1312,14 @@ const formatCurrency = (amount: number): string => {
                         
                         <button 
                           @click="openPrintModal(ticket)"
-                          class="p-1 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                          title="In vé"
+                          :disabled="!canPrintTicket(ticket)"
+                          :class="[
+                            'p-1 rounded focus:outline-none focus:ring-2 focus:ring-offset-2',
+                            !canPrintTicket(ticket)
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                          ]"
+                          :title="getPrintDisabledReason(ticket)"
                         >
                           <PrinterIcon class="w-4 h-4" />
                         </button>
@@ -1342,10 +1386,16 @@ const formatCurrency = (amount: number): string => {
             <button 
               v-if="scanResult.orderItem"
               @click="openPrintModal(scanResult.orderItem as any)"
-              class="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              :disabled="!canPrintTicket(scanResult.orderItem)"
+              :class="[
+                'flex items-center space-x-1 px-3 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2',
+                !canPrintTicket(scanResult.orderItem)
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+              ]"
             >
               <PrinterIcon class="w-4 h-4" />
-              <span>{{ t('In vé') }}</span>
+              <span>{{ getPrintDisabledReason(scanResult.orderItem) }}</span>
             </button>
           </div>
           
@@ -1376,10 +1426,18 @@ const formatCurrency = (amount: number): string => {
                     <span 
                       :class="[
                         'px-3 py-1 rounded-full text-base font-bold inline-block',
-                        scanResult.isFirstScan ? 'bg-green-100 text-green-800 border border-green-500' : 'bg-orange-100 text-orange-800 border border-orange-500'
+                        isTicketExpired(scanResult.orderItem) 
+                          ? 'bg-red-100 text-red-800 border border-red-500'
+                          : scanResult.isFirstScan 
+                            ? 'bg-green-100 text-green-800 border border-green-500' 
+                            : 'bg-orange-100 text-orange-800 border border-orange-500'
                       ]"
                     >
-                      {{ scanResult.isFirstScan ? t('CHƯA SỬ DỤNG') : t('ĐÃ SỬ DỤNG') }}
+                      {{ isTicketExpired(scanResult.orderItem) 
+                          ? t('QUÁ HẠN') 
+                          : scanResult.isFirstScan 
+                            ? t('CHƯA SỬ DỤNG') 
+                            : t('ĐÃ SỬ DỤNG') }}
                     </span>
                   </div>
                 </div>
@@ -1405,6 +1463,12 @@ const formatCurrency = (amount: number): string => {
                       class="ml-2 px-2 py-1 rounded-md text-xs font-bold bg-green-100 text-green-800 border border-green-500"
                     >
                       {{ t('HÔM NAY') }}
+                    </span>
+                    <span 
+                      v-if="isTicketExpired(scanResult.orderItem)"
+                      class="ml-2 px-2 py-1 rounded-md text-xs font-bold bg-red-100 text-red-800 border border-red-500"
+                    >
+                      {{ t('QUÁ HẠN') }}
                     </span>
                   </p>
                 </div>
