@@ -203,6 +203,7 @@ export const ticketScannerRouter = router({
             "item"."is_used" as "isUsed",
             "item"."product_type" as "productType",
             "item"."travel_date" as "travelDate",
+            "item"."product_snapshot" as "productSnapshot",
             "product"."id" as "productId",
             "translation"."title" as "productTitle"
           FROM 
@@ -273,6 +274,7 @@ export const ticketScannerRouter = router({
             productType: row.productType,
             scanCount: scanCount,
             travelDate: row.travelDate,
+            productSnapshot: row.productSnapshot,
             product: {
               id: row.productId,
               translations: [{ title: row.productTitle }]
@@ -281,8 +283,9 @@ export const ticketScannerRouter = router({
               orderCode: row.orderCode,
               status: row.status,
               customerName: row.customerName,
-              customerEmail: row.email,
-              customerPhone: row.phoneCode + row.phoneNumber,
+              email: row.email,
+              phoneCode: row.phoneCode,
+              phoneNumber: row.phoneNumber,
               createdAt: row.createdAt,
               paymentStatus: row.paymentStatus
             }

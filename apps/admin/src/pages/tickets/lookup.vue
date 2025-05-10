@@ -5,6 +5,7 @@ import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import PhoneInput from '../../components/form/PhoneInput.vue';
+import TicketPrintModal from '../../components/tickets/TicketPrintModal.vue';
 
 // Mock toast function để tránh lỗi SSR với vue-toastification
 const toast = {
@@ -64,8 +65,9 @@ interface ScanResult {
       orderCode: string;
       status?: string;
       customerName?: string;
-      customerEmail?: string;
-      customerPhone?: string;
+      email?: string;
+      phoneNumber?: string;
+      phoneCode?: string;
       createdAt: string;
       paymentStatus: string;
     };
@@ -499,7 +501,7 @@ const loadTicketPrintSettings = async () => {
 };
 
 // In vé
-const printTicket = async () => {
+const printTicket = async (size: string) => {
   if (!selectedTicket.value) return;
   
   isPrinting.value = true;
@@ -515,22 +517,22 @@ const printTicket = async () => {
     }
     
     // Lấy size in đã chọn
-    const size = printSizes.value.find(s => s.id === selectedPrintSize.value);
-    const isLabel = selectedPrintSize.value === 'LABEL';
-    const isXPPrinter = selectedPrintSize.value === 'XP_PRINTER';
+    const selectedSize = printSizes.value.find(s => s.id === size);
+    const isLabel = size === 'LABEL';
+    const isXPPrinter = size === 'XP_PRINTER';
     
     // Tạo CSS cho trang in
     const printCSS = `
       @page {
-        size: ${size?.width} ${size?.height};
+        size: ${selectedSize?.width} ${selectedSize?.height};
         margin: 0;
       }
       @media print {
         body {
           margin: 0;
           padding: 0;
-          width: ${size?.width};
-          height: ${size?.height};
+          width: ${selectedSize?.width};
+          height: ${selectedSize?.height};
         }
         .print-container {
           width: 100%;
@@ -552,9 +554,6 @@ const printTicket = async () => {
         color: ${ticketSettings.value.textColor};
       }
       .ticket-header {
-        border-bottom: ${isLabel ? 'none' : '1px solid #ddd'};
-        padding-bottom: ${isLabel ? '2mm' : '5mm'};
-        margin-bottom: ${isLabel ? '2mm' : '5mm'};
         text-align: center;
       }
       .ticket-header h1 {
@@ -670,7 +669,6 @@ const printTicket = async () => {
       // Simplified content for small label
       headerContent = `
         <h1>${ticketSettings.value.label.title}</h1>
-        <div>${productTitle}</div>
       `;
       footerContent = `
         <div>Mã QR: ${ticket.qrCode}</div>
@@ -683,12 +681,8 @@ const printTicket = async () => {
         <h1>${ticketSettings.value.title}</h1>
         <h2>${ticketSettings.value.subtitle}</h2>
         <h3>${ticketSettings.value.hotline}</h3>
-        <div>${productTitle}</div>
       `;
       footerContent = `
-        <div>${ticketSettings.value.location}</div>
-        <div>Mã đơn hàng: ${ticket.order?.orderCode || ''}</div>
-        <div>Mã QR: ${ticket.qrCode}</div>
         <div>${ticketSettings.value.footer}</div>
         <div class="mt-2 text-sm font-medium text-blue-600">${ticketSettings.value.thankYou}</div>
       `;
@@ -720,10 +714,7 @@ const printTicket = async () => {
               <div class="info-label">Mã đơn hàng:</div>
               <div class="info-value">${ticket.order?.orderCode || ''}</div>
             </div>
-            <div class="info-row">
-              <div class="info-label">Mã vé:</div>
-              <div class="info-value">${ticket.qrCode}</div>
-            </div>
+           
             ${ticket.travelDate ? `
             <div class="info-row">
               <div class="info-label">Ngày đi:</div>
@@ -734,16 +725,30 @@ const printTicket = async () => {
               <div class="info-label">Trạng thái:</div>
               <div class="info-value">${ticket.isUsed ? 'Đã sử dụng' : 'Chưa sử dụng'}</div>
             </div>
-            ${ticket.productType ? `
-            <div class="info-row">
-              <div class="info-label">Loại sản phẩm:</div>
-              <div class="info-value">${ticket.productType}</div>
-            </div>
-            ` : ''}
+          
             ${ticket.productSnapshot?.variant ? `
             <div class="info-row">
               <div class="info-label">Loại vé:</div>
               <div class="info-value">${ticket.productSnapshot.variant.name} - ${formatCurrency(ticket.productSnapshot.variant.price)}</div>
+            </div>
+            ` : ''}
+
+            ${ticket.order?.customerName ? `
+            <div class="info-row">
+              <div class="info-label">Khách hàng:</div>
+              <div class="info-value">${ticket.order.customerName}</div>
+            </div>
+            ` : ''}
+            ${ticket.order?.email ? `
+            <div class="info-row">
+              <div class="info-label">Email:</div>
+              <div class="info-value">${ticket.order.email}</div>
+            </div>
+            ` : ''}
+            ${ticket.order?.phoneNumber ? `
+            <div class="info-row">
+              <div class="info-label">Số điện thoại:</div>
+              <div class="info-value">${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>
             </div>
             ` : ''}
           </div>
@@ -761,22 +766,18 @@ const printTicket = async () => {
               <div class="info-value">${ticket.productSnapshot.variant.name}</div>
             </div>
             ` : ''}
-          </div>
-          `}
-          
-          <!-- Thêm phần thông tin khách hàng -->
-          ${isLabel ? `
-          <div class="customer-info">
-            <div class="customer-info-title">THÔNG TIN KHÁCH HÀNG</div>
-            ${ticket.order?.customerName ? `<div class="customer-detail"><strong>Khách:</strong> ${ticket.order.customerName}</div>` : '<div class="customer-detail"><strong>Khách:</strong> (Không có)</div>'}
-            ${ticket.order?.phoneNumber ? `<div class="customer-detail"><strong>SĐT:</strong> ${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>` : '<div class="customer-detail"><strong>SĐT:</strong> (Không có)</div>'}
-          </div>
-          ` : `
-          <div class="customer-info">
-            <div class="customer-info-title">THÔNG TIN KHÁCH HÀNG</div>
-            ${ticket.order?.customerName ? `<div class="customer-detail"><strong>Họ tên:</strong> ${ticket.order.customerName}</div>` : `<div class="customer-detail"><strong>Họ tên:</strong>  ${JSON.stringify(ticket.order)} </div>`}
-            ${ticket.order?.email ? `<div class="customer-detail"><strong>Email:</strong> ${ticket.order.email}</div>` : '<div class="customer-detail"><strong>Email:</strong> (Không có thông tin)</div>'}
-            ${ticket.order?.phoneNumber ? `<div class="customer-detail"><strong>Số điện thoại:</strong> ${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>` : '<div class="customer-detail"><strong>Số điện thoại:</strong> (Không có thông tin)</div>'}
+            ${ticket.order?.customerName ? `
+            <div class="info-row">
+              <div class="info-label">Khách:</div>
+              <div class="info-value">${ticket.order.customerName}</div>
+            </div>
+            ` : ''}
+            ${ticket.order?.phoneNumber ? `
+            <div class="info-row">
+              <div class="info-label">SĐT:</div>
+              <div class="info-value">${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>
+            </div>
+            ` : ''}
           </div>
           `}
           
@@ -1415,14 +1416,14 @@ const formatCurrency = (amount: number): string => {
                     <p class="font-medium text-base">{{ scanResult.orderItem.order.customerName }}</p>
                   </div>
                   
-                  <div v-if="scanResult.orderItem.order.customerEmail">
+                  <div v-if="scanResult.orderItem.order.email">
                     <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Email') }}</p>
-                    <p class="font-medium text-base">{{ scanResult.orderItem.order.customerEmail }}</p>
+                    <p class="font-medium text-base">{{ scanResult.orderItem.order.email }}</p>
                   </div>
                   
-                  <div v-if="scanResult.orderItem.order.customerPhone">
+                  <div v-if="scanResult.orderItem.order.phoneNumber">
                     <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Số điện thoại') }}</p>
-                    <p class="font-medium text-base">{{ scanResult.orderItem.order.customerPhone }}</p>
+                    <p class="font-medium text-base">{{ scanResult.orderItem.order.phoneCode }} {{ scanResult.orderItem.order.phoneNumber }}</p>
                   </div>
                 </template>
               </div>
@@ -1507,97 +1508,14 @@ const formatCurrency = (amount: number): string => {
       </div>
     </div>
     
-    <!-- Modal in vé -->
-    <div v-if="showPrintModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 m-4">
-        <div class="flex items-start justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900">
-            {{ t('In vé') }}
-          </h3>
-          <button @click="closePrintModal" class="text-gray-400 hover:text-gray-500">
-            <span class="sr-only">Close</span>
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        
-        <div class="mb-6">
-          <p class="text-sm text-gray-600 mb-4">
-            {{ t('Chọn kích thước vé muốn in. Vui lòng đảm bảo máy in và khổ giấy được cài đặt phù hợp.') }}
-          </p>
-          
-          <div class="grid grid-cols-2 gap-4 mb-6">
-            <div 
-              v-for="size in printSizes" 
-              :key="size.id"
-              :class="[
-                'border rounded-lg p-4 cursor-pointer',
-                selectedPrintSize === size.id 
-                  ? 'border-green-500 bg-green-50' 
-                  : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-              ]"
-              @click="selectedPrintSize = size.id"
-            >
-              <div class="flex justify-between items-start mb-2">
-                <h4 class="font-bold">{{ size.name }}</h4>
-                <div 
-                  :class="[
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center',
-                    selectedPrintSize === size.id
-                      ? 'border-green-500 bg-green-500'
-                      : 'border-gray-300'
-                  ]"
-                >
-                  <i v-if="selectedPrintSize === size.id" class="fas fa-check text-white text-xs"></i>
-                </div>
-              </div>
-              <p class="text-xs text-gray-500">{{ size.width }} x {{ size.height }}</p>
-              <p v-if="size.description" class="text-xs text-gray-600 mt-1">{{ size.description }}</p>
-            </div>
-          </div>
-          
-          <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-800">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <i class="fas fa-lightbulb text-yellow-600"></i>
-              </div>
-              <div class="ml-3">
-                <h4 class="font-medium">{{ t('Lưu ý khi in:') }}</h4>
-                <ul class="mt-1 list-disc pl-5 space-y-1">
-                  <li>{{ t('Đảm bảo máy in được kết nối và cài đặt đúng') }}</li>
-                  <li>{{ t('Kiểm tra khổ giấy trong máy in trước khi in') }}</li>
-                  <li>{{ t('Sử dụng khổ A4 để in vé đầy đủ thông tin') }}</li>
-                  <li>{{ t('Khổ nhỏ sẽ in ít thông tin hơn nhưng tiết kiệm giấy') }}</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="flex justify-end space-x-3">
-          <button
-            @click="closePrintModal"
-            class="px-4 py-2 border border-gray-300 rounded-md font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            {{ t('Hủy') }}
-          </button>
-          
-          <button
-            @click="printTicket"
-            class="px-4 py-2 bg-green-600 border border-transparent rounded-md font-bold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-            :disabled="isPrinting"
-          >
-            <span v-if="isPrinting">
-              <i class="fas fa-spinner fa-spin mr-2"></i>
-              {{ t('Đang in...') }}
-            </span>
-            <span v-else>
-              <i class="fas fa-print mr-2"></i>
-              {{ t('In vé') }}
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Replace the old print modal with the new component -->
+    <TicketPrintModal
+      :show="showPrintModal"
+      :ticket="selectedTicket"
+      :is-printing="isPrinting"
+      @close="closePrintModal"
+      @print="printTicket"
+    />
   </div>
 </template>
 
