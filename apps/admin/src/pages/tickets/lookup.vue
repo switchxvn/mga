@@ -127,8 +127,9 @@ interface CustomerTicket {
     orderCode: string;
     status: string;
     customerName?: string;
-    customerEmail?: string;
-    customerPhone?: string;
+    phoneNumber?: string;
+    phoneCode?: string;
+    email?: string;
     createdAt: string;
     paymentStatus: string;
   };
@@ -186,9 +187,10 @@ const orderDateRange = ref({
 // In ấn
 const showPrintModal = ref(false);
 const selectedTicket = ref<CustomerTicket | null>(null);
-const selectedPrintSize = ref('A4');
+const selectedPrintSize = ref('XP_PRINTER');
 const isPrinting = ref(false);
 const printSizes = ref<PrintSize[]>([
+  { id: 'XP_PRINTER', name: 'Máy in XP', width: '72mm', height: '297mm', description: 'Khổ máy in XP (72mm)' },
   { id: 'A4', name: 'A4', width: '210mm', height: '297mm', description: 'Khổ tiêu chuẩn A4' },
   { id: 'A5', name: 'A5', width: '148mm', height: '210mm', description: 'Khổ nhỏ A5 (nửa A4)' },
   { id: 'TICKET', name: 'Vé nhỏ', width: '80mm', height: '180mm', description: 'Khổ vé nhỏ' },
@@ -199,10 +201,12 @@ const debounceTimer = ref<NodeJS.Timeout | null>(null);
 
 // Cấu hình in vé
 const ticketSettings = ref({
-  title: 'VÉ THAM QUAN',
-  subtitle: '',
+  title: 'VÉ THAM QUAN KDL CÁP TREO NÚI SAM',
+  subtitle: 'Đường Châu Thị Tế, khóm Vĩnh Tây 3, Châu Đốc, An Giang',
+  hotline: 'Hotline: 0869 519 678',
   location: 'KDL Cáp Treo',
   footer: 'Vui lòng giữ vé cẩn thận và trình cho nhân viên khi vào cổng',
+  thankYou: 'Cảm ơn quý khách đã lựa chọn dịch vụ của chúng tôi!',
   logo: '',
   qrSize: '250',
   backgroundColor: '#ffffff',
@@ -411,7 +415,29 @@ const formatVietnameseDate = (date: Date): string => {
 
 // Mở modal in vé
 const openPrintModal = (ticket: CustomerTicket) => {
-  selectedTicket.value = ticket;
+  // Đảm bảo thông tin khách hàng luôn có sẵn
+  // Nếu không có order, tạo một order mới với thông tin từ order hiện tại
+  const enhancedTicket: CustomerTicket = {
+    ...ticket,
+    order: ticket.order ? {
+      ...ticket.order,
+      customerName: ticket.order.customerName || '',
+      email: ticket.order.email || '',
+      phoneNumber: ticket.order.phoneNumber || '',
+      phoneCode: ticket.order.phoneCode || ''
+    } : {
+      orderCode: '',
+      status: '',
+      customerName: '',
+      email: '',
+      phoneNumber: '',
+      phoneCode: '',
+      createdAt: '',
+      paymentStatus: ''
+    }
+  };
+  
+  selectedTicket.value = enhancedTicket;
   showPrintModal.value = true;
 };
 
@@ -419,7 +445,7 @@ const openPrintModal = (ticket: CustomerTicket) => {
 const loadTicketPrintSettings = async () => {
   try {
     // Lấy cài đặt theo group 'ticket'
-    const settingsData = await trpc.admin.settings.getAllSettings.query() as any;
+    const settingsData = await trpc.admin.setting.getAllSettings.query() as any;
     
     // Kiểm tra xem settingsData có tồn tại không
     if (!settingsData) return;
@@ -449,7 +475,9 @@ const loadTicketPrintSettings = async () => {
         title: settingsMap.title || 'VÉ THAM QUAN',
         subtitle: settingsMap.subtitle || '',
         location: settingsMap.location || 'KDL Cáp Treo',
+        hotline: settingsMap.hotline || '0869 519 678',
         footer: settingsMap.footer || 'Vui lòng giữ vé cẩn thận và trình cho nhân viên khi vào cổng',
+        thankYou: settingsMap.thankYou || 'Cảm ơn quý khách đã lựa chọn dịch vụ của chúng tôi!',
         logo: settingsMap.logo || '',
         qrSize: settingsMap.qrSize || '250',
         backgroundColor: settingsMap.backgroundColor || '#ffffff',
@@ -476,6 +504,9 @@ const printTicket = async () => {
   
   isPrinting.value = true;
   try {
+    // Debug thông tin khách hàng
+   
+    
     // Chuẩn bị nội dung in
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -486,6 +517,7 @@ const printTicket = async () => {
     // Lấy size in đã chọn
     const size = printSizes.value.find(s => s.id === selectedPrintSize.value);
     const isLabel = selectedPrintSize.value === 'LABEL';
+    const isXPPrinter = selectedPrintSize.value === 'XP_PRINTER';
     
     // Tạo CSS cho trang in
     const printCSS = `
@@ -513,7 +545,7 @@ const printTicket = async () => {
         background-color: ${ticketSettings.value.backgroundColor};
       }
       .print-container {
-        padding: ${isLabel ? ticketSettings.value.label.padding : '10mm'};
+        padding: ${isLabel ? ticketSettings.value.label.padding : isXPPrinter ? '6mm' : '10mm'};
         box-sizing: border-box;
         border: 1px solid ${ticketSettings.value.borderColor};
         background-color: ${ticketSettings.value.backgroundColor};
@@ -526,19 +558,19 @@ const printTicket = async () => {
         text-align: center;
       }
       .ticket-header h1 {
-        font-size: ${isLabel ? `${ticketSettings.value.label.headerFontSize}pt` : '16pt'};
+        font-size: ${isLabel ? `${ticketSettings.value.label.headerFontSize}pt` : isXPPrinter ? '13pt' : '16pt'};
         margin: 0 0 ${isLabel ? '1mm' : '2mm'} 0;
         font-weight: bold;
         color: ${ticketSettings.value.textColor};
       }
       .ticket-header h2 {
-        font-size: ${isLabel ? '7pt' : '14pt'};
+        font-size: ${isLabel ? '7pt' : isXPPrinter ? '11pt' : '14pt'};
         margin: ${isLabel ? '1mm' : '2mm'} 0;
         font-weight: normal;
         color: ${ticketSettings.value.textColor};
       }
       .ticket-header div {
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : '12pt'};
+        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '10pt' : '12pt'};
       }
       .ticket-info {
         margin-bottom: ${isLabel ? '2mm' : '5mm'};
@@ -546,7 +578,7 @@ const printTicket = async () => {
       .info-row {
         display: flex;
         margin-bottom: ${isLabel ? '1mm' : '2mm'};
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : '11pt'};
+        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '10pt' : '11pt'};
       }
       .info-label {
         font-weight: bold;
@@ -557,42 +589,63 @@ const printTicket = async () => {
       }
       .ticket-qr {
         text-align: center;
-        margin: ${isLabel ? '3mm auto' : '5mm auto'};
-        padding: ${isLabel ? '2mm' : '3mm'};
+        margin: ${isLabel ? '3mm auto' : isXPPrinter ? '4mm auto' : '5mm auto'};
+        padding: ${isLabel ? '2mm' : isXPPrinter ? '2mm' : '3mm'};
         border: 1px dashed #e0e0e0;
-        border-radius: ${isLabel ? '2mm' : '3mm'};
+        border-radius: ${isLabel ? '2mm' : isXPPrinter ? '2mm' : '3mm'};
         background-color: #f9f9f9;
-        width: ${isLabel ? '90%' : '60mm'};
+        width: ${isLabel ? '90%' : isXPPrinter ? '90%' : '60mm'};
+        margin-left: auto;
+        margin-right: auto;
       }
       .ticket-qr img {
         max-width: 100%;
         height: auto;
         margin: 0 auto;
         display: block;
+        ${isXPPrinter ? 'width: 180px; height: 180px;' : ''}
       }
       .ticket-qr .mt-2 {
-        margin-top: ${isLabel ? '1mm' : '2mm'};
+        margin-top: ${isLabel ? '1mm' : isXPPrinter ? '1.5mm' : '2mm'};
       }
       .ticket-qr .text-center {
         text-align: center;
       }
       .ticket-qr .font-bold {
         font-weight: bold;
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : '9pt'};
+        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '8pt' : '9pt'};
       }
       .ticket-footer {
-        margin-top: ${isLabel ? '2mm' : '5mm'};
+        margin-top: ${isLabel ? '2mm' : isXPPrinter ? '3mm' : '5mm'};
         text-align: center;
-        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : '9pt'};
+        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '8pt' : '9pt'};
         color: #666;
         border-top: ${isLabel ? 'none' : '1px solid #ddd'};
-        padding-top: ${isLabel ? '1mm' : '3mm'};
+        padding-top: ${isLabel ? '1mm' : isXPPrinter ? '1.5mm' : '3mm'};
+      }
+      .customer-info {
+        margin-top: ${isLabel ? '2mm' : isXPPrinter ? '3mm' : '5mm'};
+        padding: ${isLabel ? '2mm' : isXPPrinter ? '2mm' : '5mm'};
+        border: 1px dashed #ccc;
+        border-radius: ${isLabel ? '2mm' : isXPPrinter ? '2mm' : '3mm'};
+        background-color: #f9f9f9;
+      }
+      .customer-info-title {
+        font-weight: bold;
+        margin-bottom: ${isLabel ? '1mm' : isXPPrinter ? '1.5mm' : '2mm'};
+        font-size: ${isLabel ? `${Number(ticketSettings.value.label.fontSize) + 1}pt` : isXPPrinter ? '10pt' : '12pt'};
+        text-align: center;
+        color: #444;
+      }
+      .customer-detail {
+        margin-bottom: ${isLabel ? '1mm' : isXPPrinter ? '1mm' : '2mm'};
+        font-size: ${isLabel ? `${ticketSettings.value.label.fontSize}pt` : isXPPrinter ? '9pt' : '11pt'};
       }
     `;
     
     // Tạo nội dung HTML cho trang in
     const ticket = selectedTicket.value;
-    const qrCodeSize = isLabel ? ticketSettings.value.label.qrSize : ticketSettings.value.qrSize;
+    const qrCodeSize = isLabel ? ticketSettings.value.label.qrSize : isXPPrinter ? '180' : ticketSettings.value.qrSize;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrCodeSize}x${qrCodeSize}&data=${encodeURIComponent(ticket.qrCode)}`;
     
     // Format ngày đi nếu có
@@ -629,6 +682,7 @@ const printTicket = async () => {
       headerContent = `
         <h1>${ticketSettings.value.title}</h1>
         <h2>${ticketSettings.value.subtitle}</h2>
+        <h3>${ticketSettings.value.hotline}</h3>
         <div>${productTitle}</div>
       `;
       footerContent = `
@@ -636,6 +690,7 @@ const printTicket = async () => {
         <div>Mã đơn hàng: ${ticket.order?.orderCode || ''}</div>
         <div>Mã QR: ${ticket.qrCode}</div>
         <div>${ticketSettings.value.footer}</div>
+        <div class="mt-2 text-sm font-medium text-blue-600">${ticketSettings.value.thankYou}</div>
       `;
     }
     
@@ -661,22 +716,6 @@ const printTicket = async () => {
           
           ${!isLabel ? `
           <div class="ticket-info">
-            <div class="info-row">
-              <div class="info-label">Khách hàng:</div>
-              <div class="info-value">${ticket.order?.customerName || ''}</div>
-            </div>
-            ${ticket.order?.customerEmail ? `
-            <div class="info-row">
-              <div class="info-label">Email:</div>
-              <div class="info-value">${ticket.order?.customerEmail || ''}</div>
-            </div>
-            ` : ''}
-            ${ticket.order?.customerPhone ? `
-            <div class="info-row">
-              <div class="info-label">Số điện thoại:</div>
-              <div class="info-value">${ticket.order?.customerPhone || ''}</div>
-            </div>
-            ` : ''}
             <div class="info-row">
               <div class="info-label">Mã đơn hàng:</div>
               <div class="info-value">${ticket.order?.orderCode || ''}</div>
@@ -710,12 +749,6 @@ const printTicket = async () => {
           </div>
           ` : `
           <div class="ticket-info">
-            ${ticket.order?.customerName ? `
-            <div class="info-row">
-              <div class="info-label">Khách:</div>
-              <div class="info-value">${ticket.order?.customerName || ''}</div>
-            </div>
-            ` : ''}
             ${ticket.travelDate ? `
             <div class="info-row">
               <div class="info-label">Ngày:</div>
@@ -728,6 +761,22 @@ const printTicket = async () => {
               <div class="info-value">${ticket.productSnapshot.variant.name}</div>
             </div>
             ` : ''}
+          </div>
+          `}
+          
+          <!-- Thêm phần thông tin khách hàng -->
+          ${isLabel ? `
+          <div class="customer-info">
+            <div class="customer-info-title">THÔNG TIN KHÁCH HÀNG</div>
+            ${ticket.order?.customerName ? `<div class="customer-detail"><strong>Khách:</strong> ${ticket.order.customerName}</div>` : '<div class="customer-detail"><strong>Khách:</strong> (Không có)</div>'}
+            ${ticket.order?.phoneNumber ? `<div class="customer-detail"><strong>SĐT:</strong> ${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>` : '<div class="customer-detail"><strong>SĐT:</strong> (Không có)</div>'}
+          </div>
+          ` : `
+          <div class="customer-info">
+            <div class="customer-info-title">THÔNG TIN KHÁCH HÀNG</div>
+            ${ticket.order?.customerName ? `<div class="customer-detail"><strong>Họ tên:</strong> ${ticket.order.customerName}</div>` : `<div class="customer-detail"><strong>Họ tên:</strong>  ${JSON.stringify(ticket.order)} </div>`}
+            ${ticket.order?.email ? `<div class="customer-detail"><strong>Email:</strong> ${ticket.order.email}</div>` : '<div class="customer-detail"><strong>Email:</strong> (Không có thông tin)</div>'}
+            ${ticket.order?.phoneNumber ? `<div class="customer-detail"><strong>Số điện thoại:</strong> ${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>` : '<div class="customer-detail"><strong>Số điện thoại:</strong> (Không có thông tin)</div>'}
           </div>
           `}
           
@@ -747,18 +796,105 @@ const printTicket = async () => {
     printWindow.document.write(printContent);
     printWindow.document.close();
     
-    // Đợi để tải hình ảnh QR code
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-      
-      // Đóng modal sau khi in
-      showPrintModal.value = false;
-      selectedTicket.value = null;
-      selectedPrintSize.value = 'A4'; // Reset lại kích thước in mặc định
-      
-      toast.success(t('Đã gửi lệnh in vé'));
-    }, 800); // Tăng thời gian để đảm bảo QR code được tải
+    // Hiển thị thông báo đang chờ tải QR code
+    toast.info(t('Đang chờ tải hình ảnh QR...'));
+    
+    // Thiết lập thời gian tối đa chờ để tránh trường hợp không thể tải được hình
+    const maxWaitTime = setTimeout(() => {
+      try {
+        printWindow.print();
+        printWindow.close();
+        
+        // Đóng modal sau khi in
+        showPrintModal.value = false;
+        selectedTicket.value = null;
+        selectedPrintSize.value = 'XP_PRINTER'; // Reset lại kích thước in mặc định
+        
+        toast.success(t('Đã gửi lệnh in vé'));
+      } catch (error) {
+        console.error('Timeout when loading QR code, but still try to print:', error);
+        toast.warning(t('Hình QR có thể chưa tải hoàn tất, nhưng vẫn tiến hành in'));
+      }
+    }, 5000); // Thời gian chờ tối đa 5 giây
+    
+    // Kiểm tra khi hình ảnh đã tải xong
+    const checkImagesLoaded = () => {
+      // Chờ để DOM được render
+      setTimeout(() => {
+        const images = printWindow.document.querySelectorAll('img');
+        let loadedImages = 0;
+        
+        if (images.length === 0) {
+          // Không có hình ảnh, tiến hành in luôn
+          clearTimeout(maxWaitTime);
+          printWindow.print();
+          printWindow.close();
+          
+          // Đóng modal sau khi in
+          showPrintModal.value = false;
+          selectedTicket.value = null;
+          selectedPrintSize.value = 'XP_PRINTER';
+          
+          toast.success(t('Đã gửi lệnh in vé'));
+          return;
+        }
+        
+        // Đếm số lượng hình ảnh đã tải
+        const onImageLoad = () => {
+          loadedImages++;
+          
+          // Khi tất cả hình ảnh đã tải xong
+          if (loadedImages === images.length) {
+            clearTimeout(maxWaitTime);
+            toast.success(t('Hình ảnh QR đã tải xong, đang tiến hành in...'));
+            
+            // Thêm một khoảng thời gian ngắn để đảm bảo mọi thứ đã sẵn sàng
+            setTimeout(() => {
+              printWindow.print();
+              printWindow.close();
+              
+              // Đóng modal sau khi in
+              showPrintModal.value = false;
+              selectedTicket.value = null;
+              selectedPrintSize.value = 'XP_PRINTER';
+              
+              toast.success(t('Đã gửi lệnh in vé'));
+            }, 500);
+          }
+        };
+        
+        // Kiểm tra từng hình ảnh
+        images.forEach(img => {
+          if (img.complete) {
+            loadedImages++;
+          } else {
+            img.addEventListener('load', onImageLoad);
+            img.addEventListener('error', onImageLoad); // Đếm cả khi lỗi
+          }
+        });
+        
+        // Nếu tất cả đã tải xong ngay từ đầu
+        if (loadedImages === images.length) {
+          clearTimeout(maxWaitTime);
+          toast.success(t('Hình ảnh QR đã tải xong, đang tiến hành in...'));
+          
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+            
+            // Đóng modal sau khi in
+            showPrintModal.value = false;
+            selectedTicket.value = null;
+            selectedPrintSize.value = 'XP_PRINTER';
+            
+            toast.success(t('Đã gửi lệnh in vé'));
+          }, 500);
+        }
+      }, 100); // Đợi 100ms để đảm bảo DOM đã render
+    };
+    
+    // Gọi hàm kiểm tra khi hình ảnh đã tải xong
+    checkImagesLoaded();
   } catch (error) {
     console.error('Error printing ticket:', error);
     toast.error(t('Lỗi khi in vé'));
@@ -1121,8 +1257,8 @@ const formatCurrency = (amount: number): string => {
                     <td class="px-4 py-3 text-sm text-gray-500">
                       <div class="space-y-1">
                         <p class="font-medium">{{ ticket.order?.customerName || t('N/A') }}</p>
-                        <p v-if="ticket.order?.customerEmail" class="text-xs">{{ ticket.order.customerEmail }}</p>
-                        <p v-if="ticket.order?.customerPhone" class="text-xs">{{ ticket.order.customerPhone }}</p>
+                        <p v-if="ticket.order?.email" class="text-xs">{{ ticket.order.email }}</p>
+                        <p v-if="ticket.order?.phoneNumber" class="text-xs">{{ ticket.order.phoneCode }} {{ ticket.order.phoneNumber }}</p>
                       </div>
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm">
