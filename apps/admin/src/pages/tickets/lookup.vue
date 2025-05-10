@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
 import { useTrpc } from '@/composables/useTrpc';
+import { PrinterIcon, SearchIcon, UserIcon } from 'lucide-vue-next';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { navigateTo } from 'nuxt/app';
-import { TicketIcon, SearchIcon, UserIcon, PrinterIcon, ArrowLeftIcon } from 'lucide-vue-next';
-import { OrderStatus } from '@ew/shared';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import PhoneInput from '../../components/form/PhoneInput.vue';
 
@@ -43,6 +41,20 @@ interface ScanResult {
     isUsed: boolean;
     travelDate?: string;
     productType?: string;
+    productSnapshot?: {
+      id: number;
+      title: string;
+      variant?: {
+        id: number;
+        name: string;
+        price: number;
+      };
+      translations: {
+        locale: string;
+        title: string;
+        description?: string;
+      }[];
+    };
     product?: {
       translations?: {
         title: string;
@@ -92,6 +104,20 @@ interface CustomerTicket {
   isUsed: boolean;
   travelDate?: string;
   productType?: string;
+  productSnapshot?: {
+    id: number;
+    title: string;
+    variant?: {
+      id: number;
+      name: string;
+      price: number;
+    };
+    translations: {
+      locale: string;
+      title: string;
+      description?: string;
+    }[];
+  };
   product?: {
     translations?: {
       title: string;
@@ -174,7 +200,7 @@ const debounceTimer = ref<NodeJS.Timeout | null>(null);
 // Cấu hình in vé
 const ticketSettings = ref({
   title: 'VÉ THAM QUAN',
-  subtitle: 'Vé cáp treo 2 chiều',
+  subtitle: '',
   location: 'KDL Cáp Treo',
   footer: 'Vui lòng giữ vé cẩn thận và trình cho nhân viên khi vào cổng',
   logo: '',
@@ -393,18 +419,22 @@ const openPrintModal = (ticket: CustomerTicket) => {
 const loadTicketPrintSettings = async () => {
   try {
     // Lấy cài đặt theo group 'ticket'
-    const settings = await trpc.admin.settings.getAllSettings.query() as Setting[];
-    const ticketSettings = settings.filter(setting => setting.group === 'ticket');
+    const settingsData = await trpc.admin.settings.getAllSettings.query() as any;
     
-    if (ticketSettings && ticketSettings.length > 0) {
-      // Lọc các settings bắt đầu bằng 'ticket.print.'
-      const printSettings = ticketSettings.filter((setting: Setting) => setting.key.startsWith('ticket.print.'));
-      
+    // Kiểm tra xem settingsData có tồn tại không
+    if (!settingsData) return;
+    
+    // Lọc các settings bắt đầu bằng 'ticket.print.'
+    const printSettings = Array.isArray(settingsData) ? 
+      settingsData.filter((setting: any) => setting.key && setting.key.startsWith('ticket.print.')) : 
+      [];
+    
+    if (printSettings.length > 0) {
       // Tạo map từ settings
       const settingsMap: Record<string, string> = {};
       const labelSettingsMap: Record<string, string> = {};
       
-      printSettings.forEach((setting: Setting) => {
+      printSettings.forEach((setting: any) => {
         if (setting.key.startsWith('ticket.print.label.')) {
           const key = setting.key.replace('ticket.print.label.', '');
           labelSettingsMap[key] = setting.value;
@@ -414,17 +444,17 @@ const loadTicketPrintSettings = async () => {
         }
       });
       
-      // Cập nhật cấu hình
+      // Cập nhật cấu hình - sử dụng đối tượng mới
       ticketSettings.value = {
-        title: settingsMap.title || ticketSettings.value.title,
-        subtitle: settingsMap.subtitle || ticketSettings.value.subtitle,
-        location: settingsMap.location || ticketSettings.value.location,
-        footer: settingsMap.footer || ticketSettings.value.footer,
-        logo: settingsMap.logo || ticketSettings.value.logo,
-        qrSize: settingsMap.qrSize || ticketSettings.value.qrSize,
-        backgroundColor: settingsMap.backgroundColor || ticketSettings.value.backgroundColor,
-        textColor: settingsMap.textColor || ticketSettings.value.textColor,
-        borderColor: settingsMap.borderColor || ticketSettings.value.borderColor,
+        title: settingsMap.title || 'VÉ THAM QUAN',
+        subtitle: settingsMap.subtitle || '',
+        location: settingsMap.location || 'KDL Cáp Treo',
+        footer: settingsMap.footer || 'Vui lòng giữ vé cẩn thận và trình cho nhân viên khi vào cổng',
+        logo: settingsMap.logo || '',
+        qrSize: settingsMap.qrSize || '250',
+        backgroundColor: settingsMap.backgroundColor || '#ffffff',
+        textColor: settingsMap.textColor || '#000000',
+        borderColor: settingsMap.borderColor || '#cccccc',
         label: {
           title: labelSettingsMap.title || 'VÉ THAM QUAN',
           footer: labelSettingsMap.footer || 'Vui lòng giữ vé cẩn thận',
@@ -572,6 +602,13 @@ const printTicket = async () => {
       travelDateDisplay = formatVietnameseDate(travelDate);
     }
     
+    // Lấy tên sản phẩm từ productSnapshot hoặc product
+    const productTitle = getProductTitle(ticket);
+    
+    // Lấy thông tin variant nếu có
+    const variantInfo = ticket.productSnapshot?.variant ? 
+      `${ticket.productSnapshot.variant.name} - ${formatCurrency(ticket.productSnapshot.variant.price)}` : '';
+    
     // Header và footer content dựa trên kích thước in
     let headerContent = '';
     let footerContent = '';
@@ -580,7 +617,7 @@ const printTicket = async () => {
       // Simplified content for small label
       headerContent = `
         <h1>${ticketSettings.value.label.title}</h1>
-        <div>${ticket.product?.translations?.[0]?.title || ''}</div>
+        <div>${productTitle}</div>
       `;
       footerContent = `
         <div>Mã QR: ${ticket.qrCode}</div>
@@ -592,7 +629,7 @@ const printTicket = async () => {
       headerContent = `
         <h1>${ticketSettings.value.title}</h1>
         <h2>${ticketSettings.value.subtitle}</h2>
-        <div>${ticket.product?.translations?.[0]?.title || ''}</div>
+        <div>${productTitle}</div>
       `;
       footerContent = `
         <div>${ticketSettings.value.location}</div>
@@ -660,8 +697,14 @@ const printTicket = async () => {
             </div>
             ${ticket.productType ? `
             <div class="info-row">
-              <div class="info-label">Loại vé:</div>
+              <div class="info-label">Loại sản phẩm:</div>
               <div class="info-value">${ticket.productType}</div>
+            </div>
+            ` : ''}
+            ${ticket.productSnapshot?.variant ? `
+            <div class="info-row">
+              <div class="info-label">Loại vé:</div>
+              <div class="info-value">${ticket.productSnapshot.variant.name} - ${formatCurrency(ticket.productSnapshot.variant.price)}</div>
             </div>
             ` : ''}
           </div>
@@ -677,6 +720,12 @@ const printTicket = async () => {
             <div class="info-row">
               <div class="info-label">Ngày:</div>
               <div class="info-value">${formatVietnameseDate(new Date(ticket.travelDate))}</div>
+            </div>
+            ` : ''}
+            ${ticket.productSnapshot?.variant ? `
+            <div class="info-row">
+              <div class="info-label">Loại:</div>
+              <div class="info-value">${ticket.productSnapshot.variant.name}</div>
             </div>
             ` : ''}
           </div>
@@ -800,6 +849,38 @@ const formatUserName = (history: ScanHistory) => {
   
   // Trường hợp mặc định hiển thị userId
   return history.scannedBy || t('Unknown');
+};
+
+// Thêm hàm lấy tiêu đề sản phẩm từ productSnapshot hoặc product
+const getProductTitle = (item: any): string => {
+  if (item?.productSnapshot?.translations && item.productSnapshot.translations.length > 0) {
+    // Ưu tiên lấy từ productSnapshot, tìm tiêu đề tiếng Việt trước
+    const viTranslation = item.productSnapshot.translations.find((t: any) => t.locale === 'vi');
+    if (viTranslation) return viTranslation.title;
+    
+    // Nếu không có tiếng Việt, lấy tiêu đề đầu tiên
+    return item.productSnapshot.translations[0].title;
+  }
+  
+  // Fallback to product translations
+  if (item?.product?.translations && item.product.translations.length > 0) {
+    return item.product.translations[0].title;
+  }
+  
+  return t('Unknown Product');
+};
+
+// Lấy thông tin variant từ productSnapshot
+const getVariantInfo = (item: any): string => {
+  if (item?.productSnapshot?.variant) {
+    return `${item.productSnapshot.variant.name} - ${formatCurrency(item.productSnapshot.variant.price)}`;
+  }
+  return '';
+};
+
+// Format tiền tệ
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 </script>
 
@@ -1000,7 +1081,10 @@ const formatUserName = (history: ScanHistory) => {
                       {{ ticket.order?.orderCode || t('N/A') }}
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {{ ticket.product?.translations?.[0]?.title || t('Unknown Product') }}
+                      {{ getProductTitle(ticket) }}
+                      <div v-if="ticket.productSnapshot?.variant" class="text-xs text-gray-600 mt-1">
+                        {{ getVariantInfo(ticket) }}
+                      </div>
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                       <span
@@ -1133,7 +1217,10 @@ const formatUserName = (history: ScanHistory) => {
               <div class="space-y-3">
                 <div>
                   <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Sản phẩm') }}</p>
-                  <p class="font-medium text-base">{{ scanResult.orderItem.product?.translations?.[0]?.title || 'Unknown Product' }}</p>
+                  <p class="font-medium text-base">{{ getProductTitle(scanResult.orderItem) }}</p>
+                  <p v-if="scanResult.orderItem.productSnapshot?.variant" class="text-sm text-gray-600 mt-1">
+                    {{ getVariantInfo(scanResult.orderItem) }}
+                  </p>
                 </div>
                 
                 <div>
@@ -1202,6 +1289,38 @@ const formatUserName = (history: ScanHistory) => {
                     <p class="font-medium text-base">{{ scanResult.orderItem.order.customerPhone }}</p>
                   </div>
                 </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thêm chi tiết sản phẩm từ productSnapshot -->
+        <div v-if="scanResult?.orderItem?.productSnapshot" class="mt-4 pt-4 border-t border-gray-200">
+          <p class="text-sm font-bold text-gray-700 uppercase mb-2">{{ t('Chi tiết sản phẩm') }}</p>
+          <div class="bg-white p-4 rounded-md border border-gray-200">
+            <div v-if="scanResult?.orderItem?.productSnapshot?.translations && scanResult.orderItem.productSnapshot.translations.length > 0">
+              <div v-for="(translation, index) in scanResult.orderItem.productSnapshot.translations" :key="index" class="mb-2">
+                <p class="font-medium">
+                  <span class="text-xs font-bold px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full mr-2">
+                    {{ translation.locale.toUpperCase() }}
+                  </span>
+                  {{ translation.title }}
+                </p>
+                <p v-if="translation.description" class="text-sm text-gray-600 mt-1">
+                  {{ translation.description }}
+                </p>
+              </div>
+            </div>
+            
+            <div v-if="scanResult?.orderItem?.productSnapshot?.variant" class="mt-3 pt-3 border-t border-dashed border-gray-200">
+              <p class="text-sm font-bold text-gray-700 uppercase mb-1">{{ t('Loại vé') }}</p>
+              <div class="flex items-center">
+                <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-sm font-medium mr-2">
+                  {{ scanResult.orderItem.productSnapshot.variant.name }}
+                </span>
+                <span class="font-bold text-base text-blue-700">
+                  {{ formatCurrency(scanResult.orderItem.productSnapshot.variant.price) }}
+                </span>
               </div>
             </div>
           </div>

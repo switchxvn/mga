@@ -43,6 +43,20 @@ interface ScanResult {
     isUsed: boolean;
     travelDate?: string;
     productType?: string;
+    productSnapshot?: {
+      id: number;
+      title: string;
+      variant?: {
+        id: number;
+        name: string;
+        price: number;
+      };
+      translations: {
+        locale: string;
+        title: string;
+        description?: string;
+      }[];
+    };
     product?: {
       translations?: {
         title: string;
@@ -87,6 +101,20 @@ interface CustomerTicket {
   isUsed: boolean;
   travelDate?: string;
   productType?: string;
+  productSnapshot?: {
+    id: number;
+    title: string;
+    variant?: {
+      id: number;
+      name: string;
+      price: number;
+    };
+    translations: {
+      locale: string;
+      title: string;
+      description?: string;
+    }[];
+  };
   product?: {
     translations?: {
       title: string;
@@ -799,6 +827,38 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
   }
   return '';
 };
+
+// Thêm hàm lấy tiêu đề sản phẩm từ productSnapshot hoặc product
+const getProductTitle = (item: any): string => {
+  if (item?.productSnapshot?.translations && item.productSnapshot.translations.length > 0) {
+    // Ưu tiên lấy từ productSnapshot, tìm tiêu đề tiếng Việt trước
+    const viTranslation = item.productSnapshot.translations.find((t: any) => t.locale === 'vi');
+    if (viTranslation) return viTranslation.title;
+    
+    // Nếu không có tiếng Việt, lấy tiêu đề đầu tiên
+    return item.productSnapshot.translations[0].title;
+  }
+  
+  // Fallback to product translations
+  if (item?.product?.translations && item.product.translations.length > 0) {
+    return item.product.translations[0].title;
+  }
+  
+  return t('Unknown Product');
+};
+
+// Lấy thông tin variant từ productSnapshot
+const getVariantInfo = (item: any): string => {
+  if (item?.productSnapshot?.variant) {
+    return `${item.productSnapshot.variant.name} - ${formatCurrency(item.productSnapshot.variant.price)}`;
+  }
+  return '';
+};
+
+// Format tiền tệ
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+};
 </script>
 
 <template>
@@ -1021,7 +1081,10 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                         {{ ticket.order?.orderCode || t('N/A') }}
                       </td>
                       <td class="px-3 py-3 text-sm text-gray-500">
-                        {{ ticket.product?.translations?.[0]?.title || t('Unknown Product') }}
+                        {{ getProductTitle(ticket) }}
+                        <div v-if="ticket.productSnapshot?.variant" class="text-xs text-gray-600 mt-1">
+                          {{ getVariantInfo(ticket) }}
+                        </div>
                       </td>
                       <td class="px-3 py-3 whitespace-nowrap text-sm">
                         <span
@@ -1172,7 +1235,10 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
               <div class="grid grid-cols-4 gap-6">
                 <div class="border-r border-gray-200 pr-4">
                   <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Product') }}</p>
-                  <p class="font-medium text-base">{{ scanResult.orderItem.product?.translations?.[0]?.title || 'Unknown Product' }}</p>
+                  <p class="font-medium text-base">{{ getProductTitle(scanResult.orderItem) }}</p>
+                  <p v-if="scanResult.orderItem.productSnapshot?.variant" class="text-sm text-gray-600 mt-1">
+                    {{ getVariantInfo(scanResult.orderItem) }}
+                  </p>
                 </div>
                 <div class="border-r border-gray-200 pr-4">
                   <p class="text-sm font-bold text-gray-700 uppercase">{{ t('Order ID') }}</p>
@@ -1220,6 +1286,38 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                     {{ t('HÔM NAY') }}
                   </span>
                 </p>
+              </div>
+
+              <!-- Thêm chi tiết sản phẩm từ productSnapshot -->
+              <div v-if="scanResult.orderItem.productSnapshot" class="mt-2 border-t border-gray-200 pt-4">
+                <p class="text-sm font-bold text-gray-700 uppercase mb-2">{{ t('Chi tiết sản phẩm') }}</p>
+                <div class="bg-white p-4 rounded-md border border-gray-200">
+                  <div v-if="scanResult.orderItem.productSnapshot.translations && scanResult.orderItem.productSnapshot.translations.length > 0">
+                    <div v-for="(translation, index) in scanResult.orderItem.productSnapshot.translations" :key="index" class="mb-2">
+                      <p class="font-medium">
+                        <span class="text-xs font-bold px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full mr-2">
+                          {{ translation.locale.toUpperCase() }}
+                        </span>
+                        {{ translation.title }}
+                      </p>
+                      <p v-if="translation.description" class="text-sm text-gray-600 mt-1">
+                        {{ translation.description }}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div v-if="scanResult.orderItem.productSnapshot.variant" class="mt-3 pt-3 border-t border-dashed border-gray-200">
+                    <p class="text-sm font-bold text-gray-700 uppercase mb-1">{{ t('Loại vé') }}</p>
+                    <div class="flex items-center">
+                      <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-sm font-medium mr-2">
+                        {{ scanResult.orderItem.productSnapshot.variant.name }}
+                      </span>
+                      <span class="font-bold text-base text-blue-700">
+                        {{ formatCurrency(scanResult.orderItem.productSnapshot.variant.price) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1579,7 +1677,10 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                   {{ scanResult?.message }}
                 </p>
                 <p v-if="scanResult?.orderItem" class="mt-2">
-                  <strong>{{ t('Product') }}:</strong> {{ scanResult.orderItem.product?.translations?.[0]?.title }}
+                  <strong>{{ t('Product') }}:</strong> {{ getProductTitle(scanResult.orderItem) }}
+                </p>
+                <p v-if="scanResult?.orderItem?.productSnapshot?.variant" class="mt-1 text-sm">
+                  <strong>{{ t('Variant') }}:</strong> {{ getVariantInfo(scanResult.orderItem) }}
                 </p>
                 <p v-if="scanResult?.orderItem" class="mt-1">
                   <strong>{{ t('Ticket status') }}:</strong> 
@@ -1612,6 +1713,37 @@ const getTicketButtonTitle = (ticket: CustomerTicket): string => {
                   </span>
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Thêm chi tiết sản phẩm từ productSnapshot trong modal xác nhận -->
+        <div v-if="scanResult?.orderItem?.productSnapshot" class="bg-white p-4 rounded-md border border-gray-200 mb-4">
+          <h4 class="font-medium text-base mb-2">{{ t('Chi tiết sản phẩm') }}</h4>
+          
+          <div v-if="scanResult.orderItem.productSnapshot.translations && scanResult.orderItem.productSnapshot.translations.length > 0">
+            <div v-for="(translation, index) in scanResult.orderItem.productSnapshot.translations" :key="index" class="mb-2">
+              <p class="font-medium">
+                <span class="text-xs font-bold px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full mr-2">
+                  {{ translation.locale.toUpperCase() }}
+                </span>
+                {{ translation.title }}
+              </p>
+              <p v-if="translation.description" class="text-sm text-gray-600 mt-1 line-clamp-2">
+                {{ translation.description }}
+              </p>
+            </div>
+          </div>
+          
+          <div v-if="scanResult.orderItem.productSnapshot.variant" class="mt-3 pt-3 border-t border-dashed border-gray-200">
+            <p class="text-sm font-bold text-gray-700 uppercase mb-1">{{ t('Loại vé') }}</p>
+            <div class="flex items-center">
+              <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-sm font-medium mr-2">
+                {{ scanResult.orderItem.productSnapshot.variant.name }}
+              </span>
+              <span class="font-bold text-base text-blue-700">
+                {{ formatCurrency(scanResult.orderItem.productSnapshot.variant.price) }}
+              </span>
             </div>
           </div>
         </div>
