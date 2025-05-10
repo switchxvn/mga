@@ -774,7 +774,7 @@ const printTicket = async () => {
           ` : `
           <div class="customer-info">
             <div class="customer-info-title">THÔNG TIN KHÁCH HÀNG</div>
-            ${ticket.order?.customerName ? `<div class="customer-detail"><strong>Họ tên:</strong> ${ticket.order.customerName}</div>` : `<div class="customer-detail"><strong>Họ tên:</strong>  ${JSON.stringify(ticket.order)} </div>`}
+            ${ticket.order?.customerName ? `<div class="customer-detail"><strong>Họ tên:</strong> ${ticket.order.customerName}</div>` : `<div class="customer-detail"><strong>Họ tên:</strong>  ${ticket.order?.customerName} </div>`}
             ${ticket.order?.email ? `<div class="customer-detail"><strong>Email:</strong> ${ticket.order.email}</div>` : '<div class="customer-detail"><strong>Email:</strong> (Không có thông tin)</div>'}
             ${ticket.order?.phoneNumber ? `<div class="customer-detail"><strong>Số điện thoại:</strong> ${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>` : '<div class="customer-detail"><strong>Số điện thoại:</strong> (Không có thông tin)</div>'}
           </div>
