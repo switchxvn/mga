@@ -203,8 +203,8 @@ const debounceTimer = ref<NodeJS.Timeout | null>(null);
 
 // Cấu hình in vé
 const ticketSettings = ref({
-  title: 'VÉ THAM QUAN KDL CÁP TREO NÚI SAM',
-  subtitle: 'Đường Châu Thị Tế, khóm Vĩnh Tây 3, Châu Đốc, An Giang',
+  title: 'VÉ CÁP TREO NÚI SAM',
+  subtitle: 'Châu Đốc, An Giang',
   hotline: 'Hotline: 0869 519 678',
   location: 'KDL Cáp Treo',
   footer: 'Vui lòng giữ vé cẩn thận và trình cho nhân viên khi vào cổng',
@@ -215,7 +215,7 @@ const ticketSettings = ref({
   textColor: '#000000',
   borderColor: '#cccccc',
   label: {
-    title: 'VÉ THAM QUAN',
+    title: 'VÉ CÁP TREO NÚI SAM',
     footer: 'Vui lòng giữ vé cẩn thận',
     qrSize: '70',
     fontSize: '6',
@@ -739,18 +739,7 @@ const printTicket = async (size: string) => {
               <div class="info-value">${ticket.order.customerName}</div>
             </div>
             ` : ''}
-            ${ticket.order?.email ? `
-            <div class="info-row">
-              <div class="info-label">Email:</div>
-              <div class="info-value">${ticket.order.email}</div>
-            </div>
-            ` : ''}
-            ${ticket.order?.phoneNumber ? `
-            <div class="info-row">
-              <div class="info-label">SĐT:</div>
-              <div class="info-value">${ticket.order.phoneCode} ${ticket.order.phoneNumber}</div>
-            </div>
-            ` : ''}
+         
           </div>
           ` : `
           <div class="ticket-info">
