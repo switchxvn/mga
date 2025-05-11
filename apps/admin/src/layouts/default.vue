@@ -31,7 +31,7 @@ const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 const userStore = useUserStore()
 const { user, isLoading } = storeToRefs(userStore)
-const { checkAuth, user: authUser } = useAuth()
+const { checkAuth, user: authUser, logout } = useAuth()
 const { isSuperAdmin, hasPermission } = usePermissions()
 const route = useRoute()
 const router = useRouter()
@@ -146,9 +146,13 @@ onMounted(async () => {
 })
 
 const handleLogout = async () => {
-  userStore.clearUser()
-  // Redirect to login page
-  navigateTo('/login')
+  try {
+    // Gọi hàm logout từ useAuth để xử lý đăng xuất đúng cách
+    // Hàm này sẽ tự động chuyển hướng đến trang đăng nhập
+    await logout();
+  } catch (error) {
+    console.error('Logout failed:', error);
+  }
 }
 
 const userMenuItems: DropdownItem[][] = [[

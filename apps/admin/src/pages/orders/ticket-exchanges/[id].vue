@@ -6,7 +6,7 @@ import { useConfirm } from '../../../composables/useConfirm';
 import { useRoute, useRouter } from 'vue-router';
 import { RefundStatus, RefundType, RefundReason, OrderType } from '@ew/shared';
 import PageHeader from '../../../components/common/header/PageHeader.vue';
-import { Ticket, ArrowLeft, Check, X, Save, AlertTriangle, ShieldAlert, RefreshCw, Calendar, FileCheck } from 'lucide-vue-next';
+import { Ticket, ArrowLeft, Check, X, Save, AlertTriangle, ShieldAlert, RefreshCw, Calendar, FileCheck, Clock, CircleX, CircleCheck } from 'lucide-vue-next';
 
 // Composables
 const trpc = useTrpc();
@@ -84,11 +84,73 @@ const getAvailableActions = computed(() => {
   return actions;
 });
 
+// Thêm hàm để lấy icon và màu sắc cho mỗi button trạng thái
+const getStatusButtonConfig = (status: RefundStatus) => {
+  const configs = {
+    [RefundStatus.PENDING]: {
+      icon: Clock,
+      color: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500',
+      textColor: 'text-white'
+    },
+    [RefundStatus.APPROVED]: {
+      icon: CircleCheck,
+      color: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+      textColor: 'text-white'
+    },
+    [RefundStatus.REJECTED]: {
+      icon: CircleX,
+      color: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+      textColor: 'text-white'
+    },
+    [RefundStatus.PROCESSING]: {
+      icon: RefreshCw,
+      color: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500',
+      textColor: 'text-white'
+    },
+    [RefundStatus.COMPLETED]: {
+      icon: FileCheck,
+      color: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+      textColor: 'text-white'
+    },
+    [RefundStatus.CANCELLED]: {
+      icon: X,
+      color: 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500',
+      textColor: 'text-white'
+    }
+  };
+  return configs[status] || configs[RefundStatus.PENDING];
+};
+
+// Lọc các trạng thái có thể cập nhật dựa trên trạng thái hiện tại
+const availableStatuses = computed(() => {
+  if (!refund.value || !canUpdateStatus.value) return [];
+  
+  const currentStatus = refund.value.status;
+  
+  // Các trạng thái có thể chuyển đổi từ PENDING
+  if (currentStatus === RefundStatus.PENDING) {
+    return [RefundStatus.APPROVED, RefundStatus.REJECTED, RefundStatus.PROCESSING];
+  }
+  
+  // Các trạng thái có thể chuyển đổi từ PROCESSING
+  if (currentStatus === RefundStatus.PROCESSING) {
+    return [RefundStatus.COMPLETED, RefundStatus.CANCELLED];
+  }
+  
+  // Các trạng thái có thể chuyển đổi từ APPROVED
+  if (currentStatus === RefundStatus.APPROVED) {
+    return [RefundStatus.PROCESSING, RefundStatus.COMPLETED, RefundStatus.CANCELLED];
+  }
+  
+  // Nếu trạng thái hiện tại đã là COMPLETED hoặc CANCELLED, không còn trạng thái nào có thể chuyển
+  return [];
+});
+
 // Methods
 const getStatusLabel = (status: RefundStatus) => {
   const statusMap: Record<RefundStatus, string> = {
     [RefundStatus.PENDING]: 'Đang chờ xử lý',
-    [RefundStatus.APPROVED]: 'Đã duyệt',
+    [RefundStatus.APPROVED]: 'Duyệt',
     [RefundStatus.REJECTED]: 'Từ chối',
     [RefundStatus.PROCESSING]: 'Đang xử lý',
     [RefundStatus.COMPLETED]: 'Hoàn tất',
@@ -244,14 +306,14 @@ const showNewOrderDetails = () => {
 };
 
 // Update refund status
-const updateStatus = async () => {
-  if (!refundId.value || !newStatus.value || isUpdating.value) return;
+const updateStatus = async (statusToUpdate: RefundStatus) => {
+  if (!refundId.value || isUpdating.value) return;
   
   isUpdating.value = true;
   try {
     await trpc.order.admin.updateRefundStatus.mutate({
       id: refundId.value,
-      status: newStatus.value,
+      status: statusToUpdate,
       adminNotes: adminNotes.value
     });
     
@@ -268,20 +330,17 @@ const updateStatus = async () => {
 };
 
 // Confirm status update
-const confirmStatusUpdate = () => {
-  if (!newStatus.value || !refund.value) {
-    console.log('Cannot update status: newStatus or refund is missing', { 
-      newStatus: newStatus.value, 
-      hasRefund: !!refund.value 
-    });
+const confirmStatusUpdate = (statusToUpdate: RefundStatus) => {
+  if (!refund.value) {
+    console.log('Cannot update status: refund is missing');
     return;
   }
   
-  const statusLabel = getStatusLabel(newStatus.value);
+  const statusLabel = getStatusLabel(statusToUpdate);
   let message = `Bạn có chắc chắn muốn cập nhật trạng thái thành "${statusLabel}" không?`;
   
   // Thêm thông báo đặc biệt khi duyệt đổi vé
-  if (newStatus.value === RefundStatus.APPROVED && refund.value.refundType === RefundType.RESCHEDULE) {
+  if (statusToUpdate === RefundStatus.APPROVED && refund.value.refundType === RefundType.RESCHEDULE) {
     message = `Khi bạn duyệt yêu cầu đổi vé, hệ thống sẽ tự động tạo một đơn hàng mới với vé có ngày mới. Bạn có muốn tiếp tục không?`;
   }
   
@@ -289,7 +348,7 @@ const confirmStatusUpdate = () => {
     title: 'Xác nhận cập nhật trạng thái',
     message,
     confirmText: 'Xác nhận',
-    onConfirm: updateStatus
+    onConfirm: () => updateStatus(statusToUpdate)
   });
 };
 
@@ -458,7 +517,7 @@ watch(refundId, (newId, oldId) => {
       <div v-if="refund?.items?.length" class="bg-white rounded-lg shadow p-6 col-span-3">
         <h2 class="text-xl font-semibold mb-4 flex items-center">
           <Calendar class="h-5 w-5 text-indigo-500 mr-2" />
-          Vé cần đổi
+          Thông tin vé cần đổi
         </h2>
         
         <div class="overflow-x-auto">
@@ -475,47 +534,124 @@ watch(refundId, (newId, oldId) => {
                   Số lượng
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày cũ
+                  Ngày/Vé cũ
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày mới
+                  Ngày/Vé mới
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="item in refund?.items || []" :key="item.id" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <div>
+                  <div class="font-medium">
                     {{ item.orderItem?.product?.translations?.find((t: any) => t.locale === 'vi')?.title || 
                        item.orderItem?.product?.title || 
+                       item.orderItem?.productSnapshot?.translations?.find((t: any) => t.locale === 'vi')?.title ||
+                       item.orderItem?.productSnapshot?.title ||
                        'Sản phẩm không xác định' }}
                   </div>
-                  <div v-if="item.orderItem?.variantName" class="text-xs text-gray-500">
-                    {{ item.orderItem.variantName }}
+                  
+                  <!-- Variant Info - Làm nổi bật hơn -->
+                  <div v-if="item.orderItem?.variantName || item.orderItem?.productSnapshot?.variant?.name" 
+                    class="mt-1.5 px-2 py-1 bg-indigo-50 border border-indigo-100 rounded inline-flex items-center">
+                    <span class="text-xs font-medium text-indigo-700">
+                      {{ item.orderItem?.variantName || item.orderItem?.productSnapshot?.variant?.name }}
+                    </span>
+                  </div>
+                  
+                  <div v-if="item.orderItem?.productCode" class="text-xs text-gray-500 mt-1">
+                    Mã: {{ item.orderItem.productCode }}
+                  </div>
+                  <div v-if="item.orderItem?.productType" class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium"
+                    :class="{
+                      'bg-blue-100 text-blue-800': item.orderItem.productType === 'TICKET',
+                      'bg-green-100 text-green-800': item.orderItem.productType === 'PHYSICAL',
+                      'bg-purple-100 text-purple-800': item.orderItem.productType === 'DIGITAL'
+                    }">
+                    {{ item.orderItem.productType === 'TICKET' ? 'Vé' : 
+                      item.orderItem.productType === 'PHYSICAL' ? 'Sản phẩm vật lý' : 'Sản phẩm số' }}
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ formatCurrency(item.orderItem?.unitPrice) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ item.quantity }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div v-if="item.orderItem?.travelDate" class="text-gray-700">
-                    {{ formatDateOnly(item.orderItem.travelDate) }}
+                  <div class="font-medium">{{ formatCurrency(item.orderItem?.unitPrice || item.orderItem?.productSnapshot?.variant?.price || 0) }}</div>
+                  <div v-if="item.orderItem?.productSnapshot?.variant?.price && item.orderItem?.unitPrice !== item.orderItem?.productSnapshot?.variant?.price" 
+                    class="text-xs text-gray-500 mt-1">
+                    Giá gốc: {{ formatCurrency(item.orderItem?.productSnapshot?.variant?.price) }}
                   </div>
-                  <div v-else>–</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span class="font-medium">{{ item.quantity }}</span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                  <div v-if="item.newDate" class="text-green-700 font-medium flex items-center">
-                    <Calendar class="h-4 w-4 mr-1" />
-                    {{ formatDateOnly(item.newDate) }}
+                  <div v-if="item.orderItem?.travelDate" class="font-medium flex items-center">
+                    <Calendar class="h-4 w-4 mr-1 text-blue-600" />
+                    <span class="text-blue-600">{{ formatDateOnly(item.orderItem.travelDate) }}</span>
                   </div>
-                  <div v-else class="text-red-500">Chưa có ngày mới</div>
+                  <div v-if="item.orderItem?.ticketCode" class="text-xs text-gray-600 mt-1">
+                    Mã vé: {{ item.orderItem.ticketCode }}
+                  </div>
+                  <div v-else-if="item.orderItem?.productCode && item.orderItem?.productType === 'TICKET'" class="text-xs text-gray-600 mt-1">
+                    Mã vé: {{ item.orderItem.productCode }}
+                  </div>
+                  <div v-if="item.orderItem?.seatInfo" class="text-xs text-gray-600 mt-1 px-2 py-0.5 bg-gray-100 rounded inline-block">
+                    Ghế: <span class="font-medium">{{ item.orderItem.seatInfo }}</span>
+                  </div>
+                  <div v-if="item.orderItem?.qrCode" class="text-xs text-gray-600 mt-1">
+                    QR Code: {{ item.orderItem.qrCode?.substring(0, 8) }}...
+                  </div>
+                  <div v-if="item.orderItem?.isUsed" class="text-xs text-red-600 mt-1 font-medium">
+                    ĐÃ SỬ DỤNG
+                  </div>
+                  <div v-if="!item.orderItem?.travelDate && item.orderItem?.productType === 'TICKET'">Chưa có ngày</div>
+                  <div v-if="item.orderItem?.productType !== 'TICKET'" class="text-xs text-gray-500">Không áp dụng</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <div v-if="item.newDate" class="font-medium flex items-center">
+                    <Calendar class="h-4 w-4 mr-1 text-green-600" />
+                    <span class="text-green-600">{{ formatDateOnly(item.newDate) }}</span>
+                  </div>
+                  <div v-if="item.newTicketCode" class="text-xs text-green-600 mt-1">
+                    Mã vé mới: <span class="font-medium">{{ item.newTicketCode }}</span>
+                  </div>
+                  <div v-if="item.newSeatInfo" class="text-xs text-green-600 mt-1 px-2 py-0.5 bg-green-50 rounded inline-block">
+                    Ghế mới: <span class="font-medium">{{ item.newSeatInfo }}</span>
+                  </div>
+                  <div v-if="!item.newDate" class="text-red-500">Chưa có ngày mới</div>
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+        
+        <div class="mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+          <h3 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+            <AlertTriangle class="h-4 w-4 mr-1 text-amber-500" />
+            Thông tin bổ sung
+          </h3>
+          <ul class="ml-5 list-disc text-sm text-gray-600 space-y-1">
+            <li v-if="refund?.refundType === RefundType.RESCHEDULE">
+              Yêu cầu đổi vé với ngày/lịch trình mới
+            </li>
+            <li v-if="refund?.refundType === RefundType.PRODUCT_EXCHANGE">
+              Yêu cầu đổi sản phẩm/vé khác
+            </li>
+            <li v-if="refund?.refundReason">
+              Lý do: <span class="font-medium">{{ getRefundReasonLabel(refund.refundReason) }}</span>
+            </li>
+            <li v-if="refund?.order?.orderType">
+              Loại đơn hàng: <span class="font-medium">{{ refund.order.orderType }}</span>
+            </li>
+            <li v-if="refund?.order?.exchangeForOrderId">
+              Đơn hàng trao đổi từ: <span class="font-medium">#{{ refund.order.exchangeForOrderId }}</span>
+            </li>
+            <li v-if="refund?.order?.paymentMethod">
+              Phương thức thanh toán: <span class="font-medium">{{ refund.order.paymentMethod }}</span>
+            </li>
+            <li v-if="refund?.order?.paymentStatus">
+              Trạng thái thanh toán: <span class="font-medium">{{ refund.order.paymentStatus }}</span>
+            </li>
+          </ul>
         </div>
       </div>
       
@@ -526,26 +662,37 @@ watch(refundId, (newId, oldId) => {
           Cập nhật trạng thái
         </h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 gap-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái mới</label>
-            <select
-              v-model="newStatus"
-              class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              :disabled="!canUpdateStatus"
-            >
-              <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-            <p v-if="!canUpdateStatus && (refund?.status === RefundStatus.COMPLETED || refund?.status === RefundStatus.CANCELLED)" class="mt-1 text-sm text-red-500">
-              Không thể cập nhật trạng thái khi đã hoàn tất hoặc đã hủy
-            </p>
-            <p v-else-if="!canUpdateStatus && refund?.refundType === RefundType.RESCHEDULE && refund?.status === RefundStatus.APPROVED && refund?.newOrderId" class="mt-1 text-sm text-red-500">
-              Không thể thay đổi trạng thái vì đã duyệt đổi vé và tạo đơn hàng mới
-            </p>
+            <label class="block text-sm font-medium text-gray-700 mb-3">Chọn trạng thái mới</label>
             
-            <div v-if="refund?.refundType === RefundType.RESCHEDULE && newStatus === RefundStatus.APPROVED" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div v-if="!canUpdateStatus" class="text-sm text-red-500 mb-3">
+              <p v-if="refund?.status === RefundStatus.COMPLETED || refund?.status === RefundStatus.CANCELLED">
+                Không thể cập nhật trạng thái khi đã hoàn tất hoặc đã hủy
+              </p>
+              <p v-else-if="refund?.refundType === RefundType.RESCHEDULE && refund?.status === RefundStatus.APPROVED && refund?.newOrderId">
+                Không thể thay đổi trạng thái vì đã duyệt đổi vé và tạo đơn hàng mới
+              </p>
+            </div>
+            
+            <div class="flex flex-wrap gap-3">
+              <button
+                v-for="status in availableStatuses"
+                :key="status"
+                @click="confirmStatusUpdate(status)"
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 relative"
+                :class="[getStatusButtonConfig(status).color, getStatusButtonConfig(status).textColor]"
+                :disabled="isUpdating"
+              >
+                <div v-if="isUpdating" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-md">
+                  <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <component :is="getStatusButtonConfig(status).icon" class="h-4 w-4 mr-2" />
+                {{ getStatusLabel(status) }}
+              </button>
+            </div>
+            
+            <div v-if="refund?.refundType === RefundType.RESCHEDULE && availableStatuses.includes(RefundStatus.APPROVED)" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p class="text-sm text-blue-800">
                 <AlertTriangle class="h-4 w-4 inline-block mr-1" />
                 Khi duyệt đổi vé, hệ thống sẽ tự động tạo một đơn hàng mới với vé có ngày mới.
@@ -559,22 +706,10 @@ watch(refundId, (newId, oldId) => {
               v-model="adminNotes"
               rows="4"
               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              :disabled="!canUpdateStatus"
+              :disabled="!canUpdateStatus || isUpdating"
               placeholder="Nhập ghi chú của admin"
             ></textarea>
           </div>
-        </div>
-        
-        <div class="mt-4 flex justify-end">
-          <button
-            @click="confirmStatusUpdate"
-            :disabled="!canUpdateStatus || isUpdating || !newStatus"
-            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save class="h-4 w-4 mr-2" />
-            <span v-if="isUpdating">Đang cập nhật...</span>
-            <span v-else>Cập nhật trạng thái</span>
-          </button>
         </div>
       </div>
     </div>
