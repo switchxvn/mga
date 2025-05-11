@@ -137,6 +137,17 @@ const defaultColors: ThemeColors = {
 const activeTheme = ref<Theme | null>(null);
 let initialized = false;
 
+// Kiểm tra xem CSS variables đã được set chưa
+const areCssVariablesInitialized = () => {
+  if (typeof window === 'undefined') return false;
+  
+  // Kiểm tra một số biến CSS cụ thể đã được set chưa
+  const primaryVar = window.getComputedStyle(document.documentElement)
+    .getPropertyValue('--primary-500');
+  
+  return !!primaryVar.trim();
+};
+
 export function useTheme() {
   const trpc = useTrpc();
   const isDark = useDark({
@@ -240,8 +251,12 @@ export function useTheme() {
   };
 
   const initializeTheme = async () => {
-    if (initialized) return;
+    // Nếu đã khởi tạo và CSS variables đã được set, không cần khởi tạo lại
+    if (initialized && areCssVariablesInitialized()) {
+      return activeTheme.value;
+    }
 
+    // Luôn áp dụng theme mặc định ngay lập tức để tránh nhấp nháy
     if (typeof window !== 'undefined') {
       updateCssVariables(defaultColors);
     }
@@ -254,6 +269,7 @@ export function useTheme() {
         initialized = true;
         
         if (response.colors && typeof window !== 'undefined') {
+          // Áp dụng theme từ API ngay lập tức
           updateCssVariables(response.colors as unknown as ThemeColors);
         }
       }
@@ -261,6 +277,8 @@ export function useTheme() {
       return response;
     } catch (error) {
       console.error('Failed to initialize theme:', error);
+      // Đảm bảo khi lỗi vẫn đánh dấu là đã initialized để không gọi lại liên tục
+      initialized = true;
       return null;
     }
   };

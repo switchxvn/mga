@@ -108,8 +108,15 @@ export const useAuth = () => {
       }
       user.value = null
 
-      // Redirect to login
-      router.push('/auth/login')
+      // Sử dụng window.location.href để đảm bảo trang được tải lại hoàn toàn
+      // Điều này giúp Nuxt tải lại layout auth thay vì giữ layout default
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login'
+        return
+      }
+      
+      // Fallback nếu window không khả dụng (ít khi xảy ra)
+      router.push({ path: '/auth/login', replace: true })
     } catch (err: any) {
       error.value = 'An error occurred during logout'
       throw err
@@ -202,7 +209,9 @@ export const useAuth = () => {
           
           // Redirect to login page if not already there
           if (process.client && window.location.pathname !== '/auth/login') {
-            router.push('/auth/login');
+            // Sử dụng window.location.href để đảm bảo trang được tải lại hoàn toàn
+            window.location.href = '/auth/login';
+            return false;
           }
         }
         
