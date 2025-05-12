@@ -1,21 +1,25 @@
 <template>
   <div class="min-h-screen bg-slate-50">
     <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
-      <div class="flex flex-col items-center gap-2">
-        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
-        <p class="text-sm text-slate-500">Loading...</p>
+    <div v-if="loading" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div class="flex flex-col items-center gap-3 p-8 bg-white rounded-lg shadow-xl">
+        <div class="relative h-16 w-16">
+          <div class="absolute inset-0 rounded-full border-8 border-slate-200"></div>
+          <div class="absolute inset-0 rounded-full border-8 border-primary border-r-transparent animate-spin"></div>
+        </div>
+        <p class="text-lg font-medium text-slate-700">Đang tạo sản phẩm...</p>
+        <p class="text-sm text-slate-500">Vui lòng đợi trong giây lát</p>
       </div>
     </div>
 
     <!-- Content Area -->
     <div v-else class="min-h-screen bg-slate-50">
       <div class="flex-1 overflow-y-auto">
-        <div class="space-y-6">
+        <div class="space-y-6 pb-10">
           <!-- Header -->
           <PageHeader
-            title="Create Product"
-            description="Add a new product to your store"
+            title="Tạo sản phẩm mới"
+            description="Thêm sản phẩm mới vào cửa hàng của bạn"
           >
             <template #actions>
               <!-- Language Switcher -->
@@ -29,7 +33,7 @@
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
               >
                 <XIcon class="w-4 h-4 mr-2" />
-                Cancel
+                Hủy
               </NuxtLink>
               
               <button 
@@ -38,33 +42,35 @@
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
               >
                 <SaveAllIcon class="w-4 h-4 mr-2" />
-                {{ loading ? 'Creating...' : 'Create Product' }}
+                {{ loading ? 'Đang tạo...' : 'Tạo sản phẩm' }}
               </button>
             </template>
           </PageHeader>
 
           <!-- Tabs -->
-          <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              @click="tab.id !== 'inventory' || !form.hasVariants ? currentTab = tab.id : null"
-              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative group"
-              :class="{
-                'bg-primary text-white': currentTab === tab.id,
-                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id,
-                'opacity-50 cursor-not-allowed': tab.id === 'inventory' && form.hasVariants
-              }"
-            >
-              <component :is="tab.icon" class="w-4 h-4" />
-              {{ tab.name }}
-              <div v-if="tab.id === 'inventory' && form.hasVariants" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                Inventory is disabled because this product has variants. Please manage inventory for individual variants in the Variants tab.
-              </div>
-            </button>
-          </nav>
+          <div class="sticky top-0 z-10 bg-slate-50 pt-2 pb-4">
+            <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit shadow-sm">
+              <button
+                v-for="tab in tabs"
+                :key="tab.id"
+                @click="tab.id !== 'inventory' || !form.hasVariants ? currentTab = tab.id : null"
+                class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative group"
+                :class="{
+                  'bg-primary text-white shadow-sm': currentTab === tab.id,
+                  'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id,
+                  'opacity-50 cursor-not-allowed': tab.id === 'inventory' && form.hasVariants
+                }"
+              >
+                <component :is="tab.icon" class="w-4 h-4" />
+                {{ tab.name }}
+                <div v-if="tab.id === 'inventory' && form.hasVariants" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  Inventory is disabled because this product has variants. Please manage inventory for individual variants in the Variants tab.
+                </div>
+              </button>
+            </nav>
+          </div>
 
-          <div class="grid gap-6">
+          <div class="grid gap-6 px-1">
             <!-- Basic Info Tab -->
             <div v-show="currentTab === 'basic'">
               <ProductEditor
@@ -208,7 +214,18 @@ const toast = useToast()
 const loading = ref(false)
 
 // Initialize currentTab
-const currentTab = ref('basic')
+// Initialize currentTab from query params or default to 'basic'
+const currentTab = ref(route.query.tab?.toString() || 'basic')
+
+// Watch for tab changes and update URL
+watch(currentTab, (newTab) => {
+  router.replace({ 
+    query: { 
+      ...route.query,
+      tab: newTab 
+    }
+  })
+})
 
 const tabs = [
   { 
@@ -433,6 +450,15 @@ onMounted(async () => {
     const defaultLang = await trpc.admin.languages.getDefaultLanguage.query()
     selectedLanguage.value = defaultLang?.code || 'en'
     defaultLanguage.value = defaultLang?.code || 'en'
+    
+    // Cập nhật tab từ query parameter nếu có
+    if (route.query.tab) {
+      const tabId = route.query.tab.toString()
+      // Kiểm tra nếu tab tồn tại trong danh sách tabs
+      if (tabs.some(tab => tab.id === tabId)) {
+        currentTab.value = tabId
+      }
+    }
   } catch (error) {
     console.error('Failed to fetch default language:', error)
     selectedLanguage.value = 'en' // Fallback nếu không lấy được ngôn ngữ mặc định
