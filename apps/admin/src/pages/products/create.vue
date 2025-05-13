@@ -1,21 +1,25 @@
 <template>
   <div class="min-h-screen bg-slate-50">
     <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
-      <div class="flex flex-col items-center gap-2">
-        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
-        <p class="text-sm text-slate-500">Loading...</p>
+    <div v-if="loading" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div class="flex flex-col items-center gap-3 p-8 bg-white rounded-lg shadow-xl">
+        <div class="relative h-16 w-16">
+          <div class="absolute inset-0 rounded-full border-8 border-slate-200"></div>
+          <div class="absolute inset-0 rounded-full border-8 border-primary border-r-transparent animate-spin"></div>
+        </div>
+        <p class="text-lg font-medium text-slate-700">Đang tạo sản phẩm...</p>
+        <p class="text-sm text-slate-500">Vui lòng đợi trong giây lát</p>
       </div>
     </div>
 
     <!-- Content Area -->
     <div v-else class="min-h-screen bg-slate-50">
       <div class="flex-1 overflow-y-auto">
-        <div class="space-y-6">
+        <div class="space-y-6 pb-10">
           <!-- Header -->
           <PageHeader
-            title="Create Product"
-            description="Add a new product to your store"
+            title="Tạo sản phẩm mới"
+            description="Thêm sản phẩm mới vào cửa hàng của bạn"
           >
             <template #actions>
               <!-- Language Switcher -->
@@ -29,7 +33,7 @@
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
               >
                 <XIcon class="w-4 h-4 mr-2" />
-                Cancel
+                Hủy
               </NuxtLink>
               
               <button 
@@ -38,35 +42,41 @@
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
               >
                 <SaveAllIcon class="w-4 h-4 mr-2" />
-                {{ loading ? 'Creating...' : 'Create Product' }}
+                {{ loading ? 'Đang tạo...' : 'Tạo sản phẩm' }}
               </button>
             </template>
           </PageHeader>
 
           <!-- Tabs -->
-          <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              @click="tab.id !== 'inventory' || !form.hasVariants ? currentTab = tab.id : null"
-              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative group"
-              :class="{
-                'bg-primary text-white': currentTab === tab.id,
-                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id,
-                'opacity-50 cursor-not-allowed': tab.id === 'inventory' && form.hasVariants
-              }"
-            >
-              <component :is="tab.icon" class="w-4 h-4" />
-              {{ tab.name }}
-              <div v-if="tab.id === 'inventory' && form.hasVariants" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                Inventory is disabled because this product has variants. Please manage inventory for individual variants in the Variants tab.
-              </div>
-            </button>
-          </nav>
+          <div class="sticky top-0 z-10 bg-slate-50 pt-2 pb-4">
+            <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit shadow-sm">
+              <button
+                v-for="tab in tabs"
+                :key="tab.id"
+                @click="tab.id !== 'inventory' || !form.hasVariants ? currentTab = tab.id : null"
+                class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative group"
+                :class="{
+                  'bg-primary text-white shadow-sm': currentTab === tab.id,
+                  'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id,
+                  'opacity-50 cursor-not-allowed': tab.id === 'inventory' && form.hasVariants
+                }"
+              >
+                <component :is="tab.icon" class="w-4 h-4" />
+                {{ tab.name }}
+                <div v-if="tab.id === 'inventory' && form.hasVariants" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  Kho hàng đã bị vô hiệu hóa vì sản phẩm này có biến thể. Vui lòng quản lý kho cho từng biến thể trong tab Biến thể.
+                </div>
+              </button>
+            </nav>
+          </div>
 
-          <div class="grid gap-6">
+          <div class="grid gap-6 px-1">
             <!-- Basic Info Tab -->
             <div v-show="currentTab === 'basic'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'basic')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'basic')?.description }}</p>
+              </div>
               <ProductEditor
                 v-model:name="form.name"
                 v-model:slug="form.slug"
@@ -76,6 +86,7 @@
                 v-model:compareAtPrice="form.compareAtPrice"
                 v-model:sku="form.sku"
                 v-model:barcode="form.barcode"
+                v-model:isContactPrice="form.isContactPrice"
                 :editor-options="editorOptions"
                 :disable-price="form.hasVariants"
                 @generate-slug="generateSlug"
@@ -84,14 +95,23 @@
 
             <!-- Media Tab -->
             <div v-show="currentTab === 'media'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'media')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'media')?.description }}</p>
+              </div>
               <ProductMedia
                 v-model:thumbnail="form.thumbnail"
                 v-model:gallery="form.gallery"
+                v-model:videoUrl="form.videoReview"
               />
             </div>
 
             <!-- Categories Tab -->
             <div v-show="currentTab === 'categories'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'categories')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'categories')?.description }}</p>
+              </div>
               <ProductCategories
                 v-model="form.categoryIds"
               />
@@ -99,6 +119,10 @@
 
             <!-- Variants Tab -->
             <div v-show="currentTab === 'variants'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'variants')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'variants')?.description }}</p>
+              </div>
               <ProductVariants
                 v-model="form.variants"
                 v-model:hasVariants="form.hasVariants"
@@ -107,6 +131,10 @@
 
             <!-- Specifications Tab -->
             <div v-show="currentTab === 'specifications'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'specifications')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'specifications')?.description }}</p>
+              </div>
               <div class="bg-white rounded-lg shadow-sm p-6 space-y-6">
                 <ProductSpecificationsNew
                   v-model="form.specifications"
@@ -117,6 +145,10 @@
 
             <!-- Inventory Tab -->
             <div v-show="currentTab === 'inventory'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'inventory')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'inventory')?.description }}</p>
+              </div>
               <ProductInventory
                 v-model:trackInventory="form.trackInventory"
                 v-model:quantity="form.quantity"
@@ -130,13 +162,17 @@
                 <InfoIcon class="w-5 h-5 mr-2 flex-shrink-0" />
                 <div>
                   <p><span class="font-medium">Thông báo:</span> Quản lý số lượng đã bị vô hiệu hóa vì sản phẩm này có biến thể.</p>
-                  <p>Số lượng được quản lý riêng cho từng biến thể trong <button @click="currentTab = 'variants'" class="underline font-medium hover:text-blue-900">tab Variants</button>.</p>
+                  <p>Số lượng được quản lý riêng cho từng biến thể trong <button @click="currentTab = 'variants'" class="underline font-medium hover:text-blue-900">tab Biến thể</button>.</p>
                 </div>
               </div>
             </div>
 
             <!-- SEO Tab -->
             <div v-show="currentTab === 'seo'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'seo')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'seo')?.description }}</p>
+              </div>
               <ProductSEO
                 v-model:meta-description="form.metaDescription"
                 v-model:tags-input="tagsInput"
@@ -148,6 +184,10 @@
 
             <!-- Settings Tab -->
             <div v-show="currentTab === 'settings'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'settings')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'settings')?.description }}</p>
+              </div>
               <ProductSettings
                 v-model:published="form.published"
                 v-model:featured="form.featured"
@@ -167,8 +207,8 @@ import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '../../composables/useTrpc'
 import slugify from 'slugify'
-import { useHead } from 'nuxt/app'
-import { useToast } from 'vue-toastification'
+import { useHead, useNuxtApp } from 'nuxt/app'
+import { useToast } from '../../composables/useToast'
 
 // Import Lucide icons
 import {
@@ -204,52 +244,74 @@ import LanguageSwitcher from '../../components/common/LanguageSwitcher.vue'
 const trpc = useTrpc()
 const route = useRoute()
 const router = useRouter()
-const toast = useToast()
+const nuxtApp = useNuxtApp()
 const loading = ref(false)
 
+// Chỉ khởi tạo toast ở phía client
+const toast = process.client ? useToast() : null
+
 // Initialize currentTab
-const currentTab = ref('basic')
+// Initialize currentTab from query params or default to 'basic'
+const currentTab = ref(route.query.tab?.toString() || 'basic')
+
+// Watch for tab changes and update URL
+watch(currentTab, (newTab) => {
+  router.replace({ 
+    query: { 
+      ...route.query,
+      tab: newTab 
+    }
+  })
+})
 
 const tabs = [
   { 
     id: 'basic', 
-    name: 'Basic Info', 
-    icon: FileTextIcon
+    name: 'Thông tin cơ bản', 
+    icon: FileTextIcon,
+    description: 'Thông tin chung về sản phẩm'
   },
   { 
     id: 'media', 
-    name: 'Media', 
-    icon: ImageIcon
+    name: 'Hình ảnh', 
+    icon: ImageIcon,
+    description: 'Quản lý ảnh và video sản phẩm'
   },
   {
     id: 'categories',
-    name: 'Categories',
-    icon: FolderIcon
+    name: 'Danh mục',
+    icon: FolderIcon,
+    description: 'Phân loại sản phẩm vào danh mục'
   },
   {
     id: 'variants',
-    name: 'Variants',
-    icon: LayersIcon
+    name: 'Biến thể',
+    icon: LayersIcon,
+    description: 'Tạo các phiên bản khác nhau của sản phẩm'
   },
   {
     id: 'specifications',
-    name: 'Specifications',
-    icon: ClipboardListIcon
+    name: 'Thông số kỹ thuật',
+    icon: ClipboardListIcon,
+    description: 'Các thông số chi tiết của sản phẩm'
   },
   {
     id: 'inventory',
-    name: 'Inventory',
-    icon: PackageIcon
+    name: 'Kho hàng',
+    icon: PackageIcon,
+    description: 'Quản lý số lượng và tình trạng kho'
   },
   { 
     id: 'seo', 
     name: 'SEO', 
-    icon: SearchIcon
+    icon: SearchIcon,
+    description: 'Tối ưu hóa cho công cụ tìm kiếm'
   },
   { 
     id: 'settings', 
-    name: 'Settings', 
-    icon: SettingsIcon
+    name: 'Cài đặt', 
+    icon: SettingsIcon,
+    description: 'Cấu hình và thiết lập cho sản phẩm'
   }
 ]
 
@@ -258,7 +320,7 @@ interface ProductVariant {
   name: string
   sku: string
   barcode: string
-  price: number
+  price: number | null
   compareAtPrice: number | null
   quantity: number
   stock: number
@@ -270,7 +332,7 @@ interface ProductForm {
   slug: string
   description: string
   shortDescription: string
-  price: number
+  price: number | null
   compareAtPrice: number | null
   sku: string
   barcode: string
@@ -292,6 +354,7 @@ interface ProductForm {
   stockMovements: any[]
   updatedAt: string
   specifications: Array<{name: string, value: string, position: number, isNew?: boolean}>
+  videoReview: string
   translations: Record<string, {
     name: string
     slug: string
@@ -299,6 +362,9 @@ interface ProductForm {
     shortDescription: string
     metaDescription: string
   }>
+  isContactPrice: boolean
+  _tempPrice?: number
+  _tempCompareAtPrice?: number | null
 }
 
 const initialForm: ProductForm = {
@@ -327,8 +393,10 @@ const initialForm: ProductForm = {
   allowBackorders: false,
   stockMovements: [],
   specifications: [],
+  videoReview: '',
   updatedAt: new Date().toISOString(),
-  translations: {}
+  translations: {},
+  isContactPrice: false
 }
 
 const form = ref({ ...initialForm })
@@ -433,6 +501,15 @@ onMounted(async () => {
     const defaultLang = await trpc.admin.languages.getDefaultLanguage.query()
     selectedLanguage.value = defaultLang?.code || 'en'
     defaultLanguage.value = defaultLang?.code || 'en'
+    
+    // Cập nhật tab từ query parameter nếu có
+    if (route.query.tab) {
+      const tabId = route.query.tab.toString()
+      // Kiểm tra nếu tab tồn tại trong danh sách tabs
+      if (tabs.some(tab => tab.id === tabId)) {
+        currentTab.value = tabId
+      }
+    }
   } catch (error) {
     console.error('Failed to fetch default language:', error)
     selectedLanguage.value = 'en' // Fallback nếu không lấy được ngôn ngữ mặc định
@@ -466,7 +543,7 @@ const createProduct = async () => {
     // Chuẩn bị dữ liệu sản phẩm theo schema API
     const productData: any = {
       sku: form.value.sku,
-      price: form.value.price,
+      price: form.value.price, // Đã là null khi Giá liên hệ được bật
       comparePrice: form.value.compareAtPrice,
       thumbnail: form.value.thumbnail,
       gallery: form.value.gallery,
@@ -498,7 +575,7 @@ const createProduct = async () => {
         // Chuẩn bị dữ liệu cho variant
         const variantData: any = {
           sku: variant.sku,
-          price: variant.price,
+          price: variant.price, // Đã là null khi Giá liên hệ được bật cho variant
           comparePrice: variant.compareAtPrice,
           quantity: variant.quantity || variant.stock || 0
         }
@@ -524,31 +601,28 @@ const createProduct = async () => {
     // Gọi API tạo sản phẩm
     await trpc.admin.products.createProduct.mutate(productData)
 
-    toast.success('Product created successfully!')
+    if (process.client && toast) {
+      toast.success('Product created successfully!')
+    }
     router.push('/products')
   } catch (error: any) {
     console.error('Failed to create product:', error)
     
     // Hiển thị thông báo lỗi với ngôn ngữ hiện tại
-    let errorMessage = `[${selectedLanguage.value}] `
-    
-    // Handle tRPC error
-    if (error.cause) {
-      errorMessage += error.cause
-    } else if (error.message) {
-      errorMessage += error.message
-    } else {
-      errorMessage += 'Failed to create product. Please try again.'
+    if (process.client && toast) {
+      let errorMessage = `[${selectedLanguage.value}] `
+      
+      // Handle tRPC error
+      if (error.cause) {
+        errorMessage += error.cause
+      } else if (error.message) {
+        errorMessage += error.message
+      } else {
+        errorMessage += 'Failed to create product. Please try again.'
+      }
+      
+      toast.error(errorMessage, 8000)
     }
-    
-    toast.error(errorMessage, {
-      timeout: 8000,
-      closeButton: true,
-      icon: true,
-      closeOnClick: false,
-      pauseOnHover: true,
-      draggable: true
-    })
   } finally {
     loading.value = false
   }
@@ -581,6 +655,32 @@ if (process.client) {
     ]
   }
 }
+
+// Theo dõi sự thay đổi của isContactPrice để cập nhật giá
+watch(() => form.value.isContactPrice, (newValue) => {
+  if (newValue) {
+    // Lưu giá hiện tại nếu nó không phải là giá liên hệ
+    if (form.value.price !== null) {
+      form.value._tempPrice = form.value.price;
+      form.value.price = null;
+    }
+    // Lưu giá so sánh hiện tại nếu có
+    if (form.value.compareAtPrice !== null) {
+      form.value._tempCompareAtPrice = form.value.compareAtPrice;
+      form.value.compareAtPrice = null;
+    }
+  } else {
+    // Khôi phục giá đã lưu hoặc đặt thành 0
+    form.value.price = form.value._tempPrice || 0;
+    // Khôi phục giá so sánh đã lưu hoặc giữ nguyên null
+    form.value.compareAtPrice = form.value._tempCompareAtPrice !== undefined ? 
+      form.value._tempCompareAtPrice : null;
+    
+    // Xóa các giá trị tạm thời
+    form.value._tempPrice = undefined;
+    form.value._tempCompareAtPrice = undefined;
+  }
+});
 </script>
 
 <style>

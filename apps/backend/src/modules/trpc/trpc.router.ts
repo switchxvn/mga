@@ -32,9 +32,10 @@ import {
   uploadRouter,
   commentRouter,
   reviewRouter,
-  adminRouter,
-  siteStatisticsRouter
+  siteStatisticsRouter,
+  userSessionRouter
 } from './routers';
+import { adminRouter } from './routers/admin/index';
 
 @Injectable()
 export class TrpcRouter {
@@ -77,6 +78,7 @@ export class TrpcRouter {
       review: reviewRouter,
       admin: adminRouter,
       siteStatistics: siteStatisticsRouter,
+      userSession: userSessionRouter,
     });
   }
 

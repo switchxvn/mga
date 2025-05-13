@@ -18,6 +18,9 @@ import { adminMenuAdminRouter } from './admin-menu.router'
 import { ticketScannerRouter } from './ticket-scanner.router'
 import { roleAdminRouter } from './role.router'
 import { paymentAdminRouter } from './payment.router'
+import { heroSliderAdminRouter } from './hero-slider.router'
+import { userSessionAdminRouter } from './user-session.router'
+import { userPageVisitAdminRouter } from './user-page-visit.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -39,4 +42,7 @@ export const adminRouter = router({
   ticketScanner: ticketScannerRouter,
   roles: roleAdminRouter,
   payment: paymentAdminRouter,
+  heroSlider: heroSliderAdminRouter,
+  userSession: userSessionAdminRouter,
+  userPageVisit: userPageVisitAdminRouter,
 }) 

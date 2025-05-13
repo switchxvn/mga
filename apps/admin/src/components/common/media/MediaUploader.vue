@@ -1,9 +1,11 @@
 <template>
-  <div class="relative group">
+  <div class="relative w-full h-full">
     <!-- Preview Area -->
     <div
-      class="relative aspect-square rounded-lg border border-slate-200 bg-slate-50 overflow-hidden"
-      :class="{ 'border-primary': isDragging }"
+      class="relative rounded-lg overflow-hidden transition-all duration-300 cursor-pointer shadow-sm group h-full"
+      :class="[
+        isDragging ? 'ring-2 ring-primary border-primary bg-primary/5' : 'border-2 border-dashed border-slate-300 hover:border-primary bg-slate-50 hover:bg-slate-100'
+      ]"
       @dragenter.prevent="isDragging = true"
       @dragleave.prevent="isDragging = false"
       @dragover.prevent
@@ -12,24 +14,47 @@
     >
       <!-- Preview Image -->
       <template v-if="preview">
-        <img
-          :src="preview"
-          :alt="alt"
-          class="w-full h-full object-cover"
-          @error="onImageError"
-        />
-        <!-- Hover Overlay -->
-        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div class="text-white text-sm">Click or drag to replace</div>
+        <div class="absolute inset-0 w-full h-full">
+          <img
+            :src="preview"
+            :alt="alt"
+            class="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+            @error="onImageError"
+          />
+          <!-- Hover Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end p-4">
+            <div class="flex flex-col items-center mb-2">
+              <div class="p-2 rounded-full bg-white/20 mb-2">
+                <UploadCloudIcon class="w-6 h-6 text-white" />
+              </div>
+              <div class="text-white text-sm font-medium">Thay đổi ảnh</div>
+            </div>
+          </div>
         </div>
       </template>
 
-      <!-- Upload Placeholder -->
+      <!-- Upload Placeholder - Trống, chưa có ảnh -->
       <template v-else>
-        <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <UploadCloudIcon class="w-8 h-8 text-slate-400" />
-          <div class="text-sm text-slate-500 text-center px-4">
-            <span class="font-medium">Click to upload</span> or drag and drop
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 animate-pulse-subtle">
+          <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+            <ImagePlusIcon class="w-10 h-10 text-primary" />
+          </div>
+          <div class="text-center">
+            <div class="text-base font-medium text-slate-700 mb-1">
+              Tải ảnh đại diện
+            </div>
+            <div class="text-sm text-slate-500 max-w-xs">
+              Kéo và thả ảnh vào đây hoặc nhấp vào khu vực này để chọn ảnh
+            </div>
+            <div class="mt-4">
+              <button class="px-5 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center mx-auto gap-2">
+                <UploadCloudIcon class="w-4 h-4" />
+                Chọn ảnh
+              </button>
+            </div>
+          </div>
+          <div class="text-xs text-slate-400 mt-2 border-t border-slate-200 pt-3 w-full text-center">
+            Định dạng hỗ trợ: JPG, PNG, GIF • Tối đa 5MB
           </div>
         </div>
       </template>
@@ -37,11 +62,14 @@
       <!-- Loading Overlay -->
       <div
         v-if="isUploading"
-        class="absolute inset-0 bg-black/50 flex items-center justify-center"
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10"
       >
-        <div class="flex flex-col items-center gap-2">
-          <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
-          <div class="text-white text-sm">Uploading...</div>
+        <div class="flex flex-col items-center gap-3">
+          <div class="relative h-12 w-12">
+            <div class="absolute inset-0 rounded-full border-4 border-primary/30"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-primary border-r-transparent animate-spin"></div>
+          </div>
+          <div class="text-white text-sm font-medium">Đang tải lên...</div>
         </div>
       </div>
     </div>
@@ -58,8 +86,9 @@
     <!-- Error Message -->
     <div
       v-if="error"
-      class="absolute -bottom-6 left-0 text-sm text-red-500"
+      class="absolute -bottom-6 left-0 text-sm text-red-500 bg-red-50 px-2 py-1 rounded flex items-center gap-1"
     >
+      <AlertCircleIcon class="w-4 h-4" />
       {{ error }}
     </div>
   </div>
@@ -67,7 +96,8 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { UploadCloudIcon } from 'lucide-vue-next'
+import { UploadCloudIcon, AlertCircleIcon, ImagePlusIcon } from 'lucide-vue-next'
+import { useUpload } from '../../../composables/useUpload'
 
 // Base64 encoded transparent placeholder image
 const FALLBACK_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
@@ -87,13 +117,17 @@ const emit = defineEmits<{
   'error': [message: string]
 }>()
 
+const { uploadImage, isUploading: uploading } = useUpload()
 const isDragging = ref(false)
 const isUploading = ref(false)
 const error = ref('')
+const progress = ref(0)
 
 const fileInput = ref<HTMLInputElement>()
 
 const validateFile = (file: File): boolean => {
+  error.value = ''
+  
   // Check file type
   if (props.accept) {
     const acceptedTypes = props.accept.split(',').map(type => type.trim())
@@ -103,31 +137,15 @@ const validateFile = (file: File): boolean => {
       }
       return file.type.match(new RegExp(type.replace('*', '.*')))
     })) {
-      error.value = 'Invalid file type'
+      error.value = 'File không đúng định dạng'
       return false
     }
   }
 
   // Check file size
   if (props.maxSize && file.size > props.maxSize) {
-    error.value = `File size should not exceed ${formatFileSize(props.maxSize)}`
+    error.value = `Kích thước file không được vượt quá ${formatFileSize(props.maxSize)}`
     return false
-  }
-
-  // Check image dimensions if aspectRatio is specified
-  if (props.aspectRatio) {
-    return new Promise((resolve) => {
-      const img = new Image()
-      img.onload = () => {
-        const ratio = img.width / img.height
-        if (Math.abs(ratio - props.aspectRatio!) > 0.01) {
-          error.value = `Image aspect ratio should be ${props.aspectRatio}`
-          resolve(false)
-        }
-        resolve(true)
-      }
-      img.src = URL.createObjectURL(file)
-    })
   }
 
   return true
@@ -154,17 +172,17 @@ const handleFile = async (file: File) => {
   error.value = ''
   
   // Validate file
-  if (!await validateFile(file)) return
+  if (!validateFile(file)) return
 
   try {
     isUploading.value = true
-
-    // Here you would typically upload the file to your server/storage
-    // For now, we'll just create an object URL
-    const url = URL.createObjectURL(file)
+    progress.value = 0
+    
+    // Sử dụng uploadImage từ composable
+    const url = await uploadImage(file, 'products')
     emit('update:modelValue', url)
-  } catch (err) {
-    error.value = 'Failed to upload file'
+  } catch (err: any) {
+    error.value = err?.message || 'Tải ảnh thất bại'
     console.error('Upload error:', err)
   } finally {
     isUploading.value = false
@@ -196,4 +214,29 @@ watch(() => props.preview, (newPreview) => {
     emit('update:modelValue', newPreview)
   }
 })
-</script> 
+</script>
+
+<style scoped>
+.opacity-enter-active,
+.opacity-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.opacity-enter-from,
+.opacity-leave-to {
+  opacity: 0;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+</style> 

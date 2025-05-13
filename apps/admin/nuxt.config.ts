@@ -33,6 +33,7 @@ export default defineNuxtConfig({
   plugins: [
     '~/plugins/trpc',
     '~/plugins/toast',
+    '~/plugins/theme',
   ],
 
   imports: {

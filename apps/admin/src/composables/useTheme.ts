@@ -262,19 +262,22 @@ export function useTheme() {
     }
 
     try {
-      const response = await trpc.theme.getActiveTheme.query();
+      // Lấy tất cả theme
+      const themes = await trpc.admin.theme.getAll.query();
+      // Tìm theme active
+      const activeThemeData = themes.find(t => t.isActive);
       
-      if (response) {
-        activeTheme.value = response;
+      if (activeThemeData) {
+        activeTheme.value = activeThemeData;
         initialized = true;
         
-        if (response.colors && typeof window !== 'undefined') {
+        if (activeThemeData.colors && typeof window !== 'undefined') {
           // Áp dụng theme từ API ngay lập tức
-          updateCssVariables(response.colors as unknown as ThemeColors);
+          updateCssVariables(activeThemeData.colors as unknown as ThemeColors);
         }
       }
       
-      return response;
+      return activeThemeData;
     } catch (error) {
       console.error('Failed to initialize theme:', error);
       // Đảm bảo khi lỗi vẫn đánh dấu là đã initialized để không gọi lại liên tục
@@ -295,6 +298,15 @@ export function useTheme() {
     theme: activeTheme,
     isDark,
     initializeTheme,
-    updateCssVariables
+    updateCssVariables,
+    getActiveTheme: async () => {
+      try {
+        const themes = await trpc.admin.theme.getAll.query();
+        return themes.find(t => t.isActive) || null;
+      } catch (error) {
+        console.error('Failed to get active theme:', error);
+        return null;
+      }
+    }
   };
 } 

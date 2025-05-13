@@ -54,4 +54,41 @@ declare module '@backend/modules/trpc/routers' {
       };
     };
   }
+}
+
+// Thêm định nghĩa cho router UserSession
+declare module '@backend/modules/trpc/routers' {
+  interface AppRouter {
+    userSession: {
+      startSession: {
+        mutate: (input: {
+          sessionId: string;
+          userId?: number | null;
+          ipAddress?: string;
+          userAgent?: string;
+          deviceInfo?: Record<string, any>;
+          referrer?: string;
+          landingPage?: string;
+        }) => Promise<any>;
+      };
+      updateSession: {
+        mutate: (input: {
+          sessionId: string;
+          lastActivity?: Date;
+          pageViews?: number;
+          exitPage?: string;
+          isActive?: boolean;
+        }) => Promise<any>;
+      };
+      endSession: {
+        mutate: (input: {
+          sessionId: string;
+          exitPage?: string;
+        }) => Promise<any>;
+      };
+      getActiveUserCount: {
+        query: () => Promise<number>;
+      };
+    };
+  }
 } 

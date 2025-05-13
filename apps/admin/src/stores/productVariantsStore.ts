@@ -6,13 +6,15 @@ import { useToast } from 'vue-toastification';
 export interface VariantItem {
   id?: number;
   name: string;
-  price: number;
+  price: number | null;
   sku: string;
   stock: number;
   quantity?: number;
   options: Record<string, string>;
   barcode?: string;
   compareAtPrice?: number | null;
+  _tempPrice?: number;
+  _tempCompareAtPrice?: number | null;
 }
 
 // Định nghĩa interface cho state của store
