@@ -31,6 +31,8 @@ export function useUpload() {
       // Báo cáo tiến trình bắt đầu
       onProgress(10)
       
+      console.log(`Starting upload process for: ${file.name}`);
+      
       // 1. Lấy presigned URL từ API
       console.log(`Getting presigned URL for: ${file.name}, type: ${file.type}, size: ${file.size} bytes, folder: ${folder}`)
       const presignedData = await trpc.upload.getPresignedUrl.mutate({
@@ -76,6 +78,7 @@ export function useUpload() {
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
               const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              console.log(`Upload progress: ${percentCompleted}%`);
               onProgress(50 + percentCompleted * 0.5) // 50% -> 100%
             }
           }
@@ -103,6 +106,9 @@ export function useUpload() {
                             uploadError?.message || 
                             'Unknown upload error'
         const statusCode = uploadError?.response?.status || 'unknown'
+        const responseData = uploadError?.response?.data || 'No response data';
+        
+        console.error(`Upload server error - Status: ${statusCode}, Message: ${errorMessage}`, responseData);
         
         showError(`Upload failed (${statusCode}): ${errorMessage}`)
         throw new Error(`Upload failed: ${errorMessage}`)
@@ -120,7 +126,9 @@ export function useUpload() {
   const uploadImage = async (file: File, folder = 'products'): Promise<string> => {
     try {
       isUploading.value = true
+      console.log(`Uploading image: ${file.name} to folder: ${folder}`);
       const result = await uploadFile({ file, folder })
+      console.log(`Upload successful, URL: ${result.url}`);
       return result.url
     } catch (error: any) {
       console.error('Image upload failed:', error)

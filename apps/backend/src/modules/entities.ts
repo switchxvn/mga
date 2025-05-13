@@ -5,6 +5,7 @@ import { PaymentTransaction } from './payment/entities/payment-transaction.entit
 // Order
 import { Order } from './order/entities/order.entity';
 import { OrderItem } from './order/entities/order-item.entity';
+import { OrderTicketScanHistory } from './order/entities/order-ticket-scan-history.entity';
 
 // Mail
 import { MailConfig } from './mail/entities/mail-config.entity';
@@ -47,6 +48,10 @@ import { PostTag } from './post/entities/post-tag.entity';
 import { User } from './user/entities/user.entity';
 import { Role } from './user/entities/role.entity';
 import { Permission } from './user/entities/permission.entity';
+
+// User Session
+import { UserSession } from './user-session/entities/user-session.entity';
+import { UserPageVisit } from './user-session/entities/user-page-visit.entity';
 
 // Profile
 import { UserProfile } from './profile/entities/user-profile.entity';
@@ -146,6 +151,7 @@ export const entities: (new () => any)[] = [
   // Order
   Order,
   OrderItem,
+  OrderTicketScanHistory,
   
   // Mail
   MailConfig,
@@ -188,6 +194,10 @@ export const entities: (new () => any)[] = [
   User,
   Role,
   Permission,
+  
+  // User Session
+  UserSession,
+  UserPageVisit,
   
   // Profile
   UserProfile,

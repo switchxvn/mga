@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeMount } from 'vue';
 import { useTheme } from '../composables/useTheme';
 import { useLogo } from '../composables/useLogo';
 
@@ -7,9 +7,24 @@ const { theme, initializeTheme } = useTheme();
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
 const isLoading = ref(true);
 
-onMounted(async () => {
+// Khởi tạo theme trước khi component được mounted
+onBeforeMount(async () => {
   try {
     await initializeTheme();
+  } catch (error) {
+    console.error('Failed to initialize theme in auth layout (onBeforeMount):', error);
+  }
+});
+
+// Khởi tạo theme khi component được mounted
+onMounted(async () => {
+  try {
+    // Khởi tạo theme một lần nữa để đảm bảo
+    await initializeTheme();
+    // Đợi một chút để CSS được áp dụng
+    await new Promise(resolve => setTimeout(resolve, 100));
+  } catch (error) {
+    console.error('Failed to initialize theme in auth layout (onMounted):', error);
   } finally {
     isLoading.value = false;
   }
@@ -37,11 +52,10 @@ onMounted(async () => {
     <div class="flex-1 flex items-center justify-center p-8 bg-gray-50 dark:bg-gray-900">
       <template v-if="isLoading">
         <div class="text-center">
-          <LoadingIcon size="xl">
-            <span class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-              Loading theme...
-            </span>
-          </LoadingIcon>
+          <div class="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <span class="mt-4 block text-sm text-gray-500 dark:text-gray-400">
+            Loading theme...
+          </span>
         </div>
       </template>
 

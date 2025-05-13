@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatPrice, ProductType } from "@ew/shared";
+import { formatPrice, ProductType, OrderType } from "@ew/shared";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import PhoneInput from "~/components/form/PhoneInput.vue";
@@ -33,6 +33,13 @@ const isLoadingPaymentMethods = ref(false);
 
 // Booking data
 const bookingData = ref(loadBookingData());
+
+// Helper function to properly format dates for API
+const formatDate = (dateString: string): Date => {
+  const date = new Date(dateString);
+  // Ensure it's a valid date
+  return isNaN(date.getTime()) ? new Date() : date;
+};
 
 // Computed
 const canProceed = computed(() => {
@@ -119,6 +126,8 @@ const handleSubmit = async () => {
       phoneCode: formData.value.phoneCode,
       phoneNumber: formData.value.phoneNumber,
       email: formData.value.email || undefined,
+      customerName: formData.value.fullName,
+      orderType: OrderType.TICKET,
       paymentMethod:
         paymentMethods.value.find((m) => m.id === formData.value.paymentMethodId)?.code ||
         "",
@@ -130,6 +139,7 @@ const handleSubmit = async () => {
         unitPrice: Number(variant.unitPrice),
         totalPrice: Number(variant.totalPrice),
         productType: ProductType.TICKET,
+        travelDate: formatDate(bookingData.value!.date),
       })),
       totalAmount: Number(bookingData.value.totalAmount),
       returnUrl: `${window.location.origin}/checkout/success`,

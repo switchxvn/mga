@@ -18,6 +18,13 @@ export class PaymentAdminService {
     return this.paymentMethodRepository.find();
   }
 
+  async getActivePaymentMethods() {
+    return this.paymentMethodRepository.find({
+      where: { is_active: true },
+      order: { name: 'ASC' }
+    });
+  }
+
   async updatePaymentMethodStatus(id: number, isActive: boolean) {
     await this.paymentMethodRepository.update(id, { is_active: isActive });
     return this.paymentMethodRepository.findOne({ where: { id } });

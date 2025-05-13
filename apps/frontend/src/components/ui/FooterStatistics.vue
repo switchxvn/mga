@@ -199,13 +199,9 @@ const getDisplayName = (stat: Statistic): string => {
 // Format số cho dễ đọc
 const formatNumber = (value: number): string => {
   if (value === undefined || value === null || isNaN(value)) return '0';
-  
   if (value >= 1000000) {
-    return (value / 1000000).toFixed(1) + 'M';
-  } else if (value >= 1000) {
-    return (value / 1000).toFixed(1) + 'K';
+    return value.toLocaleString() + 'M';
   }
-  
   return value.toLocaleString();
 };
 

@@ -26,6 +26,7 @@ const shadowLevel = settings.shadowLevel || 'shadow-sm';
 const padding = settings.padding || 'p-6';
 const marginTop = settings.marginTop || 'mt-16';
 const marginBottom = settings.marginBottom || 'mb-16';
+const showTitle = settings.showTitle !== undefined ? settings.showTitle : true;
 const formFields = settings.formFields || {
   showServiceType: true,
   showProfession: true,
@@ -44,7 +45,7 @@ const handleSuccess = () => {
 <template>
   <div id="review-form" class="container mx-auto px-4" :class="[marginTop, marginBottom]">
     <div :class="[backgroundColor, shadowLevel, 'border rounded-lg', borderColor, padding]">
-      <h2 class="text-2xl font-bold mb-4" :class="textColor">
+      <h2 v-if="showTitle" class="text-2xl font-bold mb-4" :class="textColor">
         {{ title }}
       </h2>
       <p v-if="description" class="mb-6" :class="textColor === 'text-gray-900 dark:text-white' ? 'text-gray-600 dark:text-gray-400' : textColor">
@@ -55,6 +56,8 @@ const handleSuccess = () => {
         :show-service-type="formFields.showServiceType"
         :show-profession="formFields.showProfession"
         :show-visit-date="formFields.showVisitDate"
+        :show-card="false"
+        :show-form-title="false"
       />
     </div>
   </div>

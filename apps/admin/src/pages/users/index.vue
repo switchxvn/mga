@@ -156,7 +156,7 @@
           <div class="flex items-center">
             <div class="ml-0">
               <div class="text-sm font-medium text-gray-900 dark:text-white">
-                {{ user.username || "N/A" }}
+                {{ getFullName(user) || user.username || "N/A" }}
               </div>
               <div class="text-sm text-gray-500 dark:text-gray-400">
                 {{ user.email }}
@@ -385,6 +385,9 @@ const resetFilters = () => {
 
 // Helper functions
 const getUserInitials = (user) => {
+  if (user.profile && user.profile.firstName && user.profile.lastName) {
+    return `${user.profile.firstName.charAt(0)}${user.profile.lastName.charAt(0)}`.toUpperCase()
+  }
   if (user.username) {
     return user.username.charAt(0).toUpperCase()
   }
@@ -392,6 +395,20 @@ const getUserInitials = (user) => {
     return user.email.charAt(0).toUpperCase()
   }
   return 'U'
+}
+
+// Get full name from profile
+const getFullName = (user) => {
+  if (user.profile) {
+    if (user.profile.lastName && user.profile.firstName) {
+      return `${user.profile.lastName} ${user.profile.firstName}`.trim()
+    } else if (user.profile.lastName) {
+      return user.profile.lastName
+    } else if (user.profile.firstName) {
+      return user.profile.firstName
+    }
+  }
+  return null
 }
 
 const formatDate = (dateString) => {

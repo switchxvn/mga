@@ -52,7 +52,7 @@ export class ProfileTransformer {
     return {
       id: user.id,
       email: user.email,
-      roles: roles.map(role => role.name),
+      roles: roles.map(role => role.code),
       isEmailVerified: user.isEmailVerified,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

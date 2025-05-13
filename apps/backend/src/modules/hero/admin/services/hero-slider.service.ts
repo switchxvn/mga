@@ -10,11 +10,12 @@ export class HeroSliderService {
     private heroSliderRepository: Repository<HeroSlider>,
   ) {}
 
-  async findAll(): Promise<HeroSlider[]> {
+  async findAll(themeId?: number): Promise<HeroSlider[]> {
+    const where: any = {};
+    if (themeId) where.themeId = themeId;
     return this.heroSliderRepository.find({
-      order: {
-        order: 'ASC',
-      },
+      where,
+      order: { order: 'ASC' },
     });
   }
 

@@ -7,7 +7,7 @@ import { vi } from 'date-fns/locale';
 import { Repository } from 'typeorm';
 import { MailService } from '../../../../../apps/backend/src/modules/mail/services/mail.service';
 import { OrderAdminService } from '../../../../../apps/backend/src/modules/order/admin/services/order-admin.service';
-import { PaymentStatus } from '../../../../../apps/backend/src/modules/order/entities/order.entity';
+import { PaymentStatus, OrderStatus } from '../../../../../libs/shared/src/types/order.type';
 import { PaymentMethod } from '../../../../../apps/backend/src/modules/payment/entities/payment-method.entity';
 import { PaymentFrontendService } from '../../../../../apps/backend/src/modules/payment/frontend/services/payment-frontend.service';
 import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
@@ -88,6 +88,11 @@ export class PayOSWebhookService {
 
       // Update order status
       const order = await this.orderAdminService.updatePaymentStatus(orderId, orderPaymentStatus);
+
+      // Update order status to CONFIRMED when payment is successful
+      if (webhookData.success && order) {
+        await this.orderAdminService.updateOrderStatus(orderId, OrderStatus.CONFIRMED);
+      }
 
       // Update dashboard stats if payment is successful
       if (webhookData.success) {

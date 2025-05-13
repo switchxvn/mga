@@ -67,6 +67,7 @@ export const profileRouter = router({
     .mutation(async ({ ctx, input }): Promise<ProfileResponse> => {
       try {
         console.log('Updating profile for user ID:', ctx.user.id);
+        console.log('Profile data:', input);
         
         const user = await ctx.services.userService.findById(ctx.user.id);
         if (!user) {

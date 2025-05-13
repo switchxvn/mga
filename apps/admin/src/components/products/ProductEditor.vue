@@ -51,6 +51,22 @@
 
         <!-- Price Information -->
         <div class="grid gap-6 md:grid-cols-2">
+          <!-- Contact for Price Option -->
+          <div class="flex items-center mb-2">
+            <input
+              id="isContactPrice"
+              type="checkbox"
+              :checked="isContactPrice"
+              @change="$emit('update:isContactPrice', ($event.target as HTMLInputElement).checked)"
+              class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+            />
+            <label for="isContactPrice" class="ml-2 text-sm font-medium text-slate-900">
+              Giá liên hệ
+            </label>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
           <!-- Price -->
           <div class="grid gap-2">
             <label
@@ -77,7 +93,7 @@
                 class="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-7 pr-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 min="0"
                 step="0.01"
-                :disabled="disablePrice"
+                :disabled="disablePrice || isContactPrice"
               />
             </div>
           </div>
@@ -109,7 +125,7 @@
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                :disabled="disablePrice"
+                :disabled="disablePrice || isContactPrice"
               />
             </div>
           </div>
@@ -214,12 +230,13 @@ defineProps<{
   slug: string
   description: string
   shortDescription: string
-  price: number
+  price: number | null
   compareAtPrice: number | null
   sku: string
   barcode: string
   editorOptions: any
   disablePrice?: boolean
+  isContactPrice?: boolean
 }>()
 
 defineEmits<{
@@ -231,6 +248,7 @@ defineEmits<{
   'update:compareAtPrice': [value: number | null]
   'update:sku': [value: string]
   'update:barcode': [value: string]
+  'update:isContactPrice': [value: boolean]
   'generate-slug': []
 }>()
 </script>

@@ -137,6 +137,17 @@ const defaultColors: ThemeColors = {
 const activeTheme = ref<Theme | null>(null);
 let initialized = false;
 
+// Kiểm tra xem CSS variables đã được set chưa
+const areCssVariablesInitialized = () => {
+  if (typeof window === 'undefined') return false;
+  
+  // Kiểm tra một số biến CSS cụ thể đã được set chưa
+  const primaryVar = window.getComputedStyle(document.documentElement)
+    .getPropertyValue('--primary-500');
+  
+  return !!primaryVar.trim();
+};
+
 export function useTheme() {
   const trpc = useTrpc();
   const isDark = useDark({
@@ -240,27 +251,37 @@ export function useTheme() {
   };
 
   const initializeTheme = async () => {
-    if (initialized) return;
+    // Nếu đã khởi tạo và CSS variables đã được set, không cần khởi tạo lại
+    if (initialized && areCssVariablesInitialized()) {
+      return activeTheme.value;
+    }
 
+    // Luôn áp dụng theme mặc định ngay lập tức để tránh nhấp nháy
     if (typeof window !== 'undefined') {
       updateCssVariables(defaultColors);
     }
 
     try {
-      const response = await trpc.theme.getActiveTheme.query();
+      // Lấy tất cả theme
+      const themes = await trpc.admin.theme.getAll.query();
+      // Tìm theme active
+      const activeThemeData = themes.find(t => t.isActive);
       
-      if (response) {
-        activeTheme.value = response;
+      if (activeThemeData) {
+        activeTheme.value = activeThemeData;
         initialized = true;
         
-        if (response.colors && typeof window !== 'undefined') {
-          updateCssVariables(response.colors as unknown as ThemeColors);
+        if (activeThemeData.colors && typeof window !== 'undefined') {
+          // Áp dụng theme từ API ngay lập tức
+          updateCssVariables(activeThemeData.colors as unknown as ThemeColors);
         }
       }
       
-      return response;
+      return activeThemeData;
     } catch (error) {
       console.error('Failed to initialize theme:', error);
+      // Đảm bảo khi lỗi vẫn đánh dấu là đã initialized để không gọi lại liên tục
+      initialized = true;
       return null;
     }
   };
@@ -277,6 +298,15 @@ export function useTheme() {
     theme: activeTheme,
     isDark,
     initializeTheme,
-    updateCssVariables
+    updateCssVariables,
+    getActiveTheme: async () => {
+      try {
+        const themes = await trpc.admin.theme.getAll.query();
+        return themes.find(t => t.isActive) || null;
+      } catch (error) {
+        console.error('Failed to get active theme:', error);
+        return null;
+      }
+    }
   };
 } 

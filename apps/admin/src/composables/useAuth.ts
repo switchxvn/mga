@@ -39,15 +39,45 @@ export const useAuth = () => {
         
         // Get user info and transform to match User interface
         const userInfo = await trpc.profile.getMyProfile.query() as ProfileResponseExtended;
+        
+        // Kiểm tra và log thông tin userInfo để debug
+        console.log('User info from login:', JSON.stringify(userInfo, null, 2));
+        
+        // Xác định role từ API response
+        let userRole = 'user'; // Mặc định là user
+        
+        // Kiểm tra roles từ API
+        if (userInfo.roles && Array.isArray(userInfo.roles)) {
+          // Nếu có SUPER_ADMIN trong danh sách roles, set role là SUPER_ADMIN
+          if (userInfo.roles.some(role => 
+            (typeof role === 'string' && role === 'SUPER_ADMIN') || 
+            (typeof role === 'object' && role && 'code' in role && role.code === 'SUPER_ADMIN')
+          )) {
+            userRole = 'SUPER_ADMIN';
+          } 
+          // Nếu có ADMIN trong danh sách roles, set role là ADMIN
+          else if (userInfo.roles.some(role => 
+            (typeof role === 'string' && role === 'ADMIN') || 
+            (typeof role === 'object' && role && 'code' in role && role.code === 'ADMIN')
+          )) {
+            userRole = 'ADMIN';
+          }
+        }
+        
         user.value = {
           id: String(userInfo.id),
           email: userInfo.email,
           name: userInfo.profile?.firstName || 'Unknown',
-          role: 'admin', // Set appropriate role based on your auth logic
+          role: userRole, // Set role based on API response
           permissions: userInfo.permissions?.map(p => p.code) || [],
+          roles: userInfo.roles || [], // Lưu trữ roles từ API
+          profile: userInfo.profile || null, // Lưu profile thông tin
           createdAt: userInfo.createdAt instanceof Date ? userInfo.createdAt.toISOString() : String(userInfo.createdAt),
           updatedAt: userInfo.updatedAt instanceof Date ? userInfo.updatedAt.toISOString() : String(userInfo.updatedAt)
         }
+
+        console.log('User role set to:', userRole);
+        console.log('User permissions:', user.value.permissions);
 
         // Redirect to dashboard
         router.push('/')
@@ -78,8 +108,15 @@ export const useAuth = () => {
       }
       user.value = null
 
-      // Redirect to login
-      router.push('/auth/login')
+      // Sử dụng window.location.href để đảm bảo trang được tải lại hoàn toàn
+      // Điều này giúp Nuxt tải lại layout auth thay vì giữ layout default
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login'
+        return
+      }
+      
+      // Fallback nếu window không khả dụng (ít khi xảy ra)
+      router.push({ path: '/auth/login', replace: true })
     } catch (err: any) {
       error.value = 'An error occurred during logout'
       throw err
@@ -117,16 +154,39 @@ export const useAuth = () => {
         
         // If we got a successful response
         if (userInfo?.id) {
+          // Xác định role từ API response
+          let userRole = 'user'; // Mặc định là user
+          
+          // Kiểm tra roles từ API
+          if (userInfo.roles && Array.isArray(userInfo.roles)) {
+            // Nếu có SUPER_ADMIN trong danh sách roles, set role là SUPER_ADMIN
+            if (userInfo.roles.some(role => 
+              (typeof role === 'string' && role === 'SUPER_ADMIN') || 
+              (typeof role === 'object' && role && 'code' in role && role.code === 'SUPER_ADMIN')
+            )) {
+              userRole = 'SUPER_ADMIN';
+            } 
+            // Nếu có ADMIN trong danh sách roles, set role là ADMIN
+            else if (userInfo.roles.some(role => 
+              (typeof role === 'string' && role === 'ADMIN') || 
+              (typeof role === 'object' && role && 'code' in role && role.code === 'ADMIN')
+            )) {
+              userRole = 'ADMIN';
+            }
+          }
+          
           user.value = {
             id: String(userInfo.id),
             email: userInfo.email,
             name: userInfo.email.split('@')[0], // Use email as name if no profile
-            role: 'admin',
+            role: userRole, // Use actual role instead of hardcoded 'admin'
             permissions: userInfo.permissions?.map(p => p.code) || [],
+            roles: userInfo.roles || [], // Lưu trữ roles từ API
+            profile: userInfo.profile || null, // Lưu profile thông tin
             createdAt: userInfo.createdAt instanceof Date ? userInfo.createdAt.toISOString() : String(userInfo.createdAt),
             updatedAt: userInfo.updatedAt instanceof Date ? userInfo.updatedAt.toISOString() : String(userInfo.updatedAt)
           };
-          console.log('Auth check successful');
+          console.log('Auth check successful, user role:', userRole);
           return true;
         }
         console.log('No user ID in response');
@@ -149,7 +209,9 @@ export const useAuth = () => {
           
           // Redirect to login page if not already there
           if (process.client && window.location.pathname !== '/auth/login') {
-            router.push('/auth/login');
+            // Sử dụng window.location.href để đảm bảo trang được tải lại hoàn toàn
+            window.location.href = '/auth/login';
+            return false;
           }
         }
         

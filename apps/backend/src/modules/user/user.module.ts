@@ -9,6 +9,7 @@ import { UserFrontendController } from './frontend/controllers/frontend.controll
 import { UserAdminService } from './services/admin/user-admin.service';
 import { UserFrontendService } from './frontend/services/user-frontend.service';
 import { AdminUserService } from './admin/services/user.service';
+import { RoleAdminService } from './admin/services/role-admin.service';
 import { UserProfile } from '../profile/entities/user-profile.entity';
 import { MailModule } from '../mail/mail.module';
 
@@ -18,7 +19,7 @@ import { MailModule } from '../mail/mail.module';
     MailModule
   ],
   controllers: [UserAdminController, UserFrontendController],
-  providers: [UserService, UserAdminService, UserFrontendService, AdminUserService],
-  exports: [UserService, UserAdminService, UserFrontendService, AdminUserService],
+  providers: [UserService, UserAdminService, UserFrontendService, AdminUserService, RoleAdminService],
+  exports: [UserService, UserAdminService, UserFrontendService, AdminUserService, RoleAdminService],
 })
 export class UserModule {} 

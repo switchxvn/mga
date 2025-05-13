@@ -68,6 +68,11 @@ import { ISiteStatisticsAdminService, ISiteStatisticsFrontendService } from '../
 import { MailService } from '../../mail/services/mail.service';
 import { AdminMenuAdminService } from '../../admin-menu/admin/services/admin-menu-admin.service';
 import { AdminMenuFrontendService } from '../../admin-menu/frontend/services/admin-menu-frontend.service';
+import { RoleAdminService } from '../../user/admin/services/role-admin.service';
+import { UserSessionAdminService } from '../../user-session/admin/services/user-session-admin.service';
+import { UserSessionFrontendService } from '../../user-session/frontend/services/user-session-frontend.service';
+import { UserPageVisitAdminService } from '../../user-session/admin/services/user-page-visit-admin.service';
+import { UserPageVisitFrontendService } from '../../user-session/frontend/services/user-page-visit-frontend.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -141,6 +146,11 @@ export interface ITrpcServices {
   mailService: MailService;
   adminMenuAdminService: AdminMenuAdminService;
   adminMenuFrontendService: AdminMenuFrontendService;
+  roleAdminService: RoleAdminService;
+  userSessionAdminService: UserSessionAdminService;
+  userSessionFrontendService: UserSessionFrontendService;
+  userPageVisitAdminService: UserPageVisitAdminService;
+  userPageVisitFrontendService: UserPageVisitFrontendService;
   
   // Grouped services
   admin: {
@@ -174,6 +184,9 @@ export interface ITrpcServices {
     dashboard: DashboardAdminService;
     gallery: GalleryAdminService;
     adminMenu: AdminMenuAdminService;
+    role: RoleAdminService;
+    userSession: UserSessionAdminService;
+    userPageVisit: UserPageVisitAdminService;
   };
   
   frontend: {
@@ -204,5 +217,7 @@ export interface ITrpcServices {
     orderTicketSection: OrderTicketSectionFrontendService;
     gallery: GalleryFrontendService;
     adminMenu: AdminMenuFrontendService;
+    userSession: UserSessionFrontendService;
+    userPageVisit: UserPageVisitFrontendService;
   };
 } 

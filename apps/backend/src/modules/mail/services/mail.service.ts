@@ -174,4 +174,65 @@ export class MailService implements MailServiceInterface {
       };
     }
   }
+
+  /**
+   * Gửi email xác nhận đổi vé thành công
+   */
+  async sendTicketExchangeConfirmation(data: {
+    to: string;
+    customerName: string;
+    originalOrderCode: string;
+    newOrderCode: string;
+    refundCode: string;
+    tickets: Array<{
+      productName: string;
+      variantName?: string;
+      quantity: number;
+      oldDate: string;
+      newDate: string;
+      qrImageUrl?: string;
+    }>;
+  }): Promise<void> {
+    try {
+      const { to, customerName, originalOrderCode, newOrderCode, refundCode, tickets } = data;
+
+      // Lấy template từ database
+      const template = await this.mailTemplateRepository.findOne({
+        where: { code: 'TICKET_EXCHANGE_CONFIRMATION', is_active: true }
+      });
+
+      if (!template) {
+        throw new Error('Email template TICKET_EXCHANGE_CONFIRMATION not found or not active');
+      }
+
+      // Prepare template variables
+      const templateVars = {
+        customerName,
+        originalOrderCode,
+        newOrderCode,
+        refundCode,
+        tickets
+      };
+
+      // Compile template với Handlebars
+      const subjectTemplate = Handlebars.compile(template.subject);
+      const htmlTemplate = Handlebars.compile(template.html);
+
+      // Apply data to templates
+      const subject = subjectTemplate(templateVars);
+      const html = htmlTemplate(templateVars);
+
+      // Gửi email với template đã được render
+      await this.mailProvider.sendMail({
+        to,
+        subject,
+        html,
+      });
+    } catch (error) {
+      this.logger.error('Error sending ticket exchange confirmation email:', {
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  }
 } 

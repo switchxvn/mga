@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { OrderStatus, PaymentStatus } from '../../../order/entities/order.entity';
+import { OrderStatus, PaymentStatus } from '@ew/shared';
 import { RefundStatus } from '../../../order/entities/order-refund.entity';
 import { adminProcedure, router } from '../../procedures';
 
@@ -52,6 +52,37 @@ export const orderAdminRouter = router({
         input.id,
         input.paymentStatus
       );
+    }),
+
+  updateOrderDetails: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      customerName: z.string().optional(),
+      email: z.string().email().optional().nullable(),
+      phoneCode: z.string().optional(),
+      phoneNumber: z.string().optional(),
+      notes: z.string().optional(),
+      shippingAddress: z.object({
+        line1: z.string().optional(),
+        line2: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postal_code: z.string().optional(),
+        country: z.string().optional()
+      }).optional(),
+      billingAddress: z.object({
+        line1: z.string().optional(),
+        line2: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postal_code: z.string().optional(),
+        country: z.string().optional()
+      }).optional(),
+      paymentMethod: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return ctx.services.orderAdminService.updateOrderDetails(id, data);
     }),
 
   deleteOrder: adminProcedure
