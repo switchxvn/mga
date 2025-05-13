@@ -140,14 +140,44 @@
                       <td class="px-4 py-2">{{ variant.name }}</td>
                       <td class="px-4 py-2">
                         <div class="relative w-32">
-                          <span class="absolute left-3 top-2.5 text-slate-500">$</span>
+                          <div class="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              :id="`isContactPrice-${index}`"
+                              :checked="variant.price === null"
+                              @change="toggleContactPrice(variant)"
+                              class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                            />
+                            <label :for="`isContactPrice-${index}`" class="ml-2 text-xs font-medium text-slate-900">
+                              Giá liên hệ
+                            </label>
+                          </div>
+                          <span v-if="variant.price !== null" class="absolute left-3 top-2.5 text-slate-500">$</span>
                           <input
                             type="number"
                             v-model="variant.price"
                             class="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-7 pr-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             min="0"
                             step="0.01"
+                            :disabled="variant.price === null"
                           />
+                        </div>
+                        
+                        <!-- Compare at Price -->
+                        <div class="relative w-32 mt-2">
+                          <label class="block text-xs font-medium text-slate-500 mb-1">Compare at Price</label>
+                          <div class="relative">
+                            <span v-if="variant.price !== null" class="absolute left-3 top-2.5 text-slate-500">$</span>
+                            <input
+                              type="number"
+                              v-model="variant.compareAtPrice"
+                              class="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-7 pr-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              :disabled="variant.price === null"
+                            />
+                          </div>
                         </div>
                       </td>
                       <td class="px-4 py-2">
@@ -865,6 +895,27 @@ const onStockInputChange = (variant: VariantItem) => {
     variant.quantity = variant.stock;
   }
 }
+
+// Đơn giản hóa hàm toggleContactPrice
+const toggleContactPrice = (variant: VariantItem) => {
+  if (variant.price === null) {
+    // Nếu đang bật "Giá liên hệ", tắt nó và khôi phục giá
+    variant.price = variant._tempPrice !== undefined ? variant._tempPrice : 0;
+    variant.compareAtPrice = variant._tempCompareAtPrice;
+    
+    // Xóa giá trị tạm thời
+    delete variant._tempPrice;
+    delete variant._tempCompareAtPrice;
+  } else {
+    // Nếu đang tắt "Giá liên hệ", bật nó và lưu giá hiện tại
+    variant._tempPrice = variant.price;
+    variant._tempCompareAtPrice = variant.compareAtPrice;
+    
+    // Đặt giá thành null
+    variant.price = null;
+    variant.compareAtPrice = null;
+  }
+};
 
 // Expose functions to template
 defineExpose({

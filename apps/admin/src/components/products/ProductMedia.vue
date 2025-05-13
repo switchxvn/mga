@@ -7,14 +7,6 @@
           <h3 class="text-lg font-medium">Ảnh sản phẩm</h3>
           <p class="text-sm text-slate-500">Tải lên và quản lý ảnh sản phẩm</p>
         </div>
-        <button 
-          @click="openGalleryInput"
-          class="px-3 py-2 bg-primary text-white rounded-lg flex items-center gap-2 hover:bg-primary-dark transition-colors"
-          :disabled="isUploading || localGallery.length >= 8"
-        >
-          <PlusIcon class="h-4 w-4" />
-          <span class="text-sm font-medium">Thêm ảnh</span>
-        </button>
       </div>
       
       <div class="p-6">
@@ -38,10 +30,10 @@
               <!-- Left Side - Image Gallery with Upload Controls -->
               <div class="space-y-4">
                 <!-- Main Image Area - Row with main image and gallery upload -->
-                <div class="grid grid-cols-6 gap-2">
-                  <!-- Main Image - Upload ảnh đại diện với kéo thả -->
+                <div class="flex flex-col items-center">
+                  <!-- Main Image - Chữ nhật lớn ở trên (không phải hình vuông) -->
                   <div 
-                    class="aspect-square border border-dashed border-slate-300 rounded-md overflow-hidden bg-slate-50 flex items-center justify-center cursor-pointer relative group col-span-5"
+                    class="w-full max-w-2xl aspect-[4/3] border border-slate-200 rounded-lg overflow-hidden bg-white flex items-center justify-center cursor-pointer relative group mb-4"
                     @click="$refs.thumbnailInput.click()"
                     @dragover.prevent="isDraggingThumbnail = true"
                     @dragleave.prevent="isDraggingThumbnail = false"
@@ -58,23 +50,21 @@
                       </span>
                       <span class="text-white/70 text-xs mt-1">hoặc nhấp để chọn ảnh</span>
                     </div>
-                    
                     <!-- Thumbnail image if available -->
-                    <div v-if="localThumbnail" class="image-preview image-preview-large">
+                    <div v-if="localThumbnail" class="image-preview w-full h-full">
                       <img 
                         :src="localThumbnail" 
                         alt="Ảnh sản phẩm chính" 
                         @error="onThumbnailError" 
+                        class="object-contain w-full h-full"
                       />
                     </div>
-                    
                     <!-- Upload placeholder if no image -->
                     <div v-else class="flex flex-col items-center justify-center text-slate-300 p-4">
                       <ImageIcon class="h-16 w-16 mb-2" />
                       <p class="text-sm text-slate-500 text-center mb-1">Tải lên ảnh đại diện</p>
                       <p class="text-xs text-slate-400 text-center">Khuyến nghị: 1000 x 1000px</p>
                     </div>
-                    
                     <!-- Hidden file input for thumbnail -->
                     <input
                       ref="thumbnailInput"
@@ -85,26 +75,101 @@
                     />
                   </div>
                   
-                  <!-- Gallery Drop Area - Bên cạnh ảnh chính -->
-                  <div
-                    class="aspect-square border-2 border-dashed border-primary/30 rounded-md overflow-hidden transition-colors col-span-1"
-                    :class="{
-                      'bg-primary/5': isDraggingGallery,
-                      'bg-slate-50 hover:bg-primary/5': !isDraggingGallery
-                    }"
-                    @dragover.prevent="isDraggingGallery = true"
-                    @dragleave.prevent="isDraggingGallery = false"
-                    @drop.prevent="handleGalleryDrop"
-                    @click="openGalleryInput"
-                  >
-                    <div class="flex flex-col items-center justify-center h-full">
-                      <UploadCloudIcon 
-                        class="h-6 w-6 mb-1 transition-colors" 
-                        :class="isDraggingGallery ? 'text-primary' : 'text-slate-300'"
-                      />
-                      <p class="text-xs font-medium text-center text-slate-700">
-                        {{ isDraggingGallery ? 'Thả để tải lên' : 'Thêm ảnh' }}
-                      </p>
+                  <!-- Gallery thumbnails row + chức năng -->
+                  <div class="flex gap-2 overflow-x-auto w-full max-w-2xl p-2">
+                    <!-- Video button -->
+                    <div 
+                      class="flex-shrink-0 w-14 h-14 rounded-md border border-slate-200 flex flex-col items-center justify-center bg-white cursor-pointer relative group"
+                      :class="{ 'border-primary border-2': localVideoUrl }"
+                      @click="toggleVideoInput"
+                    >
+                      <div class="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200">
+                        <VideoIcon class="w-5 h-5" :class="localVideoUrl ? 'text-primary' : 'text-slate-500'" />
+                      </div>
+                      <span class="text-[10px] text-slate-500 mt-1">Video</span>
+                      <div v-if="localVideoUrl" class="absolute top-0 right-0 bg-primary text-white text-[8px] px-1 py-0.5">
+                        YouTube
+                      </div>
+                    </div>
+                    
+                    <!-- Main thumbnail in gallery (if available) -->
+                    <div 
+                      v-if="localThumbnail"
+                      class="flex-shrink-0 w-14 h-14 rounded-md border-2 border-primary overflow-hidden bg-white cursor-pointer relative group"
+                      @click="$refs.thumbnailInput.click()"
+                    >
+                      <div class="w-full h-full flex items-center justify-center">
+                        <img 
+                          :src="localThumbnail" 
+                          alt="Ảnh chính"
+                          class="object-contain w-full h-full p-1"
+                          @error="onThumbnailError"
+                        />
+                      </div>
+                      <div class="absolute top-0 right-0 bg-primary text-white text-[8px] px-1 py-0.5">
+                        Chính
+                      </div>
+                    </div>
+                    
+                    <!-- Gallery thumbnails -->
+                    <div 
+                      v-for="(image, index) in localGallery.slice(0, 8)" 
+                      :key="index"
+                      class="flex-shrink-0 w-14 h-14 rounded-md border border-slate-200 overflow-hidden bg-white cursor-pointer relative group"
+                      @click="setAsMainImage(index)"
+                      draggable="true"
+                      @dragstart="startDrag($event, index)"
+                      @dragover.prevent
+                      @dragenter.prevent
+                      @drop="onDrop($event, index)"
+                    >
+                      <div class="w-full h-full flex items-center justify-center">
+                        <img 
+                          :src="image" 
+                          :alt="`Ảnh ${index+1}`"
+                          class="object-contain w-full h-full p-1"
+                          @error="(e) => onImageError(e, index)"
+                        />
+                      </div>
+                      <!-- Hover overlay with drag handle and delete -->
+                      <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
+                        <button
+                          @click.stop="removeImage(index)"
+                          class="p-1 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40"
+                          title="Xóa ảnh"
+                        >
+                          <XIcon class="w-3 h-3" />
+                        </button>
+                        <div
+                          class="p-1 rounded-full bg-white/20 backdrop-blur-sm text-white cursor-grab"
+                          title="Kéo để sắp xếp lại"
+                        >
+                          <MoveVerticalIcon class="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Add image button -->
+                    <div
+                      class="flex-shrink-0 w-14 h-14 border-2 border-dashed border-primary/30 rounded-md overflow-hidden transition-colors cursor-pointer"
+                      :class="{
+                        'bg-primary/5': isDraggingGallery,
+                        'bg-slate-50 hover:bg-primary/5': !isDraggingGallery
+                      }"
+                      @dragover.prevent="isDraggingGallery = true"
+                      @dragleave.prevent="isDraggingGallery = false"
+                      @drop.prevent="handleGalleryDrop"
+                      @click="openGalleryInput"
+                    >
+                      <div class="flex flex-col items-center justify-center h-full">
+                        <UploadCloudIcon 
+                          class="h-5 w-5 mb-1 transition-colors" 
+                          :class="isDraggingGallery ? 'text-primary' : 'text-slate-300'"
+                        />
+                        <p class="text-[10px] font-medium text-center text-slate-700">
+                          {{ isDraggingGallery ? 'Thả' : 'Thêm' }}
+                        </p>
+                      </div>
                       <input
                         ref="galleryInput"
                         type="file"
@@ -113,154 +178,6 @@
                         class="hidden"
                         @change="handleGalleryUpload"
                       />
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Gallery thumbnails -->
-                <div class="grid grid-cols-6 gap-2">
-                  <div 
-                    v-for="(image, index) in localGallery.slice(0, 6)" 
-                    :key="index"
-                    class="aspect-square border border-slate-200 rounded-md overflow-hidden bg-slate-50 cursor-pointer relative group"
-                    @click="handleGalleryItemClick(index)"
-                  >
-                    <!-- Hover overlay with actions -->
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-                      <button
-                        @click.stop="setAsMainImage(index)"
-                        class="p-1.5 rounded-full bg-primary text-white hover:bg-primary-dark"
-                        title="Đặt làm ảnh chính"
-                      >
-                        <CheckIcon class="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        @click.stop="removeImage(index)"
-                        class="p-1.5 rounded-full bg-primary text-white hover:bg-primary-dark"
-                        title="Xóa ảnh"
-                      >
-                        <TrashIcon class="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    
-                    <!-- Gallery image container -->
-                    <div class="image-preview image-preview-small gallery-preview-container">
-                      <img 
-                        :src="image" 
-                        :alt="`Ảnh sản phẩm ${index+1}`" 
-                        @error="(e) => onImageError(e, index)"
-                      />
-                    </div>
-                  </div>
-                  
-                  <!-- Additional Gallery Images (if needed) -->
-                  <div 
-                    v-for="(image, index) in localGallery.slice(6, 8)" 
-                    :key="index + 6"
-                    class="aspect-square border border-slate-200 rounded-md overflow-hidden bg-slate-50 cursor-pointer relative group"
-                    @click="handleGalleryItemClick(index + 6)"
-                  >
-                    <!-- Hover overlay with actions -->
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-                      <button
-                        @click.stop="setAsMainImage(index + 6)"
-                        class="p-1.5 rounded-full bg-primary text-white hover:bg-primary-dark"
-                        title="Đặt làm ảnh chính"
-                      >
-                        <CheckIcon class="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        @click.stop="removeImage(index + 6)"
-                        class="p-1.5 rounded-full bg-primary text-white hover:bg-primary-dark"
-                        title="Xóa ảnh"
-                      >
-                        <TrashIcon class="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    
-                    <!-- Gallery image container -->
-                    <div class="image-preview image-preview-small gallery-preview-container">
-                      <img 
-                        :src="image" 
-                        :alt="`Ảnh sản phẩm ${index + 7}`" 
-                        @error="(e) => onImageError(e, index + 6)"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Gallery Management Tools -->
-                <div v-if="localGallery.length > 0" class="border border-slate-200 rounded-md p-3 bg-slate-50">
-                  <div class="flex justify-between items-center">
-                    <div class="text-xs text-slate-600 flex items-center gap-1">
-                      <ImagesIcon class="w-3.5 h-3.5" />
-                      <span>Thư viện ảnh ({{ localGallery.length }}/8)</span>
-                    </div>
-                    <button 
-                      v-if="localGallery.length < 8"
-                      @click="openGalleryInput"
-                      class="text-xs text-primary font-medium flex items-center hover:underline"
-                    >
-                      <PlusIcon class="h-3 w-3 mr-1" />
-                      <span>Thêm ảnh</span>
-                    </button>
-                  </div>
-                  
-                  <!-- Gallery Grid for Reordering -->
-                  <div v-if="localGallery.length > 0" class="grid grid-cols-6 gap-2 mt-3">
-                    <div 
-                      v-for="(image, index) in localGallery" 
-                      :key="index"
-                      class="aspect-square border border-slate-200 rounded-md overflow-hidden bg-slate-50 cursor-move relative group"
-                    >
-                      <!-- Hover overlay with actions -->
-                      <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
-                        <div class="flex gap-1">
-                          <button
-                            @click="moveImage(index, index - 1)"
-                            :disabled="index === 0"
-                            class="p-1 rounded-full bg-primary text-white disabled:opacity-50 hover:bg-primary-dark"
-                            title="Di chuyển sang trái"
-                          >
-                            <ChevronLeftIcon class="w-3 h-3" />
-                          </button>
-                          <button
-                            @click.stop="setAsMainImage(index)"
-                            class="p-1 rounded-full bg-primary text-white hover:bg-primary-dark"
-                            title="Đặt làm ảnh chính"
-                          >
-                            <CheckIcon class="w-3 h-3" />
-                          </button>
-                          <button
-                            @click.stop="removeImage(index)"
-                            class="p-1 rounded-full bg-primary text-white hover:bg-primary-dark"
-                            title="Xóa ảnh"
-                          >
-                            <XIcon class="w-3 h-3" />
-                          </button>
-                          <button
-                            @click="moveImage(index, index + 1)"
-                            :disabled="index === localGallery.length - 1"
-                            class="p-1 rounded-full bg-primary text-white disabled:opacity-50 hover:bg-primary-dark"
-                            title="Di chuyển sang phải"
-                          >
-                            <ChevronRightIcon class="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <!-- Gallery image thumbnail -->
-                      <div class="image-preview image-preview-small gallery-preview-container">
-                        <img 
-                          :src="image" 
-                          :alt="`Ảnh sản phẩm ${index+1}`" 
-                        />
-                      </div>
-                      
-                      <!-- Image number badge -->
-                      <div class="absolute top-0.5 left-0.5 text-[10px] bg-primary text-white rounded px-1 z-10">
-                        {{ index + 1 }}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -305,15 +222,41 @@
                 </div>
                 
                 <!-- Mobile-friendly explanation -->
-                <div class="border border-slate-200 rounded-md p-3 bg-slate-50 text-xs text-slate-600 flex items-start gap-2 mt-4">
-                  <InfoIcon class="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p class="font-medium mb-1">Cách sử dụng:</p>
-                    <ul class="space-y-1 list-disc list-inside text-slate-500">
-                      <li>Nhấp vào ảnh lớn ở bên trái để tải lên ảnh đại diện</li>
-                      <li>Sử dụng ô "Thêm ảnh" ở bên phải để tải lên thư viện ảnh</li>
-                      <li>Nhấp vào ảnh trong thư viện để quản lý: đặt làm ảnh chính, xóa...</li>
-                    </ul>
+                <div class="border-2 border-blue-200 rounded-lg p-4 bg-blue-50 text-sm text-slate-700 mt-6">
+                  <div class="flex items-center mb-3">
+                    <InfoIcon class="h-5 w-5 text-blue-600 flex-shrink-0 mr-2" />
+                    <h3 class="font-semibold text-blue-800">Hướng dẫn sử dụng</h3>
+                  </div>
+                  
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <p class="font-medium text-blue-700 mb-1">Tải lên và quản lý ảnh:</p>
+                      <ul class="space-y-1.5 list-disc list-inside text-slate-600">
+                        <li>Nhấp vào <span class="font-medium">hình ảnh lớn</span> hoặc kéo thả ảnh vào đó để tải lên <span class="font-medium">ảnh đại diện</span></li>
+                        <li>Sử dụng nút <span class="font-medium">"Thêm ảnh"</span> hoặc kéo thả vào đó để thêm ảnh vào thư viện</li>
+                        <li><span class="font-medium">Kéo và thả</span> trực tiếp các ảnh thumbnail để sắp xếp lại thứ tự</li>
+                        <li>Nhấp vào ảnh trong hàng thumbnail để <span class="font-medium">đặt làm ảnh đại diện</span></li>
+                        <li>Di chuột vào ảnh để hiện các <span class="font-medium">nút xóa</span> và kéo thả</li>
+                      </ul>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <p class="font-medium text-blue-700 mb-1">Quy định và lưu ý:</p>
+                      <ul class="space-y-1.5 list-disc list-inside text-slate-600">
+                        <li><span class="font-medium">Định dạng:</span> JPG, PNG, GIF, WebP</li>
+                        <li><span class="font-medium">Kích thước tối đa:</span> 2MB cho mỗi ảnh</li>
+                        <li><span class="font-medium">Số lượng:</span> Tối đa 8 ảnh (1 ảnh đại diện + 7 ảnh trong thư viện)</li>
+                        <li><span class="font-medium">Ảnh đại diện:</span> Nên có tỉ lệ 1:1, khuyến nghị 1000x1000px</li>
+                        <li><span class="font-medium">Video:</span> Chỉ hỗ trợ nhúng video từ YouTube</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div class="mt-3 pt-3 border-t border-blue-200 text-xs text-blue-600">
+                    <p class="flex items-center">
+                      <AlertCircleIcon class="h-3.5 w-3.5 mr-1.5" />
+                      <span>Lưu ý: Hình ảnh sẽ hiển thị trên trang sản phẩm và các trang khác, ảnh đẹp sẽ giúp tăng tỉ lệ chuyển đổi.</span>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -361,6 +304,66 @@
         </ul>
       </div>
     </div>
+    
+    <!-- Thêm Video Input Dialog -->
+    <!-- YouTube Video Input Modal -->
+    <div v-if="showVideoInput" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
+      <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-5 mx-4">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-slate-800">Thêm Video YouTube</h3>
+          <button @click="toggleVideoInput" class="text-slate-400 hover:text-slate-600">
+            <XIcon class="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-1">Đường link YouTube</label>
+          <input 
+            v-model="localVideoUrl" 
+            type="text" 
+            class="w-full px-3 py-2 border rounded-md"
+            :class="{'border-red-500': !isValidYoutubeUrl, 'border-slate-300': isValidYoutubeUrl}"
+            placeholder="https://www.youtube.com/watch?v=..."
+            @input="isValidYoutubeUrl = true"
+          />
+          <p v-if="!isValidYoutubeUrl" class="text-sm text-red-500 mt-1">
+            Vui lòng nhập đường link YouTube hợp lệ
+          </p>
+          <p class="text-xs text-slate-500 mt-1">
+            Hỗ trợ các định dạng: youtube.com/watch?v=, youtu.be/, youtube.com/embed/
+          </p>
+        </div>
+        
+        <!-- Preview hiện tại nếu có video -->
+        <div v-if="localVideoUrl && validateYoutubeUrl(localVideoUrl)" class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-1">Xem trước</label>
+          <div class="aspect-video w-full bg-slate-100 rounded-md overflow-hidden">
+            <iframe 
+              :src="getYoutubeEmbedUrl(localVideoUrl)" 
+              class="w-full h-full" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen
+            ></iframe>
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-2">
+          <button 
+            @click="localVideoUrl = ''; updateVideoUrl()"
+            class="px-4 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-50"
+          >
+            Xóa video
+          </button>
+          <button 
+            @click="updateVideoUrl()"
+            class="px-4 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary-dark"
+          >
+            Lưu
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -370,7 +373,8 @@ import {
   ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon, 
   XIcon, InfoIcon, AlertCircleIcon, ImageIcon, ImagesIcon, 
   UploadCloudIcon, LayoutIcon, MonitorIcon, MinusIcon,
-  ShoppingCartIcon, ShareIcon, HeartIcon, CheckIcon
+  ShoppingCartIcon, ShareIcon, HeartIcon, CheckIcon, VideoIcon,
+  MoveVerticalIcon,
 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { useUpload } from '../../composables/useUpload'
@@ -381,19 +385,24 @@ const toast = useToast()
 const props = defineProps<{
   thumbnail: string
   gallery: string[]
+  videoUrl?: string
 }>()
 
 const emit = defineEmits<{
   'update:thumbnail': [value: string]
   'update:gallery': [value: string[]]
+  'update:videoUrl': [value: string]
 }>()
 
 const localThumbnail = ref(props.thumbnail)
 const localGallery = ref([...props.gallery])
+const localVideoUrl = ref(props.videoUrl || '')
 const galleryInput = ref<HTMLInputElement | null>(null)
 const thumbnailInput = ref<HTMLInputElement | null>(null)
 const isDraggingThumbnail = ref(false)
 const isDraggingGallery = ref(false)
+const showVideoInput = ref(false)
+const isValidYoutubeUrl = ref(true)
 
 // Default image path
 const DEFAULT_IMAGE = '/images/default/default-image.jpg';
@@ -405,6 +414,10 @@ watch(() => props.thumbnail, (newValue) => {
 
 watch(() => props.gallery, (newValue) => {
   localGallery.value = [...newValue]
+})
+
+watch(() => props.videoUrl, (newValue) => {
+  localVideoUrl.value = newValue || ''
 })
 
 // Handle thumbnail upload
@@ -809,15 +822,15 @@ const setAsMainImage = (index: number) => {
   
   // Save the current thumbnail to add to gallery if available
   if (localThumbnail.value) {
-    // Add current thumbnail to gallery
-    localGallery.value.push(localThumbnail.value)
+    // Thay thế ảnh được chọn bằng ảnh thumbnail hiện tại
+    localGallery.value[index] = localThumbnail.value
+  } else {
+    // Nếu không có thumbnail, xóa ảnh gallery được chọn
+    localGallery.value.splice(index, 1)
   }
   
   // Set the selected image as thumbnail
   localThumbnail.value = selectedImage
-  
-  // Remove the selected image from gallery
-  localGallery.value.splice(index, 1)
   
   // Update parent component
   emit('update:thumbnail', localThumbnail.value)
@@ -857,6 +870,94 @@ const onImageError = (e: Event, index: number) => {
     // Remove error handler
     target.onerror = null;
   }
+}
+
+// Handle drag start
+const startDrag = (event: DragEvent, index: number) => {
+  if (event.dataTransfer) {
+    // Lưu index của ảnh đang kéo
+    event.dataTransfer.dropEffect = 'move'
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('index', index.toString())
+    
+    // Tùy chọn: thêm hình ảnh kéo
+    if (event.target instanceof HTMLElement) {
+      const img = event.target.querySelector('img')
+      if (img) {
+        const rect = img.getBoundingClientRect()
+        const dragImg = new Image()
+        dragImg.src = img.src
+        dragImg.style.opacity = '0.5'
+        event.dataTransfer.setDragImage(dragImg, rect.width / 2, rect.height / 2)
+      }
+    }
+  }
+}
+
+// Handle drop to reorder images
+const onDrop = (event: DragEvent, dropIndex: number) => {
+  if (!event.dataTransfer) return
+  
+  const dragIndex = parseInt(event.dataTransfer.getData('index'))
+  if (isNaN(dragIndex)) return
+  
+  // Không làm gì nếu thả vào chính nó
+  if (dragIndex === dropIndex) return
+  
+  // Tạo bản sao của gallery để thao tác
+  const newGallery = [...localGallery.value]
+  
+  // Lấy ảnh đang kéo
+  const draggedImage = newGallery[dragIndex]
+  
+  // Xóa ảnh từ vị trí cũ
+  newGallery.splice(dragIndex, 1)
+  
+  // Chèn ảnh vào vị trí mới
+  newGallery.splice(dropIndex, 0, draggedImage)
+  
+  // Cập nhật gallery
+  localGallery.value = newGallery
+  emit('update:gallery', localGallery.value)
+  
+  toast.success('Đã thay đổi vị trí ảnh')
+}
+
+// Validate YouTube URL
+const validateYoutubeUrl = (url: string): boolean => {
+  if (!url.trim()) return true // Empty is valid (optional field)
+  
+  // Check for YouTube URL patterns
+  const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})(.*)$/
+  return youtubeRegex.test(url)
+}
+
+// Update video URL
+const updateVideoUrl = () => {
+  const isValid = validateYoutubeUrl(localVideoUrl.value)
+  isValidYoutubeUrl.value = isValid
+  
+  if (isValid) {
+    emit('update:videoUrl', localVideoUrl.value)
+    if (localVideoUrl.value) {
+      showVideoInput.value = false
+      toast.success('Link video đã được cập nhật')
+    }
+  }
+}
+
+// Toggle video input
+const toggleVideoInput = () => {
+  showVideoInput.value = !showVideoInput.value
+  isValidYoutubeUrl.value = true // Reset validation state
+}
+
+// Extract video ID from YouTube URL for embedding
+const getYoutubeEmbedUrl = (url: string): string => {
+  if (!url) return ''
+  
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
+  return match ? `https://www.youtube.com/embed/${match[1]}` : ''
 }
 </script>
 

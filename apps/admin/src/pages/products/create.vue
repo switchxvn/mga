@@ -64,7 +64,7 @@
                 <component :is="tab.icon" class="w-4 h-4" />
                 {{ tab.name }}
                 <div v-if="tab.id === 'inventory' && form.hasVariants" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  Inventory is disabled because this product has variants. Please manage inventory for individual variants in the Variants tab.
+                  Kho hàng đã bị vô hiệu hóa vì sản phẩm này có biến thể. Vui lòng quản lý kho cho từng biến thể trong tab Biến thể.
                 </div>
               </button>
             </nav>
@@ -73,6 +73,10 @@
           <div class="grid gap-6 px-1">
             <!-- Basic Info Tab -->
             <div v-show="currentTab === 'basic'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'basic')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'basic')?.description }}</p>
+              </div>
               <ProductEditor
                 v-model:name="form.name"
                 v-model:slug="form.slug"
@@ -82,6 +86,7 @@
                 v-model:compareAtPrice="form.compareAtPrice"
                 v-model:sku="form.sku"
                 v-model:barcode="form.barcode"
+                v-model:isContactPrice="form.isContactPrice"
                 :editor-options="editorOptions"
                 :disable-price="form.hasVariants"
                 @generate-slug="generateSlug"
@@ -90,14 +95,23 @@
 
             <!-- Media Tab -->
             <div v-show="currentTab === 'media'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'media')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'media')?.description }}</p>
+              </div>
               <ProductMedia
                 v-model:thumbnail="form.thumbnail"
                 v-model:gallery="form.gallery"
+                v-model:videoUrl="form.videoReview"
               />
             </div>
 
             <!-- Categories Tab -->
             <div v-show="currentTab === 'categories'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'categories')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'categories')?.description }}</p>
+              </div>
               <ProductCategories
                 v-model="form.categoryIds"
               />
@@ -105,6 +119,10 @@
 
             <!-- Variants Tab -->
             <div v-show="currentTab === 'variants'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'variants')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'variants')?.description }}</p>
+              </div>
               <ProductVariants
                 v-model="form.variants"
                 v-model:hasVariants="form.hasVariants"
@@ -113,6 +131,10 @@
 
             <!-- Specifications Tab -->
             <div v-show="currentTab === 'specifications'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'specifications')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'specifications')?.description }}</p>
+              </div>
               <div class="bg-white rounded-lg shadow-sm p-6 space-y-6">
                 <ProductSpecificationsNew
                   v-model="form.specifications"
@@ -123,6 +145,10 @@
 
             <!-- Inventory Tab -->
             <div v-show="currentTab === 'inventory'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'inventory')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'inventory')?.description }}</p>
+              </div>
               <ProductInventory
                 v-model:trackInventory="form.trackInventory"
                 v-model:quantity="form.quantity"
@@ -136,13 +162,17 @@
                 <InfoIcon class="w-5 h-5 mr-2 flex-shrink-0" />
                 <div>
                   <p><span class="font-medium">Thông báo:</span> Quản lý số lượng đã bị vô hiệu hóa vì sản phẩm này có biến thể.</p>
-                  <p>Số lượng được quản lý riêng cho từng biến thể trong <button @click="currentTab = 'variants'" class="underline font-medium hover:text-blue-900">tab Variants</button>.</p>
+                  <p>Số lượng được quản lý riêng cho từng biến thể trong <button @click="currentTab = 'variants'" class="underline font-medium hover:text-blue-900">tab Biến thể</button>.</p>
                 </div>
               </div>
             </div>
 
             <!-- SEO Tab -->
             <div v-show="currentTab === 'seo'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'seo')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'seo')?.description }}</p>
+              </div>
               <ProductSEO
                 v-model:meta-description="form.metaDescription"
                 v-model:tags-input="tagsInput"
@@ -154,6 +184,10 @@
 
             <!-- Settings Tab -->
             <div v-show="currentTab === 'settings'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'settings')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'settings')?.description }}</p>
+              </div>
               <ProductSettings
                 v-model:published="form.published"
                 v-model:featured="form.featured"
@@ -230,43 +264,51 @@ watch(currentTab, (newTab) => {
 const tabs = [
   { 
     id: 'basic', 
-    name: 'Basic Info', 
-    icon: FileTextIcon
+    name: 'Thông tin cơ bản', 
+    icon: FileTextIcon,
+    description: 'Thông tin chung về sản phẩm'
   },
   { 
     id: 'media', 
-    name: 'Media', 
-    icon: ImageIcon
+    name: 'Hình ảnh', 
+    icon: ImageIcon,
+    description: 'Quản lý ảnh và video sản phẩm'
   },
   {
     id: 'categories',
-    name: 'Categories',
-    icon: FolderIcon
+    name: 'Danh mục',
+    icon: FolderIcon,
+    description: 'Phân loại sản phẩm vào danh mục'
   },
   {
     id: 'variants',
-    name: 'Variants',
-    icon: LayersIcon
+    name: 'Biến thể',
+    icon: LayersIcon,
+    description: 'Tạo các phiên bản khác nhau của sản phẩm'
   },
   {
     id: 'specifications',
-    name: 'Specifications',
-    icon: ClipboardListIcon
+    name: 'Thông số kỹ thuật',
+    icon: ClipboardListIcon,
+    description: 'Các thông số chi tiết của sản phẩm'
   },
   {
     id: 'inventory',
-    name: 'Inventory',
-    icon: PackageIcon
+    name: 'Kho hàng',
+    icon: PackageIcon,
+    description: 'Quản lý số lượng và tình trạng kho'
   },
   { 
     id: 'seo', 
     name: 'SEO', 
-    icon: SearchIcon
+    icon: SearchIcon,
+    description: 'Tối ưu hóa cho công cụ tìm kiếm'
   },
   { 
     id: 'settings', 
-    name: 'Settings', 
-    icon: SettingsIcon
+    name: 'Cài đặt', 
+    icon: SettingsIcon,
+    description: 'Cấu hình và thiết lập cho sản phẩm'
   }
 ]
 
@@ -275,7 +317,7 @@ interface ProductVariant {
   name: string
   sku: string
   barcode: string
-  price: number
+  price: number | null
   compareAtPrice: number | null
   quantity: number
   stock: number
@@ -287,7 +329,7 @@ interface ProductForm {
   slug: string
   description: string
   shortDescription: string
-  price: number
+  price: number | null
   compareAtPrice: number | null
   sku: string
   barcode: string
@@ -309,6 +351,7 @@ interface ProductForm {
   stockMovements: any[]
   updatedAt: string
   specifications: Array<{name: string, value: string, position: number, isNew?: boolean}>
+  videoReview: string
   translations: Record<string, {
     name: string
     slug: string
@@ -316,6 +359,9 @@ interface ProductForm {
     shortDescription: string
     metaDescription: string
   }>
+  isContactPrice: boolean
+  _tempPrice?: number
+  _tempCompareAtPrice?: number | null
 }
 
 const initialForm: ProductForm = {
@@ -344,8 +390,10 @@ const initialForm: ProductForm = {
   allowBackorders: false,
   stockMovements: [],
   specifications: [],
+  videoReview: '',
   updatedAt: new Date().toISOString(),
-  translations: {}
+  translations: {},
+  isContactPrice: false
 }
 
 const form = ref({ ...initialForm })
@@ -492,7 +540,7 @@ const createProduct = async () => {
     // Chuẩn bị dữ liệu sản phẩm theo schema API
     const productData: any = {
       sku: form.value.sku,
-      price: form.value.price,
+      price: form.value.price, // Đã là null khi Giá liên hệ được bật
       comparePrice: form.value.compareAtPrice,
       thumbnail: form.value.thumbnail,
       gallery: form.value.gallery,
@@ -524,7 +572,7 @@ const createProduct = async () => {
         // Chuẩn bị dữ liệu cho variant
         const variantData: any = {
           sku: variant.sku,
-          price: variant.price,
+          price: variant.price, // Đã là null khi Giá liên hệ được bật cho variant
           comparePrice: variant.compareAtPrice,
           quantity: variant.quantity || variant.stock || 0
         }
@@ -607,6 +655,32 @@ if (process.client) {
     ]
   }
 }
+
+// Theo dõi sự thay đổi của isContactPrice để cập nhật giá
+watch(() => form.value.isContactPrice, (newValue) => {
+  if (newValue) {
+    // Lưu giá hiện tại nếu nó không phải là giá liên hệ
+    if (form.value.price !== null) {
+      form.value._tempPrice = form.value.price;
+      form.value.price = null;
+    }
+    // Lưu giá so sánh hiện tại nếu có
+    if (form.value.compareAtPrice !== null) {
+      form.value._tempCompareAtPrice = form.value.compareAtPrice;
+      form.value.compareAtPrice = null;
+    }
+  } else {
+    // Khôi phục giá đã lưu hoặc đặt thành 0
+    form.value.price = form.value._tempPrice || 0;
+    // Khôi phục giá so sánh đã lưu hoặc giữ nguyên null
+    form.value.compareAtPrice = form.value._tempCompareAtPrice !== undefined ? 
+      form.value._tempCompareAtPrice : null;
+    
+    // Xóa các giá trị tạm thời
+    form.value._tempPrice = undefined;
+    form.value._tempCompareAtPrice = undefined;
+  }
+});
 </script>
 
 <style>

@@ -3,10 +3,13 @@ import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../types/trpc';
 
 export default defineNuxtPlugin(() => {
+  console.log('TRPC Plugin initialized');
   const config = useRuntimeConfig();
   const baseUrl = process.server 
     ? config.public.apiBase 
     : '';
+
+  console.log('TRPC Base URL:', baseUrl);
 
   /**
    * createTRPCNuxtClient adds a `useQuery` composable
@@ -17,13 +20,29 @@ export default defineNuxtPlugin(() => {
       httpBatchLink({
         url: `${baseUrl}/api/trpc`,
         headers() {
+          console.log('TRPC preparing headers');
           const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-          return token ? { Authorization: `Bearer ${token}` } : {};
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          console.log('TRPC headers:', headers);
+          return headers;
         },
         fetch(url, options) {
+          console.log('TRPC fetch request to:', url);
+          console.log('TRPC fetch options:', JSON.stringify({
+            method: options?.method,
+            headers: options?.headers,
+          }));
+          
           return fetch(url, {
             ...options,
-            signal: AbortSignal.timeout(5000), // 5 second timeout
+            signal: AbortSignal.timeout(30000), // 30 second timeout, increased from 5s
+            credentials: 'include',
+          }).then(response => {
+            console.log('TRPC response status:', response.status);
+            return response;
+          }).catch(error => {
+            console.error('TRPC fetch error:', error);
+            throw error;
           });
         },
         retryDelay: (attempt) => Math.min(attempt * 500, 3000), // Linear backoff
@@ -31,6 +50,8 @@ export default defineNuxtPlugin(() => {
       }),
     ],
   });
+
+  console.log('TRPC client created');
 
   return {
     provide: {

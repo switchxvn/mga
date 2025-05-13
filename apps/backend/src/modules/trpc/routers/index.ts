@@ -32,43 +32,44 @@ import { adminRouter } from './admin';
 import { router } from '../procedures';
 import { siteStatisticsRouter } from './site-statistics.router';
 import { adminMenuAdminRouter } from './admin/admin-menu.router';
+import { userSessionRouter } from './user-session.router';
 
-// Re-export all routers
-export {
-  authRouter,
-  postRouter,
-  userRouter,
-  settingsRouter,
-  seoRouter,
-  categoryRouter,
-  serviceRouter,
-  featureFlagsRouter,
-  productRouter,
-  priceRequestRouter,
-  profileRouter,
-  footerRouter,
-  heroRouter,
-  themeRouter,
-  languageRouter,
-  componentStyleConfigRouter,
-  logoRouter,
-  customerLogoRouter,
-  contactRouter,
-  aboutRouter,
-  galleryRouter,
-  foodMenuRouter,
-  contactSectionRouter,
-  ticketPricingSectionRouter,
-  orderTicketSectionRouter,
-  paymentRouter,
-  orderRouter,
-  uploadRouter,
-  commentRouter,
-  reviewRouter,
-  adminRouter,
-  siteStatisticsRouter,
-  adminMenuAdminRouter,
-};
+// Export all routers
+export * from './app.router';
+export * from './auth.router';
+export * from './post.router';
+export * from './category.router';
+export * from './service.router';
+export * from './user.router';
+export * from './profile.router';
+export * from './common.router';
+export * from './settings.router';
+export * from './admin.router';
+export * from './seo.router';
+export * from './footer.router';
+export * from './product.router';
+export * from './price-request.router';
+export * from './feature-flags.router';
+export * from './hero.router';
+export * from './theme.router';
+export * from './component-style-config.router';
+export * from './language.router';
+export * from './about.router';
+export * from './logo.router';
+export * from './customer-logo.router';
+export * from './contact.router';
+export * from './gallery.router';
+export * from './contact-section.router';
+export * from './ticket-pricing-section.router';
+export * from './order-ticket-section.router';
+export * from './food-menu.router';
+export * from './payment.router';
+export * from './order.router';
+export * from './upload.router';
+export * from './comment.router';
+export * from './review.router';
+export * from './site-statistics.router';
+export * from './user-session.router';
 
 export const appRouter = (commonRouter) => router({
   auth: authRouter,
@@ -104,7 +105,7 @@ export const appRouter = (commonRouter) => router({
   review: reviewRouter,
   admin: adminRouter,
   siteStatistics: siteStatisticsRouter,
-  
+  userSession: userSessionRouter,
 });
 
 export type AppRouter = ReturnType<typeof appRouter>; 

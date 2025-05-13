@@ -9,6 +9,7 @@ import { CommentModule } from '../comment/comment.module';
 import { CommonModule } from '../common';
 import { ContactModule } from '../contact/contact.module';
 import { CustomerLogoModule } from '../customer-logo/customer-logo.module';
+import { DashboardModule } from '../dashboard/dashboard.module';
 import { FeatureFlagsModule } from '../feature-flags/feature-flags.module';
 import { FoodMenuModule } from '../food-menu/food-menu.module';
 import { FooterModule } from '../footer/footer.module';
@@ -31,6 +32,7 @@ import { ThemeModule } from '../theme/theme.module';
 import { TicketPricingModule } from '../ticket-pricing/ticket-pricing.module';
 import { UploadModule } from '../upload/upload.module';
 import { UserModule } from '../user/user.module';
+import { UserSessionModule } from '../user-session/user-session.module';
 import { CommonRouter } from './routers/common.router';
 import { TrpcController } from './trpc.controller';
 import { TrpcRouter } from './trpc.router';
@@ -38,7 +40,6 @@ import { TRPCContextManager } from './contexts/trpc.context';
 import { ServiceContext } from './contexts/service.context';
 import { DataSourceContext } from './contexts/datasource.context';
 import { AuthContext } from './contexts/auth.context';
-import { DashboardModule } from '../dashboard/dashboard.module';
 /**
  * TrpcModule - Main module for tRPC integration with NestJS
  * 
@@ -89,6 +90,7 @@ import { DashboardModule } from '../dashboard/dashboard.module';
     ReviewModule,
     SiteStatisticsModule,
     AdminMenuModule,
+    UserSessionModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency

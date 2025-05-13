@@ -85,6 +85,7 @@
                 v-model:compareAtPrice="form.compareAtPrice"
                 v-model:sku="form.sku"
                 v-model:barcode="form.barcode"
+                v-model:isContactPrice="form.isContactPrice"
                 :editor-options="editorOptions"
                 :disable-price="form.hasVariants"
                 @generate-slug="generateSlug"
@@ -222,10 +223,10 @@ const defaultLanguage = ref('')
 
 // Handle language change
 const handleLanguageChange = (code: string) => {
-  // Kiểm tra nếu code trùng với ngôn ngữ hiện tại thì không làm gì
+  // Check if code is the same as current language, do nothing in that case
   if (code === selectedLanguage.value) return;
   
-  // Lưu translations hiện tại trước khi chuyển ngôn ngữ
+  // Save current translations before switching language
   if (selectedLanguage.value && form.value.name !== undefined) {
     form.value.translations[selectedLanguage.value] = {
       name: form.value.name,
@@ -236,12 +237,12 @@ const handleLanguageChange = (code: string) => {
     }
   }
   
-  // Cập nhật selectedLanguage
+  // Update selectedLanguage
   selectedLanguage.value = code;
   
-  // Kiểm tra xem đã có dữ liệu cho ngôn ngữ mới chưa
+  // Check if data exists for the new language
   if (form.value.translations[code]) {
-    // Nếu có, cập nhật form với dữ liệu từ translations
+    // If exists, update form with data from translations
     const translation = form.value.translations[code];
     form.value.name = translation.name || '';
     form.value.slug = translation.slug || '';
@@ -249,7 +250,7 @@ const handleLanguageChange = (code: string) => {
     form.value.shortDescription = translation.shortDescription || '';
     form.value.metaDescription = translation.metaDescription || '';
   } else {
-    // Nếu chưa có, reset form để nhập mới
+    // If not exists, reset form for new input
     form.value.name = '';
     form.value.slug = '';
     form.value.description = '';
@@ -257,7 +258,7 @@ const handleLanguageChange = (code: string) => {
     form.value.metaDescription = '';
   }
   
-  // Chỉ cập nhật URL nếu khác với ngôn ngữ trong URL hiện tại
+  // Only update URL if different from current URL locale
   if (route.query.locale !== code) {
     router.push({
       query: {
@@ -334,11 +335,13 @@ interface ProductVariant {
   name: string
   sku: string
   barcode: string
-  price: number
+  price: number | null
   compareAtPrice: number | null
   quantity: number
   stock: number
   options: Record<string, string>
+  _tempPrice?: number
+  _tempCompareAtPrice?: number | null
 }
 
 interface ProductForm {
@@ -346,7 +349,7 @@ interface ProductForm {
   slug: string
   description: string
   shortDescription: string
-  price: number
+  price: number | null
   compareAtPrice: number | null
   sku: string
   barcode: string
@@ -374,6 +377,9 @@ interface ProductForm {
     shortDescription: string
     metaDescription: string
   }>
+  isContactPrice: boolean
+  _tempPrice?: number
+  _tempCompareAtPrice?: number | null
 }
 
 const initialForm: ProductForm = {
@@ -402,7 +408,8 @@ const initialForm: ProductForm = {
   allowBackorders: false,
   stockMovements: [],
   updatedAt: new Date().toISOString(),
-  translations: {}
+  translations: {},
+  isContactPrice: false
 }
 
 const form = ref({ ...initialForm })
@@ -529,7 +536,7 @@ const fetchProduct = async () => {
     fetchInProgress = true;
     loading.value = true;
     
-    // Tránh log quá nhiều trong production
+    // Avoid excessive logging in production
     if (process.env.NODE_ENV !== 'production') {
       console.log('Fetching product with ID:', route.params.id, 'and language:', selectedLanguage.value);
     }
@@ -537,7 +544,7 @@ const fetchProduct = async () => {
     const product = await trpc.admin.products.getProductById.query(Number(route.params.id));
     
     if (product) {
-      // Giảm số lượng logging không cần thiết
+      // Reduce unnecessary logging
       if (process.env.NODE_ENV !== 'production') {
         console.log('Product loaded successfully');
       }
@@ -557,10 +564,10 @@ const fetchProduct = async () => {
         })
       }
 
-      // Xử lý price đúng cách
-      let productPrice = 0
+      // Process price correctly
+      let productPrice = null;
       if (product.price !== null && product.price !== undefined) {
-        // Nếu price là string, convert sang number
+        // If price is string, convert to number
         if (typeof product.price === 'string') {
           productPrice = parseFloat(product.price) || 0
         } else if (typeof product.price === 'number') {
@@ -568,7 +575,10 @@ const fetchProduct = async () => {
         }
       }
 
-      // Xử lý comparePrice
+      // Check if this is a "Contact for Price" product
+      const isContactPrice = productPrice === null;
+
+      // Process comparePrice
       let comparePrice = null
       if ((product as any).comparePrice !== null && (product as any).comparePrice !== undefined) {
         if (typeof (product as any).comparePrice === 'string') {
@@ -578,9 +588,9 @@ const fetchProduct = async () => {
         }
       }
 
-      // Xử lý product tags an toàn
+      // Process product tags safely
       const productTags: string[] = []
-      // Sử dụng as any để tránh lỗi linter
+      // Use 'as any' to avoid linter errors
       const productTagsArray = (product as any).productTags
       if (Array.isArray(productTagsArray)) {
         productTagsArray.forEach(tag => {
@@ -590,14 +600,14 @@ const fetchProduct = async () => {
         })
       }
 
-      // Xử lý variants an toàn
+      // Process variants safely
       const variants: ProductVariant[] = []
       if (Array.isArray(product.variants)) {
         console.log('Processing variants:', product.variants.length)
         
-        // Phân tích tên variant để tạo options
-        // Trong trường hợp này, có thể dựa vào translations để tạo options đơn giản
-        // Tạo một option duy nhất là "Type" (hoặc "Loại" trong tiếng Việt)
+        // Analyze variant names to create options
+        // In this case, can use translations to create simple options
+        // Create a single option named "Type"
         const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type'
         
         product.variants.forEach(variant => {
@@ -609,8 +619,8 @@ const fetchProduct = async () => {
           
           console.log('Variant name:', variantName)
 
-          // Xử lý variant price đúng cách
-          let variantPrice = 0
+          // Process variant price correctly
+          let variantPrice = null;
           if (variant.price !== null && variant.price !== undefined) {
             if (typeof variant.price === 'string') {
               variantPrice = parseFloat(variant.price) || 0
@@ -619,7 +629,7 @@ const fetchProduct = async () => {
             }
           }
 
-          // Xử lý variant comparePrice
+          // Process variant comparePrice
           let variantComparePrice = null
           if ((variant as any).comparePrice !== null && (variant as any).comparePrice !== undefined) {
             if (typeof (variant as any).comparePrice === 'string') {
@@ -629,7 +639,7 @@ const fetchProduct = async () => {
             }
           }
 
-          // Tạo đối tượng options dựa vào tên biến thể
+          // Create options object based on variant name
           const variantOptions: Record<string, string> = {}
           if (variantName) {
             variantOptions[optionName] = variantName
@@ -643,7 +653,7 @@ const fetchProduct = async () => {
             price: variantPrice,
             compareAtPrice: variantComparePrice,
             quantity: variant.quantity || 0,
-            stock: variant.quantity || 0,  // Sử dụng quantity làm giá trị mặc định cho stock
+            stock: variant.quantity || 0,  // Use quantity as default value for stock
             options: variantOptions
           })
         })
@@ -651,7 +661,7 @@ const fetchProduct = async () => {
 
       console.log('Final variants:', variants)
 
-      // Lấy translation theo ngôn ngữ hiện tại
+      // Get translation for current language
       const currentTranslation = product.translations?.find(t => t.locale === selectedLanguage.value);
       
       form.value = {
@@ -680,17 +690,18 @@ const fetchProduct = async () => {
         allowBackorders: (product as any).allowBackorders === undefined ? false : Boolean((product as any).allowBackorders),
         stockMovements: (product as any).stockMovements || [],
         updatedAt: product.updatedAt,
-        translations
+        translations,
+        isContactPrice: isContactPrice
       }
 
       console.log('Form updated with variants:', form.value.variants)
 
-      // Giảm số lượng log debug không cần thiết
+      // Reduce unnecessary debug logging
       if (process.env.NODE_ENV !== 'production') {
         console.log('Form updated with variants count:', form.value.variants?.length || 0);
       }
 
-      // Log giá trị price để debug
+      // Log price values for debugging
       console.log('Product price from API:', product.price);
       console.log('Product price after processing:', productPrice);
       
@@ -743,7 +754,7 @@ const updateProduct = debounce(async (continueEditing = false) => {
     }))
 
     const updateData: any = {
-      price: form.value.price,
+      price: form.value.price, // Will be null if "Contact for price" is enabled
       comparePrice: form.value.compareAtPrice,
       sku: form.value.sku,
       thumbnail: form.value.thumbnail,
@@ -777,21 +788,21 @@ const updateProduct = debounce(async (continueEditing = false) => {
 
     if (Array.isArray(form.value.variants)) {
       updateData.variants = form.value.variants.map(variant => {
-        // Chuẩn bị dữ liệu cho variant
+        // Prepare data for variant
         const variantData: any = {
           id: variant.id,
           sku: variant.sku,
-          price: variant.price,
+          price: variant.price, // Will be null if "Contact for price" is enabled
           comparePrice: variant.compareAtPrice,
           quantity: variant.quantity,
           stock: variant.stock
         }
 
-        // Xử lý translations dựa trên options
+        // Process translations based on options
         const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type'
         const optionValue = variant.options[optionName] || variant.name
 
-        // Thêm translations nếu có giá trị
+        // Add translations if value exists
         if (optionValue) {
           variantData.translations = [
             {
@@ -831,13 +842,13 @@ const updateProduct = debounce(async (continueEditing = false) => {
     if (!continueEditing) {
       router.push('/products');
     } else {
-      // Chỉ refresh data khi thực sự cần thiết
+      // Only refresh data when really necessary
       await fetchProduct();
     }
   } catch (error: any) {
     console.error('Failed to update product:', error);
     
-    // Hiển thị thông báo lỗi với ngôn ngữ hiện tại
+    // Display error message with current language
     let errorMessage = `[${selectedLanguage.value}] `
     
     // Handle tRPC error
@@ -862,6 +873,32 @@ const updateProduct = debounce(async (continueEditing = false) => {
     saveAndContinue.value = false;
   }
 }, 500);
+
+// Watch for changes in isContactPrice to update price values
+watch(() => form.value.isContactPrice, (newValue) => {
+  if (newValue) {
+    // Save current price if it's not already contact price
+    if (form.value.price !== null) {
+      form.value._tempPrice = form.value.price;
+      form.value.price = null;
+    }
+    // Save current compare price if exists
+    if (form.value.compareAtPrice !== null) {
+      form.value._tempCompareAtPrice = form.value.compareAtPrice;
+      form.value.compareAtPrice = null;
+    }
+  } else {
+    // Restore saved price or set to 0
+    form.value.price = form.value._tempPrice || 0;
+    // Restore saved compare price or keep null
+    form.value.compareAtPrice = form.value._tempCompareAtPrice !== undefined ? 
+      form.value._tempCompareAtPrice : null;
+    
+    // Clear temporary values
+    form.value._tempPrice = undefined;
+    form.value._tempCompareAtPrice = undefined;
+  }
+});
 
 // Quill Editor Options
 const editorOptions = ref({

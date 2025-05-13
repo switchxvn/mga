@@ -49,6 +49,10 @@ import { User } from './user/entities/user.entity';
 import { Role } from './user/entities/role.entity';
 import { Permission } from './user/entities/permission.entity';
 
+// User Session
+import { UserSession } from './user-session/entities/user-session.entity';
+import { UserPageVisit } from './user-session/entities/user-page-visit.entity';
+
 // Profile
 import { UserProfile } from './profile/entities/user-profile.entity';
 
@@ -190,6 +194,10 @@ export const entities: (new () => any)[] = [
   User,
   Role,
   Permission,
+  
+  // User Session
+  UserSession,
+  UserPageVisit,
   
   // Profile
   UserProfile,

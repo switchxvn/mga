@@ -69,6 +69,8 @@ import { MailService } from '../../mail/services/mail.service';
 import { AdminMenuAdminService } from '../../admin-menu/admin/services/admin-menu-admin.service';
 import { AdminMenuFrontendService } from '../../admin-menu/frontend/services/admin-menu-frontend.service';
 import { RoleAdminService } from '../../user/admin/services/role-admin.service';
+import { UserSessionAdminService } from '../../user-session/admin/services/user-session-admin.service';
+import { UserSessionFrontendService } from '../../user-session/frontend/services/user-session-frontend.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -143,6 +145,8 @@ export interface ITrpcServices {
   adminMenuAdminService: AdminMenuAdminService;
   adminMenuFrontendService: AdminMenuFrontendService;
   roleAdminService: RoleAdminService;
+  userSessionAdminService: UserSessionAdminService;
+  userSessionFrontendService: UserSessionFrontendService;
   
   // Grouped services
   admin: {
@@ -177,6 +181,7 @@ export interface ITrpcServices {
     gallery: GalleryAdminService;
     adminMenu: AdminMenuAdminService;
     role: RoleAdminService;
+    userSession: UserSessionAdminService;
   };
   
   frontend: {
@@ -207,5 +212,6 @@ export interface ITrpcServices {
     orderTicketSection: OrderTicketSectionFrontendService;
     gallery: GalleryFrontendService;
     adminMenu: AdminMenuFrontendService;
+    userSession: UserSessionFrontendService;
   };
 } 
