@@ -74,7 +74,8 @@ export class UserSessionFrontendService implements IUserSessionFrontendService {
       // Log dữ liệu nhận được
       this.logger.debug(`Updating session ${sessionId} with data: ${JSON.stringify({
         lastActivity: data.lastActivity ? String(data.lastActivity) : 'undefined',
-        isActive: data.isActive
+        isActive: data.isActive,
+        ipAddress: data.ipAddress || 'not provided' // Log IP address nếu có
       })}`);
 
       const session = await this.userSessionRepository.findOne({
@@ -136,11 +137,17 @@ export class UserSessionFrontendService implements IUserSessionFrontendService {
         session.expireAt = data.expireAt;
       }
 
+      // Cập nhật IP address nếu được cung cấp
+      if (data.ipAddress) {
+        this.logger.debug(`Updating IP address from ${session.ipAddress} to ${data.ipAddress}`);
+        session.ipAddress = data.ipAddress;
+      }
+
       session.updatedAt = new Date();
 
       // Lưu session và return kết quả
       const updatedSession = await this.userSessionRepository.save(session);
-      this.logger.debug(`Session updated successfully: totalTime=${updatedSession.totalTime}, lastActivity=${updatedSession.lastActivity}`);
+      this.logger.debug(`Session updated successfully: totalTime=${updatedSession.totalTime}, lastActivity=${updatedSession.lastActivity}, ipAddress=${updatedSession.ipAddress}`);
       return updatedSession;
     } catch (error) {
       this.logger.error(`Error updating session: ${error.message}`, error.stack);

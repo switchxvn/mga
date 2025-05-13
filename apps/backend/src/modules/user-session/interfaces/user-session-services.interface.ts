@@ -17,6 +17,7 @@ export interface UpdateSessionData {
   isActive?: boolean;
   expireAt?: Date;
   country?: string;
+  ipAddress?: string;
 }
 
 export interface CreatePageVisitData {

@@ -28,6 +28,7 @@ export const userSessionRouter = createTRPCRouter({
         ]).optional(),
         isActive: z.boolean().optional(),
         expireAt: z.date().optional(),
+        ipAddress: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -45,6 +46,7 @@ export const userSessionRouter = createTRPCRouter({
           lastActivity,
           isActive: input.isActive,
           expireAt: input.expireAt,
+          ipAddress: input.ipAddress,
         }
       );
     }),

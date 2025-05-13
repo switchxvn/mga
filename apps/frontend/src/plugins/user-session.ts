@@ -12,7 +12,7 @@ export default defineNuxtPlugin(() => {
     // Khởi tạo session ngay khi ứng dụng khởi động
     setTimeout(() => {
       userSession.initSession().then((sessionId) => {
-        console.log('Session initialized in plugin:', sessionId);
+        console.log('Session initialized in plugin with IP tracking:', sessionId);
         
         // Ghi nhận page view ban đầu
         const currentPath = window.location.pathname;

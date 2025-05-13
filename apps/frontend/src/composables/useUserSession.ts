@@ -16,6 +16,130 @@ const generateRandomId = (): string => {
   return `${timestamp}-${randomPart}`;
 };
 
+// Hàm lấy địa chỉ IP của client
+const getClientIpAddress = async (): Promise<string> => {
+  try {
+    // Thử gọi API ipify để lấy địa chỉ IP
+    const response = await fetch('https://api.ipify.org?format=json');
+    if (response.ok) {
+      const data = await response.json();
+      return data.ip;
+    }
+    
+    // Nếu không thành công, thử với API dự phòng
+    const backupResponse = await fetch('https://ipinfo.io/json');
+    if (backupResponse.ok) {
+      const backupData = await backupResponse.json();
+      return backupData.ip;
+    }
+    
+    console.warn('Failed to get IP address from external APIs');
+    return 'unknown';
+  } catch (error) {
+    console.error('Error getting IP address:', error);
+    return 'unknown';
+  }
+};
+
+// Hàm lấy thông tin IP và quốc gia
+interface IpInfo {
+  ip: string;
+  country?: string;
+}
+
+const getClientIpInfo = async (): Promise<IpInfo> => {
+  try {
+    console.log('Fetching IP and country information...');
+    
+    // Thử lấy thông tin từ ipinfo.io (cung cấp cả IP và country)
+    try {
+      console.log('Trying ipinfo.io API...');
+      const infoResponse = await fetch('https://ipinfo.io/json');
+      if (infoResponse.ok) {
+        const data = await infoResponse.json();
+        console.log('ipinfo.io response:', data);
+        if (data.ip && data.country) {
+          console.log('Successfully got IP and country from ipinfo.io:', data.ip, data.country);
+          return {
+            ip: data.ip,
+            country: data.country // Mã quốc gia theo ISO
+          };
+        }
+      }
+    } catch (ipinfoError) {
+      console.error('Error with ipinfo.io:', ipinfoError);
+    }
+    
+    // Nếu không thành công, thử lấy riêng IP trước, sau đó lấy country
+    let ip = 'unknown';
+    try {
+      console.log('Trying ipify API for IP address...');
+      const ipifyResponse = await fetch('https://api.ipify.org?format=json');
+      if (ipifyResponse.ok) {
+        const ipData = await ipifyResponse.json();
+        ip = ipData.ip;
+        console.log('Got IP from ipify:', ip);
+      }
+    } catch (ipifyError) {
+      console.error('Error with ipify:', ipifyError);
+    }
+    
+    // Nếu có IP, thử lấy thông tin quốc gia
+    if (ip !== 'unknown') {
+      try {
+        console.log('Trying ipapi.co API for country information...');
+        const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`);
+        if (geoResponse.ok) {
+          const geoData = await geoResponse.json();
+          console.log('ipapi.co response:', geoData);
+          if (geoData.country_code) {
+            console.log('Successfully got country from ipapi.co:', geoData.country_code);
+            return {
+              ip: ip,
+              country: geoData.country_code // Mã quốc gia theo ISO
+            };
+          }
+        }
+      } catch (geoError) {
+        console.error('Error with ipapi.co:', geoError);
+      }
+      
+      // Thử thêm một nguồn khác nếu ipapi.co không thành công
+      try {
+        console.log('Trying geoiplookup.io as final fallback...');
+        const geoApiResponse = await fetch(`https://json.geoiplookup.io/${ip}`);
+        if (geoApiResponse.ok) {
+          const geoApiData = await geoApiResponse.json();
+          console.log('geoiplookup.io response:', geoApiData);
+          if (geoApiData.country_code) {
+            console.log('Successfully got country from geoiplookup.io:', geoApiData.country_code);
+            return {
+              ip: ip,
+              country: geoApiData.country_code
+            };
+          }
+        }
+      } catch (geoApiError) {
+        console.error('Error with geoiplookup.io:', geoApiError);
+      }
+    }
+    
+    // Nếu không lấy được thông tin quốc gia, gán mặc định là 'XX'
+    console.log('Could not determine country, using default value "XX"');
+    return { 
+      ip: ip, 
+      country: 'XX' // Mã quốc gia mặc định nếu không xác định được
+    };
+  } catch (error) {
+    console.error('Error getting IP and country info:', error);
+    // Luôn trả về một giá trị mặc định thay vì để country undefined
+    return { 
+      ip: 'unknown', 
+      country: 'XX' 
+    };
+  }
+};
+
 export const useUserSession = () => {
   console.log('useUserSession composable initialized');
   const trpc = useTrpc();
@@ -96,6 +220,10 @@ export const useUserSession = () => {
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
       };
 
+      // Lấy địa chỉ IP và quốc gia của client
+      const ipInfo = await getClientIpInfo();
+      console.log('Got client IP info:', ipInfo);
+
       // Lấy thông tin trang hiện tại
       currentPage.value = window.location.pathname;
       
@@ -118,7 +246,8 @@ export const useUserSession = () => {
         await trpc.userSession.startSession.mutate({
           sessionId: id,
           userId,
-          ipAddress: undefined, // Sẽ được xác định bởi server
+          ipAddress: ipInfo.ip,
+          country: ipInfo.country,
           userAgent,
           deviceInfo,
           referrer,
@@ -158,6 +287,10 @@ export const useUserSession = () => {
       const currentTime = new Date();
       const isoString = currentTime.toISOString();
       
+      // Lấy IP address và country hiện tại
+      const ipInfo = await getClientIpInfo();
+      console.log('Got client IP info for update:', ipInfo);
+      
       // DEBUG: Kiểm tra kiểu dữ liệu
       console.log('DEBUG - currentTime type:', typeof currentTime);
       console.log('DEBUG - currentTime instanceof Date:', currentTime instanceof Date);
@@ -170,10 +303,12 @@ export const useUserSession = () => {
         sessionId: sessionId.value,
         lastActivity: isoString,
         pageViews: pageViews.value,
-        isActive: isActive.value
+        isActive: isActive.value,
+        ipAddress: ipInfo.ip,
+        country: ipInfo.country || 'XX' // Đảm bảo luôn có giá trị country
       };
       
-      console.log('DEBUG - Sending payload:', JSON.stringify(payload));
+      console.log('DEBUG - Sending full payload:', JSON.stringify(payload));
       
       // Chuyển đổi Date thành chuỗi ISO để đảm bảo tương thích
       await trpc.userSession.updateSession.mutate(payload);
@@ -181,7 +316,7 @@ export const useUserSession = () => {
       // Cập nhật giá trị lastActivity sau khi gửi thành công
       lastActivity.value = currentTime;
       
-      console.log('Session updated successfully');
+      console.log('Session updated successfully with country:', payload.country);
     } catch (err: any) {
       console.error('Error updating session:', err);
       // In chi tiết lỗi hơn

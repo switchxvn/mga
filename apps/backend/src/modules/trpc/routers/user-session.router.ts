@@ -47,6 +47,7 @@ export const userSessionRouter = router({
       isActive: z.boolean().optional(),
       expireAt: z.date().optional(),
       country: z.string().optional(),
+      ipAddress: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
