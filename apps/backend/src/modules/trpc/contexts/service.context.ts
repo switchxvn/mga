@@ -74,6 +74,8 @@ import { AdminMenuFrontendService } from '../../admin-menu/frontend/services/adm
 import { RoleAdminService } from '../../user/admin/services/role-admin.service';
 import { UserSessionAdminService } from '../../user-session/admin/services/user-session-admin.service';
 import { UserSessionFrontendService } from '../../user-session/frontend/services/user-session-frontend.service';
+import { UserPageVisitAdminService } from '../../user-session/admin/services/user-page-visit-admin.service';
+import { UserPageVisitFrontendService } from '../../user-session/frontend/services/user-page-visit-frontend.service';
 
 @Injectable()
 export class ServiceContext {
@@ -153,6 +155,8 @@ export class ServiceContext {
     private readonly roleAdminService: RoleAdminService,
     private readonly userSessionAdminService: UserSessionAdminService,
     private readonly userSessionFrontendService: UserSessionFrontendService,
+    private readonly userPageVisitAdminService: UserPageVisitAdminService,
+    private readonly userPageVisitFrontendService: UserPageVisitFrontendService,
     @Inject(forwardRef(() => PriceRequestService))
     private readonly priceRequestService: PriceRequestService,
   ) {}
@@ -233,6 +237,8 @@ export class ServiceContext {
       roleAdminService: this.roleAdminService,
       userSessionAdminService: this.userSessionAdminService,
       userSessionFrontendService: this.userSessionFrontendService,
+      userPageVisitAdminService: this.userPageVisitAdminService,
+      userPageVisitFrontendService: this.userPageVisitFrontendService,
       
       // Grouped services by namespace
       admin: {
@@ -268,6 +274,7 @@ export class ServiceContext {
         adminMenu: this.adminMenuAdminService,
         role: this.roleAdminService,
         userSession: this.userSessionAdminService,
+        userPageVisit: this.userPageVisitAdminService,
       },
       
       frontend: {
@@ -299,6 +306,7 @@ export class ServiceContext {
         gallery: this.galleryFrontendService,
         adminMenu: this.adminMenuFrontendService,
         userSession: this.userSessionFrontendService,
+        userPageVisit: this.userPageVisitFrontendService,
       },
     };
   }

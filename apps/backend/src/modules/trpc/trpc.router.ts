@@ -32,10 +32,10 @@ import {
   uploadRouter,
   commentRouter,
   reviewRouter,
-  adminRouter,
   siteStatisticsRouter,
   userSessionRouter
 } from './routers';
+import { adminRouter } from './routers/admin/index';
 
 @Injectable()
 export class TrpcRouter {

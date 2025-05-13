@@ -44,7 +44,6 @@ export * from './user.router';
 export * from './profile.router';
 export * from './common.router';
 export * from './settings.router';
-export * from './admin.router';
 export * from './seo.router';
 export * from './footer.router';
 export * from './product.router';

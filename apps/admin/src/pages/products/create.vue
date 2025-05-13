@@ -207,8 +207,8 @@ import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '../../composables/useTrpc'
 import slugify from 'slugify'
-import { useHead } from 'nuxt/app'
-import { useToast } from 'vue-toastification'
+import { useHead, useNuxtApp } from 'nuxt/app'
+import { useToast } from '../../composables/useToast'
 
 // Import Lucide icons
 import {
@@ -244,8 +244,11 @@ import LanguageSwitcher from '../../components/common/LanguageSwitcher.vue'
 const trpc = useTrpc()
 const route = useRoute()
 const router = useRouter()
-const toast = useToast()
+const nuxtApp = useNuxtApp()
 const loading = ref(false)
+
+// Chỉ khởi tạo toast ở phía client
+const toast = process.client ? useToast() : null
 
 // Initialize currentTab
 // Initialize currentTab from query params or default to 'basic'
@@ -598,31 +601,28 @@ const createProduct = async () => {
     // Gọi API tạo sản phẩm
     await trpc.admin.products.createProduct.mutate(productData)
 
-    toast.success('Product created successfully!')
+    if (process.client && toast) {
+      toast.success('Product created successfully!')
+    }
     router.push('/products')
   } catch (error: any) {
     console.error('Failed to create product:', error)
     
     // Hiển thị thông báo lỗi với ngôn ngữ hiện tại
-    let errorMessage = `[${selectedLanguage.value}] `
-    
-    // Handle tRPC error
-    if (error.cause) {
-      errorMessage += error.cause
-    } else if (error.message) {
-      errorMessage += error.message
-    } else {
-      errorMessage += 'Failed to create product. Please try again.'
+    if (process.client && toast) {
+      let errorMessage = `[${selectedLanguage.value}] `
+      
+      // Handle tRPC error
+      if (error.cause) {
+        errorMessage += error.cause
+      } else if (error.message) {
+        errorMessage += error.message
+      } else {
+        errorMessage += 'Failed to create product. Please try again.'
+      }
+      
+      toast.error(errorMessage, 8000)
     }
-    
-    toast.error(errorMessage, {
-      timeout: 8000,
-      closeButton: true,
-      icon: true,
-      closeOnClick: false,
-      pauseOnHover: true,
-      draggable: true
-    })
   } finally {
     loading.value = false
   }
