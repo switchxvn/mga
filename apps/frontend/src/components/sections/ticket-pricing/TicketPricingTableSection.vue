@@ -32,12 +32,15 @@ interface Props {
       feature?: string
       primary?: string
     }
+    mobileView?: boolean
+    compactLayout?: boolean
   }
   translations: {
     title: string
     subtitle: string
     tiers: PricingTier[]
   }
+  isMobile?: boolean
 }
 
 const props = defineProps<Props>()
@@ -52,7 +55,10 @@ const sectionClasses = computed(() => {
 })
 
 const headingClasses = computed(() => {
-  const defaultTypography = 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-center tracking-tight'
+  const defaultTypography = props.isMobile 
+    ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-center tracking-tight'
+    : 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-center tracking-tight'
+  
   const defaultColor = props.settings?.colors?.primary || 'text-primary-600 dark:text-primary-400'
   
   return [
@@ -62,8 +68,12 @@ const headingClasses = computed(() => {
 })
 
 const subheadingClasses = computed(() => {
+  const defaultTypography = props.isMobile
+    ? 'text-base sm:text-lg md:text-xl text-center max-w-2xl mx-auto font-medium'
+    : 'text-lg sm:text-xl md:text-2xl text-center max-w-2xl mx-auto font-medium'
+  
   return [
-    props.settings?.typography?.subheading || 'text-lg sm:text-xl md:text-2xl text-center max-w-2xl mx-auto font-medium',
+    props.settings?.typography?.subheading || defaultTypography,
     props.settings?.colors?.subheading || 'text-gray-600 dark:text-gray-400',
   ].join(' ')
 })
@@ -89,6 +99,10 @@ const featureClasses = computed(() => {
   ].join(' ')
 })
 
+const showMobileView = computed(() => {
+  return props.isMobile || props.settings?.mobileView
+})
+
 const handleTicketAction = async (tier: PricingTier) => {
   if (tier.isCallHotline) {
     try {
@@ -107,16 +121,16 @@ const handleTicketAction = async (tier: PricingTier) => {
 
 <template>
   <section :class="sectionClasses">
-    <div class="container mx-auto px-4 py-16 md:py-24">
-      <div class="text-center max-w-4xl mx-auto mb-16">
-        <h2 :class="headingClasses" class="mb-8">{{ translations.title }}</h2>
+    <div class="container mx-auto px-4 py-10 md:py-16 lg:py-24">
+      <div class="text-center max-w-4xl mx-auto mb-10 md:mb-16">
+        <h2 :class="headingClasses" class="mb-6 md:mb-8">{{ translations.title }}</h2>
         
         <div v-if="translations.subtitle" class="relative">
           <div class="absolute inset-0 flex items-center" aria-hidden="true">
             <div class="w-full border-t border-primary-200 dark:border-primary-700"></div>
           </div>
           <div class="relative flex justify-center">
-            <span :class="[props.settings?.backgroundColor || 'bg-gray-50 dark:bg-gray-900', 'px-6']">
+            <span :class="[props.settings?.backgroundColor || 'bg-gray-50 dark:bg-gray-900', 'px-4 md:px-6']">
               <p :class="subheadingClasses">
                 {{ translations.subtitle }}
               </p>
@@ -126,7 +140,8 @@ const handleTicketAction = async (tier: PricingTier) => {
       </div>
 
       <div class="max-w-7xl mx-auto">
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
+        <!-- Desktop Table View -->
+        <div v-if="!showMobileView" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead>
@@ -226,11 +241,82 @@ const handleTicketAction = async (tier: PricingTier) => {
             </table>
           </div>
         </div>
+
+        <!-- Mobile Card View -->
+        <div v-else class="space-y-6">
+          <div v-for="tier in translations.tiers" 
+            :key="tier.id" 
+            class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden"
+            :class="{ 'ring-2 ring-red-500': tier.isPopular }"
+          >
+            <div class="p-6">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 :class="tierNameClasses" class="flex items-center gap-2">
+                    {{ tier.name }}
+                    <span v-if="tier.isPopular" 
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                    >
+                      Phổ biến
+                    </span>
+                  </h3>
+                </div>
+                <div :class="priceClasses" class="flex items-baseline">
+                  <span class="text-xl font-semibold text-gray-900 dark:text-white">{{ tier.currency }}</span>
+                  <span class="text-xl font-bold text-gray-900 dark:text-white">{{ tier.price.toLocaleString() }}</span>
+                  <span class="ml-1 text-xs text-gray-500 dark:text-gray-400">/{{ tier.interval }}</span>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">Chi tiết:</h4>
+                <ul class="space-y-2">
+                  <li v-for="(feature, index) in tier.features" 
+                    :key="index" 
+                    :class="featureClasses" 
+                    class="flex items-start"
+                  >
+                    <svg class="w-5 h-5 text-primary-500 mr-2 flex-shrink-0 mt-0.5" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" 
+                        stroke-linejoin="round" 
+                        stroke-width="2" 
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    {{ feature }}
+                  </li>
+                </ul>
+              </div>
+
+              <div class="mt-6">
+                <button
+                  class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm transition-colors duration-200"
+                  :class="[
+                    tier.isPopular 
+                      ? 'text-white bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500' 
+                      : 'text-red-700 bg-red-50 hover:bg-red-100 focus:ring-2 focus:ring-offset-2 focus:ring-red-400'
+                  ]"
+                  @click="handleTicketAction(tier)"
+                >
+                  <span>{{ tier.isCallHotline ? 'Gọi ngay' : 'Đặt ngay' }}</span>
+                  <svg class="ml-2 -mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path v-if="tier.isCallHotline" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Travel Benefits -->
-      <div class="mt-16 max-w-4xl mx-auto">
-        <div class="grid md:grid-cols-3 gap-8 text-center">
+      <div class="mt-12 md:mt-16 max-w-4xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 text-center">
           <div v-for="(benefit, index) in [
             {
               title: 'Linh hoạt',
@@ -249,18 +335,35 @@ const handleTicketAction = async (tier: PricingTier) => {
             }
           ]" 
             :key="index"
-            class="bg-white dark:bg-gray-800 rounded-xl border border-red-200 dark:border-red-800/30 shadow-sm hover:border-red-300 dark:hover:border-red-700/30 transition-all duration-200 p-6"
+            class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
           >
-            <div class="bg-red-50 dark:bg-red-500/5 w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <svg class="w-8 h-8 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="benefit.icon"/>
-              </svg>
+            <div class="flex flex-col items-center">
+              <div class="rounded-full bg-primary-100 dark:bg-primary-900 p-3 mb-4">
+                <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="benefit.icon" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ benefit.title }}</h3>
+              <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ benefit.description }}</p>
             </div>
-            <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ benefit.title }}</h4>
-            <p class="text-gray-600 dark:text-gray-300">{{ benefit.description }}</p>
           </div>
         </div>
       </div>
     </div>
   </section>
-</template> 
+</template>
+
+<style scoped>
+@media (max-width: 767px) {
+  /* Ensure mobile view has proper spacing */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Improve touch targets for mobile */
+  button {
+    min-height: 44px;
+  }
+}
+</style> 

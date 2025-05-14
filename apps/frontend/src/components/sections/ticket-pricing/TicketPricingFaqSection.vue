@@ -37,6 +37,7 @@ interface Props {
       faqs?: FaqItem[]
     }
   }
+  isMobile?: boolean
 }
 
 const props = defineProps<Props>()
@@ -56,10 +57,18 @@ const textColor = computed(() => {
 })
 
 const padding = computed(() => {
+  // Adjust padding for mobile
+  if (props.isMobile) {
+    return props.settings?.padding || '2rem 0'
+  }
   return props.settings?.padding || '4rem 0'
 })
 
+// Force accordion layout on mobile for better UX
 const faqLayout = computed(() => {
+  if (props.isMobile) {
+    return 'accordion'
+  }
   return props.settings?.faqLayout || 'accordion'
 })
 
@@ -72,7 +81,10 @@ const contentBackgroundColor = computed(() => {
 })
 
 const headingClasses = computed(() => {
-  const defaultTypography = 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-center tracking-tight'
+  const defaultTypography = props.isMobile
+    ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-center tracking-tight'
+    : 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-center tracking-tight'
+    
   const defaultColor = props.settings?.colors?.primary || 'text-primary-600 dark:text-primary-400'
   
   return [
@@ -82,15 +94,23 @@ const headingClasses = computed(() => {
 })
 
 const subheadingClasses = computed(() => {
+  const defaultTypography = props.isMobile
+    ? 'text-base sm:text-lg md:text-xl text-center max-w-2xl mx-auto font-medium'
+    : 'text-lg sm:text-xl md:text-2xl text-center max-w-2xl mx-auto font-medium'
+    
   return [
-    props.settings?.typography?.subheading || 'text-lg sm:text-xl md:text-2xl text-center max-w-2xl mx-auto font-medium',
+    props.settings?.typography?.subheading || defaultTypography,
     props.settings?.colors?.subheading || 'text-gray-600 dark:text-gray-400',
   ].join(' ')
 })
 
 const questionClasses = computed(() => {
+  const defaultTypography = props.isMobile
+    ? 'text-base font-medium'
+    : 'text-lg font-medium'
+    
   return [
-    props.settings?.typography?.question || 'text-lg font-medium',
+    props.settings?.typography?.question || defaultTypography,
     props.settings?.colors?.question || 'text-gray-900 dark:text-gray-100',
   ].join(' ')
 })
@@ -123,8 +143,8 @@ const isItemOpen = (index: number) => {
     :style="{ padding }"
   >
     <div class="container mx-auto px-4">
-      <div class="text-center mb-16">
-        <h2 :class="headingClasses" class="mb-8">{{ translations.title }}</h2>
+      <div class="text-center mb-10 md:mb-16">
+        <h2 :class="headingClasses" class="mb-6 md:mb-8">{{ translations.title }}</h2>
         
         <div v-if="translations.subtitle">
           <p :class="subheadingClasses">
@@ -132,14 +152,14 @@ const isItemOpen = (index: number) => {
           </p>
         </div>
         
-        <p v-if="translations.content" class="text-lg max-w-3xl mx-auto mt-4">
+        <p v-if="translations.content" class="text-base md:text-lg max-w-3xl mx-auto mt-4">
           {{ translations.content }}
         </p>
       </div>
       
       <div class="max-w-3xl mx-auto">
         <!-- Accordion Layout -->
-        <div v-if="faqLayout === 'accordion'" class="space-y-4">
+        <div v-if="faqLayout === 'accordion'" class="space-y-3 md:space-y-4">
           <div 
             v-for="(faq, index) in faqs" 
             :key="faq.id"
@@ -147,20 +167,20 @@ const isItemOpen = (index: number) => {
             :class="cardBackgroundColor"
           >
             <button 
-              class="w-full flex justify-between items-center p-4 text-left font-medium"
+              class="w-full flex justify-between items-center p-3 md:p-4 text-left font-medium"
               :class="isItemOpen(index) ? contentBackgroundColor : ''"
               @click="toggleItem(index)"
             >
-              <span :class="questionClasses">{{ faq.question }}</span>
-              <span class="ml-4">
-                <ChevronUp v-if="isItemOpen(index)" class="w-5 h-5" />
-                <ChevronDown v-else class="w-5 h-5" />
+              <span :class="questionClasses" class="flex-1 pr-2">{{ faq.question }}</span>
+              <span class="ml-2 md:ml-4 flex-shrink-0">
+                <ChevronUp v-if="isItemOpen(index)" class="w-4 h-4 md:w-5 md:h-5" />
+                <ChevronDown v-else class="w-4 h-4 md:w-5 md:h-5" />
               </span>
             </button>
             
             <div 
               v-if="isItemOpen(index)"
-              class="p-4 border-t border-gray-200 dark:border-gray-700"
+              class="p-3 md:p-4 border-t border-gray-200 dark:border-gray-700"
               :class="contentBackgroundColor"
             >
               <p :class="answerClasses">{{ faq.answer }}</p>
@@ -169,18 +189,33 @@ const isItemOpen = (index: number) => {
         </div>
         
         <!-- Grid Layout -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div 
             v-for="(faq, index) in faqs" 
             :key="faq.id"
-            class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-200"
+            class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-md hover:shadow-lg transition-shadow duration-200"
             :class="cardBackgroundColor"
           >
-            <h3 :class="questionClasses">{{ faq.question }}</h3>
+            <h3 :class="questionClasses" class="mb-2 md:mb-3">{{ faq.question }}</h3>
             <p :class="answerClasses">{{ faq.answer }}</p>
           </div>
         </div>
       </div>
     </div>
   </section>
-</template> 
+</template>
+
+<style scoped>
+@media (max-width: 767px) {
+  /* Improve touch targets for mobile */
+  button {
+    min-height: 44px;
+  }
+  
+  /* Ensure proper spacing */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+</style> 

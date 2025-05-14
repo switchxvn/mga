@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useTrpc } from '~/composables/useTrpc'
 import { useI18n } from 'vue-i18n'
 import { defineAsyncComponent, markRaw } from 'vue'
 import type { Component } from 'vue'
+import { useBreakpoints } from '@vueuse/core'
 
 // Define component types
 type ComponentType = Component
@@ -17,6 +18,16 @@ const registeredComponents = {
   'TicketPricingFaqSection': defineAsyncComponent(() => import("../components/sections/ticket-pricing/TicketPricingFaqSection.vue")),
   'TicketPricingCtaSection': defineAsyncComponent(() => import("../components/sections/ticket-pricing/TicketPricingCtaSection.vue")),
 } as ComponentRegistry
+
+// Setup responsive breakpoints
+const breakpoints = useBreakpoints({
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280
+})
+
+const isMobile = breakpoints.smaller('md')
 
 // Resolve component function
 const resolveComponent = (section: any): ComponentType | null => {
@@ -70,7 +81,20 @@ const translatedSections = computed(() => {
   return sections.value.map(section => {
     if (!section) return null
     const translation = getTranslation(section.translations, {})
-    console.log('Translation data:', translation?.data)
+    
+    // Add mobile-specific settings for each section type
+    let mobileSettings = {}
+    
+    if (isMobile.value) {
+      // Add mobile-specific settings based on section type
+      if (section.type === 'pricing_table') {
+        mobileSettings = {
+          mobileView: true,
+          compactLayout: true
+        }
+      }
+    }
+    
     const translatedSection = {
       ...section,
       title: translation?.title || section.title,
@@ -79,9 +103,13 @@ const translatedSections = computed(() => {
       data: {
         ...translation?.data,
         tiers: translation?.data?.tiers || []
+      },
+      settings: {
+        ...section.settings,
+        ...mobileSettings
       }
     }
-    console.log('Translated section:', translatedSection)
+    
     return translatedSection
   }).filter(Boolean)
 })
@@ -121,16 +149,16 @@ fetchData()
 
 <template>
   <div class="ticket-pricing w-full bg-gray-50">
-    <div v-if="isLoading" class="container mx-auto py-10 px-4">
+    <div v-if="isLoading" class="container mx-auto py-8 px-4 flex flex-col items-center justify-center min-h-[200px]">
       <div
-        class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"
+        class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"
       ></div>
-      <p class="mt-4">Loading...</p>
+      <p class="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
     </div>
 
-    <div v-else-if="error" class="container mx-auto py-10 px-4">
+    <div v-else-if="error" class="container mx-auto py-8 px-4">
       <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
-        <p class="text-red-600 dark:text-red-400">{{ error }}</p>
+        <p class="text-red-600 dark:text-red-400 text-sm md:text-base">{{ error }}</p>
       </div>
     </div>
 
@@ -149,6 +177,7 @@ fetchData()
               data: section.data,
               tiers: section.data?.tiers || []
             }"
+            :is-mobile="isMobile"
           />
           <template #fallback>
             <div class="p-4 text-center">
@@ -159,4 +188,13 @@ fetchData()
       </template>
     </template>
   </div>
-</template> 
+</template>
+
+<style scoped>
+/* Mobile-specific styles */
+@media (max-width: 767px) {
+  .ticket-pricing {
+    overflow-x: hidden;
+  }
+}
+</style> 
