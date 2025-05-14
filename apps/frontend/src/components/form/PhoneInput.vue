@@ -58,7 +58,14 @@ const isValidPhoneNumberRule = (value: string) => {
     }
     
     // Kiểm tra số điện thoại có hợp lệ không
-    return isValidPhoneNumber(phoneWithCode, countryCode);
+    // Sử dụng try-catch vì isValidPhoneNumber có thể ném lỗi với một số định dạng không hợp lệ
+    try {
+      // @ts-ignore - Bỏ qua lỗi TypeScript vì chúng ta biết countryCode là string
+      return isValidPhoneNumber(phoneWithCode, countryCode);
+    } catch (e) {
+      console.error('Error validating phone number format:', e);
+      return false;
+    }
   } catch (error) {
     console.error('Error validating phone number:', error);
     return false;
@@ -115,15 +122,21 @@ const getCountryCodeFromPhoneCode = (phoneCode: string): string | undefined => {
 const formatPhoneNumber = (value: string, countryCode?: string) => {
   if (!value) return '';
   
-  // Nếu số điện thoại bắt đầu bằng số 0 và có mã quốc gia, loại bỏ số 0 đầu tiên
-  if (value.startsWith('0') && selectedPhoneCode.value) {
-    value = value.substring(1);
+  // Xử lý đặc biệt cho số điện thoại Việt Nam
+  if (countryCode === 'VN' && value.startsWith('0')) {
+    value = value.substring(1); // Bỏ số 0 đầu tiên
   }
   
   // Sử dụng AsYouType để định dạng số điện thoại theo chuẩn quốc tế
   if (countryCode) {
-    const formatter = new AsYouType(countryCode);
-    return formatter.input(value);
+    try {
+      // @ts-ignore - Bỏ qua lỗi TypeScript vì chúng ta biết countryCode là string
+      const formatter = new AsYouType(countryCode);
+      return formatter.input(value);
+    } catch (e) {
+      console.error('Error formatting phone number:', e);
+      return value;
+    }
   }
   
   return value;
@@ -169,10 +182,17 @@ const validatePhoneNumber = async () => {
 // Xử lý khi người dùng nhập số điện thoại
 const handlePhoneNumberInput = async (event: Event) => {
   const input = event.target as HTMLInputElement;
-  const value = input.value;
+  let value = input.value;
   
   // Lấy mã quốc gia từ mã điện thoại
   const countryCode = getCountryCodeFromPhoneCode(selectedPhoneCode.value);
+  
+  // Tự động xóa số 0 đầu tiên cho số điện thoại Việt Nam
+  if (countryCode === 'VN' && value.startsWith('0')) {
+    value = value.substring(1);
+    // Cập nhật lại giá trị trong input field
+    input.value = value;
+  }
   
   // Định dạng số điện thoại
   const formattedValue = formatPhoneNumber(value, countryCode);
@@ -201,7 +221,7 @@ const fetchCountryPhoneCodes = async () => {
     
     // Set default to Vietnam if available, otherwise use the first one
     if (selectedPhoneCode.value === '+84') {
-      const vietnam = result.find(c => c.countryCode === 'VN');
+      const vietnam = result.find((c: any) => c.countryCode === 'VN');
       if (vietnam) {
         selectedPhoneCode.value = vietnam.phoneCode;
         emit('update:phoneCode', vietnam.phoneCode);
@@ -330,7 +350,7 @@ defineExpose({
             class="w-5 h-auto"
           />
           <span>{{ selectedPhoneCode }}</span>
-          <ChevronDown size="16" />
+          <ChevronDown :size="16" />
         </button>
         
         <div 
@@ -345,7 +365,7 @@ defineExpose({
             <div class="p-2 border-b dark:border-gray-700">
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size="16" class="text-gray-400" />
+                  <Search :size="16" class="text-gray-400" />
                 </div>
                 <input
                   id="country-search-input"
@@ -367,7 +387,7 @@ defineExpose({
                 :key="country.phoneCode"
                 type="button"
                 @click="selectPhoneCode(country.phoneCode)"
-                class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
+                class="w-full text-left px-4 py-2 hover:bg-primary-50 dark:hover:bg-primary-900/20 flex items-center gap-3"
               >
                 <img 
                   v-if="country.flagIcon" 
@@ -427,10 +447,10 @@ defineExpose({
 }
 
 .phone-code-selector input:focus {
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 2px rgba(var(--primary-500, var(--primary)), 0.2);
 }
 
 .dark .phone-code-selector input:focus {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 2px rgba(var(--primary-500, var(--primary)), 0.2);
 }
 </style> 
