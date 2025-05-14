@@ -6,6 +6,7 @@ import { X, Check, Send } from 'lucide-vue-next';
 import PhoneInput from '~/components/form/PhoneInput.vue';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email, helpers } from '@vuelidate/validators';
+import { useNotification } from '~/composables/useNotification';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -20,6 +21,7 @@ const emit = defineEmits<{
 
 const { t } = useLocalization();
 const trpc = useTrpc();
+const notification = useNotification();
 
 // Form data
 const fullName = ref('');
@@ -36,7 +38,7 @@ const errors = ref({
 });
 
 // Phone validation state
-const phoneValidation = ref({
+const phoneValidation = ref<{ valid: boolean; message?: string }>({
   valid: true,
   message: ''
 });
@@ -46,7 +48,10 @@ const isSubmitting = ref(false);
 const submitSuccess = ref(false);
 
 // Tham chiếu đến component PhoneInput
-const phoneInputRef = ref(null);
+const phoneInputRef = ref<any>(null);
+
+// Kiểm tra xem trường nào là bắt buộc
+const isPhoneRequired = true
 
 // Định nghĩa quy tắc xác thực
 const rules = computed(() => {
@@ -87,35 +92,42 @@ const validatePhoneField = async () => {
   
   // Kiểm tra xem số điện thoại có được nhập không
   if (!phoneNumber.value.trim()) {
-    errors.value.phoneNumber = t('priceRequest.phoneRequired') || 'Vui lòng nhập số điện thoại';
-    return false;
+    // Không hiển thị lỗi khi trường này trống - số điện thoại không bắt buộc
+    return true;
   }
   
   // Xác thực số điện thoại
   let isPhoneValid = true;
   if (phoneInputRef.value) {
-    isPhoneValid = await phoneInputRef.value.validate();
+    // Gọi phương thức validate của PhoneInput để kiểm tra số điện thoại có phù hợp với quốc gia đã chọn không
+    isPhoneValid = await phoneInputRef.value.validatePhoneNumber();
   }
   
   // Cập nhật thông báo lỗi cho số điện thoại
   if (!isPhoneValid && phoneValidation.value && !phoneValidation.value.valid) {
-    errors.value.phoneNumber = phoneValidation.value.message || t('priceRequest.phoneInvalid') || 'Số điện thoại không hợp lệ';
+    errors.value.phoneNumber = phoneValidation.value.message || t('validation.invalidPhone');
   }
   
   return isPhoneValid;
 };
 
-// Validate fullName field
+// Validate full name field
 const validateFullNameField = async () => {
-  // Reset thông báo lỗi
+  // Reset error message
   errors.value.fullName = '';
   
-  // Xác thực trường họ tên
-  await v$.value.fullName.$validate();
+  // Check if name is empty
+  if (!fullName.value.trim()) {
+    errors.value.fullName = t('priceRequest.fullNameRequired') as string;
+    return false;
+  }
+  
+  // Validate with vuelidate
+  await v$.value.$validate();
   
   // Cập nhật thông báo lỗi nếu có
   if (v$.value.fullName.$error) {
-    errors.value.fullName = v$.value.fullName.$errors[0].$message;
+    errors.value.fullName = v$.value.fullName.$errors[0].$message as string;
     return false;
   }
   
@@ -124,15 +136,21 @@ const validateFullNameField = async () => {
 
 // Validate email field
 const validateEmailField = async () => {
-  // Reset thông báo lỗi
+  // Reset error message
   errors.value.email = '';
   
-  // Xác thực trường email
-  await v$.value.emailValue.$validate();
+  // Check if email is empty
+  if (!emailValue.value.trim()) {
+    errors.value.email = t('priceRequest.emailRequired') as string;
+    return false;
+  }
+  
+  // Validate with vuelidate
+  await v$.value.$validate();
   
   // Cập nhật thông báo lỗi nếu có
   if (v$.value.emailValue.$error) {
-    errors.value.email = v$.value.emailValue.$errors[0].$message;
+    errors.value.email = v$.value.emailValue.$errors[0].$message as string;
     return false;
   }
   
@@ -173,13 +191,22 @@ const submitForm = async () => {
       productName: props.productName,
     });
 
-    submitSuccess.value = true;
-    setTimeout(() => {
-      closeModal();
-      emit('success');
-    }, 2000);
+    // Hiển thị thông báo thành công
+    notification.success({
+      title: t('priceRequest.successToast') || 'Yêu cầu báo giá đã được gửi',
+      description: t('priceRequest.successToastDescription') || 'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất'
+    });
+    
+    // Đóng modal sau khi gửi thành công
+    closeModal();
+    // Không emit success để tránh hiển thị 2 toast
+    // emit('success');
   } catch (error) {
     console.error('Error submitting price request:', error);
+    notification.error({
+      title: t('priceRequest.error') || 'Lỗi',
+      description: t('priceRequest.errorDescription') || 'Có lỗi xảy ra khi gửi yêu cầu báo giá. Vui lòng thử lại sau.'
+    });
   } finally {
     isSubmitting.value = false;
   }
@@ -265,13 +292,18 @@ watch(() => props.isOpen, (newValue) => {
         </div>
 
         <div class="form-group">
-          <label for="phone" class="form-label">{{ t('priceRequest.phone') }}</label>
+          <label for="phone" class="form-label">
+            {{ t('priceRequest.phone') }}
+            <span v-if="!isPhoneRequired" class="optional-field">({{ t('common.optional') || 'Không bắt buộc' }})</span>
+          </label>
           <PhoneInput
             ref="phoneInputRef"
+            :modelValue="phoneNumber"
+            :phoneCode="selectedPhoneCode"
             v-model:phone="phoneNumber"
             v-model:code="selectedPhoneCode"
+            :error="!!errors.phoneNumber"
             @validation="handlePhoneValidation"
-            :class="{ 'error': errors.phoneNumber }"
           />
           <span v-if="errors.phoneNumber" class="error-message">{{ errors.phoneNumber }}</span>
         </div>
@@ -290,18 +322,13 @@ watch(() => props.isOpen, (newValue) => {
         <div class="form-actions">
           <button
             type="submit"
-            class="submit-button"
+            class="submit-button hover:bg-blue-800"
             :disabled="isSubmitting"
+            style="background-color: rgb(29, 78, 216) !important; color: white !important;"
           >
-            <span v-if="!submitSuccess">
-              <Send v-if="!isSubmitting" class="w-5 h-5 mr-2" />
-              <span v-else class="loading-spinner"></span>
-              {{ t('priceRequest.submit') }}
-            </span>
-            <span v-else class="success-message">
-              <Check class="w-5 h-5 mr-2" />
-              {{ t('priceRequest.success') }}
-            </span>
+            <Send v-if="!isSubmitting" class="w-5 h-5 mr-2" />
+            <span v-else class="loading-spinner"></span>
+            {{ t('priceRequest.submit') }}
           </button>
         </div>
       </form>
@@ -377,6 +404,14 @@ watch(() => props.isOpen, (newValue) => {
   margin-top: 0.25rem;
 }
 
+.optional-field {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: normal;
+  font-style: italic;
+  margin-left: 0.25rem;
+}
+
 .form-actions {
   margin-top: 1.5rem;
 }
@@ -387,8 +422,8 @@ watch(() => props.isOpen, (newValue) => {
   justify-content: center !important;
   width: 100% !important;
   padding: 0.75rem 1rem !important;
-  background-color: #3b82f6 !important;
-  color: white !important;
+  background-color: rgb(var(--primary)) !important;
+  color: rgb(var(--primary-foreground)) !important;
   border-radius: 0.375rem !important;
   font-weight: 500 !important;
   transition: background-color 0.2s !important;
@@ -396,7 +431,7 @@ watch(() => props.isOpen, (newValue) => {
 }
 
 .submit-button:hover {
-  background-color: #2563eb !important;
+  background-color: rgb(var(--primary-700, var(--primary))) !important;
 }
 
 .submit-button:disabled {
