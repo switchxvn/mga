@@ -16473,6 +16473,11 @@ sonic-boom@^4.0.1:
   dependencies:
     atomic-sleep "^1.0.0"
 
+sortablejs@1.14.0:
+  version "1.14.0"
+  resolved "https://registry.yarnpkg.com/sortablejs/-/sortablejs-1.14.0.tgz#6d2e17ccbdb25f464734df621d4f35d4ab35b3d8"
+  integrity sha512-pBXvQCs5/33fdN1/39pPL0NZF20LeRbLQ5jtnheIPN9JQAaufGjKdWduZn4U7wCtVuzKhmRkI0DFYHYRbB2H1w==
+
 "source-map-js@>=0.6.2 <2.0.0", source-map-js@^1.0.1, source-map-js@^1.0.2, source-map-js@^1.2.0, source-map-js@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/source-map-js/-/source-map-js-1.2.1.tgz#1ce5650fddd87abc099eda37dcff024c2667ae46"
@@ -18313,6 +18318,13 @@ vue-tsc@^2.0.0:
   dependencies:
     "@volar/typescript" "~2.4.11"
     "@vue/language-core" "2.2.10"
+
+vue3-draggable-next@^4.1.4:
+  version "4.1.4"
+  resolved "https://registry.yarnpkg.com/vue3-draggable-next/-/vue3-draggable-next-4.1.4.tgz#84e9e2da2e1ece7631b045167db90d400bd52127"
+  integrity sha512-29wEVebHRk0ybJEvmcQ+R/Or7Ogtp5/jc1WhVk5nEhDR7uq+iWHodScxWjG4xg4jrfA1KGWltcaGyklPpFC0qQ==
+  dependencies:
+    sortablejs "1.14.0"
 
 vue@^3.3.4, vue@^3.4, vue@^3.5.13:
   version "3.5.13"
