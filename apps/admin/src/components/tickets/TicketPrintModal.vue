@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { useLocalization } from '@/composables/useLocalization';
 import { PrinterIcon } from 'lucide-vue-next';
 
-const { t } = useI18n();
+const { t } = useLocalization();
 
 // Props
 const props = defineProps<{
@@ -23,11 +23,11 @@ const selectedPrintSize = ref('XP_PRINTER');
 
 // Print sizes
 const printSizes = [
-  { id: 'XP_PRINTER', name: 'Máy in XP', width: '72mm', height: '297mm', description: 'Khổ máy in XP (72mm)' },
-  { id: 'A4', name: 'A4', width: '210mm', height: '297mm', description: 'Khổ tiêu chuẩn A4' },
-  { id: 'A5', name: 'A5', width: '148mm', height: '210mm', description: 'Khổ nhỏ A5 (nửa A4)' },
-  { id: 'TICKET', name: 'Vé nhỏ', width: '80mm', height: '180mm', description: 'Khổ vé nhỏ' },
-  { id: 'LABEL', name: 'Nhãn vé', width: '50mm', height: '30mm', description: 'Nhãn vé nhỏ' }
+  { id: 'XP_PRINTER', name: t('tickets.sizes.xpPrinter'), width: '72mm', height: '297mm', description: t('tickets.sizes.xpDesc') },
+  { id: 'A4', name: t('tickets.sizes.a4'), width: '210mm', height: '297mm', description: t('tickets.sizes.a4Desc') },
+  { id: 'A5', name: t('tickets.sizes.a5'), width: '148mm', height: '210mm', description: t('tickets.sizes.a5Desc') },
+  { id: 'TICKET', name: t('tickets.sizes.ticket'), width: '80mm', height: '180mm', description: t('tickets.sizes.ticketDesc') },
+  { id: 'LABEL', name: t('tickets.sizes.label'), width: '50mm', height: '30mm', description: t('tickets.sizes.labelDesc') }
 ];
 
 // Methods
@@ -45,7 +45,7 @@ const handlePrint = () => {
     <div class="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 m-4">
       <div class="flex items-start justify-between mb-4">
         <h3 class="text-lg font-medium text-gray-900">
-          {{ t('In vé') }}
+          {{ t('tickets.printTicket') }}
         </h3>
         <button @click="closeModal" class="text-gray-400 hover:text-gray-500">
           <span class="sr-only">Close</span>
@@ -55,7 +55,7 @@ const handlePrint = () => {
       
       <div class="mb-6">
         <p class="text-sm text-gray-600 mb-4">
-          {{ t('Chọn kích thước vé muốn in. Vui lòng đảm bảo máy in và khổ giấy được cài đặt phù hợp.') }}
+          {{ t('tickets.selectSize') }}
         </p>
         
         <div class="grid grid-cols-2 gap-4 mb-6">
@@ -94,12 +94,9 @@ const handlePrint = () => {
               <i class="fas fa-lightbulb text-yellow-600"></i>
             </div>
             <div class="ml-3">
-              <h4 class="font-medium">{{ t('Lưu ý khi in:') }}</h4>
+              <h4 class="font-medium">{{ t('tickets.printingNotes') }}</h4>
               <ul class="mt-1 list-disc pl-5 space-y-1">
-                <li>{{ t('Đảm bảo máy in được kết nối và cài đặt đúng') }}</li>
-                <li>{{ t('Kiểm tra khổ giấy trong máy in trước khi in') }}</li>
-                <li>{{ t('Sử dụng khổ A4 để in vé đầy đủ thông tin') }}</li>
-                <li>{{ t('Khổ nhỏ sẽ in ít thông tin hơn nhưng tiết kiệm giấy') }}</li>
+                <li v-for="(note, index) in t('tickets.printerNotes')" :key="index">{{ note }}</li>
               </ul>
             </div>
           </div>
@@ -111,7 +108,7 @@ const handlePrint = () => {
           @click="closeModal"
           class="px-4 py-2 border border-gray-300 rounded-md font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          {{ t('Hủy') }}
+          {{ t('tickets.cancel') }}
         </button>
         
         <button
@@ -121,11 +118,11 @@ const handlePrint = () => {
         >
           <span v-if="isPrinting">
             <i class="fas fa-spinner fa-spin mr-2"></i>
-            {{ t('Đang in...') }}
+            {{ t('tickets.printing') }}
           </span>
           <span v-else>
             <i class="fas fa-print mr-2"></i>
-            {{ t('In vé') }}
+            {{ t('tickets.print') }}
           </span>
         </button>
       </div>

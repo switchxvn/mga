@@ -69,6 +69,7 @@
     "totalRevenue": "Total Revenue",
     "totalOrders": "Total Orders",
     "totalCustomers": "Total Customers",
+    "conversionRate": "Conversion Rate",
     "recentActivity": "Recent Activity",
     "viewAll": "View All"
   },
@@ -105,7 +106,91 @@
     "total": "Total",
     "status": "Status",
     "viewOrder": "View Order",
-    "orderDetails": "Order Details"
+    "orderDetails": "Order Details",
+    "statusTimeline": "Status Timeline",
+    "orderNotes": "Order Notes",
+    "notesPlaceholder": "Add notes about this order",
+    "statuses": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "statusDescriptions": {
+      "pending": "Order received, awaiting confirmation",
+      "confirmed": "Order confirmed, preparing for processing",
+      "processing": "Order is being processed and packed",
+      "shipped": "Order has been shipped",
+      "delivered": "Order has been delivered"
+    },
+    "payment": {
+      "method": "Payment Method",
+      "selectMethod": "Select payment method",
+      "status": "Payment Status",
+      "statuses": {
+        "pending": "Pending",
+        "paid": "Paid",
+        "failed": "Failed",
+        "refunded": "Refunded",
+        "partiallyRefunded": "Partially Refunded"
+      },
+      "sameAsShipping": "Billing address same as shipping address",
+      "billingAddress": "Billing Address"
+    },
+    "address": {
+      "line1": "Address Line 1",
+      "line1Placeholder": "Street address",
+      "line2": "Address Line 2 (Optional)",
+      "line2Placeholder": "Apartment, suite, unit, etc.",
+      "city": "City",
+      "cityPlaceholder": "City",
+      "state": "State / Province",
+      "statePlaceholder": "State or province",
+      "postalCode": "Postal Code",
+      "postalCodePlaceholder": "Postal code",
+      "country": "Country",
+      "countryPlaceholder": "Country"
+    },
+    "items": {
+      "product": "Product",
+      "price": "Price",
+      "quantity": "Quantity",
+      "total": "Total",
+      "actions": "Actions",
+      "addProduct": "Add Product",
+      "searchProducts": "Search Products",
+      "searchPlaceholder": "Search by name or SKU",
+      "sku": "SKU",
+      "noProductsFound": "No products found"
+    },
+    "customer": {
+      "name": "Customer Name",
+      "namePlaceholder": "Enter customer name",
+      "email": "Email",
+      "emailPlaceholder": "customer@example.com",
+      "countryCode": "Country Code",
+      "countryCodePlaceholder": "+84",
+      "phoneNumber": "Phone Number",
+      "phoneNumberPlaceholder": "123456789",
+      "userId": "User ID (Optional)",
+      "userIdPlaceholder": "User's UUID (if registered)",
+      "userIdDescription": "Only needed if order is associated with a registered user"
+    }
+  },
+  "hero_slider": {
+    "title": "Title",
+    "description": "Description",
+    "imageUrl": "Image URL",
+    "buttonText": "Button Text",
+    "buttonLink": "Button Link",
+    "order": "Order",
+    "active": "Active",
+    "theme": "Theme",
+    "manager": "Hero Slider Manager",
+    "addSlider": "Add Slider",
+    "confirmDelete": "Are you sure you want to delete this slider?"
   },
   "head": {
     "dashboard": "Dashboard - Admin Panel",
@@ -201,6 +286,48 @@
         "passwordMatch": "Passwords do not match",
         "invalidFormat": "Invalid format"
       }
+    }
+  },
+  "tickets": {
+    "printTicket": "Print Ticket",
+    "selectSize": "Select ticket size to print. Please ensure your printer and paper are properly set up.",
+    "printingNotes": "Printing Notes:",
+    "printerNotes": [
+      "Ensure the printer is connected and set up correctly",
+      "Check the paper size in the printer before printing",
+      "Use A4 size for full ticket information",
+      "Smaller sizes print less information but save paper"
+    ],
+    "cancel": "Cancel",
+    "print": "Print",
+    "printing": "Printing...",
+    "sizes": {
+      "xpPrinter": "XP Printer",
+      "a4": "A4",
+      "a5": "A5",
+      "ticket": "Small Ticket",
+      "label": "Ticket Label",
+      "xpDesc": "XP printer size (72mm)",
+      "a4Desc": "Standard A4 size",
+      "a5Desc": "Small A5 size (half A4)",
+      "ticketDesc": "Small ticket size",
+      "labelDesc": "Small ticket label"
+    }
+  },
+  "posts": {
+    "categories": "Categories",
+    "noCategories": "No news categories available",
+    "featuredImage": "Featured Image",
+    "featuredImageAlt": "Featured image",
+    "noImage": "No image selected",
+    "imageUrlPlaceholder": "Enter image URL or upload",
+    "recommendedSize": "Recommended: 1200x630px",
+    "uploading": "Uploading... {progress}%",
+    "uploadImage": "Upload Image",
+    "errors": {
+      "notImage": "Please select an image file",
+      "tooLarge": "Image size should be less than 5MB",
+      "uploadFailed": "Failed to upload image. Please try again."
     }
   }
 } 

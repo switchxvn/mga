@@ -1,8 +1,8 @@
 <template>
   <div>
-    <h2>Hero Slider Manager</h2>
+    <h2>{{ t('hero_slider.manager') }}</h2>
     <ThemeSelector v-model="selectedThemeId" />
-    <button class="btn btn-primary mb-2" @click="addSlider">Thêm slider</button>
+    <button class="btn btn-primary mb-2" @click="addSlider">{{ t('hero_slider.addSlider') }}</button>
     <Draggable v-model="sliders" @end="onOrderChange">
       <template #item="{element}">
         <HeroSliderItem :slider="element" @edit="editSlider" @delete="deleteSlider" />
@@ -15,6 +15,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useHeroSlider } from '@/composables/useHeroSlider'
+import { useLocalization } from '@/composables/useLocalization'
+
+const { t } = useLocalization()
 const selectedThemeId = ref<number | null>(null)
 const editingSlider = ref<any>(null)
 const {
@@ -38,8 +41,8 @@ function editSlider(slider: any) {
   editingSlider.value = { ...slider }
 }
 function deleteSlider(slider: any) {
-  if (confirm('Xác nhận xóa slider này?')) {
-    deleteSliderApi(slider.id, selectedThemeId.value)
+  if (confirm(t('hero_slider.confirmDelete'))) {
+    deleteSliderApi(slider.id, selectedThemeId.value as number)
   }
 }
 function saveSlider(data: any) {
@@ -64,6 +67,6 @@ async function onImageDrop(file: File) {
 function onOrderChange() {
   if (!selectedThemeId.value) return
   const orderList = sliders.value.map((s: any, idx: number) => ({ id: s.id, order: idx }))
-  reorderSliders(orderList, selectedThemeId.value)
+  reorderSliders(orderList, selectedThemeId.value as number)
 }
 </script> 

@@ -3,25 +3,25 @@
     <!-- Order Status -->
     <div class="space-y-1">
       <label for="order_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Order Status
+        {{ t('orders.status') }}
       </label>
       <select
         id="order_status"
         v-model="orderStatusModel"
         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
       >
-        <option value="pending">Pending</option>
-        <option value="confirmed">Confirmed</option>
-        <option value="processing">Processing</option>
-        <option value="shipped">Shipped</option>
-        <option value="delivered">Delivered</option>
-        <option value="cancelled">Cancelled</option>
+        <option value="pending">{{ t('orders.statuses.pending') }}</option>
+        <option value="confirmed">{{ t('orders.statuses.confirmed') }}</option>
+        <option value="processing">{{ t('orders.statuses.processing') }}</option>
+        <option value="shipped">{{ t('orders.statuses.shipped') }}</option>
+        <option value="delivered">{{ t('orders.statuses.delivered') }}</option>
+        <option value="cancelled">{{ t('orders.statuses.cancelled') }}</option>
       </select>
     </div>
 
     <!-- Order Status Timeline -->
     <div class="space-y-2">
-      <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Status Timeline</h3>
+      <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('orders.statusTimeline') }}</h3>
       
       <div class="mt-2 space-y-6">
         <div class="relative">
@@ -42,10 +42,10 @@
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-400'
                   ]">
-                    Pending
+                    {{ t('orders.statuses.pending') }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Order received, awaiting confirmation
+                    {{ t('orders.statusDescriptions.pending') }}
                   </p>
                 </div>
               </div>
@@ -68,10 +68,10 @@
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-400'
                   ]">
-                    Confirmed
+                    {{ t('orders.statuses.confirmed') }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Order confirmed, preparing for processing
+                    {{ t('orders.statusDescriptions.confirmed') }}
                   </p>
                 </div>
               </div>
@@ -94,10 +94,10 @@
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-400'
                   ]">
-                    Processing
+                    {{ t('orders.statuses.processing') }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Order is being processed and packed
+                    {{ t('orders.statusDescriptions.processing') }}
                   </p>
                 </div>
               </div>
@@ -120,10 +120,10 @@
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-400'
                   ]">
-                    Shipped
+                    {{ t('orders.statuses.shipped') }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Order has been shipped
+                    {{ t('orders.statusDescriptions.shipped') }}
                   </p>
                 </div>
               </div>
@@ -146,10 +146,10 @@
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-400'
                   ]">
-                    Delivered
+                    {{ t('orders.statuses.delivered') }}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Order has been delivered
+                    {{ t('orders.statusDescriptions.delivered') }}
                   </p>
                 </div>
               </div>
@@ -162,14 +162,14 @@
     <!-- Order Notes -->
     <div class="space-y-1">
       <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Order Notes
+        {{ t('orders.orderNotes') }}
       </label>
       <textarea
         id="notes"
         v-model="notesModel"
         rows="3"
         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-        placeholder="Add notes about this order"
+        :placeholder="t('orders.notesPlaceholder')"
       ></textarea>
     </div>
   </div>
@@ -184,6 +184,9 @@ import {
   TruckIcon, 
   PackageIcon 
 } from 'lucide-vue-next';
+import { useLocalization } from '@/composables/useLocalization';
+
+const { t } = useLocalization();
 
 const props = defineProps({
   orderStatus: {

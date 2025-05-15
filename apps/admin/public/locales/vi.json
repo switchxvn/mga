@@ -69,6 +69,7 @@
     "totalRevenue": "Tổng doanh thu",
     "totalOrders": "Tổng đơn hàng",
     "totalCustomers": "Tổng khách hàng",
+    "conversionRate": "Tỷ lệ chuyển đổi",
     "recentActivity": "Hoạt động gần đây",
     "viewAll": "Xem tất cả"
   },
@@ -105,7 +106,91 @@
     "total": "Tổng",
     "status": "Trạng thái",
     "viewOrder": "Xem đơn hàng",
-    "orderDetails": "Chi tiết đơn hàng"
+    "orderDetails": "Chi tiết đơn hàng",
+    "statusTimeline": "Dòng thời gian trạng thái",
+    "orderNotes": "Ghi chú đơn hàng",
+    "notesPlaceholder": "Thêm ghi chú về đơn hàng này",
+    "statuses": {
+      "pending": "Đang chờ",
+      "confirmed": "Đã xác nhận",
+      "processing": "Đang xử lý",
+      "shipped": "Đã gửi",
+      "delivered": "Đã giao",
+      "cancelled": "Đã hủy"
+    },
+    "statusDescriptions": {
+      "pending": "Đã nhận đơn hàng, đang chờ xác nhận",
+      "confirmed": "Đơn hàng đã xác nhận, đang chuẩn bị xử lý",
+      "processing": "Đơn hàng đang được xử lý và đóng gói",
+      "shipped": "Đơn hàng đã được gửi đi",
+      "delivered": "Đơn hàng đã được giao"
+    },
+    "payment": {
+      "method": "Phương thức thanh toán",
+      "selectMethod": "Chọn phương thức thanh toán",
+      "status": "Trạng thái thanh toán",
+      "statuses": {
+        "pending": "Đang chờ",
+        "paid": "Đã thanh toán",
+        "failed": "Thất bại",
+        "refunded": "Đã hoàn tiền",
+        "partiallyRefunded": "Hoàn tiền một phần"
+      },
+      "sameAsShipping": "Địa chỉ thanh toán giống với địa chỉ giao hàng",
+      "billingAddress": "Địa chỉ thanh toán"
+    },
+    "address": {
+      "line1": "Địa chỉ dòng 1",
+      "line1Placeholder": "Địa chỉ đường phố",
+      "line2": "Địa chỉ dòng 2 (Tùy chọn)",
+      "line2Placeholder": "Căn hộ, phòng, đơn vị, v.v.",
+      "city": "Thành phố",
+      "cityPlaceholder": "Thành phố",
+      "state": "Tỉnh / Thành phố",
+      "statePlaceholder": "Tỉnh hoặc thành phố",
+      "postalCode": "Mã bưu điện",
+      "postalCodePlaceholder": "Mã bưu điện",
+      "country": "Quốc gia",
+      "countryPlaceholder": "Quốc gia"
+    },
+    "items": {
+      "product": "Sản phẩm",
+      "price": "Giá",
+      "quantity": "Số lượng",
+      "total": "Tổng cộng",
+      "actions": "Hành động",
+      "addProduct": "Thêm sản phẩm",
+      "searchProducts": "Tìm kiếm sản phẩm",
+      "searchPlaceholder": "Tìm theo tên hoặc mã SKU",
+      "sku": "Mã SKU",
+      "noProductsFound": "Không tìm thấy sản phẩm nào"
+    },
+    "customer": {
+      "name": "Tên khách hàng",
+      "namePlaceholder": "Nhập tên khách hàng",
+      "email": "Email",
+      "emailPlaceholder": "khachhang@example.com",
+      "countryCode": "Mã quốc gia",
+      "countryCodePlaceholder": "+84",
+      "phoneNumber": "Số điện thoại",
+      "phoneNumberPlaceholder": "123456789",
+      "userId": "ID người dùng (Tùy chọn)",
+      "userIdPlaceholder": "UUID của người dùng (nếu đã đăng ký)",
+      "userIdDescription": "Chỉ cần thiết khi đơn hàng liên kết với một người dùng đã đăng ký"
+    }
+  },
+  "hero_slider": {
+    "title": "Tiêu đề",
+    "description": "Mô tả",
+    "imageUrl": "URL Hình ảnh",
+    "buttonText": "Nội dung nút",
+    "buttonLink": "Đường dẫn nút",
+    "order": "Thứ tự",
+    "active": "Hoạt động",
+    "theme": "Giao diện",
+    "manager": "Quản lý Slider chính",
+    "addSlider": "Thêm Slider",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa slider này?"
   },
   "head": {
     "dashboard": "Bảng điều khiển - Trang quản trị",
@@ -201,6 +286,48 @@
         "passwordMatch": "Mật khẩu không khớp",
         "invalidFormat": "Định dạng không hợp lệ"
       }
+    }
+  },
+  "tickets": {
+    "printTicket": "In vé",
+    "selectSize": "Chọn kích thước vé muốn in. Vui lòng đảm bảo máy in và khổ giấy được cài đặt phù hợp.",
+    "printingNotes": "Lưu ý khi in:",
+    "printerNotes": [
+      "Đảm bảo máy in được kết nối và cài đặt đúng",
+      "Kiểm tra khổ giấy trong máy in trước khi in",
+      "Sử dụng khổ A4 để in vé đầy đủ thông tin",
+      "Khổ nhỏ sẽ in ít thông tin hơn nhưng tiết kiệm giấy"
+    ],
+    "cancel": "Hủy",
+    "print": "In vé",
+    "printing": "Đang in...",
+    "sizes": {
+      "xpPrinter": "Máy in XP",
+      "a4": "A4",
+      "a5": "A5",
+      "ticket": "Vé nhỏ",
+      "label": "Nhãn vé",
+      "xpDesc": "Khổ máy in XP (72mm)",
+      "a4Desc": "Khổ tiêu chuẩn A4",
+      "a5Desc": "Khổ nhỏ A5 (nửa A4)",
+      "ticketDesc": "Khổ vé nhỏ",
+      "labelDesc": "Nhãn vé nhỏ"
+    }
+  },
+  "posts": {
+    "categories": "Danh mục",
+    "noCategories": "Không có danh mục tin tức nào",
+    "featuredImage": "Hình ảnh nổi bật",
+    "featuredImageAlt": "Hình ảnh nổi bật",
+    "noImage": "Chưa chọn hình ảnh",
+    "imageUrlPlaceholder": "Nhập URL hình ảnh hoặc tải lên",
+    "recommendedSize": "Kích thước khuyến nghị: 1200x630px",
+    "uploading": "Đang tải lên... {progress}%",
+    "uploadImage": "Tải lên hình ảnh",
+    "errors": {
+      "notImage": "Vui lòng chọn tệp hình ảnh",
+      "tooLarge": "Kích thước hình ảnh phải nhỏ hơn 5MB",
+      "uploadFailed": "Tải hình ảnh thất bại. Vui lòng thử lại."
     }
   }
 } 
