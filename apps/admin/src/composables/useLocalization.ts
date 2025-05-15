@@ -1,81 +1,113 @@
-import { ref, computed } from 'vue';
-import { useLocalStorage } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
+import { ref, computed, reactive } from 'vue';
+import type { Composer } from 'vue-i18n';
 
-// Define locale interface
-export interface Locale {
-  code: string;
+export type SupportedLocale = 'en' | 'vi';
+
+interface LocaleOption {
+  code: SupportedLocale;
   name: string;
   nativeName: string;
+  flag: string;
 }
 
-// Available locales
-const availableLocales: Locale[] = [
-  {
-    code: 'en',
-    name: 'English',
-    nativeName: 'English'
-  },
-  {
-    code: 'vi',
-    name: 'Vietnamese',
-    nativeName: 'Tiếng Việt'
+export const useLocalization = () => {
+  // Sử dụng try-catch để xử lý trường hợp i18n chưa được khởi tạo
+  let i18n: Composer | undefined;
+  try {
+    i18n = useI18n();
+  } catch (error) {
+    console.warn('i18n not initialized yet, using fallback');
   }
-];
 
-// Create singleton state
-const state = {
-  locale: useLocalStorage('admin-locale', 'en'),
-  locales: ref<Locale[]>(availableLocales),
-  isLoading: ref(false),
-  error: ref<string | null>(null)
-};
-
-export function useLocalization() {
-  const { locale: i18nLocale, t } = useI18n();
+  const currentLocaleCode = ref<SupportedLocale>('en');
   
-  // Sync i18n locale with our state
-  if (i18nLocale.value !== state.locale.value) {
-    i18nLocale.value = state.locale.value;
-  }
+  const availableLocales = ref<LocaleOption[]>([
+    { code: 'en', name: 'English', nativeName: 'English', flag: '/images/flag/us.svg' },
+    { code: 'vi', name: 'Tiếng Việt', nativeName: 'Tiếng Việt', flag: '/images/flag/vn.svg' }
+  ]);
 
-  // Computed
   const currentLocale = computed(() => {
-    return state.locales.value.find(l => l.code === state.locale.value) || state.locales.value[0];
+    if (i18n) {
+      return availableLocales.value.find(l => l.code === i18n.locale.value) || availableLocales.value[0];
+    }
+    return availableLocales.value.find(l => l.code === currentLocaleCode.value) || availableLocales.value[0];
   });
 
-  // Methods
-  const switchLanguage = async (code: string) => {
-    if (code === state.locale.value) return;
-    
-    const isValidLocale = state.locales.value.some(locale => locale.code === code);
-    if (!isValidLocale) {
-      console.warn(`Locale ${code} is not available`);
-      return;
+  const setLocale = (localeCode: SupportedLocale) => {
+    // Lưu ngôn ngữ vào localStorage để duy trì giữa các phiên
+    if (process.client) {
+      localStorage.setItem('locale', localeCode);
     }
     
-    // Update our state
-    state.locale.value = code;
+    // Cập nhật locale trong i18n nếu đã khởi tạo
+    if (i18n) {
+      i18n.locale.value = localeCode;
+    }
     
-    // Update i18n locale
-    i18nLocale.value = code;
+    // Luôn cập nhật giá trị local
+    currentLocaleCode.value = localeCode;
+  };
+
+  // Alias for setLocale that matches frontend API
+  const switchLanguage = (localeCode: SupportedLocale) => {
+    return setLocale(localeCode);
+  };
+
+  // Hàm tiện ích để lấy chuỗi dịch với các tham số
+  const translate = (key: string, params?: Record<string, any>) => {
+    if (i18n) {
+      return i18n.t(key, params || {});
+    }
+    return key; // Fallback khi i18n chưa sẵn sàng
+  };
+
+  // Hàm tiện ích để lấy chuỗi dịch từ một namespace cụ thể
+  const translateFromNamespace = (namespace: string, key: string, params?: Record<string, any>) => {
+    if (!i18n) return key;
     
-    // Update HTML lang attribute
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('lang', code);
+    const messages = i18n.tm(namespace);
+    if (messages && typeof messages === 'object' && key in messages) {
+      const translation = messages[key];
+      if (typeof translation === 'string') {
+        // Xử lý các tham số nếu có
+        if (params) {
+          // Sửa lỗi linter về phương thức replace
+          return Object.entries(params).reduce(
+            (acc: string, entry: [string, any]) => {
+              const [paramKey, paramValue] = entry;
+              return acc.replace(new RegExp(`{${paramKey}}`, 'g'), String(paramValue));
+            },
+            translation
+          );
+        }
+        return translation;
+      }
+    }
+    return key; // Trả về key nếu không tìm thấy bản dịch
+  };
+
+  // Khởi tạo ngôn ngữ từ localStorage nếu có
+  const initLocale = () => {
+    if (process.client) {
+      const savedLocale = localStorage.getItem('locale') as SupportedLocale | null;
+      if (savedLocale && availableLocales.value.some(l => l.code === savedLocale)) {
+        if (i18n) {
+          i18n.locale.value = savedLocale;
+        }
+        currentLocaleCode.value = savedLocale;
+      }
     }
   };
 
   return {
-    // State
-    locale: state.locale,
-    locales: state.locales,
-    isLoading: state.isLoading,
-    error: state.error,
+    locale: i18n ? i18n.locale : currentLocaleCode,
+    locales: availableLocales,
     currentLocale,
-    
-    // Methods
+    setLocale,
     switchLanguage,
-    t
+    t: translate,
+    translateFromNamespace,
+    initLocale
   };
-} 
+}; 

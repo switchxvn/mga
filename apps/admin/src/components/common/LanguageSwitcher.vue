@@ -91,16 +91,19 @@ import { useI18n } from 'vue-i18n';
 import { ClientOnly } from '#components';
 
 const { t } = useI18n();
-const { locale, locales, switchLanguage } = useLocalization();
+const { locale, locales, switchLanguage, initLocale } = useLocalization();
 
 const isOpen = ref(false);
 const showFallback = ref(false);
 
 // Computed
-const availableLocales = computed(() => locales.value);
+const availableLocales = computed(() => locales.value || []);
 
 // Get current locale display
 const currentLocaleDisplay = computed(() => {
+  if (!availableLocales.value?.length || !locale.value) {
+    return t('common.language');
+  }
   const current = availableLocales.value.find(loc => loc.code === locale.value);
   return current ? current.nativeName : t('common.language');
 });
@@ -124,16 +127,21 @@ const closeDropdown = () => {
 
 // Handle language selection and save to localStorage
 const handleSelectLanguage = async (code: string) => {
-  if (code === locale.value) {
+  if (!code || code === locale.value) {
     closeDropdown();
     return;
   }
   
-  await switchLanguage(code);
-  closeDropdown();
-  
-  // Đảm bảo DOM đã cập nhật trước khi tiếp tục
-  await nextTick();
+  try {
+    await switchLanguage(code);
+    closeDropdown();
+    
+    // Đảm bảo DOM đã cập nhật trước khi tiếp tục
+    await nextTick();
+  } catch (error) {
+    console.error('Error switching language:', error);
+    closeDropdown();
+  }
 };
 
 // Handle click outside
@@ -179,6 +187,8 @@ onMounted(() => {
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
     preloadImages();
+    // Khởi tạo ngôn ngữ từ localStorage nếu có
+    initLocale();
   }
 });
 

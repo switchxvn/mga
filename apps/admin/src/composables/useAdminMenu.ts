@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, computed, type Ref } from 'vue';
 import { useTrpc } from './useTrpc';
 import { useAuth } from './useAuth';
 import { useUserStore } from '@/stores/useUserStore';
@@ -134,9 +134,13 @@ export const useAdminMenu = () => {
         throw new Error('Chưa đăng nhập');
       }
       
-      // Sử dụng đúng endpoint từ adminMenuAdminRouter
+      // Lấy ngôn ngữ hiện tại từ localStorage
+      const currentLocale = storage ? storage.getItem('locale') || 'en' : 'en';
+      
+      // Sử dụng đúng endpoint từ adminMenuAdminRouter và truyền locale
       const response = await trpc.admin.adminMenu.getAdminMenuItems.query({ 
-        includeInactive: false 
+        includeInactive: false,
+        locale: currentLocale // Thêm locale vào query
       });
       
       if (response) {
