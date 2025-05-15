@@ -2,15 +2,15 @@
 import { useLocalization } from '@/composables/useLocalization';
 import { ref, onMounted } from 'vue';
 
-const { currentLocale, availableLocales, setLocale, initLocale } = useLocalization();
+const { currentLocale, availableLocales, setLocale, initLocale, t } = useLocalization();
 const isOpen = ref(false);
 
-// Khởi tạo ngôn ngữ từ localStorage khi component được mount
+// Initialize language from localStorage when component is mounted
 onMounted(() => {
   initLocale();
 });
 
-// Đóng dropdown khi click ra ngoài
+// Close dropdown when clicking outside
 const closeDropdown = () => {
   isOpen.value = false;
 };
@@ -20,7 +20,7 @@ const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
 };
 
-// Chọn ngôn ngữ
+// Select language
 const selectLocale = (code: 'en' | 'vi') => {
   setLocale(code);
   isOpen.value = false;
@@ -32,7 +32,7 @@ const selectLocale = (code: 'en' | 'vi') => {
     <button
       @click="toggleDropdown"
       class="flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-      aria-label="Change language"
+      :aria-label="t('components.common.languageSwitcher.selectLanguage')"
     >
       <img 
         :src="currentLocale.flag" 

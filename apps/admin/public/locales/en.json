@@ -112,5 +112,95 @@
     "profile": "Profile - Admin Panel",
     "products": "Products - Admin Panel",
     "orders": "Orders - Admin Panel"
+  },
+  "components": {
+    "common": {
+      "accessDenied": {
+        "title": "Access Denied",
+        "defaultMessage": "You don't have permission to access this page",
+        "missingPermission": "You don't have the required permission: {permission}",
+        "requiredPermissions": "You need one of the following permissions: {permissions}"
+      },
+      "permissionAlert": {
+        "accessDenied": "Access Denied",
+        "accessInfo": "Access Information",
+        "accessRequired": "Access Required",
+        "noAccess": "You don't have permission to access this content",
+        "permissionRequired": "You need the permission: {permission}",
+        "permissionsRequired": "You need one of the following permissions: {permissions}"
+      },
+      "permissionGate": {
+        "unauthorized": "Unauthorized",
+        "missingPermissions": "You don't have the required permissions to access this content",
+        "contactAdmin": "Please contact your administrator for access"
+      },
+      "languageSwitcher": {
+        "selectLanguage": "Select Language"
+      },
+      "authWrapper": {
+        "sessionExpired": "Session Expired",
+        "mustLogin": "You must log in to continue",
+        "redirectingToLogin": "Redirecting to login page..."
+      },
+      "toast": {
+        "close": "Close"
+      },
+      "filter": {
+        "statusFilter": {
+          "allStatus": "All Status",
+          "published": "Published", 
+          "unpublished": "Unpublished"
+        },
+        "searchFilter": {
+          "placeholder": "Search..."
+        },
+        "pageSizeFilter": {
+          "perPage": "{count} per page"
+        }
+      },
+      "header": {
+        "pageHeader": {
+          "actions": "Actions"
+        }
+      },
+      "media": {
+        "uploader": {
+          "changeImage": "Change Image",
+          "uploadImage": "Upload Image",
+          "dropHere": "Drag and drop image here or click to upload",
+          "selectImage": "Select Image",
+          "supportedFormats": "Supported formats: JPG, PNG, GIF • Max 5MB",
+          "uploading": "Uploading...",
+          "invalidFormat": "Invalid file format",
+          "fileTooLarge": "File size cannot exceed {size}",
+          "uploadFailed": "Upload failed"
+        }
+      },
+      "pagination": {
+        "showing": "Showing",
+        "to": "to",
+        "of": "of",
+        "results": "results",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page"
+      }
+    },
+    "form": {
+      "phoneInput": {
+        "search": "Search country",
+        "selectCountry": "Select country code",
+        "invalidPhone": "Invalid phone number",
+        "enterPhone": "Enter phone number"
+      },
+      "validation": {
+        "required": "This field is required",
+        "email": "Please enter a valid email address",
+        "minLength": "Please enter at least {min} characters",
+        "maxLength": "Please enter no more than {max} characters",
+        "passwordMatch": "Passwords do not match",
+        "invalidFormat": "Invalid format"
+      }
+    }
   }
 } 

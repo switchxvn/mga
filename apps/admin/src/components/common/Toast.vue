@@ -27,6 +27,7 @@
         <button
           class="ml-auto flex-shrink-0 text-white opacity-75 hover:opacity-100 focus:outline-none"
           @click="removeToast(toast.id)"
+          :aria-label="t('components.common.toast.close')"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -39,8 +40,10 @@
 
 <script setup>
 import { useToast } from '~/composables/useToast'
+import { useLocalization } from '../../composables/useLocalization'
 
 const { toasts, removeToast } = useToast()
+const { t } = useLocalization()
 
 const toastClasses = {
   success: 'bg-green-500',

@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useLocalization } from '../../../composables/useLocalization';
 
 interface StatusFilterOption<T = any> {
   value: T;
   label: string;
 }
+
+const { t } = useLocalization();
 
 const props = defineProps<{
   modelValue?: any;
@@ -20,9 +23,9 @@ const emit = defineEmits<{
 
 // Provide default options for published/unpublished for backward compatibility
 const defaultOptions = computed<StatusFilterOption[]>(() => [
-  { value: undefined, label: props.anyLabel || 'All Status' },
-  { value: true, label: props.publishedLabel || 'Published' },
-  { value: false, label: props.unpublishedLabel || 'Unpublished' }
+  { value: undefined, label: props.anyLabel || t('components.common.filter.statusFilter.allStatus') },
+  { value: true, label: props.publishedLabel || t('components.common.filter.statusFilter.published') },
+  { value: false, label: props.unpublishedLabel || t('components.common.filter.statusFilter.unpublished') }
 ]);
 
 // Use provided options or default boolean options

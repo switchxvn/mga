@@ -112,5 +112,95 @@
     "profile": "Hồ sơ - Trang quản trị",
     "products": "Sản phẩm - Trang quản trị",
     "orders": "Đơn hàng - Trang quản trị"
+  },
+  "components": {
+    "common": {
+      "accessDenied": {
+        "title": "Quyền truy cập bị từ chối",
+        "defaultMessage": "Bạn không có quyền truy cập vào trang này",
+        "missingPermission": "Bạn không có quyền truy cập: {permission}",
+        "requiredPermissions": "Bạn cần có một trong các quyền sau: {permissions}"
+      },
+      "permissionAlert": {
+        "accessDenied": "Quyền truy cập bị từ chối",
+        "accessInfo": "Thông tin quyền truy cập",
+        "accessRequired": "Cần quyền truy cập",
+        "noAccess": "Bạn không có quyền truy cập vào nội dung này",
+        "permissionRequired": "Bạn cần có quyền: {permission}",
+        "permissionsRequired": "Bạn cần có một trong các quyền sau: {permissions}"
+      },
+      "permissionGate": {
+        "unauthorized": "Không được phép",
+        "missingPermissions": "Bạn không có quyền cần thiết để truy cập nội dung này",
+        "contactAdmin": "Vui lòng liên hệ quản trị viên để được cấp quyền"
+      },
+      "languageSwitcher": {
+        "selectLanguage": "Chọn Ngôn ngữ"
+      },
+      "authWrapper": {
+        "sessionExpired": "Phiên đăng nhập đã hết hạn",
+        "mustLogin": "Bạn phải đăng nhập để tiếp tục",
+        "redirectingToLogin": "Đang chuyển hướng đến trang đăng nhập..."
+      },
+      "toast": {
+        "close": "Đóng"
+      },
+      "filter": {
+        "statusFilter": {
+          "allStatus": "Tất cả trạng thái",
+          "published": "Đã xuất bản", 
+          "unpublished": "Chưa xuất bản"
+        },
+        "searchFilter": {
+          "placeholder": "Tìm kiếm..."
+        },
+        "pageSizeFilter": {
+          "perPage": "{count} mỗi trang"
+        }
+      },
+      "header": {
+        "pageHeader": {
+          "actions": "Hành động"
+        }
+      },
+      "media": {
+        "uploader": {
+          "changeImage": "Thay đổi ảnh",
+          "uploadImage": "Tải ảnh đại diện",
+          "dropHere": "Kéo và thả ảnh vào đây hoặc nhấp vào khu vực này để chọn ảnh",
+          "selectImage": "Chọn ảnh",
+          "supportedFormats": "Định dạng hỗ trợ: JPG, PNG, GIF • Tối đa 5MB",
+          "uploading": "Đang tải lên...",
+          "invalidFormat": "File không đúng định dạng",
+          "fileTooLarge": "Kích thước file không được vượt quá {size}",
+          "uploadFailed": "Tải ảnh thất bại"
+        }
+      },
+      "pagination": {
+        "showing": "Hiển thị",
+        "to": "đến",
+        "of": "trong tổng số",
+        "results": "kết quả",
+        "previous": "Trước",
+        "next": "Tiếp",
+        "page": "Trang"
+      }
+    },
+    "form": {
+      "phoneInput": {
+        "search": "Tìm kiếm quốc gia",
+        "selectCountry": "Chọn mã quốc gia",
+        "invalidPhone": "Số điện thoại không hợp lệ",
+        "enterPhone": "Nhập số điện thoại"
+      },
+      "validation": {
+        "required": "Trường này là bắt buộc",
+        "email": "Vui lòng nhập địa chỉ email hợp lệ",
+        "minLength": "Vui lòng nhập ít nhất {min} ký tự",
+        "maxLength": "Vui lòng nhập không quá {max} ký tự",
+        "passwordMatch": "Mật khẩu không khớp",
+        "invalidFormat": "Định dạng không hợp lệ"
+      }
+    }
   }
 } 
