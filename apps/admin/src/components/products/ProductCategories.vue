@@ -3,9 +3,9 @@
     <div class="border-b border-slate-200 px-6 py-4 bg-slate-50">
       <h3 class="text-lg font-medium flex items-center gap-2">
         <FolderTreeIcon class="h-5 w-5 text-slate-600" />
-        Product Categories
+        {{ t('products.categories.title') }}
       </h3>
-      <p class="text-sm text-slate-500">Select categories for your product</p>
+      <p class="text-sm text-slate-500">{{ t('products.categories.description') }}</p>
     </div>
     <div class="p-6">
       <div class="grid gap-6">
@@ -14,7 +14,7 @@
           <SearchIcon class="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
           <input
             type="search"
-            placeholder="Search categories..."
+            :placeholder="t('products.categories.searchPlaceholder')"
             v-model="searchQuery"
             class="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
@@ -27,8 +27,8 @@
           </div>
           <div v-else-if="categories.length === 0" class="p-8 text-center">
             <FolderXIcon class="h-12 w-12 mx-auto text-slate-300 mb-2" />
-            <p class="text-slate-500">No categories found</p>
-            <p class="text-sm text-slate-400 mt-1">Try adjusting your search or create new categories</p>
+            <p class="text-slate-500">{{ t('products.categories.noCategories') }}</p>
+            <p class="text-sm text-slate-400 mt-1">{{ t('products.categories.searchHint') }}</p>
           </div>
           <div v-else class="grid gap-1 py-2">
             <CategoryItem
@@ -45,7 +45,7 @@
         <div v-if="selectedCategories.length > 0" class="border-t border-slate-200 pt-4">
           <h4 class="text-sm font-medium mb-3 flex items-center gap-2">
             <CheckCircleIcon class="h-4 w-4 text-emerald-500" />
-            Selected Categories <span class="text-xs bg-slate-100 rounded-full px-2 py-0.5 ml-1">{{ selectedCategories.length }}</span>
+            {{ t('products.categories.selectedCategories') }} <span class="text-xs bg-slate-100 rounded-full px-2 py-0.5 ml-1">{{ selectedCategories.length }}</span>
           </h4>
           <div class="flex flex-wrap gap-2">
             <div
@@ -54,7 +54,7 @@
               class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm hover:bg-slate-200 transition-colors group"
             >
               <FolderIcon class="h-3.5 w-3.5 text-slate-500" />
-              <span>{{ category.translations[0]?.name || 'Unnamed category' }}</span>
+              <span>{{ category.translations[0]?.name || t('products.categories.unnamedCategory') }}</span>
               <button
                 type="button"
                 @click="toggleCategory(category.id)"
@@ -83,6 +83,9 @@ import {
 } from 'lucide-vue-next'
 import { useTrpc } from '../../composables/useTrpc'
 import CategoryItem from './CategoryItem.vue'
+import { useLocalization } from '@/composables/useLocalization'
+
+const { t } = useLocalization()
 
 interface CategoryTranslation {
   id: number

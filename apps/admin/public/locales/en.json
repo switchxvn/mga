@@ -95,7 +95,17 @@
     "price": "Price",
     "stock": "Stock",
     "category": "Category",
-    "status": "Status"
+    "status": "Status",
+    "categories": {
+      "title": "Product Categories",
+      "description": "Select categories for your product",
+      "searchPlaceholder": "Search categories...",
+      "noCategories": "No categories found",
+      "searchHint": "Try adjusting your search or create new categories",
+      "selectedCategories": "Selected Categories",
+      "unnamedCategory": "Unnamed category",
+      "draft": "Draft"
+    }
   },
   "orders": {
     "title": "Orders",
@@ -328,6 +338,33 @@
       "notImage": "Please select an image file",
       "tooLarge": "Image size should be less than 5MB",
       "uploadFailed": "Failed to upload image. Please try again."
+    },
+    "editor": {
+      "basicInfo": "Basic Information",
+      "title": "Title",
+      "titlePlaceholder": "Enter title",
+      "urlSlug": "URL Slug",
+      "slugPlaceholder": "Enter URL slug",
+      "generateSlug": "Generate slug from title",
+      "shortDescription": "Short Description",
+      "shortDescriptionPlaceholder": "Enter a short description",
+      "content": "Content"
+    },
+    "seo": {
+      "title": "SEO Settings",
+      "metaDescription": "Meta Description",
+      "metaDescriptionPlaceholder": "Enter SEO meta description",
+      "characters": "characters",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter tags, separated by commas or space",
+      "tagsExample": "Example: technology, web development"
+    },
+    "settings": {
+      "title": "Post Settings",
+      "status": "Status",
+      "draft": "Draft",
+      "published": "Published",
+      "lastUpdated": "Last updated"
     }
   }
 } 

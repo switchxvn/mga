@@ -3,7 +3,7 @@
     <div class="p-6 border-b border-slate-200">
       <h3 class="text-lg font-medium text-slate-900 flex items-center gap-2">
         <SearchIcon class="w-5 h-5" />
-        SEO Settings
+        {{ t('posts.seo.title') }}
       </h3>
     </div>
     
@@ -12,11 +12,11 @@
         <div class="space-y-2">
           <label class="text-sm font-medium text-slate-900 flex items-center gap-2">
             <FileTextIcon class="w-4 h-4" />
-            Meta Description
+            {{ t('posts.seo.metaDescription') }}
           </label>
           <textarea
             :value="metaDescription"
-            placeholder="Enter SEO meta description"
+            :placeholder="t('posts.seo.metaDescriptionPlaceholder')"
             class="flex min-h-[100px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             @input="$emit('update:metaDescription', ($event.target as HTMLTextAreaElement).value)"
           ></textarea>
@@ -27,14 +27,14 @@
               'text-red-500': (metaDescription?.length || 0) > 160
             }"
           >
-            {{ metaDescription?.length || 0 }}/160 characters
+            {{ metaDescription?.length || 0 }}/160 {{ t('posts.seo.characters') }}
           </p>
         </div>
 
         <div class="space-y-2">
           <label class="text-sm font-medium text-slate-900 flex items-center gap-2">
             <TagsIcon class="w-4 h-4" />
-            Tags
+            {{ t('posts.seo.tags') }}
           </label>
           <div class="space-y-3">
             <div class="flex flex-wrap gap-2">
@@ -56,12 +56,12 @@
               :value="tagsInput"
               type="text"
               @keydown="$emit('tag-input', $event)"
-              placeholder="Enter tags, separated by commas or space"
+              :placeholder="t('posts.seo.tagsPlaceholder')"
               class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               @input="$emit('update:tagsInput', ($event.target as HTMLInputElement).value)"
             />
             <p class="text-sm text-slate-500">
-              Example: technology, web development
+              {{ t('posts.seo.tagsExample') }}
             </p>
           </div>
         </div>
@@ -72,6 +72,9 @@
 
 <script setup lang="ts">
 import { SearchIcon, FileTextIcon, TagsIcon, XIcon } from 'lucide-vue-next'
+import { useLocalization } from '@/composables/useLocalization'
+
+const { t } = useLocalization()
 
 defineProps<{
   metaDescription: string

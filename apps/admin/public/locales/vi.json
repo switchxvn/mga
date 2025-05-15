@@ -95,7 +95,17 @@
     "price": "Giá",
     "stock": "Kho",
     "category": "Danh mục",
-    "status": "Trạng thái"
+    "status": "Trạng thái",
+    "categories": {
+      "title": "Danh mục sản phẩm",
+      "description": "Chọn danh mục cho sản phẩm của bạn",
+      "searchPlaceholder": "Tìm kiếm danh mục...",
+      "noCategories": "Không tìm thấy danh mục nào",
+      "searchHint": "Thử điều chỉnh tìm kiếm hoặc tạo danh mục mới",
+      "selectedCategories": "Danh mục đã chọn",
+      "unnamedCategory": "Danh mục chưa đặt tên",
+      "draft": "Bản nháp"
+    }
   },
   "orders": {
     "title": "Đơn hàng",
@@ -328,6 +338,33 @@
       "notImage": "Vui lòng chọn tệp hình ảnh",
       "tooLarge": "Kích thước hình ảnh phải nhỏ hơn 5MB",
       "uploadFailed": "Tải hình ảnh thất bại. Vui lòng thử lại."
+    },
+    "editor": {
+      "basicInfo": "Thông tin cơ bản",
+      "title": "Tiêu đề",
+      "titlePlaceholder": "Nhập tiêu đề",
+      "urlSlug": "Đường dẫn URL",
+      "slugPlaceholder": "Nhập đường dẫn URL",
+      "generateSlug": "Tạo đường dẫn từ tiêu đề",
+      "shortDescription": "Mô tả ngắn",
+      "shortDescriptionPlaceholder": "Nhập mô tả ngắn",
+      "content": "Nội dung"
+    },
+    "seo": {
+      "title": "Cài đặt SEO",
+      "metaDescription": "Mô tả Meta",
+      "metaDescriptionPlaceholder": "Nhập mô tả SEO meta",
+      "characters": "ký tự",
+      "tags": "Thẻ",
+      "tagsPlaceholder": "Nhập thẻ, phân cách bằng dấu phẩy hoặc khoảng trắng",
+      "tagsExample": "Ví dụ: công nghệ, phát triển web"
+    },
+    "settings": {
+      "title": "Cài đặt bài viết",
+      "status": "Trạng thái",
+      "draft": "Bản nháp",
+      "published": "Đã xuất bản",
+      "lastUpdated": "Cập nhật lần cuối"
     }
   }
 } 
