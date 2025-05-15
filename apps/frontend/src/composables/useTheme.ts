@@ -189,7 +189,7 @@ export function useTheme() {
 
   const updateCssVariables = (themeColors: ThemeColors) => {
     // Skip updating CSS variables during SSR
-    if (typeof window === 'undefined') return;
+    if (process.server) return;
 
     const mode = isDark.value ? 'dark' : 'light';
     const currentColors = themeColors[mode];
@@ -289,21 +289,28 @@ export function useTheme() {
   };
 
   const initializeTheme = async () => {
+    // Ngay lập tức trả về trong SSR
+    if (process.server) return null;
+    
     if (initialized) return;
 
-    // Skip applying default colors during SSR
-    if (typeof window !== 'undefined') {
-      updateCssVariables(defaultColors);
-    }
+    // Apply default colors
+    updateCssVariables(defaultColors);
 
     try {
+      // Kiểm tra TRPC có sẵn sàng không
+      if (!trpc?.theme?.getActiveTheme?.query) {
+        console.warn('TRPC theme.getActiveTheme.query is not available');
+        return null;
+      }
+      
       const response = await trpc.theme.getActiveTheme.query();
       
       if (response) {
         activeTheme.value = response;
         initialized = true;
         
-        if (response.colors && typeof window !== 'undefined') {
+        if (response.colors) {
           updateCssVariables(response.colors);
         }
       }
@@ -311,12 +318,13 @@ export function useTheme() {
       return response;
     } catch (error) {
       console.error('Failed to initialize theme:', error);
+      initialized = true; // Đánh dấu đã khởi tạo để không gọi lại liên tục
       return null;
     }
   };
 
   // Watch for dark mode changes only in browser
-  if (typeof window !== 'undefined') {
+  if (process.client) {
     watch(isDark, () => {
       const colors = activeTheme.value?.colors || defaultColors;
       updateCssVariables(colors);

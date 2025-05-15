@@ -141,6 +141,7 @@
             <div v-show="currentTab === 'categories'">
               <PostCategories
                 v-model="form.categoryIds"
+                :selected-language="selectedLanguage"
               />
             </div>
 

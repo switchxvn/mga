@@ -10,7 +10,20 @@ interface Toast {
 const toasts = ref<Toast[]>([])
 let nextId = 0
 
-export const useToast = () => {
+export function useToast() {
+  // SSR safe - return mock object on server
+  if (process.server) {
+    return {
+      toasts: ref<Toast[]>([]),
+      addToast: () => -1,
+      removeToast: () => {},
+      success: () => -1,
+      error: () => -1,
+      info: () => -1,
+      warning: () => -1
+    }
+  }
+
   const addToast = (message: string, type: Toast['type'], duration = 3000) => {
     const id = nextId++
     const toast: Toast = {

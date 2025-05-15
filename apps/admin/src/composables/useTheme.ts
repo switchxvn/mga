@@ -139,7 +139,7 @@ let initialized = false;
 
 // Kiểm tra xem CSS variables đã được set chưa
 const areCssVariablesInitialized = () => {
-  if (typeof window === 'undefined') return false;
+  if (process.server) return false;
   
   // Kiểm tra một số biến CSS cụ thể đã được set chưa
   const primaryVar = window.getComputedStyle(document.documentElement)
@@ -155,7 +155,8 @@ export function useTheme() {
   });
   
   const updateCssVariables = (themeColors: ThemeColors) => {
-    if (typeof window === 'undefined') return;
+    // Kiểm tra xem có đang ở server-side không
+    if (process.server) return;
 
     const mode = isDark.value ? 'dark' : 'light';
     const currentColors = themeColors[mode];
@@ -251,17 +252,26 @@ export function useTheme() {
   };
 
   const initializeTheme = async () => {
+    // Nếu đang ở server-side, trả về ngay
+    if (process.server) {
+      return null;
+    }
+
     // Nếu đã khởi tạo và CSS variables đã được set, không cần khởi tạo lại
     if (initialized && areCssVariablesInitialized()) {
       return activeTheme.value;
     }
 
     // Luôn áp dụng theme mặc định ngay lập tức để tránh nhấp nháy
-    if (typeof window !== 'undefined') {
-      updateCssVariables(defaultColors);
-    }
+    updateCssVariables(defaultColors);
 
     try {
+      // Nếu TRPC chưa sẵn sàng, trả về giá trị mặc định
+      if (!trpc?.admin?.theme?.getAll?.query) {
+        console.warn('TRPC admin.theme.getAll.query is not available');
+        return null;
+      }
+
       // Lấy tất cả theme
       const themes = await trpc.admin.theme.getAll.query();
       // Tìm theme active
@@ -271,7 +281,7 @@ export function useTheme() {
         activeTheme.value = activeThemeData;
         initialized = true;
         
-        if (activeThemeData.colors && typeof window !== 'undefined') {
+        if (activeThemeData.colors) {
           // Áp dụng theme từ API ngay lập tức
           updateCssVariables(activeThemeData.colors as unknown as ThemeColors);
         }
@@ -287,7 +297,7 @@ export function useTheme() {
   };
 
   // Watch for dark mode changes
-  if (typeof window !== 'undefined') {
+  if (process.client) {
     watch(isDark, () => {
       const colors = activeTheme.value?.colors as unknown as ThemeColors || defaultColors;
       updateCssVariables(colors);
