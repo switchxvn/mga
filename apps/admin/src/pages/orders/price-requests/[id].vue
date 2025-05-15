@@ -382,14 +382,13 @@ onMounted(async () => {
               <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ priceRequest.productId }}</p>
             </div>
             
-            <div v-if="priceRequest.product">
-              <a 
-                :href="`/products/edit/${priceRequest.productId}`" 
-                target="_blank"
+            <div>
+              <router-link 
+                :to="`/products/view/${priceRequest.productId}`"
                 class="mt-2 w-full flex justify-center items-center px-3 py-2 border border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-md text-sm font-medium"
               >
                 Xem chi tiết sản phẩm
-              </a>
+              </router-link>
             </div>
           </div>
         </div>

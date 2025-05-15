@@ -247,8 +247,8 @@ const router = useRouter()
 const nuxtApp = useNuxtApp()
 const loading = ref(false)
 
-// Chỉ khởi tạo toast ở phía client
-const toast = process.client ? useToast() : null
+// Thay thế đoạn này
+const toast = useToast()
 
 // Initialize currentTab
 // Initialize currentTab from query params or default to 'basic'
@@ -601,7 +601,7 @@ const createProduct = async () => {
     // Gọi API tạo sản phẩm
     await trpc.admin.products.createProduct.mutate(productData)
 
-    if (process.client && toast) {
+    if (process.client) {
       toast.success('Product created successfully!')
     }
     router.push('/products')
@@ -609,7 +609,7 @@ const createProduct = async () => {
     console.error('Failed to create product:', error)
     
     // Hiển thị thông báo lỗi với ngôn ngữ hiện tại
-    if (process.client && toast) {
+    if (process.client) {
       let errorMessage = `[${selectedLanguage.value}] `
       
       // Handle tRPC error
