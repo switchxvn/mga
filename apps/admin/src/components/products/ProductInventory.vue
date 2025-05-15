@@ -321,7 +321,7 @@
 import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTrpc } from '../../composables/useTrpc';
-import { useToast } from 'vue-toastification';
+import { useToast } from '../../composables/useToast';
 import { RefreshCcwIcon, ChevronLeftIcon, ChevronRightIcon, InfoIcon } from 'lucide-vue-next';
 import { format } from 'date-fns';
 

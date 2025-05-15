@@ -82,13 +82,25 @@ const overlayStyle = computed(() => {
 const sectionStyle = computed(() => {
   if (!props.settings?.image) return {}
   
-  // Adjust height for mobile
+  // Use aspect ratio instead of fixed height to maintain proportions
+  const aspectRatio = props.settings.image.height / props.settings.image.width
   const minHeight = props.isMobile
-    ? `${Math.min(props.settings.image.height, 400)}px`
-    : `${props.settings.image.height}px`
+    ? '300px' // Minimum height on mobile
+    : '400px' // Minimum height on desktop
   
   return {
     minHeight,
+    // Set a max-height to prevent excessive stretching on large screens
+    maxHeight: '800px',
+  }
+})
+
+const imageStyle = computed(() => {
+  if (!props.settings?.image) return {}
+  
+  return {
+    objectPosition: props.settings.image.position || 'center',
+    objectFit: props.settings.image.objectFit || 'cover',
   }
 })
 </script>
@@ -100,10 +112,8 @@ const sectionStyle = computed(() => {
       <img 
         :src="settings.image.src" 
         :alt="settings.image.alt"
-        :width="settings.image.width"
-        :height="settings.image.height"
-        class="w-full h-full object-cover"
-        :style="{ objectPosition: settings.image.position }"
+        class="w-full h-full"
+        :style="imageStyle"
       />
       <div 
         v-if="settings.image.overlay?.enabled" 
