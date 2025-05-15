@@ -141,6 +141,7 @@
             <div v-show="currentTab === 'categories'">
               <PostCategories
                 v-model="form.categoryIds"
+                :selected-language="selectedLanguage"
               />
             </div>
 
@@ -175,7 +176,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '../../../composables/useTrpc'
 import slugify from 'slugify'
 import { useHead } from 'nuxt/app'
-import { useToast } from 'vue-toastification'
+import { useToast } from '../../../composables/useToast'
 
 // Import Lucide icons
 import {

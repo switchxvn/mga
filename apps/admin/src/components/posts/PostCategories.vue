@@ -25,8 +25,7 @@
             <input
               type="checkbox"
               :value="category.id"
-              :checked="selectedCategories.includes(category.id)"
-              @change="toggleCategory(category.id)"
+              v-model="selectedCategories"
               class="form-checkbox h-4 w-4 text-primary border-slate-300 rounded"
             />
             <span class="text-sm font-medium text-slate-700">
@@ -45,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { FolderIcon } from 'lucide-vue-next'
 import { useTrpc } from '../../composables/useTrpc'
 
@@ -59,6 +58,7 @@ interface Category {
 
 const props = defineProps<{
   modelValue: number[]
+  selectedLanguage?: string
 }>()
 
 const emit = defineEmits<{
@@ -69,11 +69,13 @@ const trpc = useTrpc()
 const categories = ref<Category[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
-const selectedCategories = ref<number[]>(props.modelValue || [])
 
-// Watch for external changes to modelValue
-watch(() => props.modelValue, (newValue) => {
-  selectedCategories.value = newValue || []
+// Computed property for v-model binding
+const selectedCategories = computed({
+  get: () => props.modelValue || [],
+  set: (newValue) => {
+    emit('update:modelValue', newValue)
+  }
 })
 
 const fetchCategories = async () => {
@@ -89,20 +91,10 @@ const fetchCategories = async () => {
   }
 }
 
-const toggleCategory = (categoryId: number) => {
-  const index = selectedCategories.value.indexOf(categoryId)
-  if (index === -1) {
-    selectedCategories.value.push(categoryId)
-  } else {
-    selectedCategories.value.splice(index, 1)
-  }
-  emit('update:modelValue', selectedCategories.value)
-}
-
 const getCategoryName = (category: Category) => {
   // Get translation in current locale or fall back to first available translation
-  const currentLocale = 'vi' // You might want to make this dynamic based on your app's locale
-  const translation = category.translations.find(t => t.locale === currentLocale) || category.translations[0]
+  const locale = props.selectedLanguage || 'en'
+  const translation = category.translations.find(t => t.locale === locale) || category.translations[0]
   return translation?.name || 'Unnamed Category'
 }
 

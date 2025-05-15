@@ -23,6 +23,7 @@ import { CrossSellService } from '../../product/frontend/services/cross-sell.ser
 import { ProductSpecificationService } from '../../product/services/product-specification.service';
 import { ProductComboService } from '../../product/frontend/services/product-combo.service';
 import { PriceRequestService } from '../../price-request/services/price-request.service';
+import { PriceRequestAdminService } from '../../price-request/admin/services/price-request-admin.service';
 import { FeatureFlagsAdminService } from '../../feature-flags/admin/services/feature-flags-admin.service';
 import { FeatureFlagsFrontendService } from '../../feature-flags/frontend/services/feature-flags-frontend.service';
 import { HeroService } from '../../hero/admin/services/hero.service';
@@ -159,6 +160,8 @@ export class ServiceContext {
     private readonly userPageVisitFrontendService: UserPageVisitFrontendService,
     @Inject(forwardRef(() => PriceRequestService))
     private readonly priceRequestService: PriceRequestService,
+    @Inject(forwardRef(() => PriceRequestAdminService))
+    private readonly priceRequestAdminService: PriceRequestAdminService,
   ) {}
 
   public getServices(): ITrpcServices {
@@ -186,6 +189,7 @@ export class ServiceContext {
       productSpecificationService: this.productSpecificationService,
       productComboService: this.productComboService,
       priceRequestService: this.priceRequestService,
+      priceRequestAdminService: this.priceRequestAdminService,
       featureFlagsAdminService: this.featureFlagsAdminService,
       featureFlagsFrontendService: this.featureFlagsFrontendService,
       heroService: this.heroService,
@@ -275,6 +279,7 @@ export class ServiceContext {
         role: this.roleAdminService,
         userSession: this.userSessionAdminService,
         userPageVisit: this.userPageVisitAdminService,
+        priceRequest: this.priceRequestAdminService,
       },
       
       frontend: {

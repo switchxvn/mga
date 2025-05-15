@@ -103,13 +103,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useToast } from 'vue-toastification'
+import { useToast } from '@/composables/useToast'
 import { useProfile } from '@/composables/useProfile'
 import { useTrpc } from '@/composables/useTrpc'
 import { useAuth } from '@/composables/useAuth'
 import { User, UserProfile } from '@/types/user'
 
-const toast = useToast()
+const { success, error: showError } = useToast()
 const trpc = useTrpc()
 const { user } = useAuth()
 const { updateName, updatePassword, isUpdatingName, isUpdatingPassword, error } = useProfile()
@@ -147,7 +147,7 @@ const handleUpdateProfile = async () => {
       lastName: profileForm.value.lastName
     })
     
-    toast.success('Cập nhật thông tin cá nhân thành công')
+    success('Cập nhật thông tin cá nhân thành công')
     
     // Cập nhật lại thông tin user
     setTimeout(() => {
@@ -155,20 +155,20 @@ const handleUpdateProfile = async () => {
     }, 1000)
   } catch (err) {
     console.error('Error updating profile:', err)
-    toast.error('Có lỗi xảy ra khi cập nhật thông tin cá nhân')
+    showError('Có lỗi xảy ra khi cập nhật thông tin cá nhân')
   } finally {
     isUpdatingProfile.value = false
   }
 }
 
 const handleUpdateName = async () => {
-  const success = await updateName(nameForm.value.newName)
+  const isSuccess = await updateName(nameForm.value.newName)
   
-  if (success) {
-    toast.success('Cập nhật tên thành công')
+  if (isSuccess) {
+    success('Cập nhật tên thành công')
     nameForm.value.newName = ''
   } else {
-    toast.error(error.value || 'Có lỗi xảy ra khi cập nhật tên')
+    showError(error.value || 'Có lỗi xảy ra khi cập nhật tên')
   }
 }
 
@@ -178,30 +178,30 @@ const handleUpdatePassword = async () => {
 
   // Validate empty fields
   if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword || !passwordForm.value.confirmPassword) {
-    toast.error('Vui lòng điền đầy đủ thông tin');
+    showError('Vui lòng điền đầy đủ thông tin');
     return;
   }
 
   // Validate password length
   if (passwordForm.value.newPassword.length < 6) {
-    toast.error('Mật khẩu mới phải có ít nhất 6 ký tự');
+    showError('Mật khẩu mới phải có ít nhất 6 ký tự');
     return;
   }
 
   // Validate password match
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    toast.error('Mật khẩu xác nhận không khớp');
+    showError('Mật khẩu xác nhận không khớp');
     return;
   }
 
   try {
-    const success = await updatePassword(
+    const isSuccess = await updatePassword(
       passwordForm.value.currentPassword,
       passwordForm.value.newPassword
     );
 
-    if (success) {
-      toast.success('Cập nhật mật khẩu thành công');
+    if (isSuccess) {
+      success('Cập nhật mật khẩu thành công');
       // Reset form
       passwordForm.value = {
         currentPassword: '',
@@ -212,10 +212,7 @@ const handleUpdatePassword = async () => {
   } catch (err: any) {
     // Hiển thị thông báo lỗi từ API
     const errorMessage = err?.message || error.value || 'Có lỗi xảy ra khi cập nhật mật khẩu';
-    toast.error(errorMessage, {
-      timeout: 5000, // Hiển thị lâu hơn cho người dùng đọc
-      position: 'top-center' as const
-    });
+    showError(errorMessage);
     
     // Focus vào field có lỗi
     if (errorMessage.includes('Mật khẩu hiện tại không đúng')) {

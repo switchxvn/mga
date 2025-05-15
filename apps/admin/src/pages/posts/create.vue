@@ -182,7 +182,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '@/composables/useTrpc'
 import slugify from 'slugify'
 import { useHead } from 'nuxt/app'
-import { useToast } from 'vue-toastification'
+import { useToast } from '../../composables/useToast'
 import { useI18n } from "vue-i18n";
 import { useAuth } from '@/composables/useAuth'
 import PermissionGate from '@/components/common/PermissionGate.vue'

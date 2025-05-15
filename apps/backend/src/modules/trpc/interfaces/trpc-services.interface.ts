@@ -20,6 +20,7 @@ import { ProductSpecificationService } from '../../product/services/product-spec
 import { ProductComboService } from '../../product/frontend/services/product-combo.service';
 import { ProductStockHistoryService } from '../../product/services/product-stock-history.service';
 import { PriceRequestService } from '../../price-request/services/price-request.service';
+import { PriceRequestAdminService } from '../../price-request/admin/services/price-request-admin.service';
 import { FeatureFlagsAdminService } from '../../feature-flags/admin/services/feature-flags-admin.service';
 import { FeatureFlagsFrontendService } from '../../feature-flags/frontend/services/feature-flags-frontend.service';
 import { HeroService } from '../../hero/admin/services/hero.service';
@@ -97,6 +98,7 @@ export interface ITrpcServices {
   productComboService: ProductComboService;
   productStockHistoryService: ProductStockHistoryService;
   priceRequestService: PriceRequestService;
+  priceRequestAdminService: PriceRequestAdminService;
   featureFlagsAdminService: FeatureFlagsAdminService;
   featureFlagsFrontendService: FeatureFlagsFrontendService;
   heroService: HeroService;
@@ -187,6 +189,7 @@ export interface ITrpcServices {
     role: RoleAdminService;
     userSession: UserSessionAdminService;
     userPageVisit: UserPageVisitAdminService;
+    priceRequest: PriceRequestAdminService;
   };
   
   frontend: {

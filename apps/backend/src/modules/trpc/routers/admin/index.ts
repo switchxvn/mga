@@ -21,6 +21,7 @@ import { paymentAdminRouter } from './payment.router'
 import { heroSliderAdminRouter } from './hero-slider.router'
 import { userSessionAdminRouter } from './user-session.router'
 import { userPageVisitAdminRouter } from './user-page-visit.router'
+import { priceRequestAdminRouter } from './price-request.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -45,4 +46,5 @@ export const adminRouter = router({
   heroSlider: heroSliderAdminRouter,
   userSession: userSessionAdminRouter,
   userPageVisit: userPageVisitAdminRouter,
+  priceRequest: priceRequestAdminRouter,
 }) 

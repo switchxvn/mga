@@ -213,8 +213,8 @@ const router = useRouter()
 const loading = ref(true)
 const saveAndContinue = ref(false)
 
-// Chỉ khởi tạo toast ở phía client
-const toast = process.client ? useToast() : null
+// Modify the toast import to use CommonJS default export pattern
+const toast = useToast()
 
 // Initialize currentTab from query params or default to 'basic'
 const currentTab = ref(route.query.tab?.toString() || 'basic')
@@ -839,7 +839,7 @@ const updateProduct = debounce(async (continueEditing = false) => {
       data: updateData
     });
 
-    if (process.client && toast) {
+    if (process.client) {
       toast.success('Product updated successfully!');
     }
 
@@ -853,7 +853,7 @@ const updateProduct = debounce(async (continueEditing = false) => {
     console.error('Failed to update product:', error);
     
     // Display error message with current language
-    if (process.client && toast) {
+    if (process.client) {
       let errorMessage = `[${selectedLanguage.value}] `
       
       // Handle tRPC error

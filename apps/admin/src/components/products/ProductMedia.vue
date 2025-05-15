@@ -376,11 +376,11 @@ import {
   ShoppingCartIcon, ShareIcon, HeartIcon, CheckIcon, VideoIcon,
   MoveVerticalIcon,
 } from 'lucide-vue-next'
-import { useToast } from 'vue-toastification'
+import { useToast } from '../../composables/useToast'
 import { useUpload } from '../../composables/useUpload'
 
 const { uploadImage, isUploading } = useUpload()
-const toast = useToast()
+const { success, error: showError, info } = useToast()
 
 const props = defineProps<{
   thumbnail: string
@@ -430,7 +430,7 @@ const handleThumbnailUpload = async (event: Event) => {
   
   // Kiểm tra định dạng file
   if (!file.type.startsWith('image/')) {
-    toast.error('Chỉ chấp nhận file hình ảnh')
+    showError('Chỉ chấp nhận file hình ảnh')
     input.value = ''
     return
   }
@@ -440,7 +440,7 @@ const handleThumbnailUpload = async (event: Event) => {
   localThumbnail.value = tempURL
   
   try {
-    toast.info('Đang xử lý ảnh...')
+    info('Đang xử lý ảnh...')
     // Thêm xử lý hình ảnh để đảm bảo tỉ lệ 1:1
     const url = await processAndUploadImage(file, 'products')
     console.log(`Thumbnail upload success, URL: ${url}`)
@@ -452,13 +452,13 @@ const handleThumbnailUpload = async (event: Event) => {
     emit('update:thumbnail', url)
     
     // Show success message
-    toast.success('Đã tải lên ảnh đại diện thành công')
+    success('Đã tải lên ảnh đại diện thành công')
     
     // Giải phóng bộ nhớ
     URL.revokeObjectURL(tempURL)
   } catch (error) {
     console.error('Failed to upload thumbnail:', error)
-    toast.error('Tải lên ảnh đại diện thất bại')
+    showError('Tải lên ảnh đại diện thất bại')
     // Nếu lỗi, xóa ảnh preview tạm thời
     if (localThumbnail.value === tempURL) {
       localThumbnail.value = ''
@@ -564,7 +564,7 @@ const handleThumbnailDrop = async (event: DragEvent) => {
   
   const file = event.dataTransfer.files[0]
   if (!file.type.startsWith('image/')) {
-    toast.error('Chỉ chấp nhận file hình ảnh')
+    showError('Chỉ chấp nhận file hình ảnh')
     return
   }
   
@@ -573,17 +573,17 @@ const handleThumbnailDrop = async (event: DragEvent) => {
   localThumbnail.value = tempURL
   
   try {
-    toast.info('Đang xử lý ảnh...')
+    info('Đang xử lý ảnh...')
     const url = await processAndUploadImage(file, 'products')
     // Cập nhật với URL chính thức
     localThumbnail.value = url
     emit('update:thumbnail', url)
-    toast.success('Đã tải lên ảnh đại diện thành công')
+    success('Đã tải lên ảnh đại diện thành công')
     // Giải phóng bộ nhớ
     URL.revokeObjectURL(tempURL)
   } catch (error) {
     console.error('Failed to upload thumbnail via drag & drop:', error)
-    toast.error('Tải lên ảnh đại diện thất bại')
+    showError('Tải lên ảnh đại diện thất bại')
     // Xóa ảnh tạm nếu lỗi
     if (localThumbnail.value === tempURL) {
       localThumbnail.value = ''
@@ -629,9 +629,9 @@ const handleGalleryUpload = async (event: Event) => {
   
   if (filesToUpload.length === 0) {
     if (files.some(file => !file.type.startsWith('image/'))) {
-      toast.error('Chỉ chấp nhận file hình ảnh')
+      showError('Chỉ chấp nhận file hình ảnh')
     } else {
-      toast.info('Bạn đã đạt đến số lượng ảnh tối đa (8 ảnh)')
+      info('Bạn đã đạt đến số lượng ảnh tối đa (8 ảnh)')
     }
     input.value = ''
     return
@@ -651,7 +651,7 @@ const handleGalleryUpload = async (event: Event) => {
   localGallery.value = tempGallery
 
   try {
-    toast.info(`Đang xử lý ${filesToUpload.length} ảnh...`)
+    info(`Đang xử lý ${filesToUpload.length} ảnh...`)
     
     // Upload all files with 1:1 processing
     const uploadPromises = filesToUpload.map(async (file, index) => {
@@ -674,7 +674,7 @@ const handleGalleryUpload = async (event: Event) => {
         return url
       } catch (error) {
         console.error('Failed to upload image:', error)
-        toast.error(`Tải lên ảnh ${file.name} thất bại`)
+        showError(`Tải lên ảnh ${file.name} thất bại`)
         
         // Xóa URL tạm thời khỏi gallery nếu upload thất bại
         const tempUrl = tempUrlMap.get(file) as string
@@ -703,11 +703,11 @@ const handleGalleryUpload = async (event: Event) => {
     
     // Show success message
     if (validUrls.length > 0) {
-      toast.success(`Đã tải lên thành công ${validUrls.length} ảnh`)
+      success(`Đã tải lên thành công ${validUrls.length} ảnh`)
     }
   } catch (error) {
     console.error('Gallery upload error:', error)
-    toast.error('Tải ảnh thất bại')
+    showError('Tải ảnh thất bại')
     
     // Xóa tất cả URL tạm thời nếu có lỗi tổng thể
     tempUrlMap.forEach((tempUrl) => {
@@ -736,9 +736,9 @@ const handleGalleryDrop = async (event: DragEvent) => {
   
   if (filesToUpload.length === 0) {
     if (files.some(file => !file.type.startsWith('image/'))) {
-      toast.error('Chỉ chấp nhận file hình ảnh')
+      showError('Chỉ chấp nhận file hình ảnh')
     } else {
-      toast.info('Bạn đã đạt đến số lượng ảnh tối đa (8 ảnh)')
+      info('Bạn đã đạt đến số lượng ảnh tối đa (8 ảnh)')
     }
     return
   }
@@ -757,7 +757,7 @@ const handleGalleryDrop = async (event: DragEvent) => {
   localGallery.value = tempGallery
 
   try {
-    toast.info(`Đang xử lý ${filesToUpload.length} ảnh...`)
+    info(`Đang xử lý ${filesToUpload.length} ảnh...`)
     
     // Xử lý tải lên tuần tự để cập nhật UI từng ảnh một
     for (const file of filesToUpload) {
@@ -793,13 +793,13 @@ const handleGalleryDrop = async (event: DragEvent) => {
     }
     
     // Thông báo hoàn thành
-    toast.success(`Đã tải lên thành công ${filesToUpload.length} ảnh`)
+    success(`Đã tải lên thành công ${filesToUpload.length} ảnh`)
     
     // Cập nhật gallery một lần cuối
     emit('update:gallery', localGallery.value)
   } catch (error) {
     console.error('Gallery upload error via drag & drop:', error)
-    toast.error('Tải ảnh thất bại')
+    showError('Tải ảnh thất bại')
     
     // Xóa tất cả URL tạm thời nếu có lỗi tổng thể
     tempUrlMap.forEach((tempUrl) => {
@@ -836,14 +836,14 @@ const setAsMainImage = (index: number) => {
   emit('update:thumbnail', localThumbnail.value)
   emit('update:gallery', localGallery.value)
   
-  toast.success('Đã đặt làm ảnh đại diện')
+  success('Đã đặt làm ảnh đại diện')
 }
 
 // Remove image from gallery
 const removeImage = (index: number) => {
   localGallery.value.splice(index, 1)
   emit('update:gallery', localGallery.value)
-  toast.info('Đã xóa ảnh khỏi thư viện')
+  info('Đã xóa ảnh khỏi thư viện')
 }
 
 // Move image in gallery
@@ -920,7 +920,7 @@ const onDrop = (event: DragEvent, dropIndex: number) => {
   localGallery.value = newGallery
   emit('update:gallery', localGallery.value)
   
-  toast.success('Đã thay đổi vị trí ảnh')
+  success('Đã thay đổi vị trí ảnh')
 }
 
 // Validate YouTube URL
@@ -941,7 +941,7 @@ const updateVideoUrl = () => {
     emit('update:videoUrl', localVideoUrl.value)
     if (localVideoUrl.value) {
       showVideoInput.value = false
-      toast.success('Link video đã được cập nhật')
+      success('Link video đã được cập nhật')
     }
   }
 }
