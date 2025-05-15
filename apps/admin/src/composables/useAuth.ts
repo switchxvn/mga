@@ -1,5 +1,5 @@
 import { TRPCClientError } from '@trpc/client'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ProfileResponseExtended, User } from '../types/user'
 import { useTrpc } from './useTrpc'
@@ -22,6 +22,7 @@ export const useAuth = () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const user = ref<User | null>(null)
+  const isAuthenticated = computed(() => !!user.value)
 
   const login = async (credentials: LoginCredentials) => {
     try {
@@ -237,5 +238,6 @@ export const useAuth = () => {
     isLoading,
     error,
     user,
+    isAuthenticated,
   }
 } 

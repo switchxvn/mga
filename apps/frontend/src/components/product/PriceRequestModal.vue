@@ -182,10 +182,15 @@ const submitForm = async () => {
   isSubmitting.value = true;
 
   try {
+    // Format phone number correctly by removing spaces and other formatting characters
+    // Only keep the actual phone number
+    const formattedPhoneNumber = phoneNumber.value.replace(/\D/g, '');
+    const completePhoneNumber = `${selectedPhoneCode.value}${formattedPhoneNumber}`;
+
     await trpc.priceRequest.create.mutate({
       fullName: fullName.value,
       email: emailValue.value,
-      phone: `${selectedPhoneCode.value} ${phoneNumber.value}`,
+      phone: completePhoneNumber,
       message: message.value,
       productId: props.productId,
       productName: props.productName,

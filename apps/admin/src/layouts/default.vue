@@ -10,7 +10,8 @@ import {
   UserCircle, 
   LogOut, 
   ChevronDown, 
-  RotateCcw
+  RotateCcw,
+  Globe
 } from 'lucide-vue-next'
 import { ref, computed, inject, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -19,7 +20,9 @@ import { useColorMode, useHead, navigateTo, useNuxtApp } from '#imports'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { usePermissions } from '@/composables/usePermissions'
+import { useLocalization } from '@/composables/useLocalization'
 import SidebarNavigation from '@/components/common/SidebarNavigation.vue'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
 
 // Minimal interfaces needed
 interface UserRole {
@@ -37,6 +40,9 @@ const route = useRoute()
 const router = useRouter()
 const currentPath = ref(route.path)
 const { t } = useI18n()
+
+// Localization
+const { locale, locales, currentLocale, switchLanguage } = useLocalization()
 
 // Try to get injected page title from child components
 const injectedTitle = inject('pageTitle', ref(''))
@@ -191,6 +197,34 @@ const toggleUserMenu = (event: MouseEvent) => {
   isUserMenuOpen.value = !isUserMenuOpen.value
 }
 
+// Locale dropdown
+const isLocaleMenuOpen = ref(false)
+const localeMenuRef = ref<HTMLElement | null>(null)
+const localeDropdownButtonRef = ref<HTMLElement | null>(null)
+
+// Đóng locale dropdown khi click ra ngoài
+const handleLocaleClickOutside = (event: MouseEvent) => {
+  if (localeDropdownButtonRef.value && localeDropdownButtonRef.value.contains(event.target as Node)) {
+    return
+  }
+  
+  if (localeMenuRef.value && !localeMenuRef.value.contains(event.target as Node)) {
+    isLocaleMenuOpen.value = false
+  }
+}
+
+// Chuyển đổi trạng thái locale dropdown
+const toggleLocaleMenu = (event: MouseEvent) => {
+  event.stopPropagation()
+  isLocaleMenuOpen.value = !isLocaleMenuOpen.value
+}
+
+// Xử lý thay đổi ngôn ngữ
+const handleLocaleChange = (localeCode: string) => {
+  switchLanguage(localeCode)
+  isLocaleMenuOpen.value = false
+}
+
 // Thêm/xóa event listener khi menu mở/đóng
 watch(isUserMenuOpen, (newVal) => {
   if (newVal) {
@@ -204,9 +238,21 @@ watch(isUserMenuOpen, (newVal) => {
   }
 })
 
+// Thêm/xóa event listener khi locale menu mở/đóng
+watch(isLocaleMenuOpen, (newVal) => {
+  if (newVal) {
+    setTimeout(() => {
+      window.addEventListener('click', handleLocaleClickOutside)
+    }, 0)
+  } else {
+    window.removeEventListener('click', handleLocaleClickOutside)
+  }
+})
+
 // Xóa event listener khi component bị phá hủy
 onUnmounted(() => {
   window.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('click', handleLocaleClickOutside)
 })
 </script>
 
@@ -222,6 +268,9 @@ onUnmounted(() => {
         </div>
         
         <div class="flex items-center gap-2 relative">
+          <!-- Language Switcher -->
+          <LanguageSwitcher />
+          
           <!-- Color Mode Toggle -->
           <UButton 
             icon
@@ -271,7 +320,7 @@ onUnmounted(() => {
       <aside class="w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto hidden md:block">
         <div class="py-4">
           <div class="px-4 mb-4">
-            <span class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Main Navigation</span>
+            <span class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">{{ t('Main Navigation') }}</span>
           </div>
           
           <!-- Navigation Links -->

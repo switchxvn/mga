@@ -3,7 +3,7 @@
     <div class="border-b border-slate-200 pb-6">
       <h3 class="text-lg font-medium text-slate-900 flex items-center gap-2">
         <FolderIcon class="w-5 h-5" />
-        Categories
+        {{ t('posts.categories') }}
       </h3>
     </div>
     
@@ -36,7 +36,7 @@
 
         <!-- No Categories Message -->
         <p v-if="categories.length === 0" class="text-sm text-slate-500">
-          No news categories available
+          {{ t('posts.noCategories') }}
         </p>
       </div>
     </div>
@@ -47,6 +47,9 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { FolderIcon } from 'lucide-vue-next'
 import { useTrpc } from '../../composables/useTrpc'
+import { useLocalization } from '@/composables/useLocalization'
+
+const { t } = useLocalization()
 
 interface Category {
   id: number

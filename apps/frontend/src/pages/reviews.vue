@@ -207,7 +207,7 @@ const defaultSections: ThemeSection[] = [
       sliderPerView: 3,
       sliderAutoplay: true,
       sliderDelay: 3000,
-      maxGalleries: 12,
+      maxGalleries: 1000,
       columns: 4,
       categoryIds: [], // Không hardcode categoryIds, để truy vấn tất cả gallery từ API
       showTitle: true

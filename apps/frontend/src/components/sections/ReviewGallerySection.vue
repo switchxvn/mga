@@ -57,7 +57,7 @@ const defaultSettings = {
   titleColor: 'text-primary-600 dark:text-primary-400',
   borderColor: 'border-gray-200 dark:border-gray-700',
   paddingY: 'py-16',
-  maxGalleries: 12,
+  maxGalleries: 1000,
   categoryIds: [],
   showTitle: true
 };
@@ -366,11 +366,6 @@ const fetchGalleries = async () => {
       console.log('[Gallery API] Valid data found, using real data');
       galleries.value = galleryData;
       useMockData.value = false;
-      
-      // Giới hạn số lượng gallery hiển thị
-      if (galleries.value.length > maxGalleries.value) {
-        galleries.value = galleries.value.slice(0, maxGalleries.value);
-      }
       
       console.log('[Gallery API] Final data count:', galleries.value.length);
       

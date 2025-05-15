@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue';
 import { useTrpc } from '../../composables/useTrpc';
+import { useLocalization } from '../../composables/useLocalization';
 import { ChevronDown, Search } from 'lucide-vue-next';
 import { parsePhoneNumberFromString, AsYouType, getCountryCallingCode, isValidPhoneNumber } from 'libphonenumber-js';
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers } from '@vuelidate/validators';
+
+const { t } = useLocalization();
 
 const props = defineProps<{
   modelValue: string;
@@ -67,10 +70,10 @@ const isValidPhoneNumberRule = (value: string) => {
 const rules = computed(() => {
   const phoneRules: any = {};
   
-  // Chỉ thêm quy tắc validPhone, không thêm quy tắc required
-  // Việc kiểm tra required sẽ được xử lý ở component cha
+  // Only add validPhone rule, don't add required rule
+  // Required check will be handled by parent component
   phoneRules.validPhone = helpers.withMessage(
-    'Số điện thoại không hợp lệ',
+    t('components.form.phoneInput.invalidPhone'),
     isValidPhoneNumberRule
   );
   
@@ -335,9 +338,9 @@ defineExpose({
           v-if="showPhoneCodeDropdown" 
           class="absolute z-50 mt-1 w-64 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto"
         >
-          <div v-if="isLoadingCountries" class="p-3 text-center text-gray-500 dark:text-gray-400">
-            Đang tải danh sách quốc gia...
-          </div>
+                      <div v-if="isLoadingCountries" class="p-3 text-center text-gray-500 dark:text-gray-400">
+              {{ t('messages.loading') }}
+            </div>
           <div v-else>
             <!-- Thêm ô tìm kiếm -->
             <div class="p-2 border-b dark:border-gray-700">
@@ -350,7 +353,7 @@ defineExpose({
                   v-model="countrySearchQuery"
                   type="text"
                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Tìm kiếm quốc gia..."
+                  :placeholder="t('components.form.phoneInput.search')"
                 />
               </div>
             </div>
@@ -358,7 +361,7 @@ defineExpose({
             <!-- Danh sách quốc gia đã lọc -->
             <div class="py-1 max-h-48 overflow-y-auto">
               <div v-if="filteredCountries.length === 0" class="p-3 text-center text-gray-500 dark:text-gray-400">
-                Không tìm thấy quốc gia nào
+                {{ t('messages.noData') }}
               </div>
               <button
                 v-for="country in filteredCountries"
@@ -383,7 +386,7 @@ defineExpose({
       
       <input
         v-model="phoneNumber"
-        :placeholder="placeholder || 'Nhập số điện thoại'"
+        :placeholder="placeholder || t('components.form.phoneInput.enterPhone')"
         :disabled="disabled"
         class="flex-1 rounded-r-md px-3 py-2 border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-l-none shadow-sm"
         :class="[

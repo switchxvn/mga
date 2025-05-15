@@ -27,7 +27,7 @@
               <div class="p-2 rounded-full bg-white/20 mb-2">
                 <UploadCloudIcon class="w-6 h-6 text-white" />
               </div>
-              <div class="text-white text-sm font-medium">Thay đổi ảnh</div>
+              <div class="text-white text-sm font-medium">{{ t('components.common.media.uploader.changeImage') }}</div>
             </div>
           </div>
         </div>
@@ -41,20 +41,20 @@
           </div>
           <div class="text-center">
             <div class="text-base font-medium text-slate-700 mb-1">
-              Tải ảnh đại diện
+              {{ t('components.common.media.uploader.uploadImage') }}
             </div>
             <div class="text-sm text-slate-500 max-w-xs">
-              Kéo và thả ảnh vào đây hoặc nhấp vào khu vực này để chọn ảnh
+              {{ t('components.common.media.uploader.dropHere') }}
             </div>
             <div class="mt-4">
               <button class="px-5 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center mx-auto gap-2">
                 <UploadCloudIcon class="w-4 h-4" />
-                Chọn ảnh
+                {{ t('components.common.media.uploader.selectImage') }}
               </button>
             </div>
           </div>
           <div class="text-xs text-slate-400 mt-2 border-t border-slate-200 pt-3 w-full text-center">
-            Định dạng hỗ trợ: JPG, PNG, GIF • Tối đa 5MB
+            {{ t('components.common.media.uploader.supportedFormats') }}
           </div>
         </div>
       </template>
@@ -69,7 +69,7 @@
             <div class="absolute inset-0 rounded-full border-4 border-primary/30"></div>
             <div class="absolute inset-0 rounded-full border-4 border-primary border-r-transparent animate-spin"></div>
           </div>
-          <div class="text-white text-sm font-medium">Đang tải lên...</div>
+          <div class="text-white text-sm font-medium">{{ t('components.common.media.uploader.uploading') }}</div>
         </div>
       </div>
     </div>
@@ -98,6 +98,9 @@
 import { ref, watch } from 'vue'
 import { UploadCloudIcon, AlertCircleIcon, ImagePlusIcon } from 'lucide-vue-next'
 import { useUpload } from '../../../composables/useUpload'
+import { useLocalization } from '../../../composables/useLocalization'
+
+const { t } = useLocalization()
 
 // Base64 encoded transparent placeholder image
 const FALLBACK_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
@@ -137,14 +140,14 @@ const validateFile = (file: File): boolean => {
       }
       return file.type.match(new RegExp(type.replace('*', '.*')))
     })) {
-      error.value = 'File không đúng định dạng'
+      error.value = t('components.common.media.uploader.invalidFormat')
       return false
     }
   }
 
   // Check file size
   if (props.maxSize && file.size > props.maxSize) {
-    error.value = `Kích thước file không được vượt quá ${formatFileSize(props.maxSize)}`
+    error.value = t('components.common.media.uploader.fileTooLarge', { size: formatFileSize(props.maxSize) })
     return false
   }
 
@@ -182,7 +185,7 @@ const handleFile = async (file: File) => {
     const url = await uploadImage(file, 'products')
     emit('update:modelValue', url)
   } catch (err: any) {
-    error.value = err?.message || 'Tải ảnh thất bại'
+    error.value = err?.message || t('components.common.media.uploader.uploadFailed')
     console.error('Upload error:', err)
   } finally {
     isUploading.value = false

@@ -74,6 +74,7 @@ import { UserSessionAdminService } from '../../user-session/admin/services/user-
 import { UserSessionFrontendService } from '../../user-session/frontend/services/user-session-frontend.service';
 import { UserPageVisitAdminService } from '../../user-session/admin/services/user-page-visit-admin.service';
 import { UserPageVisitFrontendService } from '../../user-session/frontend/services/user-page-visit-frontend.service';
+import { MenuItemAdminService } from '../../settings/admin/services/menu-item-admin.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -153,6 +154,7 @@ export interface ITrpcServices {
   userSessionFrontendService: UserSessionFrontendService;
   userPageVisitAdminService: UserPageVisitAdminService;
   userPageVisitFrontendService: UserPageVisitFrontendService;
+  menuItemAdminService: MenuItemAdminService;
   
   // Grouped services
   admin: {

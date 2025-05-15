@@ -1,5 +1,5 @@
 import { ref, computed, h } from 'vue'
-import { useToast } from 'vue-toastification'
+import { useToast } from './useToast'
 import { useRouter } from 'vue-router'
 import { useTrpc } from './useTrpc'
 import slugify from 'slugify'

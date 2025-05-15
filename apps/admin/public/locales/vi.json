@@ -1,0 +1,333 @@
+{
+  "language": "Ngôn ngữ",
+  "common": {
+    "language": "Ngôn ngữ",
+    "english": "Tiếng Anh",
+    "vietnamese": "Tiếng Việt"
+  },
+  "navigation": {
+    "dashboard": "Bảng điều khiển",
+    "products": "Sản phẩm",
+    "orders": "Đơn hàng",
+    "customers": "Khách hàng",
+    "categories": "Danh mục",
+    "settings": "Cài đặt",
+    "users": "Người dùng",
+    "roles": "Vai trò",
+    "profile": "Hồ sơ",
+    "posts": "Bài viết",
+    "galleries": "Thư viện ảnh",
+    "tickets": "Vé",
+    "reviews": "Đánh giá",
+    "hero_slider": "Slider chính",
+    "menu_items": "Mục menu",
+    "themes": "Giao diện"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "forgotPassword": "Quên mật khẩu?",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "signIn": "Đăng nhập",
+    "signUp": "Đăng ký",
+    "enterCredentials": "Nhập thông tin đăng nhập của bạn",
+    "signInToAdmin": "Đăng nhập vào trang quản trị",
+    "loadingTheme": "Đang tải giao diện...",
+    "dontHaveAccount": "Bạn chưa có tài khoản?",
+    "contactAdmin": "Liên hệ quản trị viên"
+  },
+  "actions": {
+    "add": "Thêm",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "view": "Xem",
+    "upload": "Tải lên",
+    "calculate": "Tính toán thống kê",
+    "calculating": "Đang tính toán...",
+    "setup": "Thiết lập"
+  },
+  "messages": {
+    "success": "Thành công",
+    "error": "Lỗi",
+    "warning": "Cảnh báo",
+    "info": "Thông tin",
+    "loading": "Đang tải...",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa mục này?",
+    "noData": "Không có dữ liệu",
+    "failedToLogin": "Đăng nhập thất bại"
+  },
+  "dashboard": {
+    "overview": "Tổng quan bảng điều khiển",
+    "monitorMetrics": "Theo dõi các chỉ số kinh doanh và hoạt động gần đây",
+    "totalRevenue": "Tổng doanh thu",
+    "totalOrders": "Tổng đơn hàng",
+    "totalCustomers": "Tổng khách hàng",
+    "conversionRate": "Tỷ lệ chuyển đổi",
+    "recentActivity": "Hoạt động gần đây",
+    "viewAll": "Xem tất cả"
+  },
+  "profile": {
+    "title": "Thông tin cá nhân",
+    "description": "Quản lý thông tin cá nhân và bảo mật tài khoản của bạn",
+    "personalInfo": "Thông tin cá nhân",
+    "additionalSettings": "Cài đặt bổ sung",
+    "emailNotifications": "Thông báo qua email",
+    "emailNotificationsDesc": "Nhận thông báo về các hoạt động quan trọng",
+    "twoFactorAuth": "Xác thực hai yếu tố",
+    "twoFactorAuthDesc": "Tăng cường bảo mật cho tài khoản của bạn",
+    "fullName": "Họ và tên",
+    "initials": "Chữ cái đầu"
+  },
+  "products": {
+    "title": "Sản phẩm",
+    "description": "Quản lý danh mục sản phẩm",
+    "addProduct": "Thêm sản phẩm",
+    "editProduct": "Sửa sản phẩm",
+    "viewProduct": "Xem sản phẩm",
+    "productName": "Tên sản phẩm",
+    "price": "Giá",
+    "stock": "Kho",
+    "category": "Danh mục",
+    "status": "Trạng thái"
+  },
+  "orders": {
+    "title": "Đơn hàng",
+    "description": "Quản lý đơn hàng khách hàng",
+    "orderID": "Mã đơn hàng",
+    "customer": "Khách hàng",
+    "date": "Ngày",
+    "total": "Tổng",
+    "status": "Trạng thái",
+    "viewOrder": "Xem đơn hàng",
+    "orderDetails": "Chi tiết đơn hàng",
+    "statusTimeline": "Dòng thời gian trạng thái",
+    "orderNotes": "Ghi chú đơn hàng",
+    "notesPlaceholder": "Thêm ghi chú về đơn hàng này",
+    "statuses": {
+      "pending": "Đang chờ",
+      "confirmed": "Đã xác nhận",
+      "processing": "Đang xử lý",
+      "shipped": "Đã gửi",
+      "delivered": "Đã giao",
+      "cancelled": "Đã hủy"
+    },
+    "statusDescriptions": {
+      "pending": "Đã nhận đơn hàng, đang chờ xác nhận",
+      "confirmed": "Đơn hàng đã xác nhận, đang chuẩn bị xử lý",
+      "processing": "Đơn hàng đang được xử lý và đóng gói",
+      "shipped": "Đơn hàng đã được gửi đi",
+      "delivered": "Đơn hàng đã được giao"
+    },
+    "payment": {
+      "method": "Phương thức thanh toán",
+      "selectMethod": "Chọn phương thức thanh toán",
+      "status": "Trạng thái thanh toán",
+      "statuses": {
+        "pending": "Đang chờ",
+        "paid": "Đã thanh toán",
+        "failed": "Thất bại",
+        "refunded": "Đã hoàn tiền",
+        "partiallyRefunded": "Hoàn tiền một phần"
+      },
+      "sameAsShipping": "Địa chỉ thanh toán giống với địa chỉ giao hàng",
+      "billingAddress": "Địa chỉ thanh toán"
+    },
+    "address": {
+      "line1": "Địa chỉ dòng 1",
+      "line1Placeholder": "Địa chỉ đường phố",
+      "line2": "Địa chỉ dòng 2 (Tùy chọn)",
+      "line2Placeholder": "Căn hộ, phòng, đơn vị, v.v.",
+      "city": "Thành phố",
+      "cityPlaceholder": "Thành phố",
+      "state": "Tỉnh / Thành phố",
+      "statePlaceholder": "Tỉnh hoặc thành phố",
+      "postalCode": "Mã bưu điện",
+      "postalCodePlaceholder": "Mã bưu điện",
+      "country": "Quốc gia",
+      "countryPlaceholder": "Quốc gia"
+    },
+    "items": {
+      "product": "Sản phẩm",
+      "price": "Giá",
+      "quantity": "Số lượng",
+      "total": "Tổng cộng",
+      "actions": "Hành động",
+      "addProduct": "Thêm sản phẩm",
+      "searchProducts": "Tìm kiếm sản phẩm",
+      "searchPlaceholder": "Tìm theo tên hoặc mã SKU",
+      "sku": "Mã SKU",
+      "noProductsFound": "Không tìm thấy sản phẩm nào"
+    },
+    "customer": {
+      "name": "Tên khách hàng",
+      "namePlaceholder": "Nhập tên khách hàng",
+      "email": "Email",
+      "emailPlaceholder": "khachhang@example.com",
+      "countryCode": "Mã quốc gia",
+      "countryCodePlaceholder": "+84",
+      "phoneNumber": "Số điện thoại",
+      "phoneNumberPlaceholder": "123456789",
+      "userId": "ID người dùng (Tùy chọn)",
+      "userIdPlaceholder": "UUID của người dùng (nếu đã đăng ký)",
+      "userIdDescription": "Chỉ cần thiết khi đơn hàng liên kết với một người dùng đã đăng ký"
+    }
+  },
+  "hero_slider": {
+    "title": "Tiêu đề",
+    "description": "Mô tả",
+    "imageUrl": "URL Hình ảnh",
+    "buttonText": "Nội dung nút",
+    "buttonLink": "Đường dẫn nút",
+    "order": "Thứ tự",
+    "active": "Hoạt động",
+    "theme": "Giao diện",
+    "manager": "Quản lý Slider chính",
+    "addSlider": "Thêm Slider",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa slider này?"
+  },
+  "head": {
+    "dashboard": "Bảng điều khiển - Trang quản trị",
+    "profile": "Hồ sơ - Trang quản trị",
+    "products": "Sản phẩm - Trang quản trị",
+    "orders": "Đơn hàng - Trang quản trị"
+  },
+  "components": {
+    "common": {
+      "accessDenied": {
+        "title": "Quyền truy cập bị từ chối",
+        "defaultMessage": "Bạn không có quyền truy cập vào trang này",
+        "missingPermission": "Bạn không có quyền truy cập: {permission}",
+        "requiredPermissions": "Bạn cần có một trong các quyền sau: {permissions}"
+      },
+      "permissionAlert": {
+        "accessDenied": "Quyền truy cập bị từ chối",
+        "accessInfo": "Thông tin quyền truy cập",
+        "accessRequired": "Cần quyền truy cập",
+        "noAccess": "Bạn không có quyền truy cập vào nội dung này",
+        "permissionRequired": "Bạn cần có quyền: {permission}",
+        "permissionsRequired": "Bạn cần có một trong các quyền sau: {permissions}"
+      },
+      "permissionGate": {
+        "unauthorized": "Không được phép",
+        "missingPermissions": "Bạn không có quyền cần thiết để truy cập nội dung này",
+        "contactAdmin": "Vui lòng liên hệ quản trị viên để được cấp quyền"
+      },
+      "languageSwitcher": {
+        "selectLanguage": "Chọn Ngôn ngữ"
+      },
+      "authWrapper": {
+        "sessionExpired": "Phiên đăng nhập đã hết hạn",
+        "mustLogin": "Bạn phải đăng nhập để tiếp tục",
+        "redirectingToLogin": "Đang chuyển hướng đến trang đăng nhập..."
+      },
+      "toast": {
+        "close": "Đóng"
+      },
+      "filter": {
+        "statusFilter": {
+          "allStatus": "Tất cả trạng thái",
+          "published": "Đã xuất bản", 
+          "unpublished": "Chưa xuất bản"
+        },
+        "searchFilter": {
+          "placeholder": "Tìm kiếm..."
+        },
+        "pageSizeFilter": {
+          "perPage": "{count} mỗi trang"
+        }
+      },
+      "header": {
+        "pageHeader": {
+          "actions": "Hành động"
+        }
+      },
+      "media": {
+        "uploader": {
+          "changeImage": "Thay đổi ảnh",
+          "uploadImage": "Tải ảnh đại diện",
+          "dropHere": "Kéo và thả ảnh vào đây hoặc nhấp vào khu vực này để chọn ảnh",
+          "selectImage": "Chọn ảnh",
+          "supportedFormats": "Định dạng hỗ trợ: JPG, PNG, GIF • Tối đa 5MB",
+          "uploading": "Đang tải lên...",
+          "invalidFormat": "File không đúng định dạng",
+          "fileTooLarge": "Kích thước file không được vượt quá {size}",
+          "uploadFailed": "Tải ảnh thất bại"
+        }
+      },
+      "pagination": {
+        "showing": "Hiển thị",
+        "to": "đến",
+        "of": "trong tổng số",
+        "results": "kết quả",
+        "previous": "Trước",
+        "next": "Tiếp",
+        "page": "Trang"
+      }
+    },
+    "form": {
+      "phoneInput": {
+        "search": "Tìm kiếm quốc gia",
+        "selectCountry": "Chọn mã quốc gia",
+        "invalidPhone": "Số điện thoại không hợp lệ",
+        "enterPhone": "Nhập số điện thoại"
+      },
+      "validation": {
+        "required": "Trường này là bắt buộc",
+        "email": "Vui lòng nhập địa chỉ email hợp lệ",
+        "minLength": "Vui lòng nhập ít nhất {min} ký tự",
+        "maxLength": "Vui lòng nhập không quá {max} ký tự",
+        "passwordMatch": "Mật khẩu không khớp",
+        "invalidFormat": "Định dạng không hợp lệ"
+      }
+    }
+  },
+  "tickets": {
+    "printTicket": "In vé",
+    "selectSize": "Chọn kích thước vé muốn in. Vui lòng đảm bảo máy in và khổ giấy được cài đặt phù hợp.",
+    "printingNotes": "Lưu ý khi in:",
+    "printerNotes": [
+      "Đảm bảo máy in được kết nối và cài đặt đúng",
+      "Kiểm tra khổ giấy trong máy in trước khi in",
+      "Sử dụng khổ A4 để in vé đầy đủ thông tin",
+      "Khổ nhỏ sẽ in ít thông tin hơn nhưng tiết kiệm giấy"
+    ],
+    "cancel": "Hủy",
+    "print": "In vé",
+    "printing": "Đang in...",
+    "sizes": {
+      "xpPrinter": "Máy in XP",
+      "a4": "A4",
+      "a5": "A5",
+      "ticket": "Vé nhỏ",
+      "label": "Nhãn vé",
+      "xpDesc": "Khổ máy in XP (72mm)",
+      "a4Desc": "Khổ tiêu chuẩn A4",
+      "a5Desc": "Khổ nhỏ A5 (nửa A4)",
+      "ticketDesc": "Khổ vé nhỏ",
+      "labelDesc": "Nhãn vé nhỏ"
+    }
+  },
+  "posts": {
+    "categories": "Danh mục",
+    "noCategories": "Không có danh mục tin tức nào",
+    "featuredImage": "Hình ảnh nổi bật",
+    "featuredImageAlt": "Hình ảnh nổi bật",
+    "noImage": "Chưa chọn hình ảnh",
+    "imageUrlPlaceholder": "Nhập URL hình ảnh hoặc tải lên",
+    "recommendedSize": "Kích thước khuyến nghị: 1200x630px",
+    "uploading": "Đang tải lên... {progress}%",
+    "uploadImage": "Tải lên hình ảnh",
+    "errors": {
+      "notImage": "Vui lòng chọn tệp hình ảnh",
+      "tooLarge": "Kích thước hình ảnh phải nhỏ hơn 5MB",
+      "uploadFailed": "Tải hình ảnh thất bại. Vui lòng thử lại."
+    }
+  }
+} 

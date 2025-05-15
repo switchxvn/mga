@@ -13,6 +13,7 @@ import {
 } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 import PermissionGate from "../components/common/PermissionGate.vue";
+import { useI18n } from "vue-i18n";
 
 // Các define này được Nuxt cung cấp khi chạy
 // @ts-ignore 
@@ -24,8 +25,10 @@ definePageMeta({
   middleware: ["auth", "permission"],
 });
 
+const { t } = useI18n();
+
 useHead({
-  title: 'Dashboard - Admin Panel'
+  title: t('head.dashboard')
 })
 
 const router = useRouter();
@@ -97,10 +100,10 @@ onMounted(async () => {
       <div class="md:flex md:items-center md:justify-between mb-8">
         <div class="min-w-0 flex-1">
           <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
-            Dashboard Overview
+            {{ t('dashboard.overview') }}
           </h2>
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Monitor your business metrics and recent activities
+            {{ t('dashboard.monitorMetrics') }}
           </p>
         </div>
         <div class="mt-4 flex md:ml-4 md:mt-0">
@@ -111,7 +114,7 @@ onMounted(async () => {
           >
             <RefreshCw v-if="isCalculating" class="h-4 w-4 mr-2 animate-spin" />
             <CalculatorIcon v-else class="h-4 w-4 mr-2" />
-            {{ isCalculating ? "Calculating..." : "Calculate Stats" }}
+            {{ isCalculating ? t('actions.calculating') : t('actions.calculate') }}
           </button>
         </div>
       </div>
@@ -123,7 +126,7 @@ onMounted(async () => {
             <AlertCircle class="h-5 w-5 text-red-400" />
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">Error</h3>
+            <h3 class="text-sm font-medium text-red-800">{{ t('messages.error') }}</h3>
             <div class="mt-2 text-sm text-red-700">
               <p>{{ error }}</p>
             </div>
@@ -155,7 +158,7 @@ onMounted(async () => {
               </div>
               <div class="ml-5 w-0 flex-1">
                 <dl>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Revenue</dt>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{{ t('dashboard.totalRevenue') }}</dt>
                   <dd class="flex items-baseline">
                     <div class="text-2xl font-semibold text-gray-900 dark:text-white">${{ stats.totalRevenue }}</div>
                     <div class="ml-2 flex items-baseline text-sm font-semibold" :class="stats.revenueChange >= 0 ? 'text-green-600' : 'text-red-600'">
@@ -177,7 +180,7 @@ onMounted(async () => {
               </div>
               <div class="ml-5 w-0 flex-1">
                 <dl>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Orders</dt>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{{ t('dashboard.totalOrders') }}</dt>
                   <dd class="flex items-baseline">
                     <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.totalOrders }}</div>
                     <div class="ml-2 flex items-baseline text-sm font-semibold" :class="stats.ordersChange >= 0 ? 'text-green-600' : 'text-red-600'">
@@ -199,7 +202,7 @@ onMounted(async () => {
               </div>
               <div class="ml-5 w-0 flex-1">
                 <dl>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Customers</dt>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{{ t('dashboard.totalCustomers') }}</dt>
                   <dd class="flex items-baseline">
                     <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.totalCustomers }}</div>
                     <div class="ml-2 flex items-baseline text-sm font-semibold" :class="stats.customersChange >= 0 ? 'text-green-600' : 'text-red-600'">
@@ -224,8 +227,8 @@ onMounted(async () => {
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Conversion Rate</dt>
                   <dd class="flex items-baseline">
                     <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.conversionRate }}%</div>
-                    <div class="ml-2 flex items-baseline text-sm font-semibold" :class="stats.conversionRateChange >= 0 ? 'text-green-600' : 'text-red-600'">
-                      {{ stats.conversionRateChange >= 0 ? "+" : "" }}{{ stats.conversionRateChange }}%
+                    <div class="ml-2 flex items-baseline text-sm font-semibold" :class="stats.conversionChange >= 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ stats.conversionChange >= 0 ? "+" : "" }}{{ stats.conversionChange }}%
                     </div>
                   </dd>
                 </dl>
@@ -235,25 +238,35 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Recent Activities -->
-      <div v-if="activities?.length" class="mt-8">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">Recent Activities</h3>
-        <div class="bg-white dark:bg-neutral-800 shadow overflow-hidden sm:rounded-md">
-          <ul role="list" class="divide-y divide-gray-200 dark:divide-neutral-700">
-            <li v-for="activity in activities" :key="activity.id">
-              <div class="px-4 py-4 sm:px-6">
-                <div class="flex items-center justify-between">
-                  <p class="text-sm font-medium text-indigo-600 truncate">{{ activity.type }}</p>
-                  <div class="ml-2 flex-shrink-0 flex">
-                    <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      {{ new Date(activity.createdAt).toLocaleDateString() }}
-                    </p>
+      <!-- Recent Activity -->
+      <div v-if="!isLoading && activities.length > 0" class="bg-white dark:bg-neutral-800 shadow sm:rounded-lg overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+          <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">{{ t('dashboard.recentActivity') }}</h3>
+          <button class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300">
+            {{ t('dashboard.viewAll') }}
+          </button>
+        </div>
+        <div class="border-t border-gray-200 dark:border-gray-700">
+          <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+            <li v-for="activity in activities" :key="activity.id" class="px-4 py-4 sm:px-6">
+              <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                  <div class="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                    <component :is="activity.icon || Users" class="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                   </div>
                 </div>
-                <div class="mt-2 sm:flex sm:justify-between">
-                  <div class="sm:flex">
-                    <p class="flex items-center text-sm text-gray-500 dark:text-gray-400">{{ activity.description }}</p>
-                  </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    {{ activity.description }}
+                  </p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {{ activity.user?.name || 'System' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ new Date(activity.createdAt).toLocaleDateString() }}
+                  </p>
                 </div>
               </div>
             </li>

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useTrpc } from '../composables/useTrpc';
-import { useToast } from 'vue-toastification';
+import { useToast } from '../composables/useToast';
 
 // Định nghĩa interface cho variant để thống nhất kiểu dữ liệu
 export interface VariantItem {

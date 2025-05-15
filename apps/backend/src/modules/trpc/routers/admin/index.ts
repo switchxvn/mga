@@ -22,11 +22,12 @@ import { heroSliderAdminRouter } from './hero-slider.router'
 import { userSessionAdminRouter } from './user-session.router'
 import { userPageVisitAdminRouter } from './user-page-visit.router'
 import { priceRequestAdminRouter } from './price-request.router'
+import { menuItemAdminRouter } from './menu-item.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
   languages: languageAdminRouter,
-  menuItems: adminMenuItemsRouter,
+  menuItems: menuItemAdminRouter,
   foodMenu: adminFoodMenuRouter,
   dashboard: dashboardAdminRouter,
   category: categoryAdminRouter,
