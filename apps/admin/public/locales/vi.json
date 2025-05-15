@@ -1,0 +1,116 @@
+{
+  "language": "Ngôn ngữ",
+  "common": {
+    "language": "Ngôn ngữ",
+    "english": "Tiếng Anh",
+    "vietnamese": "Tiếng Việt"
+  },
+  "navigation": {
+    "dashboard": "Bảng điều khiển",
+    "products": "Sản phẩm",
+    "orders": "Đơn hàng",
+    "customers": "Khách hàng",
+    "categories": "Danh mục",
+    "settings": "Cài đặt",
+    "users": "Người dùng",
+    "roles": "Vai trò",
+    "profile": "Hồ sơ",
+    "posts": "Bài viết",
+    "galleries": "Thư viện ảnh",
+    "tickets": "Vé",
+    "reviews": "Đánh giá",
+    "hero_slider": "Slider chính",
+    "menu_items": "Mục menu",
+    "themes": "Giao diện"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "forgotPassword": "Quên mật khẩu?",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "signIn": "Đăng nhập",
+    "signUp": "Đăng ký",
+    "enterCredentials": "Nhập thông tin đăng nhập của bạn",
+    "signInToAdmin": "Đăng nhập vào trang quản trị",
+    "loadingTheme": "Đang tải giao diện...",
+    "dontHaveAccount": "Bạn chưa có tài khoản?",
+    "contactAdmin": "Liên hệ quản trị viên"
+  },
+  "actions": {
+    "add": "Thêm",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "view": "Xem",
+    "upload": "Tải lên",
+    "calculate": "Tính toán thống kê",
+    "calculating": "Đang tính toán...",
+    "setup": "Thiết lập"
+  },
+  "messages": {
+    "success": "Thành công",
+    "error": "Lỗi",
+    "warning": "Cảnh báo",
+    "info": "Thông tin",
+    "loading": "Đang tải...",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa mục này?",
+    "noData": "Không có dữ liệu",
+    "failedToLogin": "Đăng nhập thất bại"
+  },
+  "dashboard": {
+    "overview": "Tổng quan bảng điều khiển",
+    "monitorMetrics": "Theo dõi các chỉ số kinh doanh và hoạt động gần đây",
+    "totalRevenue": "Tổng doanh thu",
+    "totalOrders": "Tổng đơn hàng",
+    "totalCustomers": "Tổng khách hàng",
+    "recentActivity": "Hoạt động gần đây",
+    "viewAll": "Xem tất cả"
+  },
+  "profile": {
+    "title": "Thông tin cá nhân",
+    "description": "Quản lý thông tin cá nhân và bảo mật tài khoản của bạn",
+    "personalInfo": "Thông tin cá nhân",
+    "additionalSettings": "Cài đặt bổ sung",
+    "emailNotifications": "Thông báo qua email",
+    "emailNotificationsDesc": "Nhận thông báo về các hoạt động quan trọng",
+    "twoFactorAuth": "Xác thực hai yếu tố",
+    "twoFactorAuthDesc": "Tăng cường bảo mật cho tài khoản của bạn",
+    "fullName": "Họ và tên",
+    "initials": "Chữ cái đầu"
+  },
+  "products": {
+    "title": "Sản phẩm",
+    "description": "Quản lý danh mục sản phẩm",
+    "addProduct": "Thêm sản phẩm",
+    "editProduct": "Sửa sản phẩm",
+    "viewProduct": "Xem sản phẩm",
+    "productName": "Tên sản phẩm",
+    "price": "Giá",
+    "stock": "Kho",
+    "category": "Danh mục",
+    "status": "Trạng thái"
+  },
+  "orders": {
+    "title": "Đơn hàng",
+    "description": "Quản lý đơn hàng khách hàng",
+    "orderID": "Mã đơn hàng",
+    "customer": "Khách hàng",
+    "date": "Ngày",
+    "total": "Tổng",
+    "status": "Trạng thái",
+    "viewOrder": "Xem đơn hàng",
+    "orderDetails": "Chi tiết đơn hàng"
+  },
+  "head": {
+    "dashboard": "Bảng điều khiển - Trang quản trị",
+    "profile": "Hồ sơ - Trang quản trị",
+    "products": "Sản phẩm - Trang quản trị",
+    "orders": "Đơn hàng - Trang quản trị"
+  }
+} 

@@ -4,11 +4,13 @@ import { useAuth } from '../../composables/useAuth';
 import { useTheme } from '../../composables/useTheme';
 import { useRouter } from 'vue-router';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
 
 definePageMeta({
   layout: 'auth'
 });
 
+const { t } = useI18n();
 const router = useRouter();
 const { login } = useAuth();
 const { theme, isDark, initializeTheme } = useTheme();
@@ -48,7 +50,7 @@ const handleLogin = async () => {
       password: password.value
     });
   } catch (err: any) {
-    error.value = err.message || 'Failed to login';
+    error.value = err.message || t('messages.failedToLogin');
   } finally {
     isLoading.value = false;
   }
@@ -67,20 +69,20 @@ const togglePassword = () => {
   <div class="w-full max-w-[420px]">
     <div v-if="isThemeLoading" class="text-center p-4">
       <div class="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-      <p class="mt-2 text-gray-600 dark:text-gray-400">Loading theme...</p>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">{{ t('auth.loadingTheme') }}</p>
     </div>
     
     <div v-else>
       <h2 class="text-2xl font-bold text-center mb-2 text-red-500">
-        Sign In to Admin
+        {{ t('auth.signInToAdmin') }}
       </h2>
       <p class="text-center text-gray-600 dark:text-gray-400 mb-8">
-        Enter your credentials to access your account
+        {{ t('auth.enterCredentials') }}
       </p>
 
       <form @submit.prevent="handleLogin" class="space-y-6">
         <div class="space-y-1.5">
-          <label for="email" class="block text-gray-700 dark:text-gray-200 text-base mb-1">Email</label>
+          <label for="email" class="block text-gray-700 dark:text-gray-200 text-base mb-1">{{ t('auth.email') }}</label>
           <div class="relative flex items-center">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Mail class="h-5 w-5 text-gray-400" :stroke-width="1.5" />
@@ -98,7 +100,7 @@ const togglePassword = () => {
         </div>
 
         <div class="space-y-1.5">
-          <label for="password" class="block text-gray-700 dark:text-gray-200 text-base mb-1">Password</label>
+          <label for="password" class="block text-gray-700 dark:text-gray-200 text-base mb-1">{{ t('auth.password') }}</label>
           <div class="relative flex items-center">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Lock class="h-5 w-5 text-gray-400" :stroke-width="1.5" />
@@ -131,14 +133,14 @@ const togglePassword = () => {
               type="checkbox"
               class="form-checkbox h-5 w-5 text-red-500 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
             />
-            <span class="ml-2 text-gray-700 dark:text-gray-200">Remember me</span>
+            <span class="ml-2 text-gray-700 dark:text-gray-200">{{ t('auth.rememberMe') }}</span>
           </label>
           <button
             type="button"
             class="text-red-500 hover:text-red-600 dark:hover:text-red-400 font-medium focus:outline-none focus:underline"
             @click="handleForgotPassword"
           >
-            Forgot password?
+            {{ t('auth.forgotPassword') }}
           </button>
         </div>
 
@@ -153,7 +155,7 @@ const togglePassword = () => {
           :disabled="isLoading"
           class="w-full h-12 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors relative"
         >
-          <span :class="{ 'opacity-0': isLoading }">Sign In</span>
+          <span :class="{ 'opacity-0': isLoading }">{{ t('auth.signIn') }}</span>
           <div
             v-if="isLoading"
             class="absolute inset-0 flex items-center justify-center"
@@ -166,13 +168,13 @@ const togglePassword = () => {
         </button>
 
         <p class="text-center text-gray-600 dark:text-gray-400">
-          Don't have an account? 
+          {{ t('auth.dontHaveAccount') }}
           <button
             type="button"
             class="text-red-500 hover:text-red-600 dark:hover:text-red-400 font-medium focus:outline-none focus:underline"
             @click="router.push('/auth/register')"
           >
-            Contact administrator
+            {{ t('auth.contactAdmin') }}
           </button>
         </p>
       </form>

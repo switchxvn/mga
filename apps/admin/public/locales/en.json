@@ -1,0 +1,116 @@
+{
+  "language": "Language",
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "vietnamese": "Vietnamese"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "orders": "Orders",
+    "customers": "Customers",
+    "categories": "Categories",
+    "settings": "Settings",
+    "users": "Users",
+    "roles": "Roles",
+    "profile": "Profile",
+    "posts": "Posts",
+    "galleries": "Galleries",
+    "tickets": "Tickets",
+    "reviews": "Reviews",
+    "hero_slider": "Hero Slider",
+    "menu_items": "Menu Items",
+    "themes": "Themes"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "rememberMe": "Remember Me",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "enterCredentials": "Enter your credentials to access your account",
+    "signInToAdmin": "Sign In to Admin",
+    "loadingTheme": "Loading theme...",
+    "dontHaveAccount": "Don't have an account?",
+    "contactAdmin": "Contact administrator"
+  },
+  "actions": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "view": "View",
+    "upload": "Upload",
+    "calculate": "Calculate Stats",
+    "calculating": "Calculating...",
+    "setup": "Setup"
+  },
+  "messages": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "loading": "Loading...",
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "noData": "No data available",
+    "failedToLogin": "Failed to login"
+  },
+  "dashboard": {
+    "overview": "Dashboard Overview",
+    "monitorMetrics": "Monitor your business metrics and recent activities",
+    "totalRevenue": "Total Revenue",
+    "totalOrders": "Total Orders",
+    "totalCustomers": "Total Customers",
+    "recentActivity": "Recent Activity",
+    "viewAll": "View All"
+  },
+  "profile": {
+    "title": "Profile Information",
+    "description": "Manage your personal information and account security",
+    "personalInfo": "Personal Information",
+    "additionalSettings": "Additional Settings",
+    "emailNotifications": "Email Notifications",
+    "emailNotificationsDesc": "Receive notifications about important activities",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "twoFactorAuthDesc": "Enhance security for your account",
+    "fullName": "Full Name",
+    "initials": "Initials"
+  },
+  "products": {
+    "title": "Products",
+    "description": "Manage your product catalog",
+    "addProduct": "Add Product",
+    "editProduct": "Edit Product",
+    "viewProduct": "View Product",
+    "productName": "Product Name",
+    "price": "Price",
+    "stock": "Stock",
+    "category": "Category",
+    "status": "Status"
+  },
+  "orders": {
+    "title": "Orders",
+    "description": "Manage customer orders",
+    "orderID": "Order ID",
+    "customer": "Customer",
+    "date": "Date",
+    "total": "Total",
+    "status": "Status",
+    "viewOrder": "View Order",
+    "orderDetails": "Order Details"
+  },
+  "head": {
+    "dashboard": "Dashboard - Admin Panel",
+    "profile": "Profile - Admin Panel",
+    "products": "Products - Admin Panel",
+    "orders": "Orders - Admin Panel"
+  }
+} 

@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { AdminMenuItemTranslation } from './admin-menu-item-translation.entity';
 
 @Entity('admin_menu_items')
 export class AdminMenuItem {
@@ -8,11 +9,11 @@ export class AdminMenuItem {
   @Column({ length: 50, unique: true })
   code!: string;
 
-  @Column({ length: 100 })
-  name!: string;
-
   @Column({ length: 50, nullable: true })
   icon!: string;
+
+  @Column({ name: 'icon_type', length: 20, default: 'lucide' })
+  iconType!: string;
 
   @Column({ length: 255, nullable: true })
   path!: string;
@@ -41,4 +42,7 @@ export class AdminMenuItem {
 
   @OneToMany(() => AdminMenuItem, item => item.parent)
   children!: AdminMenuItem[];
+  
+  @OneToMany(() => AdminMenuItemTranslation, translation => translation.adminMenuItem, { cascade: true })
+  translations!: AdminMenuItemTranslation[];
 } 

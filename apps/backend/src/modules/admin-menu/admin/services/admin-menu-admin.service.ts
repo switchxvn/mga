@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AdminMenuItem } from '../../entities/admin-menu-item.entity';
+import { AdminMenuItem, AdminMenuItemTranslation } from '../../entities';
 
 @Injectable()
 export class AdminMenuAdminService {
@@ -9,15 +9,17 @@ export class AdminMenuAdminService {
 
   constructor(
     @InjectRepository(AdminMenuItem)
-    private readonly adminMenuItemRepository: Repository<AdminMenuItem>
+    private readonly adminMenuItemRepository: Repository<AdminMenuItem>,
+    @InjectRepository(AdminMenuItemTranslation)
+    private readonly adminMenuItemTranslationRepository: Repository<AdminMenuItemTranslation>
   ) {}
 
-  async findAll(options?: { includeInactive?: boolean }): Promise<AdminMenuItem[]> {
-    const { includeInactive = false } = options || {};
+  async findAll(options?: { includeInactive?: boolean, locale?: string }): Promise<AdminMenuItem[]> {
+    const { includeInactive = false, locale = 'en' } = options || {};
     
     return this.adminMenuItemRepository.find({
       where: includeInactive ? {} : { isActive: true },
-      relations: ['parent', 'children'],
+      relations: ['parent', 'children', 'translations'],
       order: { order: 'ASC' }
     });
   }
@@ -25,7 +27,7 @@ export class AdminMenuAdminService {
   async findById(id: number): Promise<AdminMenuItem> {
     const menuItem = await this.adminMenuItemRepository.findOne({
       where: { id },
-      relations: ['parent', 'children']
+      relations: ['parent', 'children', 'translations']
     });
 
     if (!menuItem) {
@@ -38,22 +40,89 @@ export class AdminMenuAdminService {
   async findByCode(code: string): Promise<AdminMenuItem | null> {
     return this.adminMenuItemRepository.findOne({
       where: { code },
-      relations: ['parent', 'children']
+      relations: ['parent', 'children', 'translations']
     });
   }
 
-  async create(createAdminMenuItemDto: Partial<AdminMenuItem>): Promise<AdminMenuItem> {
-    const adminMenuItem = this.adminMenuItemRepository.create(createAdminMenuItemDto);
-    return this.adminMenuItemRepository.save(adminMenuItem);
+  async create(createDto: {
+    code: string;
+    icon?: string;
+    path?: string;
+    parentId?: number | null;
+    order?: number;
+    isActive?: boolean;
+    availableForRoles?: string | null;
+    translations: { locale: string; name: string }[];
+  }): Promise<AdminMenuItem> {
+    const { translations, ...menuItemData } = createDto;
+    
+    // Create the menu item
+    const adminMenuItem = this.adminMenuItemRepository.create(menuItemData);
+    const savedMenuItem = await this.adminMenuItemRepository.save(adminMenuItem);
+    
+    // Create translations
+    if (translations && translations.length > 0) {
+      const translationEntities = translations.map(translation => 
+        this.adminMenuItemTranslationRepository.create({
+          adminMenuItemId: savedMenuItem.id,
+          locale: translation.locale,
+          name: translation.name
+        })
+      );
+      
+      await this.adminMenuItemTranslationRepository.save(translationEntities);
+    }
+    
+    // Reload the menu item with translations
+    return this.findById(savedMenuItem.id);
   }
 
-  async update(id: number, updateAdminMenuItemDto: Partial<AdminMenuItem>): Promise<AdminMenuItem> {
+  async update(id: number, updateDto: {
+    code?: string;
+    icon?: string;
+    path?: string;
+    parentId?: number | null;
+    order?: number;
+    isActive?: boolean;
+    availableForRoles?: string | null;
+    translations?: { locale: string; name: string }[];
+  }): Promise<AdminMenuItem> {
     const menuItem = await this.findById(id);
+    const { translations, ...menuItemData } = updateDto;
     
-    // Update the menuItem with the dto values
-    Object.assign(menuItem, updateAdminMenuItemDto);
+    // Update the menu item
+    Object.assign(menuItem, menuItemData);
+    await this.adminMenuItemRepository.save(menuItem);
     
-    return this.adminMenuItemRepository.save(menuItem);
+    // Update translations if provided
+    if (translations && translations.length > 0) {
+      for (const translation of translations) {
+        // Check if translation exists
+        const existingTranslation = await this.adminMenuItemTranslationRepository.findOne({
+          where: {
+            adminMenuItemId: id,
+            locale: translation.locale
+          }
+        });
+        
+        if (existingTranslation) {
+          // Update existing translation
+          existingTranslation.name = translation.name;
+          await this.adminMenuItemTranslationRepository.save(existingTranslation);
+        } else {
+          // Create new translation
+          const newTranslation = this.adminMenuItemTranslationRepository.create({
+            adminMenuItemId: id,
+            locale: translation.locale,
+            name: translation.name
+          });
+          await this.adminMenuItemTranslationRepository.save(newTranslation);
+        }
+      }
+    }
+    
+    // Reload the menu item with translations
+    return this.findById(id);
   }
 
   async delete(id: number): Promise<{ success: boolean }> {

@@ -20,6 +20,7 @@ import {
   LinkIcon,
   GlobeIcon
 } from 'lucide-vue-next';
+import * as LucideIcons from 'lucide-vue-next';
 import Swal from 'sweetalert2';
 import draggable from 'vue3-draggable-next';
 
@@ -31,6 +32,7 @@ import FilterContainer from '../../components/common/filter/FilterContainer.vue'
 import SearchFilter from '../../components/common/filter/SearchFilter.vue';
 import StatusFilter from '../../components/common/filter/StatusFilter.vue';
 import PageSizeFilter from '../../components/common/filter/PageSizeFilter.vue';
+import Pagination from '../../components/common/pagination/Pagination.vue';
 
 // These functions are provided by Nuxt at runtime
 // @ts-ignore
@@ -144,7 +146,11 @@ const updateQueryParams = () => {
 // Watch for changes in filters and update URL
 watch([page, search, activeFilter, localeFilter], () => {
   updateQueryParams();
-  applyFilter();
+  
+  // Only fetch when on client side
+  if (process.client) {
+    fetchMenuItems();
+  }
 }, { deep: true });
 
 // Toggle expand/collapse of menu item
@@ -271,6 +277,15 @@ const handleClickOutside = (event: Event) => {
       isLanguageOpen.value = false;
     }
   }
+};
+
+// Thêm hàm để lấy Lucide Icon component từ tên
+const getLucideIcon = (iconName: string | null | undefined) => {
+  if (!iconName) return LucideIcons.FolderIcon; // Default icon
+  
+  // Kiểm tra xem icon có tồn tại trong Lucide không
+  const IconComponent = (LucideIcons as Record<string, any>)[iconName];
+  return IconComponent || LucideIcons.FolderIcon; // Fallback to default if not found
 };
 
 onMounted(async () => {
@@ -496,17 +511,11 @@ onBeforeUnmount(() => {
                     <ChevronRightIcon v-else class="h-5 w-5 text-gray-500" />
                   </button>
                   
-                  <button 
-                    v-else
-                    @click="toggleExpand(item.id)"
-                    class="mr-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700"
-                  >
-                    <ChevronRightIcon class="h-5 w-5 text-gray-500" />
-                  </button>
+                  <div v-else class="mr-2 p-1 w-7 h-7"></div>
                   
                   <div class="flex-1 ml-2">
                     <div class="flex items-center">
-                      <FolderIcon class="h-5 w-5 text-indigo-500 mr-2" />
+                      <component :is="getLucideIcon(item.icon)" class="h-5 w-5 text-indigo-500 mr-2" />
                       <span class="font-medium text-gray-900 dark:text-white">{{ item.translations?.[0]?.label || 'Unnamed Menu Item' }}</span>
                     </div>
                     <div class="text-sm text-gray-500 flex items-center mt-1">
@@ -575,7 +584,7 @@ onBeforeUnmount(() => {
                         
                         <div class="flex-1 ml-2">
                           <div class="flex items-center">
-                            <LinkIcon class="h-5 w-5 text-indigo-400 mr-2" />
+                            <component :is="getLucideIcon(child.icon)" class="h-5 w-5 text-indigo-400 mr-2" />
                             <span class="font-medium text-gray-900 dark:text-white">{{ child.translations?.[0]?.label || 'Unnamed Menu Item' }}</span>
                           </div>
                           <div class="text-sm text-gray-500 flex items-center mt-1">
@@ -663,91 +672,14 @@ onBeforeUnmount(() => {
       </div>
       
       <!-- Pagination -->
-      <div class="bg-white dark:bg-neutral-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-neutral-700 sm:px-6">
-        <div class="flex-1 flex justify-between sm:hidden">
-          <button
-            @click="page > 1 ? changePage(page - 1) : null"
-            :disabled="page <= 1"
-            :class="[
-              page <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-neutral-700',
-              'relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-neutral-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-neutral-800'
-            ]"
-          >
-            Previous
-          </button>
-          <button
-            @click="page < totalPages ? changePage(page + 1) : null"
-            :disabled="page >= totalPages"
-            :class="[
-              page >= totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-neutral-700',
-              'ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-neutral-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-neutral-800'
-            ]"
-          >
-            Next
-          </button>
-        </div>
-        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm text-gray-700 dark:text-gray-300">
-              Showing
-              <span class="font-medium">{{ ((page - 1) * pageSize) + 1 }}</span>
-              to
-              <span class="font-medium">{{ Math.min(page * pageSize, totalItems) }}</span>
-              of
-              <span class="font-medium">{{ totalItems }}</span>
-              results
-            </p>
-          </div>
-          <div>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-              <button
-                @click="page > 1 ? changePage(page - 1) : null"
-                :disabled="page <= 1"
-                :class="[
-                  page <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-neutral-700',
-                  'relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-sm font-medium text-gray-500 dark:text-gray-400'
-                ]"
-              >
-                <span class="sr-only">Previous</span>
-                <ChevronUpIcon class="h-5 w-5 rotate-90" />
-              </button>
-              
-              <!-- Page numbers -->
-              <template v-for="pageNum in totalPages" :key="pageNum">
-                <button
-                  v-if="pageNum === 1 || pageNum === totalPages || (pageNum >= page - 1 && pageNum <= page + 1)"
-                  @click="changePage(pageNum)"
-                  :class="[
-                    pageNum === page
-                      ? 'z-10 bg-indigo-50 dark:bg-indigo-900 border-indigo-500 dark:border-indigo-500 text-indigo-600 dark:text-indigo-200'
-                      : 'bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-700',
-                    'relative inline-flex items-center px-4 py-2 border text-sm font-medium'
-                  ]"
-                >
-                  {{ pageNum }}
-                </button>
-                <span
-                  v-else-if="(pageNum === 2 && page > 3) || (pageNum === totalPages - 1 && page < totalPages - 2)"
-                  class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  ...
-                </span>
-              </template>
-              
-              <button
-                @click="page < totalPages ? changePage(page + 1) : null"
-                :disabled="page >= totalPages"
-                :class="[
-                  page >= totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-neutral-700',
-                  'relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-sm font-medium text-gray-500 dark:text-gray-400'
-                ]"
-              >
-                <span class="sr-only">Next</span>
-                <ChevronDownIcon class="h-5 w-5 rotate-90" />
-              </button>
-            </nav>
-          </div>
-        </div>
+      <div v-if="totalPages > 1" class="border-t border-gray-200 dark:border-neutral-700">
+        <Pagination
+          :current-page="page"
+          :total-pages="totalPages"
+          :total-items="totalItems"
+          :items-per-page="pageSize"
+          @page-change="changePage"
+        />
       </div>
     </div>
   </div>

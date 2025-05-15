@@ -199,7 +199,7 @@ export const menuItemAdminRouter = router({
     })))
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.services.menuItemAdminService.updateMenuItemOrder(input);
+        await ctx.services.menuItemAdminService.updateMenuItemOrder(input as any);
         return { success: true };
       } catch (error) {
         ctx.logger.error('Failed to update menu item order:', error);

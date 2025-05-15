@@ -119,7 +119,7 @@ export class MenuItemAdminService {
     });
 
     // Save the menu item first to get the ID
-    const savedMenuItem = await this.menuItemRepository.save(menuItem);
+    const savedMenuItem = await this.menuItemRepository.save(menuItem) as unknown as MenuItem;
 
     // Create translations
     if (translations) {

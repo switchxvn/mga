@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { useLocalStorage } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 
 // Define locale interface
 export interface Locale {
@@ -31,6 +32,13 @@ const state = {
 };
 
 export function useLocalization() {
+  const { locale: i18nLocale, t } = useI18n();
+  
+  // Sync i18n locale with our state
+  if (i18nLocale.value !== state.locale.value) {
+    i18nLocale.value = state.locale.value;
+  }
+
   // Computed
   const currentLocale = computed(() => {
     return state.locales.value.find(l => l.code === state.locale.value) || state.locales.value[0];
@@ -46,19 +54,16 @@ export function useLocalization() {
       return;
     }
     
+    // Update our state
     state.locale.value = code;
+    
+    // Update i18n locale
+    i18nLocale.value = code;
     
     // Update HTML lang attribute
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('lang', code);
     }
-  };
-
-  // Translation function - basic implementation
-  const t = (key: string, params?: Record<string, any>) => {
-    // This is a placeholder implementation
-    // In a real app, you would load translations from files or API
-    return key;
   };
 
   return {
