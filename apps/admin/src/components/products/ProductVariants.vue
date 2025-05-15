@@ -383,14 +383,14 @@ import { PlusIcon, TrashIcon, XIcon, PackageIcon } from 'lucide-vue-next'
 import { Switch } from '@headlessui/vue'
 import { useRoute } from 'vue-router'
 import { useTrpc } from '../../composables/useTrpc'
-import { useToast } from 'vue-toastification'
+import { useToast } from '../../composables/useToast'
 import { format } from 'date-fns'
 import { useProductVariantsStore, VariantItem } from '../../stores/productVariantsStore'
 
 // Khởi tạo các composable
 const route = useRoute()
 const trpc = useTrpc()
-const toast = useToast()
+const { success, error: showError, warning, info } = useToast()
 const variantsStore = useProductVariantsStore()
 
 interface Option {
@@ -796,7 +796,7 @@ const applyVariantStockAdjustment = async () => {
   // Lưu lại ID của variant đang xử lý
   const variantId = stockHistoryModal.value.variant.id;
   if (!variantId) {
-    toast.error('Invalid variant ID');
+    showError('Invalid variant ID');
     stockHistoryModal.value.loading = false;
     return;
   }
@@ -843,7 +843,7 @@ const applyVariantStockAdjustment = async () => {
       }
       
       // Hiển thị thông báo thành công
-      toast.success(`Stock adjusted to ${newQuantity}`);
+      success(`Stock adjusted to ${newQuantity}`);
       
       // Tải lại history
       const history = await loadVariantStockHistory(variantId);
@@ -851,7 +851,7 @@ const applyVariantStockAdjustment = async () => {
     }
   } catch (error) {
     console.error('Error adjusting stock');
-    toast.error('Failed to adjust stock');
+    showError('Failed to adjust stock');
   } finally {
     stockHistoryModal.value.loading = false;
     stockHistoryModal.value.adjustmentQuantity = 0;

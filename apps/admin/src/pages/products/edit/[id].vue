@@ -213,7 +213,7 @@ const router = useRouter()
 const loading = ref(true)
 const saveAndContinue = ref(false)
 
-// Thay thế đoạn này
+// Modify the toast import to use CommonJS default export pattern
 const toast = useToast()
 
 // Initialize currentTab from query params or default to 'basic'

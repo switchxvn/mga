@@ -98,7 +98,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTrpc } from '../../composables/useTrpc';
-import { useToast } from 'vue-toastification';
+import { useToast } from '../../composables/useToast';
 import { PlusIcon, ListChecksIcon, TrashIcon, SaveIcon } from 'lucide-vue-next';
 
 interface Specification {
@@ -126,7 +126,7 @@ const originalSpecifications = ref<Specification[]>([]);
 
 const route = useRoute();
 const trpc = useTrpc();
-const toast = useToast();
+const { success, error: showError, warning } = useToast();
 
 // Lấy locale từ URL query parameter
 const locale = computed(() => {
@@ -153,7 +153,7 @@ const loadSpecifications = async () => {
     originalSpecifications.value = JSON.parse(JSON.stringify(specifications.value));
   } catch (error) {
     console.error('Failed to load specifications:', error);
-    toast.error('Không thể tải thông số kỹ thuật sản phẩm');
+    showError('Không thể tải thông số kỹ thuật sản phẩm');
   } finally {
     loading.value = false;
   }
@@ -197,7 +197,7 @@ const saveChanges = async () => {
     // Validate dữ liệu trước khi lưu
     const invalidSpecs = specifications.value.filter(spec => !spec.name || !spec.value);
     if (invalidSpecs.length > 0) {
-      toast.warning('Vui lòng điền đầy đủ tên và giá trị cho tất cả thông số kỹ thuật');
+      warning('Vui lòng điền đầy đủ tên và giá trị cho tất cả thông số kỹ thuật');
       return;
     }
     
@@ -235,13 +235,13 @@ const saveChanges = async () => {
       });
     }
     
-    toast.success('Lưu thông số kỹ thuật thành công');
+    success('Lưu thông số kỹ thuật thành công');
     
     // Tải lại dữ liệu sau khi lưu
     await loadSpecifications();
   } catch (error) {
     console.error('Failed to save specifications:', error);
-    toast.error('Không thể lưu thông số kỹ thuật');
+    showError('Không thể lưu thông số kỹ thuật');
   } finally {
     saving.value = false;
   }

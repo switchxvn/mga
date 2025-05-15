@@ -247,7 +247,7 @@ const router = useRouter()
 const nuxtApp = useNuxtApp()
 const loading = ref(false)
 
-// Thay thế đoạn này
+// Modify the toast import to use CommonJS default export pattern
 const toast = useToast()
 
 // Initialize currentTab
