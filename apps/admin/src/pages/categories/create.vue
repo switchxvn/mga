@@ -223,7 +223,7 @@ import { useLocalization } from '../../composables/useLocalization'
 import { useSiteTitle } from '../../composables/useSiteTitle'
 
 // Set page title with i18n support
-useSiteTitle('categories.createCategory');
+useSiteTitle('categoriesCreate');
 
 const trpc = useTrpc()
 const { t } = useLocalization();

@@ -55,8 +55,8 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-// Sử dụng useSiteTitle thay vì useHead trực tiếp
-useSiteTitle('products.management');
+// Set page title with i18n support
+useSiteTitle('productsManagement');
 
 const router = useRouter();
 const route = useRoute();

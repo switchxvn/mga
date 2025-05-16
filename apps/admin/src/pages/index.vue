@@ -29,7 +29,7 @@ definePageMeta({
 const { t } = useI18n();
 
 // Sử dụng useSiteTitle thay vì useHead trực tiếp
-useSiteTitle('head.dashboard');
+useSiteTitle('dashboard');
 
 const router = useRouter();
 const { checkAuth } = useAuth();

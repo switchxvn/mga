@@ -37,7 +37,7 @@ import { useLocalization } from '../../composables/useLocalization';
 import { useSiteTitle } from '../../composables/useSiteTitle';
 
 // Set page title with i18n support
-useSiteTitle('categories.categoriesList');
+useSiteTitle('categoriesList');
 
 // Đăng ký $lucide để sử dụng trong template
 const $lucide = lucideIcons;

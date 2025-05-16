@@ -238,7 +238,7 @@ import PageHeader from '../../../components/common/header/PageHeader.vue'
 import IconSelector from '../../../components/common/IconSelector.vue'
 
 // Set page title with i18n support
-useSiteTitle('categories.editCategory');
+useSiteTitle('categoriesEdit');
 
 const route = useRoute()
 const router = useRouter()

@@ -12,7 +12,7 @@ definePageMeta({
 });
 
 // Set page title with i18n support
-useSiteTitle('auth.signIn');
+useSiteTitle('authSignIn');
 
 const { t } = useI18n();
 const router = useRouter();

@@ -53,8 +53,8 @@ definePageMeta({
   middleware: ["auth", "permission"],
 });
 
-// Sử dụng useSiteTitle thay vì useHead trực tiếp
-useSiteTitle('posts.management');
+// Set page title with i18n support
+useSiteTitle('postsManagement');
 
 const router = useRouter();
 const route = useRoute();

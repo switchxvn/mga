@@ -279,7 +279,7 @@ import Swal from 'sweetalert2'
 import { TransitionRoot } from '@headlessui/vue'
 import { useAuth } from '~/composables/useAuth'
 import { useTrpc } from '~/composables/useTrpc'
-import { useSiteTitle } from '~/composables/useSiteTitle'
+import { useSiteTitle } from '../../composables/useSiteTitle'
 import PageHeader from '../../components/common/header/PageHeader.vue'
 import FilterContainer from '../../components/common/filter/FilterContainer.vue'
 import SearchFilter from '../../components/common/filter/SearchFilter.vue'
@@ -295,8 +295,8 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-// Sử dụng useSiteTitle thay vì useHead trực tiếp
-useSiteTitle('users.management');
+// Set page title with i18n support
+useSiteTitle('usersManagement');
 
 const router = useRouter()
 const route = useRoute()
