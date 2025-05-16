@@ -6,6 +6,7 @@ import { navigateTo } from 'nuxt/app';
 import { TicketIcon, HistoryIcon } from 'lucide-vue-next';
 import { OrderStatus } from '@ew/shared';
 import PageHeader from '../../components/common/header/PageHeader.vue';
+import { useLocalization } from "../../composables/useLocalization";
 
 // Mock toast function để tránh lỗi SSR với vue-toastification
 const toast = {
@@ -54,7 +55,7 @@ interface ScanHistory {
   scanCount?: number;
 }
 
-const { t } = useI18n();
+const { t } = useLocalization();
 const trpc = useTrpc();
 
 // Active tab for navigation
@@ -235,16 +236,16 @@ onMounted(() => {
             
             <div class="flex-1 min-w-[240px]">
               <label for="status-filter" class="block text-sm font-bold text-gray-700 mb-1">
-                {{ t('Status') }}
+                {{ t('tickets.status') }}
               </label>
               <select
                 id="status-filter"
                 v-model="statusFilter"
                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
-                <option value="all">{{ t('All') }}</option>
-                <option value="first">{{ t('First Use') }}</option>
-                <option value="used">{{ t('Already Used') }}</option>
+                <option value="all">{{ t('filters.all') }}</option>
+                <option value="first">{{ t('tickets.firstUse') }}</option>
+                <option value="used">{{ t('tickets.alreadyUsed') }}</option>
               </select>
             </div>
           </div>
@@ -252,7 +253,7 @@ onMounted(() => {
           <div class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-[240px]">
               <label for="date-from" class="block text-sm font-bold text-gray-700 mb-1">
-                {{ t('From Date') }}
+                {{ t('tickets.fromDate') }}
               </label>
               <input
                 id="date-from"
@@ -264,7 +265,7 @@ onMounted(() => {
             
             <div class="flex-1 min-w-[240px]">
               <label for="date-to" class="block text-sm font-bold text-gray-700 mb-1">
-                {{ t('To Date') }}
+                {{ t('tickets.toDate') }}
               </label>
               <input
                 id="date-to"
@@ -369,7 +370,10 @@ onMounted(() => {
           <!-- Pagination -->
           <div v-if="totalItems > 0" class="mt-4 flex justify-between items-center">
             <div class="text-sm text-gray-500">
-              {{ t('Showing') + ' ' + ((page - 1) * pageSize + 1) + ' ' + t('to') + ' ' + Math.min(page * pageSize, totalItems) + ' ' + t('of') + ' ' + totalItems + ' ' + t('entries') }}
+              {{ t('components.common.pagination.showing') }} {{ (page - 1) * pageSize + 1 }} 
+              {{ t('components.common.pagination.to') }} {{ Math.min(page * pageSize, totalItems) }} 
+              {{ t('components.common.pagination.of') }} {{ totalItems }} 
+              {{ t('components.common.pagination.results') }}
             </div>
             <div class="flex space-x-1">
               <button

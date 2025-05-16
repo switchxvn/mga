@@ -123,9 +123,12 @@ const getCurrentSection = () => {
 // Dynamic page title based on current route with SSR support
 const pageTitle = computed(() => {
   const section = getCurrentSection()
-  // If section already includes "- Admin Dashboard", return as is
-  if (section.includes('- Admin Dashboard')) return section
-  return section !== 'Dashboard' ? `${section} - Admin Dashboard` : 'Admin Dashboard'
+  const adminPageSuffix = t('common.adminPageSuffix')
+  
+  // Nếu section đã bao gồm hậu tố, trả về nguyên bản
+  if (section.includes(adminPageSuffix)) return section
+  
+  return section !== 'Dashboard' ? `${section} ${adminPageSuffix}` : `Dashboard ${adminPageSuffix}`
 })
 
 // Set page title with SSR support

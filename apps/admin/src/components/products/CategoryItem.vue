@@ -39,10 +39,10 @@
         :for="'category-' + category.id"
         class="flex-1 cursor-pointer text-sm font-medium"
       >
-        {{ category.translations[0]?.name || 'Unnamed category' }}
+        {{ category.translations[0]?.name || t('products.categories.unnamedCategory') }}
         
         <span v-if="!category.active" class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-          Draft
+          {{ t('products.categories.draft') }}
         </span>
       </label>
     </div>
@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ChevronRightIcon, FolderIcon } from 'lucide-vue-next'
+import { useLocalization } from '@/composables/useLocalization'
 
 interface CategoryTranslation {
   id: number
@@ -92,6 +93,8 @@ const props = defineProps<{
 defineEmits<{
   toggle: [categoryId: number]
 }>()
+
+const { t } = useLocalization()
 
 const expanded = ref(false)
 

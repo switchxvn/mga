@@ -66,7 +66,12 @@ export const adminMenuAdminRouter = router({
     .input(
       z.object({
         code: z.string().min(1).max(50),
-        translations: z.array(translationSchema).min(1),
+        translations: z.array(
+          z.object({
+            locale: z.string().length(2),
+            name: z.string().min(1).max(100),
+          })
+        ).min(1),
         icon: z.string().max(50).optional(),
         path: z.string().max(255).optional(),
         parentId: z.number().nullable().optional(),
@@ -77,7 +82,19 @@ export const adminMenuAdminRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.adminMenuAdminService.create(input);
+        return await ctx.services.adminMenuAdminService.create({
+          code: input.code,
+          translations: input.translations.map(t => ({
+            locale: t.locale,
+            name: t.name
+          })),
+          icon: input.icon,
+          path: input.path,
+          parentId: input.parentId,
+          order: input.order,
+          isActive: input.isActive,
+          availableForRoles: input.availableForRoles
+        });
       } catch (error) {
         ctx.logger.error('Failed to create admin menu item:', error);
         throw new TRPCError({
@@ -95,7 +112,12 @@ export const adminMenuAdminRouter = router({
         id: z.number(),
         data: z.object({
           code: z.string().min(1).max(50).optional(),
-          translations: z.array(translationSchema).optional(),
+          translations: z.array(
+            z.object({
+              locale: z.string().length(2),
+              name: z.string().min(1).max(100),
+            })
+          ).optional(),
           icon: z.string().max(50).optional(),
           path: z.string().max(255).optional(),
           parentId: z.number().nullable().optional(),
@@ -107,7 +129,14 @@ export const adminMenuAdminRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.adminMenuAdminService.update(input.id, input.data);
+        const updateData = {
+          ...input.data,
+          translations: input.data.translations ? input.data.translations.map(t => ({
+            locale: t.locale,
+            name: t.name
+          })) : undefined
+        };
+        return await ctx.services.adminMenuAdminService.update(input.id, updateData);
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;

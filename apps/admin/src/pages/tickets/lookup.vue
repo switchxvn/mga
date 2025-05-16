@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import PhoneInput from '../../components/form/PhoneInput.vue';
 import TicketPrintModal from '../../components/tickets/TicketPrintModal.vue';
+import { useLocalization } from "../../composables/useLocalization";
 
 // Mock toast function để tránh lỗi SSR với vue-toastification
 const toast = {
@@ -159,7 +160,7 @@ interface Setting {
   updatedAt?: Date;
 }
 
-const { t } = useI18n();
+const { t } = useLocalization();
 const trpc = useTrpc();
 
 // State refs
@@ -993,7 +994,7 @@ const getProductTitle = (item: any): string => {
     return item.product.translations[0].title;
   }
   
-  return t('Unknown Product');
+  return t('products.unknown');
 };
 
 // Lấy thông tin variant từ productSnapshot
@@ -1218,19 +1219,19 @@ const getPrintDisabledReason = (ticket: any): string => {
           
           <!-- Kết quả tìm kiếm -->
           <div v-if="customerTickets.length > 0" class="mt-4">
-            <h4 class="font-semibold text-gray-700 mb-3">{{ t('Vé của khách hàng') }}</h4>
+            <h4 class="font-semibold text-gray-700 mb-3">{{ t('tickets.customerTickets') }}</h4>
             <div class="border rounded-md overflow-hidden">
               <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Mã đơn hàng') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Sản phẩm') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Trạng thái vé') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Lượt quét') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Trạng thái đơn') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Ngày mua') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Thông tin KH') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('Hành động') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('orders.orderID') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('products.title') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('tickets.status') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('tickets.scanCount') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('orders.status') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('orders.date') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('orders.customer.name') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t('actions.view') }}</th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -1486,7 +1487,7 @@ const getPrintDisabledReason = (ticket: any): string => {
 
         <!-- Thêm chi tiết sản phẩm từ productSnapshot -->
         <div v-if="scanResult?.orderItem?.productSnapshot" class="mt-4 pt-4 border-t border-gray-200">
-          <p class="text-sm font-bold text-gray-700 uppercase mb-2">{{ t('Chi tiết sản phẩm') }}</p>
+          <p class="text-sm font-bold text-gray-700 uppercase mb-2">{{ t('tickets.productDetails') }}</p>
           <div class="bg-white p-4 rounded-md border border-gray-200">
             <div v-if="scanResult?.orderItem?.productSnapshot?.translations && scanResult.orderItem.productSnapshot.translations.length > 0">
               <div v-for="(translation, index) in scanResult.orderItem.productSnapshot.translations" :key="index" class="mb-2">
@@ -1503,7 +1504,7 @@ const getPrintDisabledReason = (ticket: any): string => {
             </div>
             
             <div v-if="scanResult?.orderItem?.productSnapshot?.variant" class="mt-3 pt-3 border-t border-dashed border-gray-200">
-              <p class="text-sm font-bold text-gray-700 uppercase mb-1">{{ t('Loại vé') }}</p>
+              <p class="text-sm font-bold text-gray-700 uppercase mb-1">{{ t('tickets.ticketType') }}</p>
               <div class="flex items-center">
                 <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-sm font-medium mr-2">
                   {{ scanResult.orderItem.productSnapshot.variant.name }}

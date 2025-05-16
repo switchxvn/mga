@@ -6,7 +6,7 @@
         <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
           <div class="flex flex-col items-center gap-2">
             <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
-            <p class="text-sm text-slate-500">Loading...</p>
+            <p class="text-sm text-slate-500">{{ t('common.loading') }}</p>
           </div>
         </div>
 
@@ -16,8 +16,8 @@
             <div class="space-y-6">
               <!-- Header -->
               <PageHeader
-                title="Create Post"
-                description="Create a new post with translations"
+                :title="t('posts.createPost')"
+                :description="t('posts.description')"
               >
                 <template #actions>
                   <!-- Language Switcher -->
@@ -35,7 +35,7 @@
                           @error="onFlagImageError"
                         />
                       </div>
-                      <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
+                      <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || t('language.selectLanguage') }}</span>
                       <ChevronDownIcon 
                         class="h-4 w-4 transition-transform"
                         :class="{ 'rotate-180': isLanguageOpen }"
@@ -64,7 +64,7 @@
                             />
                           </div>
                           <span class="truncate">{{ lang.nativeName }}</span>
-                          <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
+                          <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">({{ t('language.default') }})</span>
                           <CheckIcon
                             v-if="selectedLanguage === lang.code"
                             class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
@@ -79,7 +79,7 @@
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
                   >
                     <XIcon class="w-4 h-4 mr-2" />
-                    Cancel
+                    {{ t('posts.cancel') }}
                   </NuxtLink>
                   
                   <button 
@@ -88,7 +88,7 @@
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
                   >
                     <SaveIcon class="w-4 h-4 mr-2" />
-                    {{ loading && saveAndContinue ? 'Saving...' : 'Save & Continue' }}
+                    {{ loading && saveAndContinue ? t('common.saving') : t('posts.saveAndContinue') }}
                   </button>
 
                   <button 
@@ -97,7 +97,7 @@
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
                   >
                     <SaveAllIcon class="w-4 h-4 mr-2" />
-                    {{ loading && !saveAndContinue ? 'Saving...' : 'Save & Back to List' }}
+                    {{ loading && !saveAndContinue ? t('common.saving') : t('posts.saveAndBack') }}
                   </button>
                 </template>
               </PageHeader>
@@ -177,30 +177,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useTrpc } from '@/composables/useTrpc'
-import slugify from 'slugify'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useHead } from 'nuxt/app'
-import { useToast } from '../../composables/useToast'
-import { useI18n } from "vue-i18n";
-import { useAuth } from '@/composables/useAuth'
-import PermissionGate from '@/components/common/PermissionGate.vue'
-import AuthWrapper from '@/components/common/AuthWrapper.vue'
 
 // Import Lucide icons
 import {
-  FileTextIcon,
-  ImageIcon,
-  SearchIcon,
-  SettingsIcon,
   XIcon,
   SaveAllIcon,
   ChevronDownIcon,
   CheckIcon,
-  SaveIcon,
-  FolderIcon,
-  WandIcon
+  SaveIcon
 } from 'lucide-vue-next'
 
 // Import components
@@ -210,159 +196,41 @@ import PostMedia from '@/components/posts/PostMedia.vue'
 import PostSEO from '@/components/posts/PostSEO.vue'
 import PostSettings from '@/components/posts/PostSettings.vue'
 import PostCategories from '@/components/posts/PostCategories.vue'
-import PermissionAlert from '@/components/common/PermissionAlert.vue'
+import PermissionGate from '@/components/common/PermissionGate.vue'
+import AuthWrapper from '@/components/common/AuthWrapper.vue'
+import { usePost } from '@/composables/usePost';
+import { useLocalization } from '@/composables/useLocalization';
 
-const trpc = useTrpc()
-const route = useRoute()
-const router = useRouter()
-const toast = useToast()
-const { t } = useI18n()
-const { user } = useAuth()
-const loading = ref(false)
-const saveAndContinue = ref(false)
+const { t } = useLocalization();
 
-// Initialize currentTab from query params or default to 'basic'
-const currentTab = ref(route.query.tab?.toString() || 'basic')
-
-// Watch for tab changes and update URL
-watch(currentTab, (newTab) => {
-  router.replace({ 
-    query: { 
-      ...route.query,
-      tab: newTab 
-    }
-  })
-})
-
-const tabs = [
-  { 
-    id: 'basic', 
-    name: 'Basic Info', 
-    icon: FileTextIcon
-  },
-  { 
-    id: 'media', 
-    name: 'Media', 
-    icon: ImageIcon
-  },
-  {
-    id: 'categories',
-    name: 'Categories',
-    icon: FolderIcon
-  },
-  { 
-    id: 'seo', 
-    name: 'SEO', 
-    icon: SearchIcon
-  },
-  { 
-    id: 'settings', 
-    name: 'Settings', 
-    icon: SettingsIcon
-  }
-]
-
-interface PostForm {
-  title: string
-  slug: string
-  content: string
-  shortDescription: string
-  published: boolean
-  thumbnail: string
-  metaDescription: string
-  tags: string[]
-  categoryIds: number[]
-  updatedAt: string
-  translations: Record<string, {
-    title: string
-    slug: string
-    content: string
-    shortDescription: string
-    metaDescription: string
-    thumbnail: string
-  }>
-}
-
-const initialForm: PostForm = {
-  title: '',
-  slug: '',
-  content: '',
-  shortDescription: '',
-  published: false,
-  thumbnail: '',
-  metaDescription: '',
-  tags: [],
-  categoryIds: [],
-  updatedAt: new Date().toISOString(),
-  translations: {}
-}
-
-const form = ref({ ...initialForm })
-const tagsInput = ref('')
+const {
+  loading,
+  saveAndContinue,
+  currentTab,
+  tabs,
+  form,
+  tagsInput,
+  errors,
+  editorOptions,
+  languages,
+  selectedLanguage,
+  defaultLanguage,
+  isLanguageOpen,
+  handleTagInput,
+  addTag,
+  removeTag,
+  generateSlug,
+  fetchLanguages,
+  onFlagImageError,
+  createPost
+} = usePost();
 
 // Update page title dynamically
 useHead(() => ({
-  title: form.value.title 
-    ? `Create: ${form.value.title} - Admin Dashboard`
-    : 'Create Post - Admin Dashboard'
-}))
-
-const handleTagInput = (e: KeyboardEvent) => {
-  // Handle Enter key
-  if (e.key === 'Enter') {
-    e.preventDefault()
-    addTag()
-  }
-  // Handle Space key
-  else if (e.key === ' ') {
-    e.preventDefault()
-    addTag()
-  }
-  // Handle Backspace when input is empty
-  else if (e.key === 'Backspace' && tagsInput.value === '') {
-    e.preventDefault()
-    form.value.tags.pop()
-  }
-}
-
-const addTag = () => {
-  const tag = tagsInput.value.trim()
-  if (tag && !form.value.tags.includes(tag)) {
-    form.value.tags.push(tag)
-    tagsInput.value = ''
-  }
-}
-
-const removeTag = (index: number) => {
-  form.value.tags.splice(index, 1)
-}
-
-// Generate slug from title with Vietnamese support
-const generateSlug = () => {
-  if (form.value.title) {
-    form.value.slug = slugify(form.value.title, {
-      lower: true,           // Convert to lowercase
-      strict: true,          // Strip special characters except replacement
-      locale: 'vi',          // Vietnamese language
-      trim: true             // Trim leading and trailing replacement chars
-    })
-  }
-}
-
-interface Language {
-  id: number;
-  name: string;
-  code: string;
-  nativeName: string;
-  flagCode: string;
-  isDefault: boolean;
-  isActive: boolean;
-}
-
-const languages = ref<Language[]>([])
-const selectedLanguage = ref('')
-const defaultLanguage = ref('')
-const isLanguageOpen = ref(false)
+  title: form.title 
+    ? `${t('posts.create')}: ${form.title} - ${t('common.adminDashboard')}`
+    : `${t('posts.createPost')} - ${t('common.adminDashboard')}`
+}));
 
 const handleClickOutside = (event: Event) => {
   const target = event.target as HTMLElement;
@@ -372,249 +240,16 @@ const handleClickOutside = (event: Event) => {
 };
 
 onMounted(async () => {
-  try {
-    const [langs, defaultLang] = await Promise.all([
-      trpc.admin.languages.getLanguages.query(),
-      trpc.admin.languages.getDefaultLanguage.query()
-    ])
-    languages.value = langs
-    defaultLanguage.value = defaultLang?.code || ''
-    selectedLanguage.value = defaultLang?.code || ''
-  } catch (error) {
-    console.error('Failed to fetch languages:', error)
-  }
+  await fetchLanguages();
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
   }
-})
+});
 
 onBeforeUnmount(() => {
   if (process.client) {
     document.removeEventListener('click', handleClickOutside);
   }
-})
-
-// Update watch for selectedLanguage
-watch(selectedLanguage, (newLang, oldLang) => {
-  if (oldLang) {
-    // Save current content to translations before switching
-    form.value.translations[oldLang] = {
-      title: form.value.title,
-      slug: form.value.slug,
-      content: form.value.content,
-      shortDescription: form.value.shortDescription,
-      metaDescription: form.value.metaDescription,
-      thumbnail: form.value.thumbnail
-    }
-  }
-  
-  // Load content for new language
-  if (form.value.translations[newLang]) {
-    const translation = form.value.translations[newLang]
-    form.value.title = translation.title
-    form.value.slug = translation.slug
-    form.value.content = translation.content
-    form.value.shortDescription = translation.shortDescription
-    form.value.metaDescription = translation.metaDescription
-    form.value.thumbnail = translation.thumbnail
-  } else {
-    // Reset form for new translation
-    form.value.title = ''
-    form.value.slug = ''
-    form.value.content = ''
-    form.value.shortDescription = ''
-    form.value.metaDescription = ''
-    form.value.thumbnail = ''
-  }
-})
-
-// Add validation types and refs
-interface ValidationErrors {
-  title?: string;
-  slug?: string;
-  content?: string;
-}
-
-const errors = ref<ValidationErrors>({})
-
-// Add validation function
-const validateForm = (): boolean => {
-  errors.value = {}
-  let isValid = true
-
-  // Validate title
-  if (!form.value.title?.trim()) {
-    errors.value.title = 'Tiêu đề không được để trống'
-    isValid = false
-  }
-
-  // Validate slug
-  if (!form.value.slug?.trim()) {
-    errors.value.slug = 'Đường dẫn không được để trống'
-    isValid = false
-  }
-
-  // Validate content
-  if (!form.value.content?.trim()) {
-    errors.value.content = 'Nội dung không được để trống'
-    isValid = false
-  }
-
-  return isValid
-}
-
-const createPost = async (continueEditing = false) => {
-  try {
-    // Validate form before submitting
-    if (!validateForm()) {
-      toast.error('Vui lòng kiểm tra lại các trường bắt buộc', {
-        timeout: 8000,
-        position: 'top-right',
-        closeButton: true
-      })
-      return
-    }
-
-    loading.value = true
-    saveAndContinue.value = continueEditing
-
-    // Save current content to translations before creating
-    form.value.translations[selectedLanguage.value] = {
-      title: form.value.title,
-      slug: form.value.slug,
-      content: form.value.content,
-      shortDescription: form.value.shortDescription,
-      metaDescription: form.value.metaDescription,
-      thumbnail: form.value.thumbnail
-    }
-
-    // Prepare translations array for API
-    const translations = Object.entries(form.value.translations).map(([locale, content]) => ({
-      locale,
-      title: content.title,
-      slug: content.slug,
-      content: content.content,
-      shortDescription: content.shortDescription,
-      metaDescription: content.metaDescription,
-      ogImage: content.thumbnail
-    }))
-
-    const response = await trpc.admin.posts.createPost.mutate({
-      title: form.value.title,
-      content: form.value.content,
-      shortDescription: form.value.shortDescription,
-      status: form.value.published ? 'PUBLISHED' : 'DRAFT',
-      thumbnail: form.value.thumbnail || '',
-      metaDescription: form.value.metaDescription || '',
-      translations,
-      tags: form.value.tags,
-      categoryIds: form.value.categoryIds
-    })
-
-    toast.success('Tạo bài viết thành công!')
-
-    if (!continueEditing) {
-      router.push('/posts')
-    } else {
-      // Redirect to edit page
-      router.push(`/posts/edit/${response.id}`)
-    }
-  } catch (error: any) {
-    console.error('Failed to create post:', error)
-    
-    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
-    const langName = currentLang?.nativeName || selectedLanguage.value
-    
-    let errorMessage = `[${langName}] `
-
-    // Handle validation errors
-    if (error.data?.zodError?.fieldErrors) {
-      const fieldErrors = error.data.zodError.fieldErrors
-      const errorMessages = []
-
-      // Handle title errors
-      if (fieldErrors.title) {
-        errorMessages.push(fieldErrors.title[0])
-      }
-
-      // Handle content errors
-      if (fieldErrors.content) {
-        errorMessages.push(fieldErrors.content[0])
-      }
-
-      // Handle translation errors
-      if (fieldErrors.translations) {
-        errorMessages.push(fieldErrors.translations[0])
-      }
-
-      errorMessage += errorMessages.join(', ')
-    } 
-    // Handle specific error codes
-    else if (error.code === 'CONFLICT') {
-      errorMessage += 'Đường dẫn này đã tồn tại, vui lòng chọn đường dẫn khác'
-    }
-    else if (error.code === 'BAD_REQUEST') {
-      errorMessage += error.message || 'Dữ liệu không hợp lệ'
-    }
-    // Handle other errors
-    else {
-      errorMessage += error.message || 'Có lỗi xảy ra, vui lòng thử lại'
-    }
-    
-    toast.error(errorMessage, {
-      timeout: 8000,
-      position: 'top-right',
-      closeButton: true
-    })
-  } finally {
-    loading.value = false
-    saveAndContinue.value = false
-  }
-}
-
-// Quill Editor Options
-const editorOptions = {
-  theme: 'snow',
-  modules: {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike'],
-      ['blockquote', 'code-block'],
-      [{ 'header': 1 }, { 'header': 2 }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'script': 'sub'}, { 'script': 'super' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'direction': 'rtl' }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'font': [] }],
-      [{ 'align': [] }],
-      ['clean'],
-      ['link', 'image']
-    ]
-  }
-}
-
-const onFlagImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  if (target) {
-    target.style.display = 'none';
-    // Add a fallback display like the language code or first letter
-    const parent = target.parentElement;
-    if (parent) {
-      parent.textContent = selectedLanguage.value?.toUpperCase().slice(0, 2) || '';
-      parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
-    }
-  }
-};
-
-const hasCreatePostsPermission = computed(() => {
-  return user.value?.permissions?.includes('CREATE_POSTS') || false;
-});
-
-// Add middleware
-definePageMeta({
-  middleware: ["auth", "permission"],
 });
 </script>
 

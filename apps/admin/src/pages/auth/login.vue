@@ -5,10 +5,14 @@ import { useTheme } from '../../composables/useTheme';
 import { useRouter } from 'vue-router';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
+import { useSiteTitle } from '../../composables/useSiteTitle';
 
 definePageMeta({
   layout: 'auth'
 });
+
+// Set page title with i18n support
+useSiteTitle('authSignIn');
 
 const { t } = useI18n();
 const router = useRouter();

@@ -1,25 +1,25 @@
 <template>
   <div class="grid gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
     <div class="space-y-4">
-      <h2 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h2>
+      <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('posts.editor.basicInfo') }}</h2>
       
       <div class="grid grid-cols-1 gap-4">
         <!-- Title -->
-        <UFormGroup :label="$t('Title')" required :error="errors?.title">
+        <UFormGroup :label="t('posts.editor.title')" required :error="errors?.title">
           <UInput
             v-model="localTitle"
-            :placeholder="$t('Enter title')"
+            :placeholder="t('posts.editor.titlePlaceholder')"
             required
             :error="!!errors?.title"
           />
         </UFormGroup>
 
         <!-- Slug -->
-        <UFormGroup :label="$t('URL Slug')" required :error="errors?.slug">
+        <UFormGroup :label="t('posts.editor.urlSlug')" required :error="errors?.slug">
           <div class="flex gap-2">
             <UInput
               v-model="localSlug"
-              :placeholder="$t('Enter URL slug')"
+              :placeholder="t('posts.editor.slugPlaceholder')"
               required
               :error="!!errors?.slug"
               class="flex-1"
@@ -30,7 +30,7 @@
               color="gray"
               @click="$emit('generate-slug')"
               class="flex-shrink-0"
-              :title="$t('Generate slug from title')"
+              :title="t('posts.editor.generateSlug')"
               v-if="showGenerateSlug"
             >
               <WandIcon class="w-4 h-4" />
@@ -40,16 +40,16 @@
         </UFormGroup>
 
         <!-- Short Description -->
-        <UFormGroup :label="$t('Short Description')">
+        <UFormGroup :label="t('posts.editor.shortDescription')">
           <UTextarea
             v-model="localShortDescription"
-            :placeholder="$t('Enter a short description')"
+            :placeholder="t('posts.editor.shortDescriptionPlaceholder')"
             rows="3"
           />
         </UFormGroup>
 
         <!-- Content -->
-        <UFormGroup :label="$t('Content')" required :error="errors?.content">
+        <UFormGroup :label="t('posts.editor.content')" required :error="errors?.content">
           <div 
             class="quill-editor"
             :class="{ 'border border-red-500 rounded-lg': !!errors?.content }"
@@ -72,6 +72,9 @@
 <script setup lang="ts">
 import { ref, watch, defineAsyncComponent } from 'vue'
 import { WandIcon } from 'lucide-vue-next'
+import { useLocalization } from '@/composables/useLocalization'
+
+const { t } = useLocalization()
 
 // Import QuillEditor lazily
 const QuillEditor = defineAsyncComponent(() => 

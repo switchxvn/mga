@@ -4,7 +4,7 @@
     <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
       <div class="flex flex-col items-center gap-2">
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
-        <p class="text-sm text-slate-500">Loading...</p>
+        <p class="text-sm text-slate-500">{{ t('common.loading') }}</p>
       </div>
     </div>
 
@@ -14,8 +14,8 @@
         <div class="space-y-6">
           <!-- Header -->
           <PageHeader
-            title="Edit Post"
-            description="Update your post content and settings"
+            :title="t('posts.editPost')"
+            :description="t('posts.description')"
           >
             <template #actions>
               <!-- Language Switcher -->
@@ -33,7 +33,7 @@
                       @error="onFlagImageError"
                     />
                   </div>
-                  <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
+                  <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || t('language.selectLanguage') }}</span>
                   <ChevronDownIcon 
                     class="h-4 w-4 transition-transform"
                     :class="{ 'rotate-180': isLanguageOpen }"
@@ -49,7 +49,7 @@
                     <button
                       v-for="lang in languages"
                       :key="lang.code"
-                      @click="selectedLanguage = lang.code; fetchPost(); isLanguageOpen = false"
+                      @click="handleLanguageChange(lang.code)"
                       class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
                       :class="{ 'bg-slate-50': selectedLanguage === lang.code }"
                     >
@@ -62,7 +62,7 @@
                         />
                       </div>
                       <span class="truncate">{{ lang.nativeName }}</span>
-                      <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
+                      <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">({{ t('language.default') }})</span>
                       <CheckIcon
                         v-if="selectedLanguage === lang.code"
                         class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
@@ -77,25 +77,25 @@
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
               >
                 <XIcon class="w-4 h-4 mr-2" />
-                Cancel
+                {{ t('posts.cancel') }}
               </NuxtLink>
               
               <button 
-                @click="updatePost(true)" 
+                @click="updatePost(undefined, true)" 
                 :disabled="loading"
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
               >
                 <SaveIcon class="w-4 h-4 mr-2" />
-                {{ loading && saveAndContinue ? 'Saving...' : 'Save & Continue' }}
+                {{ loading && saveAndContinue ? t('common.saving') : t('posts.saveAndContinue') }}
               </button>
 
               <button 
-                @click="updatePost(false)" 
+                @click="updatePost(undefined, false)" 
                 :disabled="loading"
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
               >
                 <SaveAllIcon class="w-4 h-4 mr-2" />
-                {{ loading && !saveAndContinue ? 'Saving...' : 'Save & Back to List' }}
+                {{ loading && !saveAndContinue ? t('common.saving') : t('posts.saveAndBack') }}
               </button>
             </template>
           </PageHeader>
@@ -127,6 +127,7 @@
                 v-model:shortDescription="form.shortDescription"
                 :editor-options="editorOptions"
                 @generate-slug="generateSlug"
+                :errors="errors"
               />
             </div>
 
@@ -171,191 +172,69 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useTrpc } from '../../../composables/useTrpc'
-import slugify from 'slugify'
-import { useHead } from 'nuxt/app'
-import { useToast } from '../../../composables/useToast'
+import { onMounted, onBeforeUnmount } from 'vue';
+import { useHead } from 'nuxt/app';
 
 // Import Lucide icons
 import {
-  FileTextIcon,
-  ImageIcon,
-  SearchIcon,
-  SettingsIcon,
   XIcon,
   SaveAllIcon,
   ChevronDownIcon,
   CheckIcon,
-  SaveIcon,
-  FolderIcon
-} from 'lucide-vue-next'
+  SaveIcon
+} from 'lucide-vue-next';
 
 // Import components
-import PageHeader from '../../../components/common/header/PageHeader.vue'
-import PostEditor from '../../../components/posts/PostEditor.vue'
-import PostMedia from '../../../components/posts/PostMedia.vue'
-import PostSEO from '../../../components/posts/PostSEO.vue'
-import PostSettings from '../../../components/posts/PostSettings.vue'
-import PostCategories from '../../../components/posts/PostCategories.vue'
+import PageHeader from '../../../components/common/header/PageHeader.vue';
+import PostEditor from '../../../components/posts/PostEditor.vue';
+import PostMedia from '../../../components/posts/PostMedia.vue';
+import PostSEO from '../../../components/posts/PostSEO.vue';
+import PostSettings from '../../../components/posts/PostSettings.vue';
+import PostCategories from '../../../components/posts/PostCategories.vue';
+import { usePost } from '../../../composables/usePost';
+import { useLocalization } from '../../../composables/useLocalization';
 
-const trpc = useTrpc()
-const route = useRoute()
-const router = useRouter()
-const toast = useToast()
-const loading = ref(true)
-const saveAndContinue = ref(false)
+const { t } = useLocalization();
 
-// Initialize currentTab from query params or default to 'basic'
-const currentTab = ref(route.query.tab?.toString() || 'basic')
+const {
+  loading,
+  saveAndContinue,
+  currentTab,
+  tabs,
+  form,
+  tagsInput,
+  errors,
+  editorOptions,
+  languages,
+  selectedLanguage,
+  defaultLanguage,
+  isLanguageOpen,
+  postId,
+  handleTagInput,
+  addTag,
+  removeTag,
+  generateSlug,
+  fetchLanguages,
+  fetchPost,
+  onFlagImageError,
+  updatePost
+} = usePost();
 
-// Watch for tab changes and update URL
-watch(currentTab, (newTab) => {
-  router.replace({ 
-    query: { 
-      ...route.query,
-      tab: newTab 
-    }
-  })
-})
-
-const tabs = [
-  { 
-    id: 'basic', 
-    name: 'Basic Info', 
-    icon: FileTextIcon
-  },
-  { 
-    id: 'media', 
-    name: 'Media', 
-    icon: ImageIcon
-  },
-  {
-    id: 'categories',
-    name: 'Categories',
-    icon: FolderIcon
-  },
-  { 
-    id: 'seo', 
-    name: 'SEO', 
-    icon: SearchIcon
-  },
-  { 
-    id: 'settings', 
-    name: 'Settings', 
-    icon: SettingsIcon
+// Hàm trung gian để xử lý chuyển đổi ngôn ngữ 
+const handleLanguageChange = (langCode: string) => {
+  selectedLanguage.value = langCode;
+  if (postId.value) {
+    fetchPost(postId.value);
   }
-]
-
-interface PostForm {
-  title: string
-  slug: string
-  content: string
-  shortDescription: string
-  published: boolean
-  thumbnail: string
-  metaDescription: string
-  tags: string[]
-  categoryIds: number[]
-  updatedAt: string
-  translations: Record<string, {
-    title: string
-    slug: string
-    content: string
-    shortDescription: string
-    metaDescription: string
-    thumbnail: string
-  }>
-}
-
-const initialForm: PostForm = {
-  title: '',
-  slug: '',
-  content: '',
-  shortDescription: '',
-  published: false,
-  thumbnail: '',
-  metaDescription: '',
-  tags: [],
-  categoryIds: [],
-  updatedAt: new Date().toISOString(),
-  translations: {}
-}
-
-const form = ref({ ...initialForm })
-const tagsInput = ref('')
+  isLanguageOpen.value = false;
+};
 
 // Update page title dynamically
 useHead(() => ({
   title: form.value.title 
-    ? `Edit: ${form.value.title} - Admin Dashboard`
-    : 'Edit Post - Admin Dashboard'
-}))
-
-const handleTagInput = (e: KeyboardEvent) => {
-  // Handle Enter key
-  if (e.key === 'Enter') {
-    e.preventDefault()
-    addTag()
-  }
-  // Handle Space key
-  else if (e.key === ' ') {
-    e.preventDefault()
-    addTag()
-  }
-  // Handle Backspace when input is empty
-  else if (e.key === 'Backspace' && tagsInput.value === '') {
-    e.preventDefault()
-    form.value.tags.pop()
-  }
-}
-
-const addTag = () => {
-  const tag = tagsInput.value.trim()
-  if (tag && !form.value.tags.includes(tag)) {
-    form.value.tags.push(tag)
-    tagsInput.value = ''
-  }
-}
-
-const removeTag = (index: number) => {
-  form.value.tags.splice(index, 1)
-}
-
-// Generate slug from title with Vietnamese support
-const generateSlug = () => {
-  if (form.value.title) {
-    form.value.slug = slugify(form.value.title, {
-      lower: true,           // Convert to lowercase
-      strict: true,          // Strip special characters except replacement
-      locale: 'vi',          // Vietnamese language
-      trim: true             // Trim leading and trailing replacement chars
-    })
-  }
-}
-
-// Watch title changes to suggest slug
-watch(() => form.value.title, (newTitle) => {
-  if (!form.value.slug && newTitle) {
-    generateSlug()
-  }
-})
-
-interface Language {
-  id: number;
-  name: string;
-  code: string;
-  nativeName: string;
-  flagCode: string;
-  isDefault: boolean;
-  isActive: boolean;
-}
-
-const languages = ref<Language[]>([])
-const selectedLanguage = ref('')
-const defaultLanguage = ref('')
-const isLanguageOpen = ref(false)
+    ? `${t('posts.editPost')}: ${form.value.title} - ${t('common.adminDashboard')}`
+    : `${t('posts.editPost')} - ${t('common.adminDashboard')}`
+}));
 
 const handleClickOutside = (event: Event) => {
   const target = event.target as HTMLElement;
@@ -365,229 +244,49 @@ const handleClickOutside = (event: Event) => {
 };
 
 onMounted(async () => {
-  try {
-    const [langs, defaultLang] = await Promise.all([
-      trpc.admin.languages.getLanguages.query(),
-      trpc.admin.languages.getDefaultLanguage.query()
-    ])
-    languages.value = langs
-    defaultLanguage.value = defaultLang?.code || ''
-    selectedLanguage.value = defaultLang?.code || ''
-  } catch (error) {
-    console.error('Failed to fetch languages:', error)
+  await fetchLanguages();
+  if (postId.value) {
+    await fetchPost(postId.value);
   }
+  
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
+    
+    // Thêm cấu hình toolbar cho editor
+    editorOptions.modules = {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike'],
+        ['blockquote', 'code-block'],
+        [{ 'header': 1 }, { 'header': 2 }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'direction': 'rtl' }],
+        [{ 'size': ['small', false, 'large', 'huge'] }],
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'font': [] }],
+        [{ 'align': [] }],
+        ['clean'],
+        ['link', 'image']
+      ]
+    }
   }
-  fetchPost()
-})
+});
 
 onBeforeUnmount(() => {
   if (process.client) {
     document.removeEventListener('click', handleClickOutside);
   }
-})
+});
 
-// Update watch for selectedLanguage
-watch(selectedLanguage, (newLang, oldLang) => {
-  if (oldLang) {
-    // Save current content to translations before switching
-    form.value.translations[oldLang] = {
-      title: form.value.title,
-      slug: form.value.slug,
-      content: form.value.content,
-      shortDescription: form.value.shortDescription,
-      metaDescription: form.value.metaDescription,
-      thumbnail: form.value.thumbnail
-    }
-  }
-  
-  // Load content for new language
-  if (form.value.translations[newLang]) {
-    const translation = form.value.translations[newLang]
-    form.value.title = translation.title
-    form.value.slug = translation.slug
-    form.value.content = translation.content
-    form.value.shortDescription = translation.shortDescription
-    form.value.metaDescription = translation.metaDescription
-    form.value.thumbnail = translation.thumbnail
-  } else {
-    // Reset form for new translation
-    form.value.title = ''
-    form.value.slug = ''
-    form.value.content = ''
-    form.value.shortDescription = ''
-    form.value.metaDescription = ''
-    form.value.thumbnail = ''
-  }
-})
+// Add middleware
+// @ts-ignore
+const definePageMeta = (meta: any) => {};
 
-// Update fetchPost function
-const fetchPost = async () => {
-  try {
-    const post = await trpc.admin.posts.getPostById.query(Number(route.params.id))
-    
-    if (post) {
-      // Initialize translations
-      const translations: Record<string, any> = {}
-      
-      post.translations?.forEach(translation => {
-        translations[translation.locale] = {
-          title: translation.title,
-          slug: translation.slug,
-          content: translation.content,
-          shortDescription: translation.shortDescription || '',
-          metaDescription: translation.metaDescription,
-          thumbnail: translation.ogImage
-        }
-      })
-
-      form.value = {
-        title: post.translations?.find(t => t.locale === selectedLanguage.value)?.title || post.title || '',
-        slug: post.translations?.find(t => t.locale === selectedLanguage.value)?.slug || '',
-        content: post.translations?.find(t => t.locale === selectedLanguage.value)?.content || post.content || '',
-        shortDescription: post.translations?.find(t => t.locale === selectedLanguage.value)?.shortDescription || post.shortDescription || '',
-        published: post.published,
-        thumbnail: post.translations?.find(t => t.locale === selectedLanguage.value)?.ogImage || post.thumbnail || '',
-        metaDescription: post.translations?.find(t => t.locale === selectedLanguage.value)?.metaDescription || '',
-        tags: post.postTags?.map(tag => tag.tag.name) || [],
-        categoryIds: post.categories?.map(category => category.id) || [],
-        updatedAt: post.updatedAt,
-        translations
-      }
-      tagsInput.value = form.value.tags.join(', ')
-    }
-  } catch (error) {
-    console.error('Failed to fetch post:', error)
-    router.push('/posts')
-  } finally {
-    loading.value = false
-  }
-}
-
-// Update updatePost function
-const updatePost = async (continueEditing = false) => {
-  try {
-    loading.value = true
-    saveAndContinue.value = continueEditing
-
-    // Save current content to translations before updating
-    form.value.translations[selectedLanguage.value] = {
-      title: form.value.title,
-      slug: form.value.slug,
-      content: form.value.content,
-      shortDescription: form.value.shortDescription,
-      metaDescription: form.value.metaDescription,
-      thumbnail: form.value.thumbnail
-    }
-
-    // Prepare translations array for API
-    const translations = Object.entries(form.value.translations).map(([locale, content]) => ({
-      locale,
-      title: content.title,
-      slug: content.slug,
-      content: content.content,
-      shortDescription: content.shortDescription,
-      metaDescription: content.metaDescription,
-      ogImage: content.thumbnail
-    }))
-
-    await trpc.admin.posts.updatePost.mutate({
-      id: Number(route.params.id),
-      data: {
-        title: form.value.title,
-        content: form.value.content,
-        shortDescription: form.value.shortDescription,
-        status: form.value.published ? 'PUBLISHED' : 'DRAFT',
-        thumbnail: form.value.thumbnail || '',
-        metaDescription: form.value.metaDescription || '',
-        translations,
-        tags: form.value.tags,
-        categoryIds: form.value.categoryIds
-      }
-    })
-
-    toast.success('Post updated successfully!')
-
-    if (!continueEditing) {
-      router.push('/posts')
-    } else {
-      // Refresh the post data
-      await fetchPost()
-    }
-  } catch (error: any) {
-    console.error('Failed to update post:', error)
-    
-    const currentLang = languages.value.find(l => l.code === selectedLanguage.value)
-    const langName = currentLang?.nativeName || selectedLanguage.value
-    
-    let errorMessage = `[${langName}] `
-    
-    // Handle tRPC error
-    if (error.cause) {
-      errorMessage += error.cause
-    } else if (error.message) {
-      errorMessage += error.message
-    } else {
-      errorMessage += 'Failed to update post. Please try again.'
-    }
-    
-    toast.error(errorMessage, {
-      timeout: 8000,
-      position: 'top-center',
-      closeButton: true,
-      icon: true,
-      closeOnClick: false,
-      pauseOnHover: true,
-      draggable: true,
-      theme: 'colored'
-    })
-  } finally {
-    loading.value = false
-    saveAndContinue.value = false
-  }
-}
-
-// Quill Editor Options
-const editorOptions = ref({
-  theme: 'snow',
-  modules: {}
-})
-
-// Initialize editor options on client-side only
-if (process.client) {
-  editorOptions.value.modules = {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike'],
-      ['blockquote', 'code-block'],
-      [{ 'header': 1 }, { 'header': 2 }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'script': 'sub'}, { 'script': 'super' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'direction': 'rtl' }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'font': [] }],
-      [{ 'align': [] }],
-      ['clean'],
-      ['link', 'image']
-    ]
-  }
-}
-
-const onFlagImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  if (target) {
-    target.style.display = 'none';
-    // Add a fallback display like the language code or first letter
-    const parent = target.parentElement;
-    if (parent) {
-      parent.textContent = selectedLanguage.value?.toUpperCase().slice(0, 2) || '';
-      parent.classList.add('bg-primary', 'text-white', 'rounded-sm', 'text-xs', 'font-medium', 'flex', 'items-center', 'justify-center');
-    }
-  }
-};
+definePageMeta({
+  middleware: ["auth", "permission"],
+});
 </script>
 
 <style>

@@ -145,7 +145,8 @@ export const categoryAdminRouter = router({
         active: z.boolean().nullable().default(null),
         type: z.enum(['news', 'product', 'both', 'gallery']).optional(),
         sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).optional()
+        sortOrder: z.enum(['asc', 'desc']).optional(),
+        locale: z.string().optional()
       })
     )
     .query(async ({ ctx, input }) => {
@@ -159,7 +160,8 @@ export const categoryAdminRouter = router({
           active: input.active,
           type: input.type as CategoryType,
           sortBy: input.sortBy,
-          sortOrder: input.sortOrder
+          sortOrder: input.sortOrder,
+          locale: input.locale
         });
 
         console.log('getAllCategories result:', {

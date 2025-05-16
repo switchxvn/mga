@@ -6,6 +6,7 @@ import { useToast } from 'vue-toastification';
 import Swal from 'sweetalert2';
 import LoadingIcon from "../../components/LoadingIcon.vue";
 import PageHeader from "../../components/common/header/PageHeader.vue";
+import { useLocalization } from "../../composables/useLocalization";
 import {
   XIcon,
   SaveIcon,
@@ -15,6 +16,7 @@ import {
 const router = useRouter();
 const trpc = useTrpc();
 const toast = useToast();
+const { t } = useLocalization();
 
 interface Permission {
   id: string;
@@ -83,7 +85,7 @@ const fetchPermissions = async () => {
     allPermissions.value = permissionsData;
   } catch (error: any) {
     console.error('Lỗi khi tải danh sách quyền:', error);
-    formError.value = 'Không thể tải danh sách quyền. Vui lòng thử lại sau.';
+    formError.value = t('roles.loadError') || 'Không thể tải danh sách quyền. Vui lòng thử lại sau.';
   } finally {
     isLoading.value = false;
   }
@@ -131,7 +133,7 @@ const isGroupIndeterminate = (groupName: string): boolean => {
 // Save new role
 const createRole = async (continueEditing = false) => {
   if (!isFormValid.value) {
-    formError.value = 'Vui lòng điền đầy đủ các trường bắt buộc';
+    formError.value = t('roles.requiredFields');
     return;
   }
   
@@ -150,8 +152,8 @@ const createRole = async (continueEditing = false) => {
     
     // Hiển thị thông báo thành công bằng SweetAlert2
     Swal.fire({
-      title: 'Thành công!',
-      text: 'Tạo vai trò thành công',
+      title: t('messages.success'),
+      text: t('roles.createSuccess'),
       icon: 'success',
       timer: 2000,
       showConfirmButton: false
@@ -167,12 +169,12 @@ const createRole = async (continueEditing = false) => {
     
   } catch (error: any) {
     console.error('Lỗi khi tạo vai trò mới:', error);
-    formError.value = error.message || 'Không thể tạo vai trò mới. Vui lòng thử lại sau.';
+    formError.value = error.message || t('roles.createError');
     
     // Hiển thị thông báo lỗi bằng SweetAlert2
     Swal.fire({
-      title: 'Lỗi!',
-      text: error.message || 'Không thể tạo vai trò mới',
+      title: t('messages.error'),
+      text: error.message || t('roles.createError'),
       icon: 'error'
     });
   } finally {
@@ -197,7 +199,7 @@ onMounted(() => {
     <div v-if="isLoading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
       <div class="flex flex-col items-center gap-2">
         <LoadingIcon size="lg" />
-        <p class="text-sm text-slate-500 dark:text-neutral-400">Đang tải...</p>
+        <p class="text-sm text-slate-500 dark:text-neutral-400">{{ t('roles.loading') }}</p>
       </div>
     </div>
 
@@ -205,8 +207,8 @@ onMounted(() => {
     <div v-else class="container mx-auto py-6 space-y-6">
       <!-- Header -->
       <PageHeader 
-        title="Tạo vai trò mới" 
-        description="Tạo vai trò và chỉ định các quyền hạn"
+        :title="t('roles.createRole')" 
+        :description="t('roles.description')"
       >
         <template #actions>
           <NuxtLink 
@@ -214,7 +216,7 @@ onMounted(() => {
             class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
           >
             <XIcon class="w-4 h-4 mr-2" />
-            Hủy
+            {{ t('roles.cancel') }}
           </NuxtLink>
           <button 
             @click="createRole(true)" 
@@ -223,7 +225,7 @@ onMounted(() => {
             class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
           >
             <SaveIcon class="w-4 h-4 mr-2" />
-            {{ isSaving && saveAndContinue ? 'Đang lưu...' : 'Lưu & Tiếp tục' }}
+            {{ isSaving && saveAndContinue ? t('common.saving') : t('roles.saveAndContinue') }}
           </button>
           <button 
             @click="createRole(false)" 
@@ -232,7 +234,7 @@ onMounted(() => {
             class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
           >
             <SaveAllIcon class="w-4 h-4 mr-2" />
-            {{ isSaving && !saveAndContinue ? 'Đang lưu...' : 'Lưu & Quay lại' }}
+            {{ isSaving && !saveAndContinue ? t('common.saving') : t('roles.saveAndBack') }}
           </button>
         </template>
       </PageHeader>
@@ -249,21 +251,21 @@ onMounted(() => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label for="name" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tên vai trò <span class="text-red-500">*</span>
+                {{ t('roles.name') }} <span class="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 id="name"
                 v-model="name"
                 class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
-                placeholder="Tên vai trò"
+                :placeholder="t('roles.namePlaceholder')"
                 required
               />
             </div>
             
             <div>
               <label for="code" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Mã vai trò <span class="text-red-500">*</span>
+                {{ t('roles.code') }} <span class="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -271,41 +273,41 @@ onMounted(() => {
                 v-model="code"
                 @blur="formatCode"
                 class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
-                placeholder="Mã vai trò (ví dụ: CONTENT_MANAGER)"
+                :placeholder="t('roles.codePlaceholder')"
                 required
               />
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Mã vai trò sẽ được sử dụng trong hệ thống, nên là chữ in hoa và gạch dưới.</p>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('roles.codeHelp') }}</p>
             </div>
             
             <div>
               <label for="group" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Nhóm <span class="text-red-500">*</span>
+                {{ t('roles.group') }} <span class="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 id="group"
                 v-model="groupName"
                 class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
-                placeholder="Nhóm vai trò (ví dụ: Content, System, Users)"
+                :placeholder="t('roles.groupPlaceholder')"
                 required
               />
             </div>
             
             <div>
-              <label for="description" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Mô tả</label>
+              <label for="description" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('roles.description') }}</label>
               <input
                 type="text"
                 id="description"
                 v-model="description"
                 class="bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
-                placeholder="Mô tả vai trò"
+                :placeholder="t('roles.descriptionPlaceholder')"
               />
             </div>
           </div>
           
           <!-- Phần quyền -->
           <div class="mt-8">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Quyền hạn</h2>
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">{{ t('roles.permissions') }}</h2>
             
             <div v-for="groupName in sortedGroupNames" :key="groupName" class="mb-6">
               <div class="flex items-center space-x-2 mb-2 p-2 bg-gray-100 dark:bg-neutral-700 rounded-lg">
