@@ -1,6 +1,14 @@
 {
-  "language": "Language",
+  "language": {
+    "selectLanguage": "Select Language",
+    "default": "Default"
+  },
   "common": {
+    "adminDashboard": "Admin Dashboard",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "error": "Error",
+    "success": "Success",
     "language": "Language",
     "english": "English",
     "vietnamese": "Vietnamese"
@@ -36,7 +44,20 @@
     "signInToAdmin": "Sign In to Admin",
     "loadingTheme": "Loading theme...",
     "dontHaveAccount": "Don't have an account?",
-    "contactAdmin": "Contact administrator"
+    "contactAdmin": "Contact administrator",
+    "resetPassword": "Reset Password",
+    "resetPasswordDesc": "Enter your email and we'll send you a password reset link",
+    "backToLogin": "Back to Login",
+    "resetPasswordSent": "Password reset link sent",
+    "resetPasswordSentDesc": "Please check your email to continue",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "passwordsDontMatch": "Passwords don't match",
+    "passwordResetSuccess": "Password reset successful",
+    "passwordResetSuccessDesc": "Your password has been reset. Please sign in with your new password.",
+    "invalidResetToken": "Invalid or expired password reset link",
+    "sessionExpired": "Session expired",
+    "loginRequired": "Please login to continue"
   },
   "actions": {
     "add": "Add",
@@ -71,7 +92,16 @@
     "totalCustomers": "Total Customers",
     "conversionRate": "Conversion Rate",
     "recentActivity": "Recent Activity",
-    "viewAll": "View All"
+    "viewAll": "View All",
+    "statistics": "Statistics",
+    "revenueStats": "Revenue Statistics",
+    "orderStats": "Order Statistics",
+    "customerStats": "Customer Statistics",
+    "conversionStats": "Conversion Statistics",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month"
   },
   "profile": {
     "title": "Profile Information",
@@ -83,7 +113,20 @@
     "twoFactorAuth": "Two-Factor Authentication",
     "twoFactorAuthDesc": "Enhance security for your account",
     "fullName": "Full Name",
-    "initials": "Initials"
+    "initials": "Initials",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phoneNumber": "Phone Number",
+    "address": "Address",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "saveChanges": "Save Changes",
+    "updateSuccess": "Profile updated successfully",
+    "updateFailed": "Failed to update profile",
+    "passwordChanged": "Password changed successfully",
+    "passwordChangeFailed": "Failed to change password"
   },
   "products": {
     "title": "Products",
@@ -463,7 +506,24 @@
       "updateSuccess": "Service type updated successfully",
       "confirmDelete": "Are you sure you want to delete this service type?",
       "namePlaceholder": "Enter service type name",
-      "descriptionPlaceholder": "Enter service type description"
+      "descriptionPlaceholder": "Enter service type description",
+      "add": "Add Service Type",
+      "addNew": "Add New Service Type",
+      "createDescription": "Create a new service type for reviews",
+      "backToList": "Back to Service Types",
+      "save": "Save Service Type",
+      "slugHelp": "URL friendly identifier (e.g., \"spa-services\")",
+      "edit": "Edit Service Type",
+      "updateDescription": "Update an existing service type for reviews",
+      "update": "Update Service Type",
+      "delete": "Delete Service Type",
+      "deleteWarning": "This might affect existing reviews. This action cannot be undone.",
+      "deleteSuccess": "Service type has been deleted",
+      "deleteError": "Failed to delete service type",
+      "loadError": "Failed to load service type",
+      "updateError": "Failed to update service type",
+      "nameRequired": "Service type name is required",
+      "loading": "Loading service type data..."
     },
     "reviewForm": {
       "title": "Title",
@@ -563,46 +623,67 @@
     }
   },
   "posts": {
-    "categories": "Categories",
-    "noCategories": "No news categories available",
-    "featuredImage": "Featured Image",
+    "title": "Posts",
+    "description": "Manage your content",
+    "createPost": "Create Post",
+    "editPost": "Edit Post",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveAndContinue": "Save & Continue",
+    "saveAndBack": "Save & Back to List",
+    "noCategories": "No categories found",
+    "featuredImage": "Image",
     "featuredImageAlt": "Featured image",
-    "noImage": "No image selected",
-    "imageUrlPlaceholder": "Enter image URL or upload",
-    "recommendedSize": "Recommended: 1200x630px",
-    "uploading": "Uploading... {progress}%",
+    "noImage": "No image uploaded",
+    "imageUrlPlaceholder": "Enter image URL or upload a new image",
+    "recommendedSize": "Recommended size: 1200x630 pixels",
     "uploadImage": "Upload Image",
-    "errors": {
-      "notImage": "Please select an image file",
-      "tooLarge": "Image size should be less than 5MB",
-      "uploadFailed": "Failed to upload image. Please try again."
-    },
+    "uploading": "Uploading... {progress}%",
     "editor": {
       "basicInfo": "Basic Information",
       "title": "Title",
-      "titlePlaceholder": "Enter title",
+      "titlePlaceholder": "Enter post title",
       "urlSlug": "URL Slug",
       "slugPlaceholder": "Enter URL slug",
       "generateSlug": "Generate slug from title",
       "shortDescription": "Short Description",
-      "shortDescriptionPlaceholder": "Enter a short description",
-      "content": "Content"
+      "shortDescriptionPlaceholder": "Enter a brief description of the post",
+      "content": "Content",
+      "contentPlaceholder": "Start writing your content here..."
     },
     "seo": {
       "title": "SEO Settings",
       "metaDescription": "Meta Description",
-      "metaDescriptionPlaceholder": "Enter SEO meta description",
+      "metaDescriptionPlaceholder": "Enter meta description for search engines",
       "characters": "characters",
       "tags": "Tags",
-      "tagsPlaceholder": "Enter tags, separated by commas or space",
-      "tagsExample": "Example: technology, web development"
+      "tagsPlaceholder": "Add tags and press Enter",
+      "tagsExample": "Example: news, update, feature"
     },
     "settings": {
       "title": "Post Settings",
       "status": "Status",
-      "draft": "Draft",
       "published": "Published",
+      "draft": "Draft",
       "lastUpdated": "Last updated"
+    },
+    "tabs": {
+      "basicInfo": "Basic Info",
+      "media": "Media",
+      "categories": "Categories",
+      "seo": "SEO",
+      "settings": "Settings"
+    },
+    "errors": {
+      "titleRequired": "Title is required",
+      "slugRequired": "Slug is required",
+      "contentRequired": "Content is required",
+      "notImage": "Please select an image file",
+      "tooLarge": "Image size should be less than 5MB",
+      "uploadFailed": "Failed to upload image"
+    },
+    "validation": {
+      "checkRequiredFields": "Please check the required fields"
     }
   },
   "galleries": {
@@ -621,7 +702,20 @@
     "sequenceHelp": "Lower numbers will appear first",
     "isActive": "Active",
     "activeHelp": "When active, this gallery item will be visible on the frontend",
-    "confirmDelete": "Are you sure you want to delete this gallery item?"
+    "confirmDelete": "Are you sure you want to delete this gallery item?",
+    "errors": {
+      "noImage": "Please select an image",
+      "noTitle": "Please enter a title",
+      "notImage": "Please select an image file",
+      "tooLarge": "Image size should be less than 10MB",
+      "uploadFailed": "Failed to upload image",
+      "createFailed": "Failed to create gallery item",
+      "updateFailed": "Failed to update gallery item"
+    },
+    "createSuccess": "Gallery item created successfully",
+    "updateSuccess": "Gallery item updated successfully",
+    "featuredImage": "Featured Image",
+    "featuredImageAlt": "Featured image"
   },
   "categories": {
     "title": "Categories Management",
@@ -657,7 +751,8 @@
       "active": "Active",
       "inactive": "Inactive",
       "searchPlaceholder": "Search categories..." 
-    }
+    },
+    "slugRequired": "Slug is required"
   },
   "roles": {
     "title": "Roles Management",

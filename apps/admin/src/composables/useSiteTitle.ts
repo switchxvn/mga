@@ -61,11 +61,14 @@ export const useSiteTitle = (titleKey: string, params?: Record<string, any>) => 
       }
     }
     
+    // Lấy hậu tố từ file ngôn ngữ
+    const adminPageSuffix = t('common.adminPageSuffix');
+    
     // Log để debug
     console.log(`Title for key "${titleKey}":`, pageTitle || titleKey);
     
     // Trả về kết quả hoặc key gốc nếu không tìm thấy bản dịch
-    return pageTitle || titleKey;
+    return `${pageTitle || titleKey} ${adminPageSuffix}`;
   });
   
   useHead({

@@ -26,9 +26,7 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-useHead({
-  title: 'Create Menu Item - Admin Panel'
-});
+useHead({  title: 'Tạo Mục Menu - Admin Panel'});
 
 const router = useRouter();
 const route = useRoute();
@@ -58,18 +56,7 @@ const languages = ref<any[]>([]);
 const defaultLanguage = ref('');
 const parentMenuItems = ref<any[]>([]);
 
-const tabs = [
-  { 
-    id: 'basic', 
-    name: 'Basic Info', 
-    icon: FileTextIcon
-  },
-  { 
-    id: 'settings', 
-    name: 'Settings', 
-    icon: SettingsIcon
-  }
-];
+const tabs = [  {     id: 'basic',     name: 'Thông tin cơ bản',     icon: FileTextIcon  },  {     id: 'settings',     name: 'Cài đặt',     icon: SettingsIcon  }];
 
 // Fetch languages
 const fetchLanguages = async () => {
@@ -220,10 +207,7 @@ onBeforeUnmount(() => {
     <div class="flex-1 overflow-y-auto">
       <form @submit.prevent="handleSubmit(false)" class="space-y-6">
         <!-- Header -->
-        <PageHeader
-          title="Create Menu Item"
-          description="Add a new item to your website navigation menu"
-        >
+              <PageHeader        title="Tạo Mục Menu"        description="Thêm mục mới vào menu điều hướng trang web của bạn"      >
           <template #actions>
             <!-- Language Switcher -->
             <div class="language-switcher relative">
@@ -281,32 +265,11 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <NuxtLink 
-              to="/menu-items" 
-              class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
-            >
-              <XIcon class="w-4 h-4 mr-2" />
-              Cancel
-            </NuxtLink>
+                          <NuxtLink                 to="/menu-items"                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"              >                <XIcon class="w-4 h-4 mr-2" />                Hủy              </NuxtLink>
             
-            <button 
-              type="button"
-              @click.prevent="handleSubmit(true)" 
-              :disabled="isLoading"
-              class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
-            >
-              <SaveIcon class="w-4 h-4 mr-2" />
-              {{ isLoading ? 'Saving...' : 'Save & Create Another' }}
-            </button>
+                          <button                 type="button"                @click.prevent="handleSubmit(true)"                 :disabled="isLoading"                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"              >                <SaveIcon class="w-4 h-4 mr-2" />                {{ isLoading ? 'Đang lưu...' : 'Lưu & Tạo Mới' }}              </button>
 
-            <button 
-              type="submit"
-              :disabled="isLoading"
-              class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
-            >
-              <SaveAllIcon class="w-4 h-4 mr-2" />
-              {{ isLoading ? 'Saving...' : 'Save & Back to List' }}
-            </button>
+                          <button                 type="submit"                :disabled="isLoading"                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"              >                <SaveAllIcon class="w-4 h-4 mr-2" />                {{ isLoading ? 'Đang lưu...' : 'Lưu & Quay Lại' }}              </button>
           </template>
         </PageHeader>
 
@@ -324,55 +287,18 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Tabs -->
-        <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">
-          <button
-            type="button"
-            v-for="tab in tabs"
-            :key="tab.id"
-            @click="currentTab = tab.id"
-            class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"
-            :class="{
-              'bg-primary text-white': currentTab === tab.id,
-              'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id
-            }"
-          >
-            <component :is="tab.icon" class="w-4 h-4" />
-            {{ tab.name }}
-          </button>
-        </nav>
+                  <!-- Tabs -->          <nav class="flex items-center space-x-1 rounded-lg bg-white border border-slate-200 p-1 w-fit">            <button              type="button"              v-for="tab in tabs"              :key="tab.id"              @click="currentTab = tab.id"              class="flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all relative"              :class="{                'bg-primary text-white': currentTab === tab.id,                'text-slate-600 hover:text-slate-900 hover:bg-slate-50': currentTab !== tab.id              }"            >              <component :is="tab.icon" class="w-4 h-4" />              {{ tab.id === 'basic' ? 'Thông tin cơ bản' : tab.id === 'settings' ? 'Cài đặt' : tab.name }}            </button>          </nav>
 
         <div class="grid gap-6">
           <!-- Basic Info Tab -->
           <div v-show="currentTab === 'basic'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div class="space-y-4">
-              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Thông tin cơ bản</h2>
               
               <div class="grid grid-cols-2 gap-4">
-                <UFormGroup label="Label" required :error="errors.translations">
-                  <UInput
-                    v-model="currentTranslation.label"
-                    placeholder="Enter menu item label"
-                    required
-                    :error="!!errors.translations"
-                  />
-                </UFormGroup>
+                                <UFormGroup label="Nhãn" required :error="errors.translations">                  <UInput                    v-model="currentTranslation.label"                    placeholder="Nhập nhãn mục menu"                    required                    :error="!!errors.translations"                  />                </UFormGroup>
 
-                <UFormGroup label="Parent Menu Item">
-                  <USelect
-                    v-model="form.parentId"
-                    :options="[
-                      { id: null, label: 'None (Root Level)' },
-                      ...parentMenuItems.map(item => ({
-                        id: item.id,
-                        label: item.translations?.[0]?.label || `Menu Item #${item.id}`
-                      }))
-                    ]"
-                    option-attribute="label"
-                    value-attribute="id"
-                    placeholder="Select parent menu item"
-                  />
-                </UFormGroup>
+                                <UFormGroup label="Mục Menu Cha">                  <USelect                    v-model="form.parentId"                    :options="[                      { id: null, label: 'Không (Cấp Gốc)' },                      ...parentMenuItems.map(item => ({                        id: item.id,                        label: item.translations?.[0]?.label || `Mục Menu #${item.id}`                      }))                    ]"                    option-attribute="label"                    value-attribute="id"                    placeholder="Chọn mục menu cha"                  />                </UFormGroup>
 
                 <IconSelector
                   v-model="form.icon"
@@ -409,7 +335,7 @@ onBeforeUnmount(() => {
           <!-- Settings Tab -->
           <div v-show="currentTab === 'settings'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div class="space-y-4">
-              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Settings</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Cài đặt</h2>
               
               <UFormGroup label="Display Order">
                 <UInput

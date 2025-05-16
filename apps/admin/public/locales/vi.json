@@ -3,7 +3,13 @@
   "common": {
     "language": "Ngôn ngữ",
     "english": "Tiếng Anh",
-    "vietnamese": "Tiếng Việt"
+    "vietnamese": "Tiếng Việt",
+    "adminPageSuffix": "- Trang quản trị",
+    "adminDashboard": "Bảng điều khiển",
+    "loading": "Đang tải...",
+    "saving": "Đang lưu...",
+    "error": "Lỗi",
+    "success": "Thành công"
   },
   "navigation": {
     "dashboard": "Bảng điều khiển",
@@ -36,7 +42,20 @@
     "signInToAdmin": "Đăng nhập vào trang quản trị",
     "loadingTheme": "Đang tải giao diện...",
     "dontHaveAccount": "Bạn chưa có tài khoản?",
-    "contactAdmin": "Liên hệ quản trị viên"
+    "contactAdmin": "Liên hệ quản trị viên",
+    "resetPassword": "Đặt lại mật khẩu",
+    "resetPasswordDesc": "Nhập email của bạn và chúng tôi sẽ gửi liên kết đặt lại mật khẩu",
+    "backToLogin": "Quay lại đăng nhập",
+    "resetPasswordSent": "Liên kết đặt lại mật khẩu đã được gửi",
+    "resetPasswordSentDesc": "Vui lòng kiểm tra email của bạn để tiếp tục",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "passwordsDontMatch": "Mật khẩu không khớp",
+    "passwordResetSuccess": "Đặt lại mật khẩu thành công",
+    "passwordResetSuccessDesc": "Mật khẩu của bạn đã được đặt lại. Vui lòng đăng nhập bằng mật khẩu mới.",
+    "invalidResetToken": "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn",
+    "sessionExpired": "Phiên đăng nhập đã hết hạn",
+    "loginRequired": "Vui lòng đăng nhập để tiếp tục"
   },
   "actions": {
     "add": "Thêm",
@@ -71,7 +90,16 @@
     "totalCustomers": "Tổng khách hàng",
     "conversionRate": "Tỷ lệ chuyển đổi",
     "recentActivity": "Hoạt động gần đây",
-    "viewAll": "Xem tất cả"
+    "viewAll": "Xem tất cả",
+    "statistics": "Thống kê",
+    "revenueStats": "Thống kê doanh thu",
+    "orderStats": "Thống kê đơn hàng",
+    "customerStats": "Thống kê khách hàng",
+    "conversionStats": "Thống kê tỷ lệ chuyển đổi",
+    "today": "Hôm nay",
+    "thisWeek": "Tuần này",
+    "thisMonth": "Tháng này",
+    "lastMonth": "Tháng trước"
   },
   "profile": {
     "title": "Thông tin cá nhân",
@@ -83,7 +111,20 @@
     "twoFactorAuth": "Xác thực hai yếu tố",
     "twoFactorAuthDesc": "Tăng cường bảo mật cho tài khoản của bạn",
     "fullName": "Họ và tên",
-    "initials": "Chữ cái đầu"
+    "initials": "Chữ cái đầu",
+    "firstName": "Tên",
+    "lastName": "Họ",
+    "phoneNumber": "Số điện thoại",
+    "address": "Địa chỉ",
+    "changePassword": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmNewPassword": "Xác nhận mật khẩu mới",
+    "saveChanges": "Lưu thay đổi",
+    "updateSuccess": "Cập nhật thông tin thành công",
+    "updateFailed": "Cập nhật thông tin thất bại",
+    "passwordChanged": "Đổi mật khẩu thành công",
+    "passwordChangeFailed": "Đổi mật khẩu thất bại"
   },
   "products": {
     "title": "Sản phẩm",
@@ -291,55 +332,55 @@
     "statusInactive": "Không hoạt động"
   },
   "head": {
-    "dashboard": "Bảng điều khiển - Trang quản trị",
-    "profile": "Hồ sơ - Trang quản trị",
-    "products": "Sản phẩm - Trang quản trị",
-    "productsManagement": "Quản lý sản phẩm - Trang quản trị",
-    "orders": "Đơn hàng - Trang quản trị",
-    "categories": "Danh mục - Trang quản trị",
-    "categoriesCreate": "Tạo danh mục - Trang quản trị",
-    "categoriesEdit": "Chỉnh sửa danh mục - Trang quản trị",
-    "categoriesList": "Danh sách danh mục - Trang quản trị",
-    "galleries": "Thư viện ảnh - Trang quản trị",
-    "galleriesCreate": "Thêm ảnh mới - Trang quản trị",
-    "galleriesEdit": "Chỉnh sửa ảnh - Trang quản trị",
-    "posts": "Bài viết - Trang quản trị",
-    "postsCreate": "Tạo bài viết - Trang quản trị",
-    "postsEdit": "Chỉnh sửa bài viết - Trang quản trị",
-    "postsManagement": "Quản lý bài viết - Trang quản trị",
-    "heroSlider": "Slider chính - Trang quản trị",
-    "heroSliderCreate": "Tạo Slider - Trang quản trị",
-    "heroSliderEdit": "Chỉnh sửa Slider - Trang quản trị",
-    "menuItems": "Mục menu - Trang quản trị",
-    "menuItemsCreate": "Tạo mục menu - Trang quản trị",
-    "menuItemsEdit": "Chỉnh sửa mục menu - Trang quản trị",
-    "tickets": "Quản lý vé - Trang quản trị",
-    "ticketScanner": "Máy quét vé - Trang quản trị",
-    "ticketLookup": "Tra cứu vé - Trang quản trị",
-    "reviews": "Đánh giá - Trang quản trị",
-    "reviewsCreate": "Tạo đánh giá - Trang quản trị",
-    "reviewsEdit": "Chỉnh sửa đánh giá - Trang quản trị",
-    "serviceTypes": "Loại dịch vụ - Trang quản trị",
-    "themes": "Giao diện - Trang quản trị",
-    "themesCreate": "Tạo giao diện - Trang quản trị",
-    "themesEdit": "Chỉnh sửa giao diện - Trang quản trị",
-    "themeSections": "Phần giao diện - Trang quản trị",
-    "userSessions": "Phiên người dùng - Trang quản trị",
-    "sessionDetails": "Chi tiết phiên - Trang quản trị",
-    "users": "Người dùng - Trang quản trị",
-    "usersCreate": "Tạo người dùng - Trang quản trị",
-    "usersEdit": "Chỉnh sửa người dùng - Trang quản trị",
-    "usersManagement": "Quản lý người dùng - Trang quản trị",
-    "roles": "Vai trò - Trang quản trị",
-    "rolesCreate": "Tạo vai trò - Trang quản trị",
-    "rolesEdit": "Chỉnh sửa vai trò - Trang quản trị",
-    "orderDetails": "Chi tiết đơn hàng - Trang quản trị",
-    "ordersEdit": "Chỉnh sửa đơn hàng - Trang quản trị",
-    "ordersCreate": "Tạo đơn hàng - Trang quản trị",
-    "priceRequests": "Yêu cầu báo giá - Trang quản trị",
-    "ticketExchanges": "Đổi vé - Trang quản trị",
-    "login": "Đăng nhập - Trang quản trị",
-    "authSignIn": "Đăng nhập - Trang quản trị"
+    "dashboard": "Bảng điều khiển",
+    "profile": "Hồ sơ",
+    "products": "Sản phẩm",
+    "productsManagement": "Quản lý sản phẩm",
+    "orders": "Đơn hàng",
+    "categories": "Danh mục",
+    "categoriesCreate": "Tạo danh mục",
+    "categoriesEdit": "Chỉnh sửa danh mục",
+    "categoriesList": "Danh sách danh mục",
+    "galleries": "Thư viện ảnh",
+    "galleriesCreate": "Thêm ảnh mới",
+    "galleriesEdit": "Chỉnh sửa ảnh",
+    "posts": "Bài viết",
+    "postsCreate": "Tạo bài viết",
+    "postsEdit": "Chỉnh sửa bài viết",
+    "postsManagement": "Quản lý bài viết",
+    "heroSlider": "Slider chính",
+    "heroSliderCreate": "Tạo Slider",
+    "heroSliderEdit": "Chỉnh sửa Slider",
+    "menuItems": "Mục menu",
+    "menuItemsCreate": "Tạo mục menu",
+    "menuItemsEdit": "Chỉnh sửa mục menu",
+    "tickets": "Quản lý vé",
+    "ticketScanner": "Máy quét vé",
+    "ticketLookup": "Tra cứu vé",
+    "reviews": "Đánh giá",
+    "reviewsCreate": "Tạo đánh giá",
+    "reviewsEdit": "Chỉnh sửa đánh giá",
+    "serviceTypes": "Loại dịch vụ",
+    "themes": "Giao diện",
+    "themesCreate": "Tạo giao diện",
+    "themesEdit": "Chỉnh sửa giao diện",
+    "themeSections": "Phần giao diện",
+    "userSessions": "Phiên người dùng",
+    "sessionDetails": "Chi tiết phiên",
+    "users": "Người dùng",
+    "usersCreate": "Tạo người dùng",
+    "usersEdit": "Chỉnh sửa người dùng",
+    "usersManagement": "Quản lý người dùng",
+    "roles": "Vai trò",
+    "rolesCreate": "Tạo vai trò",
+    "rolesEdit": "Chỉnh sửa vai trò",
+    "orderDetails": "Chi tiết đơn hàng",
+    "ordersEdit": "Chỉnh sửa đơn hàng",
+    "ordersCreate": "Tạo đơn hàng",
+    "priceRequests": "Yêu cầu báo giá",
+    "ticketExchanges": "Đổi vé",
+    "login": "Đăng nhập",
+    "authSignIn": "Đăng nhập"
   },
   "components": {
     "common": {
@@ -463,7 +504,24 @@
       "updateSuccess": "Cập nhật loại dịch vụ thành công",
       "confirmDelete": "Bạn có chắc chắn muốn xóa loại dịch vụ này không?",
       "namePlaceholder": "Nhập tên loại dịch vụ",
-      "descriptionPlaceholder": "Nhập mô tả loại dịch vụ"
+      "descriptionPlaceholder": "Nhập mô tả loại dịch vụ",
+      "add": "Thêm loại dịch vụ",
+      "addNew": "Thêm loại dịch vụ mới",
+      "createDescription": "Tạo loại dịch vụ mới cho đánh giá",
+      "backToList": "Quay lại danh sách loại dịch vụ",
+      "save": "Lưu loại dịch vụ",
+      "slugHelp": "Định danh URL thân thiện (ví dụ: \"dich-vu-spa\")",
+      "edit": "Chỉnh sửa loại dịch vụ",
+      "updateDescription": "Cập nhật loại dịch vụ cho đánh giá",
+      "update": "Cập nhật loại dịch vụ",
+      "delete": "Xóa loại dịch vụ",
+      "deleteWarning": "Điều này có thể ảnh hưởng đến các đánh giá hiện có. Hành động này không thể hoàn tác.",
+      "deleteSuccess": "Loại dịch vụ đã được xóa",
+      "deleteError": "Không thể xóa loại dịch vụ",
+      "loadError": "Không thể tải loại dịch vụ",
+      "updateError": "Không thể cập nhật loại dịch vụ",
+      "nameRequired": "Tên loại dịch vụ là bắt buộc",
+      "loading": "Đang tải dữ liệu loại dịch vụ..."
     },
     "reviewForm": {
       "title": "Tiêu đề",
@@ -563,46 +621,67 @@
     }
   },
   "posts": {
-    "categories": "Danh mục",
-    "noCategories": "Không có danh mục tin tức nào",
-    "featuredImage": "Hình ảnh nổi bật",
-    "featuredImageAlt": "Hình ảnh nổi bật",
-    "noImage": "Chưa chọn hình ảnh",
-    "imageUrlPlaceholder": "Nhập URL hình ảnh hoặc tải lên",
-    "recommendedSize": "Kích thước khuyến nghị: 1200x630px",
+    "title": "Bài viết",
+    "description": "Quản lý nội dung của bạn",
+    "createPost": "Tạo bài viết",
+    "editPost": "Chỉnh sửa bài viết",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "saveAndContinue": "Lưu & Tiếp tục",
+    "saveAndBack": "Lưu & Quay lại",
+    "noCategories": "Không tìm thấy danh mục nào",
+    "featuredImage": "Ảnh",
+    "featuredImageAlt": "Ảnh đại diện",
+    "noImage": "Chưa có ảnh nào được tải lên",
+    "imageUrlPlaceholder": "Nhập URL ảnh hoặc tải lên ảnh mới",
+    "recommendedSize": "Kích thước khuyến nghị: 1200x630 pixels",
+    "uploadImage": "Tải lên ảnh",
     "uploading": "Đang tải lên... {progress}%",
-    "uploadImage": "Tải lên hình ảnh",
-    "errors": {
-      "notImage": "Vui lòng chọn tệp hình ảnh",
-      "tooLarge": "Kích thước hình ảnh phải nhỏ hơn 5MB",
-      "uploadFailed": "Tải hình ảnh thất bại. Vui lòng thử lại."
-    },
     "editor": {
       "basicInfo": "Thông tin cơ bản",
       "title": "Tiêu đề",
-      "titlePlaceholder": "Nhập tiêu đề",
+      "titlePlaceholder": "Nhập tiêu đề bài viết",
       "urlSlug": "Đường dẫn URL",
       "slugPlaceholder": "Nhập đường dẫn URL",
       "generateSlug": "Tạo đường dẫn từ tiêu đề",
       "shortDescription": "Mô tả ngắn",
-      "shortDescriptionPlaceholder": "Nhập mô tả ngắn",
-      "content": "Nội dung"
+      "shortDescriptionPlaceholder": "Nhập mô tả ngắn gọn về bài viết",
+      "content": "Nội dung",
+      "contentPlaceholder": "Bắt đầu viết nội dung của bạn tại đây..."
     },
     "seo": {
       "title": "Cài đặt SEO",
       "metaDescription": "Mô tả Meta",
-      "metaDescriptionPlaceholder": "Nhập mô tả SEO meta",
+      "metaDescriptionPlaceholder": "Nhập mô tả meta cho công cụ tìm kiếm",
       "characters": "ký tự",
       "tags": "Thẻ",
-      "tagsPlaceholder": "Nhập thẻ, phân cách bằng dấu phẩy hoặc khoảng trắng",
-      "tagsExample": "Ví dụ: công nghệ, phát triển web"
+      "tagsPlaceholder": "Thêm thẻ và nhấn Enter",
+      "tagsExample": "Ví dụ: tin tức, cập nhật, tính năng"
     },
     "settings": {
       "title": "Cài đặt bài viết",
       "status": "Trạng thái",
-      "draft": "Bản nháp",
       "published": "Đã xuất bản",
+      "draft": "Bản nháp",
       "lastUpdated": "Cập nhật lần cuối"
+    },
+    "tabs": {
+      "basicInfo": "Thông tin cơ bản",
+      "media": "Hình ảnh",
+      "categories": "Danh mục",
+      "seo": "SEO",
+      "settings": "Cài đặt"
+    },
+    "errors": {
+      "titleRequired": "Tiêu đề là bắt buộc",
+      "slugRequired": "Đường dẫn là bắt buộc",
+      "contentRequired": "Nội dung là bắt buộc",
+      "notImage": "Vui lòng chọn một tệp hình ảnh",
+      "tooLarge": "Kích thước ảnh không được vượt quá 5MB",
+      "uploadFailed": "Tải lên ảnh thất bại"
+    },
+    "validation": {
+      "checkRequiredFields": "Vui lòng kiểm tra các trường bắt buộc"
     }
   },
   "galleries": {
@@ -621,7 +700,20 @@
     "sequenceHelp": "Số thấp hơn sẽ hiển thị trước",
     "isActive": "Kích hoạt",
     "activeHelp": "Khi được kích hoạt, ảnh này sẽ hiển thị trên trang chủ",
-    "confirmDelete": "Bạn có chắc chắn muốn xóa ảnh này không?"
+    "confirmDelete": "Bạn có chắc chắn muốn xóa ảnh này không?",
+    "errors": {
+      "noImage": "Vui lòng chọn một hình ảnh",
+      "noTitle": "Vui lòng nhập tiêu đề",
+      "notImage": "Vui lòng chọn một tệp hình ảnh",
+      "tooLarge": "Kích thước hình ảnh phải nhỏ hơn 10MB",
+      "uploadFailed": "Tải lên hình ảnh thất bại",
+      "createFailed": "Tạo mục thư viện ảnh thất bại",
+      "updateFailed": "Cập nhật mục thư viện ảnh thất bại"
+    },
+    "createSuccess": "Tạo mục thư viện ảnh thành công",
+    "updateSuccess": "Cập nhật mục thư viện ảnh thành công",
+    "featuredImage": "Hình ảnh nổi bật",
+    "featuredImageAlt": "Hình ảnh nổi bật"
   },
   "categories": {
     "title": "Quản lý danh mục",
@@ -657,7 +749,8 @@
       "active": "Đang hoạt động",
       "inactive": "Không hoạt động",
       "searchPlaceholder": "Tìm kiếm danh mục..." 
-    }
+    },
+    "slugRequired": "Đường dẫn URL là bắt buộc"
   },
   "roles": {
     "title": "Quản lý vai trò",
@@ -823,5 +916,9 @@
       "admin": "Quản trị viên",
       "customer": "Khách hàng"
     }
+  },
+  "language": {
+    "selectLanguage": "Chọn ngôn ngữ",
+    "default": "Mặc định"
   }
 } 
