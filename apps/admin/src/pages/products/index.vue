@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from "vue";
 import { useAuth } from "../../composables/useAuth";
 import { useTrpc } from "../../composables/useTrpc";
 import { useRouter, useRoute } from "vue-router";
+import { useLocalization } from "../../composables/useLocalization";
 import { Menu, MenuButton, MenuItem, MenuItems, TransitionRoot } from '@headlessui/vue';
 import {
   ChevronDownIcon,
@@ -62,6 +63,7 @@ const router = useRouter();
 const route = useRoute();
 const { checkAuth } = useAuth();
 const trpc = useTrpc();
+const { t } = useLocalization();
 
 interface ProductTranslation {
   id: number;
@@ -93,16 +95,23 @@ interface ProductVariant {
   id: number;
   sku: string;
   price: number;
-  salePrice?: number;
+  salePrice?: number | null;
   stock: number;
   translations: ProductVariantTranslation[];
+  published?: boolean;
+  quantity?: number;
+  comparePrice?: number | null;
+  thumbnail?: string;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  isSale?: boolean;
 }
 
 interface Product {
   id: number;
   sku: string;
   price: number;
-  salePrice?: number;
+  salePrice?: number | null;
   stock: number;
   published: boolean;
   createdAt: string;
@@ -199,35 +208,35 @@ async function fetchProducts() {
     const mappedProducts = result.products.map(p => ({
       id: p.id,
       sku: p.sku || '',
-      price: typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0,
-      // @ts-ignore
-      salePrice: typeof p.salePrice === 'number' ? p.salePrice : p.salePrice ? parseFloat(p.salePrice) : null,
-      // @ts-ignore
-      stock: typeof p.stock === 'number' ? p.stock : parseInt(p.stock) || 0,
+      price: typeof p.price === 'number' ? p.price : parseFloat(String(p.price || '0')),
+      salePrice: typeof p.salePrice === 'number' 
+        ? p.salePrice 
+        : p.salePrice ? parseFloat(String(p.salePrice)) : null,
+      stock: typeof p.stock === 'number' ? p.stock : parseInt(String(p.stock || '0')),
       published: !!p.published,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
       translations: p.translations || [],
-      // @ts-ignore
-      variants: (p.variants || []).map(v => ({
+      variants: (p.variants || []).map((v: any) => ({
         id: v.id,
         sku: v.sku || '',
-        price: typeof v.price === 'number' ? v.price : parseFloat(v.price) || 0,
-        salePrice: typeof v.salePrice === 'number' ? v.salePrice : v.salePrice ? parseFloat(v.salePrice) : null,
-        stock: typeof v.stock === 'number' ? v.stock : parseInt(v.stock) || 0,
+        price: typeof v.price === 'number' ? v.price : parseFloat(String(v.price || '0')),
+        salePrice: typeof v.salePrice === 'number' 
+          ? v.salePrice 
+          : v.salePrice ? parseFloat(String(v.salePrice)) : null,
+        stock: typeof v.stock === 'number' ? v.stock : parseInt(String(v.stock || '0')),
         translations: v.translations || [],
-        // Đảm bảo thuộc tính này luôn có và là boolean
         published: v.published !== undefined ? !!v.published : true,
-        // Thêm các thuộc tính từ entity
-        quantity: typeof v.quantity === 'number' ? v.quantity : parseInt(v.quantity) || 0,
-        comparePrice: typeof v.comparePrice === 'number' ? v.comparePrice : v.comparePrice ? parseFloat(v.comparePrice) : null,
+        quantity: typeof v.quantity === 'number' ? v.quantity : parseInt(String(v.quantity || '0')),
+        comparePrice: typeof v.comparePrice === 'number' 
+          ? v.comparePrice 
+          : v.comparePrice ? parseFloat(String(v.comparePrice)) : null,
         thumbnail: v.thumbnail || undefined,
         isFeatured: !!v.isFeatured,
         isNew: !!v.isNew,
         isSale: !!v.isSale
       })),
       thumbnail: p.thumbnail || undefined,
-      // @ts-ignore
       attributes: p.attributes || [],
       specifications: p.specifications || [],
       type: p.type,
@@ -251,12 +260,12 @@ async function fetchProducts() {
 
 async function handleDelete(id: number) {
   const result = await Swal.fire({
-    title: 'Delete Product',
-    text: 'Are you sure you want to delete this product? This action cannot be undone.',
+    title: t('products.deleteTitle'),
+    text: t('products.confirmDelete'),
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonText: 'Yes, delete it!',
-    cancelButtonText: 'Cancel',
+    confirmButtonText: t('products.deleteSelected'),
+    cancelButtonText: t('products.cancel'),
     confirmButtonColor: '#DC2626',
   });
 
@@ -266,8 +275,8 @@ async function handleDelete(id: number) {
     await trpc.admin.products.deleteProduct.mutate(id);
     
     Swal.fire({
-      title: 'Success!',
-      text: 'Product deleted successfully',
+      title: t('messages.success'),
+      text: t('products.deleteSuccess'),
       icon: 'success',
       timer: 2000,
       showConfirmButton: false
@@ -278,8 +287,8 @@ async function handleDelete(id: number) {
     console.error("Error deleting product:", err);
     
     Swal.fire({
-      title: 'Error!',
-      text: err.message || 'Failed to delete product',
+      title: t('messages.error'),
+      text: err.message || t('messages.error'),
       icon: 'error'
     });
   }
@@ -293,8 +302,8 @@ async function handleBulkAction(action: string) {
   let confirmConfig: any = {
     icon: 'question' as const,
     showCancelButton: true,
-    confirmButtonText: 'Yes, proceed',
-    cancelButtonText: 'Cancel',
+    confirmButtonText: t('messages.confirm'),
+    cancelButtonText: t('products.cancel'),
     title: '',
     text: '',
     confirmButtonColor: ''
@@ -304,28 +313,28 @@ async function handleBulkAction(action: string) {
     case 'publish':
       confirmConfig = {
         ...confirmConfig,
-        title: 'Publish Selected Products?',
-        text: `Are you sure you want to publish ${selectedCount} selected products?`,
+        title: t('products.publishSelected'),
+        text: t('products.confirmPublishSelected', { count: selectedCount }),
         confirmButtonColor: '#10B981',
-        confirmButtonText: 'Yes, publish them'
+        confirmButtonText: t('products.publishSelected')
       };
       break;
     case 'unpublish':
       confirmConfig = {
         ...confirmConfig,
-        title: 'Unpublish Selected Products?',
-        text: `Are you sure you want to unpublish ${selectedCount} selected products?`,
+        title: t('products.unpublishSelected'),
+        text: t('products.confirmUnpublishSelected', { count: selectedCount }),
         confirmButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, unpublish them'
+        confirmButtonText: t('products.unpublishSelected')
       };
       break;
     case 'delete':
       confirmConfig = {
         ...confirmConfig,
-        title: 'Delete Selected Products?',
-        text: `Are you sure you want to permanently delete ${selectedCount} selected products? This action cannot be undone.`,
+        title: t('products.deleteSelected'),
+        text: t('products.confirmDeleteSelected', { count: selectedCount }),
         confirmButtonColor: '#DC2626',
-        confirmButtonText: 'Yes, delete them',
+        confirmButtonText: t('products.deleteSelected'),
         icon: 'warning' as const
       };
       break;
@@ -377,19 +386,19 @@ async function handleBulkAction(action: string) {
     selectedProducts.value = [];
 
     Swal.fire({
-      title: 'Success!',
-      text: `Successfully performed ${action} on ${selectedCount} products`,
+      title: t('messages.success'),
+      text: t('products.bulkActionSuccess', { action, count: selectedCount }),
       icon: 'success',
       timer: 2000,
       showConfirmButton: false
     });
   } catch (err: any) {
-    error.value = err.message || `Failed to ${action} products`;
+    error.value = err.message || t('products.bulkActionError', { action });
     console.error(`Error performing ${action} on products:`, err);
     
     Swal.fire({
-      title: 'Error!',
-      text: err.message || `Failed to ${action} products`,
+      title: t('messages.error'),
+      text: err.message || t('products.bulkActionError', { action }),
       icon: 'error' as const
     });
   } finally {
@@ -406,12 +415,14 @@ async function togglePublished(product: Product) {
   const newStatus = !product.published;
   
   const result = await Swal.fire({
-    title: `${newStatus ? 'Publish' : 'Unpublish'} Product?`,
-    text: `Are you sure you want to ${newStatus ? 'publish' : 'unpublish'} "${product.translations[0]?.title || 'Untitled Product'}"?`,
+    title: newStatus ? t('products.publishSelected') : t('products.unpublishSelected'),
+    text: newStatus 
+      ? t('products.confirmPublishSelected', { count: 1 }) 
+      : t('products.confirmUnpublishSelected', { count: 1 }),
     icon: 'question',
     showCancelButton: true,
-    confirmButtonText: `Yes, ${newStatus ? 'publish' : 'unpublish'} it!`,
-    cancelButtonText: 'Cancel',
+    confirmButtonText: newStatus ? t('products.publishSelected') : t('products.unpublishSelected'),
+    cancelButtonText: t('products.cancel'),
     confirmButtonColor: newStatus ? '#10B981' : '#6B7280',
   });
 
@@ -427,19 +438,23 @@ async function togglePublished(product: Product) {
     product.published = newStatus;
 
     Swal.fire({
-      title: 'Success!',
-      text: `Product ${newStatus ? 'published' : 'unpublished'} successfully`,
+      title: t('messages.success'),
+      text: newStatus 
+        ? t('products.bulkActionSuccess', { action: 'publish', count: 1 }) 
+        : t('products.bulkActionSuccess', { action: 'unpublish', count: 1 }),
       icon: 'success',
       timer: 2000,
       showConfirmButton: false
     });
   } catch (err: any) {
-    const errorMessage = err.message || "Failed to update product status";
+    const errorMessage = err.message || t('products.bulkActionError', { 
+      action: newStatus ? 'publish' : 'unpublish' 
+    });
     error.value = errorMessage;
     console.error("Error updating product status:", err);
     
     Swal.fire({
-      title: 'Error!',
+      title: t('messages.error'),
       text: errorMessage,
       icon: 'error' as const
     });
@@ -473,12 +488,14 @@ const toggleVariantPublished = async (variant: any) => {
     const newStatus = !variant.published;
     
     const result = await Swal.fire({
-      title: `${newStatus ? 'Publish' : 'Unpublish'} Variant?`,
-      text: `Are you sure you want to ${newStatus ? 'publish' : 'unpublish'} "${variant.translations[0]?.name || 'Unnamed Variant'}"?`,
+      title: newStatus ? t('products.publishSelected') : t('products.unpublishSelected'),
+      text: newStatus 
+        ? t('products.confirmPublishSelected', { count: 1 }) 
+        : t('products.confirmUnpublishSelected', { count: 1 }),
       icon: 'question',
       showCancelButton: true,
-      confirmButtonText: `Yes, mark as ${newStatus ? 'published' : 'unpublished'}`,
-      cancelButtonText: 'Cancel',
+      confirmButtonText: newStatus ? t('products.publishSelected') : t('products.unpublishSelected'),
+      cancelButtonText: t('products.cancel'),
       confirmButtonColor: newStatus ? '#10B981' : '#6B7280',
     });
 
@@ -516,19 +533,23 @@ const toggleVariantPublished = async (variant: any) => {
     variant.published = newStatus;
 
     Swal.fire({
-      title: 'Success!',
-      text: `Variant is now ${newStatus ? 'published' : 'unpublished'}`,
+      title: t('messages.success'),
+      text: newStatus 
+        ? t('products.bulkActionSuccess', { action: 'publish', count: 1 }) 
+        : t('products.bulkActionSuccess', { action: 'unpublish', count: 1 }),
       icon: 'success',
       timer: 2000,
       showConfirmButton: false
     });
   } catch (err: any) {
-    const errorMessage = err.message || "Failed to update variant status";
+    const errorMessage = err.message || t('products.bulkActionError', { 
+      action: !variant.published ? 'publish' : 'unpublish' 
+    });
     error.value = errorMessage;
     console.error("Error updating variant status:", err);
     
     Swal.fire({
-      title: 'Error!',
+      title: t('messages.error'),
       text: errorMessage,
       icon: 'error'
     });
@@ -565,15 +586,15 @@ onMounted(async () => {
   <div class="space-y-6">
     <!-- Header -->
     <PageHeader
-      title="Products Management"
-      description="Manage and organize your products efficiently"
+      :title="t('products.title')"
+      :description="t('products.description')"
     >
       <template #actions>
         <div class="flex items-center gap-2">
           <Menu as="div" class="relative" v-if="selectedProducts.length">
             <MenuButton class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
               <ListChecksIcon class="h-4 w-4" />
-              Bulk Actions ({{ selectedProducts.length }})
+              {{ t('products.bulkActions', { count: selectedProducts.length }) }}
               <ChevronDownIcon class="h-4 w-4" />
             </MenuButton>
 
@@ -588,7 +609,7 @@ onMounted(async () => {
                     ]"
                   >
                     <EyeIcon class="h-4 w-4" :class="active ? 'text-emerald-700' : 'text-gray-500'" />
-                    Publish Selected
+                    {{ t('products.publishSelected') }}
                   </button>
                 </MenuItem>
                 <MenuItem v-slot="{ active }">
@@ -600,7 +621,7 @@ onMounted(async () => {
                     ]"
                   >
                     <EyeOffIcon class="h-4 w-4" :class="active ? 'text-slate-700' : 'text-gray-500'" />
-                    Unpublish Selected
+                    {{ t('products.unpublishSelected') }}
                   </button>
                 </MenuItem>
               </div>
@@ -614,7 +635,7 @@ onMounted(async () => {
                     ]"
                   >
                     <TrashIcon class="h-4 w-4" :class="active ? 'text-red-700' : 'text-gray-500'" />
-                    Delete Selected
+                    {{ t('products.deleteSelected') }}
                   </button>
                 </MenuItem>
               </div>
@@ -626,7 +647,7 @@ onMounted(async () => {
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
           >
             <PlusCircleIcon class="h-4 w-4" />
-            Create Product
+            {{ t('products.createProduct') }}
           </NuxtLink>
         </div>
       </template>
@@ -637,7 +658,7 @@ onMounted(async () => {
       <template #search>
         <SearchFilter
           v-model:search="search"
-          search-placeholder="Search products..."
+          :search-placeholder="t('products.searchPlaceholder')"
         />
       </template>
       
@@ -645,9 +666,9 @@ onMounted(async () => {
         <StatusFilter
           :modelValue="publishedFilter"
           :options="[
-            { label: 'All Status', value: undefined },
-            { label: 'Published', value: true },
-            { label: 'Draft', value: false }
+            { label: t('products.allStatus'), value: undefined },
+            { label: t('products.published'), value: true },
+            { label: t('products.draft'), value: false }
           ]"
           @update:modelValue="publishedFilter = $event"
         />
@@ -692,16 +713,16 @@ onMounted(async () => {
       <!-- Header slot -->
       <template #header="{ sortBy: tableSortBy, sortOrder: tableSortOrder, handleSort }">
         <th scope="col" class="px-6 py-3 text-left">
-          <span class="text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thumbnail</span>
+          <span class="text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ t('products.thumbnail') }}</span>
         </th>
         <th 
           v-for="column in [
-            { display: 'Product', value: 'title' },
-            { display: 'SKU', value: 'sku' },
-            { display: 'Price', value: 'price' },
-            { display: 'Status', value: 'published' },
-            { display: 'Created At', value: 'createdAt' },
-            { display: 'Actions', value: '' }
+            { display: t('products.product'), value: 'title' },
+            { display: t('products.sku'), value: 'sku' },
+            { display: t('products.price'), value: 'price' },
+            { display: t('products.status'), value: 'published' },
+            { display: t('products.createdAt'), value: 'createdAt' },
+            { display: t('products.actions'), value: '' }
           ]" 
           :key="column.display"
           scope="col" 
@@ -757,11 +778,11 @@ onMounted(async () => {
                 @click="toggleVariants(product.id)"
                 class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
               >
-                {{ product.variants.length }} variants
+                {{ product.variants.length }} {{ t('products.variants') }}
                 <LucideChevronDownIcon v-if="expandedProductId !== product.id" class="h-4 w-4 ml-1" />
                 <LucideChevronUpIcon v-else class="h-4 w-4 ml-1" />
               </button>
-              <span v-else>{{ product.variants.length }} variants</span>
+              <span v-else>{{ product.variants.length }} {{ t('products.variants') }}</span>
             </div>
           </div>
         </td>
@@ -789,7 +810,7 @@ onMounted(async () => {
                 'bg-gray-500': !product.published
               }"
             ></div>
-            {{ product.published ? 'Published' : 'Draft' }}
+            {{ product.published ? t('products.published') : t('products.draft') }}
           </button>
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

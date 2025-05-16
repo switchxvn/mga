@@ -1,14 +1,14 @@
 <template>
   <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
     <div class="p-6">
-      <h3 class="text-lg font-medium text-slate-900 mb-4">Inventory Management</h3>
+      <h3 class="text-lg font-medium text-slate-900 mb-4">{{ t('products.inventory.title') }}</h3>
       
       <!-- Stock Management Form -->
       <div class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="form-group">
             <label for="track_inventory" class="block text-sm font-medium text-slate-700 mb-1">
-              Track Inventory
+              {{ t('products.inventory.trackInventory') }}
             </label>
             <div class="flex items-center space-x-2">
               <div class="form-check">
@@ -21,14 +21,14 @@
                 >
               </div>
               <div class="text-sm text-slate-500">
-                Keep track of stock quantities
+                {{ t('products.inventory.trackInventoryHelp') }}
               </div>
             </div>
           </div>
           
           <div class="form-group">
             <label for="stock_status" class="block text-sm font-medium text-slate-700 mb-1">
-              Stock Status
+              {{ t('products.inventory.stockStatus') }}
             </label>
             <select 
               id="stock_status" 
@@ -36,9 +36,9 @@
               class="block w-full rounded-md border-slate-300 focus:border-primary focus:ring-primary sm:text-sm"
               :disabled="hasVariants"
             >
-              <option value="in_stock">In Stock</option>
-              <option value="out_of_stock">Out of Stock</option>
-              <option value="on_backorder">On Backorder</option>
+              <option value="in_stock">{{ t('products.inventory.inStock') }}</option>
+              <option value="out_of_stock">{{ t('products.inventory.outOfStock') }}</option>
+              <option value="on_backorder">{{ t('products.inventory.onBackorder') }}</option>
             </select>
           </div>
         </div>
@@ -46,7 +46,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="form-group">
             <label for="quantity" class="block text-sm font-medium text-slate-700 mb-1">
-              Quantity
+              {{ t('products.inventory.quantity') }}
             </label>
             <input 
               type="number" 
@@ -60,7 +60,7 @@
           
           <div class="form-group">
             <label for="low_stock_threshold" class="block text-sm font-medium text-slate-700 mb-1">
-              Low Stock Threshold
+              {{ t('products.inventory.lowStockThreshold') }}
             </label>
             <input 
               type="number" 
@@ -74,7 +74,7 @@
           
           <div class="form-group">
             <label for="allow_backorders" class="block text-sm font-medium text-slate-700 mb-1">
-              Allow Backorders
+              {{ t('products.inventory.allowBackorders') }}
             </label>
             <div class="flex items-center space-x-2">
               <div class="form-check">
@@ -87,7 +87,7 @@
                 >
               </div>
               <div class="text-sm text-slate-500">
-                Allow customers to purchase even when out of stock
+                {{ t('products.inventory.allowBackordersHelp') }}
               </div>
             </div>
           </div>
@@ -95,32 +95,32 @@
 
         <!-- Stock Adjustment Section (if not variants) -->
         <div v-if="trackInventoryModel && !hasVariants" class="mt-6 border-t border-slate-200 pt-6">
-          <h4 class="text-md font-medium text-slate-900 mb-4">Adjust Stock</h4>
+          <h4 class="text-md font-medium text-slate-900 mb-4">{{ t('products.inventory.adjustStock') }}</h4>
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div class="form-group">
               <label for="adjustment_quantity" class="block text-sm font-medium text-slate-700 mb-1">
-                Adjustment Quantity
+                {{ t('products.inventory.adjustmentQuantity') }}
               </label>
               <input 
                 type="number" 
                 id="adjustment_quantity" 
                 v-model="adjustmentQuantity" 
                 class="block w-full rounded-md border-slate-300 focus:border-primary focus:ring-primary sm:text-sm"
-                placeholder="Enter positive or negative value"
+                :placeholder="t('products.inventory.adjustmentQuantity')"
               >
             </div>
             
             <div class="form-group">
               <label for="adjustment_note" class="block text-sm font-medium text-slate-700 mb-1">
-                Note
+                {{ t('products.inventory.adjustmentNote') }}
               </label>
               <input 
                 type="text" 
                 id="adjustment_note" 
                 v-model="adjustmentNote" 
                 class="block w-full rounded-md border-slate-300 focus:border-primary focus:ring-primary sm:text-sm"
-                placeholder="Reason for adjustment"
+                :placeholder="t('products.inventory.adjustmentReasonPlaceholder')"
               >
             </div>
             
@@ -129,7 +129,7 @@
                 @click="adjustStock" 
                 class="h-10 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
-                Apply Adjustment
+                {{ t('products.inventory.applyAdjustment') }}
               </button>
             </div>
           </div>
@@ -141,8 +141,8 @@
         <div class="flex items-center p-4 bg-blue-50 rounded-md text-blue-700 text-sm">
           <InfoIcon class="w-5 h-5 mr-2 flex-shrink-0" />
           <div>
-            <p><span class="font-medium">Thông báo:</span> Lịch sử tồn kho sẽ có sẵn sau khi sản phẩm được tạo.</p>
-            <p>Bạn có thể theo dõi lịch sử thay đổi số lượng tồn kho sau khi sản phẩm đã được lưu.</p>
+            <p>{{ t('products.inventory.newProductNotice') }}</p>
+            <p>{{ t('products.inventory.historyAvailableAfter') }}</p>
           </div>
         </div>
       </div>
@@ -150,21 +150,21 @@
       <!-- Stock History -->
       <div v-if="route.params.id" class="mt-8 border-t border-slate-200 pt-6">
         <div class="flex flex-wrap items-center justify-between mb-4">
-          <h4 class="text-md font-medium text-slate-900">Stock Movement History</h4>
+          <h4 class="text-md font-medium text-slate-900">{{ t('products.inventory.stockMovementHistory') }}</h4>
           
           <div class="flex items-center space-x-2 mt-2 md:mt-0">
             <select 
               v-model="historyFilter" 
               class="rounded-md border-slate-300 focus:border-primary focus:ring-primary text-sm"
             >
-              <option value="all">All Activities</option>
-              <option value="ADMIN_ADJUSTMENT">Admin Adjustments</option>
-              <option value="CUSTOMER_ORDER">Customer Orders</option>
-              <option value="REFUND">Refunds</option>
-              <option value="INVENTORY_CHECK">Inventory Checks</option>
-              <option value="RETURN">Returns</option>
-              <option value="DAMAGED">Damaged Items</option>
-              <option value="INITIAL_STOCK">Initial Stock</option>
+              <option value="all">{{ t('products.inventory.allActivities') }}</option>
+              <option value="ADMIN_ADJUSTMENT">{{ t('products.inventory.adminAdjustments') }}</option>
+              <option value="CUSTOMER_ORDER">{{ t('products.inventory.customerOrders') }}</option>
+              <option value="REFUND">{{ t('products.inventory.refunds') }}</option>
+              <option value="INVENTORY_CHECK">{{ t('products.inventory.inventoryChecks') }}</option>
+              <option value="RETURN">{{ t('products.inventory.returns') }}</option>
+              <option value="DAMAGED">{{ t('products.inventory.damagedItems') }}</option>
+              <option value="INITIAL_STOCK">{{ t('products.inventory.initialStock') }}</option>
             </select>
             
             <button 
@@ -181,37 +181,37 @@
             <thead class="bg-slate-50">
               <tr>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Date & Time
+                  {{ t('products.inventory.dateTime') }}
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Type
+                  {{ t('products.inventory.type') }}
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Previous
+                  {{ t('products.inventory.previous') }}
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Change
+                  {{ t('products.inventory.change') }}
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  New
+                  {{ t('products.inventory.new') }}
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Note
+                  {{ t('products.inventory.note') }}
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Reference
+                  {{ t('products.inventory.reference') }}
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-200">
               <tr v-if="loading">
                 <td colspan="7" class="px-6 py-4 text-center text-sm text-slate-500">
-                  Loading history...
+                  {{ t('products.inventory.loadingHistory') }}
                 </td>
               </tr>
               <tr v-else-if="!stockHistory.length">
                 <td colspan="7" class="px-6 py-4 text-center text-sm text-slate-500">
-                  No stock history found.
+                  {{ t('products.inventory.noHistory') }}
                 </td>
               </tr>
               <tr v-for="item in stockHistory" :key="item.id" class="hover:bg-slate-50">
@@ -241,7 +241,7 @@
                   <a v-if="item.referenceType === 'order' && item.referenceId" 
                      :href="`/orders/${item.referenceId}`" 
                      class="text-primary hover:underline">
-                    Order #{{ item.referenceId }}
+                    {{ t('products.inventory.order') }} #{{ item.referenceId }}
                   </a>
                   <span v-else>-</span>
                 </td>
@@ -259,7 +259,7 @@
               class="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }"
             >
-              Previous
+              {{ t('products.inventory.previous') }}
             </button>
             <button 
               @click="nextPage" 
@@ -267,13 +267,13 @@
               class="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               :class="{ 'opacity-50 cursor-not-allowed': currentPage >= totalPages }"
             >
-              Next
+              {{ t('products.inventory.next') }}
             </button>
           </div>
           <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
               <p class="text-sm text-slate-700">
-                Showing <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span> to <span class="font-medium">{{ Math.min(currentPage * pageSize, totalStockHistory) }}</span> of <span class="font-medium">{{ totalStockHistory }}</span> results
+                {{ t('products.inventory.showing') }} <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span> {{ t('products.inventory.to') }} <span class="font-medium">{{ Math.min(currentPage * pageSize, totalStockHistory) }}</span> {{ t('products.inventory.of') }} <span class="font-medium">{{ totalStockHistory }}</span> {{ t('products.inventory.results') }}
               </p>
             </div>
             <div>
@@ -322,6 +322,7 @@ import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTrpc } from '../../composables/useTrpc';
 import { useToast } from '../../composables/useToast';
+import { useLocalization } from '../../composables/useLocalization';
 import { RefreshCcwIcon, ChevronLeftIcon, ChevronRightIcon, InfoIcon } from 'lucide-vue-next';
 import { format } from 'date-fns';
 
@@ -363,6 +364,8 @@ const emit = defineEmits([
   'update:stockStatus',
   'update:allowBackorders'
 ]);
+
+const { t } = useLocalization();
 
 // Computed properties for v-model
 const trackInventoryModel = computed({
@@ -490,13 +493,13 @@ const formatDate = (dateString: string) => {
 // Get adjustment type label
 const getAdjustmentTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    'ADMIN_ADJUSTMENT': 'Admin Adjustment',
-    'CUSTOMER_ORDER': 'Customer Order',
-    'REFUND': 'Refund',
-    'INVENTORY_CHECK': 'Inventory Check',
-    'RETURN': 'Return',
-    'DAMAGED': 'Damaged',
-    'INITIAL_STOCK': 'Initial Stock'
+    'ADMIN_ADJUSTMENT': t('products.inventory.adminAdjustments'),
+    'CUSTOMER_ORDER': t('products.inventory.customerOrders'),
+    'REFUND': t('products.inventory.refunds'),
+    'INVENTORY_CHECK': t('products.inventory.inventoryChecks'),
+    'RETURN': t('products.inventory.returns'),
+    'DAMAGED': t('products.inventory.damagedItems'),
+    'INITIAL_STOCK': t('products.inventory.initialStock')
   };
   
   return labels[type] || type;

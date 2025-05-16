@@ -4,7 +4,7 @@
     <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-4rem)]">
       <div class="flex flex-col items-center gap-2">
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
-        <p class="text-sm text-slate-500">Loading...</p>
+        <p class="text-sm text-slate-500">{{ t('common.loading') }}</p>
       </div>
     </div>
 
@@ -14,8 +14,8 @@
         <div class="space-y-6">
           <!-- Header -->
           <PageHeader
-            title="Edit Product"
-            description="Update your product information and settings"
+            :title="t('products.edit.title')"
+            :description="t('products.edit.description')"
           >
             <template #actions>
               <!-- Language Switcher -->
@@ -29,7 +29,7 @@
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
               >
                 <XIcon class="w-4 h-4 mr-2" />
-                Cancel
+                {{ t('actions.cancel') }}
               </NuxtLink>
               
               <button 
@@ -38,7 +38,7 @@
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
               >
                 <SaveIcon class="w-4 h-4 mr-2" />
-                {{ loading && saveAndContinue ? 'Saving...' : 'Save & Continue' }}
+                {{ loading && saveAndContinue ? t('common.saving') : t('actions.saveAndContinue') }}
               </button>
 
               <button 
@@ -47,7 +47,7 @@
                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
               >
                 <SaveAllIcon class="w-4 h-4 mr-2" />
-                {{ loading && !saveAndContinue ? 'Saving...' : 'Save & Back to List' }}
+                {{ loading && !saveAndContinue ? t('common.saving') : t('actions.saveAndBack') }}
               </button>
             </template>
           </PageHeader>
@@ -68,7 +68,7 @@
               <component :is="tab.icon" class="w-4 h-4" />
               {{ tab.name }}
               <div v-if="tab.id === 'inventory' && form.hasVariants" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                Inventory is disabled because this product has variants. Please manage inventory for individual variants in the Variants tab.
+                {{ t('products.inventory.variantsDisabledMessage') }}
               </div>
             </button>
           </nav>
@@ -138,8 +138,8 @@
               <div v-if="form.hasVariants" class="mt-4 flex items-center p-4 bg-blue-50 rounded-md text-blue-700 text-sm">
                 <InfoIcon class="w-5 h-5 mr-2 flex-shrink-0" />
                 <div>
-                  <p><span class="font-medium">Thông báo:</span> Quản lý số lượng đã bị vô hiệu hóa vì sản phẩm này có biến thể.</p>
-                  <p>Số lượng được quản lý riêng cho từng biến thể trong <button @click="currentTab = 'variants'" class="underline font-medium hover:text-blue-900">tab Variants</button>.</p>
+                  <p><span class="font-medium">{{ t('products.inventory.notice') }}</span> {{ t('products.inventory.disabledMessage') }}</p>
+                  <p>{{ t('products.inventory.manageMessage') }} <button @click="currentTab = 'variants'" class="underline font-medium hover:text-blue-900">{{ t('products.tabs.variants') }}</button>.</p>
                 </div>
               </div>
             </div>
@@ -178,6 +178,7 @@ import { useTrpc } from '../../../composables/useTrpc'
 import slugify from 'slugify'
 import { useHead } from 'nuxt/app'
 import { useToast } from '../../../composables/useToast'
+import { useLocalization } from '../../../composables/useLocalization'
 
 // Import Lucide icons
 import {
@@ -212,6 +213,7 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(true)
 const saveAndContinue = ref(false)
+const { t } = useLocalization()
 
 // Modify the toast import to use CommonJS default export pattern
 const toast = useToast()
@@ -289,48 +291,48 @@ watch(currentTab, (newTab) => {
   }
 })
 
-const tabs = [
+const tabs = computed(() => [
   { 
     id: 'basic', 
-    name: 'Basic Info', 
+    name: t('products.tabs.basicInfo'), 
     icon: FileTextIcon
   },
   { 
     id: 'media', 
-    name: 'Media', 
+    name: t('products.tabs.media'), 
     icon: ImageIcon
   },
   {
     id: 'categories',
-    name: 'Categories',
+    name: t('products.tabs.categories'),
     icon: FolderIcon
   },
   {
     id: 'variants',
-    name: 'Variants',
+    name: t('products.tabs.variants'),
     icon: LayersIcon
   },
   {
     id: 'specifications',
-    name: 'Specifications',
+    name: t('products.tabs.specifications'),
     icon: ClipboardListIcon
   },
   {
     id: 'inventory',
-    name: 'Inventory',
+    name: t('products.tabs.inventory'),
     icon: PackageIcon
   },
   { 
     id: 'seo', 
-    name: 'SEO', 
+    name: t('products.tabs.seo'), 
     icon: SearchIcon
   },
   { 
     id: 'settings', 
-    name: 'Settings', 
+    name: t('products.tabs.settings'), 
     icon: SettingsIcon
   }
-]
+])
 
 interface ProductVariant {
   id?: number
@@ -420,8 +422,8 @@ const tagsInput = ref('')
 // Update page title dynamically - chỉnh sửa để tránh re-render liên tục
 useHead({
   title: computed(() => form.value.name 
-    ? `Edit: ${form.value.name} - Admin Dashboard`
-    : 'Edit Product - Admin Dashboard')
+    ? `${t('products.edit.title')}: ${form.value.name} - ${t('common.adminDashboard')}`
+    : `${t('products.edit.title')} - ${t('common.adminDashboard')}`)
 })
 
 const handleTagInput = (e: KeyboardEvent) => {
@@ -840,7 +842,7 @@ const updateProduct = debounce(async (continueEditing = false) => {
     });
 
     if (process.client) {
-      toast.success('Product updated successfully!');
+      toast.success(t('products.edit.success'));
     }
 
     if (!continueEditing) {
@@ -862,7 +864,7 @@ const updateProduct = debounce(async (continueEditing = false) => {
       } else if (error.message) {
         errorMessage += error.message
       } else {
-        errorMessage += 'Failed to update product. Please try again.'
+        errorMessage += t('products.updateError')
       }
       
       toast.error(errorMessage, 8000);
