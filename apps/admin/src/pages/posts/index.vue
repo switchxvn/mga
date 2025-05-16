@@ -47,14 +47,14 @@ import { useTrpc } from "../../composables/useTrpc";
 import PermissionGate from '../../components/common/PermissionGate.vue';
 import AuthWrapper from '../../components/common/AuthWrapper.vue';
 import { usePermissions } from '../../composables/usePermissions';
+import { useSiteTitle } from '../../composables/useSiteTitle';
 
 definePageMeta({
   middleware: ["auth", "permission"],
 });
 
-useHead({
-  title: 'Posts Management - Admin Panel'
-})
+// Sử dụng useSiteTitle thay vì useHead trực tiếp
+useSiteTitle('posts.management');
 
 const router = useRouter();
 const route = useRoute();

@@ -14,6 +14,7 @@ import {
 import { useRouter } from "vue-router";
 import PermissionGate from "../components/common/PermissionGate.vue";
 import { useI18n } from "vue-i18n";
+import { useSiteTitle } from "../composables/useSiteTitle";
 
 // Các define này được Nuxt cung cấp khi chạy
 // @ts-ignore 
@@ -27,9 +28,8 @@ definePageMeta({
 
 const { t } = useI18n();
 
-useHead({
-  title: t('head.dashboard')
-})
+// Sử dụng useSiteTitle thay vì useHead trực tiếp
+useSiteTitle('head.dashboard');
 
 const router = useRouter();
 const { checkAuth } = useAuth();

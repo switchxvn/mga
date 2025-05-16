@@ -33,6 +33,11 @@ import DataTable from '../../components/common/table/DataTable.vue';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import { useAuth } from "../../composables/useAuth";
 import { useCategory } from "../../composables/useCategory";
+import { useLocalization } from '../../composables/useLocalization';
+import { useSiteTitle } from '../../composables/useSiteTitle';
+
+// Set page title with i18n support
+useSiteTitle('categories.categoriesList');
 
 // Đăng ký $lucide để sử dụng trong template
 const $lucide = lucideIcons;
@@ -63,6 +68,7 @@ const navigateTo = (path: any, options?: any) => {};
 const router = useRouter();
 const route = useRoute();
 const { checkAuth } = useAuth();
+const { t } = useLocalization();
 
 // Use the category composable
 const {
@@ -199,12 +205,12 @@ watch([page, search, activeFilter, sortBy, sortOrder], () => {
 
 async function handleDelete(id: number) {
   const result = await Swal.fire({
-    title: 'Delete Category',
-    text: 'Are you sure you want to delete this category? This action cannot be undone.',
+    title: t('actions.delete') + ' ' + t('categories.title'),
+    text: t('categories.confirmDelete'),
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonText: 'Yes, delete it!',
-    cancelButtonText: 'Cancel',
+    confirmButtonText: t('actions.confirm'),
+    cancelButtonText: t('actions.cancel'),
     confirmButtonColor: '#DC2626',
   });
 
@@ -213,8 +219,8 @@ async function handleDelete(id: number) {
       await deleteCategory(id);
       
       Swal.fire({
-        title: 'Success!',
-        text: 'Category deleted successfully',
+        title: t('messages.success'),
+        text: t('categories.title') + ' ' + t('messages.success').toLowerCase(),
         icon: 'success',
         timer: 2000,
         showConfirmButton: false
@@ -223,8 +229,8 @@ async function handleDelete(id: number) {
       console.error('Error deleting category:', err);
       
       Swal.fire({
-        title: 'Error!',
-        text: err.message || 'Failed to delete category',
+        title: t('messages.error'),
+        text: err.message || t('messages.error'),
         icon: 'error'
       });
     }
@@ -242,26 +248,26 @@ const handleBulkAction = async (action: string) => {
   let confirmButtonColor = '';
 
   if (action === 'delete') {
-    confirmMessage = 'Are you sure you want to delete the selected categories? This action cannot be undone.';
-    confirmButtonText = 'Yes, delete them!';
+    confirmMessage = t('categories.confirmBulkDelete');
+    confirmButtonText = t('actions.confirm');
     confirmButtonColor = '#DC2626';
   } else if (action === 'activate') {
-    confirmMessage = 'Are you sure you want to activate the selected categories?';
-    confirmButtonText = 'Yes, activate them!';
+    confirmMessage = t('categories.confirmBulkActivate');
+    confirmButtonText = t('actions.confirm');
     confirmButtonColor = '#10B981';
   } else if (action === 'deactivate') {
-    confirmMessage = 'Are you sure you want to deactivate the selected categories?';
-    confirmButtonText = 'Yes, deactivate them!';
+    confirmMessage = t('categories.confirmBulkDeactivate');
+    confirmButtonText = t('actions.confirm');
     confirmButtonColor = '#EF4444';
   }
 
   const result = await Swal.fire({
-    title: `${action.charAt(0).toUpperCase() + action.slice(1)} Selected Categories`,
+    title: action.charAt(0).toUpperCase() + action.slice(1) + ' ' + t('categories.title'),
     text: confirmMessage,
     icon: 'warning',
     showCancelButton: true,
     confirmButtonText,
-    cancelButtonText: 'Cancel',
+    cancelButtonText: t('actions.cancel'),
     confirmButtonColor,
   });
 
@@ -276,7 +282,7 @@ const handleBulkAction = async (action: string) => {
       console.error(`Error during bulk ${action}:`, err);
       
       Swal.fire({
-        title: 'Error!',
+        title: t('messages.error'),
         text: err.message || `Failed to ${action} selected categories`,
         icon: 'error'
       });
@@ -337,15 +343,15 @@ onMounted(async () => {
   <div class="space-y-6">
     <!-- Header -->
     <PageHeader
-      title="Categories Management"
-      description="Manage and organize your categories efficiently"
+      :title="t('categories.title')"
+      :description="t('categories.description')"
     >
       <template #actions>
         <div class="flex items-center gap-2">
           <Menu as="div" class="relative" v-if="selectedCategories.length">
             <MenuButton class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
               <ListChecksIcon class="h-4 w-4" />
-              Bulk Actions ({{ selectedCategories.length }})
+              {{ t('categories.bulkActions') }} ({{ selectedCategories.length }})
               <ChevronDownIcon class="h-4 w-4" />
             </MenuButton>
 
@@ -360,7 +366,7 @@ onMounted(async () => {
                     ]"
                   >
                     <EyeIcon class="h-4 w-4" :class="active ? 'text-emerald-700' : 'text-gray-500'" />
-                    Activate Selected
+                    {{ t('categories.activate') }}
                   </button>
                 </MenuItem>
                 <MenuItem v-slot="{ active }">
@@ -372,7 +378,7 @@ onMounted(async () => {
                     ]"
                   >
                     <EyeOffIcon class="h-4 w-4" :class="active ? 'text-slate-700' : 'text-gray-500'" />
-                    Deactivate Selected
+                    {{ t('categories.deactivate') }}
                   </button>
                 </MenuItem>
               </div>
@@ -386,7 +392,7 @@ onMounted(async () => {
                     ]"
                   >
                     <TrashIcon class="h-4 w-4" :class="active ? 'text-red-700' : 'text-gray-500'" />
-                    Delete Selected
+                    {{ t('categories.deleteSelected') }}
                   </button>
                 </MenuItem>
               </div>
@@ -398,7 +404,7 @@ onMounted(async () => {
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
           >
             <PlusCircleIcon class="h-4 w-4" />
-            Create Category
+            {{ t('categories.createCategory') }}
           </NuxtLink>
         </div>
       </template>
@@ -409,7 +415,7 @@ onMounted(async () => {
       <template #search>
         <SearchFilter
           v-model:search="search"
-          search-placeholder="Search categories..."
+          :search-placeholder="t('categories.filters.searchPlaceholder')"
         />
       </template>
       
@@ -417,9 +423,9 @@ onMounted(async () => {
         <StatusFilter
           :modelValue="activeFilter === 'true' ? true : activeFilter === 'false' ? false : undefined"
           :options="[
-            { label: 'All Status', value: undefined },
-            { label: 'Active', value: true },
-            { label: 'Inactive', value: false }
+            { label: t('categories.filters.all'), value: undefined },
+            { label: t('categories.filters.active'), value: true },
+            { label: t('categories.filters.inactive'), value: false }
           ]"
           @update:modelValue="activeFilter = $event === true ? 'true' : $event === false ? 'false' : ''"
         />
@@ -440,7 +446,7 @@ onMounted(async () => {
             <LucideXCircleIcon class="h-5 w-5 text-red-400" />
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">Error</h3>
+            <h3 class="text-sm font-medium text-red-800">{{ t('messages.error') }}</h3>
             <div class="mt-2 text-sm text-red-700">
               <p>{{ error }}</p>
             </div>
@@ -559,7 +565,7 @@ onMounted(async () => {
                 'bg-gray-500': !category.active
               }"
             ></div>
-            {{ category.active ? 'Active' : 'Inactive' }}
+            {{ category.active ? t('categories.statusActive') : t('categories.statusInactive') }}
           </button>
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -570,14 +576,14 @@ onMounted(async () => {
             <NuxtLink
               :to="`/categories/edit/${category.id}`"
               class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-              title="Edit category"
+              :title="t('actions.edit') + ' ' + t('categories.title').toLowerCase()"
             >
               <PencilIcon class="h-5 w-5" />
             </NuxtLink>
             <button
               @click="handleDelete(category.id)"
               class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-              title="Delete category"
+              :title="t('actions.delete') + ' ' + t('categories.title').toLowerCase()"
             >
               <Trash2Icon class="h-5 w-5" />
             </button>

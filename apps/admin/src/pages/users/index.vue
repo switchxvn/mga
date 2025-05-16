@@ -279,6 +279,7 @@ import Swal from 'sweetalert2'
 import { TransitionRoot } from '@headlessui/vue'
 import { useAuth } from '~/composables/useAuth'
 import { useTrpc } from '~/composables/useTrpc'
+import { useSiteTitle } from '~/composables/useSiteTitle'
 import PageHeader from '../../components/common/header/PageHeader.vue'
 import FilterContainer from '../../components/common/filter/FilterContainer.vue'
 import SearchFilter from '../../components/common/filter/SearchFilter.vue'
@@ -294,9 +295,8 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-useHead({
-  title: 'User Management - Admin Panel'
-})
+// Sử dụng useSiteTitle thay vì useHead trực tiếp
+useSiteTitle('users.management');
 
 const router = useRouter()
 const route = useRoute()

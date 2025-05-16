@@ -40,6 +40,7 @@ import StatusFilter from '../../components/common/filter/StatusFilter.vue';
 import PageSizeFilter from '../../components/common/filter/PageSizeFilter.vue';
 import DataTable from '../../components/common/table/DataTable.vue';
 import PageHeader from '../../components/common/header/PageHeader.vue';
+import { useSiteTitle } from '../../composables/useSiteTitle';
 
 // Base64 encoded transparent placeholder image
 const FALLBACK_IMAGE = 'images/default/default-image.jpg';
@@ -54,9 +55,8 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-useHead({
-  title: 'Products Management - Admin Panel'
-})
+// Sử dụng useSiteTitle thay vì useHead trực tiếp
+useSiteTitle('products.management');
 
 const router = useRouter();
 const route = useRoute();

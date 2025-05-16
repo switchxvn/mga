@@ -98,6 +98,7 @@ import ProfileForm from '@/components/profile/ProfileForm.vue';
 import PageHeader from '@/components/common/header/PageHeader.vue';
 import { User } from '@/types/user';
 import { useI18n } from 'vue-i18n';
+import { useSiteTitle } from '@/composables/useSiteTitle';
 
 const router = useRouter();
 const { user, checkAuth } = useAuth();
@@ -136,10 +137,8 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-// @ts-ignore
-useHead({
-  title: t('head.profile')
-})
+// Sử dụng useSiteTitle thay vì useHead trực tiếp
+useSiteTitle('head.profile');
 
 onMounted(async () => {
   try {
