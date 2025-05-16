@@ -4,84 +4,84 @@
       <!-- Address Line 1 -->
       <div class="space-y-1 md:col-span-2">
         <label for="line1" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Address Line 1
+          {{ t('orders.address.line1') }}
         </label>
         <input
           id="line1"
           type="text"
           v-model="addressModel.line1"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          placeholder="Street address"
+          :placeholder="t('orders.address.line1Placeholder')"
         />
       </div>
 
       <!-- Address Line 2 -->
       <div class="space-y-1 md:col-span-2">
         <label for="line2" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Address Line 2 (Optional)
+          {{ t('orders.address.line2') }}
         </label>
         <input
           id="line2"
           type="text"
           v-model="addressModel.line2"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          placeholder="Apartment, suite, unit, etc."
+          :placeholder="t('orders.address.line2Placeholder')"
         />
       </div>
 
       <!-- City -->
       <div class="space-y-1">
         <label for="city" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          City
+          {{ t('orders.address.city') }}
         </label>
         <input
           id="city"
           type="text"
           v-model="addressModel.city"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          placeholder="City"
+          :placeholder="t('orders.address.cityPlaceholder')"
         />
       </div>
 
       <!-- State / Province -->
       <div class="space-y-1">
         <label for="state" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          State / Province
+          {{ t('orders.address.state') }}
         </label>
         <input
           id="state"
           type="text"
           v-model="addressModel.state"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          placeholder="State or province"
+          :placeholder="t('orders.address.statePlaceholder')"
         />
       </div>
 
       <!-- Postal Code -->
       <div class="space-y-1">
         <label for="postal_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Postal Code
+          {{ t('orders.address.postalCode') }}
         </label>
         <input
           id="postal_code"
           type="text"
           v-model="addressModel.postal_code"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          placeholder="Postal code"
+          :placeholder="t('orders.address.postalCodePlaceholder')"
         />
       </div>
 
       <!-- Country -->
       <div class="space-y-1">
         <label for="country" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Country
+          {{ t('orders.address.country') }}
         </label>
         <input
           id="country"
           type="text"
           v-model="addressModel.country"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          placeholder="Country"
+          :placeholder="t('orders.address.countryPlaceholder')"
         />
       </div>
     </div>
@@ -90,6 +90,9 @@
 
 <script setup lang="ts">
 import { reactive, watch } from 'vue';
+import { useLocalization } from '@/composables/useLocalization';
+
+const { t } = useLocalization();
 
 interface Address {
   line1: string;

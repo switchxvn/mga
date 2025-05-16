@@ -3,19 +3,27 @@
 </script>
 
 <template>
-  <div class="bg-white dark:bg-neutral-800 shadow-sm rounded-lg p-6">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <!-- Slot cho search filter -->
-      <slot name="search"></slot>
+  <div class="bg-white dark:bg-neutral-800 shadow-sm rounded-lg p-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Search Filter -->
+      <div>
+        <slot name="search"></slot>
+      </div>
       
-      <!-- Slot cho status filter -->
-      <slot name="status"></slot>
+      <!-- Status Filter -->
+      <div>
+        <slot name="status"></slot>
+      </div>
       
-      <!-- Slot cho page size filter -->
-      <slot name="pageSize"></slot>
+      <!-- Language Filter -->
+      <div>
+        <slot name="language"></slot>
+      </div>
       
-      <!-- Slot mặc định cho các filter tùy chỉnh khác -->
-      <slot></slot>
+      <!-- Page Size Filter -->
+      <div>
+        <slot name="pageSize"></slot>
+      </div>
     </div>
   </div>
 </template> 

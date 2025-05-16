@@ -7,6 +7,7 @@ import { StarIcon } from "lucide-vue-next";
 import Swal from "sweetalert2";
 import PageHeader from "../../components/common/header/PageHeader.vue";
 import { ReviewStatus } from "@ew/shared";
+import { useLocalization } from "../../composables/useLocalization";
 
 // These functions are provided by Nuxt at runtime
 // @ts-ignore
@@ -25,6 +26,7 @@ useHead({
 const router = useRouter();
 const { checkAuth } = useAuth();
 const trpc = useTrpc();
+const { t } = useLocalization();
 
 // Form state
 const isLoading = ref(false);
@@ -65,7 +67,7 @@ async function fetchServiceTypes() {
 async function submitForm() {
   try {
     if (!authorName.value) {
-      error.value = "Author name is required";
+      error.value = t('reviews.serviceType.nameRequired');
       return;
     }
 
@@ -99,8 +101,8 @@ async function submitForm() {
 
     Swal.fire({
       icon: "success",
-      title: "Success",
-      text: "Review created successfully",
+      title: t('messages.success'),
+      text: t('reviews.createSuccess'),
       timer: 1500,
       showConfirmButton: false,
     });
@@ -108,7 +110,7 @@ async function submitForm() {
     // Redirect to reviews list
     router.push("/reviews");
   } catch (err: any) {
-    error.value = err.message || "Failed to create review";
+    error.value = err.message || t('messages.error');
     console.error("Error creating review:", err);
   } finally {
     isLoading.value = false;
@@ -130,10 +132,10 @@ onMounted(async () => {
 <template>
   <div class="container mx-auto px-4 py-8">
     <PageHeader
-      title="Add New Review"
-      description="Create a new customer review or testimonial"
+      :title="t('reviews.createReview')"
+      :description="t('reviews.description')"
       :backButton="{
-        label: 'Back to Reviews',
+        label: t('reviews.serviceType.backToList'),
         onClick: cancel,
       }"
     />
@@ -151,7 +153,7 @@ onMounted(async () => {
         <!-- Author Information -->
         <div class="border-b border-gray-200 pb-6">
           <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">
-            Author Information
+            {{ t('reviews.authorInfo') }}
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -159,7 +161,7 @@ onMounted(async () => {
                 for="authorName"
                 class="block text-sm font-medium text-gray-700"
               >
-                Author Name <span class="text-red-500">*</span>
+                {{ t('reviews.authorName') }} <span class="text-red-500">*</span>
               </label>
               <input
                 id="authorName"
@@ -174,7 +176,7 @@ onMounted(async () => {
                 for="profession"
                 class="block text-sm font-medium text-gray-700"
               >
-                Profession
+                {{ t('reviews.profession') }}
               </label>
               <input
                 id="profession"
@@ -188,7 +190,7 @@ onMounted(async () => {
                 for="authorAvatar"
                 class="block text-sm font-medium text-gray-700"
               >
-                Avatar URL
+                {{ t('reviews.authorAvatar') }}
               </label>
               <input
                 id="authorAvatar"
@@ -206,7 +208,7 @@ onMounted(async () => {
                 for="visitDate"
                 class="block text-sm font-medium text-gray-700"
               >
-                Visit Date
+                {{ t('reviews.visitDate') }}
               </label>
               <input
                 id="visitDate"
@@ -221,7 +223,7 @@ onMounted(async () => {
         <!-- Review Content -->
         <div class="border-b border-gray-200 pb-6">
           <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">
-            Review Content
+            {{ t('reviews.reviewContent') }}
           </h3>
           <div class="space-y-6">
             <div>
@@ -229,7 +231,7 @@ onMounted(async () => {
                 for="locale"
                 class="block text-sm font-medium text-gray-700"
               >
-                Language <span class="text-red-500">*</span>
+                {{ t('language') }} <span class="text-red-500">*</span>
               </label>
               <select
                 id="locale"
@@ -237,8 +239,8 @@ onMounted(async () => {
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
               >
-                <option value="vi">Vietnamese</option>
-                <option value="en">English</option>
+                <option value="vi">{{ t('common.vietnamese') }}</option>
+                <option value="en">{{ t('common.english') }}</option>
               </select>
             </div>
             <div>
@@ -246,7 +248,7 @@ onMounted(async () => {
                 for="title"
                 class="block text-sm font-medium text-gray-700"
               >
-                Title
+                {{ t('reviews.reviewForm.title') }}
               </label>
               <input
                 id="title"
@@ -260,7 +262,7 @@ onMounted(async () => {
                 for="content"
                 class="block text-sm font-medium text-gray-700"
               >
-                Content <span class="text-red-500">*</span>
+                {{ t('reviews.content') }} <span class="text-red-500">*</span>
               </label>
               <textarea
                 id="content"
@@ -276,7 +278,7 @@ onMounted(async () => {
         <!-- Review Metadata -->
         <div>
           <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">
-            Review Details
+            {{ t('reviews.reviewDetails') }}
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -284,7 +286,7 @@ onMounted(async () => {
                 for="serviceType"
                 class="block text-sm font-medium text-gray-700"
               >
-                Service Type
+                {{ t('reviews.serviceType.title') }}
               </label>
               <select
                 id="serviceType"
@@ -292,7 +294,7 @@ onMounted(async () => {
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 :disabled="isLoadingServiceTypes"
               >
-                <option value="">Select a service type</option>
+                <option value="">{{ t('reviews.reviewForm.serviceTypePlaceholder') }}</option>
                 <option
                   v-for="type in serviceTypes"
                   :key="type.id"
@@ -305,7 +307,7 @@ onMounted(async () => {
                 v-if="isLoadingServiceTypes"
                 class="mt-1 text-sm text-gray-500"
               >
-                Loading service types...
+                {{ t('reviews.serviceType.loading') }}
               </div>
             </div>
             <div>
@@ -313,7 +315,7 @@ onMounted(async () => {
                 for="rating"
                 class="block text-sm font-medium text-gray-700"
               >
-                Rating <span class="text-red-500">*</span>
+                {{ t('reviews.rating') }} <span class="text-red-500">*</span>
               </label>
               <div class="mt-2 flex items-center">
                 <div class="flex space-x-1">
@@ -342,16 +344,16 @@ onMounted(async () => {
                 for="status"
                 class="block text-sm font-medium text-gray-700"
               >
-                Status
+                {{ t('reviews.status') }}
               </label>
               <select
                 id="status"
                 v-model="status"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               >
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
-                <option value="PENDING">Pending</option>
+                <option value="ACTIVE">{{ t('reviews.active') }}</option>
+                <option value="INACTIVE">{{ t('reviews.inactive') }}</option>
+                <option value="PENDING">{{ t('reviews.pending') }}</option>
               </select>
             </div>
             <div class="flex items-center mt-6">
@@ -362,7 +364,7 @@ onMounted(async () => {
                 class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
               />
               <label for="featured" class="ml-2 block text-sm text-gray-700">
-                Mark as Featured Review
+                {{ t('reviews.featured') }}
               </label>
             </div>
           </div>
@@ -376,15 +378,15 @@ onMounted(async () => {
             class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             :disabled="isLoading"
           >
-            Cancel
+            {{ t('actions.cancel') }}
           </button>
           <button
             type="submit"
             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             :disabled="isLoading"
           >
-            <span v-if="isLoading">Saving...</span>
-            <span v-else>Save Review</span>
+            <span v-if="isLoading">{{ t('common.saving') }}</span>
+            <span v-else>{{ t('reviews.saveReview') }}</span>
           </button>
         </div>
       </form>

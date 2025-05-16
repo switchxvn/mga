@@ -52,6 +52,7 @@ interface CategoryFilter {
   type?: CategoryTypeValue
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+  locale?: string
 }
 
 export function useCategory() {
@@ -182,7 +183,8 @@ export function useCategory() {
         active: filter.value.active,
         type: filter.value.type,
         sortBy: filter.value.sortBy,
-        sortOrder: filter.value.sortOrder
+        sortOrder: filter.value.sortOrder,
+        locale: filter.value.locale
       })
       
       categories.value = result.categories
@@ -198,7 +200,7 @@ export function useCategory() {
         errorMessage += `: ${error.message}`
       }
       
-      toast.error(errorMessage)
+      toast.error(errorMessage, 8000)
     } finally {
       loading.value = false
     }
@@ -241,7 +243,7 @@ export function useCategory() {
     try {
       // Validate form before submitting
       if (!validateForm()) {
-        toast.error('Please check all required fields')
+        toast.error('Please check all required fields', 8000)
         return
       }
 
@@ -274,7 +276,7 @@ export function useCategory() {
 
       const result = await trpc.admin.category.createCategory.mutate(createData)
       
-      toast.success(`Category "${form.value.name}" created successfully!`)
+      toast.success(`Category "${form.value.name}" created successfully!`, 8000)
       
       if (!continueEditing) {
         router.push('/categories')
@@ -297,13 +299,7 @@ export function useCategory() {
         errorMessage += 'Failed to create category. Please try again.'
       }
       
-      toast.error(errorMessage, {
-        timeout: 8000,
-        closeButton: true,
-        icon: true,
-        closeOnClick: false,
-        pauseOnHover: true
-      })
+      toast.error(errorMessage, 8000)
     } finally {
       loading.value = false
       saveAndContinue.value = false
@@ -314,7 +310,7 @@ export function useCategory() {
     try {
       // Validate form before submitting
       if (!validateForm()) {
-        toast.error('Please check all required fields')
+        toast.error('Please check all required fields', 8000)
         return
       }
 
@@ -348,7 +344,7 @@ export function useCategory() {
 
       await trpc.admin.category.updateCategory.mutate(updateData)
       
-      toast.success(`Category "${form.value.name}" updated successfully!`)
+      toast.success(`Category "${form.value.name}" updated successfully!`, 8000)
       
       if (!continueEditing) {
         router.push('/categories')
@@ -369,13 +365,7 @@ export function useCategory() {
         errorMessage += 'Failed to update category. Please try again.'
       }
       
-      toast.error(errorMessage, {
-        timeout: 8000,
-        closeButton: true,
-        icon: true,
-        closeOnClick: false,
-        pauseOnHover: true
-      })
+      toast.error(errorMessage, 8000)
     } finally {
       loading.value = false
       saveAndContinue.value = false
@@ -396,7 +386,7 @@ export function useCategory() {
         data: updateData
       })
       
-      toast.success(`Category ${active ? 'activated' : 'deactivated'} successfully!`)
+      toast.success(`Category ${active ? 'activated' : 'deactivated'} successfully!`, 8000)
       
       // Refresh the list
       await fetchCategories()
@@ -411,7 +401,7 @@ export function useCategory() {
         errorMessage += `: ${error.message}`
       }
       
-      toast.error(errorMessage)
+      toast.error(errorMessage, 8000)
     } finally {
       loading.value = false
     }
@@ -425,7 +415,7 @@ export function useCategory() {
         for (const id of ids) {
           await trpc.admin.category.deleteCategory.mutate(id)
         }
-        toast.success(`${ids.length} categories deleted successfully!`)
+        toast.success(`${ids.length} categories deleted successfully!`, 8000)
       } else if (action === 'activate' || action === 'deactivate') {
         const isActive = action === 'activate'
         
@@ -436,7 +426,7 @@ export function useCategory() {
           })
         }
         
-        toast.success(`${ids.length} categories ${isActive ? 'activated' : 'deactivated'} successfully!`)
+        toast.success(`${ids.length} categories ${isActive ? 'activated' : 'deactivated'} successfully!`, 8000)
       }
       
       // Refresh the list
@@ -452,7 +442,7 @@ export function useCategory() {
         errorMessage += `: ${error.message}`
       }
       
-      toast.error(errorMessage)
+      toast.error(errorMessage, 8000)
     } finally {
       loading.value = false
     }
@@ -462,7 +452,7 @@ export function useCategory() {
     try {
       loading.value = true
       await trpc.admin.category.deleteCategory.mutate(id)
-      toast.success('Category deleted successfully!')
+      toast.success('Category deleted successfully!', 8000)
       
       // Refresh the list
       await fetchCategories()
@@ -477,7 +467,7 @@ export function useCategory() {
         errorMessage += `: ${error.message}`
       }
       
-      toast.error(errorMessage)
+      toast.error(errorMessage, 8000)
     } finally {
       loading.value = false
     }
@@ -500,6 +490,32 @@ export function useCategory() {
   const changePage = async (page: number) => {
     filter.value.page = page
     await fetchCategories()
+  }
+
+  const fetchNewsCategoriesByLocale = async (locale = 'en') => {
+    try {
+      loading.value = true
+      const result = await trpc.admin.category.getAllCategories.query({
+        page: 1,
+        limit: 100,
+        type: CategoryType.NEWS,
+        locale
+      })
+      
+      return result.categories
+    } catch (error: any) {
+      console.error('Failed to fetch news categories:', error)
+      
+      let errorMessage = 'Failed to fetch news categories'
+      if (error.message) {
+        errorMessage += `: ${error.message}`
+      }
+      
+      toast.error(errorMessage, 8000)
+      return []
+    } finally {
+      loading.value = false
+    }
   }
 
   return {
@@ -535,6 +551,7 @@ export function useCategory() {
     applyFilter,
     resetFilter,
     changePage,
-    safeIconRenderer
+    safeIconRenderer,
+    fetchNewsCategoriesByLocale
   }
 } 

@@ -131,6 +131,9 @@ export class PostAdminService {
         postTags: {
           tag: true
         },
+        categories: {
+          translations: true
+        },
         author: {
           profile: true
         }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useLocalization } from '../../../composables/useLocalization';
 
 interface Props {
   currentPage: number;
@@ -9,6 +10,8 @@ interface Props {
   maxVisiblePages?: number;
   showItemsInfo?: boolean;
 }
+
+const { t } = useLocalization();
 
 const props = withDefaults(defineProps<Props>(), {
   maxVisiblePages: 5,
@@ -65,13 +68,13 @@ const handlePageChange = (page: number | string) => {
     <!-- Items info -->
     <div v-if="showItemsInfo" class="text-sm text-gray-700 dark:text-gray-300">
       <p class="flex items-center gap-1">
-        <span>Showing</span>
+        <span>{{ t('components.common.pagination.showing') }}</span>
         <span class="font-medium">{{ startItem }}</span>
-        <span>to</span>
+        <span>{{ t('components.common.pagination.to') }}</span>
         <span class="font-medium">{{ endItem }}</span>
-        <span>of</span>
+        <span>{{ t('components.common.pagination.of') }}</span>
         <span class="font-medium">{{ totalItems }}</span>
-        <span>results</span>
+        <span>{{ t('components.common.pagination.results') }}</span>
       </p>
     </div>
 
@@ -83,6 +86,7 @@ const handlePageChange = (page: number | string) => {
         :disabled="currentPage === 1"
         class="btn btn-sm btn-ghost"
         :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }"
+        :aria-label="t('components.common.pagination.previous')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -102,6 +106,7 @@ const handlePageChange = (page: number | string) => {
             'btn-ghost': page !== currentPage && page !== '...',
             'btn-disabled cursor-default hover:bg-transparent': page === '...'
           }"
+          :aria-label="page === '...' ? '' : `${t('components.common.pagination.page')} ${page}`"
         >
           {{ page }}
         </button>
@@ -113,6 +118,7 @@ const handlePageChange = (page: number | string) => {
         :disabled="currentPage === totalPages"
         class="btn btn-sm btn-ghost"
         :class="{ 'opacity-50 cursor-not-allowed': currentPage === totalPages }"
+        :aria-label="t('components.common.pagination.next')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

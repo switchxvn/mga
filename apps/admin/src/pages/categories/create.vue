@@ -4,8 +4,8 @@
       <form @submit.prevent="handleSubmit(false)" class="space-y-6">
         <!-- Header -->
         <PageHeader
-          title="Create Category"
-          description="Create a new category for your content"
+          :title="t('categories.createCategory')"
+          :description="t('categories.description')"
         >
           <template #actions>
             <!-- Language Switcher -->
@@ -24,7 +24,7 @@
                     @error="onFlagImageError"
                   />
                 </div>
-                <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || 'Select Language' }}</span>
+                <span>{{ languages.find(l => l.code === selectedLanguage)?.nativeName || t('components.common.languageSwitcher.selectLanguage') }}</span>
                 <ChevronDownIcon 
                   class="h-4 w-4 transition-transform"
                   :class="{ 'rotate-180': isLanguageOpen }"
@@ -69,7 +69,7 @@
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
             >
               <XIcon class="w-4 h-4 mr-2" />
-              Cancel
+              {{ t('actions.cancel') }}
             </NuxtLink>
             
             <button 
@@ -79,7 +79,7 @@
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
             >
               <SaveIcon class="w-4 h-4 mr-2" />
-              {{ loading ? 'Saving...' : 'Save & Create Another' }}
+              {{ loading ? t('messages.loading') : t('actions.save') + ' & ' + t('actions.add') }}
             </button>
 
             <button 
@@ -88,7 +88,7 @@
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
             >
               <SaveAllIcon class="w-4 h-4 mr-2" />
-              {{ loading ? 'Saving...' : 'Save & Back to List' }}
+              {{ loading ? t('messages.loading') : t('actions.save') }}
             </button>
           </template>
         </PageHeader>
@@ -115,20 +115,20 @@
           <!-- Basic Info Tab -->
           <div v-show="currentTab === 'basic'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div class="space-y-4">
-              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('categories.basicInfo') }}</h2>
               
               <div class="grid grid-cols-2 gap-4">
-                <UFormGroup label="Name" required :error="errors.name">
+                <UFormGroup :label="t('categories.name')" required :error="errors.name">
                   <UInput
                     v-model="form.name"
                     name="name"
-                    placeholder="Enter category name"
+                    :placeholder="t('categories.namePlaceholder')"
                     required
                     :error="!!errors.name"
                   />
                 </UFormGroup>
 
-                <UFormGroup label="Type" required :error="errors.type">
+                <UFormGroup :label="t('categories.type')" required :error="errors.type">
                   <USelect
                     v-model="form.type"
                     :options="[
@@ -149,11 +149,11 @@
                 />
               </div>
 
-              <UFormGroup label="Slug" required :error="errors.slug">
+              <UFormGroup :label="t('categories.slug')" required :error="errors.slug">
                 <div class="flex gap-2">
                   <UInput
                     v-model="currentTranslation.slug"
-                    placeholder="Enter URL slug"
+                    :placeholder="t('categories.slugPlaceholder')"
                     required
                     :error="!!errors.slug"
                     class="flex-1"
@@ -164,17 +164,17 @@
                     color="gray"
                     @click="generateSlug"
                     class="flex-shrink-0"
-                    title="Generate slug from name"
+                    :title="t('categories.generateSlug')"
                   >
                     <WandIcon class="w-4 h-4" />
                   </UButton>
                 </div>
               </UFormGroup>
 
-              <UFormGroup label="Description">
+              <UFormGroup :label="t('categories.description')">
                 <UTextarea
                   v-model="currentTranslation.description"
-                  placeholder="Enter description"
+                  :placeholder="t('categories.descriptionPlaceholder')"
                   rows="4"
                 />
               </UFormGroup>
@@ -184,13 +184,13 @@
           <!-- Settings Tab -->
           <div v-show="currentTab === 'settings'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div class="space-y-4">
-              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Settings</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('categories.settings') }}</h2>
               
               <UFormGroup>
                 <UCheckbox
                   v-model="form.active"
-                  label="Active"
-                  help="When active, this category will be visible on the frontend"
+                  :label="t('categories.isActive')"
+                  :help="t('categories.activeHelp')"
                 />
               </UFormGroup>
             </div>
@@ -219,8 +219,14 @@ import { useTrpc } from '../../composables/useTrpc'
 import { useCategory } from '../../composables/useCategory'
 import PageHeader from '../../components/common/header/PageHeader.vue'
 import IconSelector from '../../components/common/IconSelector.vue'
+import { useLocalization } from '../../composables/useLocalization'
+import { useSiteTitle } from '../../composables/useSiteTitle'
+
+// Set page title with i18n support
+useSiteTitle('categoriesCreate');
 
 const trpc = useTrpc()
+const { t } = useLocalization();
 
 // Use the category composable
 const {
@@ -241,12 +247,12 @@ const defaultLanguage = ref('')
 const tabs = [
   { 
     id: 'basic', 
-    name: 'Basic Info', 
+    name: t('categories.basicInfo'), 
     icon: FileTextIcon
   },
   { 
     id: 'settings', 
-    name: 'Settings', 
+    name: t('categories.settings'), 
     icon: SettingsIcon
   }
 ]

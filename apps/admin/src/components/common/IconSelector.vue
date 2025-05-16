@@ -143,7 +143,8 @@ import {
 const props = defineProps({
   modelValue: {
     type: String,
-    default: ''
+    default: '',
+    required: false
   },
   label: {
     type: String,

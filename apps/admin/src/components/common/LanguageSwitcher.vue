@@ -1,65 +1,80 @@
 <template>
-  <div class="language-switcher relative">
+  <div class="language-switcher inline-block">
     <button 
-      @click.stop="isLanguageOpen = !isLanguageOpen"
-      class="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+      @click.stop="toggleDropdown"
+      class="inline-flex items-center justify-between space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/20 dark:hover:bg-white/30 transition-[background] duration-150 text-gray-800 dark:text-white"
+      type="button"
+      :title="t('common.language')"
     >
-      <div class="w-5 h-5 flex items-center justify-center rounded-sm overflow-hidden bg-primary text-white text-xs font-medium">
-        <template v-if="modelValue && currentLanguage">
-          <img 
-            v-if="!flagLoadError"
-            :src="getFlagPath(modelValue)"
-            :alt="`${currentLanguage?.nativeName} flag`"
-            class="w-5 h-5 object-cover"
-            @error="handleFlagError"
-            @load="flagLoadError = false"
-          />
-          <template v-else>{{ modelValue.toUpperCase().slice(0, 2) }}</template>
-        </template>
-        <template v-else>--</template>
+      <div class="w-5 h-5 flex items-center justify-center">
+        <!-- Hiển thị cờ theo ngôn ngữ -->
+        <ClientOnly>
+          <template #default>
+            <img 
+              v-if="locale === 'en'"
+              src="/images/flag/us.svg" 
+              alt="English flag" 
+              class="w-5 h-5 rounded-sm object-cover"
+              @error="handleImageError"
+            />
+            <img 
+              v-else-if="locale === 'vi'"
+              src="/images/flag/vn.svg" 
+              alt="Vietnamese flag" 
+              class="w-5 h-5 rounded-sm object-cover"
+              @error="handleImageError"
+            />
+            <span v-else class="text-xs font-bold">{{ locale?.toUpperCase().substring(0, 2) }}</span>
+          </template>
+          <template #fallback>
+            <span class="text-xs font-bold">{{ locale?.toUpperCase().substring(0, 2) }}</span>
+          </template>
+        </ClientOnly>
       </div>
-      <span>{{ currentLanguage?.nativeName || 'Select Language' }}</span>
-      <ChevronDownIcon 
+      <span class="text-sm font-medium">{{ currentLocaleDisplay }}</span>
+      <ChevronDown 
         class="h-4 w-4 transition-transform"
-        :class="{ 'rotate-180': isLanguageOpen }"
+        :class="{ 'rotate-180': isOpen }"
       />
     </button>
 
     <!-- Dropdown menu -->
     <div 
-      v-if="isLanguageOpen" 
-      class="absolute z-50 mt-1 min-w-[240px] rounded-md shadow-lg bg-white ring-1 ring-black/5 focus:outline-none"
+      v-if="isOpen" 
+      class="absolute z-[120] mt-1 min-w-[160px] rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 focus:outline-none"
     >
-      <div v-if="loadingLanguages" class="py-4 px-4 text-center">
-        <div class="h-5 w-5 mx-auto animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
-        <span class="mt-2 text-sm text-slate-500 block">Loading languages...</span>
-      </div>
-      <div v-else-if="languages.length === 0" class="py-4 px-4 text-center text-sm text-slate-500">
-        No languages available
-      </div>
-      <div v-else class="py-1">
+      <div class="py-1">
         <button
-          v-for="lang in languages"
-          :key="lang.code"
-          @click="selectLanguage(lang.code)"
-          class="flex items-center w-full h-10 px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-100 transition-colors whitespace-nowrap"
-          :class="{ 'bg-slate-50': modelValue === lang.code }"
+          v-for="loc in availableLocales"
+          :key="loc.code"
+          @click="handleSelectLanguage(loc.code)"
+          class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-[background] duration-150"
+          :class="{ 'bg-gray-100 dark:bg-gray-700': locale === loc.code }"
         >
-          <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center mr-2 rounded-sm overflow-hidden bg-primary text-white text-xs font-medium">
-            <img 
-              :src="getFlagPath(lang.code)"
-              :alt="`${lang.nativeName} flag`"
-              class="w-5 h-5 object-cover"
-              :key="lang.code"
-              @error="(e) => handleListFlagError(e, lang.code)"
-            />
-            <template v-if="flagErrors[lang.code]">{{ lang.code.toUpperCase().slice(0, 2) }}</template>
+          <div class="w-5 h-5 flex items-center justify-center mr-2">
+            <!-- Hiển thị cờ trong dropdown -->
+            <ClientOnly>
+              <img 
+                v-if="loc.code === 'en'"
+                src="/images/flag/us.svg" 
+                alt="English flag" 
+                class="w-5 h-5 rounded-sm object-cover"
+                @error="handleDropdownImageError"
+              />
+              <img 
+                v-else-if="loc.code === 'vi'"
+                src="/images/flag/vn.svg" 
+                alt="Vietnamese flag" 
+                class="w-5 h-5 rounded-sm object-cover"
+                @error="handleDropdownImageError"
+              />
+              <span v-else class="text-xs font-bold">{{ loc.code.toUpperCase().substring(0, 2) }}</span>
+            </ClientOnly>
           </div>
-          <span class="truncate">{{ lang.nativeName }}</span>
-          <span v-if="lang.code === defaultLanguage" class="ml-1 text-xs text-slate-500 flex-shrink-0">(Default)</span>
-          <CheckIcon
-            v-if="modelValue === lang.code"
-            class="h-4 w-4 ml-auto flex-shrink-0 text-primary"
+          <span>{{ loc.nativeName }}</span>
+          <Check
+            v-if="locale === loc.code"
+            class="h-4 w-4 ml-auto"
           />
         </button>
       </div>
@@ -68,185 +83,117 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { ChevronDownIcon, CheckIcon } from 'lucide-vue-next';
-import { useTrpc } from '../../composables/useTrpc';
+import { useLocalization } from '@/composables/useLocalization';
+import { computed, onMounted, ref, onBeforeUnmount, watch, nextTick } from 'vue';
+import { Globe, Check, ChevronDown } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
+// @ts-ignore
+import { ClientOnly } from '#components';
 
-interface Language {
-  id: number;
-  name: string;
-  code: string;
-  nativeName: string;
-  flagCode: string;
-  isDefault: boolean;
-  isActive: boolean;
-}
+const { t } = useI18n();
+const { locale, locales, switchLanguage, initLocale } = useLocalization();
 
-const props = defineProps({
-  modelValue: {
-    type: String,
-    required: true
+const isOpen = ref(false);
+const showFallback = ref(false);
+
+// Computed
+const availableLocales = computed(() => locales.value || []);
+
+// Get current locale display
+const currentLocaleDisplay = computed(() => {
+  if (!availableLocales.value?.length || !locale.value) {
+    return t('common.language');
   }
+  const current = availableLocales.value.find(loc => loc.code === locale.value);
+  return current ? current.nativeName : t('common.language');
 });
 
-const emit = defineEmits(['update:modelValue', 'language-changed']);
-
-const router = useRouter();
-const route = useRoute();
-const trpc = useTrpc();
-
-const languages = ref<Language[]>([]);
-const defaultLanguage = ref('');
-const isLanguageOpen = ref(false);
-const loadingLanguages = ref(true);
-
-// Biến để theo dõi lỗi tải hình
-const flagLoadError = ref(false);
-const flagErrors = ref<Record<string, boolean>>({});
-
-// Lấy ngôn ngữ hiện tại
-const currentLanguage = computed(() => {
-  return languages.value.find(l => l.code === props.modelValue);
-});
-
-// Hàm lấy đường dẫn đúng cho hình cờ
+// Lấy đường dẫn cờ theo mã ngôn ngữ
 const getFlagPath = (code: string) => {
-  const language = languages.value.find(l => l.code === code);
-  if (!language) return '';
-  
-  // Đảm bảo flagCode là chữ thường
-  const flagCode = language.flagCode.toLowerCase();
-  
-  // Kiểm tra xem có dùng đuôi .svg hay không
-  if (flagCode.endsWith('.svg')) {
-    return `/images/flag/${flagCode}`;
-  }
-  
-  return `/images/flag/${flagCode}.svg`;
+  if (code === 'en') return '/images/flag/us.svg';
+  if (code === 'vi') return '/images/flag/vn.svg';
+  return '';
 };
 
-// Xử lý click outside để đóng dropdown
+// Toggle dropdown
+const toggleDropdown = () => {
+  isOpen.value = !isOpen.value;
+};
+
+// Close dropdown when clicking outside
+const closeDropdown = () => {
+  isOpen.value = false;
+};
+
+// Handle language selection and save to localStorage
+const handleSelectLanguage = async (code: string) => {
+  if (!code || code === locale.value) {
+    closeDropdown();
+    return;
+  }
+  
+  try {
+    await switchLanguage(code);
+    closeDropdown();
+    
+    // Đảm bảo DOM đã cập nhật trước khi tiếp tục
+    await nextTick();
+  } catch (error) {
+    console.error('Error switching language:', error);
+    closeDropdown();
+  }
+};
+
+// Handle click outside
 const handleClickOutside = (event: Event) => {
   const target = event.target as HTMLElement;
   if (!target.closest('.language-switcher')) {
-    isLanguageOpen.value = false;
+    closeDropdown();
   }
 };
 
-// Hàm chọn ngôn ngữ
-const selectLanguage = (code: string) => {
-  // Đóng dropdown
-  isLanguageOpen.value = false;
-  
-  // Emit sự kiện cập nhật modelValue
-  emit('update:modelValue', code);
-  
-  // Emit sự kiện đã đổi ngôn ngữ
-  emit('language-changed', code);
-  
-  // Cập nhật URL parameter
-  updateUrlParameter(code);
+// Handle image error
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.style.display = 'none';
+    showFallback.value = true;
+  }
 };
 
-// Cập nhật URL parameter
-const updateUrlParameter = (code: string) => {
-  router.replace({ 
-    query: { 
-      ...route.query,
-      locale: code 
-    }
-  });
-};
-
-// Xử lý khi hình ảnh flag bị lỗi
-const handleFlagError = () => {
-  flagLoadError.value = true;
-};
-
-// Xử lý lỗi hình trong danh sách
-const handleListFlagError = (event: Event, code: string) => {
-  flagErrors.value[code] = true;
-  // Ẩn ảnh lỗi
+// Handle flag image error in dropdown
+const handleDropdownImageError = (event: Event) => {
   const target = event.target as HTMLImageElement;
   if (target) {
     target.style.display = 'none';
   }
 };
 
-// Kiểm tra xem hình có tồn tại không
-const preloadImage = (src: string, code: string) => {
-  return new Promise<void>((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      flagErrors.value[code] = false;
-      resolve();
-    };
-    img.onerror = () => {
-      flagErrors.value[code] = true;
-      resolve();
-    };
-    img.src = src;
-  });
-};
-
-// Load languages và set default language
-const loadLanguages = async () => {
-  try {
-    loadingLanguages.value = true;
-    
-    const [langs, defaultLang] = await Promise.all([
-      trpc.admin.languages.getLanguages.query(),
-      trpc.admin.languages.getDefaultLanguage.query()
-    ]);
-    
-    languages.value = langs;
-    defaultLanguage.value = defaultLang?.code || '';
-    
-    // Nếu chưa có modelValue, lấy từ URL hoặc default
-    if (!props.modelValue) {
-      const localeFromUrl = route.query.locale as string;
-      
-      if (localeFromUrl && languages.value.some(lang => lang.code === localeFromUrl)) {
-        emit('update:modelValue', localeFromUrl);
-      } else {
-        emit('update:modelValue', defaultLang?.code || '');
-      }
-    }
-    
-    // Preload hình cờ
-    if (process.client) {
-      // Chờ một chút để đảm bảo DOM đã cập nhật
-      setTimeout(async () => {
-        for (const lang of languages.value) {
-          await preloadImage(getFlagPath(lang.code), lang.code);
-        }
-      }, 100);
-    }
-  } catch (error) {
-    console.error('Failed to fetch languages:', error);
-  } finally {
-    loadingLanguages.value = false;
-  }
-};
-
-onMounted(() => {
-  loadLanguages();
+// Preload images to ensure they're in cache
+const preloadImages = () => {
+  if (!process.client) return;
   
-  // Thêm event listener cho click outside
+  const preloadImage = (src: string) => {
+    const img = new Image();
+    img.src = src;
+  };
+  
+  preloadImage('/images/flag/us.svg');
+  preloadImage('/images/flag/vn.svg');
+};
+
+// Initialize
+onMounted(() => {
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
-  }
-  
-  // Kiểm tra URL parameter khi component mounted
-  const localeFromUrl = route.query.locale as string;
-  if (localeFromUrl && localeFromUrl !== props.modelValue) {
-    emit('update:modelValue', localeFromUrl);
+    preloadImages();
+    // Khởi tạo ngôn ngữ từ localStorage nếu có
+    initLocale();
   }
 });
 
+// Cleanup
 onBeforeUnmount(() => {
-  // Xóa event listener khi component unmounted
   if (process.client) {
     document.removeEventListener('click', handleClickOutside);
   }
@@ -262,6 +209,15 @@ onBeforeUnmount(() => {
 
 /* Dropdown menu */
 .absolute {
-  z-index: 50 !important;
+  z-index: 1200 !important;
+}
+
+/* Only enable transitions for specific properties we want to animate */
+.transition-transform {
+  transition-property: transform !important;
+}
+
+.transition-\[background\] {
+  transition-property: background-color !important;
 }
 </style> 

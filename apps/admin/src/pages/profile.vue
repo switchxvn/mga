@@ -2,8 +2,8 @@
   <div class="min-h-screen bg-gray-50/50">
     <!-- Page Header -->
     <PageHeader
-      title="Thông tin cá nhân"
-      description="Quản lý thông tin cá nhân và bảo mật tài khoản của bạn"
+      :title="t('profile.title')"
+      :description="t('profile.description')"
     />
 
     <!-- Main Content -->
@@ -44,14 +44,14 @@
         <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100">
           <div class="p-6 sm:p-8">
             <h3 class="text-lg font-medium text-gray-900 mb-4">
-              Cài đặt bổ sung
+              {{ t('profile.additionalSettings') }}
             </h3>
             <div class="space-y-4">
               <!-- Email Notifications -->
               <div class="flex items-center justify-between py-4 border-b border-gray-100">
                 <div>
-                  <h4 class="text-sm font-medium text-gray-900">Thông báo qua email</h4>
-                  <p class="text-sm text-gray-500">Nhận thông báo về các hoạt động quan trọng</p>
+                  <h4 class="text-sm font-medium text-gray-900">{{ t('profile.emailNotifications') }}</h4>
+                  <p class="text-sm text-gray-500">{{ t('profile.emailNotificationsDesc') }}</p>
                 </div>
                 <button
                   type="button"
@@ -72,14 +72,14 @@
               <!-- Two-Factor Authentication -->
               <div class="flex items-center justify-between py-4">
                 <div>
-                  <h4 class="text-sm font-medium text-gray-900">Xác thực hai yếu tố</h4>
-                  <p class="text-sm text-gray-500">Tăng cường bảo mật cho tài khoản của bạn</p>
+                  <h4 class="text-sm font-medium text-gray-900">{{ t('profile.twoFactorAuth') }}</h4>
+                  <p class="text-sm text-gray-500">{{ t('profile.twoFactorAuthDesc') }}</p>
                 </div>
                 <button
                   type="button"
                   class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  Thiết lập
+                  {{ t('actions.setup') }}
                 </button>
               </div>
             </div>
@@ -97,10 +97,13 @@ import { useRouter } from "vue-router";
 import ProfileForm from '@/components/profile/ProfileForm.vue';
 import PageHeader from '@/components/common/header/PageHeader.vue';
 import { User } from '@/types/user';
+import { useI18n } from 'vue-i18n';
+import { useSiteTitle } from '../composables/useSiteTitle';
 
 const router = useRouter();
 const { user, checkAuth } = useAuth();
 const userData = ref<User | null>(null);
+const { t } = useI18n();
 
 // Thêm các hàm helper để hiển thị tên
 const getUserInitials = () => {
@@ -134,10 +137,8 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-// @ts-ignore
-useHead({
-  title: 'Profile - Admin Panel'
-})
+// Set page title with i18n support
+useSiteTitle('profile');
 
 onMounted(async () => {
   try {

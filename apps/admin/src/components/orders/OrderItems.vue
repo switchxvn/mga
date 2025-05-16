@@ -6,19 +6,19 @@
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Product
+              {{ t('orders.items.product') }}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Price
+              {{ t('orders.items.price') }}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Quantity
+              {{ t('orders.items.quantity') }}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Total
+              {{ t('orders.items.total') }}
             </th>
             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Actions
+              {{ t('orders.items.actions') }}
             </th>
           </tr>
         </thead>
@@ -71,7 +71,7 @@
         <tfoot>
           <tr>
             <td colspan="3" class="px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-white">
-              Total
+              {{ t('orders.items.total') }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-bold">
               {{ formatCurrency(calculateTotal) }}
@@ -90,7 +90,7 @@
         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
       >
         <PlusIcon class="h-5 w-5 mr-2" />
-        Add Product
+        {{ t('orders.items.addProduct') }}
       </button>
     </div>
 
@@ -103,14 +103,14 @@
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 dark:bg-gray-900">
             <div class="mb-4">
               <label for="product-search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Search Products
+                {{ t('orders.items.searchProducts') }}
               </label>
               <input
                 id="product-search"
                 type="text"
                 v-model="productSearch"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                placeholder="Search by name or SKU"
+                :placeholder="t('orders.items.searchPlaceholder')"
               />
             </div>
 
@@ -126,12 +126,12 @@
                     {{ product.name || product.title }}
                   </div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ formatCurrency(product.price) }} - SKU: {{ product.sku }}
+                    {{ formatCurrency(product.price) }} - {{ t('orders.items.sku') }}: {{ product.sku }}
                   </div>
                 </div>
               </div>
               <div v-if="filteredProducts.length === 0" class="p-3 text-center text-gray-500 dark:text-gray-400">
-                No products found
+                {{ t('orders.items.noProductsFound') }}
               </div>
             </div>
           </div>
@@ -141,7 +141,7 @@
               @click="showProductModal = false"
               class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:w-auto sm:text-sm dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
             >
-              Cancel
+              {{ t('actions.cancel') }}
             </button>
           </div>
         </div>
@@ -154,6 +154,9 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { TrashIcon, PlusIcon } from 'lucide-vue-next';
 import { useTrpc } from '../../composables/useTrpc';
+import { useLocalization } from '@/composables/useLocalization';
+
+const { t } = useLocalization();
 
 // Interface for order item
 interface OrderItem {

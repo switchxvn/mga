@@ -8,6 +8,7 @@ import { OrderStatus } from '@ew/shared';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import PhoneInput from '../../components/form/PhoneInput.vue';
 import TicketPrintModal from '../../components/tickets/TicketPrintModal.vue';
+import { useLocalization } from "../../composables/useLocalization";
 
 // Mock toast function để tránh lỗi SSR với vue-toastification
 const toast = {
@@ -139,7 +140,7 @@ interface CustomerTicket {
   scanCount?: number;
 }
 
-const { t } = useI18n();
+const { t } = useLocalization();
 const trpc = useTrpc();
 
 // State refs
@@ -1347,10 +1348,10 @@ const clearHistorySearch = () => {
 // Lấy title cho nút sử dụng vé
 const getTicketButtonTitle = (ticket: CustomerTicket): string => {
   if (ticket.order?.paymentStatus !== 'paid') {
-    return t('Vé chưa thanh toán');
+    return t('tickets.unpaid');
   }
   if (ticket.travelDate && isDateInFuture(ticket.travelDate)) {
-    return t('Vé chưa tới ngày sử dụng');
+    return t('tickets.futureDate');
   }
   return '';
 };
@@ -1371,7 +1372,7 @@ const getProductTitle = (item: any): string => {
     return item.product.translations[0].title;
   }
   
-  return t('Unknown Product');
+  return t('products.unknown');
 };
 
 // Lấy thông tin variant từ productSnapshot
@@ -2022,12 +2023,12 @@ const getPrintDisabledReason = (ticket: any): string => {
             <!-- Loading state -->
             <div v-if="isLoadingHistory" class="text-center py-8">
               <i class="fas fa-spinner fa-spin mr-2"></i>
-              {{ t('Đang tải...') }}
+              {{ t('common.loading') }}
             </div>
             
             <!-- No history found -->
             <div v-else-if="scanHistories.length === 0" class="text-center py-8 bg-gray-50 rounded-md">
-              <p class="text-gray-500">{{ t('Chưa có lịch sử quét nào cho vé này') }}</p>
+              <p class="text-gray-500">{{ t('tickets.noScanHistory') }}</p>
             </div>
             
             <!-- History table -->
@@ -2036,19 +2037,19 @@ const getPrintDisabledReason = (ticket: any): string => {
                 <thead class="bg-gray-50">
                   <tr>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {{ t('Thời gian quét') }}
+                      {{ t('tickets.scanTime') }}
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {{ t('Người quét') }}
+                      {{ t('tickets.scanner') }}
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {{ t('Lần quét thứ #') }}
+                      {{ t('tickets.scanCount') }}
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {{ t('Vị trí') }}
+                      {{ t('tickets.location') }}
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {{ t('Trạng thái') }}
+                      {{ t('tickets.status') }}
                     </th>
                   </tr>
                 </thead>
@@ -2086,11 +2087,10 @@ const getPrintDisabledReason = (ticket: any): string => {
             <!-- Pagination for history -->
             <div v-if="historyTotalItems > 0" class="mt-4 flex justify-between items-center">
               <div class="text-sm text-gray-500">
-                {{ t('Hiển thị {0} đến {1} của {2} lượt quét', [
-                  (historyPage - 1) * historyPageSize + 1,
-                  Math.min(historyPage * historyPageSize, historyTotalItems),
-                  historyTotalItems
-                ]) }}
+                {{ t('components.common.pagination.showing') }} {{ (historyPage - 1) * historyPageSize + 1 }} 
+                {{ t('components.common.pagination.to') }} {{ Math.min(historyPage * historyPageSize, historyTotalItems) }} 
+                {{ t('components.common.pagination.of') }} {{ historyTotalItems }} 
+                {{ t('components.common.pagination.results') }}
               </div>
               <div class="flex space-x-1">
                 <button
@@ -2251,11 +2251,10 @@ const getPrintDisabledReason = (ticket: any): string => {
           <!-- Pagination -->
           <div v-if="totalItems > 0" class="mt-4 flex justify-between items-center">
             <div class="text-sm text-gray-500">
-              {{ t('Showing {0} to {1} of {2} entries', [
-                (page - 1) * pageSize + 1,
-                Math.min(page * pageSize, totalItems),
-                totalItems
-              ]) }}
+              {{ t('components.common.pagination.showing') }} {{ (page - 1) * pageSize + 1 }} 
+              {{ t('components.common.pagination.to') }} {{ Math.min(page * pageSize, totalItems) }} 
+              {{ t('components.common.pagination.of') }} {{ totalItems }} 
+              {{ t('components.common.pagination.results') }}
             </div>
             <div class="flex space-x-1">
               <button
@@ -2351,7 +2350,7 @@ const getPrintDisabledReason = (ticket: any): string => {
         
         <!-- Thêm chi tiết sản phẩm từ productSnapshot trong modal xác nhận -->
         <div v-if="scanResult?.orderItem?.productSnapshot" class="bg-white p-4 rounded-md border border-gray-200 mb-4">
-          <h4 class="font-medium text-base mb-2">{{ t('Chi tiết sản phẩm') }}</h4>
+          <h4 class="font-medium text-base mb-2">{{ t('tickets.productDetails') }}</h4>
           
           <div v-if="scanResult.orderItem.productSnapshot.translations && scanResult.orderItem.productSnapshot.translations.length > 0">
             <div v-for="(translation, index) in scanResult.orderItem.productSnapshot.translations" :key="index" class="mb-2">
@@ -2361,14 +2360,14 @@ const getPrintDisabledReason = (ticket: any): string => {
                 </span>
                 {{ translation.title }}
               </p>
-              <p v-if="translation.description" class="text-sm text-gray-600 mt-1 line-clamp-2">
+              <p v-if="translation.description" class="text-sm text-gray-600 mt-1">
                 {{ translation.description }}
               </p>
             </div>
           </div>
           
           <div v-if="scanResult.orderItem.productSnapshot.variant" class="mt-3 pt-3 border-t border-dashed border-gray-200">
-            <p class="text-sm font-bold text-gray-700 uppercase mb-1">{{ t('Loại vé') }}</p>
+            <p class="text-sm font-bold text-gray-700 uppercase mb-1">{{ t('tickets.ticketType') }}</p>
             <div class="flex items-center">
               <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-sm font-medium mr-2">
                 {{ scanResult.orderItem.productSnapshot.variant.name }}

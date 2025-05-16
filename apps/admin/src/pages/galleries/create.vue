@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { useTrpc } from '../../composables/useTrpc';
 import { useAuth } from '../../composables/useAuth';
 import { useUpload } from '../../composables/useUpload';
+import { useLocalization } from '../../composables/useLocalization';
 import PageHeader from '../../components/common/header/PageHeader.vue';
 import {
   XIcon,
@@ -33,6 +34,7 @@ const router = useRouter();
 const { checkAuth } = useAuth();
 const trpc = useTrpc();
 const { uploadImage } = useUpload();
+const { t } = useLocalization();
 
 const isLoading = ref(false);
 const isUploadingImage = ref(false);
@@ -52,12 +54,12 @@ const currentTab = ref('basic');
 const tabs = [
   { 
     id: 'basic', 
-    name: 'Basic Info', 
+    name: t('galleries.basicInfo'), 
     icon: FileTextIcon
   },
   { 
     id: 'settings', 
-    name: 'Settings', 
+    name: t('galleries.settings'), 
     icon: SettingsIcon
   }
 ];
@@ -82,7 +84,7 @@ const fetchCategories = async () => {
       }));
   } catch (err: any) {
     console.error("Error loading categories:", err);
-    error.value = err.message || "Failed to load categories";
+    error.value = err.message || t('messages.error');
   }
 };
 
@@ -104,7 +106,7 @@ const handleDrop = async (event: DragEvent) => {
   
   const file = event.dataTransfer.files[0];
   if (!file.type.startsWith('image/')) {
-    error.value = "Please drop an image file";
+    error.value = t('galleries.errors.notImage');
     return;
   }
   
@@ -134,12 +136,12 @@ const processUpload = async (file: File) => {
     
   } catch (err: any) {
     console.error("Error uploading image:", err);
-    error.value = err.message || "Failed to upload image";
+    error.value = err.message || t('galleries.errors.uploadFailed');
     
     Swal.fire({
       icon: 'error',
-      title: 'Upload Error',
-      text: err.message || "Failed to upload image"
+      title: t('messages.error'),
+      text: err.message || t('galleries.errors.uploadFailed')
     });
   } finally {
     isUploadingImage.value = false;
@@ -151,12 +153,12 @@ const createGallery = async (saveAndContinue = false) => {
   if (!process.client) return;
 
   if (!imageUrl.value) {
-    error.value = "Please upload an image";
+    error.value = t('galleries.errors.noImage');
     return;
   }
   
   if (!title.value) {
-    error.value = "Please enter a title";
+    error.value = t('galleries.errors.noTitle');
     return;
   }
   
@@ -180,8 +182,8 @@ const createGallery = async (saveAndContinue = false) => {
     
     Swal.fire({
       icon: 'success',
-      title: 'Success',
-      text: 'Gallery item created successfully',
+      title: t('messages.success'),
+      text: t('galleries.createSuccess'),
       timer: 1500,
       showConfirmButton: false
     }).then(() => {
@@ -197,12 +199,12 @@ const createGallery = async (saveAndContinue = false) => {
     });
   } catch (err: any) {
     console.error("Error creating gallery item:", err);
-    error.value = err.message || "Failed to create gallery item";
+    error.value = err.message || t('galleries.errors.createFailed');
     
     Swal.fire({
       icon: 'error',
-      title: 'Error',
-      text: err.message || "Failed to create gallery item"
+      title: t('messages.error'),
+      text: err.message || t('galleries.errors.createFailed')
     });
   } finally {
     isLoading.value = false;
@@ -225,8 +227,8 @@ onMounted(async () => {
       <form @submit.prevent="createGallery(false)" class="space-y-6">
         <!-- Header -->
         <PageHeader
-          title="Create Gallery Item"
-          description="Add a new image to your gallery collection"
+          :title="t('galleries.createItem')"
+          :description="t('galleries.description')"
         >
           <template #actions>
             <button 
@@ -235,7 +237,7 @@ onMounted(async () => {
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2"
             >
               <XIcon class="w-4 h-4 mr-2" />
-              Cancel
+              {{ t('actions.cancel') }}
             </button>
             
             <button 
@@ -245,7 +247,7 @@ onMounted(async () => {
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 h-10 px-4 py-2"
             >
               <SaveIcon class="w-4 h-4 mr-2" />
-              {{ isLoading ? 'Saving...' : 'Save & Create Another' }}
+              {{ isLoading ? t('messages.loading') : t('actions.save') + ' & ' + t('actions.add') }}
             </button>
 
             <button 
@@ -254,7 +256,7 @@ onMounted(async () => {
               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
             >
               <SaveAllIcon class="w-4 h-4 mr-2" />
-              {{ isLoading ? 'Saving...' : 'Save & Back to List' }}
+              {{ isLoading ? t('messages.loading') : t('actions.save') }}
             </button>
           </template>
         </PageHeader>
@@ -295,16 +297,16 @@ onMounted(async () => {
           <!-- Basic Info Tab -->
           <div v-show="currentTab === 'basic'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div class="space-y-4">
-              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('galleries.basicInfo') }}</h2>
               
               <!-- Image Upload -->
               <div class="space-y-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Image <span class="text-red-500">*</span>
+                  {{ t('galleries.imageUrl') }} <span class="text-red-500">*</span>
                 </label>
                 <div class="flex flex-col items-center space-y-4">
                   <div v-if="imageUrl" class="relative w-64 h-64 border rounded-lg overflow-hidden">
-                    <img :src="imageUrl" alt="Gallery preview" class="w-full h-full object-cover" />
+                    <img :src="imageUrl" :alt="t('galleries.featuredImageAlt')" class="w-full h-full object-cover" />
                     <button 
                       type="button"
                       class="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
@@ -330,14 +332,14 @@ onMounted(async () => {
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                      Drag & drop an image or click to upload
+                      {{ t('galleries.dragDropImage') }}
                     </p>
-                    <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    <p class="mt-1 text-xs text-gray-500">{{ t('galleries.uploadFormats') }}</p>
                   </div>
                   
                   <div>
                     <label v-if="!isUploadingImage" class="cursor-pointer bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                      {{ imageUrl ? 'Change Image' : 'Upload Image' }}
+                      {{ imageUrl ? t('galleries.changeImage') : t('galleries.addImage') }}
                       <input type="file" class="hidden" accept="image/*" @change="handleImageUpload" />
                     </label>
                     <div v-else class="flex items-center space-x-2">
@@ -345,7 +347,7 @@ onMounted(async () => {
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span>Uploading...</span>
+                      <span>{{ t('messages.loading') }}</span>
                     </div>
                   </div>
                 </div>
@@ -354,7 +356,7 @@ onMounted(async () => {
               <!-- Title -->
               <div>
                 <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Title <span class="text-red-500">*</span>
+                  {{ t('galleries.title') }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   id="title"
@@ -368,7 +370,7 @@ onMounted(async () => {
               <!-- Description -->
               <div>
                 <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Description
+                  {{ t('galleries.description') }}
                 </label>
                 <textarea
                   id="description"
@@ -381,7 +383,7 @@ onMounted(async () => {
               <!-- Categories -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Categories
+                  {{ t('products.categories.title') }}
                 </label>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div
@@ -398,19 +400,20 @@ onMounted(async () => {
                         : selectedCategoryIds.push(category.id)
                     "
                   >
-                    <input
-                      type="checkbox"
-                      :checked="selectedCategoryIds.includes(category.id)"
-                      class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      @change="
-                        selectedCategoryIds.includes(category.id) 
-                          ? selectedCategoryIds = selectedCategoryIds.filter(id => id !== category.id)
-                          : selectedCategoryIds.push(category.id)
-                      "
-                    />
-                    <label class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {{ category.name }}
-                    </label>
+                    <div class="flex-shrink-0">
+                      <div
+                        class="w-5 h-5 border rounded-md flex items-center justify-center"
+                        :class="{ 
+                          'bg-indigo-500 border-indigo-500': selectedCategoryIds.includes(category.id),
+                          'border-gray-300 dark:border-gray-500': !selectedCategoryIds.includes(category.id)
+                        }"
+                      >
+                        <CheckIcon v-if="selectedCategoryIds.includes(category.id)" class="h-3 w-3 text-white" />
+                      </div>
+                    </div>
+                    <div class="ml-3 text-sm">
+                      <span class="font-medium">{{ category.name }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -420,12 +423,11 @@ onMounted(async () => {
           <!-- Settings Tab -->
           <div v-show="currentTab === 'settings'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div class="space-y-4">
-              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Settings</h2>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ t('galleries.settings') }}</h2>
               
-              <!-- Sequence -->
               <div>
                 <label for="sequence" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Display Sequence
+                  {{ t('galleries.displaySequence') }}
                 </label>
                 <input
                   id="sequence"
@@ -434,25 +436,22 @@ onMounted(async () => {
                   min="0"
                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
                 />
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Lower numbers will appear first
-                </p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('galleries.sequenceHelp') }}</p>
               </div>
               
-              <!-- Active Status -->
-              <div class="flex items-center">
-                <input
-                  id="isActive"
-                  v-model="isActive"
-                  type="checkbox"
-                  class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <label for="isActive" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Active
-                </label>
-                <p class="ml-3 text-sm text-gray-500 dark:text-gray-400">
-                  When active, this gallery item will be visible on the frontend
-                </p>
+              <div>
+                <div class="flex items-center">
+                  <input
+                    id="isActive"
+                    v-model="isActive"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-neutral-600 dark:checked:bg-indigo-600"
+                  />
+                  <label for="isActive" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                    {{ t('galleries.isActive') }}
+                  </label>
+                </div>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('galleries.activeHelp') }}</p>
               </div>
             </div>
           </div>

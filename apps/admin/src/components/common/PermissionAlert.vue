@@ -1,31 +1,34 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ShieldAlert } from 'lucide-vue-next';
+import { useLocalization } from '../../composables/useLocalization';
+
+const { t } = useLocalization();
 
 const props = defineProps({
   /**
-   * Danh sách các quyền cần thiết
+   * List of required permissions
    */
   requiredPermissions: {
     type: Array as () => string[],
     default: () => []
   },
   /**
-   * Tiêu đề tùy chỉnh 
+   * Custom title 
    */
   title: {
     type: String,
     default: ''
   },
   /**
-   * Mô tả tùy chỉnh
+   * Custom description
    */
   description: {
     type: String,
     default: ''
   },
   /**
-   * Loại cảnh báo (error, warning, info)
+   * Alert type (error, warning, info)
    */
   type: {
     type: String,
@@ -34,7 +37,7 @@ const props = defineProps({
   }
 });
 
-// Xác định màu dựa trên loại
+// Determine color based on type
 const alertColor = computed(() => {
   switch (props.type) {
     case 'error': return 'text-red-500';
@@ -43,26 +46,30 @@ const alertColor = computed(() => {
   }
 });
 
-// Tiêu đề mặc định
+// Default title
 const defaultTitle = computed(() => {
   switch (props.type) {
-    case 'error': return 'Quyền truy cập bị từ chối';
-    case 'info': return 'Thông tin quyền truy cập';
-    default: return 'Cần quyền truy cập';
+    case 'error': return t('components.common.permissionAlert.accessDenied');
+    case 'info': return t('components.common.permissionAlert.accessInfo');
+    default: return t('components.common.permissionAlert.accessRequired');
   }
 });
 
-// Mô tả mặc định
+// Default description
 const defaultDescription = computed(() => {
   if (!props.requiredPermissions.length) {
-    return 'Bạn không có quyền truy cập vào nội dung này';
+    return t('components.common.permissionAlert.noAccess');
   }
 
   if (props.requiredPermissions.length === 1) {
-    return `Bạn cần có quyền: ${props.requiredPermissions[0]}`;
+    return t('components.common.permissionAlert.permissionRequired', {
+      permission: props.requiredPermissions[0]
+    });
   }
 
-  return `Bạn cần có một trong các quyền sau: ${props.requiredPermissions.join(', ')}`;
+  return t('components.common.permissionAlert.permissionsRequired', {
+    permissions: props.requiredPermissions.join(', ')
+  });
 });
 </script>
 

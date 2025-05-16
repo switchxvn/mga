@@ -13,6 +13,7 @@ interface GetCategoriesParams {
   type?: CategoryType;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  locale?: string;
 }
 
 export interface CategoryTranslationData {
@@ -178,10 +179,11 @@ export class CategoryAdminService {
     active = null,
     type,
     sortBy = 'id',
-    sortOrder = 'desc'
+    sortOrder = 'desc',
+    locale
   }: GetCategoriesParams) {
     try {
-      console.log('Getting categories with params:', { page, limit, search, active, type, sortBy, sortOrder });
+      console.log('Getting categories with params:', { page, limit, search, active, type, sortBy, sortOrder, locale });
       
       const queryBuilder = this.categoryRepository
         .createQueryBuilder('category')
@@ -200,6 +202,10 @@ export class CategoryAdminService {
 
       if (type) {
         queryBuilder.andWhere('category.type = :type', { type });
+      }
+
+      if (locale) {
+        queryBuilder.andWhere('translations.locale = :locale', { locale });
       }
 
       // Add sorting

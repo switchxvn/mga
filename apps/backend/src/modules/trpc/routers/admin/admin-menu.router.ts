@@ -4,16 +4,34 @@ import { TRPCError } from '@trpc/server';
 import { Permissions } from '../../../auth/constants/permissions.constant';
 import { requirePermission } from '../../middlewares/permission.middleware';
 
+const translationSchema = z.object({
+  locale: z.string().length(2),
+  name: z.string().min(1).max(100),
+});
+
 export const adminMenuAdminRouter = router({
   getAdminMenuItems: adminProcedure
     .input(
       z.object({
         includeInactive: z.boolean().optional().default(false),
+        locale: z.string().length(2).optional().default('en'),
       }).optional()
     )
     .query(async ({ ctx, input }) => {
       try {
-        return await ctx.services.adminMenuAdminService.findAll(input);
+        const items = await ctx.services.adminMenuAdminService.findAll(input);
+        
+        // Transform items to include name from translations based on locale
+        const locale = input?.locale || 'en';
+        return items.map(item => {
+          const translation = item.translations?.find(t => t.locale === locale) || 
+                             item.translations?.find(t => t.locale === 'en');
+          
+          return {
+            ...item,
+            name: translation?.name || item.code,
+          };
+        });
       } catch (error) {
         ctx.logger.error('Failed to fetch admin menu items:', error);
         throw new TRPCError({
@@ -48,7 +66,12 @@ export const adminMenuAdminRouter = router({
     .input(
       z.object({
         code: z.string().min(1).max(50),
-        name: z.string().min(1).max(100),
+        translations: z.array(
+          z.object({
+            locale: z.string().length(2),
+            name: z.string().min(1).max(100),
+          })
+        ).min(1),
         icon: z.string().max(50).optional(),
         path: z.string().max(255).optional(),
         parentId: z.number().nullable().optional(),
@@ -59,7 +82,19 @@ export const adminMenuAdminRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.adminMenuAdminService.create(input);
+        return await ctx.services.adminMenuAdminService.create({
+          code: input.code,
+          translations: input.translations.map(t => ({
+            locale: t.locale,
+            name: t.name
+          })),
+          icon: input.icon,
+          path: input.path,
+          parentId: input.parentId,
+          order: input.order,
+          isActive: input.isActive,
+          availableForRoles: input.availableForRoles
+        });
       } catch (error) {
         ctx.logger.error('Failed to create admin menu item:', error);
         throw new TRPCError({
@@ -77,7 +112,12 @@ export const adminMenuAdminRouter = router({
         id: z.number(),
         data: z.object({
           code: z.string().min(1).max(50).optional(),
-          name: z.string().min(1).max(100).optional(),
+          translations: z.array(
+            z.object({
+              locale: z.string().length(2),
+              name: z.string().min(1).max(100),
+            })
+          ).optional(),
           icon: z.string().max(50).optional(),
           path: z.string().max(255).optional(),
           parentId: z.number().nullable().optional(),
@@ -89,7 +129,14 @@ export const adminMenuAdminRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.services.adminMenuAdminService.update(input.id, input.data);
+        const updateData = {
+          ...input.data,
+          translations: input.data.translations ? input.data.translations.map(t => ({
+            locale: t.locale,
+            name: t.name
+          })) : undefined
+        };
+        return await ctx.services.adminMenuAdminService.update(input.id, updateData);
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;

@@ -3,7 +3,7 @@
     <div class="p-6 border-b border-slate-200">
       <h3 class="text-lg font-medium text-slate-900 flex items-center gap-2">
         <ImageIcon class="w-5 h-5" />
-        Featured Image
+        {{ t('posts.featuredImage') }}
       </h3>
     </div>
     
@@ -15,7 +15,7 @@
         >
           <img 
             :src="thumbnail" 
-            alt="Featured image" 
+            alt="{{ t('posts.featuredImageAlt') }}" 
             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <button
@@ -32,20 +32,20 @@
           <div class="rounded-full bg-slate-100 p-3">
             <ImageIcon class="w-6 h-6 text-slate-400" />
           </div>
-          <p class="text-sm text-slate-500">No image selected</p>
+          <p class="text-sm text-slate-500">{{ t('posts.noImage') }}</p>
         </div>
         
         <div class="space-y-2">
           <input
             :value="thumbnail"
             type="text"
-            placeholder="Enter image URL or upload"
+            :placeholder="t('posts.imageUrlPlaceholder')"
             class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             @input="$emit('update:thumbnail', ($event.target as HTMLInputElement).value)"
           />
           <p class="text-sm text-slate-500 flex items-center gap-2">
             <RulerIcon class="w-4 h-4" />
-            Recommended: 1200x630px
+            {{ t('posts.recommendedSize') }}
           </p>
         </div>
         
@@ -66,7 +66,7 @@
               ></div>
             </div>
             <p class="text-sm text-slate-500 text-center">
-              Uploading... {{ Math.round(uploadProgress) }}%
+              {{ t('posts.uploading', { progress: Math.round(uploadProgress) }) }}
             </p>
           </div>
           
@@ -77,7 +77,7 @@
             :disabled="isUploading"
           >
             <UploadIcon class="w-4 h-4 mr-2" />
-            Upload Image
+            {{ t('posts.uploadImage') }}
           </button>
         </div>
 
@@ -94,6 +94,9 @@
 import { ref } from 'vue'
 import { ImageIcon, RulerIcon, UploadIcon, XIcon, AlertCircleIcon } from 'lucide-vue-next'
 import { useUpload } from '../../composables/useUpload'
+import { useLocalization } from '@/composables/useLocalization'
+
+const { t } = useLocalization()
 
 const props = defineProps<{
   thumbnail: string
@@ -125,12 +128,12 @@ const handleFileSelect = async (event: Event) => {
   if (!file) return
   
   if (!file.type.startsWith('image/')) {
-    error.value = 'Please select an image file'
+    error.value = t('posts.errors.notImage')
     return
   }
   
   if (file.size > 5 * 1024 * 1024) {
-    error.value = 'Image size should be less than 5MB'
+    error.value = t('posts.errors.tooLarge')
     return
   }
   
@@ -149,7 +152,7 @@ const handleFileSelect = async (event: Event) => {
     
     emit('update:thumbnail', result.url)
   } catch (err) {
-    error.value = 'Failed to upload image. Please try again.'
+    error.value = t('posts.errors.uploadFailed')
     console.error('Upload error:', err)
   } finally {
     isUploading.value = false

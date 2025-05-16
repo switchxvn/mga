@@ -20,6 +20,9 @@
 
 <script setup lang="ts">
 import { DocumentTextIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
+import { useLocalization } from '../../../composables/useLocalization';
+
+const { t } = useLocalization();
 
 defineProps<{
   title: string

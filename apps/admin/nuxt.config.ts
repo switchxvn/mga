@@ -34,10 +34,36 @@ export default defineNuxtConfig({
     '~/plugins/trpc',
     '~/plugins/toast',
     '~/plugins/theme',
+    '~/plugins/i18n',
   ],
 
   imports: {
     dirs: ['composables/**']
+  },
+
+  i18n: {
+    vueI18n: './plugins/i18n.ts',
+    strategy: 'no_prefix',
+    defaultLocale: 'en',
+    locales: [
+      {
+        code: 'en',
+        name: 'English',
+        file: '../public/locales/en.json'
+      },
+      {
+        code: 'vi',
+        name: 'Vietnamese',
+        file: '../public/locales/vi.json'
+      }
+    ],
+    lazy: true,
+    langDir: '../public/locales/',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'admin-locale',
+      redirectOn: 'root',
+    }
   },
 
   app: {
@@ -50,6 +76,9 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: 'Admin Dashboard for E-commerce Website' }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
       ]
     }
   },

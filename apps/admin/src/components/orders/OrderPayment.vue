@@ -3,14 +3,14 @@
     <!-- Payment Method -->
     <div class="space-y-1">
       <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Payment Method
+        {{ t('orders.payment.method') }}
       </label>
       <select
         id="payment_method"
         v-model="paymentMethodModel"
         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
       >
-        <option value="">Select payment method</option>
+        <option value="">{{ t('orders.payment.selectMethod') }}</option>
         <option v-for="method in paymentMethods" :key="method.id" :value="method.name">
           {{ method.name }}
         </option>
@@ -20,18 +20,18 @@
     <!-- Payment Status -->
     <div class="space-y-1">
       <label for="payment_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Payment Status
+        {{ t('orders.payment.status') }}
       </label>
       <select
         id="payment_status"
         v-model="paymentStatusModel"
         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
       >
-        <option value="pending">Pending</option>
-        <option value="paid">Paid</option>
-        <option value="failed">Failed</option>
-        <option value="refunded">Refunded</option>
-        <option value="partially_refunded">Partially Refunded</option>
+        <option value="pending">{{ t('orders.payment.statuses.pending') }}</option>
+        <option value="paid">{{ t('orders.payment.statuses.paid') }}</option>
+        <option value="failed">{{ t('orders.payment.statuses.failed') }}</option>
+        <option value="refunded">{{ t('orders.payment.statuses.refunded') }}</option>
+        <option value="partially_refunded">{{ t('orders.payment.statuses.partiallyRefunded') }}</option>
       </select>
     </div>
 
@@ -45,14 +45,14 @@
           class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-700"
         />
         <label for="same_as_shipping" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-          Billing address same as shipping address
+          {{ t('orders.payment.sameAsShipping') }}
         </label>
       </div>
     </div>
 
     <!-- Billing Address -->
     <div v-if="!sameAsShipping" class="space-y-4">
-      <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Billing Address</h3>
+      <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('orders.payment.billingAddress') }}</h3>
       <OrderAddress v-model="billingAddressModel" />
     </div>
   </div>
@@ -61,6 +61,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useTrpc } from '../../composables/useTrpc';
+import { useLocalization } from '@/composables/useLocalization';
 import OrderAddress from './OrderAddress.vue';
 
 interface Address {
@@ -71,6 +72,8 @@ interface Address {
   postal_code: string;
   country: string;
 }
+
+const { t } = useLocalization();
 
 const props = defineProps({
   paymentMethod: {

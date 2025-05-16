@@ -77,6 +77,7 @@ import { UserSessionAdminService } from '../../user-session/admin/services/user-
 import { UserSessionFrontendService } from '../../user-session/frontend/services/user-session-frontend.service';
 import { UserPageVisitAdminService } from '../../user-session/admin/services/user-page-visit-admin.service';
 import { UserPageVisitFrontendService } from '../../user-session/frontend/services/user-page-visit-frontend.service';
+import { MenuItemAdminService } from '../../settings/admin/services/menu-item-admin.service';
 
 @Injectable()
 export class ServiceContext {
@@ -158,6 +159,7 @@ export class ServiceContext {
     private readonly userSessionFrontendService: UserSessionFrontendService,
     private readonly userPageVisitAdminService: UserPageVisitAdminService,
     private readonly userPageVisitFrontendService: UserPageVisitFrontendService,
+    private readonly menuItemAdminService: MenuItemAdminService,
     @Inject(forwardRef(() => PriceRequestService))
     private readonly priceRequestService: PriceRequestService,
     @Inject(forwardRef(() => PriceRequestAdminService))
@@ -243,6 +245,7 @@ export class ServiceContext {
       userSessionFrontendService: this.userSessionFrontendService,
       userPageVisitAdminService: this.userPageVisitAdminService,
       userPageVisitFrontendService: this.userPageVisitFrontendService,
+      menuItemAdminService: this.menuItemAdminService,
       
       // Grouped services by namespace
       admin: {

@@ -117,7 +117,7 @@ export const adminMenuItemsRouter = router({
           const level0Items = items.filter(item => item.level === 0);
 
           return level0Items.map(item => {
-            const transformedItem = { ...item } as MenuItem;
+            const transformedItem = { ...item };
             
             // Get level 1 items (subtitles) that belong to this level 0 item
             const level1Children = items.filter(child => 

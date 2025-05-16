@@ -1,11 +1,14 @@
 <template>
   <div class="border-2 border-dashed rounded p-4 text-center cursor-pointer" @drop.prevent="onDrop" @dragover.prevent @click="onClick">
-    <slot>Drag & drop image here or click to select</slot>
+    <slot>{{ t('components.common.media.uploader.dropHere') }}</slot>
     <input type="file" accept="image/*" class="hidden" ref="fileInput" @change="onFileChange" />
   </div>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useLocalization } from '@/composables/useLocalization'
+
+const { t } = useLocalization()
 const emit = defineEmits(['file-drop'])
 const fileInput = ref<HTMLInputElement | null>(null)
 function onDrop(e: DragEvent) {

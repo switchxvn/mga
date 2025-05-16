@@ -42,6 +42,7 @@ import { useTrpc } from "../../composables/useTrpc";
 import { useUpload } from "../../composables/useUpload";
 import { useNotification } from "../../composables/useNotification";
 import { useGallery } from "../../composables/useGallery";
+import { useLocalization } from "../../composables/useLocalization";
 
 definePageMeta({
   middleware: ["auth"],
@@ -57,6 +58,7 @@ const { checkAuth } = useAuth();
 const trpc = useTrpc();
 const { uploadImage, isUploading } = useUpload();
 const { showSuccess, showError, showWarning, showInfo } = useNotification();
+const { t } = useLocalization();
 
 // Use the gallery composable
 const {
@@ -133,12 +135,12 @@ async function handleDelete(id: number) {
 
   try {
     const result = await Swal.fire({
-      title: 'Delete Gallery Item?',
-      text: 'Are you sure you want to delete this gallery item? This action cannot be undone.',
+      title: t('galleries.confirmDelete'),
+      text: t('messages.confirmDelete'),
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Yes, delete it',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('actions.confirm'),
+      cancelButtonText: t('actions.cancel'),
       confirmButtonColor: '#DC2626',
     });
 
@@ -148,19 +150,19 @@ async function handleDelete(id: number) {
     await fetchGalleries();
     
     Swal.fire({
-      title: 'Deleted!',
-      text: 'Gallery item has been deleted successfully',
+      title: t('messages.success'),
+      text: t('galleries.title') + ' ' + t('messages.success').toLowerCase(),
       icon: 'success',
       timer: 2000,
       showConfirmButton: false
     });
   } catch (err: any) {
-    error.value = err.message || "Failed to delete gallery item";
+    error.value = err.message || t('messages.error');
     console.error("Error deleting gallery item:", err);
     
     Swal.fire({
-      title: 'Error!',
-      text: err.message || 'Failed to delete gallery item',
+      title: t('messages.error'),
+      text: err.message || t('messages.error'),
       icon: 'error'
     });
   }
@@ -551,15 +553,15 @@ const processImageUploads = async () => {
   <div class="space-y-6">
     <!-- Header -->
     <PageHeader
-      title="Gallery Management"
-      description="Manage your image gallery collection efficiently"
+      :title="t('galleries.title')"
+      :description="t('galleries.description')"
     >
       <template #actions>
         <div class="flex items-center gap-2">
           <Menu as="div" class="relative" v-if="selectedGalleries.length">
             <MenuButton class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
               <ListChecksIcon class="h-4 w-4" />
-              Bulk Actions ({{ selectedGalleries.length }})
+              {{ t('categories.bulkActions') }} ({{ selectedGalleries.length }})
               <ChevronDownIcon class="h-4 w-4" />
             </MenuButton>
 
@@ -574,7 +576,7 @@ const processImageUploads = async () => {
                     ]"
                   >
                     <ImageIcon class="h-4 w-4" :class="active ? 'text-emerald-700' : 'text-gray-500'" />
-                    Activate Selected
+                    {{ t('categories.activate') }}
                   </button>
                 </MenuItem>
                 <MenuItem v-slot="{ active }">
@@ -586,7 +588,7 @@ const processImageUploads = async () => {
                     ]"
                   >
                     <ImageIcon class="h-4 w-4" :class="active ? 'text-slate-700' : 'text-gray-500'" />
-                    Deactivate Selected
+                    {{ t('categories.deactivate') }}
                   </button>
                 </MenuItem>
                 <MenuItem v-slot="{ active }">
@@ -598,7 +600,7 @@ const processImageUploads = async () => {
                     ]"
                   >
                     <TagIcon class="h-4 w-4" :class="active ? 'text-blue-700' : 'text-gray-500'" />
-                    Update Categories
+                    {{ t('galleries.updateCategories') }}
                   </button>
                 </MenuItem>
               </div>
@@ -612,20 +614,19 @@ const processImageUploads = async () => {
                     ]"
                   >
                     <Trash2Icon class="h-4 w-4" :class="active ? 'text-red-700' : 'text-gray-500'" />
-                    Delete Selected
+                    {{ t('categories.deleteSelected') }}
                   </button>
                 </MenuItem>
               </div>
             </MenuItems>
           </Menu>
 
-          <!-- Thêm nút Upload Bulk -->
           <button
-            @click="openBulkUploadModal"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            @click="isBulkUploadModalOpen = true"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
           >
             <UploadIcon class="h-4 w-4" />
-            Upload Nhiều Ảnh
+            {{ t('galleries.bulkUpload') }}
           </button>
 
           <NuxtLink
@@ -633,7 +634,7 @@ const processImageUploads = async () => {
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
           >
             <PlusCircleIcon class="h-4 w-4" />
-            Add Gallery Item
+            {{ t('galleries.createItem') }}
           </NuxtLink>
         </div>
       </template>
@@ -932,13 +933,12 @@ const processImageUploads = async () => {
             
             <div class="mt-3 text-center sm:mt-0 sm:text-left">
               <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                Update Categories for {{ selectedGalleries.length }} Items
+                {{ t('galleries.updateCategories') }}
               </h3>
               
               <div class="mt-4">
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  Select the categories you want to apply to all selected gallery items.
-                  This will replace their existing categories.
+                  {{ t('galleries.updateCategoriesDescription') }}
                 </p>
                 
                 <div class="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
@@ -960,7 +960,7 @@ const processImageUploads = async () => {
                       </label>
                     </div>
                     <div v-if="categories.length === 0" class="text-gray-500 dark:text-gray-400 text-sm py-2">
-                      No categories available
+                      {{ t('galleries.noCategoriesAvailable') }}
                     </div>
                   </div>
                 </div>
@@ -973,14 +973,14 @@ const processImageUploads = async () => {
                 class="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
                 @click="handleBulkCategoryUpdate"
               >
-                Update Categories
+                {{ t('galleries.updateCategories') }}
               </button>
               <button
                 type="button"
                 class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
                 @click="closeCategoryModal"
               >
-                Cancel
+                {{ t('galleries.cancel') }}
               </button>
             </div>
           </div>
@@ -1008,21 +1008,21 @@ const processImageUploads = async () => {
             
             <div class="mt-3 text-center sm:mt-0 sm:text-left">
               <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                Upload nhiều ảnh vào thư viện
+                {{ t('galleries.bulkUpload') }}
               </h3>
               
               <div class="mt-4 space-y-4">
                 <!-- Chọn danh mục -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Danh mục <span class="text-red-500">*</span>
+                    {{ t('galleries.selectCategory') }} <span class="text-red-500">*</span>
                   </label>
                   <select
                     v-model="selectedCategoryForUpload"
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
                     :disabled="isProcessingUploads"
                   >
-                    <option :value="null">-- Chọn danh mục --</option>
+                    <option :value="null">-- {{ t('galleries.selectCategory') }} --</option>
                     <option v-for="category in categories" :key="category.id" :value="category.id">
                       {{ category.name }}
                     </option>
@@ -1032,7 +1032,7 @@ const processImageUploads = async () => {
                 <!-- Trạng thái -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Trạng thái
+                    {{ t('galleries.status') }}
                   </label>
                   <div class="mt-1 flex items-center">
                     <input
@@ -1043,7 +1043,7 @@ const processImageUploads = async () => {
                       :disabled="isProcessingUploads"
                     />
                     <label for="isActiveUpload" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                      Kích hoạt các ảnh ngay sau khi tải lên
+                      {{ t('galleries.activateImages') }}
                     </label>
                   </div>
                 </div>
@@ -1051,7 +1051,7 @@ const processImageUploads = async () => {
                 <!-- Upload form -->
                 <div class="space-y-2">
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Chọn các ảnh để tải lên <span class="text-red-500">*</span>
+                    {{ t('galleries.selectImages') }} <span class="text-red-500">*</span>
                   </label>
                   
                   <div 
@@ -1066,18 +1066,7 @@ const processImageUploads = async () => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                       </svg>
                       <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        Kéo và thả ảnh vào đây hoặc
-                        <label class="text-indigo-600 hover:text-indigo-800 cursor-pointer">
-                          chọn từ thiết bị
-                          <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            class="hidden"
-                            @change="handleBulkImageSelect"
-                            :disabled="isProcessingUploads"
-                          />
-                        </label>
+                        {{ t('galleries.dragDrop') }}
                       </p>
                       <p class="text-xs text-gray-500 mt-2">PNG, JPG, GIF tối đa 10MB</p>
                     </div>
@@ -1129,7 +1118,7 @@ const processImageUploads = async () => {
                                 </p>
                               </div>
                               <p v-else-if="item.url" class="text-xs text-green-500 mt-1">
-                                Đã tải lên thành công
+                                {{ t('galleries.uploadedSuccess') }}
                               </p>
                             </div>
                           </div>
@@ -1148,7 +1137,7 @@ const processImageUploads = async () => {
                         <label class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer"
                           :class="{ 'opacity-50 pointer-events-none': isProcessingUploads }">
                           <PlusCircleIcon class="h-4 w-4" />
-                          Thêm ảnh
+                          {{ t('galleries.addImages') }}
                           <input
                             type="file"
                             multiple
@@ -1178,9 +1167,9 @@ const processImageUploads = async () => {
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Đang xử lý...
+                  {{ t('galleries.processing') }}
                 </span>
-                <span v-else>Tải lên</span>
+                <span v-else>{{ t('galleries.upload') }}</span>
               </button>
               <button
                 type="button"
@@ -1188,7 +1177,7 @@ const processImageUploads = async () => {
                 @click="closeBulkUploadModal"
                 :disabled="isProcessingUploads"
               >
-                Hủy
+                {{ t('galleries.cancel') }}
               </button>
             </div>
           </div>
