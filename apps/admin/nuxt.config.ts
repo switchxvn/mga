@@ -49,16 +49,16 @@ export default defineNuxtConfig({
       {
         code: 'en',
         name: 'English',
-        file: '../public/locales/en.json'
+        file: 'public/locales/en.json'
       },
       {
         code: 'vi',
         name: 'Vietnamese',
-        file: '../public/locales/vi.json'
+        file: 'public/locales/vi.json'
       }
     ],
     lazy: true,
-    langDir: '../public/locales/',
+    langDir: 'public/locales/',
     detectBrowserLanguage: {
       useCookie: true,
       cookieKey: 'admin-locale',
