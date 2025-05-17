@@ -75,23 +75,27 @@ const overlayStyle = computed(() => {
   
   return {
     backgroundColor: props.settings.image.overlay.color,
-    mixBlendMode: props.settings.image.overlay.blendMode,
+    mixBlendMode: props.settings.image.overlay.blendMode as 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten' | 'color-dodge' | 'color-burn' | 'hard-light' | 'soft-light' | 'difference' | 'exclusion' | 'hue' | 'saturation' | 'color' | 'luminosity',
   }
+})
+
+const aspectRatio = computed(() => {
+  if (!props.settings?.image?.width || !props.settings?.image?.height) return null
+  return props.settings.image.width / props.settings.image.height
+})
+
+// Tính toán chiều cao tối thiểu dựa trên tỷ lệ khung hình
+const bannerHeight = computed(() => {
+  const defaultHeight = props.isMobile ? '50vh' : '60vh'
+  return defaultHeight
 })
 
 const sectionStyle = computed(() => {
   if (!props.settings?.image) return {}
   
-  // Use aspect ratio instead of fixed height to maintain proportions
-  const aspectRatio = props.settings.image.height / props.settings.image.width
-  const minHeight = props.isMobile
-    ? '300px' // Minimum height on mobile
-    : '400px' // Minimum height on desktop
-  
   return {
-    minHeight,
-    // Set a max-height to prevent excessive stretching on large screens
-    maxHeight: '800px',
+    height: bannerHeight.value,
+    maxHeight: '80vh',
   }
 })
 
@@ -99,8 +103,8 @@ const imageStyle = computed(() => {
   if (!props.settings?.image) return {}
   
   return {
-    objectPosition: props.settings.image.position || 'center',
-    objectFit: props.settings.image.objectFit || 'cover',
+    objectPosition: (props.settings.image.position || 'center') as string,
+    objectFit: (props.settings.image.objectFit || 'cover') as 'cover' | 'contain' | 'fill' | 'none' | 'scale-down',
   }
 })
 </script>
@@ -108,15 +112,18 @@ const imageStyle = computed(() => {
 <template>
   <section :class="sectionClasses" :style="sectionStyle">
     <!-- Background Image with Overlay -->
-    <div v-if="hasImage" class="absolute inset-0 z-0">
+    <div v-if="hasImage" class="absolute inset-0 z-0 image-container">
       <img 
-        :src="settings.image.src" 
-        :alt="settings.image.alt"
-        class="w-full h-full"
-        :style="imageStyle"
+        :src="settings?.image?.src" 
+        :alt="settings?.image?.alt"
+        class="hero-image"
+        :style="{
+          objectPosition: (settings?.image?.position || 'center') as string,
+          objectFit: (settings?.image?.objectFit || 'cover') as 'cover' | 'contain' | 'fill' | 'none' | 'scale-down'
+        }"
       />
       <div 
-        v-if="settings.image.overlay?.enabled" 
+        v-if="settings?.image?.overlay?.enabled" 
         class="absolute inset-0 z-10"
         :style="overlayStyle"
       ></div>
@@ -135,7 +142,29 @@ const imageStyle = computed(() => {
 </template>
 
 <style scoped>
+.image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-image {
+  object-position: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Đảm bảo giữ tỉ lệ khung hình */
 @media (max-width: 767px) {
+  .hero-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
   /* Ensure text is readable on mobile */
   h1 {
     line-height: 1.2;
