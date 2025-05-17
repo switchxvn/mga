@@ -61,7 +61,8 @@ export default defineNuxtConfig({
   },
 
   css: [
-    '~/assets/scss/main.scss'
+    '~/assets/scss/main.scss',
+    '@vueup/vue-quill/dist/vue-quill.snow.css'
   ],
 
   vite: {

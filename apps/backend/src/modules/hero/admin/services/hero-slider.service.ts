@@ -10,13 +10,20 @@ export class HeroSliderService {
     private heroSliderRepository: Repository<HeroSlider>,
   ) {}
 
-  async findAll(themeId?: number): Promise<HeroSlider[]> {
+  async findAll(themeId?: number, search?: string, isActive?: boolean): Promise<HeroSlider[]> {
     const where: any = {};
     if (themeId) where.themeId = themeId;
-    return this.heroSliderRepository.find({
-      where,
-      order: { order: 'ASC' },
-    });
+    if (isActive !== undefined) where.isActive = isActive;
+    
+    let query = this.heroSliderRepository.createQueryBuilder('slider')
+      .where(where)
+      .orderBy('slider.order', 'ASC');
+      
+    if (search) {
+      query = query.andWhere('slider.title LIKE :search', { search: `%${search}%` });
+    }
+    
+    return query.getMany();
   }
 
   async findActive(themeId?: number): Promise<HeroSlider[]> {

@@ -129,6 +129,7 @@
                     v-model:shortDescription="form.shortDescription"
                     :editor-options="editorOptions"
                     @generate-slug="generateSlug"
+                    @ready="onEditorReady"
                     :show-generate-slug="true"
                     :errors="errors"
                     required
@@ -200,8 +201,10 @@ import PermissionGate from '@/components/common/PermissionGate.vue'
 import AuthWrapper from '@/components/common/AuthWrapper.vue'
 import { usePost } from '@/composables/usePost';
 import { useLocalization } from '@/composables/useLocalization';
+import { useQuillImageHandler } from '@/composables/useQuillImageHandler';
 
 const { t } = useLocalization();
+const { registerQuillImageHandler } = useQuillImageHandler();
 
 const {
   loading,
@@ -243,6 +246,26 @@ onMounted(async () => {
   await fetchLanguages();
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
+    
+    // Thêm cấu hình toolbar cho editor
+    editorOptions.modules = {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike'],
+        ['blockquote', 'code-block'],
+        [{ 'header': 1 }, { 'header': 2 }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'direction': 'rtl' }],
+        [{ 'size': ['small', false, 'large', 'huge'] }],
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'font': [] }],
+        [{ 'align': [] }],
+        ['clean'],
+        ['link', 'image']
+      ]
+    }
   }
 });
 
@@ -251,6 +274,16 @@ onBeforeUnmount(() => {
     document.removeEventListener('click', handleClickOutside);
   }
 });
+
+// Xử lý khi editor đã sẵn sàng
+const onEditorReady = (quill: any) => {
+  // Lưu instance của quill để sử dụng khi upload ảnh
+  if (process.client) {
+    (window as any).currentQuillInstance = quill
+    // Đăng ký handler cho nút image trong toolbar
+    registerQuillImageHandler(quill)
+  }
+}
 </script>
 
 <style>

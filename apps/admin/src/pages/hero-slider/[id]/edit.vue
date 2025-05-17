@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, reactive, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useTrpc } from '../../../composables/useTrpc';
 import { useAuth } from '../../../composables/useAuth';
+import { useHeroSlider, HeroSliderFormData } from '../../../composables/useHeroSlider';
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
 import { ImageIcon, SaveIcon, XIcon } from 'lucide-vue-next';
-import Swal from 'sweetalert2';
 import PageHeader from '../../../components/common/header/PageHeader.vue';
 import { usePermissions } from '../../../composables/usePermissions';
 import PermissionAlert from '../../../components/common/PermissionAlert.vue';
+import { useLocalization } from '../../../composables/useLocalization';
 
 // These functions are provided by Nuxt at runtime
 // @ts-ignore
@@ -17,34 +18,44 @@ const definePageMeta = (meta: any) => {};
 const useHead = (head: any) => {};
 
 definePageMeta({
-  middleware: ["auth", "permission"],
+  middleware: ["auth"],
 });
+
+const { t } = useLocalization();
 
 useHead({
-  title: 'Edit Hero Slider - Admin Panel'
+  title: t('head.heroSliderEdit')
 });
 
-const router = useRouter();
 const route = useRoute();
 const { checkAuth } = useAuth();
-const trpc = useTrpc();
 const { hasPermission, isSuperAdmin } = usePermissions();
 
 // Get slider ID from route
 const sliderId = parseInt(route.params.id as string);
 
-// State
-const isLoading = ref(false);
-const isFetching = ref(false);
-const isSaving = ref(false);
-const error = ref<string | null>(null);
-const themes = ref<any[]>([]);
-const isDragging = ref(false);
-const isUploading = ref(false);
-const imagePreview = ref<string | null>(null);
+// Use hero slider composable
+const {
+  isLoading,
+  isFetching,
+  isSaving,
+  error,
+  themes,
+  isDragging,
+  imagePreview,
+  fetchThemes,
+  fetchHeroSlider,
+  handleImageUpload,
+  handleDrop,
+  handleDragOver,
+  handleDragLeave,
+  updateHeroSlider,
+  cancelAndGoBack,
+  resetImage
+} = useHeroSlider();
 
 // Form data
-const formData = reactive({
+const formData = reactive<HeroSliderFormData>({
   id: sliderId,
   title: '',
   description: '',
@@ -53,244 +64,8 @@ const formData = reactive({
   buttonLink: '',
   order: 0,
   isActive: true,
-  themeId: null as number | null
+  themeId: undefined
 });
-
-// Check permissions
-const userCanManageSliders = computed(() => {
-  if (isSuperAdmin.value) return true;
-  return hasPermission('MANAGE_THEMES');
-});
-
-// Fetch hero slider data
-const fetchHeroSlider = async () => {
-  try {
-    isFetching.value = true;
-    error.value = null;
-    
-    const result = await trpc.admin.heroSlider.getById.query(sliderId);
-    
-    if (!result) {
-      error.value = 'Hero slider not found';
-      return;
-    }
-    
-    // Update form data with slider values
-    formData.title = result.title;
-    formData.description = result.description || '';
-    formData.imageUrl = result.imageUrl;
-    formData.buttonText = result.buttonText || '';
-    formData.buttonLink = result.buttonLink || '';
-    formData.order = result.order;
-    formData.isActive = result.isActive;
-    formData.themeId = result.themeId;
-    
-    // Set image preview
-    imagePreview.value = result.imageUrl;
-    
-  } catch (err: any) {
-    console.error('Error fetching hero slider:', err);
-    error.value = err.message || 'Failed to fetch hero slider';
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: err.message || 'Failed to fetch hero slider'
-    }).then(() => {
-      router.push('/hero-slider');
-    });
-  } finally {
-    isFetching.value = false;
-  }
-};
-
-// Fetch themes
-const fetchThemes = async () => {
-  try {
-    isLoading.value = true;
-    const result = await trpc.admin.theme.getAll.query();
-    themes.value = result;
-  } catch (err: any) {
-    console.error('Error fetching themes:', err);
-    error.value = err.message || 'Failed to fetch themes';
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// Handle image upload
-const handleImageUpload = async (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (!input.files || input.files.length === 0) return;
-  
-  const file = input.files[0];
-  await processUpload(file);
-};
-
-// Handle image drop events
-const handleDrop = async (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = false;
-  
-  if (!event.dataTransfer?.files.length) return;
-  
-  const file = event.dataTransfer.files[0];
-  if (!file.type.startsWith('image/')) {
-    error.value = "Please drop an image file";
-    return;
-  }
-  
-  await processUpload(file);
-};
-
-const handleDragOver = (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = true;
-};
-
-const handleDragLeave = (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = false;
-};
-
-// Process image upload
-const processUpload = async (file: File) => {
-  try {
-    isUploading.value = true;
-    error.value = null;
-    
-    // Create FormData
-    const uploadData = new FormData();
-    uploadData.append('file', file);
-    
-    // Upload to server
-    const response = await fetch('/api/admin-upload/upload-image', {
-      method: 'POST',
-      body: uploadData
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to upload image');
-    }
-    
-    const result = await response.json();
-    
-    // Update form data with image URL
-    formData.imageUrl = result.url;
-    
-    // Show image preview
-    imagePreview.value = result.url;
-    
-  } catch (err: any) {
-    console.error('Error uploading image:', err);
-    error.value = err.message || 'Failed to upload image';
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Upload Error',
-      text: err.message || 'Failed to upload image'
-    });
-  } finally {
-    isUploading.value = false;
-  }
-};
-
-// Save hero slider
-const saveHeroSlider = async () => {
-  // Check theme selection
-  if (!formData.themeId) {
-    error.value = 'Please select a theme';
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Validation Error',
-      text: 'Please select a theme'
-    });
-    
-    return;
-  }
-  
-  // Check for required title
-  if (!formData.title) {
-    error.value = 'Please enter a title';
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Validation Error',
-      text: 'Please enter a title'
-    });
-    
-    return;
-  }
-  
-  // Check for image
-  if (!formData.imageUrl) {
-    error.value = 'Please upload an image';
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Validation Error',
-      text: 'Please upload an image'
-    });
-    
-    return;
-  }
-  
-  try {
-    isSaving.value = true;
-    error.value = null;
-    
-    // Extract data to match API structure
-    const updateData = {
-      id: sliderId,
-      data: {
-        title: formData.title,
-        description: formData.description,
-        imageUrl: formData.imageUrl,
-        buttonText: formData.buttonText,
-        buttonLink: formData.buttonLink,
-        order: formData.order,
-        isActive: formData.isActive,
-        themeId: formData.themeId
-      }
-    };
-    
-    // Update the slider
-    await trpc.admin.heroSlider.update.mutate(updateData);
-    
-    // Show success message
-    Swal.fire({
-      icon: 'success',
-      title: 'Success',
-      text: 'Hero slider updated successfully',
-      timer: 1500,
-      showConfirmButton: false
-    });
-    
-    // Redirect back to the hero sliders page
-    router.push({
-      path: '/hero-slider',
-      query: { themeId: formData.themeId }
-    });
-    
-  } catch (err: any) {
-    console.error('Error updating hero slider:', err);
-    error.value = err.message || 'Failed to update hero slider';
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: err.message || 'Failed to update hero slider'
-    });
-  } finally {
-    isSaving.value = false;
-  }
-};
-
-// Cancel editing and go back
-const cancelEdit = () => {
-  router.back();
-};
 
 // Initial load
 onMounted(async () => {
@@ -299,7 +74,7 @@ onMounted(async () => {
   // Fetch themes and slider data in parallel
   await Promise.all([
     fetchThemes(),
-    fetchHeroSlider()
+    fetchHeroSlider(sliderId, formData)
   ]);
 });
 </script>
@@ -308,41 +83,33 @@ onMounted(async () => {
   <div class="space-y-6">
     <!-- Header -->
     <PageHeader
-      title="Edit Hero Slider"
-      :description="`Update hero slider #${sliderId}`"
+      :title="t('hero_slider.editSlider')"
+      :description="t('hero_slider.editDescription', { id: sliderId, defaultValue: `Update hero slider #${sliderId}` })"
     >
       <template #actions>
         <div class="flex items-center gap-2">
           <button
-            @click="cancelEdit"
+            @click="cancelAndGoBack"
             class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
           >
             <ArrowLeftIcon class="h-4 w-4 mr-2" />
-            Back
+            {{ t('actions.cancel') }}
           </button>
           
           <button
-            @click="saveHeroSlider"
+            @click="updateHeroSlider(formData)"
             :disabled="isSaving"
             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <SaveIcon class="h-4 w-4 mr-2" />
-            {{ isSaving ? 'Saving...' : 'Save Changes' }}
+            {{ isSaving ? t('common.saving') : t('actions.save') }}
           </button>
         </div>
       </template>
     </PageHeader>
 
-    <!-- Permission Error -->
-    <div v-if="!userCanManageSliders">
-      <PermissionAlert 
-        title="Permission Error" 
-        message="You don't have permission to manage hero sliders"
-      />
-    </div>
-
     <!-- Loading -->
-    <div v-else-if="isFetching" class="flex justify-center py-10">
+    <div v-if="isFetching" class="flex justify-center py-10">
       <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
     </div>
 
@@ -355,7 +122,7 @@ onMounted(async () => {
           </svg>
         </div>
         <div class="ml-3">
-          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error occurred</h3>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">{{ t('messages.error') }}</h3>
           <div class="mt-2 text-sm text-red-700 dark:text-red-300">
             <p>{{ error }}</p>
           </div>
@@ -368,19 +135,19 @@ onMounted(async () => {
       <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700">
           <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-            Hero Slider Information
+            {{ t('hero_slider.sliderDetails') }}
           </h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            Update the details below to modify this hero slider.
+            {{ t('hero_slider.updateInstructions', { defaultValue: 'Update the details below to modify this hero slider.' }) }}
           </p>
         </div>
 
         <div class="px-4 py-5 sm:p-6">
-          <form @submit.prevent="saveHeroSlider" class="space-y-6">
+          <form @submit.prevent="updateHeroSlider(formData)" class="space-y-6">
             <!-- Theme Selection -->
             <div>
               <label for="theme" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Theme *
+                {{ t('hero_slider.theme') }} *
               </label>
               <select
                 id="theme"
@@ -388,7 +155,7 @@ onMounted(async () => {
                 class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 required
               >
-                <option value="" disabled>Select a theme</option>
+                <option value="" disabled>{{ t('hero_slider.selectTheme') }}</option>
                 <option v-for="theme in themes" :key="theme.id" :value="theme.id">
                   {{ theme.name }}
                 </option>
@@ -398,14 +165,14 @@ onMounted(async () => {
             <!-- Title -->
             <div>
               <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Title *
+                {{ t('hero_slider.title') }} *
               </label>
               <input
                 type="text"
                 id="title"
                 v-model="formData.title"
                 class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder="Enter slider title"
+                :placeholder="t('hero_slider.titlePlaceholder', { defaultValue: 'Enter slider title' })"
                 required
               />
             </div>
@@ -413,21 +180,21 @@ onMounted(async () => {
             <!-- Description -->
             <div>
               <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Description
+                {{ t('hero_slider.description') }}
               </label>
               <textarea
                 id="description"
                 v-model="formData.description"
                 rows="3"
                 class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder="Enter slider description"
+                :placeholder="t('hero_slider.descriptionPlaceholder', { defaultValue: 'Enter slider description' })"
               ></textarea>
             </div>
 
             <!-- Image Upload -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Image *
+                {{ t('hero_slider.image') }} *
               </label>
               <div
                 class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md"
@@ -437,7 +204,7 @@ onMounted(async () => {
                 }"
                 @dragover="handleDragOver"
                 @dragleave="handleDragLeave"
-                @drop="handleDrop"
+                @drop="(event) => handleDrop(event, formData)"
               >
                 <div v-if="!imagePreview" class="space-y-1 text-center">
                   <div class="flex justify-center">
@@ -445,27 +212,28 @@ onMounted(async () => {
                   </div>
                   <div class="text-sm text-gray-600 dark:text-gray-400">
                     <label for="file-upload" class="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                      <span>Upload an image</span>
-                      <input id="file-upload" name="file-upload" type="file" class="sr-only" accept="image/*" @change="handleImageUpload" />
+                      <span>{{ t('hero_slider.uploadImage') }}</span>
+                      <input id="file-upload" name="file-upload" type="file" class="sr-only" accept="image/*" @change="(event) => handleImageUpload(event, formData)" />
                     </label>
-                    <p class="pl-1">or drag and drop</p>
+                    <p class="pl-1">{{ t('hero_slider.orDragDrop', { defaultValue: 'or drag and drop' }) }}</p>
                   </div>
                   <p class="text-xs text-gray-500 dark:text-gray-400">
-                    PNG, JPG, GIF up to 10MB
+                    {{ t('hero_slider.uploadFormats') }}
                   </p>
                 </div>
                 <div v-else class="relative">
                   <img :src="imagePreview" alt="Preview" class="max-h-48 mx-auto rounded-md" />
                   <button
                     type="button"
-                    @click="imagePreview = null; formData.imageUrl = ''"
+                    @click="resetImage(formData)"
                     class="absolute top-0 right-0 -mt-2 -mr-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 focus:outline-none"
                   >
                     <XIcon class="h-4 w-4" />
                   </button>
                 </div>
-                <div v-if="isUploading" class="mt-4 flex justify-center">
+                <div v-if="isLoading" class="mt-4 flex justify-center">
                   <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500"></div>
+                  <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">{{ t('common.loading') }}</span>
                 </div>
               </div>
             </div>
@@ -473,35 +241,35 @@ onMounted(async () => {
             <!-- Button Text -->
             <div>
               <label for="buttonText" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Button Text
+                {{ t('hero_slider.buttonText') }}
               </label>
               <input
                 type="text"
                 id="buttonText"
                 v-model="formData.buttonText"
                 class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder="Enter button text (optional)"
+                :placeholder="t('hero_slider.buttonTextPlaceholder', { defaultValue: 'Enter button text (optional)' })"
               />
             </div>
 
             <!-- Button Link -->
             <div>
               <label for="buttonLink" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Button Link
+                {{ t('hero_slider.buttonLink') }}
               </label>
               <input
                 type="text"
                 id="buttonLink"
                 v-model="formData.buttonLink"
                 class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder="Enter button link URL (optional)"
+                :placeholder="t('hero_slider.buttonLinkPlaceholder', { defaultValue: 'Enter button link URL (optional)' })"
               />
             </div>
             
             <!-- Order -->
             <div>
               <label for="order" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Display Order
+                {{ t('hero_slider.order') }}
               </label>
               <input
                 type="number"
@@ -511,7 +279,7 @@ onMounted(async () => {
                 class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Lower numbers will be displayed first.
+                {{ t('hero_slider.orderHelp', { defaultValue: 'Lower numbers will be displayed first.' }) }}
               </p>
             </div>
 
@@ -526,9 +294,9 @@ onMounted(async () => {
                 />
               </div>
               <div class="ml-3 text-sm">
-                <label for="isActive" class="font-medium text-gray-700 dark:text-gray-300">Active</label>
+                <label for="isActive" class="font-medium text-gray-700 dark:text-gray-300">{{ t('hero_slider.active') }}</label>
                 <p class="text-gray-500 dark:text-gray-400">
-                  Only active sliders will be displayed on the website.
+                  {{ t('hero_slider.activeHelp', { defaultValue: 'Only active sliders will be displayed on the website.' }) }}
                 </p>
               </div>
             </div>
@@ -538,18 +306,18 @@ onMounted(async () => {
         <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 text-right sm:px-6">
           <button
             type="button"
-            @click="cancelEdit"
+            @click="cancelAndGoBack"
             class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-3 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
           >
-            Cancel
+            {{ t('actions.cancel') }}
           </button>
           <button
             type="button"
-            @click="saveHeroSlider"
+            @click="updateHeroSlider(formData)"
             :disabled="isSaving"
             class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ isSaving ? 'Saving...' : 'Save Changes' }}
+            {{ isSaving ? t('common.saving') : t('actions.save') }}
           </button>
         </div>
       </div>
