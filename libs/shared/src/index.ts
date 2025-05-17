@@ -34,7 +34,6 @@ export type {
 } from './types/order.type';
 
 // Interfaces
-export * from './lib/interfaces';
 export * from './lib/interfaces/post.interface';
 export * from './lib/interfaces/gallery.interface';
 export * from './lib/interfaces/seo.interface';

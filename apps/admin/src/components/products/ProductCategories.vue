@@ -107,6 +107,12 @@ interface Category {
   updatedAt: string
 }
 
+interface CategoryTree {
+  id: number
+  name: string
+  children: CategoryTree[]
+}
+
 const props = defineProps<{
   modelValue: number[]
 }>()
@@ -120,65 +126,31 @@ const loading = ref(true)
 const categories = ref<Category[]>([])
 const searchQuery = ref('')
 
-// Fetch categories
-onMounted(async () => {
+// Fetch categories from API and build tree
+const fetchCategories = async () => {
   try {
     loading.value = true
-    console.log('Fetching product categories...')
-    const response = await trpc.admin.category.getAllCategories.query({
-      type: 'product'
-    })
-    console.log('API Response:', response)
     
-    if (response && response.categories) {
-      categories.value = buildCategoryTree(response.categories)
-      console.log('Built category tree:', categories.value)
+    const response = await trpc.admin.category.getAllCategories.query({
+      page: 1,
+      limit: 100,
+      type: 'product',
+      locale: 'vi'
+    })
+    
+    // Create a nested tree structure from the categories array in the response
+    if (response && response.categories && Array.isArray(response.categories)) {
+      categories.value = response.categories as Category[]
     } else {
-      console.error('Invalid response format:', response)
+      console.error('Unexpected response format:', response)
       categories.value = []
     }
+
   } catch (error) {
     console.error('Failed to fetch categories:', error)
-    categories.value = []
   } finally {
     loading.value = false
   }
-})
-
-// Build category tree from flat array
-const buildCategoryTree = (flatCategories: any[]): Category[] => {
-  console.log('Building category tree from:', flatCategories)
-  
-  const categoryMap = new Map<number, Category>()
-  const tree: Category[] = []
-
-  // First pass: create map of id to category
-  flatCategories.forEach(category => {
-    if (category) {
-      categoryMap.set(category.id, { ...category, children: [] } as Category)
-    }
-  })
-
-  // Second pass: build tree structure
-  flatCategories.forEach(category => {
-    if (!category) return
-    
-    const node = categoryMap.get(category.id)!
-    if (!category.parentId) {
-      tree.push(node)
-    } else {
-      const parent = categoryMap.get(category.parentId)
-      if (parent) {
-        parent.children = parent.children || []
-        parent.children.push(node)
-      } else {
-        // If parent doesn't exist, add to root
-        tree.push(node)
-      }
-    }
-  })
-
-  return tree
 }
 
 // Filter categories based on search query
@@ -235,4 +207,9 @@ const toggleCategory = (categoryId: number) => {
     : [...props.modelValue, categoryId]
   emit('update:modelValue', newValue)
 }
+
+// Add this to call fetchCategories when component mounts
+onMounted(() => {
+  fetchCategories()
+})
 </script> 

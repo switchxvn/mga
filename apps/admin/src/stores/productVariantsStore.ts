@@ -12,9 +12,15 @@ export interface VariantItem {
   quantity?: number;
   options: Record<string, string>;
   barcode?: string;
-  compareAtPrice?: number | null;
+  comparePrice?: number | null;
+  thumbnail?: string;
+  gallery?: string[];
+  published?: boolean;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  isSale?: boolean;
   _tempPrice?: number;
-  _tempCompareAtPrice?: number | null;
+  _tempComparePrice?: number | null;
 }
 
 // Định nghĩa interface cho state của store
@@ -60,14 +66,56 @@ export const useProductVariantsStore = defineStore('productVariants', {
       }
     },
 
+    // Cập nhật giá của một variant (hỗ trợ giá liên hệ - null)
+    async updateVariantPrice(variantId: number, price: number | null, comparePrice: number | null = null) {
+      if (!variantId) return false;
+      
+      this.loading = true;
+      const trpc = useTrpc();
+      const toast = useToast();
+      
+      try {
+        // Log giá trị để debug
+        console.log(`Cập nhật giá cho variant ${variantId}:`, { price, comparePrice });
+        
+        // Gọi API để cập nhật giá
+        const result = await trpc.admin.products.updateVariant.mutate({
+          id: variantId,
+          data: {
+            price: price,
+            comparePrice: comparePrice
+          }
+        });
+        
+        if (result) {
+          // Cập nhật lại trong store
+          this.updateVariant(variantId, { 
+            price: price,
+            comparePrice: comparePrice
+          });
+          
+          // Log kết quả sau khi cập nhật thành công
+          console.log(`Cập nhật giá thành công cho variant ${variantId}:`, { price, comparePrice });
+          
+          toast.success('Cập nhật giá thành công');
+          return true;
+        }
+        return false;
+      } catch (error: any) {
+        console.error('Lỗi khi cập nhật giá variant:', error);
+        toast.error('Không thể cập nhật giá: ' + (error?.message || 'Lỗi không xác định'));
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     // Cập nhật stock cho một variant
-    updateVariantStock(variantId: number, newStock: number) {
+    updateVariantStock(variantId: number, stock: number) {
       const index = this.variants.findIndex(v => v.id === variantId);
       if (index !== -1) {
-        this.variants[index].stock = newStock;
-        if ('quantity' in this.variants[index]) {
-          this.variants[index].quantity = newStock;
-        }
+        this.variants[index].stock = stock;
+        this.variants[index].quantity = stock;
       }
     },
 
@@ -83,22 +131,27 @@ export const useProductVariantsStore = defineStore('productVariants', {
         const result = await trpc.admin.products.adjustVariantStock.mutate({
           variantId,
           adjustmentQuantity,
-          note: note || undefined
+          note
         });
         
-        // Nếu có kết quả và có quantity mới
-        if (result && result.variant && typeof result.variant.quantity === 'number') {
-          // Cập nhật variant trong store
-          this.updateVariantStock(variantId, result.variant.quantity);
-          
-          toast.success(`Stock adjusted successfully to ${result.variant.quantity}`);
+        if (result) {
+          // Cập nhật lại số lượng trong store
+          const variant = this.getVariantById(variantId);
+          if (variant) {
+            // Kiểm tra cấu trúc kết quả từ API và lấy số lượng mới
+            const newQuantity = result.quantityAfter || (result as any).data?.quantityAfter || 0;
+            this.updateVariantStock(variantId, newQuantity);
+          }
           return result;
         }
-        
-        return result;
-      } catch (error) {
-        console.error('Error adjusting variant stock:', error);
-        toast.error('Failed to adjust variant stock');
+        return false;
+      } catch (error: unknown) {
+        console.error('Lỗi khi điều chỉnh tồn kho:', error);
+        if (error instanceof Error) {
+          toast.error('Không thể điều chỉnh tồn kho: ' + error.message);
+        } else {
+          toast.error('Không thể điều chỉnh tồn kho: Lỗi không xác định');
+        }
         return false;
       } finally {
         this.loading = false;

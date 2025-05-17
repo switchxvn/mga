@@ -24,7 +24,7 @@ export class ProductVariant {
   @Column({ nullable: true })
   thumbnail!: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'json', nullable: true, default: () => "'[]'" })
   gallery!: string[];
 
   @Column({ default: true })

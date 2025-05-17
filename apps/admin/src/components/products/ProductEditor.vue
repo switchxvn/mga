@@ -3,14 +3,14 @@
     <!-- Basic Information Card -->
     <div class="rounded-lg border border-slate-200 bg-white">
       <div class="border-b border-slate-200 px-6 py-4">
-        <h3 class="text-lg font-medium">Basic Information</h3>
-        <p class="text-sm text-slate-500">Manage your product's basic information</p>
+        <h3 class="text-lg font-medium">{{ t('products.editor.basicInfo') }}</h3>
+        <p class="text-sm text-slate-500">{{ t('products.editor.basicDescription') }}</p>
       </div>
       <div class="p-6 space-y-6">
         <!-- Product Name -->
         <div class="grid gap-2">
           <label for="name" class="text-sm font-medium text-slate-900">
-            Product Name <span class="text-red-500">*</span>
+            {{ t('products.editor.productName') }} <span class="text-red-500">*</span>
           </label>
           <input
             id="name"
@@ -26,7 +26,7 @@
         <!-- Slug -->
         <div class="grid gap-2">
           <label for="slug" class="text-sm font-medium text-slate-900">
-            Slug <span class="text-red-500">*</span>
+            {{ t('products.editor.slug') }} <span class="text-red-500">*</span>
           </label>
           <div class="flex gap-2">
             <input
@@ -44,7 +44,7 @@
               class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-primary text-white hover:bg-primary/90 h-10 px-4 py-2"
             >
               <Wand2Icon class="w-4 h-4 mr-2" />
-              Generate
+              {{ t('products.editor.generate') }}
             </button>
           </div>
         </div>
@@ -61,7 +61,7 @@
               class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
             />
             <label for="isContactPrice" class="ml-2 text-sm font-medium text-slate-900">
-              Giá liên hệ
+              {{ t('products.editor.contactPrice') }}
             </label>
           </div>
         </div>
@@ -73,13 +73,13 @@
               for="price"
               class="text-sm font-medium text-slate-900 flex items-center"
             >
-              Price
+              {{ t('products.editor.price') }}
               <div v-if="disablePrice" class="relative ml-2 group">
                 <button type="button" class="text-slate-400 hover:text-slate-900">
                   <HelpCircleIcon class="w-4 h-4" />
                 </button>
                 <div class="absolute left-0 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  Price is disabled because this product has variants. Please manage prices for individual variants in the Variants tab.
+                  {{ t('products.editor.priceDisabledHelp') }}
                 </div>
               </div>
             </label>
@@ -101,26 +101,26 @@
           <!-- Compare at Price -->
           <div class="grid gap-2">
             <label 
-              for="compareAtPrice" 
+              for="comparePrice" 
               class="text-sm font-medium text-slate-900 flex items-center"
             >
-              Compare at Price
+              {{ t('products.editor.compareAtPrice') }}
               <div v-if="disablePrice" class="relative ml-2 group">
                 <button type="button" class="text-slate-400 hover:text-slate-900">
                   <HelpCircleIcon class="w-4 h-4" />
                 </button>
                 <div class="absolute left-0 bottom-full mb-2 w-64 p-2 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  Compare at Price is disabled because this product has variants. Please manage prices for individual variants in the Variants tab.
+                  {{ t('products.editor.priceDisabledHelp') }}
                 </div>
               </div>
             </label>
             <div class="relative">
               <span class="absolute left-3 top-2 text-slate-500">$</span>
               <input
-                id="compareAtPrice"
+                id="comparePrice"
                 type="number"
-                :value="compareAtPrice"
-                @input="$emit('update:compareAtPrice', Number(($event.target as HTMLInputElement).value) || null)"
+                :value="comparePrice"
+                @input="$emit('update:comparePrice', Number(($event.target as HTMLInputElement).value) || null)"
                 class="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-7 pr-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="0.00"
                 min="0"
@@ -136,7 +136,7 @@
           <!-- SKU -->
           <div class="grid gap-2">
             <label for="sku" class="text-sm font-medium text-slate-900">
-              SKU (Stock Keeping Unit)
+              {{ t('products.editor.sku') }}
             </label>
             <input
               id="sku"
@@ -151,7 +151,7 @@
           <!-- Barcode -->
           <div class="grid gap-2">
             <label for="barcode" class="text-sm font-medium text-slate-900">
-              Barcode (ISBN, UPC, GTIN, etc.)
+              {{ t('products.editor.barcode') }}
             </label>
             <input
               id="barcode"
@@ -169,14 +169,14 @@
     <!-- Description Card -->
     <div class="rounded-lg border border-slate-200 bg-white">
       <div class="border-b border-slate-200 px-6 py-4">
-        <h3 class="text-lg font-medium">Description</h3>
-        <p class="text-sm text-slate-500">Write a detailed description of your product</p>
+        <h3 class="text-lg font-medium">{{ t('products.editor.description') }}</h3>
+        <p class="text-sm text-slate-500">{{ t('products.editor.descriptionHelp') }}</p>
       </div>
       <div class="p-6 space-y-6">
         <!-- Short Description -->
         <div class="grid gap-2">
           <label for="shortDescription" class="text-sm font-medium text-slate-900">
-            Short Description
+            {{ t('products.editor.shortDescription') }}
           </label>
           <textarea
             id="shortDescription"
@@ -191,7 +191,7 @@
         <!-- Full Description -->
         <div class="grid gap-2">
           <label for="description" class="text-sm font-medium text-slate-900">
-            Full Description
+            {{ t('products.editor.fullDescription') }}
           </label>
           <client-only>
             <QuillEditor
@@ -213,6 +213,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
 import { HelpCircleIcon, Wand2Icon } from 'lucide-vue-next'
+import { useLocalization } from '../../composables/useLocalization'
 
 // Import QuillEditor lazily
 const QuillEditor = defineAsyncComponent(() => 
@@ -225,13 +226,15 @@ const QuillEditor = defineAsyncComponent(() =>
   })
 )
 
+const { t } = useLocalization()
+
 defineProps<{
   name: string
   slug: string
   description: string
   shortDescription: string
   price: number | null
-  compareAtPrice: number | null
+  comparePrice: number | null
   sku: string
   barcode: string
   editorOptions: any
@@ -245,7 +248,7 @@ defineEmits<{
   'update:description': [value: string]
   'update:shortDescription': [value: string]
   'update:price': [value: number]
-  'update:compareAtPrice': [value: number | null]
+  'update:comparePrice': [value: number | null]
   'update:sku': [value: string]
   'update:barcode': [value: string]
   'update:isContactPrice': [value: boolean]

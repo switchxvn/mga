@@ -559,8 +559,8 @@ export function usePost() {
         const translation = post.translations?.find(t => t.locale === selectedLanguage.value)
         
         form.value = {
-          title: translation?.title || post.title || '',
-          slug: translation?.slug || post.slug || '',
+          title: translation?.title  || '',
+          slug: translation?.slug || '',
           content: translation?.content || post.content || '',
           shortDescription: translation?.shortDescription || post.shortDescription || '',
           published: post.published,
@@ -617,16 +617,13 @@ export function usePost() {
 
       const result = await trpc.admin.posts.createPost.mutate({
         title: form.value.title,
-        slug: form.value.slug,
         content: form.value.content,
         shortDescription: form.value.shortDescription,
-        published: form.value.published,
+        status: form.value.published ? PostStatus.PUBLISHED : PostStatus.DRAFT,
         thumbnail: form.value.thumbnail,
-        metaDescription: form.value.metaDescription,
-        tags: form.value.tags,
-        categoryIds: form.value.categoryIds,
         translations,
-        locale: defaultLanguage.value
+        tags: form.value.tags,
+        categoryIds: form.value.categoryIds
       })
 
       toast.success(t('posts.createSuccess'))
@@ -691,7 +688,6 @@ export function usePost() {
           shortDescription: form.value.shortDescription,
           status: form.value.published ? 'PUBLISHED' : 'DRAFT',
           thumbnail: form.value.thumbnail || '',
-          metaDescription: form.value.metaDescription || '',
           translations,
           tags: form.value.tags,
           categoryIds: form.value.categoryIds

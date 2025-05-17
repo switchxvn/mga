@@ -8,46 +8,22 @@ interface NotificationOptions {
 }
 
 export function useNotification() {
-  const { showToast } = useToast();
+  const toast = useToast();
 
   const showSuccess = (message: string, options?: Omit<NotificationOptions, 'message'>) => {
-    showToast({
-      type: 'success',
-      title: options?.title || 'Success',
-      message,
-      timeout: options?.timeout || 5000,
-      closable: options?.closable || true,
-    });
+    toast.success(message, options?.timeout || 5000);
   };
 
   const showError = (message: string, options?: Omit<NotificationOptions, 'message'>) => {
-    showToast({
-      type: 'error',
-      title: options?.title || 'Error',
-      message,
-      timeout: options?.timeout || 5000,
-      closable: options?.closable || true,
-    });
+    toast.error(message, options?.timeout || 5000);
   };
 
   const showWarning = (message: string, options?: Omit<NotificationOptions, 'message'>) => {
-    showToast({
-      type: 'warning',
-      title: options?.title || 'Warning',
-      message,
-      timeout: options?.timeout || 5000,
-      closable: options?.closable || true,
-    });
+    toast.warning(message, options?.timeout || 5000);
   };
 
   const showInfo = (message: string, options?: Omit<NotificationOptions, 'message'>) => {
-    showToast({
-      type: 'info',
-      title: options?.title || 'Information',
-      message,
-      timeout: options?.timeout || 5000,
-      closable: options?.closable || true,
-    });
+    toast.info(message, options?.timeout || 5000);
   };
 
   return {

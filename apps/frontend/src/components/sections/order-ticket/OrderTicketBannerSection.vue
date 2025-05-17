@@ -117,10 +117,36 @@ const overlayStyle = computed(() => {
   };
 });
 
-const heightClasses = computed(() => [
-  props.settings?.height?.mobile || 'h-[600px]',
-  `md:${props.settings?.height?.desktop || 'h-[800px]'}`
-]);
+// Tính toán chiều cao tối thiểu dựa trên tỷ lệ khung hình
+const bannerHeight = computed(() => {
+  const defaultHeight = isMobile.value ? '50vh' : '60vh'
+  return defaultHeight
+});
+
+const sectionStyle = computed(() => {
+  return {
+    height: bannerHeight.value,
+    maxHeight: '80vh',
+  }
+});
+
+// Thêm biến để kiểm tra môi trường mobile
+const isMobile = ref(false);
+
+// Kiểm tra kích thước màn hình khi component được mount
+onMounted(() => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobile);
+});
+
+// Hàm kiểm tra kích thước màn hình
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
 
 // Swiper modules
 const modules = [Autoplay, Pagination, Navigation, EffectFade];
@@ -191,50 +217,54 @@ const animationProps = computed(() => {
 </script>
 
 <template>
-  <section :class="[containerClasses, heightClasses]" class="relative overflow-hidden" v-if="isMounted">
+  <section :class="containerClasses" class="relative overflow-hidden w-full" :style="sectionStyle" v-if="isMounted">
     <Swiper 
       v-if="settings?.slides && settings.slides.length > 0"
       v-bind="swiperOptions" 
-      class="h-full order-ticket-swiper" 
+      class="order-ticket-swiper h-full" 
       @swiper="onSwiper"
     >
       <SwiperSlide v-for="(slide, index) in settings?.slides" :key="index" class="h-full">
-        <!-- Background Image -->
-        <div class="absolute inset-0">
+        <!-- Background Image with Overlay -->
+        <div class="absolute inset-0 z-0 image-container">
           <img 
             :src="slide.backgroundImage" 
             :alt="slide.title"
-            class="w-full h-full object-cover"
+            class="banner-image"
+            :style="{
+              objectPosition: 'center',
+              objectFit: 'cover'
+            }"
           />
           <div 
             v-if="(settings?.overlayOpacity ?? 0) > 0"
-            class="absolute inset-0 bg-black"
+            class="absolute inset-0 z-10"
             :class="overlayClasses"
             :style="overlayStyle"
           ></div>
         </div>
 
         <!-- Content -->
-        <div class="container mx-auto px-4 h-full relative z-10 flex items-center">
+        <div class="container mx-auto px-4 py-10 sm:py-12 md:py-16 lg:py-24 relative z-20 h-full flex items-center">
           <div 
             class="max-w-4xl mx-auto text-center"
             v-bind="animationProps"
           >
-            <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6" v-if="slide.title">
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 leading-tight" v-if="slide.title">
               {{ slide.title }}
             </h1>
             
-            <p class="text-xl md:text-3xl lg:text-4xl mb-8 opacity-90" v-if="slide.subtitle">
+            <p class="text-lg md:text-xl lg:text-2xl mb-6 opacity-90" v-if="slide.subtitle">
               {{ slide.subtitle }}
             </p>
             
-            <div class="prose prose-lg prose-invert mx-auto mb-12" v-if="slide.content"
+            <div class="prose prose-sm md:prose-lg prose-invert mx-auto mb-6" v-if="slide.content"
                  v-html="slide.content">
             </div>
 
             <a v-if="slide.buttonText || settings?.defaultButtonText"
                :href="slide.buttonLink || settings?.defaultButtonLink"
-               class="inline-block bg-primary-500 hover:bg-primary-600 text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+               class="inline-block bg-primary-500 hover:bg-primary-600 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
               {{ slide.buttonText || settings?.defaultButtonText }}
             </a>
           </div>
@@ -243,9 +273,9 @@ const animationProps = computed(() => {
     </Swiper>
 
     <!-- Navigation -->
-    <div class="order-ticket-swiper-prev swiper-button-prev !z-10 !hidden md:!flex"></div>
-    <div class="order-ticket-swiper-next swiper-button-next !z-10 !hidden md:!flex"></div>
-    <div class="order-ticket-swiper-pagination !absolute !bottom-4 md:!bottom-8 !left-1/2 !-translate-x-1/2 !z-10 !w-auto"></div>
+    <div class="order-ticket-swiper-prev swiper-button-prev !z-30 !hidden md:!flex"></div>
+    <div class="order-ticket-swiper-next swiper-button-next !z-30 !hidden md:!flex"></div>
+    <div class="order-ticket-swiper-pagination !absolute !bottom-4 !left-1/2 !-translate-x-1/2 !z-30 !w-auto"></div>
   </section>
 </template>
 
@@ -262,9 +292,19 @@ const animationProps = computed(() => {
   @apply list-decimal list-inside;
 }
 
+.banner-section {
+  width: 100%;
+}
+
 /* Swiper custom styles */
 .order-ticket-swiper {
-  height: 100%;
+  width: 100%;
+  
+  :deep(.swiper-slide) {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+  }
   
   :deep(.swiper-button-next),
   :deep(.swiper-button-prev) {
@@ -285,6 +325,69 @@ const animationProps = computed(() => {
     &.swiper-pagination-bullet-active {
       @apply bg-primary-500;
     }
+  }
+}
+</style>
+
+<style scoped>
+.image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+  object-position: center;
+  object-fit: cover;
+}
+
+/* Overwrite swiper navigation styles */
+:deep(.swiper-button-prev),
+:deep(.swiper-button-next) {
+  color: white;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+:deep(.swiper-button-prev:hover),
+:deep(.swiper-button-next:hover) {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+:deep(.swiper-pagination-bullet) {
+  background-color: white;
+  opacity: 0.7;
+}
+
+:deep(.swiper-pagination-bullet-active) {
+  background-color: var(--primary-500, #4f46e5);
+  opacity: 1;
+}
+
+/* Đảm bảo giữ tỉ lệ khung hình */
+@media (max-width: 767px) {
+  .banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* Ensure text is readable on mobile */
+  h1 {
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  
+  /* Improve spacing on mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 </style> 

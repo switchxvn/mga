@@ -18,9 +18,13 @@ const heroSliderSchema = z.object({
 export const heroSliderAdminRouter = router({
   getAll: adminProcedure
     .use(requirePermission(Permissions.VIEW_CONTENT))
-    .input(z.object({ themeId: z.number().nullable().optional() }))
+    .input(z.object({
+      themeId: z.number().nullable().optional(),
+      search: z.string().optional(),
+      isActive: z.boolean().optional()
+    }))
     .query(async ({ ctx, input }) => {
-      return ctx.services.heroSliderService.findAll(input.themeId);
+      return ctx.services.heroSliderService.findAll(input.themeId, input.search, input.isActive);
     }),
 
   getById: adminProcedure
