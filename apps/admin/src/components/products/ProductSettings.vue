@@ -3,8 +3,8 @@
     <!-- Status Card -->
     <div class="rounded-lg border border-slate-200 bg-white">
       <div class="border-b border-slate-200 px-6 py-4">
-        <h3 class="text-lg font-medium">Product Status</h3>
-        <p class="text-sm text-slate-500">Control your product's visibility and features</p>
+        <h3 class="text-lg font-medium">{{ t('products.settings.productStatus') }}</h3>
+        <p class="text-sm text-slate-500">{{ t('products.settings.statusDescription') }}</p>
       </div>
       <div class="p-6">
         <div class="grid gap-6">
@@ -15,10 +15,10 @@
                 for="published"
                 class="text-sm font-medium text-slate-900"
               >
-                Published
+                {{ t('products.settings.published') }}
               </label>
               <p class="text-sm text-slate-500">
-                Make this product visible on your store
+                {{ t('products.settings.publishedHelp') }}
               </p>
             </div>
             <Switch
@@ -43,10 +43,10 @@
                 for="featured"
                 class="text-sm font-medium text-slate-900"
               >
-                Featured
+                {{ t('products.settings.featured') }}
               </label>
               <p class="text-sm text-slate-500">
-                Show this product in featured sections
+                {{ t('products.settings.featuredHelp') }}
               </p>
             </div>
             <Switch
@@ -71,10 +71,10 @@
                 for="taxable"
                 class="text-sm font-medium text-slate-900"
               >
-                Taxable
+                {{ t('products.settings.taxable') }}
               </label>
               <p class="text-sm text-slate-500">
-                Apply tax calculations to this product
+                {{ t('products.settings.taxableHelp') }}
               </p>
             </div>
             <Switch
@@ -98,11 +98,11 @@
     <!-- Last Updated -->
     <div class="rounded-lg border border-slate-200 bg-white">
       <div class="border-b border-slate-200 px-6 py-4">
-        <h3 class="text-lg font-medium">Last Updated</h3>
+        <h3 class="text-lg font-medium">{{ t('products.settings.lastUpdated') }}</h3>
       </div>
       <div class="p-6">
         <p class="text-sm text-slate-500">
-          This product was last updated on {{ formatDate(updatedAt) }}
+          {{ t('products.settings.lastUpdatedOn', { date: formatDate(updatedAt) }) }}
         </p>
       </div>
     </div>
@@ -111,6 +111,9 @@
 
 <script setup lang="ts">
 import { Switch } from '@headlessui/vue'
+import { useLocalization } from '../../composables/useLocalization'
+
+const { t } = useLocalization()
 
 defineProps<{
   published: boolean

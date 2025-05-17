@@ -420,142 +420,125 @@ watch(() => props.videoUrl, (newValue) => {
   localVideoUrl.value = newValue || ''
 })
 
-// Handle thumbnail upload
-const handleThumbnailUpload = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  if (!input.files?.length) return
-
-  const file = input.files[0]
-  console.log(`Starting thumbnail upload: ${file.name}, type: ${file.type}, size: ${file.size} bytes`)
-  
-  // Kiểm tra định dạng file
-  if (!file.type.startsWith('image/')) {
-    showError('Chỉ chấp nhận file hình ảnh')
-    input.value = ''
-    return
-  }
-
-  // Hiển thị ảnh tạm thời ngay lập tức để cải thiện UX
-  const tempURL = URL.createObjectURL(file)
-  localThumbnail.value = tempURL
+// Upload thumbnail
+const handleThumbnailUpload = async (file: File) => {
+  if (!file) return;
   
   try {
-    info('Đang xử lý ảnh...')
-    // Thêm xử lý hình ảnh để đảm bảo tỉ lệ 1:1
-    const url = await processAndUploadImage(file, 'products')
-    console.log(`Thumbnail upload success, URL: ${url}`)
+    isUploading.value = true;
     
-    // Update thumbnail với URL chính thức sau khi tải lên
-    localThumbnail.value = url
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', file);
     
-    // Emit event to update thumbnail in parent component
-    emit('update:thumbnail', url)
+    // Upload file
+    const response = await fetch('/api/admin/media/upload', {
+      method: 'POST',
+      body: formData
+    });
     
-    // Show success message
-    success('Đã tải lên ảnh đại diện thành công')
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`);
+    }
     
-    // Giải phóng bộ nhớ
-    URL.revokeObjectURL(tempURL)
+    const result = await response.json();
+    const url = result.url;
+    
+    // Update model value
+    emit('update:thumbnail', url);
+    isUploading.value = false;
   } catch (error) {
-    console.error('Failed to upload thumbnail:', error)
-    showError('Tải lên ảnh đại diện thất bại')
-    // Nếu lỗi, xóa ảnh preview tạm thời
-    if (localThumbnail.value === tempURL) {
-      localThumbnail.value = ''
-    }
-    // Giải phóng bộ nhớ
-    URL.revokeObjectURL(tempURL)
-  } finally {
-    input.value = '' // Reset input
+    isUploading.value = false;
+    showError('Failed to upload thumbnail: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
-}
+};
 
-// Process image to ensure 1:1 ratio before uploading
-const processAndUploadImage = async (file: File, folder: string): Promise<string> => {
+// Process image for cropping to 1:1 ratio
+const processImageForCropping = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
-    console.log(`Processing image for 1:1 ratio: ${file.name}`)
-    const reader = new FileReader()
-    
-    reader.onload = (e) => {
-      console.log('FileReader loaded image data')
-      const img = new Image()
+    try {
+      const reader = new FileReader();
       
-      img.onload = async () => {
-        console.log(`Image loaded for processing, dimensions: ${img.width}x${img.height}`)
+      reader.onload = (e) => {
         try {
-          // Determine the size and positioning for the square crop
-          const size = Math.min(img.width, img.height)
-          const x = (img.width - size) / 2
-          const y = (img.height - size) / 2
-          console.log(`Cropping dimensions: size=${size}, x=${x}, y=${y}`)
+          const img = new Image();
           
-          // Create canvas with 1:1 ratio
-          const canvas = document.createElement('canvas')
-          canvas.width = size
-          canvas.height = size
-          
-          const ctx = canvas.getContext('2d')
-          if (!ctx) {
-            console.error('Failed to get canvas context')
-            reject(new Error('Không thể tạo context canvas'))
-            return
-          }
-          
-          // Draw cropped image
-          ctx.drawImage(img, x, y, size, size, 0, 0, size, size)
-          console.log('Image cropped on canvas')
-          
-          // Convert to Blob
-          canvas.toBlob(async (blob) => {
-            if (!blob) {
-              console.error('Failed to create blob from canvas')
-              reject(new Error('Không thể tạo Blob từ canvas'))
-              return
-            }
-            console.log(`Created blob: size=${blob.size} bytes, type=${blob.type}`)
-            
-            // Create a new File object from the blob
-            const croppedFile = new File([blob], file.name, { 
-              type: file.type,
-              lastModified: file.lastModified 
-            })
-            console.log(`Created cropped file: ${croppedFile.name}, size=${croppedFile.size} bytes`)
-            
+          img.onload = () => {
             try {
-              // Upload the processed image
-              console.log('Starting upload of processed image')
-              const url = await uploadImage(croppedFile, folder)
-              console.log(`Upload successful, URL: ${url}`)
-              resolve(url)
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              
+              if (!ctx) {
+                reject(new Error('Failed to get canvas context'));
+                return;
+              }
+              
+              // Calculate crop dimensions for 1:1 aspect ratio
+              const size = Math.min(img.width, img.height);
+              const x = (img.width - size) / 2;
+              const y = (img.height - size) / 2;
+              
+              // Set canvas size to desired output dimensions
+              canvas.width = size;
+              canvas.height = size;
+              
+              // Draw cropped image on canvas
+              ctx.drawImage(
+                img,
+                x, y, size, size,  // Source rectangle
+                0, 0, size, size   // Destination rectangle
+              );
+              
+              // Convert canvas to Blob
+              canvas.toBlob((blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to create image blob'));
+                  return;
+                }
+                
+                // Create a new File from the blob
+                const croppedFile = new File([blob], file.name, {
+                  type: blob.type,
+                  lastModified: Date.now()
+                });
+                
+                // Upload the cropped file
+                const formData = new FormData();
+                formData.append('file', croppedFile);
+                
+                fetch('/api/admin/media/upload', {
+                  method: 'POST',
+                  body: formData
+                })
+                  .then(response => response.json())
+                  .then(result => resolve(result.url))
+                  .catch(error => reject(error));
+                
+              }, file.type);
+              
             } catch (error) {
-              console.error('Error uploading processed image:', error)
-              reject(error)
+              reject(error);
             }
-          }, file.type)
+          };
+          
+          img.src = e.target?.result as string;
+          
         } catch (error) {
-          console.error('Error processing image:', error)
-          reject(error)
+          reject(error);
         }
-      }
+      };
       
-      img.onerror = (error) => {
-        console.error('Image loading error:', error)
-        reject(new Error('Không thể tải hình ảnh'))
-      }
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'));
+      };
       
-      img.src = e.target?.result as string
-      console.log('Set image source from FileReader result')
+      reader.readAsDataURL(file);
+      
+    } catch (error) {
+      reject(error);
     }
-    
-    reader.onerror = (error) => {
-      console.error('FileReader error:', error)
-      reject(new Error('Không thể đọc file'))
-    }
-    
-    reader.readAsDataURL(file)
-    console.log('Started reading file as Data URL')
-  })
-}
+  });
+};
 
 // Handle thumbnail drop
 const handleThumbnailDrop = async (event: DragEvent) => {
@@ -574,7 +557,7 @@ const handleThumbnailDrop = async (event: DragEvent) => {
   
   try {
     info('Đang xử lý ảnh...')
-    const url = await processAndUploadImage(file, 'products')
+    const url = await processImageForCropping(file)
     // Cập nhật với URL chính thức
     localThumbnail.value = url
     emit('update:thumbnail', url)
@@ -657,7 +640,7 @@ const handleGalleryUpload = async (event: Event) => {
     const uploadPromises = filesToUpload.map(async (file, index) => {
       try {
         const tempUrl = tempUrlMap.get(file) as string
-        const url = await processAndUploadImage(file, 'products')
+        const url = await processImageForCropping(file)
         
         // Thay thế URL tạm thời bằng URL thật sau khi tải lên
         const tempIndex = localGallery.value.indexOf(tempUrl)
@@ -763,7 +746,7 @@ const handleGalleryDrop = async (event: DragEvent) => {
     for (const file of filesToUpload) {
       try {
         const tempUrl = tempUrlMap.get(file) as string
-        const url = await processAndUploadImage(file, 'products')
+        const url = await processImageForCropping(file)
         
         // Thay thế URL tạm thời bằng URL thật sau khi tải lên
         const tempIndex = localGallery.value.indexOf(tempUrl)

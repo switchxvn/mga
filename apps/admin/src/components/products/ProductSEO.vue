@@ -3,8 +3,8 @@
     <!-- Meta Description Card -->
     <div class="rounded-lg border border-slate-200 bg-white">
       <div class="border-b border-slate-200 px-6 py-4">
-        <h3 class="text-lg font-medium">Meta Description</h3>
-        <p class="text-sm text-slate-500">Write a description to help search engines better understand your product</p>
+        <h3 class="text-lg font-medium">{{ t('products.seo.metaTitle') }}</h3>
+        <p class="text-sm text-slate-500">{{ t('products.seo.metaDescription') }}</p>
       </div>
       <div class="p-6">
         <div class="grid gap-2">
@@ -16,7 +16,7 @@
             placeholder="Enter meta description..."
           ></textarea>
           <div class="flex justify-between text-sm">
-            <span class="text-slate-500">Recommended length: 150-160 characters</span>
+            <span class="text-slate-500">{{ t('products.seo.recommendedLength') }}</span>
             <span :class="{ 'text-red-500': metaDescription.length > 160 }">
               {{ metaDescription.length }}/160
             </span>
@@ -28,8 +28,8 @@
     <!-- Tags Card -->
     <div class="rounded-lg border border-slate-200 bg-white">
       <div class="border-b border-slate-200 px-6 py-4">
-        <h3 class="text-lg font-medium">Product Tags</h3>
-        <p class="text-sm text-slate-500">Add tags to help customers find your product</p>
+        <h3 class="text-lg font-medium">{{ t('products.seo.productTags') }}</h3>
+        <p class="text-sm text-slate-500">{{ t('products.seo.tagsHelp') }}</p>
       </div>
       <div class="p-6">
         <div class="grid gap-4">
@@ -57,15 +57,15 @@
                 @input="$emit('update:tags-input', ($event.target as HTMLInputElement).value)"
                 @keydown="$emit('tag-input', $event)"
                 class="flex-1 min-w-[120px] bg-transparent text-sm focus:outline-none"
-                placeholder="Type and press Enter or Space to add tags"
+                :placeholder="t('products.seo.tagsInputPlaceholder')"
               />
             </div>
           </div>
 
           <!-- Help Text -->
           <div class="text-sm text-slate-500">
-            <p>Press Enter or Space to add tags. Use backspace to remove the last tag.</p>
-            <p class="mt-1">Popular tags: electronics, clothing, accessories, home decor</p>
+            <p>{{ t('products.seo.tagsHint') }}</p>
+            <p class="mt-1">{{ t('products.seo.popularTags') }}</p>
           </div>
         </div>
       </div>
@@ -75,6 +75,9 @@
 
 <script setup lang="ts">
 import { XIcon } from 'lucide-vue-next'
+import { useLocalization } from '../../composables/useLocalization'
+
+const { t } = useLocalization()
 
 defineProps<{
   metaDescription: string

@@ -104,12 +104,12 @@ export class ProductAdminService {
 
   async update(id: number, productData: Partial<Product>): Promise<Product> {
     // Tách dữ liệu relations và các trường khác ra khỏi productData
-    const { translations, categories, ...productDetails } = productData;
+    const { translations, categories, variants, ...productDetails } = productData;
     
     // Lấy product hiện tại với relations cần thiết
     const existingProduct = await this.productRepository.findOne({
       where: { id },
-      relations: ['translations', 'categories'],
+      relations: ['translations', 'categories', 'variants', 'variants.translations'],
     });
     
     if (!existingProduct) {
@@ -156,8 +156,120 @@ export class ProductAdminService {
       existingProduct.categories = categories;
     }
     
+    // Xử lý variants nếu có
+    if (variants && Array.isArray(variants)) {
+      // Kiểm tra nếu cần xóa variants hiện tại
+      if (variants.length === 0 && existingProduct.variants && existingProduct.variants.length > 0) {
+        // Xóa tất cả variants hiện tại
+        for (const variant of existingProduct.variants) {
+          await this.productVariantRepository.delete(variant.id);
+        }
+        existingProduct.variants = [];
+      } else if (existingProduct.variants && existingProduct.variants.length > 0) {
+        // Lấy IDs của variant hiện có và variant mới
+        const existingVariantIds = existingProduct.variants.map(v => v.id);
+        const newVariantIds = variants.filter(v => v.id).map(v => v.id);
+        
+        // Tìm các variant cần xóa (có trong existing nhưng không có trong new)
+        const variantsToRemove = existingProduct.variants.filter(
+          v => !newVariantIds.includes(v.id)
+        );
+        
+        // Xóa các variant không còn trong danh sách mới
+        if (variantsToRemove.length > 0) {
+          for (const variant of variantsToRemove) {
+            await this.productVariantRepository.delete(variant.id);
+          }
+        }
+        
+        // Cập nhật các variant hiện có và thêm mới nếu cần
+        for (const newVariant of variants) {
+          if (newVariant.id) {
+            // Cập nhật variant hiện có
+            const updatedVariant = await this.updateVariant(newVariant.id, newVariant);
+            
+            // Cập nhật lại variant trong danh sách hiện có
+            const variantIndex = existingProduct.variants.findIndex(v => v.id === newVariant.id);
+            if (variantIndex !== -1) {
+              existingProduct.variants[variantIndex] = updatedVariant;
+            }
+          } else {
+            // Thêm variant mới
+            try {
+              // Tạo một variant mới với productId
+              const variantToAdd = this.productVariantRepository.create({
+                ...newVariant,
+                productId: id
+              });
+              
+              // Xử lý translations nếu có
+              if (newVariant.translations && newVariant.translations.length > 0) {
+                variantToAdd.translations = [];
+                for (const translation of newVariant.translations) {
+                  const translationEntity = this.productVariantTranslationRepository.create({
+                    ...translation,
+                    // Không đặt variantId ở đây vì chưa có id (sẽ được đặt tự động khi lưu variant)
+                  });
+                  variantToAdd.translations.push(translationEntity);
+                }
+              }
+              
+              // Lưu variant mới
+              const savedVariant = await this.productVariantRepository.save(variantToAdd);
+              
+              // Kiểm tra nếu existingProduct.variants chưa được khởi tạo
+              if (!existingProduct.variants) {
+                existingProduct.variants = [];
+              }
+              
+              existingProduct.variants.push(savedVariant);
+            } catch (error) {
+              throw error;
+            }
+          }
+        }
+      } else {
+        // Nếu chưa có variants, tạo mới tất cả
+        existingProduct.variants = [];
+        
+        for (const newVariant of variants) {
+          try {
+            // Tạo một variant mới với productId
+            const variantToAdd = this.productVariantRepository.create({
+              ...newVariant,
+              productId: id
+            });
+            
+            // Xử lý translations nếu có
+            if (newVariant.translations && newVariant.translations.length > 0) {
+              variantToAdd.translations = [];
+              for (const translation of newVariant.translations) {
+                const translationEntity = this.productVariantTranslationRepository.create({
+                  ...translation,
+                  // Không đặt variantId ở đây vì chưa có id (sẽ được đặt tự động khi lưu variant)
+                });
+                variantToAdd.translations.push(translationEntity);
+              }
+            }
+            
+            // Lưu variant mới
+            const savedVariant = await this.productVariantRepository.save(variantToAdd);
+            
+            existingProduct.variants.push(savedVariant);
+          } catch (error) {
+            throw error;
+          }
+        }
+      }
+    }
+    
     // Lưu toàn bộ product với relations
-    return this.productRepository.save(existingProduct);
+    try {
+      const savedProduct = await this.productRepository.save(existingProduct);
+      return savedProduct;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async remove(id: number): Promise<void> {
@@ -207,8 +319,47 @@ export class ProductAdminService {
       throw new Error(`Variant with ID ${id} not found`);
     }
     
-    // Cập nhật thông tin cơ bản của variant
-    Object.assign(existingVariant, variantDetails);
+    // Cập nhật từng trường một cách rõ ràng, đảm bảo xử lý đúng cả giá trị null
+    if ('price' in variantDetails) {
+      existingVariant.price = variantDetails.price !== null ? Number(variantDetails.price) : null;
+    }
+    
+    if ('comparePrice' in variantDetails) {
+      existingVariant.comparePrice = variantDetails.comparePrice !== null ? Number(variantDetails.comparePrice) : null;
+    }
+    
+    if ('quantity' in variantDetails) {
+      existingVariant.quantity = variantDetails.quantity !== null ? Number(variantDetails.quantity) : null;
+    }
+    
+    if ('sku' in variantDetails) {
+      existingVariant.sku = variantDetails.sku;
+    }
+    
+    if ('published' in variantDetails) {
+      existingVariant.published = !!variantDetails.published;
+    }
+    
+    if ('thumbnail' in variantDetails) {
+      existingVariant.thumbnail = variantDetails.thumbnail;
+    }
+    
+    if ('gallery' in variantDetails) {
+      // Đảm bảo gallery luôn là một mảng, ngay cả khi nhận giá trị null
+      existingVariant.gallery = Array.isArray(variantDetails.gallery) ? variantDetails.gallery : [];
+    }
+    
+    if ('isFeatured' in variantDetails) {
+      existingVariant.isFeatured = !!variantDetails.isFeatured;
+    }
+    
+    if ('isNew' in variantDetails) {
+      existingVariant.isNew = !!variantDetails.isNew;
+    }
+    
+    if ('isSale' in variantDetails) {
+      existingVariant.isSale = !!variantDetails.isSale;
+    }
     
     // Xử lý translations nếu có
     if (translations && translations.length > 0) {
@@ -248,6 +399,11 @@ export class ProductAdminService {
     }
     
     // Lưu toàn bộ variant với relations
-    return this.productVariantRepository.save(existingVariant);
+    try {
+      const savedVariant = await this.productVariantRepository.save(existingVariant);
+      return savedVariant;
+    } catch (error) {
+      throw error;
+    }
   }
 } 

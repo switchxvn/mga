@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import {
@@ -30,6 +29,9 @@ import DataTable from '../../components/common/table/DataTable.vue';
 import { useAuth } from "../../composables/useAuth";
 import { usePermissions } from '../../composables/usePermissions';
 import { useTrpc } from "../../composables/useTrpc";
+import { HeroSlider } from '../../types/hero-slider';
+import { useLocalization } from '../../composables/useLocalization';
+import LucideIcon from '../../components/common/icons/LucideIcon.vue';
 
 // These functions are provided by Nuxt at runtime
 // @ts-ignore
@@ -50,6 +52,7 @@ const route = useRoute();
 const { checkAuth } = useAuth();
 const trpc = useTrpc();
 const { hasPermission, isSuperAdmin } = usePermissions();
+const { t } = useLocalization();
 
 // State
 const isLoading = ref(true);
@@ -65,12 +68,40 @@ const themeId = ref<number | undefined>(
 );
 const page = ref(Number(route.query.page) || 1);
 const pageSize = ref(10);
-const heroSliders = ref<any[]>([]); // Should match the structure of HeroSlider entity
+const heroSliders = ref<HeroSlider[]>([]);
 const themes = ref<any[]>([]);
+const showOnlyActiveThemes = ref(route.query.activeThemesOnly === 'true' ? true : false);
 
 const selectedSliders = ref<number[]>([]);
 const sortBy = ref('order');
 const sortOrder = ref<'asc' | 'desc'>('asc');
+
+// Thêm hàm toggleSelectAll
+const toggleSelectAll = () => {
+  if (selectedSliders.value.length === heroSliders.value.length) {
+    selectedSliders.value = [];
+  } else {
+    selectedSliders.value = heroSliders.value.map(item => item.id);
+  }
+};
+
+// Thêm hàm toggleItemSelection
+const toggleItemSelection = (id: number) => {
+  const index = selectedSliders.value.indexOf(id);
+  if (index === -1) {
+    selectedSliders.value.push(id);
+  } else {
+    selectedSliders.value.splice(index, 1);
+  }
+};
+
+// Lọc themes dựa vào trạng thái active
+const filteredThemes = computed(() => {
+  if (showOnlyActiveThemes.value) {
+    return themes.value.filter(theme => theme.isActive);
+  }
+  return themes.value;
+});
 
 // Update URL query parameters
 const updateQueryParams = () => {
@@ -78,7 +109,8 @@ const updateQueryParams = () => {
     page: page.value > 1 ? page.value.toString() : undefined,
     search: search.value || undefined,
     active: activeFilter.value !== undefined ? activeFilter.value.toString() : undefined,
-    themeId: themeId.value ? themeId.value.toString() : undefined
+    themeId: themeId.value ? themeId.value.toString() : undefined,
+    activeThemesOnly: showOnlyActiveThemes.value ? 'true' : undefined
   };
 
   // Remove undefined values
@@ -88,7 +120,7 @@ const updateQueryParams = () => {
 };
 
 // Watch for changes in filters and update URL
-watch([page, search, activeFilter, themeId], () => {
+watch([page, search, activeFilter, themeId, showOnlyActiveThemes], () => {
   updateQueryParams();
   fetchHeroSliders();
 }, { deep: true });
@@ -100,6 +132,27 @@ const fetchThemes = async () => {
     themes.value = result;
   } catch (err: any) {
     console.error('Error fetching themes:', err);
+  }
+};
+
+// Toggle theme filter
+const toggleThemeFilter = () => {
+  showOnlyActiveThemes.value = !showOnlyActiveThemes.value;
+  
+  // Cập nhật URL
+  router.replace({ 
+    query: { 
+      ...route.query,
+      activeThemesOnly: showOnlyActiveThemes.value.toString() 
+    } 
+  });
+  
+  // Nếu theme hiện tại không còn trong danh sách đã lọc, chọn theme active đầu tiên
+  if (themeId.value) {
+    const themeExists = filteredThemes.value.some(theme => theme.id === themeId.value);
+    if (!themeExists && filteredThemes.value.length > 0) {
+      themeId.value = filteredThemes.value[0].id;
+    }
   }
 };
 
@@ -116,6 +169,7 @@ const fetchHeroSliders = async () => {
       return;
     }
     
+    // Builds filter object matching backend API
     const filters = {
       themeId: themeId.value,
       search: search.value || undefined,
@@ -141,23 +195,24 @@ const fetchHeroSliders = async () => {
 // Delete a single hero slider
 const deleteSlider = async (id: number) => {
   const result = await Swal.fire({
-    title: 'Are you sure?',
-    text: "You won't be able to revert this!",
+    title: t('messages.confirmDelete'),
+    text: t('hero_slider.confirmDelete'),
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#3085d6',
     cancelButtonColor: '#d33',
-    confirmButtonText: 'Yes, delete it!'
+    confirmButtonText: t('actions.delete'),
+    cancelButtonText: t('actions.cancel')
   });
 
   if (result.isConfirmed) {
     try {
       await trpc.admin.heroSlider.delete.mutate(id);
-      Swal.fire('Deleted!', 'Hero slider has been deleted.', 'success');
+      Swal.fire(t('messages.success'), t('hero_slider.deleteSuccess'), 'success');
       fetchHeroSliders();
     } catch (err: any) {
       console.error('Error deleting hero slider:', err);
-      Swal.fire('Error!', err.message || 'Failed to delete hero slider', 'error');
+      Swal.fire(t('messages.error'), err.message || t('hero_slider.deleteError'), 'error');
     }
   }
 };
@@ -179,15 +234,15 @@ const toggleActive = async (id: number, currentStatus: boolean) => {
     
     // Show success message
     Swal.fire({
-      title: 'Success!',
-      text: `Hero slider is now ${newStatus ? 'active' : 'inactive'}`,
+      title: t('messages.success'),
+      text: newStatus ? t('hero_slider.activateSuccess') : t('hero_slider.deactivateSuccess'),
       icon: 'success',
       timer: 1500,
       showConfirmButton: false
     });
   } catch (err: any) {
     console.error('Error toggling slider status:', err);
-    Swal.fire('Error!', err.message || 'Failed to update slider status', 'error');
+    Swal.fire(t('messages.error'), err.message || t('hero_slider.statusUpdateError'), 'error');
   }
 };
 
@@ -196,13 +251,14 @@ const bulkDeleteSliders = async () => {
   if (!selectedSliders.value.length) return;
 
   const result = await Swal.fire({
-    title: `Delete ${selectedSliders.value.length} sliders?`,
-    text: "You won't be able to revert this!",
+    title: t('hero_slider.confirmBulkDelete', { count: selectedSliders.value.length }),
+    text: t('hero_slider.confirmDelete'),
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#3085d6',
     cancelButtonColor: '#d33',
-    confirmButtonText: 'Yes, delete them!'
+    confirmButtonText: t('actions.delete'),
+    cancelButtonText: t('actions.cancel')
   });
 
   if (result.isConfirmed) {
@@ -212,22 +268,26 @@ const bulkDeleteSliders = async () => {
         await trpc.admin.heroSlider.delete.mutate(id);
       }
       
-      Swal.fire('Deleted!', `${selectedSliders.value.length} sliders have been deleted.`, 'success');
+      Swal.fire(
+        t('messages.success'), 
+        t('hero_slider.bulkDeleteSuccess', { count: selectedSliders.value.length }), 
+        'success'
+      );
       selectedSliders.value = [];
       fetchHeroSliders();
     } catch (err: any) {
       console.error('Error deleting sliders:', err);
-      Swal.fire('Error!', err.message || 'Failed to delete sliders', 'error');
+      Swal.fire(t('messages.error'), err.message || t('hero_slider.bulkDeleteError'), 'error');
     }
   }
 };
 
 // Reorder sliders
 const reorderSliders = async () => {
-  if (!themeId.value) return;
+  if (!themeId.value || !heroSliders.value.length) return;
   
   try {
-    // Just refresh the order based on current array order
+    // Prepare data for reordering based on current array order
     const orderList = heroSliders.value.map((slider, index) => ({
       id: slider.id,
       order: index
@@ -235,15 +295,18 @@ const reorderSliders = async () => {
     
     await trpc.admin.heroSlider.reorder.mutate(orderList);
     Swal.fire({
-      title: 'Success!',
-      text: 'Sliders have been reordered',
+      title: t('messages.success'),
+      text: t('hero_slider.reorderSuccess'),
       icon: 'success',
       timer: 1500,
       showConfirmButton: false
     });
+    
+    // Refresh the data after reordering
+    await fetchHeroSliders();
   } catch (err: any) {
     console.error('Error reordering sliders:', err);
-    Swal.fire('Error!', err.message || 'Failed to reorder sliders', 'error');
+    Swal.fire(t('messages.error'), err.message || t('hero_slider.reorderError'), 'error');
   }
 };
 
@@ -257,8 +320,19 @@ const formatDate = (dateStr: string) => {
 onMounted(async () => {
   await checkAuth();
   await fetchThemes();
-  // Only fetch sliders if themeId is specified
-  if (themeId.value) {
+  
+  // Auto-select first active theme if no theme was selected
+  if (!themeId.value) {
+    // Ưu tiên chọn theme active đầu tiên
+    const activeTheme = themes.value.find(theme => theme.isActive);
+    if (activeTheme) {
+      themeId.value = activeTheme.id;
+    } else if (themes.value.length > 0) {
+      themeId.value = themes.value[0].id;
+    }
+    // URL sẽ được cập nhật thông qua watch
+  } else if (themeId.value) {
+    // If theme is already selected, fetch sliders
     await fetchHeroSliders();
   }
 });
@@ -268,17 +342,17 @@ onMounted(async () => {
   <div class="space-y-6">
     <!-- Header -->
     <PageHeader
-      title="Hero Slider Management"
-      description="Manage hero sliders for your website themes"
+      :title="t('hero_slider.manager')"
+      :description="t('hero_slider.description')"
     >
       <template #actions>
         <PermissionGate>
           <div class="flex items-center gap-2">
             <Menu as="div" class="relative" v-if="selectedSliders.length">
-              <MenuButton class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
-                <ListChecksIcon class="h-4 w-4" />
-                Bulk Actions ({{ selectedSliders.length }})
-                <ChevronDownIcon class="h-4 w-4" />
+              <MenuButton class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
+                <LucideIcon :icon="ListChecksIcon" :size="20" aria-hidden="true" />
+                {{ t('actions.bulkActions', { count: selectedSliders.length }) }}
+                <ChevronDownIcon class="h-5 w-5" aria-hidden="true" />
               </MenuButton>
 
               <MenuItems class="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
@@ -288,11 +362,11 @@ onMounted(async () => {
                       @click="bulkDeleteSliders"
                       :class="[
                         active ? 'bg-red-100 text-red-900' : 'text-red-700',
-                        'group flex w-full items-center rounded-md px-2 py-2 text-sm'
+                        'group flex w-full items-center rounded-md px-3 py-2 text-sm transition-colors'
                       ]"
                     >
-                      <TrashIcon class="mr-2 h-4 w-4" />
-                      Delete Selected
+                      <LucideIcon :icon="TrashIcon" :size="20" class="mr-2" aria-hidden="true" />
+                      {{ t('actions.deleteSelected') }}
                     </button>
                   </MenuItem>
                 </div>
@@ -302,28 +376,28 @@ onMounted(async () => {
             <button 
               v-if="themeId" 
               @click="reorderSliders"
-              class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
             >
-              <MoveVerticalIcon class="h-4 w-4 mr-2" />
-              Update Order
+              <LucideIcon :icon="MoveVerticalIcon" :size="20" class="mr-2" aria-hidden="true" />
+              {{ t('hero_slider.updateOrder') }}
             </button>
             
             <button
               v-if="themeId"
               @click="fetchHeroSliders"
-              class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
             >
-              <RefreshCwIcon class="h-4 w-4 mr-2" />
-              Refresh
+              <LucideIcon :icon="RefreshCwIcon" :size="20" class="mr-2" aria-hidden="true" />
+              {{ t('hero_slider.refresh') }}
             </button>
             
             <NuxtLink
               v-if="themeId"
               to="/hero-slider/create"
-              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
-              <PlusCircleIcon class="h-5 w-5 mr-2" />
-              Add Slider
+              <LucideIcon :icon="PlusCircleIcon" :size="20" class="mr-2" aria-hidden="true" />
+              {{ t('hero_slider.addSlider') }}
             </NuxtLink>
           </div>
         </PermissionGate>
@@ -336,7 +410,7 @@ onMounted(async () => {
       <template #search>
         <SearchFilter
           :search="search"
-          search-placeholder="Search sliders..."
+          :search-placeholder="t('hero_slider.searchPlaceholder')"
           @update:search="search = $event"
         />
       </template>
@@ -345,9 +419,9 @@ onMounted(async () => {
         <StatusFilter
           :modelValue="activeFilter"
           :options="[
-            { label: 'All Status', value: undefined },
-            { label: 'Active', value: true },
-            { label: 'Inactive', value: false }
+            { label: t('components.common.filter.statusFilter.allStatus'), value: undefined },
+            { label: t('hero_slider.statusActive'), value: true },
+            { label: t('hero_slider.statusInactive'), value: false }
           ]"
           @update:modelValue="activeFilter = $event"
         />
@@ -356,17 +430,33 @@ onMounted(async () => {
       <template #additionalFilters>
         <div class="flex items-center space-x-4">
           <div class="w-48">
-            <label for="theme-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Theme</label>
+            <label for="theme-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('hero_slider.theme') }}</label>
             <select
               id="theme-filter"
               v-model="themeId"
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
             >
-              <option :value="undefined">Select theme</option>
-              <option v-for="theme in themes" :key="theme.id" :value="theme.id">
+              <option :value="undefined">{{ t('hero_slider.selectTheme') }}</option>
+              <option v-for="theme in filteredThemes" :key="theme.id" :value="theme.id">
                 {{ theme.name }}
               </option>
             </select>
+          </div>
+          
+          <div class="flex flex-col">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('hero_slider.themeFilter') }}</label>
+            <button
+              @click="toggleThemeFilter"
+              class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-700"
+            >
+              <LucideIcon 
+                :icon="showOnlyActiveThemes ? ToggleRightIcon : ToggleLeftIcon" 
+                :size="16" 
+                class="mr-2" 
+                aria-hidden="true" 
+              />
+              {{ showOnlyActiveThemes ? t('hero_slider.activeThemesOnly') : t('hero_slider.allThemes') }}
+            </button>
           </div>
         </div>
       </template>
@@ -395,31 +485,54 @@ onMounted(async () => {
           pageSize: pageSize
         }"
         @update:selected-items="selectedSliders = $event"
+        @toggle-select-all="toggleSelectAll"
+        @toggle-item-selection="toggleItemSelection"
         @sort="sortBy = $event"
         @page-change="page = $event"
         @clear-error="error = null"
       >
+        <!-- Selection slot -->
+        <template #selection="{ item, isSelected, toggleSelection }">
+          <input
+            type="checkbox"
+            class="checkbox rounded"
+            :checked="isSelected"
+            @change="toggleSelection(item.id)"
+          />
+        </template>
+
+        <!-- Selection header slot -->
+        <template #selection-header="{ toggleAll }">
+          <input
+            type="checkbox"
+            class="checkbox rounded"
+            :checked="selectedSliders.length === heroSliders.length && heroSliders.length > 0"
+            :indeterminate="selectedSliders.length > 0 && selectedSliders.length < heroSliders.length"
+            @change="toggleAll"
+          />
+        </template>
+
         <template #header>
           <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            IMAGE
+            {{ t('hero_slider.image') }}
           </th>
           <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            TITLE
+            {{ t('hero_slider.title') }}
           </th>
           <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            BUTTON
+            {{ t('hero_slider.button') }}
           </th>
           <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            ORDER
+            {{ t('hero_slider.order') }}
           </th>
           <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            STATUS
+            {{ t('hero_slider.status') }}
           </th>
           <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            DATE
+            {{ t('hero_slider.date') }}
           </th>
           <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            ACTIONS
+            {{ t('products.actions') }}
           </th>
         </template>
 
@@ -435,7 +548,7 @@ onMounted(async () => {
                   :alt="slider.title" 
                 />
                 <div v-else class="flex items-center justify-center h-full w-full">
-                  <ImageIcon class="h-5 w-5 text-gray-400" />
+                  <LucideIcon :icon="ImageIcon" :size="20" class="text-gray-400" aria-hidden="true" />
                 </div>
               </div>
             </div>
@@ -462,7 +575,7 @@ onMounted(async () => {
               </div>
             </div>
             <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-              No button
+              {{ t('hero_slider.noButton') }}
             </div>
           </td>
           
@@ -477,7 +590,7 @@ onMounted(async () => {
               class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
               :class="slider.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
             >
-              {{ slider.isActive ? 'Active' : 'Inactive' }}
+              {{ slider.isActive ? t('hero_slider.statusActive') : t('hero_slider.statusInactive') }}
             </span>
           </td>
           
@@ -488,15 +601,39 @@ onMounted(async () => {
           
           <!-- ACTIONS Column -->
           <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <div class="flex items-center space-x-2">
-              <button @click="toggleActive(slider.id, slider.isActive)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                <component :is="slider.isActive ? ToggleRightIcon : ToggleLeftIcon" class="h-5 w-5" />
+            <div class="flex justify-end gap-2">
+              <button 
+                @click="toggleActive(slider.id, slider.isActive)" 
+                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                :title="slider.isActive ? t('hero_slider.deactivate') : t('hero_slider.activate')"
+              >
+                <LucideIcon 
+                  :icon="slider.isActive ? ToggleRightIcon : ToggleLeftIcon" 
+                  :size="20" 
+                  aria-hidden="true" 
+                />
               </button>
-              <NuxtLink :to="`/hero-slider/${slider.id}/edit`" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                <PencilIcon class="h-5 w-5" />
+              <NuxtLink 
+                :to="`/hero-slider/${slider.id}/edit`" 
+                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                :title="t('hero_slider.edit')"
+              >
+                <LucideIcon 
+                  :icon="PencilIcon" 
+                  :size="20" 
+                  aria-hidden="true" 
+                />
               </NuxtLink>
-              <button @click="deleteSlider(slider.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                <TrashIcon class="h-5 w-5" />
+              <button 
+                @click="deleteSlider(slider.id)" 
+                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                :title="t('hero_slider.delete')"
+              >
+                <LucideIcon 
+                  :icon="TrashIcon" 
+                  :size="20" 
+                  aria-hidden="true" 
+                />
               </button>
             </div>
           </td>
@@ -504,20 +641,25 @@ onMounted(async () => {
 
         <template #empty>
           <div class="text-center py-10">
-            <LayoutIcon class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
+            <LucideIcon 
+              :icon="LayoutIcon" 
+              :size="48" 
+              class="mx-auto text-gray-400 dark:text-gray-600" 
+              aria-hidden="true" 
+            />
             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-              {{ themeId ? 'No hero sliders found' : 'Please select a theme first' }}
+              {{ themeId ? t('hero_slider.noSlidersFound') : t('hero_slider.selectThemeFirst') }}
             </h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {{ themeId ? 'Get started by creating a new hero slider.' : 'Select a theme to manage its hero sliders.' }}
+              {{ themeId ? t('hero_slider.createNewHint') : t('hero_slider.selectThemeHint') }}
             </p>
             <div class="mt-6" v-if="themeId">
               <NuxtLink
                 to="/hero-slider/create"
-                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
-                <PlusCircleIcon class="-ml-1 mr-2 h-5 w-5" />
-                Add Hero Slider
+                <LucideIcon :icon="PlusCircleIcon" :size="20" class="mr-2" aria-hidden="true" />
+                {{ t('hero_slider.addSlider') }}
               </NuxtLink>
             </div>
           </div>

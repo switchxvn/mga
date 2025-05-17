@@ -127,7 +127,10 @@
                 v-model:shortDescription="form.shortDescription"
                 :editor-options="editorOptions"
                 @generate-slug="generateSlug"
+                @ready="onEditorReady"
+                :show-generate-slug="true"
                 :errors="errors"
+                required
               />
             </div>
 
@@ -193,8 +196,10 @@ import PostSettings from '../../../components/posts/PostSettings.vue';
 import PostCategories from '../../../components/posts/PostCategories.vue';
 import { usePost } from '../../../composables/usePost';
 import { useLocalization } from '../../../composables/useLocalization';
+import { useQuillImageHandler } from '../../../composables/useQuillImageHandler';
 
 const { t } = useLocalization();
+const { registerQuillImageHandler } = useQuillImageHandler();
 
 const {
   loading,
@@ -220,7 +225,17 @@ const {
   updatePost
 } = usePost();
 
-// Hàm trung gian để xử lý chuyển đổi ngôn ngữ 
+// Xử lý khi editor đã sẵn sàng
+const onEditorReady = (quill: any) => {
+  // Lưu instance của quill để sử dụng khi upload ảnh
+  if (process.client) {
+    (window as any).currentQuillInstance = quill
+    // Đăng ký handler cho nút image trong toolbar
+    registerQuillImageHandler(quill)
+  }
+}
+
+// Hàm trung gian để xử lý chuyển đổi ngôn ngữ
 const handleLanguageChange = (langCode: string) => {
   selectedLanguage.value = langCode;
   if (postId.value) {

@@ -57,9 +57,11 @@
             <ClientOnly>
               <QuillEditor
                 v-model:content="localContent"
-                :toolbar="editorOptions.modules.toolbar"
+                :toolbar="mergedEditorOptions.modules.toolbar"
                 contentType="html"
                 theme="snow"
+                ref="quillEditorRef"
+                @ready="onEditorReady"
               />
             </ClientOnly>
           </div>
@@ -70,19 +72,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineAsyncComponent } from 'vue'
+import { ref, watch, defineAsyncComponent, onMounted, computed } from 'vue'
 import { WandIcon } from 'lucide-vue-next'
 import { useLocalization } from '@/composables/useLocalization'
+import { useQuillImageHandler } from '@/composables/useQuillImageHandler'
 
 const { t } = useLocalization()
+const { registerQuillImageHandler } = useQuillImageHandler()
 
 // Import QuillEditor lazily
 const QuillEditor = defineAsyncComponent(() => 
   import('@vueup/vue-quill').then(mod => {
-    // Import CSS only on client-side
-    if (process.client) {
-      import('@vueup/vue-quill/dist/vue-quill.snow.css')
-    }
     return mod.QuillEditor
   })
 )
@@ -109,6 +109,36 @@ const props = withDefaults(defineProps<Props>(), {
   showGenerateSlug: false
 })
 
+// Tạo cấu hình toolbar mặc định nếu không nhận được từ props
+const defaultEditorOptions = {
+  modules: {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      ['blockquote', 'code-block'],
+      [{ 'header': 1 }, { 'header': 2 }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'script': 'sub'}, { 'script': 'super' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      [{ 'direction': 'rtl' }],
+      [{ 'size': ['small', false, 'large', 'huge'] }],
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'font': [] }],
+      [{ 'align': [] }],
+      ['clean'],
+      ['link', 'image']
+    ]
+  }
+}
+
+// Hợp nhất cấu hình từ props với cấu hình mặc định
+const mergedEditorOptions = computed(() => {
+  if (props.editorOptions?.modules?.toolbar) {
+    return props.editorOptions
+  }
+  return defaultEditorOptions
+})
+
 const emit = defineEmits<{
   (e: 'update:title', value: string): void
   (e: 'update:slug', value: string): void
@@ -117,10 +147,21 @@ const emit = defineEmits<{
   (e: 'generate-slug'): void
 }>()
 
+const quillEditorRef = ref<any>(null)
 const localTitle = ref(props.title)
 const localSlug = ref(props.slug)
 const localContent = ref(props.content)
 const localShortDescription = ref(props.shortDescription)
+
+// Xử lý khi editor đã sẵn sàng
+const onEditorReady = (quill: any) => {
+  // Lưu instance của quill để sử dụng khi upload ảnh
+  if (process.client) {
+    (window as any).currentQuillInstance = quill
+    // Đăng ký handler cho nút image trong toolbar
+    registerQuillImageHandler(quill)
+  }
+}
 
 watch(() => props.title, (newVal) => {
   localTitle.value = newVal
@@ -155,6 +196,7 @@ watch(localShortDescription, (newVal) => {
 })
 </script>
 
+
 <style scoped>
 .quill-editor {
   @apply bg-white rounded-lg overflow-hidden;
@@ -164,7 +206,7 @@ watch(localShortDescription, (newVal) => {
   @apply border-0 border-b border-slate-200 bg-white px-6 !important;
 }
 
-.ql-container {
+.ql-container {  
   @apply border-0 bg-white !important;
 }
 

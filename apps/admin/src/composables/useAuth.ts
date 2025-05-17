@@ -41,9 +41,6 @@ export const useAuth = () => {
         // Get user info and transform to match User interface
         const userInfo = await trpc.profile.getMyProfile.query() as ProfileResponseExtended;
         
-        // Kiểm tra và log thông tin userInfo để debug
-        console.log('User info from login:', JSON.stringify(userInfo, null, 2));
-        
         // Xác định role từ API response
         let userRole = 'user'; // Mặc định là user
         
@@ -76,9 +73,6 @@ export const useAuth = () => {
           createdAt: userInfo.createdAt instanceof Date ? userInfo.createdAt.toISOString() : String(userInfo.createdAt),
           updatedAt: userInfo.updatedAt instanceof Date ? userInfo.updatedAt.toISOString() : String(userInfo.updatedAt)
         }
-
-        console.log('User role set to:', userRole);
-        console.log('User permissions:', user.value.permissions);
 
         // Redirect to dashboard
         router.push('/')
@@ -136,22 +130,18 @@ export const useAuth = () => {
 
       const storage = getLocalStorage();
       if (!storage) {
-        console.log('No storage available');
         return false;
       }
 
       const token = storage.getItem('accessToken');
-      console.log('Found token:', !!token);
       
       if (!token) {
         return false;
       }
 
       try {
-        console.log('Fetching profile...');
         // Get user info and transform to match User interface
         const userInfo = await trpc.profile.getMyProfile.query() as ProfileResponseExtended;
-        console.log('Profile response:', userInfo);
         
         // If we got a successful response
         if (userInfo?.id) {
@@ -187,14 +177,10 @@ export const useAuth = () => {
             createdAt: userInfo.createdAt instanceof Date ? userInfo.createdAt.toISOString() : String(userInfo.createdAt),
             updatedAt: userInfo.updatedAt instanceof Date ? userInfo.updatedAt.toISOString() : String(userInfo.updatedAt)
           };
-          console.log('Auth check successful, user role:', userRole);
           return true;
         }
-        console.log('No user ID in response');
         return false;
       } catch (profileError: any) {
-        console.error('Error fetching profile:', profileError);
-        
         // Handle token expired error
         const errorMessage = profileError?.message || '';
         const isAuthError = profileError instanceof TRPCClientError && 
@@ -204,7 +190,6 @@ export const useAuth = () => {
                            
         if (isAuthError) {
           // Clear invalid token
-          console.log('Auth error detected, removing token and redirecting to login');
           storage.removeItem('accessToken');
           user.value = null;
           
@@ -219,7 +204,6 @@ export const useAuth = () => {
         return false;
       }
     } catch (err) {
-      console.error('Auth check error:', err);
       return false;
     } finally {
       isLoading.value = false;

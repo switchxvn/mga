@@ -25,7 +25,7 @@ const emit = defineEmits<{
   (e: 'remove'): void;
 }>();
 
-const { locales, currentLocale } = useLocalization();
+const { locales, currentLocale, t } = useLocalization();
 
 const defaultTranslation = computed(() => 
   props.attribute.translations.find(t => t.locale === currentLocale.value) || props.attribute.translations[0]
@@ -77,11 +77,11 @@ function validate() {
   errors.value = {};
   
   if (!defaultTranslation.value.name) {
-    errors.value.name = 'Attribute name is required';
+    errors.value.name = t('products.attributes.nameRequired');
   }
   
   if (props.attribute.values.length === 0) {
-    errors.value.values = 'At least one value is required';
+    errors.value.values = t('products.attributes.valueRequired');
   }
 
   const hasEmptyValues = props.attribute.values.some(v => 
@@ -89,7 +89,7 @@ function validate() {
   );
 
   if (hasEmptyValues) {
-    errors.value.values = 'All values must have a name';
+    errors.value.values = t('products.attributes.allValuesRequired');
   }
 
   return Object.keys(errors.value).length === 0;
@@ -105,7 +105,7 @@ defineExpose({ validate });
         <!-- Attribute Name -->
         <div class="sm:col-span-4">
           <label for="attributeName" class="block text-sm font-medium leading-6 text-gray-900">
-            Attribute Name
+            {{ t('products.attributes.attributeName') }}
             <span class="text-red-500">*</span>
           </label>
           <div class="mt-2">
@@ -126,7 +126,7 @@ defineExpose({ validate });
         <!-- Attribute Values -->
         <div class="col-span-full">
           <label class="block text-sm font-medium leading-6 text-gray-900">
-            Values
+            {{ t('products.attributes.values') }}
             <span class="text-red-500">*</span>
           </label>
           <p v-if="errors.values" class="mt-2 text-sm text-red-600">{{ errors.values }}</p>
@@ -140,7 +140,7 @@ defineExpose({ validate });
                     :value="value.translations.find(t => t.locale === currentLocale)?.value"
                     @input="updateValueTranslation(valueIndex, currentLocale, ($event.target as HTMLInputElement).value)"
                     class="block flex-1 border-0 bg-transparent py-1.5 pl-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                    :placeholder="`Value ${valueIndex + 1}`"
+                    :placeholder="`${t('products.attributes.value')} ${valueIndex + 1}`"
                   />
                 </div>
               </div>
@@ -159,7 +159,7 @@ defineExpose({ validate });
               @click="addValue"
             >
               <PlusCircleIcon class="mx-auto h-6 w-6 text-gray-400" />
-              <span class="mt-2 block text-sm font-semibold text-gray-900">Add value</span>
+              <span class="mt-2 block text-sm font-semibold text-gray-900">{{ t('products.attributes.addValue') }}</span>
             </button>
           </div>
         </div>
@@ -197,7 +197,7 @@ defineExpose({ validate });
                       :value="value.translations.find(t => t.locale === locale)?.value"
                       @input="updateValueTranslation(valueIndex, locale, ($event.target as HTMLInputElement).value)"
                       class="block flex-1 border-0 bg-transparent py-1.5 pl-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                      :placeholder="`Value ${valueIndex + 1}`"
+                      :placeholder="`${t('products.attributes.value')} ${valueIndex + 1}`"
                     />
                   </div>
                 </div>
@@ -216,7 +216,7 @@ defineExpose({ validate });
         @click="emit('remove')"
       >
         <XCircleIcon class="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-        Remove Attribute
+        {{ t('products.attributes.removeAttribute') }}
       </button>
     </div>
   </div>
