@@ -1,20 +1,52 @@
 <script setup lang="ts">
-import { useColorMode } from '@vueuse/core';
+import { ref, onMounted, onBeforeMount } from 'vue';
 import { computed } from 'vue';
 import { useLogo } from '~/composables/useLogo';
+import { useTheme } from '~/composables/useTheme';
 
-const colorMode = useColorMode();
-const isDarkMode = computed(() => colorMode.value === 'dark');
+const { isDark, initializeTheme } = useTheme();
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
+const isLoading = ref(true);
+
+// Khởi tạo theme trước khi component được mounted
+onBeforeMount(async () => {
+  try {
+    await initializeTheme();
+  } catch (error) {
+    console.error('Failed to initialize theme in auth layout (onBeforeMount):', error);
+  }
+});
+
+// Khởi tạo theme khi component được mounted
+onMounted(async () => {
+  try {
+    // Khởi tạo theme một lần nữa để đảm bảo
+    await initializeTheme();
+    // Đợi một chút để CSS được áp dụng
+    await new Promise(resolve => setTimeout(resolve, 100));
+  } catch (error) {
+    console.error('Failed to initialize theme in auth layout (onMounted):', error);
+  } finally {
+    isLoading.value = false;
+  }
+});
 
 const toggleTheme = () => {
-  colorMode.value = isDarkMode.value ? 'light' : 'dark';
+  isDark.value = !isDark.value;
 };
 </script>
 
 <template>
   <div class="min-h-screen bg-background">
-    <main class="flex min-h-screen">
+    <template v-if="isLoading">
+      <div class="flex items-center justify-center min-h-screen">
+        <div class="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <span class="mt-4 block text-sm text-gray-500 dark:text-gray-400">
+          Loading theme...
+        </span>
+      </div>
+    </template>
+    <main v-else class="flex min-h-screen">
       <!-- Left side - Branding -->
       <div class="hidden lg:flex lg:w-1/2 bg-primary/5 dark:bg-primary/10">
         <div class="flex flex-col justify-center items-center w-full p-12">

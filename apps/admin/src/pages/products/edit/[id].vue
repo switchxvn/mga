@@ -82,7 +82,7 @@
                 v-model:description="form.description"
                 v-model:shortDescription="form.shortDescription"
                 v-model:price="form.price"
-                v-model:compareAtPrice="form.compareAtPrice"
+                v-model:comparePrice="form.comparePrice"
                 v-model:sku="form.sku"
                 v-model:barcode="form.barcode"
                 v-model:isContactPrice="form.isContactPrice"
@@ -111,7 +111,8 @@
             <!-- Variants Tab -->
             <div v-show="currentTab === 'variants'">
               <ProductVariants
-                v-model="form.variants"
+                :modelValue="form.variants"
+                @update:modelValue="handleVariantsUpdate"
                 v-model:hasVariants="form.hasVariants"
               />
             </div>
@@ -284,11 +285,6 @@ watch(currentTab, (newTab) => {
       }
     })
   }
-  
-  // Debug khi chọn tab variants - giảm số lượng log
-  if (newTab === 'variants' && process.env.NODE_ENV !== 'production') {
-    console.log('Variants tab selected. hasVariants:', form.value.hasVariants)
-  }
 })
 
 const tabs = computed(() => [
@@ -334,18 +330,31 @@ const tabs = computed(() => [
   }
 ])
 
+// Định nghĩa interface trực tiếp trong file
 interface ProductVariant {
-  id?: number
-  name: string
-  sku: string
-  barcode: string
-  price: number | null
-  compareAtPrice: number | null
-  quantity: number
-  stock: number
-  options: Record<string, string>
-  _tempPrice?: number
-  _tempCompareAtPrice?: number | null
+  id?: number;
+  productId?: number;
+  sku: string;
+  price: number | null;
+  comparePrice: number | null;
+  thumbnail?: string;
+  gallery?: string[];
+  published?: boolean;
+  quantity: number;
+  stock?: number; // Alias for quantity used in frontend
+  isFeatured?: boolean;
+  isNew?: boolean;
+  isSale?: boolean;
+  barcode?: string;
+  options?: Record<string, string>;
+  translations?: Array<{locale: string, name: string, variantId?: number}>;
+  createdAt?: Date;
+  updatedAt?: Date;
+  
+  // Frontend-only fields for UI state
+  _tempPrice?: number;
+  _tempComparePrice?: number | null;
+  name?: string;
 }
 
 interface ProductForm {
@@ -354,7 +363,7 @@ interface ProductForm {
   description: string
   shortDescription: string
   price: number | null
-  compareAtPrice: number | null
+  comparePrice: number | null
   sku: string
   barcode: string
   published: boolean
@@ -383,7 +392,7 @@ interface ProductForm {
   }>
   isContactPrice: boolean
   _tempPrice?: number
-  _tempCompareAtPrice?: number | null
+  _tempComparePrice?: number | null
 }
 
 const initialForm: ProductForm = {
@@ -392,7 +401,7 @@ const initialForm: ProductForm = {
   description: '',
   shortDescription: '',
   price: 0,
-  compareAtPrice: null,
+  comparePrice: null,
   sku: '',
   barcode: '',
   published: false,
@@ -540,19 +549,9 @@ const fetchProduct = async () => {
     fetchInProgress = true;
     loading.value = true;
     
-    // Avoid excessive logging in production
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Fetching product with ID:', route.params.id, 'and language:', selectedLanguage.value);
-    }
-    
     const product = await trpc.admin.products.getProductById.query(Number(route.params.id));
     
     if (product) {
-      // Reduce unnecessary logging
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Product loaded successfully');
-      }
-      
       // Initialize translations
       const translations: Record<string, any> = {}
       
@@ -607,21 +606,15 @@ const fetchProduct = async () => {
       // Process variants safely
       const variants: ProductVariant[] = []
       if (Array.isArray(product.variants)) {
-        console.log('Processing variants:', product.variants.length)
-        
         // Analyze variant names to create options
         // In this case, can use translations to create simple options
         // Create a single option named "Type"
         const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type'
         
         product.variants.forEach(variant => {
-          console.log('Processing variant:', variant)
-          
           const variantName = Array.isArray(variant.translations) 
             ? variant.translations.find(t => t?.locale === selectedLanguage.value)?.name || ''
             : ''
-          
-          console.log('Variant name:', variantName)
 
           // Process variant price correctly
           let variantPrice = null;
@@ -655,15 +648,19 @@ const fetchProduct = async () => {
             sku: variant.sku || '',
             barcode: (variant as any).barcode || '',
             price: variantPrice,
-            compareAtPrice: variantComparePrice,
+            comparePrice: variantComparePrice,
             quantity: variant.quantity || 0,
             stock: variant.quantity || 0,  // Use quantity as default value for stock
-            options: variantOptions
+            options: variantOptions,
+            thumbnail: variant.thumbnail || '',
+            gallery: variant.gallery || [],
+            published: variant.published || false,
+            isFeatured: variant.isFeatured || false,
+            isNew: variant.isNew || false,
+            isSale: !!(variant.comparePrice && variant.price && variant.comparePrice > variant.price),
           })
         })
       }
-
-      console.log('Final variants:', variants)
 
       // Get translation for current language
       const currentTranslation = product.translations?.find(t => t.locale === selectedLanguage.value);
@@ -674,7 +671,7 @@ const fetchProduct = async () => {
         description: currentTranslation?.content || '',
         shortDescription: currentTranslation?.shortDescription || '',
         price: productPrice,
-        compareAtPrice: comparePrice,
+        comparePrice: comparePrice,
         sku: product.sku || '',
         barcode: (product as any).barcode || '',
         published: Boolean(product.published),
@@ -697,17 +694,6 @@ const fetchProduct = async () => {
         translations,
         isContactPrice: isContactPrice
       }
-
-      console.log('Form updated with variants:', form.value.variants)
-
-      // Reduce unnecessary debug logging
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Form updated with variants count:', form.value.variants?.length || 0);
-      }
-
-      // Log price values for debugging
-      console.log('Product price from API:', product.price);
-      console.log('Product price after processing:', productPrice);
       
       tagsInput.value = form.value.tags.join(', ')
     }
@@ -759,7 +745,7 @@ const updateProduct = debounce(async (continueEditing = false) => {
 
     const updateData: any = {
       price: form.value.price, // Will be null if "Contact for price" is enabled
-      comparePrice: form.value.compareAtPrice,
+      comparePrice: form.value.comparePrice,
       sku: form.value.sku,
       thumbnail: form.value.thumbnail,
       gallery: form.value.gallery,
@@ -791,33 +777,56 @@ const updateProduct = debounce(async (continueEditing = false) => {
     }
 
     if (Array.isArray(form.value.variants)) {
+      console.log(`Preparing ${form.value.variants.length} variants for update`);
+      
       updateData.variants = form.value.variants.map(variant => {
-        // Prepare data for variant
+        // Đảm bảo giá trị số được chuyển đổi đúng
+        const variantPrice = variant.price === null ? null : 
+          (typeof variant.price === 'string' ? parseFloat(variant.price) : variant.price);
+          
+        const variantComparePrice = variant.comparePrice === null ? null : 
+          (typeof variant.comparePrice === 'string' ? parseFloat(variant.comparePrice) : variant.comparePrice);
+          
+        const variantQuantity = typeof variant.quantity === 'number' ? variant.quantity : 
+                              (typeof variant.stock === 'number' ? variant.stock : 0);
+        
+        console.log(`Preparing variant ${variant.id || 'new'}: Price=${variantPrice}, ComparePrice=${variantComparePrice}, Quantity=${variantQuantity}`);
+        
+        // Prepare data for variant API
         const variantData: any = {
           id: variant.id,
           sku: variant.sku,
-          price: variant.price, // Will be null if "Contact for price" is enabled
-          comparePrice: variant.compareAtPrice,
-          quantity: variant.quantity,
-          stock: variant.stock
+          price: variantPrice,
+          comparePrice: variantComparePrice,
+          quantity: variantQuantity,
+          published: variant.published !== undefined ? variant.published : true,
+          isFeatured: variant.isFeatured || false,
+          isNew: variant.isNew || false,
+          isSale: !!(variantComparePrice && variantPrice && variantComparePrice > variantPrice),
+          gallery: variant.gallery || [],
+          thumbnail: variant.thumbnail || '',
+          options: variant.options || {}
+        };
+
+        // Process translations
+        if (variant.options) {
+          const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type';
+          const optionValue = variant.options[optionName] || variant.name;
+
+          if (optionValue) {
+            variantData.translations = [
+              {
+                locale: selectedLanguage.value,
+                name: optionValue
+              }
+            ];
+          }
         }
 
-        // Process translations based on options
-        const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type'
-        const optionValue = variant.options[optionName] || variant.name
-
-        // Add translations if value exists
-        if (optionValue) {
-          variantData.translations = [
-            {
-              locale: selectedLanguage.value,
-              name: optionValue
-            }
-          ]
-        }
-
-        return variantData
-      })
+        return variantData;
+      });
+      
+      console.log(`Prepared ${updateData.variants.length} variants for API request`);
     }
 
     if (typeof form.value.trackInventory === 'boolean') {
@@ -834,6 +843,13 @@ const updateProduct = debounce(async (continueEditing = false) => {
 
     if (typeof form.value.allowBackorders === 'boolean') {
       updateData.allowBackorders = form.value.allowBackorders
+    }
+
+    // Log toàn bộ dữ liệu trước khi gửi đi
+    console.log("Sending update request for product", route.params.id);
+    if (updateData.variants && updateData.variants.length > 0) {
+      console.log(`Sending ${updateData.variants.length} variants in update request`);
+      console.log("First variant:", updateData.variants[0]);
     }
 
     await trpc.admin.products.updateProduct.mutate({
@@ -884,20 +900,20 @@ watch(() => form.value.isContactPrice, (newValue) => {
       form.value.price = null;
     }
     // Save current compare price if exists
-    if (form.value.compareAtPrice !== null) {
-      form.value._tempCompareAtPrice = form.value.compareAtPrice;
-      form.value.compareAtPrice = null;
+    if (form.value.comparePrice !== null) {
+      form.value._tempComparePrice = form.value.comparePrice;
+      form.value.comparePrice = null;
     }
   } else {
     // Restore saved price or set to 0
     form.value.price = form.value._tempPrice || 0;
     // Restore saved compare price or keep null
-    form.value.compareAtPrice = form.value._tempCompareAtPrice !== undefined ? 
-      form.value._tempCompareAtPrice : null;
+    form.value.comparePrice = form.value._tempComparePrice !== undefined ? 
+      form.value._tempComparePrice : null;
     
     // Clear temporary values
     form.value._tempPrice = undefined;
-    form.value._tempCompareAtPrice = undefined;
+    form.value._tempComparePrice = undefined;
   }
 });
 
@@ -937,6 +953,31 @@ onBeforeUnmount(() => {
   loading.value = false;
   saveAndContinue.value = false;
 });
+
+// Watch cho form.variants để log khi thay đổi
+watch(() => form.value.variants, (newVariants) => {
+  console.log("[id].vue detected change in form.variants:", 
+    newVariants.map(v => ({
+      id: v.id, 
+      price: v.price, 
+      comparePrice: v.comparePrice,
+      stock: v.stock,
+      quantity: v.quantity
+    }))
+  );
+}, { deep: true });
+
+// Hàm xử lý khi variants được cập nhật từ component ProductVariants
+const handleVariantsUpdate = (updatedVariants: ProductVariant[]) => {
+  console.log("handleVariantsUpdate called with", updatedVariants.length, "variants");
+  
+  // Sử dụng deep clone để đảm bảo không có tham chiếu chung
+  form.value.variants = JSON.parse(JSON.stringify(updatedVariants));
+  
+  // Thêm log để debug
+  console.log("form.variants updated to", form.value.variants.length, "variants");
+  console.log("Sample variant data:", form.value.variants[0] || "No variants");
+};
 </script>
 
 <style>

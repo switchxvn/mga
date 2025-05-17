@@ -266,16 +266,16 @@ export function useTheme() {
     updateCssVariables(defaultColors);
 
     try {
-      // Nếu TRPC chưa sẵn sàng, trả về giá trị mặc định
-      if (!trpc?.admin?.theme?.getAll?.query) {
-        console.warn('TRPC admin.theme.getAll.query is not available');
+      let activeThemeData = null;
+      
+      // Sử dụng API public để lấy theme
+      if (trpc?.theme?.getActiveTheme?.query) {
+        console.log('Using public theme API');
+        activeThemeData = await trpc.theme.getActiveTheme.query();
+      } else {
+        console.warn('Public theme API not available');
         return null;
       }
-
-      // Lấy tất cả theme
-      const themes = await trpc.admin.theme.getAll.query();
-      // Tìm theme active
-      const activeThemeData = themes.find(t => t.isActive);
       
       if (activeThemeData) {
         activeTheme.value = activeThemeData;
@@ -311,8 +311,7 @@ export function useTheme() {
     updateCssVariables,
     getActiveTheme: async () => {
       try {
-        const themes = await trpc.admin.theme.getAll.query();
-        return themes.find(t => t.isActive) || null;
+        return await trpc.theme.getActiveTheme.query();
       } catch (error) {
         console.error('Failed to get active theme:', error);
         return null;

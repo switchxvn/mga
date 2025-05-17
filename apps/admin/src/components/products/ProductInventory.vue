@@ -413,7 +413,6 @@ const toast = useToast();
 const loadStockHistory = async () => {
   try {
     if (!route.params.id) {
-      console.log('No product ID available (create mode), skipping stock history load')
       return
     }
     

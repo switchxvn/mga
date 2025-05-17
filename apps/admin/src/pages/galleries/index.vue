@@ -270,7 +270,8 @@ const closeBulkUploadModal = () => {
       title: 'Đang tải lên',
       text: 'Vui lòng đợi quá trình tải lên hoàn tất',
       icon: 'warning',
-      showConfirmButton: false
+      showConfirmButton: false,
+      timer: 2000 // Tự động đóng thông báo sau 2 giây
     });
     return;
   }
@@ -278,6 +279,24 @@ const closeBulkUploadModal = () => {
   // Không cần revoke object URL vì đã sử dụng FileReader với Data URL
   isBulkUploadModalOpen.value = false;
   uploadingImages.value = [];
+};
+
+// Force đóng modal
+const forceCloseBulkUploadModal = () => {
+  isProcessingUploads.value = false;
+  isBulkUploadModalOpen.value = false;
+  uploadingImages.value = [];
+};
+
+// Xử lý sự kiện click vào khung upload
+const fileInput = ref<HTMLInputElement | null>(null);
+const handleClickUpload = () => {
+  if (isProcessingUploads.value) return;
+  
+  // Kích hoạt input file ẩn
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
 };
 
 // Sau khi upload thành công, thêm chức năng gỡ lỗi
@@ -509,6 +528,11 @@ const processImageUploads = async () => {
               locale: 'vi',
               title: item.file.name.split('.')[0], // Lấy tên file làm tiêu đề
               description: ''
+            },
+            {
+              locale: 'en',
+              title: item.file.name.split('.')[0], // Lấy tên file làm tiêu đề
+              description: ''
             }
           ]
         });
@@ -532,11 +556,11 @@ const processImageUploads = async () => {
     if (successCount > 0) {
       showSuccess(`Đã tải lên thành công ${successCount} ảnh${errorCount > 0 ? `, ${errorCount} ảnh bị lỗi` : ''}`);
       
-      // Đóng modal nếu tất cả thành công
-      if (errorCount === 0) {
-        // Không cần revoke object URL vì đã sử dụng FileReader với Data URL
-        closeBulkUploadModal();
-      }
+      // Đóng modal cả khi có lỗi
+      setTimeout(() => {
+        isBulkUploadModalOpen.value = false;
+        uploadingImages.value = [];
+      }, 500);
     } else {
       showError('Không có ảnh nào được tải lên thành công');
     }
@@ -999,7 +1023,7 @@ const processImageUploads = async () => {
               <button
                 type="button"
                 class="rounded-md bg-white dark:bg-neutral-800 text-gray-400 hover:text-gray-500 focus:outline-none"
-                @click="closeBulkUploadModal"
+                @click="forceCloseBulkUploadModal"
                 :disabled="isProcessingUploads"
               >
                 <XMarkIcon class="h-6 w-6" />
@@ -1055,11 +1079,12 @@ const processImageUploads = async () => {
                   </label>
                   
                   <div 
-                    class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center transition-colors duration-200"
+                    class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center transition-colors duration-200 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 dark:hover:border-indigo-700 dark:hover:bg-indigo-900/30"
                     :class="{ 'opacity-50 pointer-events-none': isProcessingUploads }"
                     @dragover="handleDragOver"
                     @dragleave="handleDragLeave"
                     @drop="handleDrop"
+                    @click="handleClickUpload"
                   >
                     <div v-if="uploadingImages.length === 0">
                       <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1069,6 +1094,14 @@ const processImageUploads = async () => {
                         {{ t('galleries.dragDrop') }}
                       </p>
                       <p class="text-xs text-gray-500 mt-2">PNG, JPG, GIF tối đa 10MB</p>
+                      <input
+                        type="file"
+                        ref="fileInput"
+                        multiple
+                        accept="image/*"
+                        class="hidden"
+                        @change="handleBulkImageSelect"
+                      />
                     </div>
                     
                     <div v-else class="max-h-60 overflow-y-auto">
@@ -1174,7 +1207,7 @@ const processImageUploads = async () => {
               <button
                 type="button"
                 class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-                @click="closeBulkUploadModal"
+                @click="forceCloseBulkUploadModal"
                 :disabled="isProcessingUploads"
               >
                 {{ t('galleries.cancel') }}

@@ -11,7 +11,8 @@
     "success": "Success",
     "language": "Language",
     "english": "English",
-    "vietnamese": "Vietnamese"
+    "vietnamese": "Vietnamese",
+    "adminPageSuffix": "- Admin Panel"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -72,7 +73,9 @@
     "upload": "Upload",
     "calculate": "Calculate Stats",
     "calculating": "Calculating...",
-    "setup": "Setup"
+    "setup": "Setup",
+    "saveAndContinue": "Save & Continue",
+    "saveAndBack": "Save & Back to List"
   },
   "messages": {
     "success": "Success",
@@ -206,7 +209,7 @@
       "applyAdjustment": "Apply Adjustment",
       "newProductNotice": "Stock history will be available after the product is created.",
       "historyAvailableAfter": "You can track stock movement history after the product has been saved.",
-      "stockMovementHistory": "Stock Movement History",
+      "stockMovements": "Stock Movement History",
       "allActivities": "All Activities",
       "adminAdjustments": "Admin Adjustments",
       "customerOrders": "Customer Orders",
@@ -230,7 +233,11 @@
       "of": "of",
       "results": "results",
       "previous": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "variantsDisabledMessage": "Inventory management is disabled because this product has variants. Please manage inventory for each variant in the Variants tab.",
+      "notice": "Notice:",
+      "disabledMessage": "Quantity management has been disabled because this product has variants.",
+      "manageMessage": "Quantities are managed individually for each variant in the"
     },
     "variants": {
       "title": "Product Variants",
@@ -981,7 +988,21 @@
     "createSuccess": "Gallery item created successfully",
     "updateSuccess": "Gallery item updated successfully",
     "featuredImage": "Featured Image",
-    "featuredImageAlt": "Featured image"
+    "featuredImageAlt": "Featured image",
+    "bulkUpload": "Bulk Upload",
+    "selectCategory": "Select Category",
+    "activateImages": "Activate Images",
+    "selectImages": "Select Images",
+    "dragDrop": "Drag & drop images here or click to upload",
+    "addImages": "Add More Images",
+    "upload": "Upload",
+    "uploadedSuccess": "Uploaded successfully",
+    "processing": "Processing...",
+    "updateCategories": "Update Categories",
+    "updateCategoriesDescription": "Select categories to assign to the selected gallery items",
+    "noCategoriesAvailable": "No categories available",
+    "cancel": "Cancel",
+    "status": "Status"
   },
   "categories": {
     "title": "Categories Management",

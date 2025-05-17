@@ -178,11 +178,31 @@ export const productAdminRouter = router({
         videoReview: z.string().optional(),
         translations: z.array(productTranslationSchema).optional(),
         categories: z.array(categoryInputSchema).optional(),
-        categoryIds: z.array(z.number()).optional()
+        categoryIds: z.array(z.number()).optional(),
+        hasVariants: z.boolean().optional(),
+        variants: z.array(z.object({
+          id: z.number().optional(),
+          sku: z.string().optional(),
+          price: z.number().nullable().optional(),
+          comparePrice: z.number().nullable().optional(),
+          quantity: z.number().optional(),
+          published: z.boolean().optional(),
+          isFeatured: z.boolean().optional(),
+          isNew: z.boolean().optional(),
+          isSale: z.boolean().optional(),
+          gallery: z.array(z.string()).optional(),
+          thumbnail: z.string().optional(),
+          options: z.record(z.string()).optional(),
+          translations: z.array(z.object({
+            locale: z.string(),
+            name: z.string(),
+            variantId: z.number().optional()
+          })).optional()
+        })).optional()
       })
     }))
     .mutation(async ({ ctx, input }) => {
-      const { translations, categories, categoryIds, ...updateData } = input.data;
+      const { translations, categories, categoryIds, variants, ...updateData } = input.data;
       
       // Tạo đối tượng dữ liệu cập nhật
       const productUpdateData: any = {
@@ -199,6 +219,11 @@ export const productAdminRouter = router({
         productUpdateData.categories = categories.map(({ id }) => ({ id } as unknown as Category));
       } else if (categoryIds && categoryIds.length > 0) {
         productUpdateData.categories = categoryIds.map(id => ({ id } as unknown as Category));
+      }
+      
+      // Xử lý variants nếu có
+      if (variants && variants.length > 0) {
+        productUpdateData.variants = variants;
       }
       
       return ctx.services.productAdminService.update(input.id, productUpdateData);
@@ -492,6 +517,67 @@ export const productAdminRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update variant status',
+          cause: error,
+        });
+      }
+    }),
+    
+  // Cập nhật thông tin biến thể sản phẩm
+  updateVariant: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      data: z.object({
+        sku: z.string().optional(),
+        price: z.number().nullable().optional(),
+        comparePrice: z.number().nullable().optional(),
+        quantity: z.number().optional(),
+        published: z.boolean().optional(),
+        thumbnail: z.string().optional(),
+        gallery: z.array(z.string()).optional(),
+      })
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Log input data với format đầy đủ
+        console.log('updateVariant input:', JSON.stringify(input, null, 2));
+        
+        // Log giá trị price và gallery riêng biệt
+        console.log(`Variant ${input.id} - Specific values:`, {
+          price: input.data.price === undefined ? 'undefined' : input.data.price === null ? 'null' : input.data.price,
+          comparePrice: input.data.comparePrice === undefined ? 'undefined' : input.data.comparePrice === null ? 'null' : input.data.comparePrice,
+          gallery: input.data.gallery === undefined ? 'undefined' : (input.data.gallery === null ? 'null' : (Array.isArray(input.data.gallery) ? `array[${input.data.gallery.length}]` : 'not array'))
+        });
+        
+        const variant = await ctx.services.productAdminService.findVariantById(input.id);
+        
+        if (!variant) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Variant with ID ${input.id} not found`,
+          });
+        }
+        
+        // Đảm bảo dữ liệu price và gallery được giữ nguyên giá trị, kể cả khi là 0, null, hoặc []
+        const dataToUpdate = { ...input.data };
+        
+        // Ghi log rõ ràng trước khi cập nhật
+        console.log(`Variant ${input.id} - Data to send to service:`, JSON.stringify(dataToUpdate, null, 2));
+        
+        const updatedVariant = await ctx.services.productAdminService.updateVariant(input.id, dataToUpdate);
+        
+        // Log kết quả sau khi cập nhật
+        console.log(`Variant ${input.id} updated successfully:`, {
+          price: updatedVariant.price,
+          comparePrice: updatedVariant.comparePrice,
+          gallery: updatedVariant.gallery ? `array[${updatedVariant.gallery.length}]` : 'null/empty'
+        });
+        
+        return updatedVariant;
+      } catch (error) {
+        ctx.logger.error('Failed to update variant:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update variant',
           cause: error,
         });
       }

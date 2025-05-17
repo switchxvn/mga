@@ -101,7 +101,7 @@
           <!-- Compare at Price -->
           <div class="grid gap-2">
             <label 
-              for="compareAtPrice" 
+              for="comparePrice" 
               class="text-sm font-medium text-slate-900 flex items-center"
             >
               {{ t('products.editor.compareAtPrice') }}
@@ -117,10 +117,10 @@
             <div class="relative">
               <span class="absolute left-3 top-2 text-slate-500">$</span>
               <input
-                id="compareAtPrice"
+                id="comparePrice"
                 type="number"
-                :value="compareAtPrice"
-                @input="$emit('update:compareAtPrice', Number(($event.target as HTMLInputElement).value) || null)"
+                :value="comparePrice"
+                @input="$emit('update:comparePrice', Number(($event.target as HTMLInputElement).value) || null)"
                 class="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-7 pr-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="0.00"
                 min="0"
@@ -234,7 +234,7 @@ defineProps<{
   description: string
   shortDescription: string
   price: number | null
-  compareAtPrice: number | null
+  comparePrice: number | null
   sku: string
   barcode: string
   editorOptions: any
@@ -248,7 +248,7 @@ defineEmits<{
   'update:description': [value: string]
   'update:shortDescription': [value: string]
   'update:price': [value: number]
-  'update:compareAtPrice': [value: number | null]
+  'update:comparePrice': [value: number | null]
   'update:sku': [value: string]
   'update:barcode': [value: string]
   'update:isContactPrice': [value: boolean]

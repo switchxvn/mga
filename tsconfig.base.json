@@ -8,16 +8,17 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "es2015",
+    "target": "es2022",
     "module": "esnext",
     "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@ew/database": ["libs/database/src/index.ts"],
-      "@ew/backend/*": ["apps/backend/src/*"],
-      "@ew/shared": ["libs/shared/src/index.ts"]
+      "@shared/*": ["libs/shared/src/*"],
+      "@shared": ["libs/shared/src/index.ts"],
+      "@database/*": ["libs/database/src/*"],
+      "@database": ["libs/database/src/index.ts"]
     },
     "useDefineForClassFields": false,
     "strict": false,

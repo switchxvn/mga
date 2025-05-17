@@ -292,7 +292,7 @@ export function useTheme() {
     // Ngay lập tức trả về trong SSR
     if (process.server) return null;
     
-    if (initialized) return;
+    if (initialized) return activeTheme.value;
 
     // Apply default colors
     updateCssVariables(defaultColors);
