@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Theme } from './theme.entity';
 import { ThemeSectionTranslation } from './theme-section-translation.entity';
+import { PageType as SharedPageType } from '@ew/shared';
 
 // Define PageType enum locally for application code only
 export enum PageType {
@@ -20,6 +21,7 @@ export enum PageType {
   SERVICE_PAGE = 'service_page',
   CONTACT_PAGE = 'contact_page',
   REVIEWS_PAGE = 'reviews_page',
+  TICKET_PRICING_PAGE = 'ticket_pricing_page',
   COMMON = 'common'
 }
 

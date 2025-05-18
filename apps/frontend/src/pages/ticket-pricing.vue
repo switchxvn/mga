@@ -5,6 +5,8 @@ import { useI18n } from 'vue-i18n'
 import { defineAsyncComponent, markRaw } from 'vue'
 import type { Component } from 'vue'
 import { useBreakpoints } from '@vueuse/core'
+import { useTheme } from '~/composables/useTheme'
+import { PageType } from '@ew/shared'
 
 // Define component types
 type ComponentType = Component
@@ -61,11 +63,13 @@ const resolveComponent = (section: any): ComponentType | null => {
 
 const trpc = useTrpc()
 const { locale } = useI18n()
+const { getActiveTheme, getPageSections } = useTheme()
 
 // State management
 const sections = ref<any[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
+const themeId = ref<number | null>(null)
 
 // Helper function to get translation by locale
 const getTranslation = (translations: any[] | undefined, fallback: any) => {
@@ -95,17 +99,18 @@ const translatedSections = computed(() => {
       }
     }
     
+    // Lấy dữ liệu từ translation settings
+    const translationSettings = translation?.settings || {}
+    
+    // Cấu trúc dữ liệu cho phù hợp với component
     const translatedSection = {
       ...section,
       title: translation?.title || section.title,
-      subtitle: translation?.subtitle || '',
-      content: translation?.content || '',
-      data: {
-        ...translation?.data,
-        tiers: translation?.data?.tiers || []
-      },
+      subtitle: translation?.settings?.subtitle || '',
+      content: translation?.settings?.content || translation?.description || '',
       settings: {
-        ...section.settings,
+        ...(section.settings || {}),
+        ...(translationSettings || {}),
         ...mobileSettings
       }
     }
@@ -114,21 +119,35 @@ const translatedSections = computed(() => {
   }).filter(Boolean)
 })
 
-// Fetch data using tRPC
+// Fetch data using tRPC and Theme services
 const fetchData = async () => {
   try {
     console.log('Fetching ticket pricing sections with locale:', locale.value)
     isLoading.value = true
     error.value = null
 
-    const data = await trpc.ticketPricingSection.getActiveSections.query(locale.value)
+    // Tìm active theme trước
+    const theme = await getActiveTheme()
+    if (!theme) {
+      error.value = 'No active theme found'
+      return
+    }
 
-    if (!data || data.length === 0) {
+    themeId.value = theme.id
+
+    // Lấy các section cho ticket pricing page
+    const pageSections = await getPageSections(
+      theme.id, 
+      PageType.TICKET_PRICING_PAGE, 
+      locale.value
+    )
+
+    if (!pageSections || pageSections.length === 0) {
       error.value = 'No active ticket pricing sections found'
       return
     }
 
-    sections.value = data
+    sections.value = pageSections
 
   } catch (e) {
     console.error('Error fetching ticket pricing sections:', e)
@@ -174,8 +193,8 @@ fetchData()
               subtitle: section.subtitle,
               content: section.content,
               benefits: section.settings?.benefits || [],
-              data: section.data,
-              tiers: section.data?.tiers || []
+              tiers: section.settings?.tiers || [],
+              faqs: section.settings?.faqs || []
             }"
             :is-mobile="isMobile"
           />

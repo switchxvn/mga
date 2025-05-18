@@ -21,7 +21,6 @@ import { aboutRouter } from './about.router';
 import { galleryRouter } from './gallery.router';
 import { foodMenuRouter } from './food-menu.router';
 import { contactSectionRouter } from './contact-section.router';
-import { ticketPricingSectionRouter } from './ticket-pricing-section.router';
 import { orderTicketSectionRouter } from './order-ticket-section.router';
 import { paymentRouter } from './payment.router';
 import { orderRouter } from './order.router';
@@ -59,7 +58,6 @@ export * from './customer-logo.router';
 export * from './contact.router';
 export * from './gallery.router';
 export * from './contact-section.router';
-export * from './ticket-pricing-section.router';
 export * from './order-ticket-section.router';
 export * from './food-menu.router';
 export * from './payment.router';
@@ -95,7 +93,6 @@ export const appRouter = (commonRouter) => router({
   gallery: galleryRouter,
   foodMenu: foodMenuRouter,
   contactSection: contactSectionRouter,
-  ticketPricingSection: ticketPricingSectionRouter,
   orderTicketSection: orderTicketSectionRouter,
   payment: paymentRouter,
   order: orderRouter,
