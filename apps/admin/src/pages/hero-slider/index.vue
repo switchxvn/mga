@@ -7,18 +7,16 @@ import {
   ImageIcon,
   LayoutIcon,
   ListChecksIcon,
-  MoveVerticalIcon,
   PencilIcon,
   PlusCircleIcon,
-  RefreshCwIcon,
-  ToggleLeftIcon,
-  ToggleRightIcon,
   TrashIcon,
-  XCircleIcon
+  XCircleIcon,
+  GripVerticalIcon
 } from 'lucide-vue-next';
 import Swal from 'sweetalert2';
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import draggable from 'vue3-draggable-next';
 import FilterContainer from '../../components/common/filter/FilterContainer.vue';
 import PageSizeFilter from '../../components/common/filter/PageSizeFilter.vue';
 import SearchFilter from '../../components/common/filter/SearchFilter.vue';
@@ -75,6 +73,18 @@ const showOnlyActiveThemes = ref(route.query.activeThemesOnly === 'true' ? true 
 const selectedSliders = ref<number[]>([]);
 const sortBy = ref('order');
 const sortOrder = ref<'asc' | 'desc'>('asc');
+const isDragging = ref(false);
+
+// Drag and drop options
+const dragOptions = computed(() => {
+  return {
+    animation: 200,
+    group: "sliders",
+    disabled: false,
+    ghostClass: "ghost-slider",
+    handle: ".slider-drag-handle"
+  };
+});
 
 // Thêm hàm toggleSelectAll
 const toggleSelectAll = () => {
@@ -93,6 +103,12 @@ const toggleItemSelection = (id: number) => {
   } else {
     selectedSliders.value.splice(index, 1);
   }
+};
+
+// Handle drag end event
+const handleDragEnd = () => {
+  isDragging.value = false;
+  reorderSliders();
 };
 
 // Lọc themes dựa vào trạng thái active
@@ -220,27 +236,35 @@ const deleteSlider = async (id: number) => {
 // Toggle active status
 const toggleActive = async (id: number, currentStatus: boolean) => {
   try {
-    const newStatus = !currentStatus;
-    await trpc.admin.heroSlider.update.mutate({ 
-      id, 
-      data: { isActive: newStatus } 
-    });
-    
-    // Update local state
+    // Đưa sự thay đổi vào state trước để UI phản ứng ngay lập tức
     const index = heroSliders.value.findIndex(slider => slider.id === id);
     if (index !== -1) {
+      // Đảo ngược trạng thái hiện tại
+      const newStatus = !currentStatus;
       heroSliders.value[index].isActive = newStatus;
+      
+      // Gọi API để cập nhật backend
+      await trpc.admin.heroSlider.update.mutate({ 
+        id, 
+        data: { isActive: newStatus } 
+      });
+      
+      // Show success message
+      Swal.fire({
+        title: t('messages.success'),
+        text: newStatus ? t('hero_slider.activateSuccess') : t('hero_slider.deactivateSuccess'),
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  } catch (err: any) {
+    // Nếu có lỗi, revert lại trạng thái
+    const index = heroSliders.value.findIndex(slider => slider.id === id);
+    if (index !== -1) {
+      heroSliders.value[index].isActive = currentStatus;
     }
     
-    // Show success message
-    Swal.fire({
-      title: t('messages.success'),
-      text: newStatus ? t('hero_slider.activateSuccess') : t('hero_slider.deactivateSuccess'),
-      icon: 'success',
-      timer: 1500,
-      showConfirmButton: false
-    });
-  } catch (err: any) {
     console.error('Error toggling slider status:', err);
     Swal.fire(t('messages.error'), err.message || t('hero_slider.statusUpdateError'), 'error');
   }
@@ -373,24 +397,6 @@ onMounted(async () => {
               </MenuItems>
             </Menu>
             
-            <button 
-              v-if="themeId" 
-              @click="reorderSliders"
-              class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
-            >
-              <LucideIcon :icon="MoveVerticalIcon" :size="20" class="mr-2" aria-hidden="true" />
-              {{ t('hero_slider.updateOrder') }}
-            </button>
-            
-            <button
-              v-if="themeId"
-              @click="fetchHeroSliders"
-              class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
-            >
-              <LucideIcon :icon="RefreshCwIcon" :size="20" class="mr-2" aria-hidden="true" />
-              {{ t('hero_slider.refresh') }}
-            </button>
-            
             <NuxtLink
               v-if="themeId"
               to="/hero-slider/create"
@@ -445,18 +451,26 @@ onMounted(async () => {
           
           <div class="flex flex-col">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('hero_slider.themeFilter') }}</label>
-            <button
-              @click="toggleThemeFilter"
-              class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-700"
-            >
-              <LucideIcon 
-                :icon="showOnlyActiveThemes ? ToggleRightIcon : ToggleLeftIcon" 
-                :size="16" 
-                class="mr-2" 
-                aria-hidden="true" 
+            <div class="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                id="theme-active-toggle"
+                :checked="showOnlyActiveThemes" 
+                @change="toggleThemeFilter" 
+                class="sr-only peer" 
               />
-              {{ showOnlyActiveThemes ? t('hero_slider.activeThemesOnly') : t('hero_slider.allThemes') }}
-            </button>
+              <label 
+                for="theme-active-toggle" 
+                class="flex items-center cursor-pointer"
+              >
+                <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative transition-colors duration-200 ease-in-out" :class="{'bg-indigo-600 dark:bg-indigo-500': showOnlyActiveThemes}">
+                  <div class="absolute w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ease-in-out" :style="{ top: '2px', [showOnlyActiveThemes ? 'right' : 'left']: '2px' }"></div>
+                </div>
+                <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                  {{ showOnlyActiveThemes ? t('hero_slider.activeThemesOnly') : t('hero_slider.allThemes') }}
+                </span>
+              </label>
+            </div>
           </div>
         </div>
       </template>
@@ -469,202 +483,175 @@ onMounted(async () => {
       </template>
     </FilterContainer>
 
-    <!-- Hero Sliders Table -->
-    <div>
-      <DataTable
-        :items="heroSliders"
-        :loading="isLoading"
-        :error="error"
-        :sort-by="sortBy"
-        :sort-order="sortOrder"
-        :selected-items="selectedSliders"
-        :pagination="{
-          currentPage: page,
-          totalPages: 1,
-          total: heroSliders.length,
-          pageSize: pageSize
-        }"
-        @update:selected-items="selectedSliders = $event"
-        @toggle-select-all="toggleSelectAll"
-        @toggle-item-selection="toggleItemSelection"
-        @sort="sortBy = $event"
-        @page-change="page = $event"
-        @clear-error="error = null"
-      >
-        <!-- Selection slot -->
-        <template #selection="{ item, isSelected, toggleSelection }">
-          <input
-            type="checkbox"
-            class="checkbox rounded"
-            :checked="isSelected"
-            @change="toggleSelection(item.id)"
-          />
-        </template>
-
-        <!-- Selection header slot -->
-        <template #selection-header="{ toggleAll }">
-          <input
-            type="checkbox"
-            class="checkbox rounded"
-            :checked="selectedSliders.length === heroSliders.length && heroSliders.length > 0"
-            :indeterminate="selectedSliders.length > 0 && selectedSliders.length < heroSliders.length"
-            @change="toggleAll"
-          />
-        </template>
-
-        <template #header>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {{ t('hero_slider.image') }}
-          </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {{ t('hero_slider.title') }}
-          </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {{ t('hero_slider.button') }}
-          </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {{ t('hero_slider.order') }}
-          </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {{ t('hero_slider.status') }}
-          </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {{ t('hero_slider.date') }}
-          </th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {{ t('products.actions') }}
-          </th>
-        </template>
-
-        <template #row="{ item: slider }">
-          <!-- IMAGE Column -->
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex items-center">
-              <div class="flex-shrink-0 h-10 w-16 rounded-sm bg-gray-100 dark:bg-gray-800 overflow-hidden">
+    <!-- Hero Sliders Table / Draggable List -->
+    <div class="bg-white dark:bg-neutral-800 shadow-sm rounded-lg overflow-hidden">
+      <div v-if="themeId && heroSliders.length > 0" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          <span class="font-medium">{{ t('hero_slider.dragDropInstructions') || 'Kéo và thả để sắp xếp lại thứ tự sliders' }}</span>
+        </p>
+      </div>
+      
+      <div v-if="themeId && heroSliders.length > 0" class="p-4">
+        <draggable
+          v-model="heroSliders"
+          v-bind="dragOptions"
+          item-key="id"
+          @end="handleDragEnd"
+          class="space-y-2"
+        >
+          <template #item="{ element: slider }">
+            <div class="flex items-center bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+              <!-- Drag Handle -->
+              <div class="slider-drag-handle cursor-move p-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                <LucideIcon :icon="GripVerticalIcon" :size="20" aria-hidden="true" />
+              </div>
+              
+              <!-- Checkbox for bulk selection -->
+              <div class="ml-2">
+                <input
+                  type="checkbox"
+                  class="checkbox rounded"
+                  :checked="selectedSliders.includes(slider.id)"
+                  @change="toggleItemSelection(slider.id)"
+                />
+              </div>
+              
+              <!-- Image -->
+              <div class="ml-4 flex-shrink-0 h-12 w-20 rounded-sm bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 <img 
                   v-if="slider.imageUrl" 
                   :src="slider.imageUrl" 
-                  class="h-10 w-16 object-cover" 
+                  class="h-12 w-20 object-cover" 
                   :alt="slider.title" 
                 />
                 <div v-else class="flex items-center justify-center h-full w-full">
                   <LucideIcon :icon="ImageIcon" :size="20" class="text-gray-400" aria-hidden="true" />
                 </div>
               </div>
-            </div>
-          </td>
-          
-          <!-- TITLE Column -->
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm font-medium text-gray-900 dark:text-white">
-              {{ slider.title }}
-            </div>
-            <div v-if="slider.description" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">
-              {{ slider.description }}
-            </div>
-          </td>
-          
-          <!-- BUTTON Column -->
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div v-if="slider.buttonText" class="flex flex-col">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">
-                {{ slider.buttonText }}
+              
+              <!-- Content -->
+              <div class="ml-4 flex-1">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ slider.title }}
+                </div>
+                <div v-if="slider.description" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">
+                  {{ slider.description }}
+                </div>
+                
+                <div class="flex items-center mt-1">
+                  <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                    Order: {{ slider.order }}
+                  </span>
+                  
+                  <span v-if="slider.buttonText" class="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                    Button: {{ slider.buttonText }}
+                  </span>
+                </div>
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">
-                {{ slider.buttonLink }}
+              
+              <!-- Actions -->
+              <div class="flex space-x-2 items-center">
+                <!-- Toggle switch -->
+                <div class="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    :id="`slider-active-toggle-${slider.id}`"
+                    :checked="slider.isActive" 
+                    @change="() => toggleActive(slider.id, slider.isActive)" 
+                    class="sr-only peer" 
+                  />
+                  <label 
+                    :for="`slider-active-toggle-${slider.id}`" 
+                    class="flex cursor-pointer"
+                  >
+                    <div class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full relative transition-colors duration-200 ease-in-out" :class="{'bg-green-500 dark:bg-green-600': slider.isActive}">
+                      <div class="absolute w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ease-in-out" :style="{ top: '2px', [slider.isActive ? 'right' : 'left']: '2px' }"></div>
+                    </div>
+                  </label>
+                </div>
+                <NuxtLink 
+                  :to="`/hero-slider/${slider.id}/edit`" 
+                  class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                  :title="t('hero_slider.edit')"
+                >
+                  <LucideIcon 
+                    :icon="PencilIcon" 
+                    :size="20" 
+                    aria-hidden="true" 
+                  />
+                </NuxtLink>
+                <button 
+                  @click="deleteSlider(slider.id)" 
+                  class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                  :title="t('hero_slider.delete')"
+                >
+                  <LucideIcon 
+                    :icon="TrashIcon" 
+                    :size="20" 
+                    aria-hidden="true" 
+                  />
+                </button>
               </div>
             </div>
-            <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-              {{ t('hero_slider.noButton') }}
-            </div>
-          </td>
-          
-          <!-- ORDER Column -->
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-            {{ slider.order }}
-          </td>
-          
-          <!-- STATUS Column -->
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span 
-              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-              :class="slider.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
-            >
-              {{ slider.isActive ? t('hero_slider.statusActive') : t('hero_slider.statusInactive') }}
-            </span>
-          </td>
-          
-          <!-- DATE Column -->
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-            {{ formatDate(slider.createdAt) }}
-          </td>
-          
-          <!-- ACTIONS Column -->
-          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <div class="flex justify-end gap-2">
-              <button 
-                @click="toggleActive(slider.id, slider.isActive)" 
-                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                :title="slider.isActive ? t('hero_slider.deactivate') : t('hero_slider.activate')"
-              >
-                <LucideIcon 
-                  :icon="slider.isActive ? ToggleRightIcon : ToggleLeftIcon" 
-                  :size="20" 
-                  aria-hidden="true" 
-                />
-              </button>
-              <NuxtLink 
-                :to="`/hero-slider/${slider.id}/edit`" 
-                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
-                :title="t('hero_slider.edit')"
-              >
-                <LucideIcon 
-                  :icon="PencilIcon" 
-                  :size="20" 
-                  aria-hidden="true" 
-                />
-              </NuxtLink>
-              <button 
-                @click="deleteSlider(slider.id)" 
-                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                :title="t('hero_slider.delete')"
-              >
-                <LucideIcon 
-                  :icon="TrashIcon" 
-                  :size="20" 
-                  aria-hidden="true" 
-                />
-              </button>
-            </div>
-          </td>
-        </template>
+          </template>
+        </draggable>
+      </div>
 
-        <template #empty>
-          <div class="text-center py-10">
-            <LucideIcon 
-              :icon="LayoutIcon" 
-              :size="48" 
-              class="mx-auto text-gray-400 dark:text-gray-600" 
-              aria-hidden="true" 
-            />
-            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-              {{ themeId ? t('hero_slider.noSlidersFound') : t('hero_slider.selectThemeFirst') }}
-            </h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {{ themeId ? t('hero_slider.createNewHint') : t('hero_slider.selectThemeHint') }}
-            </p>
-            <div class="mt-6" v-if="themeId">
-              <NuxtLink
-                to="/hero-slider/create"
-                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                <LucideIcon :icon="PlusCircleIcon" :size="20" class="mr-2" aria-hidden="true" />
-                {{ t('hero_slider.addSlider') }}
-              </NuxtLink>
-            </div>
-          </div>
-        </template>
-      </DataTable>
+      <!-- Empty state -->
+      <div v-if="isLoading" class="px-6 py-10 text-center">
+        <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+          <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+            {{ t('loading') }}
+          </span>
+        </div>
+      </div>
+      
+      <div v-else-if="error" class="px-6 py-10 text-center">
+        <div class="inline-flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-full bg-red-100 text-red-500">
+          <LucideIcon :icon="XCircleIcon" :size="24" aria-hidden="true" />
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ t('error') }}</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ error }}</p>
+        <div class="mt-6">
+          <button
+            @click="fetchHeroSliders"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            {{ t('retry') }}
+          </button>
+        </div>
+      </div>
+      
+      <div v-else-if="!themeId || heroSliders.length === 0" class="text-center py-10">
+        <LucideIcon 
+          :icon="LayoutIcon" 
+          :size="48" 
+          class="mx-auto text-gray-400 dark:text-gray-600" 
+          aria-hidden="true" 
+        />
+        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+          {{ themeId ? t('hero_slider.noSlidersFound') : t('hero_slider.selectThemeFirst') }}
+        </h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {{ themeId ? t('hero_slider.createNewHint') : t('hero_slider.selectThemeHint') }}
+        </p>
+        <div class="mt-6" v-if="themeId">
+          <NuxtLink
+            to="/hero-slider/create"
+            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          >
+            <LucideIcon :icon="PlusCircleIcon" :size="20" class="mr-2" aria-hidden="true" />
+            {{ t('hero_slider.addSlider') }}
+          </NuxtLink>
+        </div>
+      </div>
     </div>
   </div>
-</template> 
+</template>
+
+<style scoped>
+.ghost-slider {
+  opacity: 0.5;
+  background: #c8ebfb;
+}
+</style> 

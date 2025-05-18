@@ -1,7 +1,7 @@
 import { ref, watch, computed } from 'vue';
 import { useTrpc } from './useTrpc';
 import { useDark } from '@vueuse/core';
-import { PageType } from '@ew/shared';
+import { PageType, ThemeSectionTranslation } from '@ew/shared';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../types/trpc';
 
@@ -42,6 +42,7 @@ interface ThemeSection {
   componentName?: string;
   settings: Record<string, any>;
   isActive: boolean;
+  translations?: ThemeSectionTranslation[];
 }
 
 interface Theme {
@@ -187,6 +188,50 @@ export function useTheme() {
     }
   };
 
+  // Lấy tất cả section của một theme theo locale
+  const getThemeSections = async (themeId: number, locale?: string): Promise<ThemeSection[]> => {
+    try {
+      const sections = await trpc.theme.getSections.query({
+        themeId,
+        locale
+      });
+      return sections as ThemeSection[];
+    } catch (error) {
+      console.error(`Failed to fetch theme sections for theme ${themeId}:`, error);
+      return [];
+    }
+  };
+
+  // Lấy tất cả section của một page type theo locale
+  const getPageSections = async (themeId: number, pageType: PageType, locale?: string): Promise<ThemeSection[]> => {
+    try {
+      const sections = await trpc.theme.getPageSections.query({
+        themeId,
+        pageType,
+        locale
+      });
+      return sections as ThemeSection[];
+    } catch (error) {
+      console.error(`Failed to fetch page sections for theme ${themeId}:`, error);
+      return [];
+    }
+  };
+
+  // Lấy một section cụ thể theo locale
+  const getSection = async (themeId: number, sectionId: number, locale?: string): Promise<ThemeSection | null> => {
+    try {
+      const section = await trpc.theme.getSection.query({
+        themeId,
+        sectionId,
+        locale
+      });
+      return section as ThemeSection;
+    } catch (error) {
+      console.error(`Failed to fetch section ${sectionId}:`, error);
+      return null;
+    }
+  };
+
   const updateCssVariables = (themeColors: ThemeColors) => {
     // Skip updating CSS variables during SSR
     if (process.server) return;
@@ -288,53 +333,90 @@ export function useTheme() {
     }
   };
 
-  const initializeTheme = async () => {
-    // Ngay lập tức trả về trong SSR
-    if (process.server) return null;
-    
-    if (initialized) return activeTheme.value;
+  const setMode = (mode: 'light' | 'dark' | 'auto') => {
+    // TODO: Add some persistence mechanism (cookie or localStorage)
+    if (mode === 'auto') {
+      // Let system preference decide
+      isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Add listener for changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent) => {
+        isDark.value = e.matches;
+      };
+      mediaQuery.addEventListener('change', handleChange);
+      // Store the mode
+      localStorage.setItem('color-theme', 'auto');
+    } else {
+      // Explicitly set light or dark
+      isDark.value = mode === 'dark';
+      localStorage.setItem('color-theme', mode);
+    }
 
-    // Apply default colors
-    updateCssVariables(defaultColors);
-
-    try {
-      // Kiểm tra TRPC có sẵn sàng không
-      if (!trpc?.theme?.getActiveTheme?.query) {
-        console.warn('TRPC theme.getActiveTheme.query is not available');
-        return null;
-      }
-      
-      const response = await trpc.theme.getActiveTheme.query();
-      
-      if (response) {
-        activeTheme.value = response;
-        initialized = true;
-        
-        if (response.colors) {
-          updateCssVariables(response.colors);
-        }
-      }
-      
-      return response;
-    } catch (error) {
-      console.error('Failed to initialize theme:', error);
-      initialized = true; // Đánh dấu đã khởi tạo để không gọi lại liên tục
-      return null;
+    // If we have an active theme, update CSS
+    if (activeTheme.value && activeTheme.value.colors) {
+      updateCssVariables(activeTheme.value.colors);
     }
   };
 
-  // Watch for dark mode changes only in browser
+  // Initialize theme based on stored preference or system default
+  const initializeColorMode = () => {
+    if (process.server) return;
+
+    const storedMode = localStorage.getItem('color-theme');
+    
+    if (storedMode) {
+      if (storedMode === 'dark') {
+        isDark.value = true;
+      } else if (storedMode === 'light') {
+        isDark.value = false;
+      } else if (storedMode === 'auto') {
+        isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+    }
+  };
+
+  const initializeTheme = async () => {
+    if (initialized || process.server) return;
+
+    try {
+      // Load stored color mode first
+      initializeColorMode();
+      
+      // Then load the theme
+      const theme = await getActiveTheme();
+      activeTheme.value = theme;
+      
+      if (theme && theme.colors) {
+        updateCssVariables(theme.colors);
+      }
+      
+      initialized = true;
+    } catch (error) {
+      console.error('Failed to initialize theme:', error);
+    }
+  };
+
+  // Watch for changes to dark mode and update CSS
+  watch(isDark, () => {
+    if (activeTheme.value && activeTheme.value.colors) {
+      updateCssVariables(activeTheme.value.colors);
+    }
+  });
+
+  // Initialize the theme on client side
   if (process.client) {
-    watch(isDark, () => {
-      const colors = activeTheme.value?.colors || defaultColors;
-      updateCssVariables(colors);
-    });
+    initializeTheme();
   }
 
   return {
+    activeTheme,
     getActiveTheme,
-    initializeTheme,
+    getThemeSections,
+    getPageSections,
+    getSection,
+    updateCssVariables,
     isDark,
-    updateCssVariables
+    setMode,
+    initializeTheme
   };
 } 

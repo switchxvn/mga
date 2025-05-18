@@ -14,6 +14,7 @@ export * from './types/food.type';
 export * from './types/profile.type';
 export * from './types/upload.type';
 export * from './types/theme.type';
+export * from './types/section-config.type';
 // Re-export ProductType from lib/types/product.type
 export { ProductType as LibProductType } from './lib/types/product.type';
 // Re-export other items from lib/types/product.type except ProductType
@@ -37,6 +38,7 @@ export type {
 export * from './lib/interfaces/post.interface';
 export * from './lib/interfaces/gallery.interface';
 export * from './lib/interfaces/seo.interface';
+export * from './lib/interfaces/theme-section-translation.interface';
 
 // Enums
 export * from './lib/enums';
