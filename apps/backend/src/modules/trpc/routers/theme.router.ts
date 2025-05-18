@@ -65,6 +65,159 @@ export const themeRouter = router({
       }
     }),
 
+  // Lấy tất cả section của theme
+  getSections: publicProcedure
+    .input(z.object({
+      themeId: z.number(),
+      locale: z.string().min(2).max(5).optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const locale = input.locale || 'en';
+        console.log('getSections trpc called with locale:', locale);
+        
+        try {
+          // Thử lấy với locale được yêu cầu
+          const sections = await ctx.services.themeSectionFrontendService.getAllByThemeId(
+            input.themeId,
+            locale
+          );
+          
+          if (sections.length > 0) {
+            return sections;
+          }
+          
+          // Nếu không tìm thấy sections với locale yêu cầu và locale khác 'en', thử dùng locale 'en'
+          if (locale !== 'en') {
+            ctx.logger.log(`No sections found for locale ${locale}, trying fallback to 'en'`);
+            return await ctx.services.themeSectionFrontendService.getAllByThemeId(
+              input.themeId,
+              'en'
+            );
+          }
+          
+          return sections; // Trả về mảng rỗng nếu không tìm thấy với 'en'
+        } catch (error) {
+          // Nếu lỗi NotFoundException và locale khác 'en', thử dùng 'en'
+          if (error.name === 'NotFoundException' && locale !== 'en') {
+            ctx.logger.log(`Error with locale ${locale}, trying fallback to 'en'`);
+            return await ctx.services.themeSectionFrontendService.getAllByThemeId(
+              input.themeId,
+              'en'
+            );
+          }
+          throw error;
+        }
+      } catch (error) {
+        ctx.logger.error(`Failed to fetch sections for theme ${input.themeId}:`, error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch theme sections',
+          cause: error,
+        });
+      }
+    }),
+
+  // Lấy tất cả section của page type
+  getPageSections: publicProcedure
+    .input(z.object({
+      themeId: z.number(),
+      pageType: z.nativeEnum(PageType),
+      locale: z.string().min(2).max(5).optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const locale = input.locale || 'en';
+        console.log('getPageSections trpc called with locale:', locale);
+        
+        try {
+          // Thử lấy với locale được yêu cầu
+          const sections = await ctx.services.themeSectionFrontendService.getAllByPageType(
+            input.themeId,
+            input.pageType,
+            locale
+          );
+          
+          if (sections.length > 0) {
+            return sections;
+          }
+          
+          // Nếu không tìm thấy sections với locale yêu cầu và locale khác 'en', thử dùng locale 'en'
+          if (locale !== 'en') {
+            ctx.logger.log(`No sections found for locale ${locale}, trying fallback to 'en'`);
+            return await ctx.services.themeSectionFrontendService.getAllByPageType(
+              input.themeId,
+              input.pageType,
+              'en'
+            );
+          }
+          
+          return sections; // Trả về mảng rỗng nếu không tìm thấy với 'en'
+        } catch (error) {
+          // Nếu lỗi NotFoundException và locale khác 'en', thử dùng 'en'
+          if (error.name === 'NotFoundException' && locale !== 'en') {
+            ctx.logger.log(`Error with locale ${locale}, trying fallback to 'en'`);
+            return await ctx.services.themeSectionFrontendService.getAllByPageType(
+              input.themeId,
+              input.pageType,
+              'en'
+            );
+          }
+          throw error;
+        }
+      } catch (error) {
+        ctx.logger.error(`Failed to fetch page sections for theme ${input.themeId}:`, error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch page sections',
+          cause: error,
+        });
+      }
+    }),
+
+  // Lấy một section cụ thể với translation
+  getSection: publicProcedure
+    .input(z.object({
+      themeId: z.number(),
+      sectionId: z.number(),
+      locale: z.string().min(2).max(5).optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const locale = input.locale || 'en';
+        console.log('getSection trpc called with locale:', locale);
+        
+        try {
+          // Thử lấy với locale được yêu cầu
+          const section = await ctx.services.themeSectionFrontendService.getById(
+            input.themeId,
+            input.sectionId,
+            locale
+          );
+          
+          return section;
+        } catch (error) {
+          // Nếu lỗi NotFoundException và locale khác 'en', thử dùng locale 'en'
+          if (error.name === 'NotFoundException' && locale !== 'en') {
+            ctx.logger.log(`Error fetching section ${input.sectionId} with locale ${locale}, trying fallback to 'en'`);
+            return await ctx.services.themeSectionFrontendService.getById(
+              input.themeId,
+              input.sectionId,
+              'en'
+            );
+          }
+          throw error;
+        }
+      } catch (error) {
+        ctx.logger.error(`Failed to fetch section ${input.sectionId}:`, error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch section',
+          cause: error,
+        });
+      }
+    }),
+
   adminGetAll: adminProcedure.query(async ({ ctx }) => {
     try {
       return await ctx.services.themeAdminService.findAll();

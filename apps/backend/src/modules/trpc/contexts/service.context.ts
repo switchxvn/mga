@@ -32,6 +32,7 @@ import { HeroVideoService } from '../../hero/services/hero-video.service';
 import { ThemeAdminService } from '../../theme/admin/services/theme-admin.service';
 import { ThemeFrontendService } from '../../theme/frontend/services/theme-frontend.service';
 import { ThemeSectionAdminService } from '../../theme/admin/services/theme-section-admin.service';
+import { ThemeSectionFrontendService } from '../../theme/frontend/services/theme-section-frontend.service';
 import { ComponentStyleConfigAdminService } from '../../theme/admin/services/component-style-config-admin.service';
 import { ComponentStyleConfigFrontendService } from '../../theme/frontend/services/component-style-config-frontend.service';
 import { LanguageFrontendService } from '../../language/frontend/services/language-frontend.service';
@@ -114,6 +115,7 @@ export class ServiceContext {
     private readonly themeAdminService: ThemeAdminService,
     private readonly themeFrontendService: ThemeFrontendService,
     private readonly themeSectionAdminService: ThemeSectionAdminService,
+    private readonly themeSectionFrontendService: ThemeSectionFrontendService,
     private readonly componentStyleConfigAdminService: ComponentStyleConfigAdminService,
     private readonly componentStyleConfigFrontendService: ComponentStyleConfigFrontendService,
     private readonly languageFrontendService: LanguageFrontendService,
@@ -200,6 +202,7 @@ export class ServiceContext {
       themeAdminService: this.themeAdminService,
       themeFrontendService: this.themeFrontendService,
       themeSectionAdminService: this.themeSectionAdminService,
+      themeSectionFrontendService: this.themeSectionFrontendService,
       componentStyleConfigAdminService: this.componentStyleConfigAdminService,
       componentStyleConfigFrontendService: this.componentStyleConfigFrontendService,
       languageFrontendService: this.languageFrontendService,
@@ -297,6 +300,7 @@ export class ServiceContext {
         product: this.productFrontendService,
         featureFlags: this.featureFlagsFrontendService,
         theme: this.themeFrontendService,
+        themeSection: this.themeSectionFrontendService,
         componentStyleConfig: this.componentStyleConfigFrontendService,
         language: this.languageFrontendService,
         about: this.aboutFrontendService,

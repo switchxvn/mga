@@ -11,4 +11,5 @@ export * from './product-variant.interface';
 export * from './profile.interface';
 export * from './seo.interface';
 export * from './service.interface';
-export * from './tag.interface'; 
+export * from './tag.interface';
+export * from './theme-section-translation.interface'; 

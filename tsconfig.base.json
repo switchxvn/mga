@@ -18,7 +18,10 @@
       "@shared/*": ["libs/shared/src/*"],
       "@shared": ["libs/shared/src/index.ts"],
       "@database/*": ["libs/database/src/*"],
-      "@database": ["libs/database/src/index.ts"]
+      "@database": ["libs/database/src/index.ts"],
+      "@ew/database/*": ["libs/database/src/*"],
+      "@ew/shared/*": ["libs/shared/src/*"],
+      "@ew/shared": ["libs/shared/src/index.ts"]
     },
     "useDefineForClassFields": false,
     "strict": false,
