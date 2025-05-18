@@ -25,7 +25,8 @@
             <input
               type="checkbox"
               :value="category.id"
-              v-model="localSelectedCategories"
+              :checked="isSelected(category.id)"
+              @change="toggleCategory(category.id)"
               class="form-checkbox h-4 w-4 text-primary border-slate-300 rounded"
             />
             <span class="text-sm font-medium text-slate-700">
@@ -44,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, watchEffect } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { FolderIcon } from 'lucide-vue-next'
 import { useLocalization } from '@/composables/useLocalization'
 import { useCategory } from '@/composables/useCategory'
@@ -76,33 +77,33 @@ const emit = defineEmits<{
   'update:modelValue': [value: number[]]
 }>()
 
-const categories = ref<Category[]>([])
+const categories = ref<any[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-// Sử dụng biến cục bộ để theo dõi danh sách categories đã chọn
-const localSelectedCategories = ref<number[]>([])
+// Thay đổi cách kiểm tra categories đã chọn để tránh vòng lặp với v-model
+const isSelected = (categoryId: number) => {
+  return props.modelValue.includes(categoryId)
+}
 
-// Cập nhật localSelectedCategories khi modelValue thay đổi
-watchEffect(() => {
-  if (props.modelValue && Array.isArray(props.modelValue)) {
-    localSelectedCategories.value = [...props.modelValue]
+// Thay đổi cách cập nhật danh sách categories đã chọn
+const toggleCategory = (categoryId: number) => {
+  const newSelected = [...props.modelValue]
+  const index = newSelected.indexOf(categoryId)
+  
+  if (index === -1) {
+    newSelected.push(categoryId)
+  } else {
+    newSelected.splice(index, 1)
   }
-})
+  
+  emit('update:modelValue', newSelected)
+}
 
-// Emit sự kiện khi localSelectedCategories thay đổi
-watch(localSelectedCategories, (newValue) => {
-  emit('update:modelValue', newValue)
-}, { deep: true })
-
-// Watching selectedLanguage changes to reload categories with the new locale
-watch(() => props.selectedLanguage, (newLocale) => {
-  if (newLocale) {
-    fetchCategories(newLocale)
-  }
-})
-
+// Định nghĩa hàm fetchCategories trước khi sử dụng nó trong watch
 const fetchCategories = async (locale: string = props.selectedLanguage || 'en') => {
+  if (!locale) return
+  
   try {
     loading.value = true
     error.value = null
@@ -122,7 +123,19 @@ const getCategoryName = (category: Category) => {
   return translation?.name || 'Unnamed Category'
 }
 
+// Watching selectedLanguage changes to reload categories with the new locale
+let previousLocale = ''
+watch(() => props.selectedLanguage, (newLocale) => {
+  if (newLocale && newLocale !== previousLocale) {
+    previousLocale = newLocale
+    fetchCategories(newLocale)
+  }
+}, { immediate: true })
+
+// Tải categories ban đầu nếu cần thiết
 onMounted(() => {
-  fetchCategories()
+  if (!categories.value.length && !loading.value) {
+    fetchCategories()
+  }
 })
 </script> 
