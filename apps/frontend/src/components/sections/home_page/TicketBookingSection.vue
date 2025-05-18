@@ -133,6 +133,33 @@
                 currentSettings.benefits.freeShuttle
               }}</span>
             </div>
+            
+            <!-- Tier Discount Benefits -->
+            <div v-if="selectedProduct && tierDiscounts.length > 0" 
+                 class="flex flex-col gap-2 mt-2">
+              <div class="text-lg font-semibold text-green-700 border-t border-green-200 pt-2">
+                {{ t('products.tierDiscounts.title') }}
+              </div>
+              <div 
+                v-for="(tier, index) in sortedTierDiscounts" 
+                :key="tier.id"
+                class="flex items-center gap-3"
+              >
+                <CheckCircleIcon class="w-6 h-6 text-green-500 flex-shrink-0" />
+                <span class="text-base font-bold text-gray-800 dark:text-gray-200">
+                  <template v-if="index < sortedTierDiscounts.length - 1">
+                    {{ locale === 'vi' ? 
+                      `Quý khách mua từ ${tier.minQuantity} đến ${sortedTierDiscounts[index+1].minQuantity-1} vé chiết khấu ${tier.discountPercent}%` : 
+                      `Purchase ${tier.minQuantity} to ${sortedTierDiscounts[index+1].minQuantity-1} tickets for ${tier.discountPercent}% discount` }}
+                  </template>
+                  <template v-else>
+                    {{ locale === 'vi' ? 
+                      `Quý khách mua từ ${tier.minQuantity} vé chiết khấu ${tier.discountPercent}%` : 
+                      `Purchase ${tier.minQuantity} or more tickets for ${tier.discountPercent}% discount` }}
+                  </template>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -217,14 +244,37 @@
             </DatePicker>
           </div>
 
+          
+
+          <!-- Tiered Pricing Table -->
+          <div v-if="selectedProduct && totalTickets > 0" class="mb-4 mt-6">
+            <h3 class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {{ t('products.bulkDiscounts') }}
+            </h3>
+            <TierPricingTable 
+              :productId="selectedProduct.id"
+              :quantity="totalTickets"
+              :showUnitPrice="false"
+              :title="''"
+            />
+          </div>
+
           <!-- Total and Submit -->
           <div
             class="flex items-center justify-between pt-4 border-t dark:border-gray-700"
           >
             <div :class="currentSettings.colors.secondary">
               <div class="text-sm">Tổng tiền</div>
-              <div class="text-2xl font-semibold" :class="currentSettings.colors.primary">
-                {{ calculateTotal }}
+              <div v-if="discountedTotal < originalTotal" class="flex flex-col">
+                <div class="text-2xl font-semibold" :class="currentSettings.colors.primary">
+                  {{ formatPrice(discountedTotal) }}
+                </div>
+                <div class="text-sm text-gray-500 line-through">
+                  {{ formatPrice(originalTotal) }}
+                </div>
+              </div>
+              <div v-else class="text-2xl font-semibold" :class="currentSettings.colors.primary">
+                {{ formatPrice(discountedTotal) }}
               </div>
               <div class="text-xs mt-1 text-gray-600 dark:text-gray-400">
                 {{ totalTickets }} vé
@@ -251,9 +301,8 @@
 
 <script setup lang="ts">
 import { useProduct } from "@/composables/useProduct";
-import type { Settings } from "@/types/ticket";
+import type { Settings, Product } from "@/types/ticket";
 import { defaultSettings } from "@/types/ticket";
-import type { Product } from "@ew/shared";
 import { ProductType } from "@ew/shared";
 import {
   ArrowRight,
@@ -273,10 +322,12 @@ import {
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { DatePicker } from "v-calendar";
 import "v-calendar/style.css";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useLocalization } from "../../../composables/useLocalization";
 import { useTicketBooking } from '~/composables/useTicketBooking';
 import { useRouter } from 'vue-router';
+import { useTierPricing } from '~/composables/useTierPricing';
+import TierPricingTable from '~/components/product/TierPricingTable.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -289,10 +340,11 @@ const props = withDefaults(
   }
 );
 
-const { locale } = useLocalization();
+const { locale, t } = useLocalization();
 const { products, isLoadingProducts, filters, fetchProducts } = useProduct();
 const router = useRouter();
 const { saveBookingData } = useTicketBooking();
+const { getDiscountForQuantity, fetchTierDiscountsForProduct, tierDiscounts } = useTierPricing();
 
 const selectedProduct = ref<Product | null>(null);
 const selectedDate = ref<Date | null>(null);
@@ -309,7 +361,7 @@ const formatPrice = (price: number) => {
   }).format(price);
 };
 
-const calculateTotal = computed(() => {
+const calculateTotal = computed(async () => {
   if (!selectedProduct.value) return formatPrice(0);
 
   // Tính tổng dựa trên số lượng của mỗi variant
@@ -323,6 +375,39 @@ const calculateTotal = computed(() => {
 
   return formatPrice(total);
 });
+
+// Tổng tiền gốc và đã áp dụng giảm giá
+const originalTotal = ref(0);
+const discountedTotal = ref(0);
+
+// Cập nhật tổng tiền với giảm giá
+const updateDiscountedTotal = async () => {
+  if (!selectedProduct.value || totalTickets.value <= 0) {
+    originalTotal.value = 0;
+    discountedTotal.value = 0;
+    return;
+  }
+
+  // Tính tổng cơ bản
+  let total = 0;
+  Object.entries(variantCounts.value).forEach(([variantId, count]) => {
+    const variant = indexedVariants.value.find((v) => v.id === Number(variantId));
+    if (variant && count > 0) {
+      total += getVariantPrice(variant) * count;
+    }
+  });
+
+  // Lưu tổng tiền gốc
+  originalTotal.value = total;
+
+  // Áp dụng giảm giá theo số lượng nếu có
+  const discountPercent = await getDiscountForQuantity(selectedProduct.value.id, null, totalTickets.value);
+  if (discountPercent > 0) {
+    total = total * (1 - discountPercent / 100);
+  }
+
+  discountedTotal.value = total;
+};
 
 const isFormValid = computed(() => {
   if (!selectedProduct.value) return false;
@@ -340,13 +425,20 @@ const totalTickets = computed(() => {
   return Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
 });
 
-const selectProduct = (product: Product) => {
+// Sort tier discounts by minQuantity for display
+const sortedTierDiscounts = computed(() => {
+  return [...tierDiscounts.value]
+    .filter(discount => discount.isActive)
+    .sort((a, b) => a.minQuantity - b.minQuantity);
+});
+
+const selectProduct = async (product: Product) => {
   selectedProduct.value = product;
   variantCounts.value = {};
 
   // Khởi tạo variants có index
   if (product.variants && product.variants.length > 0) {
-    indexedVariants.value = product.variants.map((variant, index) => ({
+    indexedVariants.value = product.variants.map((variant: any, index: number) => ({
       ...variant,
       _index: index,
     }));
@@ -358,6 +450,16 @@ const selectProduct = (product: Product) => {
   } else {
     indexedVariants.value = [];
   }
+  
+  // Fetch tier discounts for the selected product
+  if (product.id) {
+    try {
+      await fetchTierDiscountsForProduct(product.id);
+      // The tierDiscounts are now updated in the composable
+    } catch (error) {
+      console.error('Error fetching tier discounts:', error);
+    }
+  }
 };
 
 const selectVariant = (variant: any) => {
@@ -366,6 +468,9 @@ const selectVariant = (variant: any) => {
 
 const handleSubmit = async () => {
   if (!selectedProduct.value || !selectedDate.value) return;
+
+  // Make sure discounted total is updated
+  await updateDiscountedTotal();
 
   // Get active variants (quantity > 0)
   const activeVariants = Object.entries(variantCounts.value)
@@ -383,16 +488,14 @@ const handleSubmit = async () => {
 
   if (activeVariants.length === 0) return;
 
-  // Calculate total amount
-  const totalAmount = activeVariants.reduce((sum, variant) => sum + variant.totalPrice, 0);
-
-  // Save booking data
+  // Save booking data with discounted total amount and original amount
   saveBookingData({
     productId: selectedProduct.value.id,
     productName: getTranslationByLocale(selectedProduct.value.translations, "title"),
     date: selectedDate.value,
     variants: activeVariants,
-    totalAmount
+    totalAmount: discountedTotal.value,
+    originalAmount: originalTotal.value
   });
 
   // Navigate to checkout
@@ -402,46 +505,15 @@ const handleSubmit = async () => {
 const transformToProduct = (item: any): Product => {
   return {
     id: item.id,
-    type: item.type,
-    title: item.translations[0]?.title || "",
-    slug: item.translations[0]?.slug || "",
-    sku: item.sku || "",
-    price: item.price || 0,
-    comparePrice: item.comparePrice || null,
-    formattedPrice: item.formattedPrice,
-    shortDescription: item.translations[0]?.shortDescription || "",
-    content: item.translations[0]?.content || "",
-    thumbnail: item.thumbnail || "",
-    gallery: item.gallery || [],
-    metaTitle: item.translations[0]?.metaTitle || "",
-    metaDescription: item.translations[0]?.metaDescription || "",
-    metaKeywords: item.translations[0]?.metaKeywords || "",
-    ogTitle: item.translations[0]?.ogTitle || "",
-    ogDescription: item.translations[0]?.ogDescription || "",
-    ogImage: item.translations[0]?.ogImage || "",
-    videoTitle: "",
-    videoUrl: "",
-    videoThumbnail: "",
-    videoReview: "",
-    isNew: item.isNew || false,
-    isSale: item.isSale || false,
-    isFeatured: item.isFeatured || false,
-    stock: item.stock || 0,
-    active: true,
-    categories: item.categories || [],
     translations: (item.translations || []).map((t: any) => ({
       ...t,
       createdAt: new Date(t.createdAt),
       updatedAt: new Date(t.updatedAt),
     })),
-    specifications: item.specifications || [],
-    combos: item.combos || [],
-    crossSellProducts: [],
-    priceRequests: [],
+    thumbnail: item.thumbnail || "",
+    price: item.price || 0,
     variants: item.variants || [],
     variantAttributes: item.variantAttributes || undefined,
-    createdAt: new Date(item.createdAt),
-    updatedAt: new Date(item.updatedAt),
   };
 };
 
@@ -457,12 +529,29 @@ const fetchTicketProducts = async () => {
 
   if (products.value.length) {
     // Auto-select first product
-    selectProduct(products.value[0]);
+    await selectProduct(products.value[0]);
   }
 };
 
-onMounted(() => {
-  fetchTicketProducts();
+// Theo dõi thay đổi của totalTickets để cập nhật tổng tiền có giảm giá
+watch(totalTickets, async (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    await updateDiscountedTotal();
+  }
+});
+
+// Theo dõi thay đổi của selectedProduct
+watch(selectedProduct, async (newValue) => {
+  if (newValue) {
+    await updateDiscountedTotal();
+  } else {
+    discountedTotal.value = 0;
+  }
+});
+
+onMounted(async () => {
+  await fetchTicketProducts();
+  await updateDiscountedTotal();
 });
 
 // Date picker configuration
@@ -528,6 +617,8 @@ const increaseVariantCount = (variant: any) => {
     variantCounts.value[variant.id] = currentCount + 1;
   }
 };
+
+
 </script>
 
 <style>

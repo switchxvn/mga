@@ -12,7 +12,10 @@
     "language": "Language",
     "english": "English",
     "vietnamese": "Vietnamese",
-    "adminPageSuffix": "- Admin Panel"
+    "adminPageSuffix": "- Admin Panel",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deleting": "Deleting..."
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -176,6 +179,7 @@
       "variants": "Variants",
       "specifications": "Specifications",
       "inventory": "Inventory",
+      "tierPricing": "Tiered Pricing",
       "seo": "SEO",
       "settings": "Settings"
     },
@@ -381,6 +385,32 @@
       "videoUpdated": "Video link updated",
       "maxImagesReached": "You have reached the maximum number of images (8 images)",
       "onlyImagesAllowed": "Only image files are accepted"
+    },
+    "tierDiscounts": {
+      "title": "Tiered Pricing",
+      "description": "Set up quantity-based discounts",
+      "minQuantity": "Minimum Quantity",
+      "discountPercent": "Discount Percentage",
+      "status": "Status",
+      "empty": "No price tiers yet",
+      "emptyDescription": "Set up quantity-based pricing tiers to boost sales",
+      "addFirst": "Add your first price tier",
+      "addDiscount": "Add Price Tier",
+      "editDiscount": "Edit Price Tier",
+      "minQuantityPlaceholder": "Enter minimum quantity",
+      "discountPercentPlaceholder": "Enter discount percentage",
+      "isActive": "Activate this price tier",
+      "confirmDelete": "Delete Price Tier",
+      "confirmDeleteMessage": "Are you sure you want to delete this price tier?",
+      "minQuantityError": "Minimum quantity must be greater than 0",
+      "discountPercentError": "Discount percentage must be between 0 and 100",
+      "duplicateQuantityError": "This minimum quantity already exists",
+      "loadError": "Failed to load tiered pricing",
+      "saveError": "Failed to save price tier",
+      "createSuccess": "Price tier created successfully",
+      "updateSuccess": "Price tier updated successfully",
+      "deleteSuccess": "Price tier deleted successfully",
+      "deleteError": "Failed to delete price tier"
     }
   },
   "orders": {

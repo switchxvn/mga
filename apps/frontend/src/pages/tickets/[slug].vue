@@ -52,6 +52,8 @@ import { useProductDetail } from '~/composables/useProductDetail';
 import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
 import { useTicketBooking } from '~/composables/useTicketBooking';
+import TierPricingTable from "~/components/product/TierPricingTable.vue";
+import { useTierPricing } from "~/composables/useTierPricing";
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -196,10 +198,25 @@ const increaseVariantCount = (variant: any) => {
   }
 };
 
+// Original total without discount
+const originalTotal = ref(0);
+const discountedTotal = ref(0);
+
 // Calculate total price based on selected variants
 const calculateTotal = computed(() => {
-  if (!productData.value) return formatPrice(0);
+  if (!productData.value) return formatPrice(discountedTotal.value || 0);
+  return formatPrice(discountedTotal.value || 0);
+});
 
+// Update the total when variants change
+const updateTotals = async () => {
+  if (!productData.value) {
+    originalTotal.value = 0;
+    discountedTotal.value = 0;
+    return;
+  }
+
+  // Calculate original total
   let total = 0;
   Object.entries(variantCounts.value).forEach(([variantId, count]) => {
     const variant = indexedVariants.value.find((v) => v.id === Number(variantId));
@@ -207,12 +224,38 @@ const calculateTotal = computed(() => {
       total += getVariantPrice(variant) * count;
     }
   });
-
-  return formatPrice(total);
-});
+  
+  originalTotal.value = total;
+  
+  // Apply discount if applicable
+  if (totalTickets.value > 0) {
+    const { getDiscountForQuantity } = useTierPricing();
+    const discountPercent = await getDiscountForQuantity(productData.value.id, null, totalTickets.value);
+    if (discountPercent > 0) {
+      total = total * (1 - discountPercent / 100);
+    }
+  }
+  
+  discountedTotal.value = total;
+};
 
 const totalTickets = computed(() => {
   return Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
+});
+
+// Watch for quantity changes to update totals
+watch(variantCounts, async () => {
+  await updateTotals();
+}, { deep: true });
+
+// Watch for selectedDate changes to update totals
+watch(selectedDate, async () => {
+  await updateTotals();
+});
+
+// Initialize updateTotals on mount
+onMounted(async () => {
+  await updateTotals();
 });
 
 // Extend base canAddToCart with date validation for tickets
@@ -358,6 +401,9 @@ const { saveBookingData } = useTicketBooking();
 const handleSubmit = async () => {
   if (!productData.value || !selectedDate.value) return;
 
+  // Make sure discounted total is updated
+  await updateTotals();
+
   // Get active variants (quantity > 0)
   const activeVariants = Object.entries(variantCounts.value)
     .filter(([_, count]) => count > 0)
@@ -374,16 +420,14 @@ const handleSubmit = async () => {
 
   if (activeVariants.length === 0) return;
 
-  // Calculate total amount
-  const totalAmount = activeVariants.reduce((sum, variant) => sum + variant.totalPrice, 0);
-
-  // Save booking data
+  // Save booking data with discounted total and original amount
   saveBookingData({
     productId: productData.value.id,
     productName: productTitle.value,
     date: selectedDate.value,
     variants: activeVariants,
-    totalAmount
+    totalAmount: discountedTotal.value,
+    originalAmount: originalTotal.value
   });
 
   // Navigate to checkout
@@ -756,7 +800,15 @@ const handleSubmit = async () => {
               <div class="flex items-center justify-between pt-4 border-t dark:border-gray-700">
                 <div class="text-gray-700 dark:text-gray-300">
                   <div class="text-sm">{{ t("tickets.total") || "Tổng tiền" }}</div>
-                  <div class="text-2xl font-semibold text-primary-600 dark:text-primary-400">
+                  <div v-if="discountedTotal < originalTotal" class="flex flex-col">
+                    <div class="text-2xl font-semibold text-primary-600 dark:text-primary-400">
+                      {{ formatPrice(discountedTotal) }}
+                    </div>
+                    <div class="text-sm text-gray-500 line-through">
+                      {{ formatPrice(originalTotal) }}
+                    </div>
+                  </div>
+                  <div v-else class="text-2xl font-semibold text-primary-600 dark:text-primary-400">
                     {{ calculateTotal }}
                   </div>
                   <div class="text-xs mt-1 text-gray-600 dark:text-gray-400">
@@ -787,6 +839,23 @@ const handleSubmit = async () => {
                     {{ t("tickets.requestPrice") || "Yêu cầu báo giá" }}
                   </UButton>
                 </div>
+              </div>
+              
+              <!-- Tiered Pricing Table -->
+              <div v-if="productData" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h3 class="font-medium text-lg mb-3 text-gray-900 dark:text-white">
+                  {{ t('products.bulkDiscounts') || 'Giảm giá theo số lượng' }}
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {{ t('products.bulkDiscountsDesc') || 'Mua nhiều để được giảm giá hơn' }}
+                </p>
+                
+                <TierPricingTable 
+                  :productId="productData.id"
+                  :quantity="totalTickets"
+                  :originalPrice="selectedVariant ? getVariantPrice(selectedVariant) : (productData.price || 0)"
+                  title=""
+                />
               </div>
             </div>
           </div>

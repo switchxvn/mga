@@ -13,6 +13,7 @@ import { ProductAttributeTranslation } from './entities/product-attribute-transl
 import { ProductAttributeValue } from './entities/product-attribute-value.entity';
 import { ProductAttributeValueTranslation } from './entities/product-attribute-value-translation.entity';
 import { ProductStockHistory } from './entities/product-stock-history.entity';
+import { ProductTierDiscount } from './entities/product-tier-discount.entity';
 import { ProductAdminController } from './admin/controllers/admin.controller';
 import { ProductFrontendController } from './frontend/controllers/frontend.controller';
 import { ProductAdminService } from './admin/services/product-admin.service';
@@ -21,6 +22,8 @@ import { CrossSellService } from './frontend/services/cross-sell.service';
 import { ProductSpecificationService } from './services/product-specification.service';
 import { ProductComboService } from './frontend/services/product-combo.service';
 import { ProductStockHistoryService } from './services/product-stock-history.service';
+import { AdminProductTierDiscountService } from './admin/services/product-tier-discount.service';
+import { FrontendProductTierDiscountService } from './frontend/services/product-tier-discount.service';
 
 @Module({
   imports: [
@@ -37,7 +40,8 @@ import { ProductStockHistoryService } from './services/product-stock-history.ser
       ProductAttributeTranslation,
       ProductAttributeValue,
       ProductAttributeValueTranslation,
-      ProductStockHistory
+      ProductStockHistory,
+      ProductTierDiscount
     ])
   ],
   controllers: [ProductAdminController, ProductFrontendController],
@@ -47,7 +51,9 @@ import { ProductStockHistoryService } from './services/product-stock-history.ser
     CrossSellService,
     ProductSpecificationService,
     ProductComboService,
-    ProductStockHistoryService
+    ProductStockHistoryService,
+    AdminProductTierDiscountService,
+    FrontendProductTierDiscountService
   ],
   exports: [
     ProductAdminService, 
@@ -55,7 +61,9 @@ import { ProductStockHistoryService } from './services/product-stock-history.ser
     CrossSellService,
     ProductSpecificationService,
     ProductComboService,
-    ProductStockHistoryService
+    ProductStockHistoryService,
+    AdminProductTierDiscountService,
+    FrontendProductTierDiscountService
   ],
 })
 export class ProductModule {} 

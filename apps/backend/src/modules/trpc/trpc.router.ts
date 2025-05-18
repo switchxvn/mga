@@ -32,7 +32,8 @@ import {
   commentRouter,
   reviewRouter,
   siteStatisticsRouter,
-  userSessionRouter
+  userSessionRouter,
+  productTierDiscountRouter
 } from './routers';
 import { adminRouter } from './routers/admin/index';
 
@@ -77,6 +78,7 @@ export class TrpcRouter {
       admin: adminRouter,
       siteStatistics: siteStatisticsRouter,
       userSession: userSessionRouter,
+      productTierDiscount: productTierDiscountRouter,
     });
   }
 

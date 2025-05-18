@@ -7,12 +7,14 @@ import { useLocalization } from "~/composables/useLocalization";
 import { useNotification } from "~/composables/useNotification";
 import { useTicketBooking } from "~/composables/useTicketBooking";
 import { useTrpc } from "~/composables/useTrpc";
+import { useTierPricing } from "~/composables/useTierPricing";
 
 const router = useRouter();
 const { t } = useLocalization();
 const trpc = useTrpc();
 const notification = useNotification();
 const { loadBookingData, clearBookingData } = useTicketBooking();
+const { getDiscountForQuantity } = useTierPricing();
 
 // Form data
 const formData = ref({
@@ -122,6 +124,38 @@ const handleSubmit = async () => {
   }
 
   try {
+    // Xử lý giảm giá theo bậc cho từng variant
+    const itemPromises = bookingData.value.variants.map(async (variant) => {
+      // Lấy phần trăm giảm giá theo số lượng
+      const discountPercent = await getDiscountForQuantity(
+        bookingData.value!.productId,
+        variant.id,
+        Number(variant.quantity)
+      );
+      
+      // Tính giá sau khi giảm
+      const originalTotalPrice = Number(variant.totalPrice);
+      const discountAmount = (originalTotalPrice * discountPercent) / 100;
+      const discountedTotalPrice = originalTotalPrice - discountAmount;
+      
+      return {
+        productId: bookingData.value!.productId,
+        variantId: variant.id,
+        quantity: Number(variant.quantity),
+        unitPrice: Number(variant.unitPrice),
+        totalPrice: discountedTotalPrice, // Sử dụng giá đã giảm
+        originalPrice: originalTotalPrice, // Giữ giá gốc để tham khảo
+        discountPercent: discountPercent, // Lưu phần trăm giảm giá
+        productType: ProductType.TICKET,
+        travelDate: formatDate(bookingData.value!.date),
+      };
+    });
+
+    const items = await Promise.all(itemPromises);
+    
+    // Tính tổng tiền sau khi đã áp dụng giảm giá
+    const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
+
     const { order, payment } = await trpc.order.createOrder.mutate({
       phoneCode: formData.value.phoneCode,
       phoneNumber: formData.value.phoneNumber,
@@ -132,16 +166,8 @@ const handleSubmit = async () => {
         paymentMethods.value.find((m) => m.id === formData.value.paymentMethodId)?.code ||
         "",
       payment_method_id: formData.value.paymentMethodId,
-      items: bookingData.value.variants.map((variant) => ({
-        productId: bookingData.value!.productId,
-        variantId: variant.id,
-        quantity: Number(variant.quantity),
-        unitPrice: Number(variant.unitPrice),
-        totalPrice: Number(variant.totalPrice),
-        productType: ProductType.TICKET,
-        travelDate: formatDate(bookingData.value!.date),
-      })),
-      totalAmount: Number(bookingData.value.totalAmount),
+      items: items,
+      totalAmount: totalAmount,
       returnUrl: `${window.location.origin}/checkout/success`,
       cancelUrl: `${window.location.origin}/checkout/cancel`,
     });
@@ -233,11 +259,18 @@ onMounted(() => {
                     <span class="text-lg font-semibold text-gray-900 dark:text-white">{{
                       t("checkout.total")
                     }}</span>
-                    <span
-                      class="text-lg font-semibold text-primary-600 dark:text-primary-400"
-                    >
-                      {{ formatPrice(bookingData.totalAmount) }}
-                    </span>
+                    <div class="text-right">
+                      <span
+                        class="text-lg font-semibold text-primary-600 dark:text-primary-400"
+                      >
+                        {{ formatPrice(bookingData.totalAmount) }}
+                      </span>
+                      <!-- Hiển thị giá gốc nếu có giảm giá -->
+                      <div v-if="bookingData.originalAmount && bookingData.originalAmount > bookingData.totalAmount" 
+                        class="text-sm text-gray-500 line-through">
+                        {{ formatPrice(bookingData.originalAmount) }}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
