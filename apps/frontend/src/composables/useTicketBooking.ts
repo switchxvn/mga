@@ -12,6 +12,7 @@ export interface TicketBookingData {
     totalPrice: number;
   }>;
   totalAmount: number;
+  originalAmount?: number;
 }
 
 const STORAGE_KEY = 'ticket_booking_data';

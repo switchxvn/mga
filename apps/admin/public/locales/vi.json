@@ -7,12 +7,15 @@
     "language": "Ngôn ngữ",
     "english": "Tiếng Anh",
     "vietnamese": "Tiếng Việt",
-    "adminPageSuffix": "- Trang quản trị",
-    "adminDashboard": "Bảng điều khiển",
+    "adminPageSuffix": "- Bảng quản trị",
+    "adminDashboard": "Quản trị viên",
     "loading": "Đang tải...",
     "saving": "Đang lưu...",
     "error": "Lỗi",
-    "success": "Thành công"
+    "success": "Thành công",
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động",
+    "deleting": "Đang xóa..."
   },
   "navigation": {
     "dashboard": "Bảng điều khiển",
@@ -176,6 +179,7 @@
       "variants": "Biến thể",
       "specifications": "Thông số kỹ thuật",
       "inventory": "Kho hàng",
+      "tierPricing": "Giá theo bậc",
       "seo": "SEO",
       "settings": "Cài đặt"
     },
@@ -381,6 +385,32 @@
       "videoUpdated": "Link video đã được cập nhật",
       "maxImagesReached": "Bạn đã đạt đến số lượng ảnh tối đa (8 ảnh)",
       "onlyImagesAllowed": "Chỉ chấp nhận file hình ảnh"
+    },
+    "tierDiscounts": {
+      "title": "Giá theo bậc",
+      "description": "Thiết lập giảm giá theo số lượng mua",
+      "minQuantity": "Số lượng tối thiểu",
+      "discountPercent": "Phần trăm giảm giá",
+      "status": "Trạng thái",
+      "empty": "Chưa có bậc giá nào",
+      "emptyDescription": "Thiết lập bậc giá theo số lượng để tăng doanh số bán hàng",
+      "addFirst": "Thêm bậc giá đầu tiên",
+      "addDiscount": "Thêm bậc giá",
+      "editDiscount": "Chỉnh sửa bậc giá",
+      "minQuantityPlaceholder": "Nhập số lượng tối thiểu",
+      "discountPercentPlaceholder": "Nhập phần trăm giảm giá",
+      "isActive": "Kích hoạt bậc giá này",
+      "confirmDelete": "Xóa bậc giá",
+      "confirmDeleteMessage": "Bạn có chắc chắn muốn xóa bậc giá này không?",
+      "minQuantityError": "Số lượng tối thiểu phải lớn hơn 0",
+      "discountPercentError": "Phần trăm giảm giá phải từ 0 đến 100",
+      "duplicateQuantityError": "Số lượng tối thiểu này đã tồn tại",
+      "loadError": "Không thể tải danh sách giá theo bậc",
+      "saveError": "Không thể lưu giá theo bậc",
+      "createSuccess": "Thêm bậc giá thành công",
+      "updateSuccess": "Cập nhật bậc giá thành công",
+      "deleteSuccess": "Xóa bậc giá thành công",
+      "deleteError": "Không thể xóa bậc giá"
     }
   },
   "orders": {

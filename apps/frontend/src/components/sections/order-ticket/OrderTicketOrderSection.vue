@@ -21,6 +21,8 @@ import { Navigation as SwiperNavigation, Pagination as SwiperPagination } from '
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import { useTierPricing } from '~/composables/useTierPricing';
+import TierPricingTable from '~/components/product/TierPricingTable.vue';
 
 interface Translation {
   title?: string;
@@ -64,7 +66,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const router = useRouter();
-const { locale } = useLocalization();
+const { locale, t } = useLocalization();
 const { saveBookingData } = useTicketBooking();
 
 // Initialize product composable with ticket type filter
@@ -72,6 +74,9 @@ const { products, isLoadingProducts, filters, fetchProducts } = useProduct({
   type: ProductType.TICKET,
   locale: locale.value
 });
+
+// Thêm composable tiered pricing
+const { getDiscountForQuantity, fetchTierDiscountsForProduct, tierDiscounts } = useTierPricing();
 
 const selectedDate = ref<Date | null>(null);
 const variantCounts = ref<Record<number, number>>({});
@@ -84,7 +89,7 @@ watch(products, (newProducts) => {
   }
 }, { immediate: true });
 
-const selectProduct = (product: Product) => {
+const selectProduct = async (product: Product) => {
   selectedProduct.value = product;
   // Reset variant counts when switching products
   variantCounts.value = {};
@@ -92,6 +97,16 @@ const selectProduct = (product: Product) => {
     product.variants.forEach(variant => {
       variantCounts.value[variant.id] = 0;
     });
+  }
+  
+  // Fetch tier discounts for the selected product
+  if (product.id) {
+    try {
+      await fetchTierDiscountsForProduct(product.id);
+      // tierDiscounts are already updated in the composable
+    } catch (error) {
+      console.error('Error fetching tier discounts:', error);
+    }
   }
 };
 
@@ -123,19 +138,72 @@ const formatPrice = (price: number) => {
   }).format(price);
 };
 
-const calculateTotal = computed(() => {
-  let total = 0;
+// Track original and discounted totals
+const originalTotal = ref(0);
+const discountedTotal = ref(0);
+
+// Update totals based on selected variants and quantities
+const updateTotals = async () => {
   const product = products.value[0]; // Get first ticket product
-  if (product?.variants) {
-    product.variants.forEach((variant: ProductVariant) => {
-      total += (variant.price * (variantCounts.value[variant.id] || 0));
-    });
+  if (!product?.variants) {
+    originalTotal.value = 0;
+    discountedTotal.value = 0;
+    return;
   }
-  return formatPrice(total);
+  
+  // Calculate original total
+  let total = 0;
+  const activeVariants: Array<{ variantId: number, originalTotal: number, quantity: number }> = [];
+  
+  // Calculate original totals and prepare for discount calculations
+  product.variants.forEach((variant: ProductVariant) => {
+    const quantity = variantCounts.value[variant.id] || 0;
+    if (quantity > 0) {
+      const variantTotal = variant.price * quantity;
+      total += variantTotal;
+      activeVariants.push({ variantId: variant.id, originalTotal: variantTotal, quantity });
+    }
+  });
+  
+  originalTotal.value = total;
+  
+  // Calculate discounted total
+  let discounted = total;
+  
+  // Get total tickets count
+  const totalTicketsCount = Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
+  
+  // Lấy phần trăm giảm giá từ API dựa trên tổng số vé
+  if (totalTicketsCount > 0 && product.id) {
+    const discountPercent = await getDiscountForQuantity(product.id, null, totalTicketsCount);
+    if (discountPercent > 0) {
+      const discountAmount = (total * discountPercent) / 100;
+      discounted = total - discountAmount;
+    }
+  }
+  
+  discountedTotal.value = discounted;
+};
+
+// Calculate total for display
+const calculateTotal = computed(() => {
+  return formatPrice(discountedTotal.value || originalTotal.value || 0);
+});
+
+// Check if there's a discount applied
+const hasDiscount = computed(() => {
+  return originalTotal.value > 0 && discountedTotal.value > 0 && discountedTotal.value < originalTotal.value;
 });
 
 const totalTickets = computed(() => {
   return Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
+});
+
+// Sort tier discounts by minQuantity for display
+const sortedTierDiscounts = computed(() => {
+  return [...tierDiscounts.value]
+    .filter(discount => discount.isActive)
+    .sort((a, b) => a.minQuantity - b.minQuantity);
 });
 
 const isFormValid = computed(() => {
@@ -158,6 +226,9 @@ const increaseCount = (variantId: number) => {
 const handleSubmit = async () => {
   if (!selectedDate.value || !products.value[0]) return;
 
+  // Make sure totals are up-to-date
+  await updateTotals();
+
   const product = products.value[0];
   const activeVariants = Object.entries(variantCounts.value)
     .filter(([_, count]) => count > 0)
@@ -176,15 +247,14 @@ const handleSubmit = async () => {
 
   if (activeVariants.length === 0) return;
 
-  const totalAmount = activeVariants.reduce((sum, variant) => sum + variant.totalPrice, 0);
-
-  // Save booking data
+  // Save booking data with original and discounted totals
   saveBookingData({
     productId: product.id,
     productName: product.title,
     date: selectedDate.value,
     variants: activeVariants,
-    totalAmount
+    totalAmount: discountedTotal.value,
+    originalAmount: originalTotal.value
   });
 
   // Navigate to checkout
@@ -198,10 +268,16 @@ const handleSlideChange = (swiper: any) => {
   }
 };
 
-// Initialize variant counts
-onMounted(() => {
-  fetchProducts();
+// Initialize variant counts and update totals when needed
+onMounted(async () => {
+  await fetchProducts();
+  await updateTotals();
 });
+
+// Watch for variant count changes to update totals
+watch(variantCounts, async () => {
+  await updateTotals();
+}, { deep: true });
 
 // Watch for locale changes
 watch(locale, () => {
@@ -286,6 +362,32 @@ watch(locale, () => {
                   <CheckCircleIcon class="w-5 h-5 text-green-500 flex-shrink-0" />
                   <span class="text-sm font-medium">Miễn phí xe điện đưa rước ra vào nhà ga cáp treo</span>
                 </div>
+                
+                <!-- Tier Discount Benefits -->
+                <div v-if="tierDiscounts.length > 0" class="flex flex-col gap-2 mt-2 pt-2 border-t border-green-200">
+                  <div class="text-base font-semibold text-green-700">
+                    {{ t('products.tierDiscounts.title') }}
+                  </div>
+                  <div 
+                    v-for="(tier, index) in sortedTierDiscounts" 
+                    :key="tier.id"
+                    class="flex items-center gap-2 text-green-700"
+                  >
+                    <CheckCircleIcon class="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span class="text-sm font-medium">
+                      <template v-if="index < sortedTierDiscounts.length - 1">
+                        {{ locale === 'vi' ? 
+                          `Quý khách mua từ ${tier.minQuantity} đến ${sortedTierDiscounts[index+1].minQuantity-1} vé chiết khấu ${tier.discountPercent}%` : 
+                          `Purchase ${tier.minQuantity} to ${sortedTierDiscounts[index+1].minQuantity-1} tickets for ${tier.discountPercent}% discount` }}
+                      </template>
+                      <template v-else>
+                        {{ locale === 'vi' ? 
+                          `Quý khách mua từ ${tier.minQuantity} vé chiết khấu ${tier.discountPercent}%` : 
+                          `Purchase ${tier.minQuantity} or more tickets for ${tier.discountPercent}% discount` }}
+                      </template>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -340,6 +442,16 @@ watch(locale, () => {
                 </div>
               </div>
 
+              <!-- Thêm TierPricingTable sau phần variants selection -->
+              <div v-if="selectedProduct && totalTickets > 0" class="mb-6">
+                <TierPricingTable 
+                  :productId="selectedProduct.id"
+                  :quantity="totalTickets"
+                  :originalPrice="0"
+                  :showUnitPrice="false"
+                />
+              </div>
+
               <!-- Date Picker -->
               <div class="space-y-2">
                 <label class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
@@ -369,7 +481,15 @@ watch(locale, () => {
               <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div>
                   <div class="text-sm text-gray-600 dark:text-gray-400">Tổng tiền</div>
-                  <div class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                  <div v-if="hasDiscount" class="flex flex-col">
+                    <div class="text-2xl font-semibold text-primary-600 dark:text-primary-400">
+                      {{ formatPrice(discountedTotal) }}
+                    </div>
+                    <div class="text-sm text-gray-500 line-through">
+                      {{ formatPrice(originalTotal) }}
+                    </div>
+                  </div>
+                  <div v-else class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                     {{ calculateTotal }}
                   </div>
                   <div class="text-xs mt-1 text-gray-600 dark:text-gray-400">

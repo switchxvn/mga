@@ -23,6 +23,7 @@ import { userSessionAdminRouter } from './user-session.router'
 import { userPageVisitAdminRouter } from './user-page-visit.router'
 import { priceRequestAdminRouter } from './price-request.router'
 import { menuItemAdminRouter } from './menu-item.router'
+import { adminProductTierDiscountRouter } from './product-tier-discount.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -48,4 +49,5 @@ export const adminRouter = router({
   userSession: userSessionAdminRouter,
   userPageVisit: userPageVisitAdminRouter,
   priceRequest: priceRequestAdminRouter,
+  productTierDiscount: adminProductTierDiscountRouter,
 }) 

@@ -34,6 +34,7 @@ import GlobalModal from "~/components/ui/GlobalModal.vue";
 import LazyImage from "~/components/ui/LazyImage.vue";
 import { useLocalization } from "~/composables/useLocalization";
 import { useProductDetail } from '~/composables/useProductDetail';
+import TierPricingTable from "~/components/product/TierPricingTable.vue";
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -139,6 +140,8 @@ const canAddToCart = computed(() => {
 definePageMeta({
   layout: "default",
 });
+
+const productQuantity = ref(1);
 
 // Thiết lập meta tags
 useHead({
@@ -608,6 +611,16 @@ watch(activeTab, (newTab, oldTab) => {
                   {{ displayComparePrice }}
                 </span>
               </div>
+
+              <!-- Tiered Pricing Table -->
+              <TierPricingTable 
+                v-if="!hasRequiredAttributes || matchingVariant"
+                :productId="!matchingVariant ? productData?.id : null"
+                :variantId="matchingVariant?.id || null"
+                :quantity="productQuantity"
+                :originalPrice="matchingVariant?.price || productData?.price || 0"
+                class="mb-6"
+              />
 
               <div
                 v-if="productShortDescription"
