@@ -5,5 +5,7 @@ export enum PageType {
   ABOUT_PAGE = 'about_page',
   SERVICE_PAGE = 'service_page',
   CONTACT_PAGE = 'contact_page',
+  REVIEWS_PAGE = 'reviews_page',
+  TICKET_PRICING_PAGE = 'ticket_pricing_page',
   COMMON = 'common'
 } 

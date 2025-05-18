@@ -89,6 +89,7 @@ import { HeroVideo } from './hero/entities/hero-video.entity';
 import { Theme } from './theme/entities/theme.entity';
 import { ThemeSection } from './theme/entities/theme-section.entity';
 import { ComponentStyleConfig } from './theme/entities/component-style-config.entity';
+import { ThemeSectionTranslation } from './theme/entities/theme-section-translation.entity';
 
 // About
 import { AboutSection } from './about/entities/about-section.entity';
@@ -114,10 +115,6 @@ import { Footer } from './footer/entities/footer.entity';
 import { Contact } from './contact/entities/contact.entity';
 import { ContactSection } from './contact/entities/contact-section.entity';
 import { ContactSectionTranslation } from './contact/entities/contact-section-translation.entity';
-
-// Ticket Pricing
-import { TicketPricingSection } from './ticket-pricing/entities/ticket-pricing-section.entity';
-import { TicketPricingSectionTranslation } from './ticket-pricing/entities/ticket-pricing-section-translation.entity';
 
 // Comment
 import { Comment } from './comment/entities/comment.entity';
@@ -234,6 +231,7 @@ export const entities: (new () => any)[] = [
   // Theme
   Theme,
   ThemeSection,
+  ThemeSectionTranslation,
   ComponentStyleConfig,
   
   // About
@@ -260,10 +258,6 @@ export const entities: (new () => any)[] = [
   Contact,
   ContactSection,
   ContactSectionTranslation,
-  
-  // Ticket Pricing
-  TicketPricingSection,
-  TicketPricingSectionTranslation,
   
   // Comment
   Comment,

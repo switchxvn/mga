@@ -4,10 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Theme } from './theme.entity';
+import { ThemeSectionTranslation } from './theme-section-translation.entity';
+import { PageType as SharedPageType } from '@ew/shared';
 
 // Define PageType enum locally for application code only
 export enum PageType {
@@ -18,6 +21,7 @@ export enum PageType {
   SERVICE_PAGE = 'service_page',
   CONTACT_PAGE = 'contact_page',
   REVIEWS_PAGE = 'reviews_page',
+  TICKET_PRICING_PAGE = 'ticket_pricing_page',
   COMMON = 'common'
 }
 
@@ -35,8 +39,9 @@ export class ThemeSection {
   @Column({ name: 'component_name', length: 100, nullable: true })
   componentName?: string;
 
-  @Column()
-  title!: string;
+  // Title field is kept for backward compatibility but will be removed in future
+  @Column({ nullable: true })
+  title?: string;
 
   @Column({ type: 'int', default: 0 })
   order!: number;
@@ -44,87 +49,9 @@ export class ThemeSection {
   @Column({ name: 'page_type', type: 'varchar', length: 50, default: PageType.HOME_PAGE })
   pageType!: string;
 
-  @Column({ type: 'jsonb', default: {
-    layout: '', // 'split-columns' | 'stacked-rows'
-    height: '600px',
-    autoplay: true,
-    interval: 5000,
-    showDots: true,
-    showArrows: true,
-    videoWidth: '30%',
-    sliderWidth: '70%',
-    videoPosition: 'left',
-    sliderPosition: 'right',
-    maxVideos: 3,
-    videoRowHeight: '300px', // Chỉ áp dụng cho layout 'stacked-rows'
-    gap: '0.5rem',
-    videoGap: '0.5rem',
-    backgroundGradient: {
-      from: 'rgba(0,0,0,0.7)',
-      to: 'rgba(0,0,0,0)',
-      direction: 'to-t'
-    },
-    overlayOpacity: '0.5',
-    description: '',
-    image: '',
-    stats: [
-      { value: '150+', label: 'Khách hàng' },
-      { value: '10+', label: 'Năm kinh nghiệm' },
-      { value: '1000+', label: 'Dự án' },
-      { value: '24/7', label: 'Hỗ trợ' }
-    ],
-    buttonText: 'Tìm hiểu thêm',
-    buttonLink: '/about',
-    backgroundColor: '',
-    textColor: '',
-    // Navbar settings
-    menuAlignment: 'center',
-    showLanguageSwitcher: true,
-    showThemeToggle: true,
-    showCart: true,
-    showHotline: false,
-    mobileMenuBreakpoint: 'md',
-    borderColor: '',
-    // Top menu settings with new column structure
-    topMenu: {
-      leftColumn: {
-        items: [],
-        width: '30%',
-        alignment: 'start'
-      },
-      centerColumn: {
-        items: [],
-        width: '40%',
-        alignment: 'center'
-      },
-      rightColumn: {
-        items: [],
-        width: '30%',
-        alignment: 'end'
-      }
-    },
-    // Product categories section settings
-    colors: {
-      title: 'text-gray-900 dark:text-white',
-      description: 'text-gray-600 dark:text-gray-400'
-    },
-    columns: 8,
-    fontSize: {
-      title: 'text-2xl',
-      description: 'text-base'
-    },
-    maxItems: 8,
-    alignment: {
-      header: 'justify-between',
-      content: 'text-left',
-      container: 'items-start'
-    },
-    categoryIds: [],
-    displayMode: 'grid',
-    useUppercase: true,
-    showDescription: true
-  } })
-  settings!: Record<string, any>;
+  // Settings will be moved to translations in the future
+  @Column({ type: 'jsonb', nullable: true })
+  settings?: Record<string, any>;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
@@ -138,4 +65,9 @@ export class ThemeSection {
   @ManyToOne(() => Theme, theme => theme.sections, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'theme_id' })
   theme!: Theme;
+
+  @OneToMany(() => ThemeSectionTranslation, translation => translation.section, {
+    cascade: true
+  })
+  translations!: ThemeSectionTranslation[];
 } 
