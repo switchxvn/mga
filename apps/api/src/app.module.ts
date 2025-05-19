@@ -1,7 +1,10 @@
-import { Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentModule } from './payment/payment.module';
+import { TicketModule } from './ticket/ticket.module';
+import { OrderModule } from './order/order.module';
+import { CommonModule } from './common/common.module';
 import * as entities from '../../../apps/backend/src/modules/entities';
 
 @Module({
@@ -29,9 +32,10 @@ import * as entities from '../../../apps/backend/src/modules/entities';
         } : {},
       }),
     }),
+    CommonModule,
     PaymentModule,
+    TicketModule,
+    OrderModule,
   ],
 })
-export class AppModule implements NestModule {
-  configure() {}
-} 
+export class AppModule {} 

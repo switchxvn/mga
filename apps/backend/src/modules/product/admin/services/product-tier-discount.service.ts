@@ -2,7 +2,25 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProductTierDiscount } from '../../entities/product-tier-discount.entity';
-import { ProductTierDiscountCreateDto, ProductTierDiscountUpdateDto } from '@shared/lib/dtos/product-tier-discount.dto';
+
+// Tạm thời định nghĩa các DTO ở đây, sau này sẽ chuyển vào thư viện shared
+class ProductTierDiscountCreateDto {
+  productId?: number;
+  productVariantId?: number;
+  minQuantity: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  isActive?: boolean;
+}
+
+class ProductTierDiscountUpdateDto {
+  productId?: number;
+  productVariantId?: number;
+  minQuantity?: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  isActive?: boolean;
+}
 
 @Injectable()
 export class AdminProductTierDiscountService {
