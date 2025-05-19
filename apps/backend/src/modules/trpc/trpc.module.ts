@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AboutModule } from '../about/about.module';
 import { AdminMenuModule } from '../admin-menu/admin-menu.module';
+import { ApiKeyModule } from '../api-key/api-key.module';
 import { AuthModule } from '../auth/auth.module';
 import { CategoryModule } from '../category/category.module';
 import { CommentModule } from '../comment/comment.module';
@@ -91,6 +92,7 @@ import { AuthContext } from './contexts/auth.context';
     SiteStatisticsModule,
     AdminMenuModule,
     UserSessionModule,
+    ApiKeyModule,
     forwardRef(() => PriceRequestModule),
     
     // Auth module is imported with forwardRef to avoid circular dependency
