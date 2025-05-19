@@ -137,6 +137,10 @@ import { SiteStatisticsSettings } from './site-statistics/entities/site-statisti
 
 // Admin Menu
 import { AdminMenuItem } from './admin-menu/entities/admin-menu-item.entity';
+import { AdminMenuItemTranslation } from './admin-menu/entities/admin-menu-item-translation.entity';
+
+// API Key
+import { ApiKey } from './api-key/entities/api-key.entity';
 
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
@@ -281,4 +285,8 @@ export const entities: (new () => any)[] = [
   
   // Admin Menu
   AdminMenuItem,
+  AdminMenuItemTranslation,
+  
+  // API Key
+  ApiKey,
 ]; 

@@ -24,6 +24,7 @@ import { userPageVisitAdminRouter } from './user-page-visit.router'
 import { priceRequestAdminRouter } from './price-request.router'
 import { menuItemAdminRouter } from './menu-item.router'
 import { adminProductTierDiscountRouter } from './product-tier-discount.router'
+import { apiKeyAdminRouter } from './api-key.router'
 
 export const adminRouter = router({
   posts: postAdminRouter,
@@ -50,4 +51,5 @@ export const adminRouter = router({
   userPageVisit: userPageVisitAdminRouter,
   priceRequest: priceRequestAdminRouter,
   productTierDiscount: adminProductTierDiscountRouter,
+  apiKey: apiKeyAdminRouter,
 }) 

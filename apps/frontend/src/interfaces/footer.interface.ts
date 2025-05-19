@@ -19,6 +19,7 @@ export interface CompanyInfo {
   registration: string;
   tax_number?: string;
   business_license?: string;
+  footer_line?: string;
   certifications?: {
     image: string;
     alt?: string;
@@ -68,6 +69,13 @@ export interface FooterSettings {
     url: string;
     alt: string;
   };
+  policy_link?: {
+    title: string;
+    links: {
+      label: string;
+      url: string;
+    }[];
+  };
 }
 
 export interface Footer {
@@ -103,6 +111,7 @@ export interface Footer {
       alt?: string;
       text?: string;
     }>;
+    footer_line?: string;
   };
   quickLinks?: Array<{
     url: string;

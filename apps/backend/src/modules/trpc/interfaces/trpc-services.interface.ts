@@ -78,6 +78,8 @@ import { UserSessionFrontendService } from '../../user-session/frontend/services
 import { UserPageVisitAdminService } from '../../user-session/admin/services/user-page-visit-admin.service';
 import { UserPageVisitFrontendService } from '../../user-session/frontend/services/user-page-visit-frontend.service';
 import { MenuItemAdminService } from '../../settings/admin/services/menu-item-admin.service';
+import { ApiKeyAdminService } from '../../api-key/admin/services/api-key-admin.service';
+import { ApiKeyFrontendService } from '../../api-key/frontend/services/api-key-frontend.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -161,6 +163,8 @@ export interface ITrpcServices {
   userPageVisitAdminService: UserPageVisitAdminService;
   userPageVisitFrontendService: UserPageVisitFrontendService;
   menuItemAdminService: MenuItemAdminService;
+  apiKeyAdminService: ApiKeyAdminService;
+  apiKeyFrontendService: ApiKeyFrontendService;
   
   // Grouped services
   admin: {
@@ -198,6 +202,7 @@ export interface ITrpcServices {
     userSession: UserSessionAdminService;
     userPageVisit: UserPageVisitAdminService;
     priceRequest: PriceRequestAdminService;
+    apiKey: ApiKeyAdminService;
   };
   
   frontend: {
@@ -231,5 +236,6 @@ export interface ITrpcServices {
     adminMenu: AdminMenuFrontendService;
     userSession: UserSessionFrontendService;
     userPageVisit: UserPageVisitFrontendService;
+    apiKey: ApiKeyFrontendService;
   };
 } 
