@@ -9,6 +9,7 @@ import { PaymentMethod } from '../../../../apps/backend/src/modules/payment/enti
 import { UploadModule } from '../../../../apps/backend/src/modules/upload/upload.module';
 import { MailModule } from '../../../../apps/backend/src/modules/mail/mail.module';
 import { DashboardModule } from '../../../../apps/backend/src/modules/dashboard/dashboard.module';
+import { ApiKeyModule } from '../../../../apps/backend/src/modules/api-key/api-key.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DashboardModule } from '../../../../apps/backend/src/modules/dashboard/
     UploadModule,
     MailModule,
     DashboardModule,
+    ApiKeyModule,
   ],
   controllers: [PayOSWebhookController],
   providers: [PayOSWebhookService],

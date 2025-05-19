@@ -81,6 +81,8 @@ import { UserSessionFrontendService } from '../../user-session/frontend/services
 import { UserPageVisitAdminService } from '../../user-session/admin/services/user-page-visit-admin.service';
 import { UserPageVisitFrontendService } from '../../user-session/frontend/services/user-page-visit-frontend.service';
 import { MenuItemAdminService } from '../../settings/admin/services/menu-item-admin.service';
+import { ApiKeyAdminService } from '../../api-key/admin/services/api-key-admin.service';
+import { ApiKeyFrontendService } from '../../api-key/frontend/services/api-key-frontend.service';
 
 @Injectable()
 export class ServiceContext {
@@ -166,6 +168,8 @@ export class ServiceContext {
     private readonly menuItemAdminService: MenuItemAdminService,
     private readonly adminProductTierDiscount: AdminProductTierDiscountService,
     private readonly frontendProductTierDiscount: FrontendProductTierDiscountService,
+    private readonly apiKeyAdminService: ApiKeyAdminService,
+    private readonly apiKeyFrontendService: ApiKeyFrontendService,
     @Inject(forwardRef(() => PriceRequestService))
     private readonly priceRequestService: PriceRequestService,
     @Inject(forwardRef(() => PriceRequestAdminService))
@@ -255,6 +259,8 @@ export class ServiceContext {
       userPageVisitAdminService: this.userPageVisitAdminService,
       userPageVisitFrontendService: this.userPageVisitFrontendService,
       menuItemAdminService: this.menuItemAdminService,
+      apiKeyAdminService: this.apiKeyAdminService,
+      apiKeyFrontendService: this.apiKeyFrontendService,
       
       // Grouped services by namespace
       admin: {
@@ -292,6 +298,7 @@ export class ServiceContext {
         userSession: this.userSessionAdminService,
         userPageVisit: this.userPageVisitAdminService,
         priceRequest: this.priceRequestAdminService,
+        apiKey: this.apiKeyAdminService,
       },
       
       frontend: {
@@ -325,6 +332,7 @@ export class ServiceContext {
         adminMenu: this.adminMenuFrontendService,
         userSession: this.userSessionFrontendService,
         userPageVisit: this.userPageVisitFrontendService,
+        apiKey: this.apiKeyFrontendService,
       },
     };
   }
