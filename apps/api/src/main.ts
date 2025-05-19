@@ -28,6 +28,9 @@ async function bootstrap() {
     .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'api-key')
     .addApiKey({ type: 'apiKey', name: 'x-api-secret', in: 'header' }, 'api-secret')
     .addTag('payment', 'Payment processing endpoints')
+    .addTag('Tickets', 'Ticket management and booking endpoints')
+    .addTag('Ticket Webhooks', 'Webhooks for ticket inventory updates')
+    .addTag('Orders', 'Order management endpoints')
     .build();
   
   const document = SwaggerModule.createDocument(app, config);
