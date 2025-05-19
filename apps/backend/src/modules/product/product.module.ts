@@ -14,7 +14,6 @@ import { ProductAttributeValue } from './entities/product-attribute-value.entity
 import { ProductAttributeValueTranslation } from './entities/product-attribute-value-translation.entity';
 import { ProductStockHistory } from './entities/product-stock-history.entity';
 import { ProductTierDiscount } from './entities/product-tier-discount.entity';
-import { ProductAdminController } from './admin/controllers/admin.controller';
 import { ProductFrontendController } from './frontend/controllers/frontend.controller';
 import { ProductAdminService } from './admin/services/product-admin.service';
 import { ProductFrontendService } from './frontend/services/product-frontend.service';
@@ -44,7 +43,7 @@ import { FrontendProductTierDiscountService } from './frontend/services/product-
       ProductTierDiscount
     ])
   ],
-  controllers: [ProductAdminController, ProductFrontendController],
+  controllers: [ProductFrontendController],
   providers: [
     ProductAdminService, 
     ProductFrontendService, 
