@@ -55,7 +55,10 @@ export const adminProductTierDiscountRouter = router({
     .mutation(async ({ ctx, input }) => {
       const service = ctx.services.adminProductTierDiscount as AdminProductTierDiscountService;
       try {
-        return await service.create(input);
+        return await service.create({
+          ...input,
+          minQuantity: input.minQuantity,
+        });
       } catch (error) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
