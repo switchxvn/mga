@@ -91,4 +91,35 @@ declare module '@backend/modules/trpc/routers' {
       };
     };
   }
+}
+
+// Định nghĩa kiểu cho ProductTierDiscount
+interface ProductTierDiscount {
+  id: number;
+  productId: number | null;
+  productVariantId: number | null;
+  minQuantity: number;
+  discountPercent: number;
+  isActive: boolean;
+}
+
+// Thêm định nghĩa cho router productTierDiscount
+declare module '@backend/modules/trpc/routers' {
+  interface AppRouter {
+    productTierDiscount: {
+      getByProductId: {
+        query: (input: { productId: number }) => Promise<ProductTierDiscount[]>;
+      };
+      getByVariantId: {
+        query: (input: { variantId: number }) => Promise<ProductTierDiscount[]>;
+      };
+      getDiscountForQuantity: {
+        query: (input: { 
+          productId?: number | null; 
+          variantId?: number | null; 
+          quantity: number 
+        }) => Promise<number>;
+      };
+    };
+  }
 } 

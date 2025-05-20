@@ -22,6 +22,7 @@ import { NestFactory } from '@nestjs/core';
 import { CustomerLogoModule } from './modules/customer-logo/customer-logo.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ApiKeyModule } from './modules/api-key/api-key.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     ContactModule,
     DashboardModule,
     AdminMenuModule,
+    ApiKeyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

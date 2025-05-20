@@ -21,6 +21,7 @@ export interface CompanyInfo {
   registration: string;
   tax_number?: string;
   business_license?: string;
+  footer_line?: string;
   certifications?: {
     image: string;
     alt?: string;

@@ -145,6 +145,14 @@
               </div>
             </div>
 
+            <!-- Tier Pricing Tab -->
+            <div v-show="currentTab === 'tier_pricing'">
+              <ProductTierDiscounts
+                :productId="Number(route.params.id)"
+                :locale="selectedLanguage"
+              />
+            </div>
+
             <!-- SEO Tab -->
             <div v-show="currentTab === 'seo'">
               <ProductSEO
@@ -194,7 +202,8 @@ import {
   LayersIcon,
   PackageIcon,
   InfoIcon,
-  ClipboardListIcon
+  ClipboardListIcon,
+  PercentIcon
 } from 'lucide-vue-next'
 
 // Import components
@@ -208,6 +217,7 @@ import ProductVariants from '../../../components/products/ProductVariants.vue'
 import ProductInventory from '../../../components/products/ProductInventory.vue'
 import ProductSpecifications from '../../../components/products/ProductSpecifications.vue'
 import LanguageSwitcher from '../../../components/common/LanguageSwitcher.vue'
+import ProductTierDiscounts from '../../../components/products/ProductTierDiscounts.vue'
 
 const trpc = useTrpc()
 const route = useRoute()
@@ -317,6 +327,11 @@ const tabs = computed(() => [
     id: 'inventory',
     name: t('products.tabs.inventory'),
     icon: PackageIcon
+  },
+  {
+    id: 'tier_pricing',
+    name: t('products.tabs.tierPricing'),
+    icon: PercentIcon
   },
   { 
     id: 'seo', 

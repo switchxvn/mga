@@ -1,10 +1,13 @@
-import { Body, Controller, HttpCode, HttpStatus, Logger, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, HttpCode, HttpStatus, Logger, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
 import { PayOSWebhookService } from '../services/payos-webhook.service';
+import { ApiKeyGuard } from '../guards/api-key.guard';
 
 @ApiTags('PayOS Webhook')
 @Controller('webhook/payos')
+@ApiSecurity('api-key')
+@ApiSecurity('api-secret')
 export class PayOSWebhookController {
   private readonly logger = new Logger(PayOSWebhookController.name);
 
@@ -12,7 +15,21 @@ export class PayOSWebhookController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Handle PayOS payment notification webhook' })
+  @UseGuards(ApiKeyGuard)
+  @ApiOperation({ 
+    summary: 'Handle PayOS payment notification webhook',
+    description: 'Endpoint for receiving payment notifications from PayOS gateway'
+  })
+  @ApiHeader({
+    name: 'x-api-key',
+    description: 'API Key for authorization',
+    required: true,
+  })
+  @ApiHeader({
+    name: 'x-api-secret',
+    description: 'API Secret for authorization',
+    required: true,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Successfully processed webhook',
@@ -23,8 +40,21 @@ export class PayOSWebhookController {
           type: 'boolean',
           example: true,
         },
+        message: {
+          type: 'string',
+          example: 'Payment processed successfully',
+          nullable: true
+        }
       },
     },
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid API credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid webhook data or signature',
   })
   async handleWebhook(@Body() webhookData: PayOSWebhookDto) {
     // For testing purposes

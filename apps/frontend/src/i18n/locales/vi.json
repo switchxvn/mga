@@ -196,7 +196,28 @@
     "availableSlots": "Số vé còn lại",
     "noMatchingVariant": "Không tìm thấy phiên bản phù hợp với lựa chọn của bạn",
     "viewDetail": "Xem chi tiết",
-    "physicalType": "Sản phẩm"
+    "physicalType": "Sản phẩm",
+    "tierPricing": "Giá theo bậc",
+    "tierDiscounts": {
+      "minQuantity": "Số lượng tối thiểu",
+      "discountPercent": "Giảm giá",
+      "title": "Giảm giá số lượng lớn",
+      "description": "Mua nhiều để tiết kiệm hơn",
+      "noDiscounts": "Không có giảm giá theo số lượng",
+      "fromQuantity": "Từ {quantity} sản phẩm",
+      "saveUp": "Tiết kiệm đến {percent}%",
+      "perItem": "mỗi sản phẩm",
+      "table": {
+        "quantity": "Số lượng",
+        "discount": "Giảm giá",
+        "unitPrice": "Đơn giá"
+      }
+    },
+    "unitPrice": "Đơn giá",
+    "appliedDiscount": "Giảm giá đang áp dụng",
+    "youSave": "Bạn tiết kiệm được",
+    "bulkDiscounts": "Giảm giá theo số lượng",
+    "bulkDiscountsDesc": "Mua nhiều để được giảm giá hơn"
   },
   "priceRequest": {
     "title": "Yêu cầu báo giá",

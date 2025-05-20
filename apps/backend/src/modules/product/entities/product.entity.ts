@@ -7,6 +7,7 @@ import { ProductCombo } from './product-combo.entity';
 import { PriceRequest } from '../../price-request/entities/price-request.entity';
 import { ProductVariant } from './product-variant.entity';
 import { ProductStockHistory } from './product-stock-history.entity';
+import { ProductTierDiscount } from './product-tier-discount.entity';
 
 export enum ProductType {
   PHYSICAL = 'PHYSICAL', // Sản phẩm vật lý
@@ -119,4 +120,8 @@ export class Product {
   // Product stock history relationship
   @OneToMany(() => ProductStockHistory, stockHistory => stockHistory.product)
   stockHistory!: ProductStockHistory[];
+  
+  // Product tier discount relationship
+  @OneToMany(() => ProductTierDiscount, tierDiscount => tierDiscount.product)
+  tierDiscounts!: ProductTierDiscount[];
 } 

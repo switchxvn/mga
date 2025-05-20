@@ -30,6 +30,7 @@ import { ProductAttributeValue } from './product/entities/product-attribute-valu
 import { ProductAttributeTranslation } from './product/entities/product-attribute-translation.entity';
 import { ProductAttributeValueTranslation } from './product/entities/product-attribute-value-translation.entity';
 import { ProductStockHistory } from './product/entities/product-stock-history.entity';
+import { ProductTierDiscount } from './product/entities/product-tier-discount.entity';
 
 // Category
 import { Category } from './category/entities/category.entity';
@@ -136,6 +137,10 @@ import { SiteStatisticsSettings } from './site-statistics/entities/site-statisti
 
 // Admin Menu
 import { AdminMenuItem } from './admin-menu/entities/admin-menu-item.entity';
+import { AdminMenuItemTranslation } from './admin-menu/entities/admin-menu-item-translation.entity';
+
+// API Key
+import { ApiKey } from './api-key/entities/api-key.entity';
 
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
@@ -173,6 +178,7 @@ export const entities: (new () => any)[] = [
   ProductAttributeTranslation,
   ProductAttributeValueTranslation,
   ProductStockHistory,
+  ProductTierDiscount,
   
   // Category
   Category,
@@ -279,4 +285,8 @@ export const entities: (new () => any)[] = [
   
   // Admin Menu
   AdminMenuItem,
+  AdminMenuItemTranslation,
+  
+  // API Key
+  ApiKey,
 ]; 

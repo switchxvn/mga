@@ -197,7 +197,28 @@
     "noResults": "No products found",
     "tryAdjustingFilters": "Please try adjusting your filters",
     "viewDetail": "View details",
-    "physicalType": "Product"
+    "physicalType": "Product",
+    "tierPricing": "Tiered Pricing",
+    "tierDiscounts": {
+      "minQuantity": "Minimum Quantity",
+      "discountPercent": "Discount",
+      "title": "Bulk Discounts",
+      "description": "Buy more to save more",
+      "noDiscounts": "No bulk discounts available",
+      "fromQuantity": "From {quantity} items",
+      "saveUp": "Save up to {percent}%",
+      "perItem": "per item",
+      "table": {
+        "quantity": "Quantity",
+        "discount": "Discount",
+        "unitPrice": "Unit Price"
+      }
+    },
+    "unitPrice": "Unit Price",
+    "appliedDiscount": "Applied Discount",
+    "youSave": "You Save",
+    "bulkDiscounts": "Bulk Discounts",
+    "bulkDiscountsDesc": "Buy more to save more"
   },
   "priceRequest": {
     "title": "Request Price Quote",

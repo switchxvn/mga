@@ -167,6 +167,17 @@
               </div>
             </div>
 
+            <!-- Tier Pricing Tab -->
+            <div v-show="currentTab === 'tier_pricing'">
+              <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-medium text-slate-900 mb-1">{{ tabs.find(t => t.id === 'tier_pricing')?.name }}</h2>
+                <p class="text-sm text-slate-500">{{ tabs.find(t => t.id === 'tier_pricing')?.description }}</p>
+              </div>
+              <ProductTierDiscounts
+                :isNewProduct="true"
+              />
+            </div>
+
             <!-- SEO Tab -->
             <div v-show="currentTab === 'seo'">
               <div class="mb-6 bg-white rounded-lg shadow-sm p-6">
@@ -225,7 +236,8 @@ import {
   LayersIcon,
   PackageIcon,
   InfoIcon,
-  ClipboardListIcon
+  ClipboardListIcon,
+  PercentIcon
 } from 'lucide-vue-next'
 
 // Import components
@@ -240,6 +252,7 @@ import ProductInventory from '../../components/products/ProductInventory.vue'
 import ProductSpecifications from '../../components/products/ProductSpecifications.vue'
 import ProductSpecificationsNew from '../../components/products/ProductSpecificationsNew.vue'
 import LanguageSwitcher from '../../components/common/LanguageSwitcher.vue'
+import ProductTierDiscounts from '../../components/products/ProductTierDiscounts.vue'
 
 const trpc = useTrpc()
 const route = useRoute()
@@ -300,6 +313,12 @@ const tabs = [
     name: 'Kho hàng',
     icon: PackageIcon,
     description: 'Quản lý số lượng và tình trạng kho'
+  },
+  {
+    id: 'tier_pricing',
+    name: 'Giá theo bậc',
+    icon: PercentIcon,
+    description: 'Thiết lập giảm giá theo số lượng mua'
   },
   { 
     id: 'seo', 
@@ -365,6 +384,7 @@ interface ProductForm {
   isContactPrice: boolean
   _tempPrice?: number
   _tempCompareAtPrice?: number | null
+  tierPricing: Array<{quantity: number, price: number}>
 }
 
 const initialForm: ProductForm = {
@@ -396,7 +416,8 @@ const initialForm: ProductForm = {
   videoReview: '',
   updatedAt: new Date().toISOString(),
   translations: {},
-  isContactPrice: false
+  isContactPrice: false,
+  tierPricing: []
 }
 
 const form = ref({ ...initialForm })

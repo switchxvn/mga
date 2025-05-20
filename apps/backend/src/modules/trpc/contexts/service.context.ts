@@ -64,6 +64,8 @@ import { OrderTicketSectionFrontendService } from '../../order-ticket/frontend/s
 import { SettingsService } from '../../settings/services/settings.service';
 import { DashboardAdminService } from '../../dashboard/admin/services/dashboard-admin.service';
 import { ProductStockHistoryService } from '../../product/services/product-stock-history.service';
+import { AdminProductTierDiscountService } from '../../product/admin/services/product-tier-discount.service';
+import { FrontendProductTierDiscountService } from '../../product/frontend/services/product-tier-discount.service';
 import { CommentAdminService } from '../../comment/admin/services/comment-admin.service';
 import { CommentFrontendService } from '../../comment/frontend/services/comment-frontend.service';
 import { AdminReviewService } from '../../review/admin/services/admin-review.service';
@@ -79,6 +81,8 @@ import { UserSessionFrontendService } from '../../user-session/frontend/services
 import { UserPageVisitAdminService } from '../../user-session/admin/services/user-page-visit-admin.service';
 import { UserPageVisitFrontendService } from '../../user-session/frontend/services/user-page-visit-frontend.service';
 import { MenuItemAdminService } from '../../settings/admin/services/menu-item-admin.service';
+import { ApiKeyAdminService } from '../../api-key/admin/services/api-key-admin.service';
+import { ApiKeyFrontendService } from '../../api-key/frontend/services/api-key-frontend.service';
 
 @Injectable()
 export class ServiceContext {
@@ -162,6 +166,10 @@ export class ServiceContext {
     private readonly userPageVisitAdminService: UserPageVisitAdminService,
     private readonly userPageVisitFrontendService: UserPageVisitFrontendService,
     private readonly menuItemAdminService: MenuItemAdminService,
+    private readonly adminProductTierDiscount: AdminProductTierDiscountService,
+    private readonly frontendProductTierDiscount: FrontendProductTierDiscountService,
+    private readonly apiKeyAdminService: ApiKeyAdminService,
+    private readonly apiKeyFrontendService: ApiKeyFrontendService,
     @Inject(forwardRef(() => PriceRequestService))
     private readonly priceRequestService: PriceRequestService,
     @Inject(forwardRef(() => PriceRequestAdminService))
@@ -192,6 +200,9 @@ export class ServiceContext {
       crossSellService: this.crossSellService,
       productSpecificationService: this.productSpecificationService,
       productComboService: this.productComboService,
+      productStockHistoryService: this.productStockHistoryService,
+      adminProductTierDiscount: this.adminProductTierDiscount,
+      frontendProductTierDiscount: this.frontendProductTierDiscount,
       priceRequestService: this.priceRequestService,
       priceRequestAdminService: this.priceRequestAdminService,
       featureFlagsAdminService: this.featureFlagsAdminService,
@@ -233,7 +244,6 @@ export class ServiceContext {
       orderTicketSectionFrontendService: this.orderTicketSectionFrontendService,
       settingsService: this.settingsService,
       dashboardAdminService: this.dashboardAdminService,
-      productStockHistoryService: this.productStockHistoryService,
       commentAdminService: this.commentAdminService,
       commentService: this.commentFrontendService,
       reviewAdminService: this.adminReviewService,
@@ -249,6 +259,8 @@ export class ServiceContext {
       userPageVisitAdminService: this.userPageVisitAdminService,
       userPageVisitFrontendService: this.userPageVisitFrontendService,
       menuItemAdminService: this.menuItemAdminService,
+      apiKeyAdminService: this.apiKeyAdminService,
+      apiKeyFrontendService: this.apiKeyFrontendService,
       
       // Grouped services by namespace
       admin: {
@@ -286,6 +298,7 @@ export class ServiceContext {
         userSession: this.userSessionAdminService,
         userPageVisit: this.userPageVisitAdminService,
         priceRequest: this.priceRequestAdminService,
+        apiKey: this.apiKeyAdminService,
       },
       
       frontend: {
@@ -319,6 +332,7 @@ export class ServiceContext {
         adminMenu: this.adminMenuFrontendService,
         userSession: this.userSessionFrontendService,
         userPageVisit: this.userPageVisitFrontendService,
+        apiKey: this.apiKeyFrontendService,
       },
     };
   }

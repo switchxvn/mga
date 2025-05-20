@@ -101,6 +101,7 @@ onMounted(async () => {
               <p>{{ activeFooter.companyInfo.registration }}</p>
               <p v-if="activeFooter.companyInfo.tax_number">MST: {{ activeFooter.companyInfo.tax_number }}</p>
               <p v-if="activeFooter.companyInfo.business_license">{{ activeFooter.companyInfo.business_license }}</p>
+              <p v-if="activeFooter.companyInfo.footer_line">{{ activeFooter.companyInfo.footer_line }}</p>
               
               <!-- Certificates -->
               <div v-if="activeFooter.companyInfo.certifications" class="mt-4 flex items-center space-x-4">
@@ -110,6 +111,18 @@ onMounted(async () => {
                     <img :src="cert.image" :alt="cert.alt || ''" class="h-12" />
                     <span v-if="cert.text" class="text-xs mt-1">{{ cert.text }}</span>
                   </div>
+              </div>
+              
+              <!-- Quick Links -->
+              <div v-if="activeFooter.settings && activeFooter.settings?.policy_link" class="mt-4">
+                <h4 class="font-bold mb-2 text-lg uppercase" style="color: #FF0000">{{ activeFooter.settings.policy_link.title }}</h4>
+                <ul class="quick-links-list">
+                  <li v-for="link in activeFooter.settings.policy_link.links" :key="link.url" class="mb-2">
+                    <a :href="link.url" class="quick-link flex items-center hover:underline">
+                      <span>{{ link.label }}</span>
+                    </a>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -328,5 +341,13 @@ html.dark .footer,
 
 .contact-info a {
   @apply hover:text-primary transition-colors duration-200;
+}
+
+.quick-links-list {
+  @apply pl-2;
+}
+
+.quick-link {
+  @apply text-sm hover:text-primary transition-colors duration-200;
 }
 </style>
