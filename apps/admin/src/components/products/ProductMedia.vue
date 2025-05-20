@@ -421,35 +421,37 @@ watch(() => props.videoUrl, (newValue) => {
 })
 
 // Upload thumbnail
-const handleThumbnailUpload = async (file: File) => {
-  if (!file) return;
+const handleThumbnailUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (!input.files?.length) return;
+  
+  const file = input.files[0];
+  if (!file.type.startsWith('image/')) {
+    showError('Chỉ chấp nhận file hình ảnh');
+    return;
+  }
   
   try {
-    isUploading.value = true;
+    // Hiển thị ảnh tạm thời ngay lập tức
+    const tempURL = URL.createObjectURL(file);
+    localThumbnail.value = tempURL;
     
-    // Create form data
-    const formData = new FormData();
-    formData.append('file', file);
+    info('Đang xử lý ảnh...');
+    const url = await processImageForCropping(file);
     
-    // Upload file
-    const response = await fetch('/api/admin/media/upload', {
-      method: 'POST',
-      body: formData
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`);
-    }
-    
-    const result = await response.json();
-    const url = result.url;
-    
-    // Update model value
+    // Cập nhật với URL chính thức
+    localThumbnail.value = url;
     emit('update:thumbnail', url);
-    isUploading.value = false;
+    success('Đã tải lên ảnh đại diện thành công');
+    
+    // Giải phóng bộ nhớ
+    URL.revokeObjectURL(tempURL);
   } catch (error) {
-    isUploading.value = false;
-    showError('Failed to upload thumbnail: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    console.error('Failed to upload thumbnail:', error);
+    showError('Tải lên ảnh đại diện thất bại');
+    localThumbnail.value = '';
+  } finally {
+    input.value = ''; // Reset input
   }
 };
 
@@ -463,7 +465,7 @@ const processImageForCropping = async (file: File): Promise<string> => {
         try {
           const img = new Image();
           
-          img.onload = () => {
+          img.onload = async () => {
             try {
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d');
@@ -490,7 +492,7 @@ const processImageForCropping = async (file: File): Promise<string> => {
               );
               
               // Convert canvas to Blob
-              canvas.toBlob((blob) => {
+              canvas.toBlob(async (blob) => {
                 if (!blob) {
                   reject(new Error('Failed to create image blob'));
                   return;
@@ -502,17 +504,13 @@ const processImageForCropping = async (file: File): Promise<string> => {
                   lastModified: Date.now()
                 });
                 
-                // Upload the cropped file
-                const formData = new FormData();
-                formData.append('file', croppedFile);
-                
-                fetch('/api/admin/media/upload', {
-                  method: 'POST',
-                  body: formData
-                })
-                  .then(response => response.json())
-                  .then(result => resolve(result.url))
-                  .catch(error => reject(error));
+                try {
+                  // Sử dụng uploadImage từ useUpload composable
+                  const url = await uploadImage(croppedFile, 'products');
+                  resolve(url);
+                } catch (error) {
+                  reject(error);
+                }
                 
               }, file.type);
               
