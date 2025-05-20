@@ -518,8 +518,12 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 md:w-5 md:h-5"
-                    :style="{ color: item.textColor }"
+                    class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
+                    :style="{ 
+                      color: isMenuActive(item.href) 
+                        ? 'rgb(var(--color-primary-500))'
+                        : props.settings?.navigation?.textColor
+                    }"
                   />
                   <span
                     class="text-sm md:text-base lg:text-[16px] font-medium whitespace-nowrap"
@@ -544,8 +548,12 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 md:w-5 md:h-5"
-                    :style="{ color: item.textColor }"
+                    class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
+                    :style="{ 
+                      color: isMenuActive(item.href) 
+                        ? 'rgb(var(--color-primary-500))'
+                        : props.settings?.navigation?.textColor
+                    }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                 </NuxtLink>
@@ -584,8 +592,12 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 md:w-5 md:h-5"
-                    :style="{ color: item.textColor }"
+                    class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
+                    :style="{ 
+                      color: isMenuActive(item.href) 
+                        ? 'rgb(var(--color-primary-500))'
+                        : props.settings?.navigation?.textColor
+                    }"
                   />
                   <span
                     class="text-sm md:text-base lg:text-[18px] font-medium whitespace-nowrap"
@@ -610,8 +622,12 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 md:w-5 md:h-5"
-                    :style="{ color: item.textColor }"
+                    class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
+                    :style="{ 
+                      color: isMenuActive(item.href) 
+                        ? 'rgb(var(--color-primary-500))'
+                        : props.settings?.navigation?.textColor
+                    }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                 </NuxtLink>
@@ -716,7 +732,7 @@ watch(locale, () => {
         zIndex: 60
       }"
     >
-      <div class="w-full px-3 py-2">
+      <div class="w-full px-2 xs:px-3 py-1 xs:py-1.5">
         <div class="flex items-center justify-between">
           <!-- Mobile Logo -->
           <div class="flex-shrink-0">
@@ -725,39 +741,39 @@ watch(locale, () => {
                 v-if="mobileLogoUrl"
                 :src="mobileLogoUrl"
                 :alt="mobileLogo?.altText || 'Logo'"
-                class="h-10 w-auto object-contain max-w-[120px]"
+                class="h-7 xs:h-8 w-auto object-contain max-w-[90px] xs:max-w-[110px]"
               />
             </NuxtLink>
           </div>
           
           <!-- Right Actions -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1">
             <!-- Phone Button -->
             <a 
               :href="`tel:${props.settings?.phoneButton?.numbers?.[0]?.number?.replace(/\s+/g, '') || ''}`"
-              class="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+              class="flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
             >
-              <Phone class="w-4 h-4 text-white" />
+              <Phone class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-white" />
             </a>
             
             <!-- Cart Icon -->
-            <CartIcon v-if="props.settings?.showCart && isCartEnabled" class="w-9 h-9" />
+            <CartIcon v-if="props.settings?.showCart && isCartEnabled" class="w-6 h-6 xs:w-7 xs:h-7" />
             
             <!-- User Button -->
             <button
-              class="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+              class="flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
               @click="showUserDropdown = !showUserDropdown"
             >
-              <User class="w-4 h-4 text-white" />
+              <User class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-white" />
             </button>
             
             <!-- Mobile Menu Button -->
             <button
-              class="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+              class="flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300 ml-1"
               @click="toggleMobileMenu"
               aria-label="Toggle Menu"
             >
-              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="w-4 h-4 text-white" />
+              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-white" />
             </button>
           </div>
         </div>
@@ -774,7 +790,7 @@ watch(locale, () => {
       >
         <div
           v-if="showUserDropdown"
-          class="absolute right-3 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
+          class="absolute right-2 xs:right-3 mt-1 w-36 xs:w-40 rounded-md shadow-lg py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
           :style="{ zIndex: 65 }"
           @click.outside="showUserDropdown = false"
         >
@@ -782,18 +798,18 @@ watch(locale, () => {
           <template v-if="!isAuthenticated">
             <NuxtLink
               to="/auth/login"
-              class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              class="flex items-center gap-1.5 px-2 xs:px-3 py-1 xs:py-1.5 text-[11px] xs:text-xs text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               @click="showUserDropdown = false"
             >
-              <LogIn class="w-4 h-4" />
+              <LogIn class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
               {{ t('Đăng nhập') }}
             </NuxtLink>
             <NuxtLink
               to="/auth/register"
-              class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              class="flex items-center gap-1.5 px-2 xs:px-3 py-1 xs:py-1.5 text-[11px] xs:text-xs text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               @click="showUserDropdown = false"
             >
-              <UserCircle class="w-4 h-4" />
+              <UserCircle class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
               {{ t('Đăng ký') }}
             </NuxtLink>
           </template>
@@ -801,27 +817,27 @@ watch(locale, () => {
           <!-- Logged In -->
           <template v-else>
             <!-- User Info -->
-            <div class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
-              <div class="text-sm font-medium text-neutral-900 dark:text-white">
+            <div class="px-2 xs:px-3 py-1 xs:py-1.5 border-b border-neutral-200 dark:border-neutral-700">
+              <div class="text-[11px] xs:text-xs font-medium text-neutral-900 dark:text-white truncate">
                 {{ userDisplayName }}
               </div>
-              <div class="text-xs text-neutral-500 dark:text-neutral-400">
+              <div class="text-[9px] xs:text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
                 {{ user?.email }}
               </div>
             </div>
             <NuxtLink
               to="/dashboard"
-              class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              class="flex items-center gap-1.5 px-2 xs:px-3 py-1 xs:py-1.5 text-[11px] xs:text-xs text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               @click="showUserDropdown = false"
             >
-              <Settings class="w-4 h-4" />
+              <Settings class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
               {{ t('Dashboard') }}
             </NuxtLink>
             <button
-              class="flex items-center gap-2 w-full px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              class="flex items-center gap-1.5 w-full px-2 xs:px-3 py-1 xs:py-1.5 text-[11px] xs:text-xs text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               @click="handleLogout"
             >
-              <LogOut class="w-4 h-4" />
+              <LogOut class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
               {{ t('Đăng xuất') }}
             </button>
           </template>
@@ -839,11 +855,11 @@ watch(locale, () => {
       }"
     >
       <nav class="navigation-section w-full h-full relative">
-        <div class="w-full px-8 h-full">
+        <div class="w-full px-4 lg:px-6 xl:px-8 h-full">
           <div class="flex items-center h-full relative">
             <!-- Logo - Left column -->
-            <div class="w-[15%] flex justify-start">
-              <NuxtLink to="/" class="flex-shrink-0 mr-8 py-3">
+            <div class="w-[15%] lg:w-[12%] xl:w-[15%] flex justify-start">
+              <NuxtLink to="/" class="flex-shrink-0 mr-4 lg:mr-6 xl:mr-8 py-3">
                 <div 
                   class="flex items-center justify-center"
                   :style="logo ? `width: ${Math.min(logo.width * 1.5, 200)}px; height: ${Math.min(logo.height * 1.5, 60)}px` : ''"
@@ -854,7 +870,7 @@ watch(locale, () => {
                     :alt="logo?.altText || 'Logo'"
                     :width="logo?.width"
                     :height="logo?.height"
-                    class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[60px]"
+                    class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[60px] lg:max-h-[50px] xl:max-h-[60px]"
                   />
                   <span
                     v-else-if="isLoadingLogo"
@@ -865,14 +881,14 @@ watch(locale, () => {
             </div>
 
             <!-- Navigation Menu - Center column -->
-            <nav class="w-[70%] hidden lg:flex h-full">
+            <nav class="w-[70%] lg:w-[75%] xl:w-[70%] hidden lg:flex h-full">
               <div class="flex items-center justify-between w-full h-full" ref="menuContainerRef">
                 <div class="flex items-center justify-between w-full h-full">
                   <div v-if="isLoading" class="text-sm" :style="{ color: isDark ? props.settings?.darkMode?.textColor : props.settings?.textColor }">
                     Đang tải menu...
                   </div>
                   <template v-else>
-                    <div class="flex items-center justify-between w-full gap-2">
+                    <div class="flex items-center justify-between w-full gap-1 xl:gap-2">
                       <!-- Visible Menu Items -->
                       <div
                         v-for="(item, itemIndex) in visibleMenuItems"
@@ -885,7 +901,7 @@ watch(locale, () => {
                       >
                         <NuxtLink
                           :to="item.href"
-                          class="main-menu-item flex items-center space-x-2 whitespace-nowrap h-full px-4"
+                          class="main-menu-item flex items-center space-x-1 xl:space-x-2 whitespace-nowrap h-full px-2 xl:px-4"
                           :class="{ 
                             'menu-active': isMenuActive(item.href),
                             [props.settings?.navigation?.fontWeight || '']: true
@@ -894,7 +910,7 @@ watch(locale, () => {
                           <Icon
                             v-if="item.icon"
                             :name="item.icon"
-                            class="nav-icon w-6 h-6"
+                            class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
                             :style="{ 
                               color: isMenuActive(item.href) 
                                 ? 'rgb(var(--color-primary-500))'
@@ -902,7 +918,7 @@ watch(locale, () => {
                             }"
                           />
                           <span 
-                            class="text-[1.25rem] uppercase font-black" 
+                            class="text-[1rem] lg:text-[1.1rem] xl:text-[1.25rem] uppercase font-black" 
                             :style="{ 
                               color: isMenuActive(item.href) 
                                 ? 'rgb(var(--color-primary-500))'
@@ -972,20 +988,20 @@ watch(locale, () => {
                             >
                               <NuxtLink
                                 :to="item.href"
-                                class="flex items-center space-x-2 w-full"
+                                class="flex items-center space-x-2 w-full px-3 py-2 text-sm"
                                 :style="{ color: props.settings?.navigation?.textColor }"
                                 @click="showMoreMenu = false"
                               >
                                 <Icon
                                   v-if="item.icon"
                                   :name="item.icon"
-                                  class="nav-icon w-5 h-5"
+                                  class="nav-icon w-4 h-4 xl:w-5 xl:h-5"
                                 />
                                 <span>{{ item.isTranslated ? t(item.label ?? '') : item.label }}</span>
                                 <Icon
                                   v-if="item.children?.length"
                                   name="ChevronRight"
-                                  class="nav-icon w-5 h-5 ml-auto"
+                                  class="nav-icon w-4 h-4 xl:w-5 xl:h-5 ml-auto"
                                 />
                               </NuxtLink>
 
@@ -1011,11 +1027,11 @@ watch(locale, () => {
             </nav>
 
             <!-- Right Actions - Right column -->
-            <div class="w-[15%] flex items-center justify-end gap-4">
+            <div class="w-[15%] lg:w-[13%] xl:w-[15%] flex items-center justify-end gap-2 lg:gap-3 xl:gap-4">
               <!-- Combined Book Now Button -->
               <NuxtLink
                 :to="props.settings?.bookingButton?.href || '/booking'"
-                class="hidden lg:flex items-center gap-1 lg:gap-4 px-2 lg:px-6 py-1 lg:py-3 min-h-[40px] lg:min-h-[60px] rounded-full transition-all duration-300 hover:opacity-90"
+                class="hidden lg:flex items-center gap-1 lg:gap-2 xl:gap-4 px-2 lg:px-3 xl:px-6 py-1 lg:py-2 xl:py-3 min-h-[40px] lg:min-h-[50px] xl:min-h-[60px] rounded-full transition-all duration-300 hover:opacity-90"
                 :style="{
                   backgroundColor: props.settings?.bookingButton?.backgroundColor || 'rgb(var(--color-primary-500))',
                   color: props.settings?.bookingButton?.textColor || '#ffffff'
@@ -1023,7 +1039,7 @@ watch(locale, () => {
               >
                 <div class="relative">
                   <div class="animate-ring absolute -inset-0.5 lg:-inset-1 rounded-full border border-white lg:border-2 opacity-75"></div>
-                  <div class="relative flex items-center justify-center rounded-full bg-white/20 w-5 lg:w-10 h-5 lg:h-10">
+                  <div class="relative flex items-center justify-center rounded-full bg-white/20 w-5 lg:w-8 xl:w-10 h-5 lg:h-8 xl:h-10">
                     <Phone
                       class="text-white"
                       :size="14"
@@ -1033,13 +1049,13 @@ watch(locale, () => {
                   </div>
                 </div>
                 <div class="flex flex-col items-start py-0.5">
-                  <span class="text-xs sm:text-sm lg:text-lg font-bold leading-none lg:leading-normal whitespace-nowrap">
+                  <span class="text-xs sm:text-sm lg:text-base xl:text-lg font-bold leading-none lg:leading-normal whitespace-nowrap">
                     {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
                   </span>
                   <div class="flex flex-col">
                     <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
                       <button 
-                        class="text-[8px] sm:text-[10px] lg:text-sm leading-tight lg:leading-normal opacity-90 hover:underline transition-all duration-300"
+                        class="text-[8px] sm:text-[10px] lg:text-xs xl:text-sm leading-tight lg:leading-normal opacity-90 hover:underline transition-all duration-300"
                         @click.stop="callPhone(phone.number)"
                       >
                         {{ t(phone.label) }}: {{ phone.number }}
@@ -1080,42 +1096,42 @@ watch(locale, () => {
           @click.stop
         >
           <!-- Mobile Menu Header -->
-          <div class="mobile-menu-header flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+          <div class="mobile-menu-header flex items-center justify-between px-3 xs:px-4 py-2 xs:py-3 border-b border-neutral-200 dark:border-neutral-700">
             <NuxtLink to="/" class="flex-shrink-0" @click="isMobileMenuOpen = false">
               <img
                 v-if="mobileLogoUrl"
                 :src="mobileLogoUrl"
                 :alt="mobileLogo?.altText || 'Logo'"
-                class="h-10 w-auto object-contain"
+                class="h-7 xs:h-8 w-auto object-contain"
               />
             </NuxtLink>
             <button
-              class="p-2 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              class="p-1 xs:p-1.5 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
               @click="isMobileMenuOpen = false"
               aria-label="Close Menu"
             >
-              <Icon name="X" class="nav-icon w-7 h-7" />
+              <Icon name="X" class="nav-icon w-4 h-4 xs:w-5 xs:h-5" />
             </button>
           </div>
 
           <!-- Mobile Call Button & Booking Button -->
-          <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+          <div class="px-3 xs:px-4 py-2 xs:py-3 border-b border-neutral-200 dark:border-neutral-700">
             <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2">
                 <div class="relative">
-                  <div class="animate-ring absolute -inset-1 rounded-full border-2 border-primary-500 opacity-75"></div>
-                  <div class="relative flex items-center justify-center rounded-full bg-primary-500 w-10 h-10">
-                    <Phone class="text-white" :size="20" :stroke-width="2.5" aria-hidden="true" />
+                  <div class="animate-ring absolute -inset-0.5 rounded-full border border-primary-500 opacity-75"></div>
+                  <div class="relative flex items-center justify-center rounded-full bg-primary-500 w-7 h-7 xs:w-8 xs:h-8">
+                    <Phone class="text-white" :size="14" :stroke-width="2.5" aria-hidden="true" />
                   </div>
                 </div>
                 <div class="flex flex-col">
-                  <span class="text-lg font-bold text-neutral-900 dark:text-white">
+                  <span class="text-sm xs:text-base font-bold text-neutral-900 dark:text-white">
                     {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
                   </span>
                   <div class="flex flex-col">
                     <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
                       <button 
-                        class="text-base text-primary-600 dark:text-primary-400 font-medium hover:underline transition-all duration-300 text-left"
+                        class="text-xs xs:text-sm text-primary-600 dark:text-primary-400 font-medium hover:underline transition-all duration-300 text-left"
                         @click="callPhone(phone.number)"
                       >
                         {{ t(phone.label) }}: {{ phone.number }}
@@ -1126,30 +1142,30 @@ watch(locale, () => {
               </div>
               <NuxtLink
                 :to="props.settings?.bookingButton?.href || '/booking'"
-                class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-full transition-all duration-300"
+                class="flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-full transition-all duration-300 text-xs xs:text-sm"
                 @click="isMobileMenuOpen = false"
               >
-                <Icon name="Calendar" class="w-5 h-5" />
+                <Icon name="Calendar" class="w-3.5 h-3.5 xs:w-4 xs:h-4" />
                 {{ t('Đặt vé ngay') }}
               </NuxtLink>
             </div>
           </div>
 
-          <div class="px-6 py-4 space-y-4">
+          <div class="px-3 xs:px-4 py-2 xs:py-3 space-y-2 xs:space-y-3">
             <!-- Cart Icon for Mobile -->
             <div v-if="props.settings?.showCart && isCartEnabled">
               <NuxtLink 
                 to="/cart" 
-                class="flex items-center gap-3 px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                class="flex items-center gap-2 px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                 @click="isMobileMenuOpen = false"
               >
-                <Icon name="ShoppingCart" class="nav-icon w-6 h-6" />
-                <span class="text-base font-medium">Giỏ hàng</span>
+                <Icon name="ShoppingCart" class="nav-icon w-4 h-4 xs:w-5 xs:h-5" />
+                <span>Giỏ hàng</span>
               </NuxtLink>
             </div>
 
             <!-- Language Switcher and Theme Toggle in Mobile Menu -->
-            <div class="flex flex-col space-y-3">
+            <div class="flex flex-col space-y-1.5 xs:space-y-2">
               <div v-if="props.settings?.showLanguageSwitcher" class="w-full">
                 <LanguageSwitcher />
               </div>
@@ -1159,7 +1175,7 @@ watch(locale, () => {
             </div>
 
             <!-- Mobile Menu Items with Mega Menu -->
-            <div class="space-y-1 mt-4">
+            <div class="space-y-0.5 mt-2 xs:mt-3">
               <div
                 v-for="item in processedMenuItems"
                 :key="item.id"
@@ -1168,28 +1184,28 @@ watch(locale, () => {
                 <!-- Menu Item with Mega Menu -->
                 <div
                   v-if="item.children && item.children.length > 0"
-                  class="mobile-main-menu-item flex items-center justify-between px-4 py-3 text-base font-semibold uppercase rounded-lg"
+                  class="mobile-main-menu-item flex items-center justify-between px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-semibold uppercase rounded-lg"
                   :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 >
                   <NuxtLink
                     :to="item.href"
-                    class="flex-1 flex items-center gap-3"
+                    class="flex-1 flex items-center gap-1.5 xs:gap-2"
                     @click="isMobileMenuOpen = false"
                   >
                     <Icon
                       v-if="item.icon"
                       :name="item.icon"
-                      class="nav-icon w-6 h-6"
+                      class="nav-icon w-4 h-4 xs:w-5 xs:h-5"
                     />
                     {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                   </NuxtLink>
                   <button
-                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
+                    class="p-1 xs:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
                     @click.stop="toggleMobileMegaMenu(item.id)"
                   >
                     <Icon
                       name="ChevronRight"
-                      class="nav-icon w-6 h-6 transition-transform duration-300"
+                      class="nav-icon w-4 h-4 xs:w-5 xs:h-5 transition-transform duration-300"
                       :class="{ 'rotate-90': activeMobileMegaMenu === item.id }"
                     />
                   </button>
@@ -1199,14 +1215,14 @@ watch(locale, () => {
                 <NuxtLink
                   v-else
                   :to="item.href"
-                  class="mobile-main-menu-item flex items-center gap-3 px-4 py-3 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors duration-300"
+                  class="mobile-main-menu-item flex items-center gap-1.5 xs:gap-2 px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors duration-300"
                   :class="{ 'text-primary-600 dark:text-primary-400': isMenuActive(item.href) }"
                   @click="isMobileMenuOpen = false"
                 >
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-6 h-6"
+                    class="nav-icon w-4 h-4 xs:w-5 xs:h-5"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                 </NuxtLink>
@@ -1292,6 +1308,11 @@ watch(locale, () => {
     position: relative;
     transition-property: color;
     transition-duration: 300ms;
+    padding: 0 0.75rem;
+
+    @media (max-width: 1440px) {
+      padding: 0 0.5rem;
+    }
 
     &::after {
       content: none;
@@ -1358,8 +1379,13 @@ watch(locale, () => {
       border-radius: 0.375rem;
       box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
       border: 1px solid rgb(229 231 235);
-      min-width: 280px;
+      min-width: 200px;
+      max-width: 280px;
       z-index: 1000;
+
+      @media (min-width: 1280px) {
+        min-width: 280px;
+      }
 
       .dark & {
         background-color: rgb(38 38 38);
@@ -1388,10 +1414,6 @@ watch(locale, () => {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding-left: 1rem;
-        padding-right: 1rem;
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
         cursor: pointer;
 
         &:hover {
@@ -1402,7 +1424,11 @@ watch(locale, () => {
         }
 
         span {
-          font-size: 1.05rem;
+          font-size: 0.875rem;
+          
+          @media (min-width: 1280px) {
+            font-size: 1rem;
+          }
         }
       }
     }
@@ -1420,13 +1446,13 @@ watch(locale, () => {
       right: 0;
       height: 100%;
       width: 100%;
-      max-width: 90%;
+      max-width: 85%;
       overflow-y: auto;
       box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
       animation: slideInRight 0.3s ease-out;
 
-      @media (min-width: 640px) {
-        max-width: 400px;
+      @media (min-width: 480px) {
+        max-width: 320px;
       }
     }
   }
@@ -1465,6 +1491,21 @@ watch(locale, () => {
 
   .animate-ring {
     animation: ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  // Add spacer for content below fixed menu
+  &::before {
+    content: '';
+    display: block;
+    height: 38px; // Adjusted for even smaller mobile header
+    
+    @media (min-width: 400px) {
+      height: 42px; // Slightly taller for medium small screens
+    }
+    
+    @media (min-width: 1024px) {
+      display: none;
+    }
   }
 }
 
@@ -1534,18 +1575,5 @@ watch(locale, () => {
 .mobile-shadow {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   transition: box-shadow 0.3s ease-in-out;
-}
-
-// Add spacer for content below fixed menu
-.navbar-container {
-  &::before {
-    content: '';
-    display: block;
-    height: 57px; // Adjust based on your mobile menu height
-    
-    @media (min-width: 1024px) {
-      display: none;
-    }
-  }
 }
 </style> 
