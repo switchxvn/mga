@@ -425,11 +425,11 @@ watch(locale, () => {
           color: isDark ? props.settings?.darkMode?.textColor : '#ffffff'
         }"
       >
-        <div class="w-full px-2 sm:px-4 lg:px-8">
-          <div class="flex items-center h-10 sm:h-12 lg:h-16">
+        <div class="w-full px-2 sm:px-3 lg:px-4">
+          <div class="flex items-center h-8 sm:h-10 lg:h-10">
             <!-- Left Column -->
             <div 
-              class="flex items-center gap-2 sm:gap-3 lg:gap-4" 
+              class="flex items-center gap-0.5 sm:gap-1 lg:gap-2" 
               :style="{
                 width: props.settings?.topMenu?.leftColumn?.width || '20%',
                 justifyContent: props.settings?.topMenu?.leftColumn?.alignment === 'center' ? 'center' : 
@@ -447,16 +447,16 @@ watch(locale, () => {
                 <!-- Text Type with Icon -->
                 <div
                   v-else-if="item.type === 'text'"
-                  class="flex items-center gap-2"
+                  class="flex items-center gap-0.5 sm:gap-1"
                 >
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5"
+                    class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3"
                     :style="{ color: item.textColor }"
                   />
                   <span
-                    class="text-xs sm:text-sm lg:text-base font-medium whitespace-nowrap"
+                    class="text-[9px] sm:text-[10px] lg:text-xs font-medium whitespace-nowrap"
                     :style="{ color: item.textColor }"
                   >
                     {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -467,7 +467,7 @@ watch(locale, () => {
                 <NuxtLink
                   v-else-if="item.type === 'link'"
                   :to="item.href"
-                  class="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm lg:text-base font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  class="flex items-center gap-0.5 text-[9px] sm:text-[10px] lg:text-xs font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                   :style="{
                     color: item.textColor,
                     '&:hover': {
@@ -478,7 +478,7 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5"
+                    class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3"
                     :style="{ color: item.textColor }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
@@ -487,7 +487,7 @@ watch(locale, () => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-3 sm:h-4 lg:h-6 w-[1px] sm:mx-1 lg:mx-2"
+                  class="h-2 sm:h-2.5 lg:h-3 w-[1px] sm:mx-0.5"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
@@ -495,7 +495,7 @@ watch(locale, () => {
             
             <!-- Center Column -->
             <div 
-              class="flex items-center gap-4" 
+              class="flex items-center gap-2 lg:gap-3" 
               :style="{
                 width: props.settings?.topMenu?.centerColumn?.width || '60%',
                 justifyContent: props.settings?.topMenu?.centerColumn?.alignment === 'start' ? 'flex-start' : 
@@ -513,20 +513,16 @@ watch(locale, () => {
                 <!-- Text Type with Icon -->
                 <div
                   v-else-if="item.type === 'text'"
-                  class="flex items-center gap-2"
+                  class="flex items-center gap-1 sm:gap-1.5"
                 >
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
-                    :style="{ 
-                      color: isMenuActive(item.href) 
-                        ? 'rgb(var(--color-primary-500))'
-                        : props.settings?.navigation?.textColor
-                    }"
+                    class="nav-icon w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4"
+                    :style="{ color: item.textColor }"
                   />
                   <span
-                    class="text-sm md:text-base lg:text-[16px] font-medium whitespace-nowrap"
+                    class="text-[10px] sm:text-xs lg:text-sm font-medium whitespace-nowrap"
                     :style="{ color: item.textColor }"
                   >
                     {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -537,7 +533,7 @@ watch(locale, () => {
                 <NuxtLink
                   v-else-if="item.type === 'link'"
                   :to="item.href"
-                  class="flex items-center gap-1 md:gap-2 text-sm md:text-base lg:text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  class="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                   :style="{
                     color: item.textColor,
                     '&:hover': {
@@ -548,12 +544,8 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
-                    :style="{ 
-                      color: isMenuActive(item.href) 
-                        ? 'rgb(var(--color-primary-500))'
-                        : props.settings?.navigation?.textColor
-                    }"
+                    class="nav-icon w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4"
+                    :style="{ color: item.textColor }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                 </NuxtLink>
@@ -561,7 +553,7 @@ watch(locale, () => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-4 md:h-6 w-[1px] md:w-[2px] mx-1 md:mx-2"
+                  class="h-2.5 sm:h-3 lg:h-4 w-[1px] sm:mx-0.5 lg:mx-1"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
@@ -569,7 +561,7 @@ watch(locale, () => {
 
             <!-- Right Column -->
             <div 
-              class="flex items-center gap-4" 
+              class="flex items-center gap-2 lg:gap-3" 
               :style="{
                 width: props.settings?.topMenu?.rightColumn?.width || '20%',
                 justifyContent: props.settings?.topMenu?.rightColumn?.alignment === 'center' ? 'center' : 
@@ -587,20 +579,16 @@ watch(locale, () => {
                 <!-- Text Type with Icon -->
                 <div
                   v-else-if="item.type === 'text'"
-                  class="flex items-center gap-2"
+                  class="flex items-center gap-1 sm:gap-1.5"
                 >
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
-                    :style="{ 
-                      color: isMenuActive(item.href) 
-                        ? 'rgb(var(--color-primary-500))'
-                        : props.settings?.navigation?.textColor
-                    }"
+                    class="nav-icon w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4"
+                    :style="{ color: item.textColor }"
                   />
                   <span
-                    class="text-sm md:text-base lg:text-[18px] font-medium whitespace-nowrap"
+                    class="text-[10px] sm:text-xs lg:text-sm font-medium whitespace-nowrap"
                     :style="{ color: item.textColor }"
                   >
                     {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -611,7 +599,7 @@ watch(locale, () => {
                 <NuxtLink
                   v-else-if="item.type === 'link'"
                   :to="item.href"
-                  class="flex items-center gap-1 md:gap-2 text-sm md:text-base lg:text-[18px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  class="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                   :style="{
                     color: item.textColor,
                     '&:hover': {
@@ -622,12 +610,8 @@ watch(locale, () => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
-                    :style="{ 
-                      color: isMenuActive(item.href) 
-                        ? 'rgb(var(--color-primary-500))'
-                        : props.settings?.navigation?.textColor
-                    }"
+                    class="nav-icon w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4"
+                    :style="{ color: item.textColor }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                 </NuxtLink>
@@ -635,7 +619,7 @@ watch(locale, () => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-4 md:h-6 w-[1px] md:w-[2px] mx-1 md:mx-2"
+                  class="h-2.5 sm:h-3 lg:h-4 w-[1px] sm:mx-0.5 lg:mx-1"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
@@ -643,10 +627,10 @@ watch(locale, () => {
               <!-- User Menu -->
               <div class="relative">
                 <button
-                  class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/20 transition-colors duration-300"
+                  class="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 transition-colors duration-300"
                   @click="showUserDropdown = !showUserDropdown"
                 >
-                  <User class="w-5 h-5 text-white" />
+                  <User class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </button>
 
                 <!-- User Dropdown -->
@@ -660,7 +644,7 @@ watch(locale, () => {
                 >
                   <div
                     v-if="showUserDropdown"
-                    class="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
+                    class="absolute right-1.5 xs:right-2 mt-0.5 w-32 xs:w-36 rounded-md shadow-lg py-0.5 xs:py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
                     :style="{ zIndex: 65 }"
                     @click.outside="showUserDropdown = false"
                   >
@@ -668,18 +652,18 @@ watch(locale, () => {
                     <template v-if="!isAuthenticated">
                       <NuxtLink
                         to="/auth/login"
-                        class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        class="flex items-center gap-1 px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-[11px] text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
                         @click="showUserDropdown = false"
                       >
-                        <LogIn class="w-4 h-4" />
+                        <LogIn class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
                         {{ t('Đăng nhập') }}
                       </NuxtLink>
                       <NuxtLink
                         to="/auth/register"
-                        class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        class="flex items-center gap-1 px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-[11px] text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
                         @click="showUserDropdown = false"
                       >
-                        <UserCircle class="w-4 h-4" />
+                        <UserCircle class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
                         {{ t('Đăng ký') }}
                       </NuxtLink>
                     </template>
@@ -687,27 +671,27 @@ watch(locale, () => {
                     <!-- Logged In -->
                     <template v-else>
                        <!-- User Info -->
-                       <div class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
-                        <div class="text-sm font-medium text-neutral-900 dark:text-white">
+                       <div class="px-1.5 xs:px-2 py-1 xs:py-1.5 border-b border-neutral-200 dark:border-neutral-700">
+                        <div class="text-[10px] xs:text-[11px] font-medium text-neutral-900 dark:text-white">
                           {{ userDisplayName }}
                         </div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                        <div class="text-[8px] xs:text-[9px] text-neutral-500 dark:text-neutral-400">
                           {{ user?.email }}
                         </div>
                       </div>
-                                            <NuxtLink
+                      <NuxtLink
                         to="/dashboard"
-                        class="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        class="flex items-center gap-1 px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-[11px] text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
                         @click="showUserDropdown = false"
                       >
-                        <Settings class="w-4 h-4" />
+                        <Settings class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
                         {{ t('Dashboard') }}
                       </NuxtLink>
                       <button
-                        class="flex items-center gap-2 w-full px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        class="flex items-center gap-1 w-full px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-[11px] text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
                         @click="handleLogout"
                       >
-                        <LogOut class="w-4 h-4" />
+                        <LogOut class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
                         {{ t('Đăng xuất') }}
                       </button>
                     </template>
@@ -732,7 +716,7 @@ watch(locale, () => {
         zIndex: 60
       }"
     >
-      <div class="w-full px-2 xs:px-3 py-1 xs:py-1.5">
+      <div class="w-full px-1.5 xs:px-2 py-0.5 xs:py-1">
         <div class="flex items-center justify-between">
           <!-- Mobile Logo -->
           <div class="flex-shrink-0">
@@ -741,39 +725,39 @@ watch(locale, () => {
                 v-if="mobileLogoUrl"
                 :src="mobileLogoUrl"
                 :alt="mobileLogo?.altText || 'Logo'"
-                class="h-7 xs:h-8 w-auto object-contain max-w-[90px] xs:max-w-[110px]"
+                class="h-6 xs:h-7 w-auto object-contain max-w-[80px] xs:max-w-[100px]"
               />
             </NuxtLink>
           </div>
           
           <!-- Right Actions -->
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-0.5 xs:gap-1">
             <!-- Phone Button -->
             <a 
               :href="`tel:${props.settings?.phoneButton?.numbers?.[0]?.number?.replace(/\s+/g, '') || ''}`"
-              class="flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+              class="flex items-center justify-center w-5 h-5 xs:w-6 xs:h-6 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
             >
-              <Phone class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-white" />
+              <Phone class="w-2.5 h-2.5 xs:w-3 xs:h-3 text-white" />
             </a>
             
             <!-- Cart Icon -->
-            <CartIcon v-if="props.settings?.showCart && isCartEnabled" class="w-6 h-6 xs:w-7 xs:h-7" />
+            <CartIcon v-if="props.settings?.showCart && isCartEnabled" class="w-5 h-5 xs:w-6 xs:h-6" />
             
             <!-- User Button -->
             <button
-              class="flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+              class="flex items-center justify-center w-5 h-5 xs:w-6 xs:h-6 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
               @click="showUserDropdown = !showUserDropdown"
             >
-              <User class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-white" />
+              <User class="w-2.5 h-2.5 xs:w-3 xs:h-3 text-white" />
             </button>
             
             <!-- Mobile Menu Button -->
             <button
-              class="flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300 ml-1"
+              class="flex items-center justify-center w-5 h-5 xs:w-6 xs:h-6 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300 ml-0.5 xs:ml-1"
               @click="toggleMobileMenu"
               aria-label="Toggle Menu"
             >
-              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-white" />
+              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="w-2.5 h-2.5 xs:w-3 xs:h-3 text-white" />
             </button>
           </div>
         </div>
@@ -790,7 +774,7 @@ watch(locale, () => {
       >
         <div
           v-if="showUserDropdown"
-          class="absolute right-2 xs:right-3 mt-1 w-36 xs:w-40 rounded-md shadow-lg py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
+          class="absolute right-1.5 xs:right-2 mt-0.5 w-32 xs:w-36 rounded-md shadow-lg py-0.5 xs:py-1 bg-white dark:bg-neutral-800 ring-1 ring-black ring-opacity-5"
           :style="{ zIndex: 65 }"
           @click.outside="showUserDropdown = false"
         >
@@ -798,7 +782,7 @@ watch(locale, () => {
           <template v-if="!isAuthenticated">
             <NuxtLink
               to="/auth/login"
-              class="flex items-center gap-1.5 px-2 xs:px-3 py-1 xs:py-1.5 text-[11px] xs:text-xs text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              class="flex items-center gap-1 px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-[11px] text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               @click="showUserDropdown = false"
             >
               <LogIn class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
@@ -806,7 +790,7 @@ watch(locale, () => {
             </NuxtLink>
             <NuxtLink
               to="/auth/register"
-              class="flex items-center gap-1.5 px-2 xs:px-3 py-1 xs:py-1.5 text-[11px] xs:text-xs text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              class="flex items-center gap-1 px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-[11px] text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               @click="showUserDropdown = false"
             >
               <UserCircle class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
@@ -816,25 +800,25 @@ watch(locale, () => {
 
           <!-- Logged In -->
           <template v-else>
-            <!-- User Info -->
-            <div class="px-2 xs:px-3 py-1 xs:py-1.5 border-b border-neutral-200 dark:border-neutral-700">
-              <div class="text-[11px] xs:text-xs font-medium text-neutral-900 dark:text-white truncate">
+             <!-- User Info -->
+             <div class="px-1.5 xs:px-2 py-1 xs:py-1.5 border-b border-neutral-200 dark:border-neutral-700">
+              <div class="text-[10px] xs:text-[11px] font-medium text-neutral-900 dark:text-white">
                 {{ userDisplayName }}
               </div>
-              <div class="text-[9px] xs:text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
+              <div class="text-[8px] xs:text-[9px] text-neutral-500 dark:text-neutral-400">
                 {{ user?.email }}
               </div>
             </div>
             <NuxtLink
               to="/dashboard"
-              class="flex items-center gap-1.5 px-2 xs:px-3 py-1 xs:py-1.5 text-[11px] xs:text-xs text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              class="flex items-center gap-1 px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-[11px] text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               @click="showUserDropdown = false"
             >
               <Settings class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
               {{ t('Dashboard') }}
             </NuxtLink>
             <button
-              class="flex items-center gap-1.5 w-full px-2 xs:px-3 py-1 xs:py-1.5 text-[11px] xs:text-xs text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              class="flex items-center gap-1 w-full px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-[11px] text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               @click="handleLogout"
             >
               <LogOut class="w-2.5 h-2.5 xs:w-3 xs:h-3" />
@@ -848,7 +832,7 @@ watch(locale, () => {
     <!-- Navigation Section for Desktop -->
     <div 
       ref="navWrapperRef"
-      class="nav-wrapper w-full h-[90px] hidden lg:block"
+      class="nav-wrapper w-full h-[70px] lg:h-[80px] xl:h-[90px] hidden lg:block"
       :class="{ 'nav-sticky': isScrolled }"
       :style="{
         backgroundColor: isDark ? props.settings?.darkMode?.menuBackgroundColor : props.settings?.menuBackgroundColor
@@ -901,7 +885,7 @@ watch(locale, () => {
                       >
                         <NuxtLink
                           :to="item.href"
-                          class="main-menu-item flex items-center space-x-1 xl:space-x-2 whitespace-nowrap h-full px-2 xl:px-4"
+                          class="main-menu-item flex items-center space-x-1 xl:space-x-1.5 whitespace-nowrap h-full px-1 lg:px-1.5 xl:px-2"
                           :class="{ 
                             'menu-active': isMenuActive(item.href),
                             [props.settings?.navigation?.fontWeight || '']: true
@@ -910,7 +894,7 @@ watch(locale, () => {
                           <Icon
                             v-if="item.icon"
                             :name="item.icon"
-                            class="nav-icon w-4 h-4 xl:w-6 xl:h-6"
+                            class="nav-icon w-3 h-3 lg:w-3 lg:h-3 xl:w-3.5 xl:h-3.5"
                             :style="{ 
                               color: isMenuActive(item.href) 
                                 ? 'rgb(var(--color-primary-500))'
@@ -918,7 +902,7 @@ watch(locale, () => {
                             }"
                           />
                           <span 
-                            class="text-[1rem] lg:text-[1.1rem] xl:text-[1.25rem] uppercase font-black" 
+                            class="text-[0.75rem] lg:text-[0.8rem] xl:text-[0.85rem] uppercase font-black" 
                             :style="{ 
                               color: isMenuActive(item.href) 
                                 ? 'rgb(var(--color-primary-500))'
@@ -930,7 +914,7 @@ watch(locale, () => {
                           <Icon
                             v-if="item.children?.length"
                             name="ChevronDown"
-                            class="nav-icon w-5 h-5 transition-transform duration-300 group-hover:rotate-180"
+                            class="nav-icon w-2.5 h-2.5 lg:w-3 lg:h-3 xl:w-3.5 xl:h-3.5 transition-transform duration-300 group-hover:rotate-180"
                             :style="{ 
                               color: isMenuActive(item.href) 
                                 ? 'rgb(var(--color-primary-500))'
@@ -955,15 +939,15 @@ watch(locale, () => {
                       <!-- More Menu -->
                       <div 
                         v-if="hiddenMenuItems.length > 0"
-                        class="more-menu flex-shrink-0 ml-2"
+                        class="more-menu flex-shrink-0 ml-0.5 lg:ml-1 xl:ml-1.5"
                         ref="moreMenuRef"
                       >
                         <button 
-                          class="flex items-center space-x-1 py-5 px-4 hover:bg-white/30 dark:hover:bg-neutral-800 rounded-md"
+                          class="flex items-center space-x-1 py-2 lg:py-3 xl:py-4 px-1.5 lg:px-2 xl:px-3 hover:bg-white/30 dark:hover:bg-neutral-800 rounded-md"
                           :style="{ color: props.settings?.navigation?.textColor }"
                           @click="showMoreMenu = !showMoreMenu"
                         >
-                          <Icon name="MoreHorizontal" class="nav-icon w-6 h-6" />
+                          <Icon name="MoreHorizontal" class="nav-icon w-3.5 h-3.5 lg:w-4 lg:h-4 xl:w-4.5 xl:h-4.5" />
                         </button>
 
                         <!-- More Menu Dropdown -->
@@ -988,20 +972,20 @@ watch(locale, () => {
                             >
                               <NuxtLink
                                 :to="item.href"
-                                class="flex items-center space-x-2 w-full px-3 py-2 text-sm"
+                                class="flex items-center space-x-1.5 w-full px-1.5 lg:px-2 py-1 lg:py-1.5 text-xs"
                                 :style="{ color: props.settings?.navigation?.textColor }"
                                 @click="showMoreMenu = false"
                               >
                                 <Icon
                                   v-if="item.icon"
                                   :name="item.icon"
-                                  class="nav-icon w-4 h-4 xl:w-5 xl:h-5"
+                                  class="nav-icon w-2.5 h-2.5 lg:w-3 lg:h-3"
                                 />
                                 <span>{{ item.isTranslated ? t(item.label ?? '') : item.label }}</span>
                                 <Icon
                                   v-if="item.children?.length"
                                   name="ChevronRight"
-                                  class="nav-icon w-4 h-4 xl:w-5 xl:h-5 ml-auto"
+                                  class="nav-icon w-2.5 h-2.5 lg:w-3 lg:h-3 ml-auto"
                                 />
                               </NuxtLink>
 
@@ -1031,31 +1015,31 @@ watch(locale, () => {
               <!-- Combined Book Now Button -->
               <NuxtLink
                 :to="props.settings?.bookingButton?.href || '/booking'"
-                class="hidden lg:flex items-center gap-1 lg:gap-2 xl:gap-4 px-2 lg:px-3 xl:px-6 py-1 lg:py-2 xl:py-3 min-h-[40px] lg:min-h-[50px] xl:min-h-[60px] rounded-full transition-all duration-300 hover:opacity-90"
+                class="hidden lg:flex items-center gap-1 lg:gap-1 xl:gap-1.5 px-1 lg:px-1.5 xl:px-2.5 py-0.5 lg:py-1 xl:py-1.5 min-h-[30px] lg:min-h-[36px] xl:min-h-[42px] rounded-full transition-all duration-300 hover:opacity-90"
                 :style="{
                   backgroundColor: props.settings?.bookingButton?.backgroundColor || 'rgb(var(--color-primary-500))',
                   color: props.settings?.bookingButton?.textColor || '#ffffff'
                 }"
               >
                 <div class="relative">
-                  <div class="animate-ring absolute -inset-0.5 lg:-inset-1 rounded-full border border-white lg:border-2 opacity-75"></div>
-                  <div class="relative flex items-center justify-center rounded-full bg-white/20 w-5 lg:w-8 xl:w-10 h-5 lg:h-8 xl:h-10">
+                  <div class="animate-ring absolute -inset-0.5 rounded-full border border-white opacity-75"></div>
+                  <div class="relative flex items-center justify-center rounded-full bg-white/20 w-4 lg:w-5 xl:w-6 h-4 lg:h-5 xl:h-6">
                     <Phone
                       class="text-white"
-                      :size="14"
+                      :size="10"
                       :stroke-width="2.5"
                       aria-hidden="true"
                     />
                   </div>
                 </div>
                 <div class="flex flex-col items-start py-0.5">
-                  <span class="text-xs sm:text-sm lg:text-base xl:text-lg font-bold leading-none lg:leading-normal whitespace-nowrap">
+                  <span class="text-xs lg:text-xs xl:text-sm font-bold leading-none lg:leading-normal whitespace-nowrap">
                     {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
                   </span>
                   <div class="flex flex-col">
                     <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
                       <button 
-                        class="text-[8px] sm:text-[10px] lg:text-xs xl:text-sm leading-tight lg:leading-normal opacity-90 hover:underline transition-all duration-300"
+                        class="text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-90 hover:underline transition-all duration-300"
                         @click.stop="callPhone(phone.number)"
                       >
                         {{ t(phone.label) }}: {{ phone.number }}
@@ -1096,42 +1080,42 @@ watch(locale, () => {
           @click.stop
         >
           <!-- Mobile Menu Header -->
-          <div class="mobile-menu-header flex items-center justify-between px-3 xs:px-4 py-2 xs:py-3 border-b border-neutral-200 dark:border-neutral-700">
+          <div class="mobile-menu-header flex items-center justify-between px-2 xs:px-3 py-1.5 xs:py-2 border-b border-neutral-200 dark:border-neutral-700">
             <NuxtLink to="/" class="flex-shrink-0" @click="isMobileMenuOpen = false">
               <img
                 v-if="mobileLogoUrl"
                 :src="mobileLogoUrl"
                 :alt="mobileLogo?.altText || 'Logo'"
-                class="h-7 xs:h-8 w-auto object-contain"
+                class="h-6 xs:h-7 w-auto object-contain"
               />
             </NuxtLink>
             <button
-              class="p-1 xs:p-1.5 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              class="p-1 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
               @click="isMobileMenuOpen = false"
               aria-label="Close Menu"
             >
-              <Icon name="X" class="nav-icon w-4 h-4 xs:w-5 xs:h-5" />
+              <Icon name="X" class="nav-icon w-3.5 h-3.5 xs:w-4 xs:h-4" />
             </button>
           </div>
 
           <!-- Mobile Call Button & Booking Button -->
-          <div class="px-3 xs:px-4 py-2 xs:py-3 border-b border-neutral-200 dark:border-neutral-700">
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-2">
+          <div class="px-2 xs:px-3 py-1.5 xs:py-2 border-b border-neutral-200 dark:border-neutral-700">
+            <div class="flex flex-col gap-1.5">
+              <div class="flex items-center gap-1.5">
                 <div class="relative">
                   <div class="animate-ring absolute -inset-0.5 rounded-full border border-primary-500 opacity-75"></div>
-                  <div class="relative flex items-center justify-center rounded-full bg-primary-500 w-7 h-7 xs:w-8 xs:h-8">
-                    <Phone class="text-white" :size="14" :stroke-width="2.5" aria-hidden="true" />
+                  <div class="relative flex items-center justify-center rounded-full bg-primary-500 w-6 h-6 xs:w-7 xs:h-7">
+                    <Phone class="text-white" :size="12" :stroke-width="2.5" aria-hidden="true" />
                   </div>
                 </div>
                 <div class="flex flex-col">
-                  <span class="text-sm xs:text-base font-bold text-neutral-900 dark:text-white">
+                  <span class="text-xs xs:text-sm font-bold text-neutral-900 dark:text-white">
                     {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
                   </span>
                   <div class="flex flex-col">
                     <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
                       <button 
-                        class="text-xs xs:text-sm text-primary-600 dark:text-primary-400 font-medium hover:underline transition-all duration-300 text-left"
+                        class="text-[10px] xs:text-xs text-primary-600 dark:text-primary-400 font-medium hover:underline transition-all duration-300 text-left"
                         @click="callPhone(phone.number)"
                       >
                         {{ t(phone.label) }}: {{ phone.number }}
@@ -1142,16 +1126,16 @@ watch(locale, () => {
               </div>
               <NuxtLink
                 :to="props.settings?.bookingButton?.href || '/booking'"
-                class="flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-full transition-all duration-300 text-xs xs:text-sm"
+                class="flex items-center justify-center gap-1 w-full px-2 py-1.5 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-full transition-all duration-300 text-[10px] xs:text-xs"
                 @click="isMobileMenuOpen = false"
               >
-                <Icon name="Calendar" class="w-3.5 h-3.5 xs:w-4 xs:h-4" />
+                <Icon name="Calendar" class="w-3 h-3 xs:w-3.5 xs:h-3.5" />
                 {{ t('Đặt vé ngay') }}
               </NuxtLink>
             </div>
           </div>
 
-          <div class="px-3 xs:px-4 py-2 xs:py-3 space-y-2 xs:space-y-3">
+          <div class="px-2 xs:px-3 py-1.5 xs:py-2 space-y-2 xs:space-y-3">
             <!-- Cart Icon for Mobile -->
             <div v-if="props.settings?.showCart && isCartEnabled">
               <NuxtLink 
@@ -1175,7 +1159,7 @@ watch(locale, () => {
             </div>
 
             <!-- Mobile Menu Items with Mega Menu -->
-            <div class="space-y-0.5 mt-2 xs:mt-3">
+            <div class="space-y-0.5 mt-1.5 xs:mt-2">
               <div
                 v-for="item in processedMenuItems"
                 :key="item.id"
@@ -1184,28 +1168,28 @@ watch(locale, () => {
                 <!-- Menu Item with Mega Menu -->
                 <div
                   v-if="item.children && item.children.length > 0"
-                  class="mobile-main-menu-item flex items-center justify-between px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-semibold uppercase rounded-lg"
+                  class="mobile-main-menu-item flex items-center justify-between px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-xs font-semibold uppercase rounded-lg"
                   :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 >
                   <NuxtLink
                     :to="item.href"
-                    class="flex-1 flex items-center gap-1.5 xs:gap-2"
+                    class="flex-1 flex items-center gap-1 xs:gap-1.5"
                     @click="isMobileMenuOpen = false"
                   >
                     <Icon
                       v-if="item.icon"
                       :name="item.icon"
-                      class="nav-icon w-4 h-4 xs:w-5 xs:h-5"
+                      class="nav-icon w-3.5 h-3.5 xs:w-4 xs:h-4"
                     />
                     {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                   </NuxtLink>
                   <button
-                    class="p-1 xs:p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
+                    class="p-0.5 xs:p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
                     @click.stop="toggleMobileMegaMenu(item.id)"
                   >
                     <Icon
                       name="ChevronRight"
-                      class="nav-icon w-4 h-4 xs:w-5 xs:h-5 transition-transform duration-300"
+                      class="nav-icon w-3.5 h-3.5 xs:w-4 xs:h-4 transition-transform duration-300"
                       :class="{ 'rotate-90': activeMobileMegaMenu === item.id }"
                     />
                   </button>
@@ -1215,14 +1199,14 @@ watch(locale, () => {
                 <NuxtLink
                   v-else
                   :to="item.href"
-                  class="mobile-main-menu-item flex items-center gap-1.5 xs:gap-2 px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors duration-300"
+                  class="mobile-main-menu-item flex items-center gap-1 xs:gap-1.5 px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors duration-300"
                   :class="{ 'text-primary-600 dark:text-primary-400': isMenuActive(item.href) }"
                   @click="isMobileMenuOpen = false"
                 >
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-4 h-4 xs:w-5 xs:h-5"
+                    class="nav-icon w-3.5 h-3.5 xs:w-4 xs:h-4"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
                 </NuxtLink>
@@ -1314,6 +1298,10 @@ watch(locale, () => {
       padding: 0 0.5rem;
     }
 
+    @media (max-width: 1280px) {
+      padding: 0 0.3rem;
+    }
+
     &::after {
       content: none;
     }
@@ -1379,12 +1367,13 @@ watch(locale, () => {
       border-radius: 0.375rem;
       box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
       border: 1px solid rgb(229 231 235);
-      min-width: 200px;
-      max-width: 280px;
+      min-width: 160px;
+      max-width: 220px;
       z-index: 1000;
 
       @media (min-width: 1280px) {
-        min-width: 280px;
+        min-width: 200px;
+        max-width: 250px;
       }
 
       .dark & {
