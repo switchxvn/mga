@@ -841,22 +841,6 @@ const handleSubmit = async () => {
                 </div>
               </div>
               
-              <!-- Tiered Pricing Table -->
-              <div v-if="productData" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <h3 class="font-medium text-lg mb-3 text-gray-900 dark:text-white">
-                  {{ t('products.bulkDiscounts') || 'Giảm giá theo số lượng' }}
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {{ t('products.bulkDiscountsDesc') || 'Mua nhiều để được giảm giá hơn' }}
-                </p>
-                
-                <TierPricingTable 
-                  :productId="productData.id"
-                  :quantity="totalTickets"
-                  :originalPrice="selectedVariant ? getVariantPrice(selectedVariant) : (productData.price || 0)"
-                  title=""
-                />
-              </div>
             </div>
           </div>
         </div>

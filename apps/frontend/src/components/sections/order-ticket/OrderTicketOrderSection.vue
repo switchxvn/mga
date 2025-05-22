@@ -4,9 +4,9 @@ import { useRouter } from 'vue-router';
 import { useLocalization } from '../../../composables/useLocalization';
 import { useTicketBooking } from '~/composables/useTicketBooking';
 import { useProduct } from '~/composables/useProduct';
-import type { ProductVariant } from '~/composables/useProduct';
+import type { ProductVariant, Product } from '~/composables/useProduct';
 import { ProductType } from '@ew/shared';
-import type { Product } from '@ew/shared';
+import type { Product as SharedProduct } from '@ew/shared';
 import {
   Calendar as CalendarIcon,
   CheckCircle as CheckCircleIcon,
@@ -80,7 +80,7 @@ const { getDiscountForQuantity, fetchTierDiscountsForProduct, tierDiscounts } = 
 
 const selectedDate = ref<Date | null>(null);
 const variantCounts = ref<Record<number, number>>({});
-const selectedProduct = ref<Product | null>(null);
+const selectedProduct = ref<SharedProduct | null>(null);
 
 // Select first product by default when products are loaded
 watch(products, (newProducts) => {
@@ -89,7 +89,7 @@ watch(products, (newProducts) => {
   }
 }, { immediate: true });
 
-const selectProduct = async (product: Product) => {
+const selectProduct = async (product: SharedProduct) => {
   selectedProduct.value = product;
   // Reset variant counts when switching products
   variantCounts.value = {};
@@ -153,33 +153,55 @@ const updateTotals = async () => {
   
   // Calculate original total
   let total = 0;
-  const activeVariants: Array<{ variantId: number, originalTotal: number, quantity: number }> = [];
   
-  // Calculate original totals and prepare for discount calculations
-  product.variants.forEach((variant: ProductVariant) => {
+  // Array to store each variant's details for discount calculation
+  const variantDetails: Array<{
+    variantId: number;
+    quantity: number;
+    originalTotal: number;
+    price: number;
+  }> = [];
+  
+  // Calculate original totals for each variant
+  for (const variant of product.variants as ProductVariant[]) {
     const quantity = variantCounts.value[variant.id] || 0;
     if (quantity > 0) {
-      const variantTotal = variant.price * quantity;
-      total += variantTotal;
-      activeVariants.push({ variantId: variant.id, originalTotal: variantTotal, quantity });
+      const variantOriginalTotal = (variant.price || 0) * quantity;
+      total += variantOriginalTotal;
+      
+      variantDetails.push({
+        variantId: variant.id,
+        quantity,
+        originalTotal: variantOriginalTotal,
+        price: variant.price || 0
+      });
     }
-  });
+  }
   
   originalTotal.value = total;
   
-  // Calculate discounted total
-  let discounted = total;
+  // Calculate discounted total by applying discount to each variant individually
+  let discounted = 0;
   
-  // Get total tickets count
-  const totalTicketsCount = Object.values(variantCounts.value).reduce((sum, count) => sum + count, 0);
-  
-  // Lấy phần trăm giảm giá từ API dựa trên tổng số vé
-  if (totalTicketsCount > 0 && product.id) {
-    const discountPercent = await getDiscountForQuantity(product.id, null, totalTicketsCount);
-    if (discountPercent > 0) {
-      const discountAmount = (total * discountPercent) / 100;
-      discounted = total - discountAmount;
+  // Apply discount to each variant based on its individual quantity
+  for (const variantDetail of variantDetails) {
+    let variantDiscounted = variantDetail.originalTotal;
+    
+    // Get discount percentage for this specific variant
+    if (variantDetail.quantity > 0 && product.id) {
+      const discountPercent = await getDiscountForQuantity(
+        product.id, 
+        variantDetail.variantId, // Pass specific variant ID
+        variantDetail.quantity
+      );
+      
+      if (discountPercent > 0) {
+        const discountAmount = (variantDetail.originalTotal * discountPercent) / 100;
+        variantDiscounted = variantDetail.originalTotal - discountAmount;
+      }
     }
+    
+    discounted += variantDiscounted;
   }
   
   discountedTotal.value = discounted;
@@ -210,16 +232,109 @@ const isFormValid = computed(() => {
   return selectedDate.value && totalTickets.value > 0;
 });
 
-const decreaseCount = (variantId: number) => {
-  if (variantCounts.value[variantId] > 0) {
-    variantCounts.value[variantId]--;
+// Thêm phương thức mới để lấy % giảm giá cho một variant cụ thể
+const getVariantDiscount = async (variantId: number, quantity: number) => {
+  if (!selectedProduct.value?.id || quantity <= 0) return 0;
+  
+  try {
+    return await getDiscountForQuantity(
+      selectedProduct.value.id,
+      variantId,
+      quantity
+    );
+  } catch (error) {
+    console.error('Error getting discount:', error);
+    return 0;
   }
 };
 
-const increaseCount = (variantId: number) => {
+// Thêm mảng lưu trữ các mức giảm giá đã tính toán
+const variantDiscounts = ref<Record<number, number>>({});
+
+// Thêm hàm cập nhật tất cả giảm giá variant
+const updateAllVariantDiscounts = async () => {
+  if (!selectedProduct.value) return;
+
+  for (const [variantId, quantity] of Object.entries(variantCounts.value)) {
+    if (quantity > 0) {
+      try {
+        const discount = await getDiscountForQuantity(
+          selectedProduct.value.id,
+          Number(variantId),
+          quantity
+        );
+        variantDiscounts.value[variantId] = discount;
+      } catch (error) {
+        console.error('Error updating discount for variant', variantId, error);
+        variantDiscounts.value[variantId] = 0;
+      }
+    } else {
+      variantDiscounts.value[variantId] = 0;
+    }
+  }
+};
+
+// Theo dõi thay đổi của variantCounts để cập nhật giảm giá
+watch(variantCounts, async () => {
+  await updateAllVariantDiscounts();
+}, { deep: true });
+
+// Cập nhật giảm giá khi thay đổi sản phẩm
+watch(selectedProduct, async () => {
+  await updateAllVariantDiscounts();
+});
+
+// Cập nhật hàm increaseCount để hiển thị giảm giá ngay lập tức
+const increaseCount = async (variantId: number) => {
   const currentCount = variantCounts.value[variantId] || 0;
   if (currentCount < (props.settings?.maxGuests || 999)) {
+    // Cập nhật số lượng
     variantCounts.value[variantId] = currentCount + 1;
+    
+    // Cập nhật mức giảm giá ngay lập tức cho variant này
+    if (selectedProduct.value?.id) {
+      try {
+        const discount = await getDiscountForQuantity(
+          selectedProduct.value.id,
+          variantId,
+          currentCount + 1
+        );
+        variantDiscounts.value[variantId] = discount;
+      } catch (error) {
+        console.error('Error updating discount for variant', variantId, error);
+      }
+    }
+    
+    // Cập nhật tổng tiền
+    await updateTotals();
+  }
+};
+
+const decreaseCount = async (variantId: number) => {
+  if (variantCounts.value[variantId] > 0) {
+    // Cập nhật số lượng
+    variantCounts.value[variantId]--;
+    
+    // Cập nhật mức giảm giá ngay lập tức cho variant này
+    if (selectedProduct.value?.id) {
+      const newCount = variantCounts.value[variantId];
+      if (newCount > 0) {
+        try {
+          const discount = await getDiscountForQuantity(
+            selectedProduct.value.id,
+            variantId,
+            newCount
+          );
+          variantDiscounts.value[variantId] = discount;
+        } catch (error) {
+          console.error('Error updating discount for variant', variantId, error);
+        }
+      } else {
+        variantDiscounts.value[variantId] = 0;
+      }
+    }
+    
+    // Cập nhật tổng tiền
   }
 };
 
@@ -274,15 +389,16 @@ onMounted(async () => {
   await updateTotals();
 });
 
-// Watch for variant count changes to update totals
-watch(variantCounts, async () => {
-  await updateTotals();
-}, { deep: true });
-
 // Watch for locale changes
 watch(locale, () => {
   filters.value.locale = locale.value;
 });
+
+// Thêm hàm getVariantName
+const getVariantName = (variantId: number): string => {
+  const variant = selectedProduct.value?.variants?.find(v => v.id === variantId);
+  return variant ? variant.name : `Loại vé #${variantId}`;
+};
 </script>
 
 <template>
@@ -415,6 +531,15 @@ watch(locale, () => {
                         <p v-if="variant.description" class="text-sm text-gray-500 mt-1">
                           {{ variant.description }}
                         </p>
+                        <!-- Hiển thị thông tin giảm giá nếu có -->
+                        <div v-if="variantCounts[variant.id] > 0" class="mt-1">
+                          <span 
+                            v-if="variantDiscounts[variant.id] > 0" 
+                            class="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800"
+                          >
+                            Giảm {{ variantDiscounts[variant.id] }}% cho {{ variantCounts[variant.id] }} vé
+                          </span>
+                        </div>
                       </div>
                       <div class="flex items-center">
                         <button
@@ -442,13 +567,17 @@ watch(locale, () => {
                 </div>
               </div>
 
-              <!-- Thêm TierPricingTable sau phần variants selection -->
+              <!-- Thêm TierPricingTable với các tính năng mới -->
               <div v-if="selectedProduct && totalTickets > 0" class="mb-6">
                 <TierPricingTable 
                   :productId="selectedProduct.id"
                   :quantity="totalTickets"
-                  :originalPrice="0"
                   :showUnitPrice="false"
+                  :showVariantDiscountDetails="true"
+                  :showVariantInTable="true"
+                  :variantDiscounts="variantDiscounts"
+                  :getVariantName="(id) => getVariantName(id)"
+                  :getVariantQuantity="(id) => variantCounts[id] || 0"
                 />
               </div>
 
