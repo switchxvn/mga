@@ -210,16 +210,14 @@ const handleImageError = (event: Event) => {
 
 <template>
   <section v-if="config" :class="sectionClasses">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 overflow-hidden">
       <div class="flex flex-col md:flex-row gap-8">
         <!-- Text Column -->
-        <div 
-          :style="{ 
-            width: config.textColumnWidth || '60%',
-            ...currentBorderStyles
-          }" 
-          class="prose dark:prose-invert max-w-none flex-shrink-0 bg-white dark:bg-gray-800 shadow-lg flex flex-col rounded-2xl relative max-h-[400px]"
-        >
+        <div class="prose dark:prose-invert max-w-none flex-shrink-0 bg-white dark:bg-gray-800 shadow-lg flex flex-col rounded-2xl relative max-h-[400px] w-full md:column-width-text"
+             :style="{
+               ...currentBorderStyles,
+               '--column-width-text': config.textColumnWidth || '60%'
+             }">
           <div class="p-8 md:p-12 flex flex-col h-full">
             <!-- Scrollable Content -->
             <div 
@@ -246,10 +244,8 @@ const handleImageError = (event: Event) => {
         </div>
 
         <!-- Video Column -->
-        <div 
-          :style="{ width: config.videoColumnWidth || '40%' }" 
-          class="relative flex-shrink-0"
-        >
+        <div class="relative flex-shrink-0 w-full md:column-width-video"
+             :style="{ '--column-width-video': config.videoColumnWidth || '40%' }">
           <div v-if="isLoading" class="flex justify-center items-center h-[400px] rounded-2xl bg-gray-100 dark:bg-gray-800">
             <ULoader size="lg" />
           </div>
@@ -309,18 +305,18 @@ const handleImageError = (event: Event) => {
               class="absolute inset-0 flex items-center justify-between p-4 pointer-events-none z-10"
             >
               <button
-                class="w-12 h-12 rounded-full bg-white/90 hover:bg-white text-primary-600 flex items-center justify-center opacity-75 hover:opacity-100 pointer-events-auto transition-all duration-300 shadow-lg"
+                class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 hover:bg-white text-primary-600 flex items-center justify-center opacity-75 hover:opacity-100 pointer-events-auto transition-all duration-300 shadow-lg"
                 @click="currentSlideIndex = (currentSlideIndex - 1 + videos.length) % videos.length"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <button
-                class="w-12 h-12 rounded-full bg-white/90 hover:bg-white text-primary-600 flex items-center justify-center opacity-75 hover:opacity-100 pointer-events-auto transition-all duration-300 shadow-lg"
+                class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 hover:bg-white text-primary-600 flex items-center justify-center opacity-75 hover:opacity-100 pointer-events-auto transition-all duration-300 shadow-lg"
                 @click="currentSlideIndex = (currentSlideIndex + 1) % videos.length"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -406,16 +402,23 @@ const handleImageError = (event: Event) => {
   --tw-prose-links: var(--primary);
 }
 
+/* Custom column width classes for desktop */
+@media (min-width: 768px) {
+  .video-intro-with-text .md\:column-width-text {
+    width: var(--column-width-text) !important;
+  }
+  
+  .video-intro-with-text .md\:column-width-video {
+    width: var(--column-width-video) !important;
+  }
+}
+
 /* Make columns stack on mobile */
 @media (max-width: 768px) {
   .video-intro-with-text .flex-col {
     @apply gap-4;
   }
   
-  .video-intro-with-text [style*="width"] {
-    width: 100% !important;
-  }
-
   .video-intro-with-text .p-8 {
     @apply p-6;
   }
@@ -426,6 +429,10 @@ const handleImageError = (event: Event) => {
 
   .video-intro-with-text .max-h-\[400px\] {
     max-height: none !important;
+  }
+  
+  .video-intro-with-text .overflow-hidden {
+    overflow: hidden !important;
   }
 }
 
