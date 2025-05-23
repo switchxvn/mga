@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { formatPrice, ProductType, OrderType } from "@ew/shared";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import PhoneInput from "~/components/form/PhoneInput.vue";
 import { useLocalization } from "~/composables/useLocalization";
@@ -14,7 +14,7 @@ const { t } = useLocalization();
 const trpc = useTrpc();
 const notification = useNotification();
 const { loadBookingData, clearBookingData } = useTicketBooking();
-const { getDiscountForQuantity } = useTierPricing();
+const { getDiscountForQuantity, fetchTierDiscountsForProduct, tierDiscounts } = useTierPricing();
 
 // Form data
 const formData = ref({
@@ -33,12 +33,32 @@ const isPhoneValid = ref(false);
 const paymentMethods = ref<any[]>([]);
 const isLoadingPaymentMethods = ref(false);
 
-// Booking data
-const bookingData = ref(loadBookingData());
+// Thêm interface cho variant với các trường mới
+interface BookingVariant {
+  id: number;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  originalPrice?: number;
+  discountPercent?: number;
+}
+
+interface BookingData {
+  productId: number;
+  productName: string;
+  date: string | Date;
+  variants: BookingVariant[];
+  totalAmount: number;
+  originalAmount?: number;
+}
+
+// Cập nhật type cho bookingData
+const bookingData = ref<BookingData | null>(loadBookingData());
 
 // Helper function to properly format dates for API
-const formatDate = (dateString: string): Date => {
-  const date = new Date(dateString);
+const formatDate = (dateInput: string | Date): Date => {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
   // Ensure it's a valid date
   return isNaN(date.getTime()) ? new Date() : date;
 };
@@ -53,6 +73,13 @@ const canProceed = computed(() => {
     formData.value.paymentMethodId &&
     !Object.keys(errors.value).length
   );
+});
+
+// Sorted tier discounts for display
+const sortedTierDiscounts = computed(() => {
+  return [...tierDiscounts.value]
+    .filter(discount => discount.isActive)
+    .sort((a, b) => a.minQuantity - b.minQuantity);
 });
 
 // Methods
@@ -116,6 +143,57 @@ const fetchPaymentMethods = async () => {
   }
 };
 
+// Cập nhật hàm để tải thông tin giảm giá theo bậc
+const loadDiscountInfo = async () => {
+  if (!bookingData.value || !bookingData.value.productId) return;
+  
+  try {
+    // Tải thông tin giảm giá theo bậc cho sản phẩm
+    await fetchTierDiscountsForProduct(bookingData.value.productId);
+    
+    // Cập nhật thông tin giảm giá cho từng variant
+    const updatedVariants = await Promise.all(
+      bookingData.value.variants.map(async (variant) => {
+        // Lấy phần trăm giảm giá theo số lượng cho variant cụ thể
+        const discountPercent = await getDiscountForQuantity(
+          bookingData.value!.productId,
+          variant.id,
+          variant.quantity
+        );
+        
+        // Lưu thông tin giảm giá vào variant để hiển thị
+        variant.discountPercent = discountPercent;
+        
+        // Tính giá sau khi giảm
+        if (discountPercent > 0) {
+          const originalTotalPrice = variant.unitPrice * variant.quantity;
+          const discountAmount = (originalTotalPrice * discountPercent) / 100;
+          variant.totalPrice = originalTotalPrice - discountAmount;
+          variant.originalPrice = originalTotalPrice;
+        }
+        
+        return variant;
+      })
+    );
+    
+    // Cập nhật variants với thông tin giảm giá
+    if (bookingData.value) {
+      bookingData.value.variants = updatedVariants;
+      
+      // Tính lại tổng tiền
+      const newTotalAmount = updatedVariants.reduce((sum, variant) => sum + variant.totalPrice, 0);
+      const originalAmount = updatedVariants.reduce((sum, variant) => {
+        return sum + (variant.originalPrice || variant.totalPrice);
+      }, 0);
+      
+      bookingData.value.totalAmount = newTotalAmount;
+      bookingData.value.originalAmount = originalAmount;
+    }
+  } catch (error) {
+    console.error("Error loading discount information:", error);
+  }
+};
+
 const handleSubmit = async () => {
   if (!validateForm()) return;
   if (!bookingData.value) {
@@ -124,25 +202,36 @@ const handleSubmit = async () => {
   }
 
   try {
-    // Xử lý giảm giá theo bậc cho từng variant
+    // Tạo các item từ variant sau khi đã áp dụng chiết khấu riêng cho từng loại vé
     const itemPromises = bookingData.value.variants.map(async (variant) => {
-      // Lấy phần trăm giảm giá theo số lượng
+      // Lấy phần trăm giảm giá theo số lượng cho variant cụ thể này
       const discountPercent = await getDiscountForQuantity(
         bookingData.value!.productId,
-        variant.id,
+        variant.id,  // Sử dụng variant.id cụ thể
         Number(variant.quantity)
       );
       
+      // Lưu thông tin giảm giá vào variant để hiển thị
+      variant.discountPercent = discountPercent;
+      
       // Tính giá sau khi giảm
-      const originalTotalPrice = Number(variant.totalPrice);
-      const discountAmount = (originalTotalPrice * discountPercent) / 100;
-      const discountedTotalPrice = originalTotalPrice - discountAmount;
+      const originalTotalPrice = variant.unitPrice * variant.quantity;
+      const unitPrice = Number(variant.unitPrice);
+      let discountedTotalPrice = originalTotalPrice;
+      
+      if (discountPercent > 0) {
+        const discountAmount = (originalTotalPrice * discountPercent) / 100;
+        discountedTotalPrice = originalTotalPrice - discountAmount;
+        // Cập nhật giá đã giảm vào variant
+        variant.totalPrice = discountedTotalPrice;
+        variant.originalPrice = originalTotalPrice;
+      }
       
       return {
         productId: bookingData.value!.productId,
         variantId: variant.id,
         quantity: Number(variant.quantity),
-        unitPrice: Number(variant.unitPrice),
+        unitPrice: unitPrice,
         totalPrice: discountedTotalPrice, // Sử dụng giá đã giảm
         originalPrice: originalTotalPrice, // Giữ giá gốc để tham khảo
         discountPercent: discountPercent, // Lưu phần trăm giảm giá
@@ -153,8 +242,14 @@ const handleSubmit = async () => {
 
     const items = await Promise.all(itemPromises);
     
-    // Tính tổng tiền sau khi đã áp dụng giảm giá
+    // Tính tổng tiền sau khi đã áp dụng giảm giá riêng cho từng variant
     const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
+    // Tính tổng tiền gốc để so sánh
+    const originalAmount = items.reduce((sum, item) => sum + item.originalPrice, 0);
+    
+    // Cập nhật tổng tiền và tổng tiền gốc vào bookingData để hiển thị
+    bookingData.value.totalAmount = totalAmount;
+    bookingData.value.originalAmount = originalAmount;
 
     const { order, payment } = await trpc.order.createOrder.mutate({
       phoneCode: formData.value.phoneCode,
@@ -188,13 +283,22 @@ const handleSubmit = async () => {
 };
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   if (!bookingData.value) {
     router.push("/ticket-pricing");
     return;
   }
-  fetchPaymentMethods();
+  
+  await fetchPaymentMethods();
+  await loadDiscountInfo();
 });
+
+// Watch for changes in booking data to update discount info
+watch(() => bookingData.value?.productId, async (newProductId) => {
+  if (newProductId) {
+    await loadDiscountInfo();
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -223,6 +327,31 @@ onMounted(() => {
               <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 {{ t("checkout.bookingSummary") }}
               </h2>
+              
+              <!-- Tier Discount Benefits -->
+              <div v-if="sortedTierDiscounts.length > 0" class="mb-4 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-800">
+                <div class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">
+                  {{ t('products.tierDiscounts.title') || 'Giảm giá theo số lượng:' }}
+                </div>
+                <div class="space-y-1">
+                  <div 
+                    v-for="(tier, index) in sortedTierDiscounts" 
+                    :key="tier.id"
+                    class="flex items-center gap-2 text-xs"
+                  >
+                    <span class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
+                    <span class="text-gray-800 dark:text-gray-200">
+                      <template v-if="index < sortedTierDiscounts.length - 1">
+                        {{ `Mua từ ${tier.minQuantity} đến ${sortedTierDiscounts[index+1].minQuantity-1} vé: giảm ${tier.discountPercent}%` }}
+                      </template>
+                      <template v-else>
+                        {{ `Mua từ ${tier.minQuantity} vé trở lên: giảm ${tier.discountPercent}%` }}
+                      </template>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
               <div class="space-y-4">
                 <div class="flex justify-between items-center">
                   <span class="text-gray-600 dark:text-gray-400">{{
@@ -246,12 +375,29 @@ onMounted(() => {
                     :key="variant.id"
                     class="flex justify-between items-center"
                   >
-                    <span class="text-gray-600 dark:text-gray-400">
-                      {{ variant.name }} x {{ variant.quantity }}
-                    </span>
-                    <span class="font-medium text-gray-900 dark:text-white">
-                      {{ formatPrice(variant.totalPrice) }}
-                    </span>
+                    <div class="flex flex-col">
+                      <span class="text-gray-600 dark:text-gray-400">
+                        {{ variant.name }} x {{ variant.quantity }}
+                      </span>
+                      <!-- Hiển thị thông tin giảm giá nếu có -->
+                      <span 
+                        v-if="variant.discountPercent && variant.discountPercent > 0" 
+                        class="text-xs text-green-600 dark:text-green-400"
+                      >
+                        (Giảm {{ variant.discountPercent }}%)
+                      </span>
+                    </div>
+                    <div class="flex flex-col items-end">
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ formatPrice(variant.totalPrice) }}
+                      </span>
+                      <span 
+                        v-if="variant.originalPrice && variant.originalPrice > variant.totalPrice" 
+                        class="text-xs text-gray-500 line-through"
+                      >
+                        {{ formatPrice(variant.originalPrice) }}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div class="border-t dark:border-gray-700 pt-4 mt-4">

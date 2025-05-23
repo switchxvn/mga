@@ -1,69 +1,48 @@
 <template>
-  <div v-if="tierDiscounts.length > 0" class="tier-pricing-table bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-    <div class="flex items-center mb-3 text-primary-600 dark:text-primary-400">
-      <PercentIcon class="w-5 h-5 mr-2" />
-      <h3 class="font-medium text-base">{{ title }}</h3>
-    </div>
+  <div v-if="tierDiscounts.length > 0" class="space-y-4">
+    <h3 v-if="title" class="text-lg font-medium text-gray-800 dark:text-gray-200">{{ title }}</h3>
+   
     
-    <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead>
-          <tr class="border-b border-gray-200 dark:border-gray-700">
-            <th class="py-2 px-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('products.tierDiscounts.minQuantity') }}</th>
-            <th class="py-2 px-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('products.tierDiscounts.discountPercent') }}</th>
-            <th v-if="showUnitPrice" class="py-2 px-3 text-right text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('products.unitPrice') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr 
-            v-for="(discount, index) in sortedTierDiscounts" 
-            :key="discount.id"
-            :class="[
-              index === sortedTierDiscounts.length - 1 ? '' : 'border-b border-gray-200 dark:border-gray-700',
-              getBestTierForQuantity?.id === discount.id ? 'bg-primary-50 dark:bg-primary-900/20' : ''
-            ]"
-          >
-            <td class="py-2 px-3 text-sm text-gray-700 dark:text-gray-300">
-              {{ discount.minQuantity }}+
-            </td>
-            <td class="py-2 px-3 text-sm">
-              <span class="text-primary-600 dark:text-primary-400 font-medium">{{ discount.discountPercent }}%</span>
-            </td>
-            <td v-if="showUnitPrice" class="py-2 px-3 text-sm text-right text-gray-700 dark:text-gray-300">
-              {{ formatDiscountedUnitPrice(discount.discountPercent) }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-if="getBestTierForQuantity && quantity > 0" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-      <div class="flex justify-between items-center text-sm">
-        <span class="text-gray-600 dark:text-gray-400">{{ t('products.appliedDiscount') }}:</span>
-        <span class="font-medium text-primary-600 dark:text-primary-400">{{ getBestTierForQuantity.discountPercent }}%</span>
-      </div>
-      <div v-if="showSavings && originalPrice && quantity" class="flex justify-between items-center text-sm mt-1">
-        <span class="text-gray-600 dark:text-gray-400">{{ t('products.youSave') }}:</span>
-        <span class="font-medium text-green-600 dark:text-green-400">{{ formatSavings(originalPrice, quantity, getBestTierForQuantity.discountPercent) }}</span>
+    <!-- Sửa lại phần hiển thị chi tiết, chỉ hiển thị khi không có cột "Áp dụng cho" trong bảng -->
+    <div 
+      v-if="showVariantDiscountDetails && variantDiscounts && Object.keys(variantDiscounts).length > 0 && !showVariantInTable"
+      class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+    >
+      <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {{ t('products.tierDiscounts.appliedDiscounts') }}:
+      </h4>
+      <div class="space-y-2">
+        <div 
+          v-for="(discount, variantId) in variantDiscounts" 
+          :key="variantId"
+          class="flex items-center justify-between text-sm"
+          v-show="discount > 0 && getVariantQuantity(Number(variantId)) > 0"
+        >
+          <div class="flex items-center">
+            <span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+            <span class="text-gray-700 dark:text-gray-300">
+              {{ getVariantName(Number(variantId)) }} (x{{ getVariantQuantity(Number(variantId)) }})
+            </span>
+          </div>
+          <span class="font-medium text-green-600 dark:text-green-400">
+            -{{ discount }}%
+          </span>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue';
-import { PercentIcon } from 'lucide-vue-next';
+import { ref, computed, onMounted, watch, inject } from 'vue';
 import { useTierPricing } from '~/composables/useTierPricing';
 import { useLocalization } from '~/composables/useLocalization';
+import { formatPrice } from '@ew/shared';
 
 const props = defineProps({
   productId: {
     type: Number,
-    default: null
-  },
-  variantId: {
-    type: Number,
-    default: null
+    required: true
   },
   quantity: {
     type: Number,
@@ -77,66 +56,126 @@ const props = defineProps({
     type: Boolean,
     default: true
   },
-  showSavings: {
+  title: {
+    type: String,
+    default: 'Giảm giá theo số lượng'
+  },
+  showVariantDiscountDetails: {
     type: Boolean,
     default: true
   },
-  title: {
-    type: String,
-    default: 'Giá theo bậc'
+  showVariantInTable: {
+    type: Boolean,
+    default: true
+  },
+  variantDiscounts: {
+    type: Object,
+    default: () => ({})
+  },
+  getVariantName: {
+    type: Function,
+    default: (id: number) => `Loại vé #${id}`
+  },
+  getVariantQuantity: {
+    type: Function,
+    default: () => 0
   }
 });
 
 const { t } = useLocalization();
-const { 
-  tierDiscounts, 
-  fetchTierDiscountsForProduct, 
-  fetchTierDiscountsForVariant,
-  formatDiscountedPrice,
-  formatSavings
-} = useTierPricing();
+const { fetchTierDiscountsForProduct, tierDiscounts, getDiscountForQuantity } = useTierPricing();
 
-// Sắp xếp tiered discounts theo số lượng tối thiểu tăng dần
+// Sắp xếp giảm giá theo số lượng tối thiểu
 const sortedTierDiscounts = computed(() => {
-  return [...tierDiscounts.value].sort((a, b) => a.minQuantity - b.minQuantity);
+  return [...tierDiscounts.value]
+    .filter(tier => tier.isActive)
+    .sort((a, b) => a.minQuantity - b.minQuantity);
 });
 
-// Tính giá theo đơn vị sau khi áp dụng giảm giá
-const formatDiscountedUnitPrice = (discountPercent: number) => {
-  if (!props.originalPrice) return "";
-  return formatDiscountedPrice(props.originalPrice, discountPercent);
+// Kiểm tra xem số lượng hiện tại có đạt ngưỡng giảm giá nào không
+const currentTier = computed(() => {
+  if (props.quantity <= 0) return null;
+  
+  // Tìm mức giảm giá cao nhất mà số lượng hiện tại đạt được
+  const applicableTiers = sortedTierDiscounts.value.filter(
+    tier => props.quantity >= tier.minQuantity
+  );
+  
+  return applicableTiers.length > 0 
+    ? applicableTiers[applicableTiers.length - 1] 
+    : null;
+});
+
+// Hàm kiểm tra tier hiện tại
+const isCurrentTier = (tier) => {
+  if (!currentTier.value) return false;
+  
+  // Nếu số lượng hiện tại nằm trong khoảng của tier này
+  const nextTierIndex = sortedTierDiscounts.value.findIndex(t => t.id === tier.id) + 1;
+  const nextTier = nextTierIndex < sortedTierDiscounts.value.length 
+    ? sortedTierDiscounts.value[nextTierIndex] 
+    : null;
+  
+  if (nextTier) {
+    return props.quantity >= tier.minQuantity && props.quantity < nextTier.minQuantity;
+  } else {
+    return props.quantity >= tier.minQuantity;
+  }
 };
 
-// Lấy bậc giá tốt nhất dựa trên số lượng hiện tại
-const getBestTierForQuantity = computed(() => {
-  if (!tierDiscounts.value.length || props.quantity <= 0) return null;
-  
-  // Sắp xếp giảm dần theo số lượng tối thiểu để lấy bậc cao nhất phù hợp
-  const sortedDiscounts = [...tierDiscounts.value].sort((a, b) => b.minQuantity - a.minQuantity);
-  
-  // Tìm bậc giá đầu tiên có số lượng tối thiểu <= số lượng yêu cầu
-  return sortedDiscounts.find(tier => tier.minQuantity <= props.quantity) || null;
-});
+// Tính giá sau khi giảm
+const getDiscountedPrice = (discountPercent) => {
+  if (props.originalPrice <= 0) return 0;
+  return props.originalPrice * (1 - discountPercent / 100);
+};
 
-// Fetch data khi component được tạo
+// Tải dữ liệu giảm giá khi component được mount
 onMounted(async () => {
   if (props.productId) {
     await fetchTierDiscountsForProduct(props.productId);
-  } else if (props.variantId) {
-    await fetchTierDiscountsForVariant(props.variantId);
   }
 });
 
-// Watch changes to productId or variantId
-watch(() => props.productId, async (newProductId) => {
-  if (newProductId) {
-    await fetchTierDiscountsForProduct(newProductId);
+// Cập nhật lại khi productId thay đổi
+watch(() => props.productId, async (newValue) => {
+  if (newValue) {
+    await fetchTierDiscountsForProduct(newValue);
   }
-}, { immediate: true });
+});
 
-watch(() => props.variantId, async (newVariantId) => {
-  if (newVariantId) {
-    await fetchTierDiscountsForVariant(newVariantId);
+// Thêm phương thức để nhóm các variant theo mức giảm giá
+const getVariantsGroupedByDiscount = computed(() => {
+  if (!props.variantDiscounts || Object.keys(props.variantDiscounts).length === 0) {
+    return {};
   }
-}, { immediate: true });
+  
+  // Nhóm các variant theo mức giảm giá
+  const groupedVariants = {};
+  
+  Object.entries(props.variantDiscounts).forEach(([variantId, discount]) => {
+    const numDiscount = Number(discount);
+    const quantity = props.getVariantQuantity(Number(variantId));
+    
+    // Chỉ xem xét các variant có số lượng > 0 và có giảm giá
+    if (numDiscount > 0 && quantity > 0) {
+      if (!groupedVariants[numDiscount]) {
+        groupedVariants[numDiscount] = [];
+      }
+      
+      groupedVariants[numDiscount].push({
+        id: Number(variantId),
+        name: props.getVariantName(Number(variantId)),
+        quantity: quantity
+      });
+    }
+  });
+  
+  return groupedVariants;
+});
+
+// Thêm phương thức để lấy danh sách variant có mức giảm giá cụ thể
+const variantsWithDiscount = (discountPercent) => {
+  const groupedVariants = getVariantsGroupedByDiscount.value;
+  return groupedVariants[discountPercent] || [];
+};
 </script> 

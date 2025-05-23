@@ -179,17 +179,26 @@
                 >
                   <div class="flex flex-col">
                     <span class="font-medium text-gray-900 dark:text-gray-100">{{
-                      getVariantName(variant)
+                      getVariantName(variant.id)
                     }}</span>
                     <span class="text-sm text-gray-600 dark:text-gray-400">{{
                       formatPrice(getVariantPrice(variant))
                     }}</span>
+                    <!-- Hiển thị thông tin giảm giá nếu có -->
+                    <div v-if="getVariantCount(variant.id) > 0" class="mt-1">
+                      <span 
+                        v-if="variantDiscounts[variant.id] > 0" 
+                        class="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800"
+                      >
+                        Giảm {{ variantDiscounts[variant.id] }}% cho {{ getVariantCount(variant.id) }} vé
+                      </span>
+                    </div>
                   </div>
                   <div class="flex items-center">
                     <button
                       type="button"
                       class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      :disabled="getVariantCount(variant) <= 0"
+                      :disabled="getVariantCount(variant.id) <= 0"
                       @click="decreaseVariantCount(variant)"
                     >
                       <MinusIcon class="w-5 h-5" />
@@ -198,13 +207,13 @@
                       class="w-12 text-center text-lg font-medium"
                       :class="currentSettings.colors.heading"
                     >
-                      {{ getVariantCount(variant) }}
+                      {{ getVariantCount(variant.id) }}
                     </span>
                     <button
                       type="button"
                       class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="
-                        getVariantCount(variant) >= currentSettings.form.maxGuests
+                        getVariantCount(variant.id) >= currentSettings.form.maxGuests
                       "
                       @click="increaseVariantCount(variant)"
                     >
@@ -244,20 +253,7 @@
             </DatePicker>
           </div>
 
-          
-
-          <!-- Tiered Pricing Table -->
-          <div v-if="selectedProduct && totalTickets > 0" class="mb-4 mt-6">
-            <h3 class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {{ t('products.bulkDiscounts') }}
-            </h3>
-            <TierPricingTable 
-              :productId="selectedProduct.id"
-              :quantity="totalTickets"
-              :showUnitPrice="false"
-              :title="''"
-            />
-          </div>
+       
 
           <!-- Total and Submit -->
           <div
@@ -353,6 +349,7 @@ const currentSettings = ref<Settings>(props.settings);
 const selectedVariant = ref<any>(null);
 const indexedVariants = ref<any[]>([]);
 const variantCounts = ref<Record<number, number>>({});
+const variantDiscounts = ref<Record<number, number>>({});
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat("vi-VN", {
@@ -390,23 +387,60 @@ const updateDiscountedTotal = async () => {
 
   // Tính tổng cơ bản
   let total = 0;
+  
+  // Mảng lưu thông tin chi tiết từng variant để tính chiết khấu
+  const variantDetails: Array<{
+    variantId: number;
+    quantity: number;
+    originalTotal: number;
+    price: number;
+  }> = [];
+  
+  // Tính tổng tiền gốc cho từng variant
   Object.entries(variantCounts.value).forEach(([variantId, count]) => {
     const variant = indexedVariants.value.find((v) => v.id === Number(variantId));
     if (variant && count > 0) {
-      total += getVariantPrice(variant) * count;
+      const variantPrice = getVariantPrice(variant);
+      const variantOriginalTotal = variantPrice * count;
+      total += variantOriginalTotal;
+      
+      variantDetails.push({
+        variantId: Number(variantId),
+        quantity: count,
+        originalTotal: variantOriginalTotal,
+        price: variantPrice
+      });
     }
   });
 
   // Lưu tổng tiền gốc
   originalTotal.value = total;
 
-  // Áp dụng giảm giá theo số lượng nếu có
-  const discountPercent = await getDiscountForQuantity(selectedProduct.value.id, null, totalTickets.value);
-  if (discountPercent > 0) {
-    total = total * (1 - discountPercent / 100);
+  // Tính tổng tiền sau khi áp dụng chiết khấu cho từng variant riêng biệt
+  let discounted = 0;
+  
+  // Áp dụng chiết khấu cho từng variant dựa trên số lượng riêng của nó
+  for (const variantDetail of variantDetails) {
+    let variantDiscounted = variantDetail.originalTotal;
+    
+    // Lấy phần trăm chiết khấu cho variant cụ thể này
+    if (variantDetail.quantity > 0 && selectedProduct.value.id) {
+      const discountPercent = await getDiscountForQuantity(
+        selectedProduct.value.id,
+        variantDetail.variantId, // Truyền ID variant cụ thể
+        variantDetail.quantity
+      );
+      
+      if (discountPercent > 0) {
+        const discountAmount = (variantDetail.originalTotal * discountPercent) / 100;
+        variantDiscounted = variantDetail.originalTotal - discountAmount;
+      }
+    }
+    
+    discounted += variantDiscounted;
   }
 
-  discountedTotal.value = total;
+  discountedTotal.value = discounted;
 };
 
 const isFormValid = computed(() => {
@@ -479,7 +513,7 @@ const handleSubmit = async () => {
       const variant = indexedVariants.value.find(v => v.id === Number(variantId));
       return {
         id: Number(variantId),
-        name: getVariantName(variant),
+        name: getVariantName(Number(variantId)),
         quantity: count,
         unitPrice: getVariantPrice(variant),
         totalPrice: getVariantPrice(variant) * count
@@ -590,34 +624,82 @@ const getTranslationByLocale = (translations: any[], field: string = "name") => 
 };
 
 // Hàm lấy tên của variant theo locale
-const getVariantName = (variant: any) => {
-  if (variant.translations && variant.translations.length > 0) {
-    return getTranslationByLocale(variant.translations, "name") || "Vé mặc định";
-  }
-  return variant.name || "Vé mặc định";
+const getVariantName = (variantId: number): string => {
+  const variant = indexedVariants.value.find(v => v.id === variantId);
+  return variant ? getTranslationByLocale(variant.translations, "name") || "Vé mặc định" : `Loại vé #${variantId}`;
 };
 
 const getVariantPrice = (variant: any) => {
   return variant.price || 0;
 };
 
-const getVariantCount = (variant: any): number => {
-  return variantCounts.value[variant.id] || 0;
+const getVariantCount = (variantId: number): number => {
+  return variantCounts.value[variantId] || 0;
 };
 
-const decreaseVariantCount = (variant: any) => {
-  if (variantCounts.value[variant.id] > 0) {
-    variantCounts.value[variant.id]--;
+// Thêm hàm cập nhật tất cả giảm giá variant
+const updateAllVariantDiscounts = async () => {
+  if (!selectedProduct.value) return;
+
+  for (const [variantId, quantity] of Object.entries(variantCounts.value)) {
+    if (quantity > 0) {
+      try {
+        const discount = await getDiscountForQuantity(
+          selectedProduct.value.id,
+          Number(variantId),
+          quantity
+        );
+        variantDiscounts.value[variantId] = discount;
+      } catch (error) {
+        console.error('Error updating discount for variant', variantId, error);
+        variantDiscounts.value[variantId] = 0;
+      }
+    } else {
+      variantDiscounts.value[variantId] = 0;
+    }
   }
 };
 
-const increaseVariantCount = (variant: any) => {
+// Cập nhật hàm tăng giảm số lượng để cập nhật mức giảm giá
+const increaseVariantCount = async (variant: any) => {
   const currentCount = variantCounts.value[variant.id] || 0;
   if (currentCount < currentSettings.value.form.maxGuests) {
     variantCounts.value[variant.id] = currentCount + 1;
+    
+    // Cập nhật mức giảm giá
+    const discount = await getDiscountForQuantity(
+      selectedProduct.value!.id, 
+      variant.id, 
+      currentCount + 1
+    );
+    variantDiscounts.value[variant.id] = discount;
+    
+    // Cập nhật tổng tiền
+    await updateDiscountedTotal();
   }
 };
 
+const decreaseVariantCount = async (variant: any) => {
+  if (variantCounts.value[variant.id] > 0) {
+    variantCounts.value[variant.id]--;
+    
+    const newCount = variantCounts.value[variant.id];
+    if (newCount > 0) {
+      // Cập nhật mức giảm giá
+      const discount = await getDiscountForQuantity(
+        selectedProduct.value!.id, 
+        variant.id, 
+        newCount
+      );
+      variantDiscounts.value[variant.id] = discount;
+    } else {
+      variantDiscounts.value[variant.id] = 0;
+    }
+    
+    // Cập nhật tổng tiền
+    await updateDiscountedTotal();
+  }
+};
 
 </script>
 

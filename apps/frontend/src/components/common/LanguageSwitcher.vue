@@ -155,31 +155,31 @@ onBeforeUnmount(() => {
   <div class="language-switcher inline-block">
     <button 
       @click.stop="toggleDropdown"
-      class="inline-flex items-center justify-between space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/20 dark:hover:bg-white/30 transition-[background] duration-150 text-gray-800 dark:text-white"
+      class="inline-flex items-center justify-between space-x-1 px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/20 dark:hover:bg-white/30 transition-[background] duration-150 text-gray-800 dark:text-white"
       type="button"
       :title="t('language')"
       :disabled="isLoadingLanguages"
     >
-      <div v-if="isLoadingLanguages" class="w-4 h-4 flex items-center justify-center">
+      <div v-if="isLoadingLanguages" class="w-3.5 h-3.5 flex items-center justify-center">
         <span class="animate-pulse !transition-none">...</span>
       </div>
-      <div v-else class="w-4 h-4 flex items-center justify-center">
+      <div v-else class="w-3.5 h-3.5 flex items-center justify-center">
         <!-- Hiển thị flag khi đã tải xong -->
         <img 
           v-if="locale && !isLoadingLanguages && flagLoaded && !flagLoadError"
           :src="getFlagPath(locale)" 
           :alt="`${currentLocaleDisplay} flag`" 
-          class="w-4 h-4 rounded-sm object-cover !transition-none"
+          class="w-3.5 h-3.5 rounded-sm object-cover !transition-none"
           @load="handleImageLoad"
           @error="handleImageError"
         />
         <!-- Hiển thị mã ngôn ngữ khi chưa tải được flag -->
-        <span v-else class="text-xs font-bold !transition-none">{{ locale?.toUpperCase().substring(0, 2) }}</span>
+        <span v-else class="text-[10px] font-bold !transition-none">{{ locale?.toUpperCase().substring(0, 2) }}</span>
       </div>
-      <span class="text-sm font-medium !transition-none">{{ currentLocaleDisplay }}</span>
+      <span class="text-xs font-medium !transition-none">{{ currentLocaleDisplay }}</span>
       <Icon 
         name="ChevronDown"
-        class="h-4 w-4 transition-transform !transition-none"
+        class="h-3.5 w-3.5 transition-transform !transition-none"
         :class="{ 'rotate-180': isOpen }"
       />
     </button>
@@ -187,9 +187,9 @@ onBeforeUnmount(() => {
     <!-- Dropdown menu -->
     <div 
       v-if="isOpen" 
-      class="absolute z-[120] mt-1 min-w-[160px] rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 focus:outline-none !transition-none"
+      class="absolute z-[120] mt-1 min-w-[140px] rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 focus:outline-none !transition-none"
     >
-      <div v-if="isLoadingLanguages" class="py-4 px-4 text-center text-sm text-gray-900 dark:text-gray-100 !transition-none">
+      <div v-if="isLoadingLanguages" class="py-3 px-3 text-center text-xs text-gray-900 dark:text-gray-100 !transition-none">
         <span>Loading...</span>
       </div>
       <div v-else class="py-1">
@@ -197,15 +197,15 @@ onBeforeUnmount(() => {
           v-for="loc in availableLocales"
           :key="loc.code"
           @click="handleSelectLanguage(loc.code)"
-          class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-[background] duration-150"
+          class="flex items-center w-full px-3 py-1.5 text-xs text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-[background] duration-150"
           :class="{ 'bg-gray-100 dark:bg-gray-700': locale === loc.code }"
         >
-          <div class="w-4 h-4 flex items-center justify-center mr-2">
+          <div class="w-3.5 h-3.5 flex items-center justify-center mr-1.5">
             <!-- Hiển thị flag trong dropdown -->
             <img 
               :src="getFlagPath(loc.code)" 
               :alt="`${loc.name} flag`" 
-              class="w-4 h-4 rounded-sm object-cover !transition-none"
+              class="w-3.5 h-3.5 rounded-sm object-cover !transition-none"
               @error="handleDropdownImageError"
             />
           </div>
@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
           <Icon
             v-if="locale === loc.code"
             name="Check"
-            class="h-4 w-4 ml-auto"
+            class="h-3.5 w-3.5 ml-auto"
           />
         </button>
       </div>
