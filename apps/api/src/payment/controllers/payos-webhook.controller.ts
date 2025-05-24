@@ -1,13 +1,11 @@
 import { Body, Controller, HttpCode, HttpStatus, Logger, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PayOSWebhookDto } from '../dtos/payos-webhook.dto';
-import { PayOSWebhookService } from '../services/payos-webhook.service';
 import { ApiKeyGuard } from '../guards/api-key.guard';
+import { PayOSWebhookService } from '../services/payos-webhook.service';
 
 @ApiTags('PayOS Webhook')
 @Controller('webhook/payos')
-@ApiSecurity('api-key')
-@ApiSecurity('api-secret')
 export class PayOSWebhookController {
   private readonly logger = new Logger(PayOSWebhookController.name);
 
