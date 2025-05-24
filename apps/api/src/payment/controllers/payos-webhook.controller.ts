@@ -13,7 +13,6 @@ export class PayOSWebhookController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(ApiKeyGuard)
   @ApiOperation({ 
     summary: 'Handle PayOS payment notification webhook',
     description: 'Endpoint for receiving payment notifications from PayOS gateway'
