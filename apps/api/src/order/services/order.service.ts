@@ -92,27 +92,6 @@ export class OrderService {
 
       await this.orderItemRepository.save(orderItems);
 
-      // Khởi tạo thanh toán qua PaymentService
-      const paymentResult = await this.paymentService.createPayment({
-        order_id: newOrder.id,
-        amount: newOrder.totalAmount,
-        payment_method_id: parseInt(createOrderDto.paymentMethod) || 1,
-        return_url: createOrderDto.returnUrl || this.configService.get('DEFAULT_RETURN_URL'),
-        cancel_url: createOrderDto.returnUrl || this.configService.get('DEFAULT_RETURN_URL'),
-        description: `Payment for order ${orderCode}`
-      });
-
-      // Cập nhật payment URL vào đơn hàng
-      if (paymentResult && paymentResult.payment_url) {
-        const notesData = newOrder.notes ? JSON.parse(newOrder.notes) : {};
-        await this.orderRepository.update(newOrder.id, {
-          notes: JSON.stringify({
-            ...notesData,
-            payment_url: paymentResult.payment_url
-          })
-        });
-      }
-
       // Lấy thông tin đơn hàng đầy đủ và trả về
       return this.getOrderById(newOrder.id);
     } catch (error) {
