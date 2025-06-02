@@ -271,7 +271,18 @@ const ticketDate = computed(() => props.product.specifications?.find((spec: Prod
         <div class="flex items-center">
           <AddToCartButton
             v-if="product.price !== null"
-            :product="{ id: product.id, title: title, price: product.price }"
+            :product="{
+              id: product.id,
+              title: title,
+              thumbnail: product.thumbnail,
+              price: product.price,
+              comparePrice: product.comparePrice,
+              formattedPrice: product.formattedPrice,
+              sku: product.sku,
+              stock: product.stock,
+              hasRequiredAttributes: false,
+              hasSelectedAllAttributes: true
+            }"
             iconOnly
             buttonClass="p-2 flex items-center justify-center rounded-full hover:scale-110 transition-transform duration-200 cart-button-small"
           >

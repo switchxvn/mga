@@ -13,6 +13,7 @@ export type TRPCContext = {
   dataSource: DataSource | null;
   logger: Logger;
   services: ReturnType<ServiceContext['getServices']>;
+  sessionId?: string;
   _custom?: {
     needsOwnershipCheck?: boolean;
   };
@@ -31,6 +32,10 @@ export class TRPCContextManager {
   async createContext({ req, res }: any): Promise<TRPCContext> {
     const ds = await this.dataSourceContext.getDataSource();
     const user = await this.authContext.authenticateUser(req.headers.authorization);
+    
+    // Extract sessionId from headers or query parameters
+    const sessionId = req.headers['x-session-id'] || req.query?.sessionId || req.headers['session-id'];
+    
     return {
       req,
       res,
@@ -38,6 +43,7 @@ export class TRPCContextManager {
       dataSource: ds,
       logger: this.logger,
       services: this.serviceContext.getServices(),
+      sessionId,
       _custom: {},
     };
   }

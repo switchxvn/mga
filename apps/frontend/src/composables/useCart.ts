@@ -1,94 +1,249 @@
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useAuth } from './useAuth';
-import type { CartItem } from '~/types';
+import { useFeatureFlags } from './useFeatureFlags';
+import { useTrpc } from './useTrpc';
+
+export interface CartItem {
+  id: number;
+  productId: number;
+  variantId?: number;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number;
+  finalPrice: number;
+  metadata?: Record<string, any>;
+  product?: {
+    id: number;
+    title: string;
+    thumbnail?: string;
+    translations?: Array<{
+      locale: string;
+      title: string;
+      description?: string;
+    }>;
+  };
+  variant?: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface CartSummary {
+  itemCount: number;
+  subtotal: number;
+  totalDiscount: number;
+  total: number;
+}
+
+export interface AddToCartDto {
+  productId: number;
+  variantId?: number;
+  quantity: number;
+  metadata?: Record<string, any>;
+}
 
 /**
- * Composable để quản lý giỏ hàng
- * @returns Các phương thức và thuộc tính để làm việc với giỏ hàng
+ * Composable để quản lý giỏ hàng với tRPC
  */
 export function useCart() {
   const { user } = useAuth();
-  const items = ref<CartItem[]>([]);
+  const { isAddToCartEnabled, isInitialized: isFeatureFlagsInitialized } = useFeatureFlags();
+  const { $trpc } = useTrpc();
+  
+  const cart = ref<{ id: number; items: CartItem[] } | null>(null);
+  const cartSummary = ref<CartSummary | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
+  const isInitialized = ref(false);
+  const isCartEnabled = ref(true);
 
-  const totalItems = computed(() => {
-    return items.value.reduce((sum, item) => sum + item.quantity, 0);
-  });
+  // Computed properties
+  const cartItems = computed(() => cart.value?.items || []);
+  const cartItemCount = computed(() => cartSummary.value?.itemCount || 0);
+  const cartTotal = computed(() => cartSummary.value?.total || 0);
+  const cartSubtotal = computed(() => cartSummary.value?.subtotal || 0);
+  const cartDiscount = computed(() => cartSummary.value?.totalDiscount || 0);
 
-  const totalPrice = computed(() => {
-    return items.value.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  });
+  // Generate session ID for guest users
+  const getSessionId = () => {
+    let sessionId = localStorage.getItem('cart_session_id');
+    if (!sessionId) {
+      sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('cart_session_id', sessionId);
+    }
+    return sessionId;
+  };
 
+  // Fetch cart from backend
   const fetchCart = async () => {
-    if (!user.value) return;
-
+    if (!isCartEnabled.value) return;
+    
     try {
       isLoading.value = true;
       error.value = null;
-      // TODO: Implement API call to fetch cart items
-      // For now, return mock data
-      items.value = [];
+      
+      cart.value = await $trpc.cart.getCart.query();
+      cartSummary.value = await $trpc.cart.getCartSummary.query();
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải giỏ hàng';
+      console.error('Error fetching cart:', err);
     } finally {
       isLoading.value = false;
     }
   };
 
-  const addToCart = async (item: CartItem) => {
-    // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
-    const existingItem = items.value.find(
-      i => i.productId === item.productId && i.variantId === item.variantId
-    );
+  // Add item to cart
+  const addToCart = async (dto: AddToCartDto) => {
+    if (!isCartEnabled.value) {
+      error.value = 'Tính năng giỏ hàng đã bị tắt';
+      return;
+    }
 
-    if (existingItem) {
-      // Nếu có rồi thì tăng số lượng
-      existingItem.quantity += item.quantity;
-    } else {
-      // Nếu chưa có thì thêm mới
-      items.value.push(item);
+    try {
+      isLoading.value = true;
+      error.value = null;
+      
+      cart.value = await $trpc.cart.addToCart.mutate(dto);
+      cartSummary.value = await $trpc.cart.getCartSummary.query();
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng';
+      console.error('Error adding to cart:', err);
+      throw err;
+    } finally {
+      isLoading.value = false;
     }
   };
 
-  const removeFromCart = (itemId: string) => {
-    const index = items.value.findIndex(item => item.id === itemId);
-    if (index > -1) {
-      items.value.splice(index, 1);
+  // Update cart item quantity
+  const updateCartItem = async (itemId: number, quantity: number) => {
+    if (!isCartEnabled.value) return;
+
+    try {
+      isLoading.value = true;
+      error.value = null;
+      
+      cart.value = await $trpc.cart.updateCartItem.mutate({ itemId, quantity });
+      cartSummary.value = await $trpc.cart.getCartSummary.query();
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi cập nhật giỏ hàng';
+      console.error('Error updating cart item:', err);
+    } finally {
+      isLoading.value = false;
     }
   };
 
-  const updateQuantity = (itemId: string, quantity: number) => {
-    const item = items.value.find(item => item.id === itemId);
-    if (item) {
-      item.quantity = quantity;
+  // Remove item from cart
+  const removeFromCart = async (itemId: number) => {
+    if (!isCartEnabled.value) return;
+
+    try {
+      isLoading.value = true;
+      error.value = null;
+      
+      cart.value = await $trpc.cart.removeFromCart.mutate({ itemId });
+      cartSummary.value = await $trpc.cart.getCartSummary.query();
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi xóa sản phẩm khỏi giỏ hàng';
+      console.error('Error removing from cart:', err);
+    } finally {
+      isLoading.value = false;
     }
   };
 
-  const clearCart = () => {
-    items.value = [];
+  // Clear entire cart
+  const clearCart = async () => {
+    if (!isCartEnabled.value) return;
+
+    try {
+      isLoading.value = true;
+      error.value = null;
+      
+      await $trpc.cart.clearCart.mutate();
+      cart.value = null;
+      cartSummary.value = null;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi xóa giỏ hàng';
+      console.error('Error clearing cart:', err);
+    } finally {
+      isLoading.value = false;
+    }
   };
 
-  const getTotal = () => {
-    return items.value.reduce((total, item) => total + item.price * item.quantity, 0);
+  // Merge guest cart when user logs in
+  const mergeGuestCart = async () => {
+    const sessionId = localStorage.getItem('cart_session_id');
+    if (!sessionId || !user.value) return;
+
+    try {
+      await $trpc.cart.mergeGuestCart.mutate({ sessionId });
+      localStorage.removeItem('cart_session_id');
+      await fetchCart();
+    } catch (err) {
+      console.error('Error merging guest cart:', err);
+    }
   };
 
-  const getItemCount = () => {
-    return items.value.reduce((count, item) => count + item.quantity, 0);
+  // Initialize cart
+  const initialize = async () => {
+    if (isInitialized.value) return;
+    
+    // Check if cart feature is enabled
+    const cartEnabled = await isAddToCartEnabled();
+    isCartEnabled.value = cartEnabled;
+    
+    if (isCartEnabled.value) {
+      await fetchCart();
+    }
+    
+    isInitialized.value = true;
   };
+
+  // Watch for user login/logout
+  watch(user, async (newUser, oldUser) => {
+    if (newUser && !oldUser) {
+      // User just logged in
+      await mergeGuestCart();
+    } else if (!newUser && oldUser) {
+      // User logged out, reset cart
+      cart.value = null;
+      cartSummary.value = null;
+    }
+  });
+
+  // Auto-initialize on mount
+  onMounted(() => {
+    initialize();
+  });
 
   return {
-    items,
-    totalItems,
-    totalPrice,
+    // State
+    cart,
+    cartItems,
+    cartSummary,
+    cartItemCount,
+    cartTotal,
+    cartSubtotal,
+    cartDiscount,
     isLoading,
     error,
+    isCartEnabled,
+    isInitialized,
+
+    // Methods
+    initialize,
     fetchCart,
     addToCart,
+    updateCartItem,
     removeFromCart,
-    updateQuantity,
     clearCart,
-    getTotal,
-    getItemCount
+    mergeGuestCart,
+    
+    // Legacy support for existing components
+    items: cartItems,
+    totalItems: cartItemCount,
+    totalPrice: cartTotal,
+    getTotal: () => cartTotal.value,
+    getItemCount: () => cartItemCount.value,
+    updateQuantity: updateCartItem
   };
 } 

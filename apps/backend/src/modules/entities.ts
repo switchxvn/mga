@@ -7,6 +7,10 @@ import { Order } from './order/entities/order.entity';
 import { OrderItem } from './order/entities/order-item.entity';
 import { OrderTicketScanHistory } from './order/entities/order-ticket-scan-history.entity';
 
+// Cart
+import { Cart } from './cart/entities/cart.entity';
+import { CartItem } from './cart/entities/cart-item.entity';
+
 // Mail
 import { MailConfig } from './mail/entities/mail-config.entity';
 import { MailLog } from './mail/entities/mail-log.entity';
@@ -154,6 +158,10 @@ export const entities: (new () => any)[] = [
   Order,
   OrderItem,
   OrderTicketScanHistory,
+  
+  // Cart
+  Cart,
+  CartItem,
   
   // Mail
   MailConfig,

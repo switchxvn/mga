@@ -3,10 +3,12 @@ import { ref, onMounted, watch } from 'vue';
 import { useCart } from '~/composables/useCart';
 import { useFeatureFlags } from '~/composables/useFeatureFlags';
 import { ShoppingCart } from 'lucide-vue-next';
+import CartSidebar from './CartSidebar.vue';
 
 const { cartItemCount, isCartEnabled, initialize } = useCart();
 const { isInitialized } = useFeatureFlags();
 const isLoading = ref(true);
+const showCartSidebar = ref(false);
 
 // Kiểm tra cài đặt khi component được mount
 onMounted(async () => {
@@ -31,6 +33,18 @@ watch(isInitialized, async (newValue) => {
     isLoading.value = false;
   }
 });
+
+// Handle cart icon click
+const handleCartClick = () => {
+  if (isCartEnabled.value) {
+    showCartSidebar.value = true;
+  }
+};
+
+// Handle cart sidebar close
+const handleCartSidebarClose = () => {
+  showCartSidebar.value = false;
+};
 </script>
 
 <template>
@@ -39,7 +53,13 @@ watch(isInitialized, async (newValue) => {
     <div v-if="isLoading" class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
     
     <!-- Hiển thị icon giỏ hàng nếu tính năng được bật -->
-    <NuxtLink v-else-if="isCartEnabled" to="/cart" class="cart-button" :title="'Giỏ hàng'" aria-label="Shopping Cart">
+    <button 
+      v-else-if="isCartEnabled" 
+      @click="handleCartClick"
+      class="cart-button" 
+      :title="'Giỏ hàng'" 
+      aria-label="Shopping Cart"
+    >
       <ShoppingCart class="h-5 w-5" />
       
       <!-- Hiển thị số lượng sản phẩm trong giỏ hàng -->
@@ -49,9 +69,15 @@ watch(isInitialized, async (newValue) => {
       >
         {{ cartItemCount > 99 ? '99+' : cartItemCount }}
       </span>
-    </NuxtLink>
+    </button>
     <div v-else class="hidden"><!-- Không hiển thị gì khi tính năng bị tắt --></div>
   </div>
+
+  <!-- Cart Sidebar -->
+  <CartSidebar 
+    :is-open="showCartSidebar" 
+    @close="handleCartSidebarClose" 
+  />
 </template>
 
 <style lang="scss" scoped>

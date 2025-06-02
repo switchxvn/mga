@@ -80,6 +80,7 @@ import { UserPageVisitFrontendService } from '../../user-session/frontend/servic
 import { MenuItemAdminService } from '../../settings/admin/services/menu-item-admin.service';
 import { ApiKeyAdminService } from '../../api-key/admin/services/api-key-admin.service';
 import { ApiKeyFrontendService } from '../../api-key/frontend/services/api-key-frontend.service';
+import { CartFrontendService } from '../../cart/frontend/services/cart-frontend.service';
 
 export interface ITrpcServices {
   userService: UserService;
@@ -165,6 +166,7 @@ export interface ITrpcServices {
   menuItemAdminService: MenuItemAdminService;
   apiKeyAdminService: ApiKeyAdminService;
   apiKeyFrontendService: ApiKeyFrontendService;
+  cartFrontendService: CartFrontendService;
   
   // Grouped services
   admin: {
@@ -237,5 +239,6 @@ export interface ITrpcServices {
     userSession: UserSessionFrontendService;
     userPageVisit: UserPageVisitFrontendService;
     apiKey: ApiKeyFrontendService;
+    cart: CartFrontendService;
   };
 } 
