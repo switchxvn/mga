@@ -5,6 +5,7 @@ import { AboutModule } from '../about/about.module';
 import { AdminMenuModule } from '../admin-menu/admin-menu.module';
 import { ApiKeyModule } from '../api-key/api-key.module';
 import { AuthModule } from '../auth/auth.module';
+import { CartModule } from '../cart/cart.module';
 import { CategoryModule } from '../category/category.module';
 import { CommentModule } from '../comment/comment.module';
 import { CommonModule } from '../common';
@@ -80,6 +81,7 @@ import { AuthContext } from './contexts/auth.context';
     AboutModule,
     CustomerLogoModule,
     AuthModule,
+    CartModule,
     ContactModule,
     GalleryModule,
     TicketPricingModule,

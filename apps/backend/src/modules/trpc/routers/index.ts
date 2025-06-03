@@ -33,6 +33,7 @@ import { siteStatisticsRouter } from './site-statistics.router';
 import { adminMenuAdminRouter } from './admin/admin-menu.router';
 import { userSessionRouter } from './user-session.router';
 import { productTierDiscountRouter } from './product-tier-discount.router';
+import { cartRouter } from './cart.router';
 
 // Export all routers
 export * from './app.router';
@@ -69,6 +70,7 @@ export * from './review.router';
 export * from './site-statistics.router';
 export * from './user-session.router';
 export * from './product-tier-discount.router';
+export * from './cart.router';
 
 export const appRouter = (commonRouter) => router({
   auth: authRouter,
@@ -105,6 +107,7 @@ export const appRouter = (commonRouter) => router({
   siteStatistics: siteStatisticsRouter,
   userSession: userSessionRouter,
   productTierDiscount: productTierDiscountRouter,
+  cart: cartRouter,
 });
 
 export type AppRouter = ReturnType<typeof appRouter>; 

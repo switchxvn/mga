@@ -39,6 +39,7 @@ export * from './lib/interfaces/post.interface';
 export * from './lib/interfaces/gallery.interface';
 export * from './lib/interfaces/seo.interface';
 export * from './lib/interfaces/theme-section-translation.interface';
+export * from './lib/interfaces/zns.interface';
 
 // Enums
 export * from './lib/enums';

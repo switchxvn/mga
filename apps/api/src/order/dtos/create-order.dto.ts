@@ -13,7 +13,7 @@ export class OrderItemDto {
   @IsNumber()
   variantId?: number;
 
-  @ApiProperty({ description: 'Quantity' })
+  @ApiProperty({ description: 'Quantity - Each ticket will be created as a separate OrderItem with unique QR code' })
   @IsNotEmpty()
   @IsNumber()
   quantity: number;

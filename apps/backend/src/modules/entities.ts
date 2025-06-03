@@ -7,6 +7,10 @@ import { Order } from './order/entities/order.entity';
 import { OrderItem } from './order/entities/order-item.entity';
 import { OrderTicketScanHistory } from './order/entities/order-ticket-scan-history.entity';
 
+// Cart
+import { Cart } from './cart/entities/cart.entity';
+import { CartItem } from './cart/entities/cart-item.entity';
+
 // Mail
 import { MailConfig } from './mail/entities/mail-config.entity';
 import { MailLog } from './mail/entities/mail-log.entity';
@@ -142,6 +146,12 @@ import { AdminMenuItemTranslation } from './admin-menu/entities/admin-menu-item-
 // API Key
 import { ApiKey } from './api-key/entities/api-key.entity';
 
+// ZNS
+import { ZnsConfiguration } from './zns/entities/zns-configuration.entity';
+import { ZnsTemplate } from './zns/entities/zns-template.entity';
+import { ZnsLog } from './zns/entities/zns-log.entity';
+import { ZnsWebhookEvent } from './zns/entities/zns-webhook-event.entity';
+
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
 
@@ -154,6 +164,10 @@ export const entities: (new () => any)[] = [
   Order,
   OrderItem,
   OrderTicketScanHistory,
+  
+  // Cart
+  Cart,
+  CartItem,
   
   // Mail
   MailConfig,
@@ -289,4 +303,10 @@ export const entities: (new () => any)[] = [
   
   // API Key
   ApiKey,
+  
+  // ZNS
+  ZnsConfiguration,
+  ZnsTemplate,
+  ZnsLog,
+  ZnsWebhookEvent,
 ]; 

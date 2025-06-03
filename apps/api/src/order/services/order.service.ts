@@ -8,18 +8,18 @@ import { PaymentFrontendService } from '../../../../backend/src/modules/payment/
 import { MailService } from '../../../../backend/src/modules/mail/services/mail.service';
 import { CreateOrderDto } from '../dtos/create-order.dto';
 import { OrderCancelDto, OrderConfirmDto } from '../dtos/order-action.dto';
-import { OrderItemResponseDto, OrderResponseDto } from '../dtos/order-response.dto';
+import { OrderItemResponseDto, OrderResponseDto, ProductSnapshotDto } from '../dtos/order-response.dto';
 import { TicketService } from '../../ticket/services/ticket.service';
-import { ProductType } from '../../../../backend/src/modules/product/entities/product.entity';
+import { Product, ProductType } from '../../../../backend/src/modules/product/entities/product.entity';
 import { OrderItem, ProductSnapshot } from '../../../../backend/src/modules/order/entities/order-item.entity';
 import * as crypto from 'crypto';
 
-// Mở rộng type Order để thêm các property metadata
+// Extended Order type with additional metadata properties
 type ExtendedOrder = Order & {
   metadata?: Record<string, any>;
 };
 
-// Mở rộng type OrderItem để thêm các property metadata
+// Extended OrderItem type with additional metadata properties
 type ExtendedOrderItem = OrderItem & {
   metadata?: Record<string, any>;
 };
@@ -34,6 +34,8 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
     private readonly orderAdminService: OrderAdminService,
     private readonly paymentService: PaymentFrontendService,
     private readonly mailService: MailService,
@@ -44,19 +46,19 @@ export class OrderService {
     try {
       this.logger.log('Creating new order', { email: createOrderDto.email });
 
-      // Tính tổng tiền đơn hàng
+      // Calculate total amount for the order
       const totalAmount = createOrderDto.items.reduce(
         (sum, item) => sum + (item.quantity * item.unitPrice), 
         0
       );
 
-      // Chuẩn bị dữ liệu cho order
+      // Prepare order data
       const orderCode = this.generateOrderCode();
       const orderData: Partial<Order> = {
         orderCode,
         customerName: createOrderDto.customerName,
         email: createOrderDto.email,
-        phoneCode: '+84', // Mặc định là Việt Nam
+        phoneCode: '+84', // Default to Vietnam
         phoneNumber: createOrderDto.phone,
         paymentMethod: createOrderDto.paymentMethod,
         status: 'pending' as any,
@@ -69,30 +71,34 @@ export class OrderService {
         })
       };
 
-      // Tạo đơn hàng mới
+      // Create new order
       const newOrder = await this.orderRepository.save(orderData);
 
-      // Tạo các items cho đơn hàng
-      const orderItems = createOrderDto.items.map(item => {
-        const orderItem = new OrderItem();
-        orderItem.order = newOrder;
-        orderItem.productId = item.ticketId;
-        orderItem.quantity = item.quantity;
-        orderItem.unitPrice = item.unitPrice;
-        orderItem.totalPrice = item.quantity * item.unitPrice;
-        orderItem.productType = 'TICKET' as any;
-        orderItem.productSnapshot = {
-          id: item.ticketId,
-          title: `Ticket #${item.ticketId}`,
-          translations: [{ locale: 'vi', title: `Ticket #${item.ticketId}` }]
-        };
-        orderItem.travelDate = item.selectedDate ? new Date(item.selectedDate) : null;
-        return orderItem;
-      });
+      // Create order items - split each ticket into separate records
+      const orderItems: OrderItem[] = [];
+      
+      for (const item of createOrderDto.items) {
+        // Get product information for snapshot
+        const productSnapshot = await this.buildProductSnapshot(item.ticketId, item.variantId);
+        
+        // Create individual tickets for TICKET product type
+        for (let i = 0; i < item.quantity; i++) {
+          const orderItem = new OrderItem();
+          orderItem.order = newOrder;
+          orderItem.productId = item.ticketId;
+          orderItem.quantity = 1; // Each ticket has quantity of 1
+          orderItem.unitPrice = item.unitPrice;
+          orderItem.totalPrice = item.unitPrice; // Total = unit price since quantity = 1
+          orderItem.productType = 'TICKET' as any;
+          orderItem.productSnapshot = productSnapshot;
+          orderItem.travelDate = item.selectedDate ? new Date(item.selectedDate) : null;
+          orderItems.push(orderItem);
+        }
+      }
 
       await this.orderItemRepository.save(orderItems);
 
-      // Lấy thông tin đơn hàng đầy đủ và trả về
+      // Get complete order information and return
       return this.getOrderById(newOrder.id);
     } catch (error) {
       this.logger.error('Error creating order:', error);
@@ -109,7 +115,7 @@ export class OrderService {
 
   async getOrderById(id: number): Promise<OrderResponseDto> {
     try {
-      // Lấy thông tin đơn hàng với quan hệ
+      // Get order information with relations
       const order = await this.orderRepository.findOne({
         where: { id },
         relations: ['items', 'items.product', 'items.product.translations']
@@ -119,7 +125,7 @@ export class OrderService {
         throw new NotFoundException(`Order with ID ${id} not found`);
       }
 
-      // Chuyển đổi dữ liệu sang format response
+      // Convert data to response format
       return this.mapToResponseDto(order);
     } catch (error) {
       this.logger.error(`Error fetching order with ID ${id}:`, error);
@@ -131,7 +137,7 @@ export class OrderService {
     try {
       const { orderId, transactionId, paymentReference, metadata } = confirmDto;
       
-      // Kiểm tra trạng thái đơn hàng hiện tại
+      // Check current order status
       const order = await this.orderRepository.findOne({
         where: { id: orderId },
         relations: ['items']
@@ -146,11 +152,11 @@ export class OrderService {
         return this.getOrderById(orderId);
       }
 
-      // Cập nhật trạng thái đơn hàng
+      // Update order status
       order.paymentStatus = 'paid' as any;
       order.status = 'confirmed' as any;
       
-      // Cập nhật thông tin giao dịch vào notes
+      // Update transaction information in notes
       const notesData = order.notes ? JSON.parse(order.notes) : {};
       order.notes = JSON.stringify({
         ...notesData,
@@ -162,23 +168,25 @@ export class OrderService {
       
       await this.orderRepository.save(order);
       
-      // Tạo QR code cho các item trong đơn hàng
+      // Generate QR codes for each individual ticket
       for (const item of order.items) {
         try {
-          // Tạo mã QR
+          // Generate unique QR code for each ticket
           const ticketToken = this.generateTicketToken(order.id, item.id);
           const qrCodeUrl = await this.generateQrCodeUrl(ticketToken);
           
-          // Cập nhật item
+          // Update item with individual QR code
           item.qrCode = ticketToken;
           item.imageQrCode = qrCodeUrl;
           await this.orderItemRepository.save(item);
+          
+          this.logger.log(`Generated QR code for ticket ${item.id}: ${ticketToken}`);
         } catch (error) {
           this.logger.error(`Failed to generate QR code for order item ${item.id}:`, error);
         }
       }
       
-      // Gửi email xác nhận với vé điện tử
+      // Send confirmation email with digital tickets
       const updatedOrder = await this.getOrderById(orderId);
       await this.sendTicketConfirmationEmail(updatedOrder);
       
@@ -191,21 +199,22 @@ export class OrderService {
 
   private generateTicketToken(orderId: number, itemId: number): string {
     const timestamp = Date.now();
-    const randomPart = crypto.randomBytes(6).toString('hex');
-    return `TKT-${orderId}-${itemId}-${timestamp}-${randomPart}`;
+    const randomPart = crypto.randomBytes(8).toString('hex'); // Increase random length
+    const uniqueId = crypto.randomUUID().split('-')[0]; // Add UUID segment
+    return `TKT-${orderId}-${itemId}-${timestamp}-${randomPart}-${uniqueId}`;
   }
 
   private async generateQrCodeUrl(ticketToken: string): Promise<string> {
-    // Tạo một URL giả cho QR code - trong thực tế cần triển khai tạo QR code thực
+    // URL to verify tickets with unique token
     const baseUrl = this.configService.get('TICKET_VERIFICATION_URL', 'https://verify.example.com');
-    return `${baseUrl}/${ticketToken}`;
+    return `${baseUrl}/verify/${ticketToken}`;
   }
 
   async cancelOrder(cancelDto: OrderCancelDto): Promise<OrderResponseDto> {
     try {
       const { orderId, reason, metadata } = cancelDto;
       
-      // Kiểm tra trạng thái đơn hàng hiện tại
+      // Check current order status
       const order = await this.orderRepository.findOne({
         where: { id: orderId }
       });
@@ -214,15 +223,15 @@ export class OrderService {
         throw new NotFoundException(`Order with ID ${orderId} not found`);
       }
       
-      // Chỉ có thể hủy đơn hàng trong trạng thái pending
+      // Only pending orders can be cancelled
       if (order.status !== 'pending') {
         throw new BadRequestException(`Cannot cancel order with status ${order.status}`);
       }
       
-      // Cập nhật trạng thái và thông tin hủy
+      // Update status and cancellation information
       order.status = 'cancelled' as any;
       
-      // Cập nhật lý do hủy vào notes
+      // Update cancellation reason in notes
       const notesData = order.notes ? JSON.parse(order.notes) : {};
       order.notes = JSON.stringify({
         ...notesData,
@@ -240,7 +249,60 @@ export class OrderService {
     }
   }
 
-  // Helper methods cho việc chuyển đổi dữ liệu
+  /**
+   * Build product snapshot from current product data
+   */
+  private async buildProductSnapshot(productId: number, variantId?: number): Promise<ProductSnapshot> {
+    try {
+      const product = await this.productRepository.findOne({
+        where: { id: productId },
+        relations: ['translations', 'variants', 'variants.translations']
+      });
+
+      if (!product) {
+        // Fallback snapshot if product not found
+        return {
+          id: productId,
+          title: `Product #${productId}`,
+          translations: [{ locale: 'vi', title: `Product #${productId}` }]
+        };
+      }
+
+      const snapshot: ProductSnapshot = {
+        id: product.id,
+        title: product.translations?.[0]?.title || `Product #${product.id}`,
+        translations: product.translations.map(t => ({
+          locale: t.locale,
+          title: t.title,
+          description: t.shortDescription || t.content
+        }))
+      };
+
+      // Add variant information if specified
+      if (variantId && product.variants) {
+        const variant = product.variants.find(v => v.id === variantId);
+        if (variant) {
+          snapshot.variant = {
+            id: variant.id,
+            name: variant.translations?.[0]?.name || `Variant #${variant.id}`,
+            price: Number(variant.price) || Number(product.price) || 0
+          };
+        }
+      }
+
+      return snapshot;
+    } catch (error) {
+      this.logger.error(`Failed to build product snapshot for product ${productId}:`, error);
+      // Return fallback snapshot
+      return {
+        id: productId,
+        title: `Product #${productId}`,
+        translations: [{ locale: 'vi', title: `Product #${productId}` }]
+      };
+    }
+  }
+
+  // Helper methods for data conversion
   private mapToResponseDto(order: Order): OrderResponseDto {
     const returnUrl = order.notes ? 
       JSON.parse(order.notes)?.returnUrl || null : null;
@@ -280,6 +342,7 @@ export class OrderService {
       qrCode: item.qrCode,
       qrCodeImageUrl: item.imageQrCode,
       travelDate: item.travelDate ? item.travelDate.toISOString().split('T')[0] : null,
+      productSnapshot: item.productSnapshot as ProductSnapshotDto,
     };
   }
 
@@ -325,7 +388,7 @@ export class OrderService {
       this.logger.log(`Ticket confirmation email sent to ${order.email} for order ${order.id}`);
     } catch (error) {
       this.logger.error(`Failed to send ticket confirmation email for order ${order.id}:`, error);
-      // Không throw lỗi vì đây là một quy trình phụ và không nên ảnh hưởng đến luồng chính
+      // Don't throw error as this is a secondary process and shouldn't affect main flow
     }
   }
 } 

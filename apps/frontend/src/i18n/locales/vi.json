@@ -68,6 +68,33 @@
     "blog": "Blog",
     "cableCar": "Hỗ Trợ & Khiếu Nại"
   },
+  "cart": {
+    "title": "Giỏ hàng",
+    "subtitle": "Quản lý các sản phẩm trong giỏ hàng của bạn",
+    "description": "Giỏ hàng - Quản lý và thanh toán các sản phẩm đã chọn",
+    "empty": {
+      "title": "Giỏ hàng trống",
+      "description": "Bạn chưa có sản phẩm nào trong giỏ hàng",
+      "shopNow": "Mua sắm ngay"
+    },
+    "items": {
+      "title": "Sản phẩm"
+    },
+    "summary": {
+      "title": "Tóm tắt đơn hàng",
+      "subtotal": "Tạm tính",
+      "discount": "Giảm giá",
+      "total": "Tổng cộng"
+    },
+    "variant": "Phiên bản",
+    "removeItem": "Xóa sản phẩm",
+    "clearAll": "Xóa tất cả",
+    "confirmClear": "Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng?",
+    "checkout": "Thanh toán",
+    "continueShopping": "Tiếp tục mua sắm",
+    "viewCart": "Xem giỏ hàng",
+    "disabled": "Tính năng giỏ hàng hiện tại đã bị tắt"
+  },
   "validation": {
     "required": "Trường này là bắt buộc",
     "email": "Email không hợp lệ",

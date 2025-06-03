@@ -67,6 +67,33 @@
     "viewAll": "View All",
     "cableCar": "Cable Car Contact"
   },
+  "cart": {
+    "title": "Shopping Cart",
+    "subtitle": "Manage the products in your cart",
+    "description": "Shopping Cart - Manage and checkout selected products",
+    "empty": {
+      "title": "Your cart is empty",
+      "description": "You don't have any products in your cart yet",
+      "shopNow": "Shop Now"
+    },
+    "items": {
+      "title": "Items"
+    },
+    "summary": {
+      "title": "Order Summary",
+      "subtotal": "Subtotal",
+      "discount": "Discount", 
+      "total": "Total"
+    },
+    "variant": "Variant",
+    "removeItem": "Remove item",
+    "clearAll": "Clear all",
+    "confirmClear": "Are you sure you want to remove all products from your cart?",
+    "checkout": "Checkout",
+    "continueShopping": "Continue Shopping",
+    "viewCart": "View Cart",
+    "disabled": "Cart feature is currently disabled"
+  },
   "validation": {
     "required": "This field is required",
     "email": "Invalid email address",

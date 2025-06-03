@@ -86,24 +86,35 @@ const isMaxQuantity = computed(() => {
 
 // Thêm sản phẩm vào giỏ hàng
 const handleAddToCart = async (event: MouseEvent) => {
-  if (!canAddToCart.value) return;
+  console.log('AddToCartButton - handleAddToCart called');
+  console.log('AddToCartButton - canAddToCart:', canAddToCart.value);
+  console.log('AddToCartButton - product:', props.product);
+  
+  if (!canAddToCart.value) {
+    console.log('AddToCartButton - Cannot add to cart, stopping');
+    return;
+  }
   
   createRipple(event);
   isAdding.value = true;
   
+  const cartItem = {
+    productId: props.product.id,
+    variantId: props.product.variantId,
+    quantity: quantity.value,
+    metadata: {
+      variantName: props.product.variantName,
+      sku: props.product.sku
+    }
+  };
+  
+  console.log('AddToCartButton - Attempting to add to cart:', cartItem);
+  
   try {
-    await addToCart({
-      id: String(props.product.id),
-      productId: String(props.product.id),
-      name: props.product.title,
-      price: props.product.price || 0,
-      quantity: quantity.value,
-      image: props.product.thumbnail,
-      variantId: props.product.variantId ? String(props.product.variantId) : undefined,
-      variantName: props.product.variantName
-    });
+    await addToCart(cartItem);
+    console.log('AddToCartButton - Successfully added to cart');
   } catch (error) {
-    console.error('Error adding product to cart:', error);
+    console.error('AddToCartButton - Error adding product to cart:', error);
   } finally {
     isAdding.value = false;
   }
