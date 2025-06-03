@@ -24,6 +24,7 @@ import { ContactModule } from './modules/contact/contact.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ApiKeyModule } from './modules/api-key/api-key.module';
 import { CartModule } from './modules/cart/cart.module';
+import { ZnsModule } from './modules/zns/zns.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { CartModule } from './modules/cart/cart.module';
     AdminMenuModule,
     ApiKeyModule,
     CartModule,
+    ZnsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

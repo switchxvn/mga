@@ -146,6 +146,12 @@ import { AdminMenuItemTranslation } from './admin-menu/entities/admin-menu-item-
 // API Key
 import { ApiKey } from './api-key/entities/api-key.entity';
 
+// ZNS
+import { ZnsConfiguration } from './zns/entities/zns-configuration.entity';
+import { ZnsTemplate } from './zns/entities/zns-template.entity';
+import { ZnsLog } from './zns/entities/zns-log.entity';
+import { ZnsWebhookEvent } from './zns/entities/zns-webhook-event.entity';
+
 // Type for TypeORM entities
 import { EntitySchema } from 'typeorm';
 
@@ -297,4 +303,10 @@ export const entities: (new () => any)[] = [
   
   // API Key
   ApiKey,
+  
+  // ZNS
+  ZnsConfiguration,
+  ZnsTemplate,
+  ZnsLog,
+  ZnsWebhookEvent,
 ]; 

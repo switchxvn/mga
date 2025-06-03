@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentModule } from './payment/payment.module';
 import { TicketModule } from './ticket/ticket.module';
 import { OrderModule } from './order/order.module';
+import { ZnsModule } from './zns/zns.module';
 import { CommonModule } from './common/common.module';
 import * as entities from '../../../apps/backend/src/modules/entities';
 
@@ -36,6 +37,7 @@ import * as entities from '../../../apps/backend/src/modules/entities';
     PaymentModule,
     TicketModule,
     OrderModule,
+    ZnsModule,
   ],
 })
 export class AppModule {} 
