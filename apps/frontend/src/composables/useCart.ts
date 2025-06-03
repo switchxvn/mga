@@ -48,7 +48,7 @@ export interface AddToCartDto {
 export function useCart() {
   const { user } = useAuth();
   const { isAddToCartEnabled, isInitialized: isFeatureFlagsInitialized } = useFeatureFlags();
-  const { $trpc } = useTrpc();
+  const $trpc = useTrpc();
   
   const cart = ref<{ id: number; items: CartItem[] } | null>(null);
   const cartSummary = ref<CartSummary | null>(null);
@@ -94,6 +94,10 @@ export function useCart() {
 
   // Add item to cart
   const addToCart = async (dto: AddToCartDto) => {
+    console.log('useCart - addToCart called with:', dto);
+    console.log('useCart - $trpc client:', $trpc);
+    console.log('useCart - $trpc.cart:', $trpc.cart);
+    
     if (!isCartEnabled.value) {
       error.value = 'Tính năng giỏ hàng đã bị tắt';
       return;
@@ -103,7 +107,9 @@ export function useCart() {
       isLoading.value = true;
       error.value = null;
       
+      console.log('useCart - Calling $trpc.cart.addToCart.mutate');
       cart.value = await $trpc.cart.addToCart.mutate(dto);
+      console.log('useCart - addToCart success, getting cart summary');
       cartSummary.value = await $trpc.cart.getCartSummary.query();
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng';
@@ -185,34 +191,47 @@ export function useCart() {
 
   // Initialize cart
   const initialize = async () => {
-    if (isInitialized.value) return;
-    
-    // Check if cart feature is enabled
-    const cartEnabled = await isAddToCartEnabled();
-    isCartEnabled.value = cartEnabled;
-    
-    if (isCartEnabled.value) {
-      await fetchCart();
+    if (isInitialized.value) {
+      console.log('useCart - already initialized, skipping');
+      return;
     }
     
-    isInitialized.value = true;
+    console.log('useCart - initializing...');
+    isInitialized.value = true; // Set this early to prevent multiple calls
+    
+    try {
+      // Check if cart feature is enabled
+      const cartEnabled = await isAddToCartEnabled();
+      isCartEnabled.value = cartEnabled;
+      console.log('useCart - cart enabled:', cartEnabled);
+      
+      if (isCartEnabled.value) {
+        await fetchCart();
+      }
+    } catch (error) {
+      console.error('useCart - error during initialization:', error);
+      isInitialized.value = false; // Reset on error
+    }
   };
 
   // Watch for user login/logout
   watch(user, async (newUser, oldUser) => {
     if (newUser && !oldUser) {
       // User just logged in
+      console.log('useCart - user logged in, merging guest cart');
       await mergeGuestCart();
     } else if (!newUser && oldUser) {
       // User logged out, reset cart
+      console.log('useCart - user logged out, clearing cart');
       cart.value = null;
       cartSummary.value = null;
     }
   });
 
   // Auto-initialize on mount
-  onMounted(() => {
-    initialize();
+  onMounted(async () => {
+    console.log('useCart - component mounted, initializing');
+    await initialize();
   });
 
   return {

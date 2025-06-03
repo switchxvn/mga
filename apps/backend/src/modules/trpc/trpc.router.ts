@@ -33,7 +33,8 @@ import {
   reviewRouter,
   siteStatisticsRouter,
   userSessionRouter,
-  productTierDiscountRouter
+  productTierDiscountRouter,
+  cartRouter
 } from './routers';
 import { adminRouter } from './routers/admin/index';
 
@@ -79,6 +80,7 @@ export class TrpcRouter {
       siteStatistics: siteStatisticsRouter,
       userSession: userSessionRouter,
       productTierDiscount: productTierDiscountRouter,
+      cart: cartRouter,
     });
   }
 

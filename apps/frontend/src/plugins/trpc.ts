@@ -21,8 +21,24 @@ export default defineNuxtPlugin(() => {
         url: `${baseUrl}/api/trpc`,
         headers() {
           console.log('TRPC preparing headers');
-          const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const headers: Record<string, string> = {};
+          
+          // Add authorization token if available
+          if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+              headers.Authorization = `Bearer ${token}`;
+            }
+            
+            // Add session ID for cart functionality
+            let sessionId = localStorage.getItem('cart_session_id');
+            if (!sessionId) {
+              sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              localStorage.setItem('cart_session_id', sessionId);
+            }
+            headers['x-session-id'] = sessionId;
+          }
+          
           console.log('TRPC headers:', headers);
           return headers;
         },
@@ -45,8 +61,7 @@ export default defineNuxtPlugin(() => {
             throw error;
           });
         },
-        retryDelay: (attempt) => Math.min(attempt * 500, 3000), // Linear backoff
-        maxRetries: 3,
+
       }),
     ],
   });

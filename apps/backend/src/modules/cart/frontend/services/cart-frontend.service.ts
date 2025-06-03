@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, LessThan, Not } from 'typeorm';
+import { Repository, IsNull, LessThan, MoreThan, Not } from 'typeorm';
 import { Cart } from '../../entities/cart.entity';
 import { CartItem } from '../../entities/cart-item.entity';
 import { ProductFrontendService } from '../../../product/frontend/services/product-frontend.service';
@@ -39,27 +39,47 @@ export class CartFrontendService {
   ) {}
 
   async getOrCreateCart(userId?: string, sessionId?: string): Promise<Cart> {
-    let cart: Cart;
+    this.logger.debug(`Getting or creating cart for userId: ${userId}, sessionId: ${sessionId}`);
+    
+    if (!userId && !sessionId) {
+      throw new Error('Either userId or sessionId must be provided');
+    }
+
+    let cart: Cart | null = null;
 
     if (userId) {
       // For logged-in users
+      this.logger.debug(`Looking for cart by userId: ${userId}`);
       cart = await this.cartRepository.findOne({
         where: { userId },
         relations: ['items', 'items.product', 'items.product.translations', 'items.variant']
       });
     } else if (sessionId) {
-      // For guest users
+      // For guest users - find carts that haven't expired yet
+      this.logger.debug(`Looking for cart by sessionId: ${sessionId}`);
       cart = await this.cartRepository.findOne({
         where: { 
           sessionId,
-          expiresAt: LessThan(new Date())
+          expiresAt: MoreThan(new Date())
         },
         relations: ['items', 'items.product', 'items.product.translations', 'items.variant']
       });
+      
+      // Also check for carts without expiry (legacy)
+      if (!cart) {
+        cart = await this.cartRepository.findOne({
+          where: { 
+            sessionId,
+            expiresAt: IsNull()
+          },
+          relations: ['items', 'items.product', 'items.product.translations', 'items.variant']
+        });
+      }
     }
 
     if (!cart) {
       // Create new cart
+      this.logger.debug(`Creating new cart for userId: ${userId}, sessionId: ${sessionId}`);
       const expiresAt = sessionId 
         ? new Date(Date.now() + this.GUEST_CART_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
         : null;
@@ -70,7 +90,16 @@ export class CartFrontendService {
         expiresAt,
         items: []
       });
-      await this.cartRepository.save(cart);
+      
+      try {
+        cart = await this.cartRepository.save(cart);
+        this.logger.debug(`Created new cart with ID: ${cart.id}`);
+      } catch (error) {
+        this.logger.error('Error creating cart:', error);
+        throw error;
+      }
+    } else {
+      this.logger.debug(`Found existing cart with ID: ${cart.id}`);
     }
 
     return cart;
@@ -264,6 +293,37 @@ export class CartFrontendService {
     if (expiredCarts.length > 0) {
       await this.cartRepository.remove(expiredCarts);
       this.logger.log(`Cleaned up ${expiredCarts.length} expired carts`);
+    }
+  }
+
+  async cleanupDuplicateCarts(): Promise<void> {
+    // Find duplicate carts by session_id
+    const duplicateSessions = await this.cartRepository
+      .createQueryBuilder('cart')
+      .select('cart.sessionId')
+      .addSelect('COUNT(*)', 'count')
+      .where('cart.sessionId IS NOT NULL')
+      .groupBy('cart.sessionId')
+      .having('COUNT(*) > 1')
+      .getRawMany();
+
+    this.logger.log(`Found ${duplicateSessions.length} sessions with duplicate carts`);
+
+    for (const session of duplicateSessions) {
+      const sessionId = session.cart_session_id;
+      
+      // Get all carts for this session, ordered by creation date (keep newest)
+      const carts = await this.cartRepository.find({
+        where: { sessionId },
+        order: { createdAt: 'DESC' }
+      });
+
+      if (carts.length > 1) {
+        // Keep the first (newest) cart, remove the rest
+        const cartsToRemove = carts.slice(1);
+        await this.cartRepository.remove(cartsToRemove);
+        this.logger.log(`Removed ${cartsToRemove.length} duplicate carts for session ${sessionId}`);
+      }
     }
   }
 } 
