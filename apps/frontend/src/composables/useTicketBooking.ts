@@ -10,6 +10,8 @@ export interface TicketBookingData {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    originalPrice?: number;
+    discountPercent?: number;
   }>;
   totalAmount: number;
   originalAmount?: number;

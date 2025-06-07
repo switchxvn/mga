@@ -79,7 +79,7 @@
 
         <!-- Slider Layout -->
         <div v-else class="swiper-outer-container">
-          <div class="swiper-container">
+          <div class="swiper-container relative">
             <Swiper
               v-if="videoData.length > 0"
               :modules="[Autoplay, SwiperPagination, SwiperNavigation]"
@@ -183,11 +183,11 @@
                 </div>
               </SwiperSlide>
             </Swiper>
+            
+            <!-- Navigation Arrows - Di chuyển vào trong .swiper-container -->
+            <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-prev swiper-button-prev !z-10 swiper-nav-button"></div>
+            <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-next swiper-button-next !z-10 swiper-nav-button"></div>
           </div>
-
-          <!-- Navigation Arrows -->
-          <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-prev swiper-button-prev !z-10"></div>
-          <div v-if="props.config?.sliderSettings?.arrows" class="video-swiper-next swiper-button-next !z-10"></div>
           
           <!-- Pagination -->
           <div class="flex justify-center w-full">
@@ -467,6 +467,7 @@ const onSlideChange = () => {
   margin-left: -50vw;
   margin-right: -50vw;
   padding: 0;
+  overflow-x: hidden; /* Thêm overflow-x: hidden để ngăn scroll ngang */
 
   @media (min-width: 641px) {
     width: auto;
@@ -550,11 +551,11 @@ const onSlideChange = () => {
 }
 
 .video-intro-section :deep(.swiper-button-prev) {
-  left: 0;
+  left: 10px; /* Điều chỉnh vị trí để không bị tràn ra ngoài */
 }
 
 .video-intro-section :deep(.swiper-button-next) {
-  right: 0;
+  right: 10px; /* Điều chỉnh vị trí để không bị tràn ra ngoài */
 }
 
 .video-intro-section :deep(.swiper-pagination) {

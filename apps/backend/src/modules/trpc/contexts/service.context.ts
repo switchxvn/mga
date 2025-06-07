@@ -83,6 +83,7 @@ import { UserPageVisitFrontendService } from '../../user-session/frontend/servic
 import { MenuItemAdminService } from '../../settings/admin/services/menu-item-admin.service';
 import { ApiKeyAdminService } from '../../api-key/admin/services/api-key-admin.service';
 import { ApiKeyFrontendService } from '../../api-key/frontend/services/api-key-frontend.service';
+import { CartFrontendService } from '../../cart/frontend/services/cart-frontend.service';
 
 @Injectable()
 export class ServiceContext {
@@ -170,6 +171,7 @@ export class ServiceContext {
     private readonly frontendProductTierDiscount: FrontendProductTierDiscountService,
     private readonly apiKeyAdminService: ApiKeyAdminService,
     private readonly apiKeyFrontendService: ApiKeyFrontendService,
+    private readonly cartFrontendService: CartFrontendService,
     @Inject(forwardRef(() => PriceRequestService))
     private readonly priceRequestService: PriceRequestService,
     @Inject(forwardRef(() => PriceRequestAdminService))
@@ -261,6 +263,7 @@ export class ServiceContext {
       menuItemAdminService: this.menuItemAdminService,
       apiKeyAdminService: this.apiKeyAdminService,
       apiKeyFrontendService: this.apiKeyFrontendService,
+      cartFrontendService: this.cartFrontendService,
       
       // Grouped services by namespace
       admin: {
@@ -333,6 +336,7 @@ export class ServiceContext {
         userSession: this.userSessionFrontendService,
         userPageVisit: this.userPageVisitFrontendService,
         apiKey: this.apiKeyFrontendService,
+        cart: this.cartFrontendService,
       },
     };
   }

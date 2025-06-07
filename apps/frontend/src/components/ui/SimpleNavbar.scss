@@ -1,0 +1,587 @@
+// SimpleNavbar Styles
+// Prevent horizontal scrolling on root elements
+html, body {
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+* {
+  box-sizing: border-box !important;
+}
+
+.navbar-container {
+  position: relative;
+  z-index: 50;
+  width: 100% !important;
+  max-width: 100vw !important; /* Ensure no overflow */
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  // Add spacer for content below fixed menu
+  &::before {
+    content: '';
+    display: block;
+    height: 38px; // Adjusted for even smaller mobile header
+    
+    @media screen and (min-width: 400px) {
+      height: 42px; // Slightly taller for medium small screens
+    }
+    
+    @media screen and (min-width: 768px) {
+      height: 45px; // For iPad and iPad Pro
+    }
+    
+    @media screen and (min-width: 1024px) {
+      display: none;
+    }
+  }
+
+  .top-menu {
+    position: relative;
+    z-index: 50;
+    background-color: rgb(var(--color-primary-DEFAULT));
+    width: 100%;
+    box-sizing: border-box !important;
+
+    .icon {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+
+      @media screen and (min-width: 768px) {
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+
+      @media screen and (min-width: 1024px) {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+  }
+
+  .fixed-time-width {
+    display: inline-block;
+    width: 240px;
+  }
+
+  .nav-icon {
+    flex-shrink: 0;
+    width: auto;
+    height: auto;
+  }
+
+  .main-menu-item {
+    position: relative;
+    transition-property: color;
+    transition-duration: 300ms;
+    
+    @media screen and (min-width: 768px) {
+      padding: 0 0.15rem;
+    }
+    
+    @media screen and (min-width: 1024px) {
+      padding: 0 0.2rem;
+    }
+    
+    @media screen and (min-width: 1280px) {
+      padding: 0 0.25rem;
+    }
+    
+    @media screen and (min-width: 1440px) {
+      padding: 0 0.35rem;
+    }
+    
+    @media screen and (min-width: 1600px) {
+      padding: 0 0.45rem;
+    }
+
+    &::after {
+      content: none;
+    }
+
+    span, .icon {
+      transition-property: color;
+      transition-duration: 300ms;
+    }
+
+    &:hover {
+      span, .icon {
+        color: rgb(var(--color-primary-500)) !important;
+      }
+      
+      &::after {
+        width: 0;
+      }
+    }
+
+    &.menu-active {
+      span, .icon {
+        color: rgb(var(--color-primary-500)) !important;
+      }
+
+      &::after {
+        width: 0;
+      }
+    }
+  }
+
+  .nav-wrapper {
+    position: relative;
+    z-index: 40;
+    width: 100% !important;
+    box-sizing: border-box !important;
+
+    &.nav-sticky {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      animation: slideDown 0.3s ease-out;
+    }
+  }
+
+  .navigation-section {
+    position: relative;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    
+    .container {
+      height: 100%;
+      
+      > div {
+        height: 100%;
+      }
+    }
+  }
+
+  .more-menu {
+    position: relative;
+
+    &-dropdown {
+      position: absolute;
+      right: 0;
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      background-color: white;
+      border-radius: 0.375rem;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      border: 1px solid rgb(229 231 235);
+      min-width: 160px;
+      max-width: 220px;
+      z-index: 1000;
+
+      @media screen and (min-width: 768px) {
+        min-width: 180px;
+        max-width: 230px;
+      }
+
+      @media screen and (min-width: 1280px) {
+        min-width: 200px;
+        max-width: 250px;
+      }
+
+      .dark & {
+        background-color: rgb(38 38 38);
+        border-color: rgb(64 64 64);
+      }
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: -0.5rem;
+        right: 1.25rem;
+        height: 1rem;
+        width: 1rem;
+        background-color: white;
+        border-left: 1px solid rgb(229 231 235);
+        border-top: 1px solid rgb(229 231 235);
+        transform: rotate(45deg);
+
+        .dark & {
+          background-color: rgb(38 38 38);
+          border-color: rgb(64 64 64);
+        }
+      }
+
+      .menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+
+        &:hover {
+          background-color: rgb(243 244 246);
+          .dark & {
+            background-color: rgb(64 64 64);
+          }
+        }
+
+        span {
+          font-size: 0.75rem;
+          
+          @media screen and (min-width: 768px) {
+            font-size: 0.8125rem;
+          }
+          
+          @media screen and (min-width: 1280px) {
+            font-size: 1rem;
+          }
+        }
+      }
+    }
+  }
+
+  // Ensure mega menu is visible
+  .relative.group {
+    position: static;
+  }
+
+  // Fix mega menu positioning
+  .absolute.top-full {
+    z-index: 9999 !important;
+  }
+
+  .mobile-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+
+    .mobile-menu-content {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 100%;
+      max-width: 85%;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      animation: slideInRight 0.3s ease-out;
+
+      @media screen and (min-width: 480px) {
+        max-width: 320px;
+      }
+
+      @media screen and (min-width: 768px) {
+        max-width: 380px;
+      }
+    }
+  }
+
+  .mobile-main-menu-item {
+    position: relative;
+
+    &:hover {
+      background-color: rgb(249 250 251);
+
+      .dark & {
+        background-color: rgb(38 38 38);
+      }
+    }
+
+    &.mobile-menu-active {
+      color: rgb(var(--color-primary-500));
+      background-color: rgb(239 246 255);
+
+      .dark & {
+        background-color: rgba(var(--color-primary-900), 0.2);
+      }
+    }
+  }
+
+  @keyframes ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(1.2);
+      opacity: 0;
+    }
+  }
+
+  .animate-ring {
+    animation: ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  // Responsive font and element sizing for different screen sizes
+  // Desktop menu items
+  @media screen and (min-width: 1024px) {
+    .main-menu-item {
+      span {
+        font-size: 0.75rem;
+      }
+      .nav-icon {
+        transform: scale(0.75);
+      }
+    }
+  }
+  
+  @media screen and (min-width: 1280px) {
+    .main-menu-item {
+      span {
+        font-size: 0.85rem;
+      }
+      .nav-icon {
+        transform: scale(0.85);
+      }
+    }
+  }
+  
+  @media screen and (min-width: 1440px) {
+    .main-menu-item {
+      span {
+        font-size: 0.95rem;
+      }
+      .nav-icon {
+        transform: scale(0.95);
+      }
+    }
+  }
+  
+  @media screen and (min-width: 1600px) {
+    .main-menu-item {
+      span {
+        font-size: 1rem;
+      }
+      .nav-icon {
+        transform: scale(1);
+      }
+    }
+  }
+}
+
+// Hotline button responsive styles
+// Adjust hotline button size at different breakpoints
+a[href^="/booking"] {
+  @media screen and (min-width: 1024px) and (max-width: 1279px) {
+    padding: 0.2rem 0.4rem !important;
+    min-height: 30px !important;
+    gap: 0.4rem !important;
+    
+    .rounded-full {
+      width: 18px !important;
+      height: 18px !important;
+    }
+    
+    span {
+      font-size: 0.7rem !important;
+    }
+    
+    button {
+      font-size: 0.6rem !important;
+    }
+  }
+  
+  @media screen and (min-width: 1280px) and (max-width: 1365px) {
+    padding: 0.25rem 0.5rem !important;
+    min-height: 32px !important;
+    gap: 0.4rem !important;
+    
+    .rounded-full {
+      width: 20px !important;
+      height: 20px !important;
+    }
+    
+    span {
+      font-size: 0.75rem !important;
+    }
+    
+    button {
+      font-size: 0.65rem !important;
+    }
+  }
+}
+
+// Adjust columns width to avoid overflow
+.nav-wrapper {
+  @media screen and (min-width: 1024px) and (max-width: 1279px) {
+    .w-\[12\%\], .w-\[10\%\] {
+      width: 18% !important;
+    }
+    
+    .w-\[76\%\], .w-\[78\%\] {
+      width: 64% !important;
+    }
+    
+    .w-\[12\%\] {
+      &:last-child {
+        width: 18% !important;
+      }
+    }
+  }
+  
+  @media screen and (min-width: 1280px) and (max-width: 1439px) {
+    .w-\[12\%\], .w-\[10\%\] {
+      width: 16% !important;
+    }
+    
+    .w-\[76\%\], .w-\[78\%\] {
+      width: 68% !important;
+    }
+    
+    .w-\[12\%\] {
+      &:last-child {
+        width: 16% !important;
+      }
+    }
+  }
+}
+
+// iPad Pro specific styles
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .top-menu {
+    .flex {
+      gap: 0.25rem !important;
+    }
+    
+    span {
+      font-size: 0.625rem !important;
+    }
+    
+    .nav-icon {
+      transform: scale(0.9);
+    }
+  }
+  
+  // Make columns more balanced on iPad Pro
+  .navbar-container {
+    [class*="md:w-"] {
+      width: auto !important;
+    }
+  }
+  
+  // Tighten spacing in the right column for iPad Pro
+  .top-menu {
+    .justify-end {
+      gap: 0.375rem !important;
+      
+      .nav-icon {
+        transform: scale(0.85);
+      }
+      
+      span {
+        font-size: 0.6rem !important;
+      }
+    }
+  }
+  
+  // Force width for iPad Pro regardless of props
+  .top-menu {
+    .flex:first-child {
+      width: 25% !important;
+    }
+    
+    .justify-end {
+      width: 75% !important;
+    }
+  }
+  
+  // Add classes for special components
+  .top-menu-component {
+    transform: scale(0.9);
+  }
+  
+  .top-menu-text,
+  .top-menu-link {
+    font-size: 0.6rem !important;
+    
+    span {
+      font-size: 0.6rem !important;
+      line-height: 1 !important;
+    }
+    
+    .nav-icon {
+      width: 12px !important;
+      height: 12px !important;
+    }
+  }
+  
+  .top-menu-divider {
+    height: 12px !important;
+    margin: 0 2px !important;
+  }
+  
+  // Always show language switcher
+  [class*="LanguageSwitcher"] {
+    display: flex !important;
+  }
+}
+
+// Navbar animations
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+// Vue transitions
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+// Mobile navigation specific styles
+.nav-wrapper-mobile {
+  position: relative;
+  z-index: 40;
+  overflow-x: hidden !important;
+
+  &.nav-sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    animation: slideDown 0.3s ease-out;
+  }
+}
+
+.top-menu-mobile {
+  position: relative;
+  z-index: 50;
+  background-color: rgb(var(--color-primary-DEFAULT));
+  overflow-x: hidden !important;
+}
+
+.mobile-shadow {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transition: box-shadow 0.3s ease-in-out;
+} 

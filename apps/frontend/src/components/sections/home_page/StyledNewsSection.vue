@@ -363,20 +363,13 @@ watch(locale, () => {
 
   .swiper-outer-container {
     position: relative;
-    width: 100vw;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
-    padding: 0;
-
-    @media (min-width: 641px) {
-      width: auto;
-      left: auto;
-      right: auto;
-      margin: 0 -40px;
-      padding: 0 40px;
+    width: 100%;
+    overflow: visible;
+    
+    @media (max-width: 640px) {
+      padding: 0;
     }
+
   }
 
   .swiper-container {
@@ -418,14 +411,38 @@ watch(locale, () => {
       cursor: pointer;
       z-index: 10;
       
+      // Hiển thị navigation trên cả màn hình và đảm bảo nằm trong container
       @media (max-width: 640px) {
-        display: none;
+        width: 30px;
+        height: 30px;
+        margin-top: -15px;
+      }
+      
+      // Đặt vị trí nút prev và next để nằm gọn trong container
+      &.swiper-button-prev {
+        left: 20px;
+        
+        @media (max-width: 640px) {
+          left: 16px;
+        }
+      }
+      
+      &.swiper-button-next {
+        right: 20px;
+        
+        @media (max-width: 640px) {
+          right: 16px;
+        }
       }
       
       &::after {
         font-size: 1.2rem;
         font-weight: bold;
         color: var(--primary);
+        
+        @media (max-width: 640px) {
+          font-size: 0.9rem;
+        }
       }
       
       &:hover {
@@ -446,14 +463,6 @@ watch(locale, () => {
           }
         }
       }
-    }
-
-    .swiper-button-prev {
-      left: 0;
-    }
-
-    .swiper-button-next {
-      right: 0;
     }
 
     .swiper-pagination {

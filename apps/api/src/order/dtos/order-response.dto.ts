@@ -1,5 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+// ProductSnapshot interface for API response
+export interface ProductSnapshotDto {
+  id: number;
+  title: string;
+  variant?: {
+    id: number;
+    name: string;
+    price: number;
+  };
+  translations: {
+    locale: string;
+    title: string;
+    description?: string;
+  }[];
+}
+
 export class OrderItemResponseDto {
   @ApiProperty({ description: 'Item ID' })
   id: number;
@@ -10,7 +26,7 @@ export class OrderItemResponseDto {
   @ApiProperty({ description: 'Product title' })
   title: string;
 
-  @ApiProperty({ description: 'Quantity' })
+  @ApiProperty({ description: 'Quantity - Always 1 for ticket items (each ticket is separate)' })
   quantity: number;
 
   @ApiProperty({ description: 'Unit price' })
@@ -30,6 +46,9 @@ export class OrderItemResponseDto {
 
   @ApiProperty({ description: 'Travel date', required: false })
   travelDate?: string;
+
+  @ApiProperty({ description: 'Product snapshot at time of order', required: false })
+  productSnapshot?: ProductSnapshotDto;
 }
 
 export class OrderResponseDto {

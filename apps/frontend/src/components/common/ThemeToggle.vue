@@ -53,20 +53,20 @@ const getCurrentLabel = computed(() => {
 <template>
   <div ref="menuRef" class="relative">
     <button 
-      class="inline-flex items-center justify-between space-x-2 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/20 dark:hover:bg-white/30 transition-[background] duration-150 text-gray-800 dark:text-white"
+      class="inline-flex items-center justify-between gap-1.5 sm:gap-1 px-3 py-2 sm:px-2 sm:py-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/20 dark:hover:bg-white/30 transition-[background] duration-150 text-gray-800 dark:text-white min-h-[40px] sm:min-h-auto w-full min-w-[120px] sm:min-w-auto"
       @click="isOpen = !isOpen"
       :title="t('theme.title')"
     >
-      <div class="w-4 h-4 flex items-center justify-center">
+      <div class="w-4 h-4 sm:w-3.5 sm:h-3.5 flex items-center justify-center flex-shrink-0">
         <Icon
           :name="getCurrentIcon"
-          class="h-4 w-4"
+          class="h-4 w-4 sm:h-3.5 sm:w-3.5"
         />
       </div>
-      <span class="text-sm font-medium">{{ getCurrentLabel }}</span>
+      <span class="text-sm sm:text-xs font-medium whitespace-nowrap flex-1 text-left">{{ getCurrentLabel }}</span>
       <Icon 
         name="ChevronDown"
-        class="h-4 w-4 transition-transform !transition-none"
+        class="h-4 w-4 sm:h-3.5 sm:w-3.5 transition-transform !transition-none flex-shrink-0"
         :class="{ 'rotate-180': isOpen }"
       />
     </button>
@@ -74,22 +74,22 @@ const getCurrentLabel = computed(() => {
     <!-- Dropdown Menu -->
     <div
       v-if="isOpen"
-      class="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 z-[120]"
+      class="absolute right-0 mt-1 w-full min-w-[160px] sm:w-40 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black/5 dark:ring-white/10 z-[120]"
     >
       <div class="py-1">
         <button
           v-for="mode in modes"
           :key="mode.value"
-          class="flex items-center w-full px-4 py-2 text-sm text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-[background] duration-150"
+          class="flex items-center w-full px-3 py-3 sm:py-1.5 text-sm sm:text-xs text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-[background] duration-150"
           :class="{ 'bg-gray-100 dark:bg-gray-700': currentMode === mode.value }"
           @click="() => { setMode(mode.value); isOpen = false; }"
         >
-          <Icon :name="mode.icon" class="h-4 w-4 mr-2" />
-          <span>{{ mode.label }}</span>
+          <Icon :name="mode.icon" class="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-3 sm:mr-1.5 flex-shrink-0" />
+          <span class="flex-1 whitespace-nowrap">{{ mode.label }}</span>
           <Icon
             v-if="currentMode === mode.value"
             name="Check"
-            class="h-4 w-4 ml-auto"
+            class="h-4 w-4 sm:h-3.5 sm:w-3.5 ml-2 flex-shrink-0"
           />
         </button>
       </div>
@@ -101,6 +101,20 @@ const getCurrentLabel = computed(() => {
 /* Dropdown menu */
 .absolute {
   z-index: 1200 !important;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 640px) {
+  .relative {
+    width: 100%;
+  }
+  
+  .absolute {
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    min-width: unset !important;
+  }
 }
 
 /* Disable all transitions when switching between light/dark modes */
