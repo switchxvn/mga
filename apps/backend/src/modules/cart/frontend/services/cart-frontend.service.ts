@@ -24,6 +24,11 @@ export interface CartSummary {
   total: number;
 }
 
+export interface CartWithSummary {
+  cart: Cart;
+  summary: CartSummary;
+}
+
 @Injectable()
 export class CartFrontendService {
   private readonly logger = new Logger(CartFrontendService.name);
@@ -57,28 +62,36 @@ export class CartFrontendService {
     } else if (sessionId) {
       // For guest users - find carts that haven't expired yet
       this.logger.debug(`Looking for cart by sessionId: ${sessionId}`);
-      cart = await this.cartRepository.findOne({
-        where: { 
-          sessionId,
-          expiresAt: MoreThan(new Date())
-        },
-        relations: ['items', 'items.product', 'items.product.translations', 'items.variant']
-      });
       
-      // Also check for carts without expiry (legacy)
-      if (!cart) {
-        cart = await this.cartRepository.findOne({
-          where: { 
+      // First check for existing active carts
+      const existingCarts = await this.cartRepository.find({
+        where: [
+          { 
+            sessionId,
+            expiresAt: MoreThan(new Date())
+          },
+          {
             sessionId,
             expiresAt: IsNull()
-          },
-          relations: ['items', 'items.product', 'items.product.translations', 'items.variant']
-        });
+          }
+        ],
+        relations: ['items', 'items.product', 'items.product.translations', 'items.variant'],
+        order: { createdAt: 'DESC' }
+      });
+
+      if (existingCarts.length > 1) {
+        // Keep the newest cart, remove duplicates
+        cart = existingCarts[0];
+        const duplicates = existingCarts.slice(1);
+        await this.cartRepository.remove(duplicates);
+        this.logger.warn(`Removed ${duplicates.length} duplicate carts for session ${sessionId}`);
+      } else if (existingCarts.length === 1) {
+        cart = existingCarts[0];
       }
     }
 
     if (!cart) {
-      // Create new cart
+      // Create new cart only if none exists
       this.logger.debug(`Creating new cart for userId: ${userId}, sessionId: ${sessionId}`);
       const expiresAt = sessionId 
         ? new Date(Date.now() + this.GUEST_CART_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
@@ -95,6 +108,11 @@ export class CartFrontendService {
         cart = await this.cartRepository.save(cart);
         this.logger.debug(`Created new cart with ID: ${cart.id}`);
       } catch (error) {
+        // Handle race condition - cart might have been created by another request
+        if (error.code === '23505') { // Unique constraint violation
+          this.logger.warn(`Race condition detected for session ${sessionId}, fetching existing cart`);
+          return this.getCart(userId, sessionId);
+        }
         this.logger.error('Error creating cart:', error);
         throw error;
       }
@@ -103,6 +121,35 @@ export class CartFrontendService {
     }
 
     return cart;
+  }
+
+  // Helper method to calculate summary from cart items
+  private calculateSummaryFromItems(items: CartItem[]): CartSummary {
+    let itemCount = 0;
+    let subtotal = 0;
+    let totalDiscount = 0;
+
+    for (const item of items) {
+      itemCount += item.quantity;
+      const itemSubtotal = item.unitPrice * item.quantity;
+      subtotal += itemSubtotal;
+      totalDiscount += itemSubtotal * (item.discountPercent / 100);
+    }
+
+    return {
+      itemCount,
+      subtotal,
+      totalDiscount,
+      total: subtotal - totalDiscount
+    };
+  }
+
+  // Get cart with summary in one call
+  async getCartWithSummary(userId?: string, sessionId?: string): Promise<CartWithSummary> {
+    const cart = await this.getOrCreateCart(userId, sessionId);
+    const summary = this.calculateSummaryFromItems(cart.items);
+    
+    return { cart, summary };
   }
 
   async addToCart(
@@ -157,6 +204,17 @@ export class CartFrontendService {
     return this.getCart(userId, sessionId);
   }
 
+  // Add method that returns cart with summary after adding item
+  async addToCartWithSummary(
+    userId: string | undefined,
+    sessionId: string | undefined,
+    dto: AddToCartDto
+  ): Promise<CartWithSummary> {
+    // Reuse existing logic but return with summary
+    await this.addToCart(userId, sessionId, dto);
+    return this.getCartWithSummary(userId, sessionId);
+  }
+
   async updateCartItem(
     userId: string | undefined,
     sessionId: string | undefined,
@@ -197,6 +255,17 @@ export class CartFrontendService {
     return this.getCart(userId, sessionId);
   }
 
+  // Add method that returns cart with summary after updating item
+  async updateCartItemWithSummary(
+    userId: string | undefined,
+    sessionId: string | undefined,
+    itemId: number,
+    dto: UpdateCartItemDto
+  ): Promise<CartWithSummary> {
+    await this.updateCartItem(userId, sessionId, itemId, dto);
+    return this.getCartWithSummary(userId, sessionId);
+  }
+
   async removeFromCart(
     userId: string | undefined,
     sessionId: string | undefined,
@@ -210,6 +279,16 @@ export class CartFrontendService {
     });
 
     return this.getCart(userId, sessionId);
+  }
+
+  // Add method that returns cart with summary after removing item
+  async removeFromCartWithSummary(
+    userId: string | undefined,
+    sessionId: string | undefined,
+    itemId: number
+  ): Promise<CartWithSummary> {
+    await this.removeFromCart(userId, sessionId, itemId);
+    return this.getCartWithSummary(userId, sessionId);
   }
 
   async clearCart(userId?: string, sessionId?: string): Promise<void> {

@@ -147,6 +147,27 @@ const labelStyle = (type: 'featured' | 'new' | 'sale' | 'discount') => ({
 // Specs for ticket
 const ticketLocation = computed(() => props.product.specifications?.find((spec: ProductSpecification) => spec.name === 'location')?.value || '');
 const ticketDate = computed(() => props.product.specifications?.find((spec: ProductSpecification) => spec.name === 'date')?.value || '');
+
+// Quick add to cart logic
+const shouldShowVariantModal = computed(() => {
+  return hasVariants.value && props.product.variantAttributes?.variants && props.product.variantAttributes.variants.length > 0;
+});
+
+// Product data for AddToCartButton
+const productForCart = computed(() => ({
+  id: props.product.id,
+  title: title.value,
+  thumbnail: props.product.thumbnail,
+  price: props.product.price,
+  comparePrice: props.product.comparePrice,
+  formattedPrice: props.product.formattedPrice,
+  sku: props.product.sku,
+  stock: props.product.stock,
+  hasRequiredAttributes: false, // For quick add, we handle variants via modal
+  hasSelectedAllAttributes: true, // Always true for quick add
+  variantAttributes: props.product.variantAttributes,
+  variants: props.product.variantAttributes?.variants || []
+}));
 </script>
 
 <template>
@@ -271,19 +292,9 @@ const ticketDate = computed(() => props.product.specifications?.find((spec: Prod
         <div class="flex items-center">
           <AddToCartButton
             v-if="product.price !== null"
-            :product="{
-              id: product.id,
-              title: title,
-              thumbnail: product.thumbnail,
-              price: product.price,
-              comparePrice: product.comparePrice,
-              formattedPrice: product.formattedPrice,
-              sku: product.sku,
-              stock: product.stock,
-              hasRequiredAttributes: false,
-              hasSelectedAllAttributes: true
-            }"
+            :product="productForCart"
             iconOnly
+            :showQuantity="false"
             buttonClass="p-2 flex items-center justify-center rounded-full hover:scale-110 transition-transform duration-200 cart-button-small"
           >
             <template #default>

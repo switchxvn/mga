@@ -32,6 +32,22 @@ export const cartRouter = router({
       return ctx.services.cartFrontendService.getCart(userId, sessionId);
     }),
 
+  // Get cart with summary in one call - optimized endpoint
+  getCartWithSummary: publicProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.user?.id;
+      const sessionId = ctx.sessionId;
+      
+      if (!userId && !sessionId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User ID or session ID is required'
+        });
+      }
+
+      return ctx.services.cartFrontendService.getCartWithSummary(userId, sessionId);
+    }),
+
   // Get cart summary
   getCartSummary: publicProcedure
     .query(async ({ ctx }) => {
@@ -48,7 +64,7 @@ export const cartRouter = router({
       return ctx.services.cartFrontendService.getCartSummary(userId, sessionId);
     }),
 
-  // Add item to cart
+  // Add item to cart - now returns cart with summary
   addToCart: publicProcedure
     .input(addToCartSchema)
     .mutation(async ({ ctx, input }) => {
@@ -69,10 +85,16 @@ export const cartRouter = router({
         metadata: input.metadata
       };
 
-      return ctx.services.cartFrontendService.addToCart(userId, sessionId, addToCartData);
+      const result = await ctx.services.cartFrontendService.addToCartWithSummary(userId, sessionId, addToCartData);
+      
+      // Return cart with summary attached for frontend optimization
+      return {
+        ...result.cart,
+        summary: result.summary
+      };
     }),
 
-  // Update cart item quantity
+  // Update cart item quantity - now returns cart with summary
   updateCartItem: publicProcedure
     .input(updateCartItemSchema)
     .mutation(async ({ ctx, input }) => {
@@ -86,15 +108,21 @@ export const cartRouter = router({
         });
       }
 
-      return ctx.services.cartFrontendService.updateCartItem(
+      const result = await ctx.services.cartFrontendService.updateCartItemWithSummary(
         userId,
         sessionId,
         input.itemId,
         { quantity: input.quantity }
       );
+
+      // Return cart with summary attached for frontend optimization
+      return {
+        ...result.cart,
+        summary: result.summary
+      };
     }),
 
-  // Remove item from cart
+  // Remove item from cart - now returns cart with summary
   removeFromCart: publicProcedure
     .input(z.object({ itemId: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -108,11 +136,17 @@ export const cartRouter = router({
         });
       }
 
-      return ctx.services.cartFrontendService.removeFromCart(
+      const result = await ctx.services.cartFrontendService.removeFromCartWithSummary(
         userId,
         sessionId,
         input.itemId
       );
+
+      // Return cart with summary attached for frontend optimization
+      return {
+        ...result.cart,
+        summary: result.summary
+      };
     }),
 
   // Clear cart

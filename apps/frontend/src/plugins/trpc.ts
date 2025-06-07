@@ -11,6 +11,28 @@ export default defineNuxtPlugin(() => {
 
   console.log('TRPC Base URL:', baseUrl);
 
+  // Cache session ID to prevent creating new ones on every request
+  let cachedSessionId: string | null = null;
+  
+  const getOrCreateSessionId = (): string => {
+    if (cachedSessionId) {
+      return cachedSessionId;
+    }
+    
+    if (typeof window !== 'undefined') {
+      cachedSessionId = localStorage.getItem('cart_session_id');
+      if (!cachedSessionId) {
+        cachedSessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('cart_session_id', cachedSessionId);
+        console.log('TRPC: Created new session ID:', cachedSessionId);
+      } else {
+        console.log('TRPC: Using existing session ID:', cachedSessionId);
+      }
+    }
+    
+    return cachedSessionId || '';
+  };
+
   /**
    * createTRPCNuxtClient adds a `useQuery` composable
    * built on top of `useAsyncData`.
@@ -20,7 +42,6 @@ export default defineNuxtPlugin(() => {
       httpBatchLink({
         url: `${baseUrl}/api/trpc`,
         headers() {
-          console.log('TRPC preparing headers');
           const headers: Record<string, string> = {};
           
           // Add authorization token if available
@@ -30,28 +51,21 @@ export default defineNuxtPlugin(() => {
               headers.Authorization = `Bearer ${token}`;
             }
             
-            // Add session ID for cart functionality
-            let sessionId = localStorage.getItem('cart_session_id');
-            if (!sessionId) {
-              sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              localStorage.setItem('cart_session_id', sessionId);
+            // Use cached session ID
+            const sessionId = getOrCreateSessionId();
+            if (sessionId) {
+              headers['x-session-id'] = sessionId;
             }
-            headers['x-session-id'] = sessionId;
           }
           
-          console.log('TRPC headers:', headers);
           return headers;
         },
         fetch(url, options) {
           console.log('TRPC fetch request to:', url);
-          console.log('TRPC fetch options:', JSON.stringify({
-            method: options?.method,
-            headers: options?.headers,
-          }));
           
           return fetch(url, {
             ...options,
-            signal: AbortSignal.timeout(30000), // 30 second timeout, increased from 5s
+            signal: AbortSignal.timeout(30000), // 30 second timeout
             credentials: 'include',
           }).then(response => {
             console.log('TRPC response status:', response.status);
