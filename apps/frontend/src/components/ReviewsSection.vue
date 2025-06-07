@@ -300,20 +300,19 @@ const contentNeedsExpansion = (content?: string) => {
         </p>
         
         <!-- Rating summary -->
-        <div v-if="totalReviews > 0" class="flex items-center justify-center mt-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 py-5 px-8 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 mx-auto" style="min-width: 400px; max-width: 480px;">
-          <div class="flex space-x-2 mr-6">
-            <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+        <div v-if="totalReviews > 0" class="flex flex-col sm:flex-row items-center justify-center mt-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 py-4 sm:py-5 px-4 sm:px-6 lg:px-8 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 mx-auto w-full max-w-[95vw] sm:max-w-md lg:max-w-lg">
+          <div class="flex space-x-1 sm:space-x-2 mb-2 sm:mb-0 sm:mr-4 lg:mr-6">
+            <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" viewBox="0 0 20 20" fill="currentColor">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" class="text-amber-400" />
             </svg>
           </div>
           
-          <span class="font-bold text-4xl text-rose-500 dark:text-rose-400 leading-none mr-4">
+          <span class="font-bold text-3xl sm:text-4xl text-rose-500 dark:text-rose-400 leading-none mb-1 sm:mb-0 sm:mr-3 lg:mr-4">
             {{ averageRating }}
           </span>
           
-          <div class="flex flex-col">
-            
-            <div class="text-base font-medium text-gray-700 dark:text-gray-300">
+          <div class="flex flex-col text-center sm:text-left">
+            <div class="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
               · {{ totalReviews }} đánh giá
             </div>
           </div>

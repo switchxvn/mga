@@ -234,7 +234,7 @@ const formattedTime = useDateFormat(now, 'HH:mm:ss - DD/MM/YYYY');
 // Thêm biến để kiểm soát hiển thị thời gian
 const showTimeOnTopBar = computed(() => {
   if (typeof window !== 'undefined') {
-    return window.innerWidth >= 1276;
+    return window.innerWidth >= 1400; // Tăng breakpoint để ẩn time ở màn hình nhỏ
   }
   return true;
 });
@@ -242,7 +242,7 @@ const showTimeOnTopBar = computed(() => {
 // Thêm biến kiểm soát hiển thị top menu dạng hamburger
 const showTopMenuHamburger = computed(() => {
   if (typeof window !== 'undefined') {
-    return window.innerWidth < 1300;
+    return window.innerWidth < 1400; // Tăng breakpoint để hiển thị hamburger menu ở 1320px
   }
   return false;
 });
@@ -420,7 +420,7 @@ onMounted(() => {
   // Thêm event listener để kiểm tra kích thước cửa sổ khi thay đổi
   window.addEventListener('resize', () => {
     // Đóng dropdown khi resize
-    if (isTopMenuDropdownOpen.value && window.innerWidth >= 1300) {
+    if (isTopMenuDropdownOpen.value && window.innerWidth >= 1400) {
       isTopMenuDropdownOpen.value = false;
     }
   });
@@ -492,24 +492,24 @@ const handleClickOutside = (event: MouseEvent) => {
         }"
       >
         <!-- Top Menu với chế độ normal và hamburger -->
-        <div class="w-full px-2 sm:px-3 lg:px-4 xl:px-6">
+        <div class="w-full px-3 sm:px-4 lg:px-6 xl:px-8">
           <!-- Hamburger Menu cho màn hình nhỏ (< 1300px) -->
-          <div v-if="showTopMenuHamburger" class="flex items-center justify-between h-8 sm:h-10 lg:h-12 xl:h-14 2xl:h-16">
+          <div v-if="showTopMenuHamburger" class="flex items-center justify-between h-10 sm:h-12 lg:h-14 xl:h-16 2xl:h-18">
             <!-- Hiển thị CurrentDateTime thay vì logo -->
-            <div class="flex-shrink-0 transform scale-75 origin-left">
+            <div class="flex-shrink-0 transform scale-90 sm:scale-100 origin-left">
               <CurrentDateTime />
             </div>
             
             <!-- Nút Hamburger và các action khác -->
-            <div class="flex items-center gap-2 lg:gap-3">
+            <div class="flex items-center gap-3 lg:gap-4">
             
               <!-- Top Menu Hamburger Button -->
               <button 
                 ref="topMenuButtonRef"
-                class="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full hover:bg-white/20 transition-colors duration-300" 
+                class="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 transition-colors duration-300" 
                 @click.stop="toggleTopMenuDropdown"
               >
-                <Icon :name="isTopMenuDropdownOpen ? 'X' : 'Menu'" class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                <Icon :name="isTopMenuDropdownOpen ? 'X' : 'Menu'" class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </button>
             </div>
             
@@ -590,6 +590,16 @@ const handleClickOutside = (event: MouseEvent) => {
                       <div class="text-xs font-medium text-gray-600 dark:text-gray-300">Giờ làm việc:</div>
                       <div class="text-sm font-semibold text-gray-800 dark:text-gray-200">24/7</div>
                     </div>
+                  </div>
+                </div>
+
+                <!-- Cart Section -->
+                <div class="px-2 mb-1">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 ml-2 mt-1">
+                    Giỏ hàng
+                  </div>
+                  <div class="px-3 py-1.5">
+                    <CartIcon class="mobile-top-menu-cart-icon" />
                   </div>
                 </div>
 
@@ -732,10 +742,10 @@ const handleClickOutside = (event: MouseEvent) => {
           </div>
 
           <!-- Normal Top Menu cho màn hình lớn (>= 1300px) -->
-          <div v-else class="flex items-center h-8 sm:h-10 lg:h-12 xl:h-14 2xl:h-16">
+          <div v-else class="flex items-center h-9 sm:h-10 lg:h-11 xl:h-12 2xl:h-14">
             <!-- Left Column -->
             <div 
-              class="flex items-center gap-0.5 sm:gap-1 lg:gap-1 xl:gap-2" 
+              class="flex items-center gap-0.5 sm:gap-1 lg:gap-1.5 xl:gap-2" 
               :style="{
                 width: props.settings?.topMenu?.leftColumn?.width || '25%',
                 justifyContent: 'flex-start'
@@ -759,11 +769,11 @@ const handleClickOutside = (event: MouseEvent) => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-2.5 lg:h-2.5 xl:w-3 xl:h-3"
+                    class="nav-icon w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3 lg:h-3 xl:w-3.5 xl:h-3.5"
                     :style="{ color: item.textColor }"
                   />
                   <span
-                    class="text-[8px] sm:text-[9px] lg:text-[10px] xl:text-xs font-medium whitespace-nowrap"
+                    class="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm font-medium whitespace-nowrap"
                     :style="{ color: item.textColor }"
                   >
                     {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -774,7 +784,7 @@ const handleClickOutside = (event: MouseEvent) => {
                 <NuxtLink
                   v-else-if="item.type === 'link'"
                   :to="item.href"
-                  class="flex items-center gap-0.5 text-[8px] sm:text-[9px] lg:text-[10px] xl:text-xs font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  class="flex items-center gap-0.5 text-[10px] sm:text-[11px] lg:text-xs xl:text-sm font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                   :style="{
                     color: item.textColor,
                     '&:hover': {
@@ -785,7 +795,7 @@ const handleClickOutside = (event: MouseEvent) => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-2.5 lg:h-2.5 xl:w-3 xl:h-3"
+                    class="nav-icon w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3 lg:h-3 xl:w-3.5 xl:h-3.5"
                     :style="{ color: item.textColor }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
@@ -794,7 +804,7 @@ const handleClickOutside = (event: MouseEvent) => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-2 sm:h-2.5 lg:h-2.5 xl:h-3 w-[1px] sm:mx-0.5"
+                  class="h-2.5 sm:h-3 lg:h-3.5 xl:h-4 w-[1px] mx-0.5 sm:mx-1"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
@@ -802,7 +812,7 @@ const handleClickOutside = (event: MouseEvent) => {
             
             <!-- Center Column -->
             <div 
-              class="flex items-center justify-center gap-1 lg:gap-2 xl:gap-6 2xl:gap-8" 
+              class="flex items-center justify-center gap-1 lg:gap-2 xl:gap-4 2xl:gap-6" 
               :style="{
                 width: props.settings?.topMenu?.centerColumn?.width || '50%'
               }"
@@ -826,11 +836,11 @@ const handleClickOutside = (event: MouseEvent) => {
                     <Icon
                       v-if="item.icon"
                       :name="item.icon"
-                      class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4"
+                      class="nav-icon w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 xl:w-4 xl:h-4"
                       :style="{ color: item.textColor }"
                     />
                     <span
-                      class="text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[16px] 2xl:text-[20px] font-medium whitespace-nowrap"
+                      class="text-[11px] sm:text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium whitespace-nowrap"
                       :style="{ color: item.textColor }"
                     >
                       {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -853,11 +863,11 @@ const handleClickOutside = (event: MouseEvent) => {
                     <Icon
                       v-if="item.icon"
                       :name="item.icon"
-                      class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4"
+                      class="nav-icon w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 xl:w-4 xl:h-4"
                       :style="{ color: item.textColor }"
                     />
                     <span
-                      class="text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[16px] 2xl:text-[20px] font-medium whitespace-nowrap"
+                      class="text-[11px] sm:text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium whitespace-nowrap"
                       :style="{ color: item.textColor }"
                     >
                       {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -867,7 +877,7 @@ const handleClickOutside = (event: MouseEvent) => {
                   <NuxtLink
                     v-else-if="item.type === 'link'"
                     :to="item.href"
-                    class="flex items-center gap-0.5 text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[16px] 2xl:text-[20px] font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                    class="flex items-center gap-0.5 text-[11px] sm:text-xs lg:text-sm xl:text-base 2xl:text-lg font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                     :style="{
                       color: item.textColor,
                       '&:hover': {
@@ -878,7 +888,7 @@ const handleClickOutside = (event: MouseEvent) => {
                     <Icon
                       v-if="item.icon"
                       :name="item.icon"
-                      class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4"
+                      class="nav-icon w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 xl:w-4 xl:h-4"
                       :style="{ color: item.textColor }"
                     />
                     {{ item.isTranslated ? t(item.label ?? '') : item.label }}
@@ -886,7 +896,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
                   <div
                     v-else-if="item.type === 'divider'"
-                    class="h-2 sm:h-2.5 lg:h-3 xl:h-4 w-[1px] sm:mx-0.5 lg:mx-1"
+                    class="h-3 sm:h-3.5 lg:h-4 xl:h-4 w-[1px] mx-0.5 sm:mx-1 lg:mx-1"
                     :style="{ backgroundColor: item.color || '#ffffff' }"
                   ></div>
                 </template>
@@ -895,7 +905,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
             <!-- Right Column -->
             <div 
-              class="flex items-center gap-1 lg:gap-1.5 xl:gap-3" 
+              class="flex items-center gap-1 lg:gap-1.5 xl:gap-2" 
               :style="{
                 width: props.settings?.topMenu?.rightColumn?.width || '25%',
                 justifyContent: props.settings?.topMenu?.rightColumn?.alignment === 'center' ? 'center' : 
@@ -920,11 +930,11 @@ const handleClickOutside = (event: MouseEvent) => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4"
+                    class="nav-icon w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4"
                     :style="{ color: item.textColor }"
                   />
                   <span
-                    class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm font-medium whitespace-nowrap"
+                    class="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm font-medium whitespace-nowrap"
                     :style="{ color: item.textColor }"
                   >
                     {{ item.isTranslated ? t(item.content ?? '') : item.content }}
@@ -935,7 +945,7 @@ const handleClickOutside = (event: MouseEvent) => {
                 <NuxtLink
                   v-else-if="item.type === 'link'"
                   :to="item.href"
-                  class="flex items-center gap-0.5 text-[9px] sm:text-[10px] lg:text-xs xl:text-sm font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
+                  class="flex items-center gap-0.5 text-[10px] sm:text-[11px] lg:text-xs xl:text-sm font-[800] uppercase transition-colors duration-300 hover:opacity-90 whitespace-nowrap"
                   :style="{
                     color: item.textColor,
                     '&:hover': {
@@ -946,7 +956,7 @@ const handleClickOutside = (event: MouseEvent) => {
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4"
+                    class="nav-icon w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4"
                     :style="{ color: item.textColor }"
                   />
                   {{ item.isTranslated ? t(item.label ?? '') : item.label }}
@@ -955,18 +965,23 @@ const handleClickOutside = (event: MouseEvent) => {
                 <!-- Divider -->
                 <div
                   v-else-if="item.type === 'divider'"
-                  class="h-2 sm:h-2.5 lg:h-3 xl:h-4 w-[1px] sm:mx-0.5 lg:mx-0.5 xl:mx-1"
+                  class="h-2.5 sm:h-3 lg:h-3.5 xl:h-4 w-[1px] mx-0.5 sm:mx-1"
                   :style="{ backgroundColor: item.color || '#ffffff' }"
                 ></div>
               </template>
 
+              <!-- Cart Icon -->
+              <div class="relative">
+                <CartIcon class="top-menu-cart-icon" />
+              </div>
+
               <!-- User Menu -->
               <div class="relative">
                 <button
-                  class="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 rounded-full hover:bg-white/20 transition-colors duration-300"
+                  class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 xl:w-9 xl:h-9 rounded-full hover:bg-white/20 transition-colors duration-300"
                   @click="showUserDropdown = !showUserDropdown"
                 >
-                  <User class="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 text-white" />
+                  <User class="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 xl:w-5 xl:h-5 text-white" />
                 </button>
 
                 <!-- User Dropdown -->
@@ -1052,7 +1067,7 @@ const handleClickOutside = (event: MouseEvent) => {
         zIndex: 60
       }"
     >
-      <div class="w-full px-1.5 xs:px-2 py-0.5 xs:py-1">
+      <div class="w-full px-3 sm:px-4 py-2 sm:py-3">
         <div class="flex items-center justify-between">
           <!-- Mobile Logo -->
           <div class="flex-shrink-0">
@@ -1061,41 +1076,38 @@ const handleClickOutside = (event: MouseEvent) => {
                 v-if="mobileLogoUrl"
                 :src="mobileLogoUrl"
                 :alt="mobileLogo?.altText || 'Logo'"
-                class="h-6 xs:h-7 w-auto object-contain max-w-[80px] xs:max-w-[100px]"
+                class="h-8 sm:h-10 w-auto object-contain max-w-[120px] sm:max-w-[140px]"
               />
             </NuxtLink>
           </div>
           
           <!-- Right Actions -->
-          <div class="flex items-center gap-1 xs:gap-2">
+          <div class="flex items-center gap-2 sm:gap-3">
             <!-- Phone Button -->
             <a 
               :href="`tel:${props.settings?.phoneButton?.numbers?.[0]?.number?.replace(/\s+/g, '') || ''}`"
-              class="flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
+              class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300"
             >
-              <Phone class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-white" />
+              <Phone class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </a>
-            
-            <!-- Cart Icon -->
-            <CartIcon v-if="props.settings?.showCart && isCartEnabled" class="w-7 h-7 xs:w-8 xs:h-8" />
             
             <!-- User Button -->
             <button
-              class="flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300 relative"
+              class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300 relative"
               @click="showUserDropdown = !showUserDropdown"
             >
-              <User class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-white" />
+              <User class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               <!-- Authenticated indicator -->
-              <div v-if="isAuthenticated" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border border-white"></div>
+              <div v-if="isAuthenticated" class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
             </button>
             
             <!-- Mobile Menu Button -->
             <button
-              class="flex items-center justify-center w-7 h-7 xs:w-8 xs:h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300 ml-0.5 xs:ml-1"
+              class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-300 ml-1 sm:ml-2"
               @click="toggleMobileMenu"
               aria-label="Toggle Menu"
             >
-              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-white" />
+              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </button>
           </div>
         </div>
@@ -1175,15 +1187,6 @@ const handleClickOutside = (event: MouseEvent) => {
             <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
               Liên kết nhanh
             </div>
-            <NuxtLink 
-              to="/cart" 
-              class="flex items-center gap-2 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-              v-if="props.settings?.showCart && isCartEnabled"
-              @click="showUserDropdown = false"
-            >
-              <Icon name="ShoppingCart" class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              Giỏ hàng
-            </NuxtLink>
             <a 
               :href="`tel:${props.settings?.phoneButton?.numbers?.[0]?.number?.replace(/\s+/g, '') || ''}`"
               class="flex items-center gap-2 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
@@ -1416,10 +1419,7 @@ const handleClickOutside = (event: MouseEvent) => {
                 </div>
               </NuxtLink>
 
-              <!-- Cart Icon -->
-              <CartIcon v-if="props.settings?.showCart && isCartEnabled" />
-              
-              <!-- Mobile Menu Button -->
+                                        <!-- Mobile Menu Button -->
               <button
                 class="lg:hidden flex items-center justify-center w-10 h-10 hover:bg-white/30 dark:hover:bg-neutral-800 rounded-full"
                 @click="toggleMobileMenu"
@@ -1447,42 +1447,42 @@ const handleClickOutside = (event: MouseEvent) => {
           @click.stop
         >
           <!-- Mobile Menu Header -->
-          <div class="mobile-menu-header flex items-center justify-between px-2 xs:px-3 py-1.5 xs:py-2 border-b border-neutral-200 dark:border-neutral-700">
+          <div class="mobile-menu-header flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
             <NuxtLink to="/" class="flex-shrink-0" @click="isMobileMenuOpen = false">
               <img
                 v-if="mobileLogoUrl"
                 :src="mobileLogoUrl"
                 :alt="mobileLogo?.altText || 'Logo'"
-                class="h-6 xs:h-7 w-auto object-contain"
+                class="h-8 w-auto object-contain"
               />
             </NuxtLink>
             <button
-              class="p-1 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              class="p-2 text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
               @click="isMobileMenuOpen = false"
               aria-label="Close Menu"
             >
-              <Icon name="X" class="nav-icon w-3.5 h-3.5 xs:w-4 xs:h-4" />
+              <Icon name="X" class="nav-icon w-5 h-5" />
             </button>
           </div>
 
           <!-- Mobile Call Button & Booking Button -->
-          <div class="px-2 xs:px-3 py-1.5 xs:py-2 border-b border-neutral-200 dark:border-neutral-700">
-            <div class="flex flex-col gap-1.5">
-              <div class="flex items-center gap-1.5">
+          <div class="px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-3">
                 <div class="relative">
                   <div class="animate-ring absolute -inset-0.5 rounded-full border border-primary-500 opacity-75"></div>
-                  <div class="relative flex items-center justify-center rounded-full bg-primary-500 w-6 h-6 xs:w-7 xs:h-7">
-                    <Phone class="text-white" :size="12" :stroke-width="2.5" aria-hidden="true" />
+                  <div class="relative flex items-center justify-center rounded-full bg-primary-500 w-10 h-10">
+                    <Phone class="text-white" :size="16" :stroke-width="2.5" aria-hidden="true" />
                   </div>
                 </div>
                 <div class="flex flex-col">
-                  <span class="text-xs xs:text-sm font-bold text-neutral-900 dark:text-white">
+                  <span class="text-sm font-bold text-neutral-900 dark:text-white">
                     {{ t(props.settings?.bookingButton?.text ?? 'booking.button') }}
                   </span>
                   <div class="flex flex-col">
                     <template v-for="(phone, index) in props.settings?.bookingButton?.phoneNumbers" :key="index">
                       <button 
-                        class="text-[10px] xs:text-xs text-primary-600 dark:text-primary-400 font-medium hover:underline transition-all duration-300 text-left"
+                        class="text-xs text-primary-600 dark:text-primary-400 font-medium hover:underline transition-all duration-300 text-left"
                         @click="callPhone(phone.number)"
                       >
                         {{ t(phone.label) }}: {{ phone.number }}
@@ -1493,30 +1493,20 @@ const handleClickOutside = (event: MouseEvent) => {
               </div>
               <NuxtLink
                 :to="props.settings?.bookingButton?.href || '/booking'"
-                class="flex items-center justify-center gap-1 w-full px-2 py-1.5 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-full transition-all duration-300 text-[10px] xs:text-xs"
+                class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-full transition-all duration-300 text-sm"
                 @click="isMobileMenuOpen = false"
               >
-                <Icon name="Calendar" class="w-3 h-3 xs:w-3.5 xs:h-3.5" />
+                <Icon name="Calendar" class="w-4 h-4" />
                 {{ t('Đặt vé ngay') }}
               </NuxtLink>
             </div>
           </div>
 
-          <div class="px-2 xs:px-3 py-1.5 xs:py-2 space-y-2 xs:space-y-3">
-            <!-- Cart Icon for Mobile -->
-            <div v-if="props.settings?.showCart && isCartEnabled">
-              <NuxtLink 
-                to="/cart" 
-                class="flex items-center gap-2 px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-                @click="isMobileMenuOpen = false"
-              >
-                <Icon name="ShoppingCart" class="nav-icon w-4 h-4 xs:w-5 xs:h-5" />
-                <span>Giỏ hàng</span>
-              </NuxtLink>
-            </div>
+          <div class="px-4 py-4 space-y-4">
+
 
             <!-- Language Switcher and Theme Toggle in Mobile Menu -->
-            <div class="flex flex-col space-y-1.5 xs:space-y-2">
+            <div class="flex flex-col space-y-3">
               <div v-if="props.settings?.showLanguageSwitcher" class="w-full">
                 <LanguageSwitcher />
               </div>
@@ -1526,7 +1516,7 @@ const handleClickOutside = (event: MouseEvent) => {
             </div>
 
             <!-- Mobile Menu Items with Mega Menu -->
-            <div class="space-y-0.5 mt-1.5 xs:mt-2">
+            <div class="space-y-1">
               <div
                 v-for="item in processedMenuItems"
                 :key="item.id"
@@ -1535,28 +1525,28 @@ const handleClickOutside = (event: MouseEvent) => {
                 <!-- Menu Item with Mega Menu -->
                 <div
                   v-if="item.children && item.children.length > 0"
-                  class="mobile-main-menu-item flex items-center justify-between px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-xs font-semibold uppercase rounded-lg"
+                  class="mobile-main-menu-item flex items-center justify-between px-3 py-3 text-sm font-semibold uppercase rounded-lg"
                   :class="{ 'mobile-menu-active': isMenuActive(item.href) }"
                 >
                   <NuxtLink
                     :to="item.href"
-                    class="flex-1 flex items-center gap-1 xs:gap-1.5"
+                    class="flex-1 flex items-center gap-3"
                     @click="isMobileMenuOpen = false"
                   >
                     <Icon
                       v-if="item.icon"
                       :name="item.icon"
-                      class="nav-icon w-3.5 h-3.5 xs:w-4 xs:h-4"
+                      class="nav-icon w-5 h-5"
                     />
-                    {{ item.isTranslated ? t(item.label ?? '') : item.label }}
+                    {{ item.label }}
                   </NuxtLink>
                   <button
-                    class="p-0.5 xs:p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
+                    class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
                     @click.stop="toggleMobileMegaMenu(item.id)"
                   >
                     <Icon
                       name="ChevronRight"
-                      class="nav-icon w-3.5 h-3.5 xs:w-4 xs:h-4 transition-transform duration-300"
+                      class="nav-icon w-4 h-4 transition-transform duration-300"
                       :class="{ 'rotate-90': activeMobileMegaMenu === item.id }"
                     />
                   </button>
@@ -1566,16 +1556,16 @@ const handleClickOutside = (event: MouseEvent) => {
                 <NuxtLink
                   v-else
                   :to="item.href"
-                  class="mobile-main-menu-item flex items-center gap-1 xs:gap-1.5 px-1.5 xs:px-2 py-1 xs:py-1.5 text-[10px] xs:text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors duration-300"
+                  class="mobile-main-menu-item flex items-center gap-3 px-3 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg transition-colors duration-300"
                   :class="{ 'text-primary-600 dark:text-primary-400': isMenuActive(item.href) }"
                   @click="isMobileMenuOpen = false"
                 >
                   <Icon
                     v-if="item.icon"
                     :name="item.icon"
-                    class="nav-icon w-3.5 h-3.5 xs:w-4 xs:h-4"
+                    class="nav-icon w-5 h-5"
                   />
-                  {{ item.isTranslated ? t(item.label ?? '') : item.label }}
+                  {{ item.label }}
                 </NuxtLink>
 
                 <!-- Mobile Mega Menu Content -->
@@ -1859,10 +1849,10 @@ const handleClickOutside = (event: MouseEvent) => {
   &::before {
     content: '';
     display: block;
-    height: 38px; // Adjusted for even smaller mobile header
+    height: 50px; // Increased for better mobile header
     
-    @media (min-width: 400px) {
-      height: 42px; // Slightly taller for medium small screens
+    @media (min-width: 640px) {
+      height: 56px; // Taller for larger mobile screens
     }
     
     @media (min-width: 1024px) {
@@ -1937,5 +1927,91 @@ const handleClickOutside = (event: MouseEvent) => {
 .mobile-shadow {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   transition: box-shadow 0.3s ease-in-out;
+}
+
+/* Navbar Cart Icon Styling */
+.navbar-cart-icon {
+  position: relative;
+  z-index: 60;
+}
+
+.navbar-cart-icon .cart-icon-container {
+  position: relative;
+}
+
+/* Ensure cart preview dropdown appears above other elements */
+.navbar-cart-icon .cart-icon-container > div:last-child {
+  z-index: 70 !important;
+}
+
+/* Adjust cart preview positioning for navbar */
+@media (min-width: 1024px) {
+  .navbar-cart-icon .cart-icon-container > div:last-child {
+    right: -1rem;
+  }
+}
+
+/* Top Menu Cart Icon Styling */
+.top-menu-cart-icon {
+  position: relative;
+  z-index: 65;
+}
+
+.top-menu-cart-icon .cart-icon-container {
+  position: relative;
+}
+
+.top-menu-cart-icon .cart-icon-container button {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.25rem;
+}
+
+@media (min-width: 640px) {
+  .top-menu-cart-icon .cart-icon-container button {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .top-menu-cart-icon .cart-icon-container button {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .top-menu-cart-icon .cart-icon-container button {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+
+/* Mobile Top Menu Cart Icon */
+.mobile-top-menu-cart-icon {
+  position: relative;
+}
+
+.mobile-top-menu-cart-icon .cart-icon-container button {
+  background-color: transparent;
+  color: rgb(75 85 99);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  width: 100%;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.mobile-top-menu-cart-icon .cart-icon-container button:hover {
+  background-color: rgb(243 244 246);
+}
+
+.dark .mobile-top-menu-cart-icon .cart-icon-container button {
+  color: rgb(209 213 219);
+}
+
+.dark .mobile-top-menu-cart-icon .cart-icon-container button:hover {
+  background-color: rgb(55 65 81);
 }
 </style> 
