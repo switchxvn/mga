@@ -1,22 +1,27 @@
 import { z } from 'zod';
 import { MoreThan, Not, IsNull } from 'typeorm';
 import { adminProcedure, router } from '../../procedures';
+import { Cart } from '../../../cart/entities/cart.entity';
 
 export const adminCartRouter = router({
   cleanupDuplicateCarts: adminProcedure
     .mutation(async ({ ctx }) => {
-      await ctx.cartFrontendService.cleanupDuplicateCarts();
+      await ctx.services.cartFrontendService.cleanupDuplicateCarts();
       return { success: true, message: 'Duplicate carts cleaned up successfully' };
     }),
 
   getCartStats: adminProcedure
     .query(async ({ ctx }) => {
-      const cartRepository = ctx.cartRepository;
+      const cartRepository = ctx.dataSource.getRepository(Cart);
       
       const totalCarts = await cartRepository.count();
-      const activeCarts = await cartRepository.count({
-        where: { items: { length: MoreThan(0) } }
-      });
+      
+      // Get carts with items using a subquery
+      const activeCarts = await cartRepository
+        .createQueryBuilder('cart')
+        .innerJoin('cart.items', 'item')
+        .getCount();
+        
       const guestCarts = await cartRepository.count({
         where: { sessionId: Not(IsNull()) }
       });
