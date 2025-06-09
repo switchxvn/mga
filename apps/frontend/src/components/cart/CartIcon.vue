@@ -1,20 +1,30 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { ShoppingCart, X, Plus, Minus, Trash2 } from 'lucide-vue-next';
 import { useCart } from '~/composables/useCart';
+import { useCartStore } from '~/stores/cart';
+import { storeToRefs } from 'pinia';
 import { useLocalization } from '~/composables/useLocalization';
 import CartSidebar from './CartSidebar.vue';
 
+// Get reactive state from store
+const cartStore = useCartStore();
 const { 
+  cart,
   cartItemCount, 
   cartItems, 
   cartSummary, 
   isCartEnabled, 
+  isLoading,
+  isPending,
+  error
+} = storeToRefs(cartStore);
+
+// Get actions from composable
+const { 
   updateCartItem, 
   removeFromCart,
-  isLoading,
-  initialize,
-  fetchCart
+  initialize
 } = useCart();
 
 const { t } = useLocalization();
@@ -23,21 +33,23 @@ const showCartPreview = ref(false);
 const isProcessing = ref(false);
 const cartIconRef = ref<HTMLElement>();
 
-// Computed properties - follow cart.vue pattern
+// Computed properties
 const isEmpty = computed(() => {
-  console.log('CartIcon isEmpty check:', {
-    cartItems: cartItems,
-    length: cartItems?.length,
-    cartItemCount: cartItemCount
-  });
-  return !cartItems || cartItems.length === 0;
+  // If we have itemCount from summary but no items, something is wrong
+  // Prioritize cartItemCount from summary as it's more reliable
+  if (cartItemCount.value > 0) {
+    return false; // We have items according to summary
+  }
+  
+  // Fallback to checking items array
+  return !cartItems.value || cartItems.value.length === 0;
 });
 
 const formattedTotal = computed(() => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND'
-  }).format(cartSummary?.total || 0);
+  }).format(cartSummary.value?.total || 0);
 });
 
 // Format price helper
@@ -71,28 +83,7 @@ const getItemDiscount = (item: any) => {
 };
 
 // Handle cart icon click
-const handleCartIconClick = async () => {
-  console.log('Cart icon clicked - Debug info:', {
-    cartItems: cartItems,
-    cartItemCount: cartItemCount,
-    cartSummary: cartSummary,
-    isEmpty: isEmpty,
-    isLoading: isLoading
-  });
-  
-  // Always refresh cart data when opening dropdown to ensure latest data
-  console.log('Refreshing cart data...');
-  try {
-    await fetchCart();
-    console.log('Cart data refreshed:', {
-      cartItems: cartItems,
-      cartItemCount: cartItemCount
-    });
-  } catch (error) {
-    console.error('Error refreshing cart:', error);
-  }
-  
-  // Toggle dropdown instead of opening sidebar
+const handleCartIconClick = () => {
   showCartPreview.value = !showCartPreview.value;
   showCartSidebar.value = false;
 };
@@ -102,38 +93,12 @@ const handleCartSidebarClose = () => {
   showCartSidebar.value = false;
 };
 
-// Handle cart preview hover (disabled for click-only behavior)
-const handleMouseEnter = () => {
-  // Disabled hover behavior - only click to toggle
-};
-
-const handleMouseLeave = () => {
-  // Disabled hover behavior - only click to toggle
-};
-
 // Close dropdown when clicking outside
 const handleClickOutside = (event: MouseEvent) => {
   if (cartIconRef.value && !cartIconRef.value.contains(event.target as Node)) {
     showCartPreview.value = false;
   }
 };
-
-// Setup click outside listener and initialize cart
-onMounted(async () => {
-  document.addEventListener('click', handleClickOutside);
-  
-  // Initialize and fetch cart data like in cart.vue
-  try {
-    await initialize();
-    await fetchCart(); // Explicitly fetch cart data
-  } catch (error) {
-    console.error('Error initializing cart:', error);
-  }
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
 
 // Handle quantity change
 const handleQuantityChange = async (itemId: number, newQuantity: number) => {
@@ -162,17 +127,71 @@ const handleRemoveItem = async (itemId: number) => {
     isProcessing.value = false;
   }
 };
+
+// Initialize cart on mount
+onMounted(async () => {
+  document.addEventListener('click', handleClickOutside);
+  
+  try {
+    await initialize();
+  } catch (error) {
+    console.error('Error initializing cart:', error);
+  }
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+// Check for data inconsistency (count > 0 but no items)
+const hasDataInconsistency = computed(() => {
+  return cartItemCount.value > 0 && cartItems.value.length === 0;
+});
+
+// Auto-refresh when data inconsistency detected
+watch(hasDataInconsistency, (newValue) => {
+  if (newValue && !isPending.value) {
+    // Auto refresh after 2 seconds to try to resolve inconsistency
+    setTimeout(() => {
+      if (hasDataInconsistency.value) {
+        cartStore.fetchCartData();
+      }
+    }, 2000);
+  }
+});
+
+function togglePreview() {
+  showCartPreview.value = !showCartPreview.value;
+}
+
+function closePreview() {
+  showCartPreview.value = false;
+}
+
+async function handleRetry() {
+  try {
+    await cartStore.fetchCartData();
+  } catch (err) {
+    console.error('Failed to retry:', err);
+  }
+}
+
+async function handleRefresh() {
+  try {
+    await cartStore.fetchCartData();
+  } catch (err) {
+    console.error('Failed to refresh:', err);
+  }
+}
 </script>
 
 <template>
   <div ref="cartIconRef" class="cart-icon-container relative">
     <!-- Cart Icon Button -->
     <button
-      @click="handleCartIconClick"
-      @mouseenter="handleMouseEnter"
-      @mouseleave="handleMouseLeave"
+      @click="togglePreview"
       class="relative p-2 rounded-full hover:bg-white/20 dark:hover:bg-gray-800 transition-colors duration-200 group cursor-pointer"
-      aria-label="Giỏ hàng"
+      :aria-label="t('cart.title')"
       style="pointer-events: auto;"
     >
       <ShoppingCart class="w-5 h-5 lg:w-6 lg:h-6 text-white group-hover:text-primary-200 transition-colors duration-200" />
@@ -206,7 +225,7 @@ const handleRemoveItem = async (itemId: number) => {
               {{ t('cart.title') }} ({{ cartItemCount }})
             </h3>
             <button
-              @click="showCartPreview = false"
+              @click="closePreview"
               class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
             >
               <X class="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -230,10 +249,29 @@ const handleRemoveItem = async (itemId: number) => {
             {{ t('cart.empty.description') }}
           </p>
           <button
-            @click="showCartPreview = false"
+            @click="closePreview"
             class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm transition-colors"
           >
             {{ t('cart.empty.shopNow') }}
+          </button>
+        </div>
+
+        <!-- Data Conflict - Show when count > 0 but no items -->
+        <div v-else-if="hasDataInconsistency" class="p-6 text-center">
+          <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span class="text-yellow-600 text-xl">⚠️</span>
+          </div>
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">
+            {{ t('cart.loading') }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            {{ $t('common.loading') }}
+          </p>
+          <button
+            @click="handleRetry"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+          >
+            {{ t('common.back') }}
           </button>
         </div>
 
@@ -370,14 +408,14 @@ const handleRemoveItem = async (itemId: number) => {
             <NuxtLink
               to="/cart"
               class="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-center py-2 px-3 rounded-lg text-sm font-medium transition-colors"
-              @click="showCartPreview = false"
+              @click="closePreview"
             >
               {{ t('cart.viewCart') }}
             </NuxtLink>
             <NuxtLink
               to="/checkout"
               class="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-center py-2 px-3 rounded-lg text-sm font-medium transition-colors"
-              @click="showCartPreview = false"
+              @click="closePreview"
             >
               {{ t('cart.checkout') }}
             </NuxtLink>

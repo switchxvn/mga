@@ -1083,6 +1083,11 @@ const handleClickOutside = (event: MouseEvent) => {
           
           <!-- Right Actions -->
           <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Cart Icon -->
+            <div class="relative">
+              <CartIcon class="mobile-navbar-cart-icon" />
+            </div>
+            
             <!-- Phone Button -->
             <a 
               :href="`tel:${props.settings?.phoneButton?.numbers?.[0]?.number?.replace(/\s+/g, '') || ''}`"
@@ -2013,5 +2018,42 @@ const handleClickOutside = (event: MouseEvent) => {
 
 .dark .mobile-top-menu-cart-icon .cart-icon-container button:hover {
   background-color: rgb(55 65 81);
+}
+
+/* Mobile Navbar Cart Icon */
+.mobile-navbar-cart-icon {
+  position: relative;
+  z-index: 65;
+}
+
+.mobile-navbar-cart-icon .cart-icon-container button {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.5rem;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.mobile-navbar-cart-icon .cart-icon-container button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.mobile-navbar-cart-icon .cart-icon-container button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (min-width: 640px) {
+  .mobile-navbar-cart-icon .cart-icon-container button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  .mobile-navbar-cart-icon .cart-icon-container button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
 }
 </style> 

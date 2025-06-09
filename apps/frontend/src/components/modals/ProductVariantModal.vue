@@ -2,6 +2,8 @@
 import { ref, computed, watch } from 'vue';
 import { X, ShoppingCart, Minus, Plus } from 'lucide-vue-next';
 import { useCart } from '~/composables/useCart';
+import { useToast } from '~/composables/useToast';
+import { useLocalization } from '~/composables/useLocalization';
 
 interface ProductVariant {
   id: number;
@@ -44,12 +46,11 @@ const props = defineProps<{
   isOpen: boolean;
 }>();
 
-const emit = defineEmits<{
-  close: [];
-  addToCart: [item: { productId: number; variantId?: number; quantity: number; metadata?: any }];
-}>();
+const emit = defineEmits(['close', 'addToCart', 'success']);
 
 const { addToCart } = useCart();
+const toast = useToast();
+const { t } = useLocalization();
 
 const quantity = ref(1);
 const isAdding = ref(false);
@@ -193,10 +194,12 @@ const handleAddToCart = async () => {
   
   try {
     await addToCart(cartItem);
+    toast.success(t('common.success'));
     emit('addToCart', cartItem);
+    emit('success');
     emit('close');
   } catch (error) {
-    console.error('Error adding product to cart:', error);
+    toast.error(t('common.error'));
   } finally {
     isAdding.value = false;
   }

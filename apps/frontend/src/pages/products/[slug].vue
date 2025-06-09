@@ -34,6 +34,7 @@ import GlobalModal from "~/components/ui/GlobalModal.vue";
 import LazyImage from "~/components/ui/LazyImage.vue";
 import { useLocalization } from "~/composables/useLocalization";
 import { useProductDetail } from '~/composables/useProductDetail';
+import { useCart } from "~/composables/useCart";
 import TierPricingTable from "~/components/product/TierPricingTable.vue";
 
 // Định nghĩa interface cho PriceRequest
@@ -87,6 +88,7 @@ const {
   shouldShowFromPrice,
   shouldShowPriceRequest,
   canAddToCart: baseCanAddToCart,
+  canBuyNow,
   displayPrice,
   displayComparePrice,
   getProductForCart,
@@ -142,6 +144,34 @@ definePageMeta({
 });
 
 const productQuantity = ref(1);
+
+// Handle Buy Now - add to cart and redirect to checkout
+const handleBuyNow = async () => {
+  if (!canBuyNow.value || !getProductForCart.value) return;
+  
+  const { addToCart } = useCart();
+  const cartItem = {
+    productId: productData.value!.id,
+    variantId: matchingVariant.value?.id,
+    quantity: 1,
+    metadata: {
+      variantName: matchingVariant.value ? Object.entries(selectedAttributes.value).map(([attributeId, valueId]) => {
+        const attribute = productAttributes.value.find(attr => attr.id === Number(attributeId));
+        const value = attribute?.values.find(val => val.id === Number(valueId));
+        return value?.displayValue;
+      }).join(' - ') : undefined,
+      sku: matchingVariant.value?.sku || productData.value!.sku
+    }
+  };
+  
+  try {
+    await addToCart(cartItem);
+    // Redirect to checkout immediately
+    await router.push('/checkout');
+  } catch (error) {
+    console.error('Error in buy now:', error);
+  }
+};
 
 // Thiết lập meta tags
 useHead({
@@ -714,14 +744,33 @@ watch(activeTab, (newTab, oldTab) => {
 
               <!-- Buttons -->
               <div class="space-y-4">
+                <!-- Add to Cart Button -->
                 <AddToCartButton
                   v-if="canAddToCart && getProductForCart"
                   :product="getProductForCart"
                   :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
-                  :showQuantity="true"
-                  buttonClass="flex-1"
+                  :showQuantity="!hasRequiredAttributes"
+                  buttonClass="w-full bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium text-base transition-colors duration-200 flex items-center justify-center gap-2"
                 />
 
+                <!-- Buy Now Button -->
+                <UButton
+                  v-if="canBuyNow && getProductForCart"
+                  color="orange"
+                  size="lg"
+                  block
+                  class="bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-medium py-3 text-base"
+                  @click="handleBuyNow"
+                >
+                  <template #leading>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                  </template>
+                  {{ t("products.buyNow") || "Mua ngay" }}
+                </UButton>
+
+                <!-- Price Request Button -->
                 <UButton
                   v-if="shouldShowPriceRequest"
                   color="primary"
@@ -732,6 +781,19 @@ watch(activeTab, (newTab, oldTab) => {
                   @click="openPriceRequestModal"
                 >
                   {{ t("products.requestPrice") || "Yêu cầu báo giá" }}
+                </UButton>
+
+                <!-- Contact Button when product is not available -->
+                <UButton
+                  v-if="!canAddToCart && !shouldShowPriceRequest"
+                  color="gray"
+                  size="lg"
+                  block
+                  icon="i-heroicons-phone"
+                  class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 text-base"
+                  @click="$router.push('/contact')"
+                >
+                  {{ t("products.contact") || "Liên hệ" }}
                 </UButton>
               </div>
             </div>
