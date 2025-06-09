@@ -791,57 +791,80 @@ const updateProduct = debounce(async (continueEditing = false) => {
       updateData.hasVariants = form.value.hasVariants
     }
 
+    // Improved variants handling
     if (Array.isArray(form.value.variants)) {
       console.log(`Preparing ${form.value.variants.length} variants for update`);
       
       updateData.variants = form.value.variants.map(variant => {
-        // Đảm bảo giá trị số được chuyển đổi đúng
-        const variantPrice = variant.price === null ? null : 
-          (typeof variant.price === 'string' ? parseFloat(variant.price) : variant.price);
+        // Convert and validate numeric values
+        const variantPrice = variant.price === null || variant.price === undefined ? null : 
+          (typeof variant.price === 'string' ? parseFloat(variant.price) || null : Number(variant.price));
           
-        const variantComparePrice = variant.comparePrice === null ? null : 
-          (typeof variant.comparePrice === 'string' ? parseFloat(variant.comparePrice) : variant.comparePrice);
+        const variantComparePrice = variant.comparePrice === null || variant.comparePrice === undefined ? null : 
+          (typeof variant.comparePrice === 'string' ? parseFloat(variant.comparePrice) || null : Number(variant.comparePrice));
           
-        const variantQuantity = typeof variant.quantity === 'number' ? variant.quantity : 
-                              (typeof variant.stock === 'number' ? variant.stock : 0);
+        // Use quantity as primary source, fallback to stock
+        let variantQuantity = 0;
+        if (variant.quantity !== undefined && variant.quantity !== null) {
+          variantQuantity = typeof variant.quantity === 'number' ? variant.quantity : parseInt(String(variant.quantity)) || 0;
+        } else if (variant.stock !== undefined && variant.stock !== null) {
+          variantQuantity = typeof variant.stock === 'number' ? variant.stock : parseInt(String(variant.stock)) || 0;
+        }
         
         console.log(`Preparing variant ${variant.id || 'new'}: Price=${variantPrice}, ComparePrice=${variantComparePrice}, Quantity=${variantQuantity}`);
         
-        // Prepare data for variant API
+        // Prepare data for variant API with all required fields
         const variantData: any = {
-          id: variant.id,
-          sku: variant.sku,
+          sku: variant.sku || '',
           price: variantPrice,
           comparePrice: variantComparePrice,
           quantity: variantQuantity,
-          published: variant.published !== undefined ? variant.published : true,
-          isFeatured: variant.isFeatured || false,
-          isNew: variant.isNew || false,
-          isSale: !!(variantComparePrice && variantPrice && variantComparePrice > variantPrice),
-          gallery: variant.gallery || [],
+          published: variant.published !== undefined ? Boolean(variant.published) : true,
+          isFeatured: Boolean(variant.isFeatured),
+          isNew: Boolean(variant.isNew),
+          isSale: Boolean(variantComparePrice && variantPrice && variantComparePrice > variantPrice),
+          gallery: Array.isArray(variant.gallery) ? variant.gallery : [],
           thumbnail: variant.thumbnail || '',
           options: variant.options || {}
         };
 
-        // Process translations
-        if (variant.options) {
+        // Add ID only for existing variants
+        if (variant.id) {
+          variantData.id = variant.id;
+        }
+
+        // Process translations for variants
+        const variantTranslations = [];
+        
+        // First, try to get name from variant.name
+        if (variant.name) {
+          variantTranslations.push({
+            locale: selectedLanguage.value,
+            name: variant.name
+          });
+        }
+        // Fallback to options if name is not available
+        else if (variant.options) {
           const optionName = selectedLanguage.value === 'vi' ? 'Loại' : 'Type';
-          const optionValue = variant.options[optionName] || variant.name;
+          const optionValue = variant.options[optionName];
 
           if (optionValue) {
-            variantData.translations = [
-              {
-                locale: selectedLanguage.value,
-                name: optionValue
-              }
-            ];
+            variantTranslations.push({
+              locale: selectedLanguage.value,
+              name: optionValue
+            });
           }
+        }
+        
+        if (variantTranslations.length > 0) {
+          variantData.translations = variantTranslations;
         }
 
         return variantData;
       });
       
       console.log(`Prepared ${updateData.variants.length} variants for API request`);
+      console.log("Sample variant data:", updateData.variants[0]);
     }
 
     if (typeof form.value.trackInventory === 'boolean') {
@@ -860,12 +883,11 @@ const updateProduct = debounce(async (continueEditing = false) => {
       updateData.allowBackorders = form.value.allowBackorders
     }
 
-    // Log toàn bộ dữ liệu trước khi gửi đi
-    console.log("Sending update request for product", route.params.id);
-    if (updateData.variants && updateData.variants.length > 0) {
-      console.log(`Sending ${updateData.variants.length} variants in update request`);
-      console.log("First variant:", updateData.variants[0]);
-    }
+    // Log entire update data for debugging
+    console.log("Final update data being sent to API:", {
+      ...updateData,
+      variants: updateData.variants ? `${updateData.variants.length} variants` : 'no variants'
+    });
 
     await trpc.admin.products.updateProduct.mutate({
       id: Number(route.params.id),
@@ -879,23 +901,28 @@ const updateProduct = debounce(async (continueEditing = false) => {
     if (!continueEditing) {
       router.push('/products');
     } else {
-      // Only refresh data when really necessary
+      // Refresh data to get latest state from backend
       await fetchProduct();
     }
   } catch (error: any) {
     console.error('Failed to update product:', error);
     
-    // Display error message with current language
+    // Display detailed error message
     if (process.client) {
       let errorMessage = `[${selectedLanguage.value}] `
       
-      // Handle tRPC error
+      // Handle tRPC error with better details
       if (error.cause) {
         errorMessage += error.cause
       } else if (error.message) {
         errorMessage += error.message
       } else {
         errorMessage += t('products.updateError')
+      }
+      
+      // Additional context for variants errors
+      if (error.message && error.message.includes('variant')) {
+        errorMessage += ` - Kiểm tra lại thông tin variants (SKU, giá, số lượng)`;
       }
       
       toast.error(errorMessage, 8000);
@@ -969,29 +996,65 @@ onBeforeUnmount(() => {
   saveAndContinue.value = false;
 });
 
-// Watch cho form.variants để log khi thay đổi
-watch(() => form.value.variants, (newVariants) => {
-  console.log("[id].vue detected change in form.variants:", 
-    newVariants.map(v => ({
-      id: v.id, 
-      price: v.price, 
-      comparePrice: v.comparePrice,
-      stock: v.stock,
-      quantity: v.quantity
-    }))
-  );
+// Watch cho form.variants để log khi thay đổi - cải thiện logging
+watch(() => form.value.variants, (newVariants, oldVariants) => {
+  console.log("[id].vue variants changed:");
+  console.log("  Old length:", oldVariants?.length || 0);
+  console.log("  New length:", newVariants?.length || 0);
+  
+  if (newVariants && newVariants.length > 0) {
+    console.log("  Sample new variant:", {
+      id: newVariants[0].id,
+      name: newVariants[0].name,
+      sku: newVariants[0].sku,
+      price: newVariants[0].price,
+      comparePrice: newVariants[0].comparePrice,
+      stock: newVariants[0].stock,
+      quantity: newVariants[0].quantity,
+      options: newVariants[0].options
+    });
+  }
+  
+  // Count new vs existing variants
+  const newVariantsCount = newVariants?.filter(v => !v.id).length || 0;
+  const existingVariantsCount = newVariants?.filter(v => v.id).length || 0;
+  console.log(`  New variants: ${newVariantsCount}, Existing variants: ${existingVariantsCount}`);
 }, { deep: true });
 
 // Hàm xử lý khi variants được cập nhật từ component ProductVariants
 const handleVariantsUpdate = (updatedVariants: ProductVariant[]) => {
   console.log("handleVariantsUpdate called with", updatedVariants.length, "variants");
   
-  // Sử dụng deep clone để đảm bảo không có tham chiếu chung
-  form.value.variants = JSON.parse(JSON.stringify(updatedVariants));
+  // Validate variants data before updating
+  const validatedVariants = updatedVariants.map(variant => {
+    // Ensure required fields are present for new variants
+    const validatedVariant = {
+      ...variant,
+      sku: variant.sku || '',
+      price: variant.price !== undefined ? variant.price : null,
+      comparePrice: variant.comparePrice !== undefined ? variant.comparePrice : null,
+      quantity: variant.quantity !== undefined ? variant.quantity : (variant.stock !== undefined ? variant.stock : 0),
+      published: variant.published !== undefined ? variant.published : true,
+      isFeatured: variant.isFeatured !== undefined ? variant.isFeatured : false,
+      isNew: variant.isNew !== undefined ? variant.isNew : false,
+      isSale: variant.isSale !== undefined ? variant.isSale : false,
+      gallery: Array.isArray(variant.gallery) ? variant.gallery : [],
+      thumbnail: variant.thumbnail || '',
+      options: variant.options || {},
+    };
+    
+    // Sync stock and quantity
+    if (validatedVariant.stock !== undefined && validatedVariant.quantity !== validatedVariant.stock) {
+      validatedVariant.quantity = validatedVariant.stock;
+    }
+    
+    return validatedVariant;
+  });
   
-  // Thêm log để debug
-  console.log("form.variants updated to", form.value.variants.length, "variants");
-  console.log("Sample variant data:", form.value.variants[0] || "No variants");
+  // Update form.variants
+  form.value.variants = validatedVariants;
+  
+  console.log("form.variants updated with validated data:", form.value.variants.length, "variants");
 };
 </script>
 

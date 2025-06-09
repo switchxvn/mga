@@ -98,7 +98,19 @@
     "checkout": "Thanh toán",
     "continueShopping": "Tiếp tục mua sắm",
     "viewCart": "Xem giỏ hàng",
-    "disabled": "Tính năng giỏ hàng hiện tại đã bị tắt"
+    "disabled": "Tính năng giỏ hàng hiện tại đã bị tắt",
+    "confirmRemove": {
+      "title": "Xác nhận xóa sản phẩm",
+      "message": "Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?",
+      "confirm": "Xóa",
+      "cancel": "Hủy"
+    },
+    "confirmClear": {
+      "title": "Xác nhận xóa tất cả",
+      "message": "Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng?",
+      "confirm": "Xóa tất cả",
+      "cancel": "Hủy"
+    }
   },
   "validation": {
     "required": "Trường này là bắt buộc",

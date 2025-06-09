@@ -1,21 +1,42 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useCart } from '~/composables/useCart';
-import { useLocalization } from '~/composables/useLocalization';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-vue-next';
+import { Trash2, ShoppingBag, ArrowRight } from 'lucide-vue-next';
+import { useCartPage } from '~/composables/useCartPage';
+import ConfirmDialog from '~/components/common/ConfirmDialog.vue';
+import CartQuantityControls from '~/components/cart/CartQuantityControls.vue';
 
-const { t } = useLocalization();
-const { 
-  cartItems, 
-  cartSummary, 
-  isLoading, 
-  error, 
-  updateCartItem, 
-  removeFromCart, 
-  clearCart,
+const {
+  // State
+  cartItems,
+  cartSummary,
+  isLoading,
+  error,
+  isProcessing,
   isCartEnabled,
-  initialize
-} = useCart();
+  
+  // Computed
+  isEmpty,
+  formattedSubtotal,
+  formattedDiscount,
+  formattedTotal,
+  
+  // Methods
+  formatPrice,
+  getProductTitle,
+  getItemTotal,
+  getItemDiscount,
+  handleQuantityChange,
+  handleRemoveItem,
+  handleClearCart,
+  
+  // Confirm dialog
+  isConfirmVisible,
+  confirmOptions,
+  confirm,
+  cancel,
+  
+  // Utils
+  t
+} = useCartPage();
 
 // Page metadata
 useHead({
@@ -24,83 +45,6 @@ useHead({
     { name: 'description', content: t('cart.description') }
   ]
 });
-
-const isProcessing = ref(false);
-
-// Force initialize cart when page loads
-onMounted(async () => {
-  console.log('🛒 Cart page mounted, ensuring cart is initialized...');
-  try {
-    await initialize();
-    console.log('🛒 Cart initialized, current items:', cartItems);
-    console.log('🛒 Cart summary:', cartSummary);
-  } catch (error) {
-    console.error('🛒 Error initializing cart:', error);
-  }
-});
-
-// Computed properties
-const isEmpty = computed(() => !cartItems || cartItems.length === 0);
-
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price);
-};
-
-const formattedSubtotal = computed(() => formatPrice(cartSummary?.subtotal || 0));
-const formattedDiscount = computed(() => formatPrice(cartSummary?.totalDiscount || 0));
-const formattedTotal = computed(() => formatPrice(cartSummary?.total || 0));
-
-// Get product title with locale
-const getProductTitle = (item: any) => {
-  const translation = item.product?.translations?.find((t: any) => t.locale === 'vi') ||
-                     item.product?.translations?.[0];
-  return translation?.title || item.product?.title || 'Unknown Product';
-};
-
-// Handle quantity change
-const handleQuantityChange = async (itemId: number, newQuantity: number) => {
-  if (isProcessing.value || newQuantity < 1) return;
-  
-  isProcessing.value = true;
-  try {
-    await updateCartItem(itemId, newQuantity);
-  } catch (error) {
-    console.error('Error updating quantity:', error);
-  } finally {
-    isProcessing.value = false;
-  }
-};
-
-// Handle item removal
-const handleRemoveItem = async (itemId: number) => {
-  if (isProcessing.value) return;
-  
-  isProcessing.value = true;
-  try {
-    await removeFromCart(itemId);
-  } catch (error) {
-    console.error('Error removing item:', error);
-  } finally {
-    isProcessing.value = false;
-  }
-};
-
-// Handle clear cart
-const handleClearCart = async () => {
-  if (isProcessing.value || !confirm(t('cart.confirmClear'))) return;
-  
-  isProcessing.value = true;
-  try {
-    await clearCart();
-  } catch (error) {
-    console.error('Error clearing cart:', error);
-  } finally {
-    isProcessing.value = false;
-  }
-};
 </script>
 
 <template>
@@ -199,7 +143,7 @@ const handleClearCart = async () => {
                   </div>
 
                   <!-- Price Display -->
-                  <div class="flex items-center gap-4">
+                  <div class="flex items-center gap-2 mb-2">
                     <div v-if="item.discountPercent > 0" class="flex items-center gap-2">
                       <span class="text-lg font-semibold text-gray-900 dark:text-white">
                         {{ formatPrice(item.finalPrice) }}
@@ -207,7 +151,7 @@ const handleClearCart = async () => {
                       <span class="text-sm text-gray-500 line-through">
                         {{ formatPrice(item.unitPrice) }}
                       </span>
-                      <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                      <span class="text-xs bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400 px-1.5 py-0.5 rounded">
                         -{{ item.discountPercent }}%
                       </span>
                     </div>
@@ -215,41 +159,33 @@ const handleClearCart = async () => {
                       {{ formatPrice(item.unitPrice) }}
                     </div>
                   </div>
+
+                  <!-- Discount Amount (if any) -->
+                  <div v-if="getItemDiscount(item) > 0" class="text-sm text-green-600 dark:text-green-400">
+                    {{ t('cart.saved') }}: {{ formatPrice(getItemDiscount(item)) }}
+                  </div>
                 </div>
 
                 <!-- Quantity & Actions -->
                 <div class="flex flex-col items-end gap-3">
                   <!-- Quantity Controls -->
-                  <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg">
-                    <button
-                      @click="handleQuantityChange(item.id, item.quantity - 1)"
-                      :disabled="item.quantity <= 1 || isProcessing"
-                      class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Minus class="w-4 h-4" />
-                    </button>
-                    
-                    <span class="px-4 py-2 min-w-[3rem] text-center font-medium">
-                      {{ item.quantity }}
-                    </span>
-                    
-                    <button
-                      @click="handleQuantityChange(item.id, item.quantity + 1)"
-                      :disabled="isProcessing"
-                      class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
-                    >
-                      <Plus class="w-4 h-4" />
-                    </button>
+                  <div @click.stop>
+                    <CartQuantityControls
+                      :quantity="item.quantity"
+                      :is-processing="isProcessing"
+                      size="md"
+                      @change="(newQuantity) => handleQuantityChange(item.id, newQuantity)"
+                    />
                   </div>
 
                   <!-- Item Total -->
                   <div class="text-lg font-semibold text-gray-900 dark:text-white">
-                    {{ formatPrice(item.finalPrice * item.quantity) }}
+                    {{ formatPrice(getItemTotal(item)) }}
                   </div>
 
                   <!-- Remove Button -->
                   <button
-                    @click="handleRemoveItem(item.id)"
+                    @click.stop="handleRemoveItem(item.id)"
                     :disabled="isProcessing"
                     class="text-red-600 hover:text-red-700 disabled:opacity-50 p-1 transition-colors"
                     :title="t('cart.removeItem')"
@@ -307,6 +243,18 @@ const handleClearCart = async () => {
         </div>
       </div>
     </div>
+
+    <!-- Confirmation Dialog -->
+    <ConfirmDialog
+      :is-visible="isConfirmVisible"
+      :title="confirmOptions.title"
+      :message="confirmOptions.message"
+      :confirm-text="confirmOptions.confirmText"
+      :cancel-text="confirmOptions.cancelText"
+      :variant="confirmOptions.variant"
+      @confirm="confirm"
+      @cancel="cancel"
+    />
   </div>
 </template>
 
