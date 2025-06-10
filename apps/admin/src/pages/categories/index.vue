@@ -59,7 +59,11 @@ const getIconComponent = (iconName: string | undefined | null) => {
 
 // These functions are provided by Nuxt at runtime
 // @ts-ignore
-const definePageMeta = (meta: any) => {}; 
+const definePageMeta = (meta: any) => {};
+
+definePageMeta({
+  middleware: ["auth"],
+}); 
 // @ts-ignore
 const useHead = (head: any) => {};
 // @ts-ignore

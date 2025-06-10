@@ -138,14 +138,7 @@ onMounted(() => {
     try {
       const isAuthenticated = await auth.checkAuth();
       
-      // Reload user from store after auth check
-      if (isAuthenticated && !user.value) {
-        try {
-          await userStore.fetchUser();
-        } catch (error) {
-          console.error('SidebarNavigation: Failed to fetch user:', error);
-        }
-      }
+      // User data will be loaded by useAuth.checkAuth() automatically
       
       // Chỉ tải menu khi đã xác thực
       if (isAuthenticated) {
@@ -188,8 +181,11 @@ onMounted(() => {
   <!-- Navigation Links -->
   <div>
     <!-- Loading state for menu -->
-    <div v-if="isLoadingMenu" class="animate-pulse space-y-4 px-4 py-2">
-      <div v-for="i in 5" :key="i" class="h-8 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
+    <div v-if="isLoadingMenu" class="animate-pulse space-y-2 px-4 py-2">
+      <div v-for="i in 7" :key="i" class="flex items-center space-x-3">
+        <div class="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
+      </div>
     </div>
     
     <!-- Error state -->
@@ -221,7 +217,7 @@ onMounted(() => {
           >
             <component 
               :is="item.icon" 
-              class="mr-3 h-5 w-5" 
+              class="mr-3 h-5 w-5 flex-shrink-0" 
               :class="isActive(item.to) ? 'text-primary-600 dark:text-primary-400' : ''"
             />
             {{ item.label }}
@@ -234,7 +230,7 @@ onMounted(() => {
           >
             <component 
               :is="item.icon" 
-              class="mr-3 h-5 w-5"
+              class="mr-3 h-5 w-5 flex-shrink-0"
             />
             {{ item.label }}
           </div>
@@ -247,7 +243,7 @@ onMounted(() => {
             @click="() => { if (item.isOpen) item.isOpen.value = !item.isOpen.value }"
           >
             <div class="flex items-center">
-              <component :is="item.icon" class="mr-3 h-5 w-5" />
+              <component :is="item.icon" class="mr-3 h-5 w-5 flex-shrink-0" />
               {{ item.label }}
             </div>
             <ChevronDown 
@@ -272,7 +268,7 @@ onMounted(() => {
               >
                 <component 
                   :is="child.icon" 
-                  class="mr-3 h-4 w-4" 
+                  class="mr-3 h-4 w-4 flex-shrink-0" 
                   :class="isActive(child.to) ? 'text-primary-600 dark:text-primary-400' : ''"
                 />
                 {{ child.label }}

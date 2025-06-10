@@ -23,7 +23,7 @@ const definePageMeta = (meta: any) => {};
 const useHead = (head: any) => {};
 
 definePageMeta({
-  middleware: ["auth", "permission"],
+  middleware: ["auth"],
 });
 
 const { t } = useI18n();
@@ -77,14 +77,9 @@ async function handleCalculateStats() {
 }
 
 onMounted(async () => {
+  console.log('📊 Dashboard: Component mounted, loading data...')
   try {
-    // Check authentication first
-    const isAuthenticated = await checkAuth();
-    if (!isAuthenticated) {
-      router.push("/auth/login");
-      return;
-    }
-
+    // Authentication is handled by layout and middleware
     await loadDashboardData();
   } catch (err: any) {
     error.value = err.message || "Failed to initialize dashboard";
