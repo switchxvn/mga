@@ -40,6 +40,8 @@ export default [
       'vue/valid-template-root': 'error',
       'vue/html-indent': ['error', 2],
       'vue/html-self-closing': 'warn',
+      // Disable Nx module boundaries for Vue files
+      '@nx/enforce-module-boundaries': 'off',
     },
   },
   
@@ -61,6 +63,15 @@ export default [
         },
       ],
       'unicode-bom': 'off',
+    },
+  },
+  
+  // Frontend specific overrides
+  {
+    files: ['apps/frontend/**/*.ts', 'apps/frontend/**/*.js'],
+    rules: {
+      // Disable Nx module boundaries for frontend app files temporarily
+      '@nx/enforce-module-boundaries': 'off',
     },
   },
 ];

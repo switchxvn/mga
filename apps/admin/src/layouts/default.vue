@@ -1,45 +1,33 @@
 <script setup lang="ts">
 import type { DropdownItem } from '@nuxt/ui/dist/runtime/types'
 import { useUserStore } from '@/stores/useUserStore'
-import { storeToRefs } from 'pinia'
 import { 
   Moon, 
   Sun, 
-  Home, 
-  Settings, 
-  UserCircle, 
-  LogOut, 
-  ChevronDown, 
-  RotateCcw,
-  Globe
+  ChevronDown,
 } from 'lucide-vue-next'
 import { ref, computed, inject, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 // @ts-ignore
-import { useColorMode, useHead, navigateTo, useNuxtApp } from '#imports'
+import { useColorMode, useHead } from '#imports'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
-import { usePermissions } from '@/composables/usePermissions'
 import { useLocalization } from '@/composables/useLocalization'
 import SidebarNavigation from '@/components/common/SidebarNavigation.vue'
 import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
 
-// Minimal interfaces needed
-interface UserRole {
-  code: string;
-  name: string;
-}
-
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 const userStore = useUserStore()
-const { user, isLoading } = storeToRefs(userStore)
-const { checkAuth, user: authUser, logout } = useAuth()
-const { isSuperAdmin, hasPermission } = usePermissions()
+const { checkAuth, logout } = useAuth()
 const route = useRoute()
 const router = useRouter()
 const currentPath = ref(route.path)
 const { t } = useI18n()
+
+// Computed for reactivity
+const isUserLoaded = computed(() => userStore.isAuthenticated && !!userStore.user)
+const currentUser = computed(() => userStore.user)
 
 // Localization
 const { locale, locales, currentLocale, switchLanguage } = useLocalization()
@@ -47,66 +35,13 @@ const { locale, locales, currentLocale, switchLanguage } = useLocalization()
 // Try to get injected page title from child components
 const injectedTitle = inject('pageTitle', ref(''))
 
-// Computed để kết hợp thông tin từ cả hai nguồn
-const combinedUser = computed(() => {
-  // Ưu tiên dữ liệu từ useUserStore
-  if (user.value) return user.value;
-  
-  // Sử dụng dữ liệu từ useAuth nếu userStore trống
-  if (authUser.value) {
-    console.log('Using auth user:', authUser.value);
-    return {
-      email: authUser.value.email,
-      profile: {
-        firstName: authUser.value.name,
-        lastName: ''
-      }
-    };
-  }
-  
-  // Không có thông tin người dùng
-  return null;
-});
-
-// Hiển thị tên hoặc chữ cái đầu tiên
-const displayName = computed(() => {
-  if (!combinedUser.value) return 'U';
-  
-  if (combinedUser.value.profile?.firstName) {
-    return combinedUser.value.profile.firstName;
-  }
-  
-  return combinedUser.value.email?.split('@')[0] || 'U';
-});
-
-// Lấy email của người dùng
-const userEmail = computed(() => {
-  if (!combinedUser.value) return '';
-  return combinedUser.value.email || '';
-});
-
-// Chữ cái đầu tiên cho avatar
-const avatarInitial = computed(() => {
-  if (!combinedUser.value) return 'U';
-  
-  if (combinedUser.value.profile?.firstName) {
-    return combinedUser.value.profile.firstName[0].toUpperCase();
-  }
-  
-  if (combinedUser.value.email) {
-    return combinedUser.value.email[0].toUpperCase();
-  }
-  
-  return 'U';
-});
-
 // Get current section from route
 const getCurrentSection = () => {
   const path = currentPath.value
   // If we have an injected title from a child component, use it
   if (injectedTitle.value) return injectedTitle.value
   
-  // Thêm handling cho các trường hợp cụ thể
+  // Handle specific cases
   if (path.includes('/users/create')) return 'Create User'
   if (path.includes('/users/edit/')) return 'Edit User'
   if (path.includes('/roles/create')) return 'Create Role'
@@ -116,7 +51,6 @@ const getCurrentSection = () => {
   if (path.includes('/reviews/add')) return 'Add Review'
   if (path.includes('/reviews/edit/')) return 'Edit Review'
   
-  // Get the current route label from navigation
   return 'Admin Dashboard'
 }
 
@@ -125,7 +59,6 @@ const pageTitle = computed(() => {
   const section = getCurrentSection()
   const adminPageSuffix = t('common.adminPageSuffix')
   
-  // Nếu section đã bao gồm hậu tố, trả về nguyên bản
   if (section.includes(adminPageSuffix)) return section
   
   return section !== 'Dashboard' ? `${section} ${adminPageSuffix}` : `Dashboard ${adminPageSuffix}`
@@ -138,29 +71,41 @@ useHead(() => ({
 
 // Watch for route changes
 onMounted(async () => {
-  currentPath.value = route.path;
+  currentPath.value = route.path
   
-  // Kiểm tra xác thực khi component được tải
   try {
-    const isAuthenticated = await checkAuth();
-    console.log('Default layout: authentication check:', isAuthenticated);
+    console.log('🏠 Layout: Starting authentication verification')
+    const isAuthenticated = await checkAuth()
+    
+    if (!isAuthenticated) {
+      console.log('❌ Layout: Authentication failed, redirecting to login')
+      // Use window.location for force reload
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login'
+        return
+      }
+    } else {
+      console.log('✅ Layout: Authentication successful, user loaded')
+    }
   } catch (error) {
-    console.error('Authentication check failed:', error);
+    console.error('❌ Layout: Authentication check failed:', error)
+    // Redirect on auth failure
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login'
+      return
+    }
   }
   
-  // Listen to route changes
   router.afterEach((to) => {
-    currentPath.value = to.path;
-  });
+    currentPath.value = to.path
+  })
 })
 
 const handleLogout = async () => {
   try {
-    // Gọi hàm logout từ useAuth để xử lý đăng xuất đúng cách
-    // Hàm này sẽ tự động chuyển hướng đến trang đăng nhập
-    await logout();
+    await logout()
   } catch (error) {
-    console.error('Logout failed:', error);
+    console.error('Logout failed:', error)
   }
 }
 
@@ -177,14 +122,12 @@ const userMenuItems: DropdownItem[][] = [[
   }
 ]]
 
-// Theo dõi trạng thái mở của dropdown menu
+// User menu dropdown state
 const isUserMenuOpen = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 const userDropdownButtonRef = ref<HTMLElement | null>(null)
 
-// Đóng dropdown khi click ra ngoài
 const handleClickOutside = (event: MouseEvent) => {
-  // Bỏ qua nếu click vào dropdown button
   if (userDropdownButtonRef.value && userDropdownButtonRef.value.contains(event.target as Node)) {
     return
   }
@@ -194,18 +137,16 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
-// Chuyển đổi trạng thái dropdown
 const toggleUserMenu = (event: MouseEvent) => {
-  event.stopPropagation() // Ngăn sự kiện lan tỏa để không kích hoạt handleClickOutside
+  event.stopPropagation()
   isUserMenuOpen.value = !isUserMenuOpen.value
 }
 
-// Locale dropdown
+// Locale dropdown state
 const isLocaleMenuOpen = ref(false)
 const localeMenuRef = ref<HTMLElement | null>(null)
 const localeDropdownButtonRef = ref<HTMLElement | null>(null)
 
-// Đóng locale dropdown khi click ra ngoài
 const handleLocaleClickOutside = (event: MouseEvent) => {
   if (localeDropdownButtonRef.value && localeDropdownButtonRef.value.contains(event.target as Node)) {
     return
@@ -216,32 +157,27 @@ const handleLocaleClickOutside = (event: MouseEvent) => {
   }
 }
 
-// Chuyển đổi trạng thái locale dropdown
 const toggleLocaleMenu = (event: MouseEvent) => {
   event.stopPropagation()
   isLocaleMenuOpen.value = !isLocaleMenuOpen.value
 }
 
-// Xử lý thay đổi ngôn ngữ
 const handleLocaleChange = (localeCode: string) => {
   switchLanguage(localeCode)
   isLocaleMenuOpen.value = false
 }
 
-// Thêm/xóa event listener khi menu mở/đóng
+// Event listeners for dropdowns
 watch(isUserMenuOpen, (newVal) => {
   if (newVal) {
-    // Đăng ký sự kiện click outside
     setTimeout(() => {
       window.addEventListener('click', handleClickOutside)
     }, 0)
   } else {
-    // Xóa sự kiện nếu menu đóng
     window.removeEventListener('click', handleClickOutside)
   }
 })
 
-// Thêm/xóa event listener khi locale menu mở/đóng
 watch(isLocaleMenuOpen, (newVal) => {
   if (newVal) {
     setTimeout(() => {
@@ -252,7 +188,6 @@ watch(isLocaleMenuOpen, (newVal) => {
   }
 })
 
-// Xóa event listener khi component bị phá hủy
 onUnmounted(() => {
   window.removeEventListener('click', handleClickOutside)
   window.removeEventListener('click', handleLocaleClickOutside)
@@ -262,8 +197,8 @@ onUnmounted(() => {
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col">
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
-      <div class="flex items-center justify-between px-4 py-2">
+    <header class="bg-white dark:bg-gray-800 shadow sticky top-0 z-10 h-16">
+      <div class="flex items-center justify-between px-4 py-2 h-full">
         <div class="flex items-center">
           <NuxtLink to="/" class="flex items-center text-gray-800 dark:text-white">
             <span class="text-xl font-semibold ml-2">Admin Dashboard</span>
@@ -294,22 +229,30 @@ onUnmounted(() => {
               ref="userDropdownButtonRef"
               @click="toggleUserMenu"
             >
-              <div v-if="combinedUser" class="flex items-center">
+              <!-- User info with loading state -->
+              <div v-if="userStore.user" class="flex items-center">
                 <div class="relative">
                   <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center uppercase">
-                    {{ avatarInitial }}
+                    {{ userStore.avatarInitial }}
                   </div>
                   <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-white"></span>
                 </div>
                 <div class="ml-2 hidden sm:block">
                   <div class="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    {{ displayName }}
-                    <span v-if="isSuperAdmin" class="ml-1 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded-full">SUPER</span>
+                    {{ userStore.displayName }}
+                    <span v-if="userStore.isSuperAdmin" class="ml-1 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded-full">SUPER</span>
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ userEmail }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ userStore.user?.email || '' }}</div>
                 </div>
               </div>
-              <div v-else class="w-8 h-8 rounded-full bg-gray-300 animate-pulse"></div>
+              <!-- Loading state -->
+              <div v-else class="flex items-center">
+                <div class="w-8 h-8 rounded-full bg-gray-300 animate-pulse"></div>
+                <div class="ml-2 hidden sm:block">
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1 w-20"></div>
+                  <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24"></div>
+                </div>
+              </div>
               <ChevronDown class="w-4 h-4 ml-1 text-gray-500" />
             </div>
           </UDropdown>
@@ -320,7 +263,7 @@ onUnmounted(() => {
     <!-- Main Content -->
     <div class="flex flex-1 overflow-hidden">
       <!-- Sidebar -->
-      <aside class="w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto hidden md:block">
+      <aside class="w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto hidden md:block flex-shrink-0">
         <div class="py-4">
           <div class="px-4 mb-4">
             <span class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">{{ t('Main Navigation') }}</span>
@@ -345,4 +288,20 @@ onUnmounted(() => {
 
 <style scoped>
 /* Remove router-link-active styling */
+
+/* Smooth loading transitions */
+.user-info-container {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Prevent flash of unstyled content */
+.header-loading {
+  opacity: 0;
+  animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 </style> 

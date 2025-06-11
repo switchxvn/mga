@@ -1339,5 +1339,12 @@
       "admin": "Administrators",
       "customer": "Customers"
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage system settings and configuration",
+    "access_denied": "Access Denied",
+    "access_denied_message": "You don't have sufficient permissions to access the settings page. Contact your administrator for access.",
+    "no_permissions": "You don't have permission to access these settings"
   }
 } 

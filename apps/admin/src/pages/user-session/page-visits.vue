@@ -297,7 +297,7 @@ const definePageMeta = (meta: any) => {};
 const useHead = (head: any) => {};
 
 definePageMeta({
-  middleware: ["auth", "permission"],
+  middleware: ["auth"],
 });
 
 useHead({

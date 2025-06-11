@@ -1339,5 +1339,12 @@
       "admin": "Quản trị viên",
       "customer": "Khách hàng"
     }
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "description": "Quản lý cài đặt hệ thống và cấu hình",
+    "access_denied": "Truy cập bị từ chối",
+    "access_denied_message": "Bạn không có đủ quyền để truy cập trang cài đặt. Vui lòng liên hệ quản trị viên để được cấp quyền.",
+    "no_permissions": "Bạn không có quyền truy cập các cài đặt này"
   }
 } 

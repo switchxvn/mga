@@ -431,12 +431,18 @@ const addValue = (optionIndex: number) => {
   if (option.newValue && !option.values.includes(option.newValue)) {
     option.values.push(option.newValue)
     option.newValue = ''
+    
+    // Recalculate combinations and variants when values change
+    recalculateVariantCombinations()
   }
 }
 
 // Remove value from option
 const removeValue = (optionIndex: number, valueIndex: number) => {
   options.value[optionIndex].values.splice(valueIndex, 1)
+  
+  // Recalculate combinations and variants when values change
+  recalculateVariantCombinations()
 }
 
 // Generate all possible combinations of option values
@@ -501,118 +507,154 @@ const generatedVariants = computed(() => {
   });
 });
 
-// Computed để hiển thị variants (từ dynamic combinations hoặc từ props)
+// Computed để hiển thị variants - đơn giản hóa logic
 const displayVariants = computed(() => {
-  // Nếu có options, sử dụng variants từ combinations
-  if (options.value.length > 0) {
-    return generatedVariants.value;
-  }
-  
-  // Nếu không có options nhưng có modelValue, trả về modelValue
+  // Always return variants.value for consistency
   return variants.value;
 });
 
-// Event handlers cho các thao tác trên form
+// Event handlers cho các thao tác trên form - cải thiện để đảm bảo consistency
 const onPriceInput = (variant: ProductVariant, event: Event) => {
-  // Log trước thay đổi
   console.log(`Updating variant price: ${variant.id}, current: ${variant.price}, new: ${(event.target as HTMLInputElement).value}`);
   
   const target = event.target as HTMLInputElement;
   const newPrice = target.value ? Number(target.value) : 0;
   
-  if (variant.id) {
-    // Cập nhật thông qua composable nếu đã có ID
-    updateVariantPrice(variant.id, newPrice);
-  } else {
-    // Cập nhật trực tiếp cho variants mới
-    variant.price = newPrice;
-    // Đảm bảo emit event để cập nhật form
-    emit('update:modelValue', [...variants.value]);
+  // Update variant in the variants array
+  const variantIndex = variants.value.findIndex(v => 
+    variant.id ? v.id === variant.id : 
+    (v.options && variant.options && 
+     Object.entries(variant.options).every(([key, value]) => v.options?.[key] === value))
+  );
+  
+  if (variantIndex !== -1) {
+    variants.value[variantIndex].price = newPrice;
+    
+    // Use composable for existing variants
+    if (variant.id) {
+      updateVariantPrice(variant.id, newPrice);
+    } else {
+      // Emit for new variants
+      emit('update:modelValue', [...variants.value]);
+    }
   }
 };
 
 const onComparePriceInput = (variant: ProductVariant, event: Event) => {
-  // Log trước thay đổi
   console.log(`Updating variant comparePrice: ${variant.id}, current: ${variant.comparePrice}, new: ${(event.target as HTMLInputElement).value}`);
   
   const target = event.target as HTMLInputElement;
   const newComparePrice = target.value ? Number(target.value) : null;
   
-  if (variant.id) {
-    // Cập nhật thông qua composable nếu đã có ID
-    updateVariantComparePrice(variant.id, newComparePrice);
-  } else {
-    // Cập nhật trực tiếp cho variants mới
-    variant.comparePrice = newComparePrice;
-    // Đảm bảo emit event để cập nhật form
-    emit('update:modelValue', [...variants.value]);
+  // Update variant in the variants array
+  const variantIndex = variants.value.findIndex(v => 
+    variant.id ? v.id === variant.id : 
+    (v.options && variant.options && 
+     Object.entries(variant.options).every(([key, value]) => v.options?.[key] === value))
+  );
+  
+  if (variantIndex !== -1) {
+    variants.value[variantIndex].comparePrice = newComparePrice;
+    
+    // Use composable for existing variants
+    if (variant.id) {
+      updateVariantComparePrice(variant.id, newComparePrice);
+    } else {
+      // Emit for new variants
+      emit('update:modelValue', [...variants.value]);
+    }
   }
 };
 
 const onSkuInput = (variant: ProductVariant, event: Event) => {
-  // Log trước thay đổi
   console.log(`Updating variant SKU: ${variant.id}, current: ${variant.sku}, new: ${(event.target as HTMLInputElement).value}`);
   
   const target = event.target as HTMLInputElement;
   
-  if (variant.id) {
-    // Cập nhật thông qua composable nếu đã có ID
-    updateVariantSku(variant.id, target.value);
-  } else {
-    // Cập nhật trực tiếp cho variants mới
-    variant.sku = target.value;
-    // Đảm bảo emit event để cập nhật form
-    emit('update:modelValue', [...variants.value]);
+  // Update variant in the variants array
+  const variantIndex = variants.value.findIndex(v => 
+    variant.id ? v.id === variant.id : 
+    (v.options && variant.options && 
+     Object.entries(variant.options).every(([key, value]) => v.options?.[key] === value))
+  );
+  
+  if (variantIndex !== -1) {
+    variants.value[variantIndex].sku = target.value;
+    
+    // Use composable for existing variants
+    if (variant.id) {
+      updateVariantSku(variant.id, target.value);
+    } else {
+      // Emit for new variants
+      emit('update:modelValue', [...variants.value]);
+    }
   }
 };
 
 const onStockInput = (variant: ProductVariant, event: Event) => {
-  // Log trước thay đổi
   console.log(`Updating variant stock: ${variant.id}, current: ${variant.stock}, new: ${(event.target as HTMLInputElement).value}`);
   
   const target = event.target as HTMLInputElement;
   const newStock = target.value ? Number(target.value) : 0;
   
-  if (variant.id) {
-    // Cập nhật thông qua composable nếu đã có ID
-    updateVariantStock(variant.id, newStock);
-  } else {
-    // Cập nhật trực tiếp cho variants mới
-    variant.stock = newStock;
-    variant.quantity = newStock; // Đồng bộ cả stock và quantity
-    // Đảm bảo emit event để cập nhật form
-    emit('update:modelValue', [...variants.value]);
+  // Update variant in the variants array
+  const variantIndex = variants.value.findIndex(v => 
+    variant.id ? v.id === variant.id : 
+    (v.options && variant.options && 
+     Object.entries(variant.options).every(([key, value]) => v.options?.[key] === value))
+  );
+  
+  if (variantIndex !== -1) {
+    variants.value[variantIndex].stock = newStock;
+    variants.value[variantIndex].quantity = newStock; // Sync quantity
+    
+    // Use composable for existing variants
+    if (variant.id) {
+      updateVariantStock(variant.id, newStock);
+    } else {
+      // Emit for new variants
+      emit('update:modelValue', [...variants.value]);
+    }
   }
 };
 
 const onToggleContactPrice = (variant: ProductVariant) => {
-  // Log trước thay đổi
   console.log(`Toggling contact price for variant: ${variant.id}, current price: ${variant.price}`);
   
-  if (variant.id) {
-    // Cập nhật thông qua composable nếu đã có ID
-    toggleContactPrice(variant.id);
-  } else {
-    // Cập nhật trực tiếp cho variants mới
-    if (variant.price === null) {
-      // Đang ở trạng thái "Giá liên hệ", chuyển về giá bình thường
-      variant.price = variant._tempPrice !== undefined ? variant._tempPrice : 0;
-      variant.comparePrice = variant._tempComparePrice !== undefined ? variant._tempComparePrice : null;
+  // Update variant in the variants array
+  const variantIndex = variants.value.findIndex(v => 
+    variant.id ? v.id === variant.id : 
+    (v.options && variant.options && 
+     Object.entries(variant.options).every(([key, value]) => v.options?.[key] === value))
+  );
+  
+  if (variantIndex !== -1) {
+    const currentVariant = variants.value[variantIndex];
+    
+    if (currentVariant.price === null) {
+      // Currently "Contact for price", switch to normal price
+      currentVariant.price = currentVariant._tempPrice !== undefined ? currentVariant._tempPrice : 0;
+      currentVariant.comparePrice = currentVariant._tempComparePrice !== undefined ? currentVariant._tempComparePrice : null;
       
-      // Xóa giá tạm
-      delete variant._tempPrice;
-      delete variant._tempComparePrice;
+      // Clear temp values
+      delete currentVariant._tempPrice;
+      delete currentVariant._tempComparePrice;
     } else {
-      // Đang có giá, chuyển sang "Giá liên hệ"
-      variant._tempPrice = variant.price;
-      variant._tempComparePrice = variant.comparePrice;
+      // Currently has price, switch to "Contact for price"
+      currentVariant._tempPrice = currentVariant.price;
+      currentVariant._tempComparePrice = currentVariant.comparePrice;
       
-      variant.price = null;
-      variant.comparePrice = null;
+      currentVariant.price = null;
+      currentVariant.comparePrice = null;
     }
     
-    // Đảm bảo emit event để cập nhật form
-    emit('update:modelValue', [...variants.value]);
+    // Use composable for existing variants
+    if (variant.id) {
+      toggleContactPrice(variant.id);
+    } else {
+      // Emit for new variants
+      emit('update:modelValue', [...variants.value]);
+    }
   }
 };
 
@@ -734,14 +776,56 @@ const getAdjustmentTypeClass = (type: string) => {
 
 // Sync variants with combinations
 const syncVariantsWithCombinations = () => {
-  // Cập nhật variants dựa trên các tổ hợp mới
   console.log('syncVariantsWithCombinations - Current variants:', variants.value.length);
   console.log('syncVariantsWithCombinations - Current combinations:', variantCombinations.value.length);
   
-  // Đồng bộ và emit event để thông báo thay đổi
+  // Create variants based on combinations
+  const newVariants = variantCombinations.value.map(combo => {
+    // Find existing variant with matching options
+    const existingVariant = variants.value.find(v => {
+      return v.options && Object.entries(combo).every(
+        ([key, value]) => v.options?.[key] === value
+      );
+    });
+
+    // Create variant name from combination
+    const name = Object.entries(combo)
+      .map(([_, value]) => `${value}`)
+      .join(' / ');
+
+    // If existing variant found, preserve its data
+    if (existingVariant) {
+      return {
+        ...existingVariant,
+        name, // Update name in case it changed
+        options: combo // Ensure options are current
+      };
+    }
+
+    // Create new variant with default values
+    return {
+      name,
+      sku: '',
+      price: 0,
+      comparePrice: null,
+      quantity: 0,
+      stock: 0,
+      published: true,
+      isFeatured: false,
+      isNew: false,
+      isSale: false,
+      gallery: [],
+      thumbnail: '',
+      options: combo
+    };
+  });
+
+  // Update variants
+  variants.value = newVariants;
+  
+  // Emit update to parent component
   nextTick(() => {
-    // Đảm bảo gửi thông báo cập nhật sau khi đồng bộ
-    console.log('Emitting update after syncing variants');
+    console.log('Emitting update after syncing variants:', variants.value.length, 'variants');
     emit('update:modelValue', [...variants.value]);
   });
 };
@@ -757,6 +841,38 @@ const notifyVariantsUpdated = () => {
   console.log('ProductVariants: Emitting update:modelValue with', variants.value.length, 'variants');
   emit('update:modelValue', deepClone(variants.value));
 };
+
+// Watch for options changes to regenerate combinations and variants
+watch(
+  () => options.value,
+  () => {
+    console.log('Options changed, recalculating combinations');
+    recalculateVariantCombinations();
+  },
+  { deep: true }
+);
+
+// Watch for hasVariants changes
+watch(
+  () => props.hasVariants,
+  (newHasVariants) => {
+    console.log('hasVariants changed to:', newHasVariants);
+    
+    if (!newHasVariants) {
+      // Clear variants when hasVariants is turned off
+      variants.value = [];
+      options.value = [];
+      variantCombinations.value = [];
+      emit('update:modelValue', []);
+    } else {
+      // Initialize variants when hasVariants is turned on
+      if (props.modelValue && props.modelValue.length > 0) {
+        processExistingVariants();
+        initializeVariants(props.modelValue);
+      }
+    }
+  }
+);
 
 // Expose functions to template
 defineExpose({
