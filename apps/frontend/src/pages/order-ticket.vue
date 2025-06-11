@@ -78,12 +78,10 @@ const translatedSections = computed(() => {
 
 const fetchData = async () => {
   try {
-    console.log('Fetching order ticket sections with locale:', locale.value);
     isLoading.value = true;
     error.value = null;
 
     const data = await trpc.orderTicketSection.getActiveSections.query(locale.value);
-    console.log('Received data:', data);
 
     if (!data || data.length === 0) {
       error.value = 'No active order ticket sections found';

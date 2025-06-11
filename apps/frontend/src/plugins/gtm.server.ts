@@ -21,7 +21,7 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       // Also provide it via nuxtApp for immediate access
       nuxtApp.provide('gtmId', gtmId)
 
-      console.log('GTM Server Plugin: GTM ID loaded from API:', gtmId)
+      
     } else {
       console.warn('GTM Server Plugin: No GTM ID found in settings')
     }

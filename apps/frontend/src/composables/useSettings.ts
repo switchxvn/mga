@@ -78,11 +78,8 @@ export function useSettings() {
       isLoading.value = true;
       isGlobalLoading.value = true;
       error.value = null;
-      console.log('Fetching public settings...');
-      
       // Gọi API tRPC
       const data = await trpc.settings.getPublicSettings.query();
-      console.log('Public settings from tRPC:', data);
       
       // Lưu vào bộ nhớ cache
       settings.value = { ...settings.value, ...data };
@@ -129,11 +126,8 @@ export function useSettings() {
     try {
       isLoading.value = true;
       error.value = null;
-      console.log(`Fetching public setting with key: ${key}`);
-      
       // Gọi API tRPC
       const setting = await trpc.settings.getPublicSettingByKey.query(key);
-      console.log(`Setting with key ${key} from tRPC:`, setting);
       
       // Lưu vào cache
       if (setting && setting.key) {
@@ -168,7 +162,7 @@ export function useSettings() {
       
       const setting = await getPublicSettingByKey(key);
       const value = setting ? setting.value : defaultValue;
-      console.log(`Value for setting ${key}:`, value);
+
       return value;
     } catch (err) {
       console.error(`Error getting value for setting ${key}:`, err);
@@ -186,7 +180,7 @@ export function useSettings() {
     try {
       const value = await getPublicSettingValueByKey(key, defaultValue ? 'true' : 'false');
       const enabled = value.toLowerCase() === 'true';
-      console.log(`Setting ${key} enabled:`, enabled);
+
       return enabled;
     } catch (err) {
       console.error(`Error checking if setting ${key} is enabled:`, err);
@@ -199,9 +193,7 @@ export function useSettings() {
    * @returns true nếu cho phép, false nếu không
    */
   const isAddToCartEnabled = async () => {
-    console.log('Checking if add to cart is enabled...');
     const enabled = await isSettingEnabled('enable_add_to_cart', true); // Mặc định là true
-    console.log('Add to cart enabled:', enabled);
     return enabled;
   };
   

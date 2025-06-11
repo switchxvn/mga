@@ -56,11 +56,8 @@ const themeSections = ref<ThemeSection[]>([]);
 // Fetch theme sections from API
 const fetchThemeSections = async () => {
   try {
-    console.log('[Theme API] Fetching theme sections for reviews page');
     // Gọi API với pageType được hỗ trợ
     const result = await trpc.theme.getActiveTheme.query();
-    
-    console.log('[Theme API] Response received:', result);
     
     // Extract sections from various possible response formats
     let extractedSections = [];
@@ -75,8 +72,6 @@ const fetchThemeSections = async () => {
       extractedSections = result.result.data.sections;
     }
     
-    console.log('[Theme API] Extracted sections:', extractedSections);
-    
     if (Array.isArray(extractedSections) && extractedSections.length > 0) {
       // Lọc chỉ giữ lại các sections phù hợp với trang reviews
       const reviewSections = extractedSections.filter(section => 
@@ -86,15 +81,12 @@ const fetchThemeSections = async () => {
       
       if (reviewSections.length > 0) {
         themeSections.value = reviewSections;
-        console.log('[Theme API] Review sections filtered:', themeSections.value.length);
         return true;
       } else {
-        console.log('[Theme API] No review-specific sections found, falling back to default');
         themeSections.value = defaultSections;
         return false;
       }
     } else {
-      console.log('[Theme API] No sections found in API response, falling back to default sections');
       themeSections.value = defaultSections;
       return false;
     }

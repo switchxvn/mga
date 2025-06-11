@@ -147,7 +147,7 @@ const fetchPosts = async () => {
       }
     });
 
-    console.log('Fetching posts with params:', queryParams);
+
 
     // Fetch posts
     const result = await trpc.post.byLocale.query(queryParams);
@@ -220,7 +220,7 @@ const transformPost = (post: any): Post => {
 
 // Handle filter change from sidebar
 const handleFilterChange = (newFilters: any) => {
-  console.log('Filter change from sidebar:', newFilters);
+
   
   // Update filters
   filters.search = newFilters.search || '';
@@ -270,7 +270,7 @@ const resetAllFilters = () => {
 
 // Handle page change
 const handlePageChange = (page: number) => {
-  console.log('Changing page to:', page);
+
   
   // Cập nhật URL trước
   const query = { ...route.query, page: String(page) };
@@ -293,7 +293,7 @@ watch(() => route.query.page, (newPage) => {
   if (newPage) {
     const pageNum = Number(newPage);
     if (!isNaN(pageNum)) {
-      console.log('Page changed in URL to:', pageNum);
+    
       fetchPosts();
     }
   }

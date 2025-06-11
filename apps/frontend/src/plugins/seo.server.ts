@@ -39,7 +39,7 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       if (seoData) {
         // Store in global state for middleware to use
         const seoState = useState(`seo-${path}`, () => seoData)
-        console.log('SEO Server Plugin: Preloaded SEO data for', path)
+
       }
     } catch (apiError) {
       console.warn('SEO Server Plugin: Failed to preload SEO data:', apiError)

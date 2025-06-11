@@ -76,18 +76,12 @@ const resolveFooterComponent = (componentName?: string) => {
 
 // Function to get component name based on section type and componentName
 const resolveComponent = (section: any) => {
-  console.log('Resolving component for section:', section);
-  console.log('Section type:', section.type);
-  console.log('Section componentName:', section.componentName);
-  
   if (section.componentName && components[section.componentName as keyof typeof components]) {
     const component = components[section.componentName as keyof typeof components];
-    console.log('Using component from componentName:', component.name);
     return component;
   }
   
   const component = getDefaultComponent(section.type);
-  console.log('Using default component for type:', section.type, component?.name);
   return component;
 };
 
@@ -127,7 +121,6 @@ const initSession = async () => {
     // Start hoặc update session trên backend
     if (isNewSession) {
       // Khởi tạo session mới với IP và country đã lấy được
-      console.log('Creating new session with IP:', ipData.ip, 'and country:', ipData.country);
       await trpc.userSession.startSession.mutate({
         sessionId: sessionId.value,
         ipAddress: ipData.ip,
@@ -220,9 +213,6 @@ onMounted(async () => {
       const activeTheme = await getActiveTheme({ pageType: PageType.COMMON });
       if (activeTheme) {
         theme.value = activeTheme;
-        console.log('Active theme loaded:', activeTheme);
-        console.log('Theme sections:', activeTheme.sections);
-        console.log('Active sections:', activeTheme.sections?.filter(s => s.isActive));
       }
     } catch (error) {
       console.error('Failed to load theme:', error);
@@ -233,7 +223,6 @@ onMounted(async () => {
       const activeFooter = await trpc.footer.getActiveFooter.query();
       if (activeFooter) {
         footer.value = activeFooter;
-        console.log('Active footer loaded:', activeFooter);
       }
     } catch (error) {
       console.error('Failed to load footer:', error);

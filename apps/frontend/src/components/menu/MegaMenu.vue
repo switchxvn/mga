@@ -69,11 +69,8 @@ const getTranslation = (item: MenuItem): MenuItemTranslation => {
 
 // Process menu structure recursively
 const menuStructure = computed(() => {
-  console.log('MegaMenu - Processing item:', props.item);
-  
   // Ensure we have children to process
   if (!props.item?.children?.length) {
-    console.log('MegaMenu - No children available');
     return [];
   }
 
@@ -128,7 +125,6 @@ const menuStructure = computed(() => {
     });
   }
 
-  console.log('MegaMenu - Final structure:', level1Items);
   return level1Items;
 });
 

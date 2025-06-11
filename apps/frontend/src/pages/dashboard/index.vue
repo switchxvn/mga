@@ -169,7 +169,7 @@ onMounted(async () => {
     
     // Populate user info from auth state
     if (user.value) {
-      console.log('User data:', user.value); // Debug log
+    
       userInfo.value = {
         name: user.value.profile?.firstName || '',
         email: user.value.email || '',
@@ -186,6 +186,6 @@ onMounted(async () => {
 
 const saveProfile = async () => {
   // Implement save profile logic here
-  console.log('Saving profile:', userInfo.value);
+
 };
 </script> 
