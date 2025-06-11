@@ -4,7 +4,17 @@ import { useAuth } from '../composables/useAuth';
 
 // Định nghĩa quyền truy cập cho từng route
 const routePermissions: Record<string, string[]> = {
- 
+  '/settings': ['ACCESS_ADMIN_SETTINGS', 'MANAGE_SETTINGS'],
+  '/settings/general': ['MANAGE_SETTINGS'],
+  '/settings/language': ['MANAGE_LOCALES'],
+  '/settings/seo': ['MANAGE_SEO'],
+  '/settings/email': ['MANAGE_EMAIL'],
+  '/settings/security': ['MANAGE_AUTH'],
+  '/settings/theme': ['MANAGE_THEME'],
+  '/settings/users': ['MANAGE_USERS'],
+  '/settings/system': ['MANAGE_SYSTEM'],
+  '/settings/api': ['MANAGE_API'],
+  '/settings/advanced': ['MANAGE_ADVANCED'],
   // Thêm nhiều route khác ở đây
 };
 
