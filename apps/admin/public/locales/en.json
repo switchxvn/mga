@@ -1345,6 +1345,220 @@
     "description": "Manage system settings and configuration",
     "access_denied": "Access Denied",
     "access_denied_message": "You don't have sufficient permissions to access the settings page. Contact your administrator for access.",
-    "no_permissions": "You don't have permission to access these settings"
+    "no_permissions": "You don't have permission to access these settings",
+    "categories": {
+      "general": {
+        "title": "General Settings",
+        "description": "Basic site configuration and general preferences",
+        "features": {
+          "siteName": "Site Name",
+          "logo": "Logo",
+          "contactInfo": "Contact Info",
+          "defaultLanguage": "Default Language"
+        }
+      },
+      "language": {
+        "title": "Language & Localization",
+        "description": "Manage supported languages and translations",
+        "features": {
+          "supportedLanguages": "Supported Languages",
+          "defaultLocale": "Default Locale",
+          "dateFormats": "Date Formats",
+          "numberFormats": "Number Formats"
+        }
+      },
+      "seo": {
+        "title": "SEO & Meta",
+        "description": "Search engine optimization and metadata settings",
+        "features": {
+          "metaTags": "Meta Tags",
+          "openGraph": "Open Graph",
+          "sitemap": "Sitemap",
+          "analytics": "Analytics"
+        }
+      },
+      "email": {
+        "title": "Email & Notifications",
+        "description": "SMTP configuration and notification preferences",
+        "features": {
+          "smtpSettings": "SMTP Settings",
+          "emailTemplates": "Email Templates",
+          "notificationRules": "Notification Rules",
+          "deliveryStatus": "Delivery Status"
+        }
+      },
+      "security": {
+        "title": "Security & Authentication",
+        "description": "Security policies and authentication settings",
+        "features": {
+          "passwordPolicy": "Password Policy",
+          "twoFactorAuth": "Two-Factor Auth",
+          "sessionManagement": "Session Management",
+          "apiKeys": "API Keys"
+        }
+      },
+      "theme": {
+        "title": "Theme & Appearance",
+        "description": "Customize site appearance and branding",
+        "features": {
+          "colorScheme": "Color Scheme",
+          "typography": "Typography",
+          "layoutOptions": "Layout Options",
+          "customCss": "Custom CSS"
+        }
+      },
+      "users": {
+        "title": "User Management",
+        "description": "User registration and profile settings",
+        "features": {
+          "registrationRules": "Registration Rules",
+          "profileFields": "Profile Fields",
+          "userRoles": "User Roles",
+          "permissions": "Permissions"
+        }
+      },
+      "system": {
+        "title": "System & Performance",
+        "description": "System configuration and performance optimization",
+        "features": {
+          "cacheSettings": "Cache Settings",
+          "databaseConfig": "Database Config",
+          "logManagement": "Log Management",
+          "backup": "Backup"
+        }
+      },
+      "api": {
+        "title": "API & Integrations",
+        "description": "Third-party integrations and API management",
+        "features": {
+          "apiKeys": "API Keys",
+          "webhooks": "Webhooks",
+          "externalServices": "External Services",
+          "rateLimiting": "Rate Limiting"
+        }
+      },
+      "logo": {
+        "title": "Logo & Favicon",
+        "description": "Manage site logos, favicons and brand assets",
+        "features": {
+          "mainLogo": "Main Logo",
+          "mobileLogo": "Mobile Logo",
+          "favicon": "Favicon",
+          "darkLightMode": "Dark/Light Mode"
+        }
+      },
+      "advanced": {
+        "title": "Advanced Settings",
+        "description": "Advanced configuration and developer options",
+        "features": {
+          "debugMode": "Debug Mode",
+          "featureFlags": "Feature Flags",
+          "customFields": "Custom Fields",
+          "scripts": "Scripts"
+        }
+      }
+    },
+    "general": {
+      "title": "General Settings",
+      "description": "Configure basic site information and preferences",
+      "siteInformation": "Site Information",
+      "contactInformation": "Contact Information",
+      "regionalSettings": "Regional Settings",
+      "siteName": "Site Name",
+      "siteDescription": "Site Description",
+      "siteKeywords": "Site Keywords",
+      "siteLogoUrl": "Site Logo URL",
+      "contactEmail": "Contact Email",
+      "contactPhone": "Contact Phone",
+      "contactAddress": "Contact Address",
+      "supportEmail": "Support Email",
+      "defaultLanguage": "Default Language",
+      "defaultTimezone": "Default Timezone",
+      "defaultCurrency": "Default Currency",
+      "dateFormat": "Date Format",
+      "saveAll": "Save All Settings",
+      "saving": "Saving...",
+      "saved": "Settings saved successfully",
+      "error": "Failed to save settings"
+    },
+    "language": {
+      "title": "Language Settings",
+      "description": "Configure language and localization settings",
+      "supportedLanguages": "Supported Languages",
+      "regionalSettings": "Regional Settings",
+      "dateTimeFormats": "Date & Time Formats",
+      "numberCurrencyFormats": "Number & Currency Formats",
+      "defaultLanguage": "Default Language",
+      "availableLanguages": "Available Languages",
+      "fallbackLanguage": "Fallback Language",
+      "autoDetectLanguage": "Auto-detect Language",
+      "defaultTimezone": "Default Timezone",
+      "userTimezoneDetection": "User Timezone Detection",
+      "dateFormat": "Date Format",
+      "timeFormat": "Time Format",
+      "weekStartDay": "Week Start Day",
+      "numberFormat": "Number Format",
+      "currencyFormat": "Currency Format",
+      "defaultCurrency": "Default Currency"
+    },
+    "seo": {
+      "title": "SEO Settings",
+      "description": "Configure SEO and metadata settings",
+      "metaTags": "Meta Tags",
+      "openGraph": "Open Graph",
+      "twitterCards": "Twitter Cards",
+      "analyticsTracking": "Analytics & Tracking",
+      "technicalSeo": "Technical SEO",
+      "metaTitle": "Default Meta Title",
+      "metaDescription": "Default Meta Description",
+      "metaKeywords": "Default Meta Keywords",
+      "metaAuthor": "Author",
+      "ogSiteName": "Site Name",
+      "ogTitle": "Default OG Title",
+      "ogDescription": "Default OG Description",
+      "ogImage": "Default OG Image",
+      "ogType": "OG Type",
+      "twitterCard": "Card Type",
+      "twitterSite": "Twitter Site",
+      "twitterCreator": "Twitter Creator",
+      "googleAnalyticsId": "Google Analytics ID",
+      "googleTagManagerId": "Google Tag Manager ID",
+      "facebookPixelId": "Facebook Pixel ID",
+      "robotsTxt": "Robots.txt",
+      "sitemapEnabled": "Sitemap Enabled",
+      "canonicalUrls": "Canonical URLs"
+    },
+    "email": {
+      "title": "Email Settings",
+      "description": "Configure SMTP settings and email notifications",
+      "comingSoon": "Email configuration settings will be available soon. This will include SMTP setup, email templates, and notification preferences."
+    },
+    "common": {
+      "back": "Back",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "create": "Create",
+      "update": "Update",
+      "loading": "Loading...",
+      "saved": "Saved successfully",
+      "error": "An error occurred",
+      "confirmDelete": "Are you sure you want to delete this setting?",
+      "noSettingsFound": "No settings found in this category",
+      "searchSettings": "Search settings...",
+      "filterByCategory": "Filter by category",
+      "allCategories": "All Categories",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "yes": "Yes",
+      "no": "No",
+      "settings": "settings",
+      "manage_category": "Manage settings",
+      "no_results": "No Settings Found",
+      "no_results_message": "No settings categories match your search. Try a different keyword.",
+      "clear_search": "Clear Search",
+      "back_to_dashboard": "Back to Dashboard"
+    }
   }
 } 

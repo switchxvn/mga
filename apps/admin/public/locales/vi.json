@@ -1345,6 +1345,220 @@
     "description": "Quản lý cài đặt hệ thống và cấu hình",
     "access_denied": "Truy cập bị từ chối",
     "access_denied_message": "Bạn không có đủ quyền để truy cập trang cài đặt. Vui lòng liên hệ quản trị viên để được cấp quyền.",
-    "no_permissions": "Bạn không có quyền truy cập các cài đặt này"
+    "no_permissions": "Bạn không có quyền truy cập các cài đặt này",
+    "categories": {
+      "general": {
+        "title": "Cài đặt chung",
+        "description": "Cấu hình cơ bản của trang web và các tùy chọn chung",
+        "features": {
+          "siteName": "Tên trang web",
+          "logo": "Logo",
+          "contactInfo": "Thông tin liên hệ",
+          "defaultLanguage": "Ngôn ngữ mặc định"
+        }
+      },
+      "language": {
+        "title": "Ngôn ngữ & Bản địa hóa",
+        "description": "Quản lý các ngôn ngữ được hỗ trợ và bản dịch",
+        "features": {
+          "supportedLanguages": "Ngôn ngữ được hỗ trợ",
+          "defaultLocale": "Ngôn ngữ mặc định",
+          "dateFormats": "Định dạng ngày",
+          "numberFormats": "Định dạng số"
+        }
+      },
+      "seo": {
+        "title": "SEO & Meta",
+        "description": "Cài đặt tối ưu hóa công cụ tìm kiếm và metadata",
+        "features": {
+          "metaTags": "Thẻ Meta",
+          "openGraph": "Open Graph",
+          "sitemap": "Sitemap",
+          "analytics": "Phân tích"
+        }
+      },
+      "email": {
+        "title": "Email & Thông báo",
+        "description": "Cấu hình SMTP và tùy chọn thông báo",
+        "features": {
+          "smtpSettings": "Cài đặt SMTP",
+          "emailTemplates": "Mẫu email",
+          "notificationRules": "Quy tắc thông báo",
+          "deliveryStatus": "Trạng thái gửi"
+        }
+      },
+      "security": {
+        "title": "Bảo mật & Xác thực",
+        "description": "Chính sách bảo mật và cài đặt xác thực",
+        "features": {
+          "passwordPolicy": "Chính sách mật khẩu",
+          "twoFactorAuth": "Xác thực hai yếu tố",
+          "sessionManagement": "Quản lý phiên",
+          "apiKeys": "Khóa API"
+        }
+      },
+      "theme": {
+        "title": "Giao diện & Hiển thị",
+        "description": "Tùy chỉnh giao diện và thương hiệu trang web",
+        "features": {
+          "colorScheme": "Bảng màu",
+          "typography": "Kiểu chữ",
+          "layoutOptions": "Tùy chọn bố cục",
+          "customCss": "CSS tùy chỉnh"
+        }
+      },
+      "users": {
+        "title": "Quản lý người dùng",
+        "description": "Đăng ký người dùng và cài đặt hồ sơ",
+        "features": {
+          "registrationRules": "Quy tắc đăng ký",
+          "profileFields": "Trường hồ sơ",
+          "userRoles": "Vai trò người dùng",
+          "permissions": "Quyền hạn"
+        }
+      },
+      "system": {
+        "title": "Hệ thống & Hiệu suất",
+        "description": "Cấu hình hệ thống và tối ưu hóa hiệu suất",
+        "features": {
+          "cacheSettings": "Cài đặt cache",
+          "databaseConfig": "Cấu hình cơ sở dữ liệu",
+          "logManagement": "Quản lý log",
+          "backup": "Sao lưu"
+        }
+      },
+      "api": {
+        "title": "API & Tích hợp",
+        "description": "Tích hợp bên thứ ba và quản lý API",
+        "features": {
+          "apiKeys": "Khóa API",
+          "webhooks": "Webhooks",
+          "externalServices": "Dịch vụ bên ngoài",
+          "rateLimiting": "Giới hạn tốc độ"
+        }
+      },
+      "logo": {
+        "title": "Logo & Favicon",
+        "description": "Quản lý logo trang web, favicon và tài sản thương hiệu",
+        "features": {
+          "mainLogo": "Logo chính",
+          "mobileLogo": "Logo mobile",
+          "favicon": "Favicon",
+          "darkLightMode": "Chế độ tối/sáng"
+        }
+      },
+      "advanced": {
+        "title": "Cài đặt nâng cao",
+        "description": "Cấu hình nâng cao và tùy chọn phát triển",
+        "features": {
+          "debugMode": "Chế độ debug",
+          "featureFlags": "Cờ tính năng",
+          "customFields": "Trường tùy chỉnh",
+          "scripts": "Scripts"
+        }
+      }
+    },
+    "general": {
+      "title": "Cài đặt chung",
+      "description": "Cấu hình thông tin cơ bản của trang web và tùy chọn",
+      "siteInformation": "Thông tin trang web",
+      "contactInformation": "Thông tin liên hệ",
+      "regionalSettings": "Cài đặt khu vực",
+      "siteName": "Tên trang web",
+      "siteDescription": "Mô tả trang web",
+      "siteKeywords": "Từ khóa trang web",
+      "siteLogoUrl": "URL Logo trang web",
+      "contactEmail": "Email liên hệ",
+      "contactPhone": "Số điện thoại liên hệ",
+      "contactAddress": "Địa chỉ liên hệ",
+      "supportEmail": "Email hỗ trợ",
+      "defaultLanguage": "Ngôn ngữ mặc định",
+      "defaultTimezone": "Múi giờ mặc định",
+      "defaultCurrency": "Tiền tệ mặc định",
+      "dateFormat": "Định dạng ngày",
+      "saveAll": "Lưu tất cả cài đặt",
+      "saving": "Đang lưu...",
+      "saved": "Đã lưu cài đặt thành công",
+      "error": "Không thể lưu cài đặt"
+    },
+    "language": {
+      "title": "Cài đặt ngôn ngữ",
+      "description": "Cấu hình cài đặt ngôn ngữ và bản địa hóa",
+      "supportedLanguages": "Ngôn ngữ được hỗ trợ",
+      "regionalSettings": "Cài đặt khu vực",
+      "dateTimeFormats": "Định dạng ngày & giờ",
+      "numberCurrencyFormats": "Định dạng số & tiền tệ",
+      "defaultLanguage": "Ngôn ngữ mặc định",
+      "availableLanguages": "Ngôn ngữ có sẵn",
+      "fallbackLanguage": "Ngôn ngữ dự phòng",
+      "autoDetectLanguage": "Tự động phát hiện ngôn ngữ",
+      "defaultTimezone": "Múi giờ mặc định",
+      "userTimezoneDetection": "Phát hiện múi giờ người dùng",
+      "dateFormat": "Định dạng ngày",
+      "timeFormat": "Định dạng giờ",
+      "weekStartDay": "Ngày bắt đầu tuần",
+      "numberFormat": "Định dạng số",
+      "currencyFormat": "Định dạng tiền tệ",
+      "defaultCurrency": "Tiền tệ mặc định"
+    },
+    "seo": {
+      "title": "Cài đặt SEO",
+      "description": "Cấu hình cài đặt SEO và metadata",
+      "metaTags": "Thẻ Meta",
+      "openGraph": "Open Graph",
+      "twitterCards": "Twitter Cards",
+      "analyticsTracking": "Phân tích & Theo dõi",
+      "technicalSeo": "SEO Kỹ thuật",
+      "metaTitle": "Meta Title mặc định",
+      "metaDescription": "Meta Description mặc định",
+      "metaKeywords": "Meta Keywords mặc định",
+      "metaAuthor": "Tác giả",
+      "ogSiteName": "Tên trang web",
+      "ogTitle": "OG Title mặc định",
+      "ogDescription": "OG Description mặc định",
+      "ogImage": "OG Image mặc định",
+      "ogType": "Loại OG",
+      "twitterCard": "Loại Card",
+      "twitterSite": "Twitter Site",
+      "twitterCreator": "Twitter Creator",
+      "googleAnalyticsId": "Google Analytics ID",
+      "googleTagManagerId": "Google Tag Manager ID",
+      "facebookPixelId": "Facebook Pixel ID",
+      "robotsTxt": "Robots.txt",
+      "sitemapEnabled": "Bật Sitemap",
+      "canonicalUrls": "URL Canonical"
+    },
+    "email": {
+      "title": "Cài đặt Email",
+      "description": "Cấu hình cài đặt SMTP và thông báo email",
+      "comingSoon": "Cài đặt cấu hình email sẽ có sẵn sớm. Điều này sẽ bao gồm thiết lập SMTP, mẫu email và tùy chọn thông báo."
+    },
+    "common": {
+      "back": "Quay lại",
+      "save": "Lưu",
+      "cancel": "Hủy",
+      "delete": "Xóa",
+      "edit": "Chỉnh sửa",
+      "create": "Tạo",
+      "update": "Cập nhật",
+      "loading": "Đang tải...",
+      "saved": "Đã lưu thành công",
+      "error": "Đã xảy ra lỗi",
+      "confirmDelete": "Bạn có chắc chắn muốn xóa cài đặt này?",
+      "noSettingsFound": "Không tìm thấy cài đặt nào trong danh mục này",
+      "searchSettings": "Tìm kiếm cài đặt...",
+      "filterByCategory": "Lọc theo danh mục",
+      "allCategories": "Tất cả danh mục",
+      "enabled": "Bật",
+      "disabled": "Tắt",
+      "yes": "Có",
+      "no": "Không",
+      "settings": "cài đặt",
+      "manage_category": "Quản lý cài đặt",
+      "no_results": "Không tìm thấy cài đặt",
+      "no_results_message": "Không có danh mục cài đặt nào khớp với tìm kiếm của bạn. Thử từ khóa khác.",
+      "clear_search": "Xóa tìm kiếm",
+      "back_to_dashboard": "Quay lại Dashboard"
+    }
   }
 } 

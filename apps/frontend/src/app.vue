@@ -6,6 +6,7 @@ import { useComponentStyles } from './composables/useComponentStyles';
 import { useTheme } from './composables/useTheme';
 import { useDarkMode } from './composables/useDarkMode';
 import { useSettings } from './composables/useSettings';
+import { useFavicon } from './composables/useFavicon';
 
 const isLoading = ref(true);
 
@@ -24,8 +25,9 @@ const { initializeTheme } = useTheme();
 const { initializeStyles } = useComponentStyles();
 const { initializeDarkMode } = useDarkMode();
 
-// Initialize settings
+// Initialize settings and favicon
 const { getPublicSettingValueByKey } = useSettings();
+const { initializeFavicon } = useFavicon();
 
 console.log('Starting app initialization...');
 
@@ -41,12 +43,20 @@ const logGTMSettings = async () => {
   }
 };
 
-// Initialize theme and dark mode
+// Initialize theme, dark mode, and favicon
 const initApp = async () => {
   try {
     console.log('Initializing theme...');
     await initializeTheme();
     console.log('Theme initialized successfully');
+    
+    console.log('Initializing favicon...');
+    try {
+      await initializeFavicon();
+      console.log('Favicon initialized successfully');
+    } catch (faviconError) {
+      console.warn('Favicon initialization failed, using default:', faviconError);
+    }
     
     if (process.client) {
       console.log('Initializing dark mode...');
@@ -63,7 +73,7 @@ const initApp = async () => {
 // Start initialization
 initApp();
 
-// Add font awesome
+// Add font awesome and meta tags
 useHead({
   link: [
     {
@@ -76,6 +86,17 @@ useHead({
     {
       rel: 'stylesheet',
       href: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap'
+    }
+  ],
+  meta: [
+    // Favicon-related meta tags for better browser support
+    {
+      name: 'msapplication-TileColor',
+      content: '#ffffff'
+    },
+    {
+      name: 'theme-color',
+      content: '#ffffff'
     }
   ]
 });

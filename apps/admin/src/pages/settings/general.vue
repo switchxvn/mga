@@ -1,8 +1,14 @@
-<script setup lang="ts">
-import { ref, computed, provide, onMounted } from 'vue'
+,<script setup lang="ts">
+import { ref, computed, provide, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePermissions } from '@/composables/usePermissions'
 import { useAdminSettings } from '@/composables/useAdminSettings'
+import { useUserStore } from '@/stores/useUserStore'
+
+// Add page meta for auth middleware
+definePageMeta({
+  middleware: ['auth']
+})
 import { 
   Settings, 
   ArrowLeft, 
@@ -29,9 +35,36 @@ const {
   deleteSetting,
   clearError 
 } = useAdminSettings()
+const userStore = useUserStore()
 
 // Provide page title for layout
-provide('pageTitle', ref('General Settings'))
+provide('pageTitle', ref(t('settings.general.title')))
+
+// Permission checking state
+const isLoadingPermissions = ref(true)
+const hasPermissionAccess = ref(false)
+
+// Watch for user data changes and check permissions
+watch(() => userStore.user, (user) => {
+  if (user) {
+    // Check permissions once user data is available
+    hasPermissionAccess.value = isSuperAdmin.value || hasPermission('MANAGE_SETTINGS')
+    isLoadingPermissions.value = false
+    
+    if (!hasPermissionAccess.value) {
+      console.log('User does not have permission to access general settings')
+      navigateTo('/settings')
+    }
+  }
+}, { immediate: true })
+
+// Also check if user store is not loading
+watch(() => userStore.isLoading, (loading) => {
+  if (!loading && !userStore.user) {
+    // User finished loading but no user data - redirect to login
+    navigateTo('/auth/login')
+  }
+})
 
 // Local state
 const generalSettings = ref<any[]>([])
@@ -51,48 +84,48 @@ const createForm = ref({
 // Predefined general settings structure
 const generalSettingsTemplate = [
   {
-    category: 'Site Information',
+    category: t('settings.general.siteInformation'),
     icon: Building,
     settings: [
-      { key: 'site_name', label: 'Site Name', description: 'The name of your website', type: 'text', placeholder: 'My Website' },
-      { key: 'site_description', label: 'Site Description', description: 'Brief description of your website', type: 'textarea', placeholder: 'A brief description...' },
-      { key: 'site_keywords', label: 'Site Keywords', description: 'SEO keywords separated by commas', type: 'text', placeholder: 'keyword1, keyword2, keyword3' },
-      { key: 'site_logo_url', label: 'Site Logo URL', description: 'URL to your site logo', type: 'url', placeholder: 'https://example.com/logo.png' }
+      { key: 'site_name', label: t('settings.general.siteName'), description: 'The name of your website', type: 'text', placeholder: 'My Website' },
+      { key: 'site_description', label: t('settings.general.siteDescription'), description: 'Brief description of your website', type: 'textarea', placeholder: 'A brief description...' },
+      { key: 'site_keywords', label: t('settings.general.siteKeywords'), description: 'SEO keywords separated by commas', type: 'text', placeholder: 'keyword1, keyword2, keyword3' },
+      { key: 'site_logo_url', label: t('settings.general.siteLogoUrl'), description: 'URL to your site logo', type: 'url', placeholder: 'https://example.com/logo.png' }
     ]
   },
   {
-    category: 'Contact Information',
+    category: t('settings.general.contactInformation'),
     icon: Phone,
     settings: [
-      { key: 'contact_email', label: 'Contact Email', description: 'Primary contact email address', type: 'email', placeholder: 'contact@example.com' },
-      { key: 'contact_phone', label: 'Contact Phone', description: 'Primary contact phone number', type: 'tel', placeholder: '+1 234 567 8900' },
-      { key: 'contact_address', label: 'Contact Address', description: 'Physical business address', type: 'textarea', placeholder: '123 Main St, City, Country' },
-      { key: 'support_email', label: 'Support Email', description: 'Support team email address', type: 'email', placeholder: 'support@example.com' }
+      { key: 'contact_email', label: t('settings.general.contactEmail'), description: 'Primary contact email address', type: 'email', placeholder: 'contact@example.com' },
+      { key: 'contact_phone', label: t('settings.general.contactPhone'), description: 'Primary contact phone number', type: 'tel', placeholder: '+1 234 567 8900' },
+      { key: 'contact_address', label: t('settings.general.contactAddress'), description: 'Physical business address', type: 'textarea', placeholder: '123 Main St, City, Country' },
+      { key: 'support_email', label: t('settings.general.supportEmail'), description: 'Support team email address', type: 'email', placeholder: 'support@example.com' }
     ]
   },
   {
-    category: 'Regional Settings',
+    category: t('settings.general.regionalSettings'),
     icon: Globe,
     settings: [
-      { key: 'default_language', label: 'Default Language', description: 'Default language for the site', type: 'select', options: [
+      { key: 'default_language', label: t('settings.general.defaultLanguage'), description: 'Default language for the site', type: 'select', options: [
         { value: 'en', label: 'English' },
         { value: 'vi', label: 'Vietnamese' },
         { value: 'fr', label: 'French' },
         { value: 'es', label: 'Spanish' }
       ]},
-      { key: 'default_timezone', label: 'Default Timezone', description: 'Default timezone for the application', type: 'select', options: [
+      { key: 'default_timezone', label: t('settings.general.defaultTimezone'), description: 'Default timezone for the application', type: 'select', options: [
         { value: 'UTC', label: 'UTC' },
         { value: 'Asia/Ho_Chi_Minh', label: 'Ho Chi Minh City (UTC+7)' },
         { value: 'America/New_York', label: 'New York (UTC-5)' },
         { value: 'Europe/London', label: 'London (UTC+0)' }
       ]},
-      { key: 'default_currency', label: 'Default Currency', description: 'Default currency for prices', type: 'select', options: [
+      { key: 'default_currency', label: t('settings.general.defaultCurrency'), description: 'Default currency for prices', type: 'select', options: [
         { value: 'USD', label: 'US Dollar (USD)' },
         { value: 'VND', label: 'Vietnamese Dong (VND)' },
         { value: 'EUR', label: 'Euro (EUR)' },
         { value: 'GBP', label: 'British Pound (GBP)' }
       ]},
-      { key: 'date_format', label: 'Date Format', description: 'Default date format', type: 'select', options: [
+      { key: 'date_format', label: t('settings.general.dateFormat'), description: 'Default date format', type: 'select', options: [
         { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
         { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
         { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' }
@@ -255,17 +288,29 @@ const deleteSetting_ = async (settingId: number) => {
 const canEdit = computed(() => isSuperAdmin.value || hasPermission('MANAGE_SETTINGS'))
 
 onMounted(async () => {
-  if (!canEdit.value) {
-    navigateTo('/settings')
-    return
+  // Ensure user data is loaded
+  if (!userStore.user && !userStore.isLoading) {
+    try {
+      await userStore.fetchUser()
+    } catch (error) {
+      console.error('Failed to fetch user in general settings:', error)
+    }
   }
   
+  // Load settings data
   await loadGeneralSettings()
 })
 </script>
 
 <template>
   <div class="space-y-6">
+    <!-- Loading State -->
+    <div v-if="isLoadingPermissions" class="flex items-center justify-center min-h-screen">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+    </div>
+
+    <!-- Main Content -->
+    <template v-else-if="hasPermissionAccess">
     <!-- Header -->
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
       <div class="flex items-center justify-between">
@@ -607,5 +652,24 @@ onMounted(async () => {
         </template>
       </UCard>
     </UModal>
+    </template>
+
+    <!-- Access Denied Fallback -->
+    <div v-else class="bg-white dark:bg-gray-800 shadow rounded-lg p-8 text-center">
+      <Settings class="h-12 w-12 text-gray-400 mx-auto mb-4" />
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        {{ t('settings.access_denied', 'Access Denied') }}
+      </h3>
+      <p class="text-sm text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+        {{ t('settings.access_denied_message', 'You don\'t have sufficient permissions to access these settings.') }}
+      </p>
+      <UButton 
+        to="/settings" 
+        variant="outline" 
+        class="mt-4"
+      >
+        {{ t('common.back_to_settings', 'Back to Settings') }}
+      </UButton>
+    </div>
   </div>
 </template> 

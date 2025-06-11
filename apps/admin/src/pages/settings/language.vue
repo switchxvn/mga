@@ -26,7 +26,7 @@ const {
 } = useAdminSettings()
 
 // Provide page title for layout
-provide('pageTitle', ref('Language Settings'))
+provide('pageTitle', ref(t('settings.language.title')))
 
 // Local state
 const languageSettings = ref<any[]>([])
@@ -44,12 +44,12 @@ const createForm = ref({
 // Language settings template
 const languageSettingsTemplate = [
   {
-    category: 'Supported Languages',
+    category: t('settings.language.supportedLanguages'),
     icon: Languages,
     settings: [
       { 
         key: 'default_language', 
-        label: 'Default Language', 
+        label: t('settings.language.defaultLanguage'), 
         description: 'Primary language for the application', 
         type: 'select', 
         options: [
@@ -65,14 +65,14 @@ const languageSettingsTemplate = [
       },
       { 
         key: 'available_languages', 
-        label: 'Available Languages', 
+        label: t('settings.language.availableLanguages'), 
         description: 'Comma-separated list of available language codes', 
         type: 'text', 
         placeholder: 'en,vi,fr,es' 
       },
       { 
         key: 'fallback_language', 
-        label: 'Fallback Language', 
+        label: t('settings.language.fallbackLanguage'), 
         description: 'Language to use when translation is missing', 
         type: 'select', 
         options: [
@@ -82,7 +82,7 @@ const languageSettingsTemplate = [
       },
       { 
         key: 'auto_detect_language', 
-        label: 'Auto-detect Language', 
+        label: t('settings.language.autoDetectLanguage'), 
         description: 'Automatically detect user language from browser', 
         type: 'select', 
         options: [
@@ -93,12 +93,12 @@ const languageSettingsTemplate = [
     ]
   },
   {
-    category: 'Regional Settings',
+    category: t('settings.language.regionalSettings'),
     icon: Globe2,
     settings: [
       { 
         key: 'default_timezone', 
-        label: 'Default Timezone', 
+        label: t('settings.language.defaultTimezone'), 
         description: 'Default timezone for the application', 
         type: 'select', 
         options: [
@@ -115,7 +115,7 @@ const languageSettingsTemplate = [
       },
       { 
         key: 'user_timezone_detection', 
-        label: 'User Timezone Detection', 
+        label: t('settings.language.userTimezoneDetection'), 
         description: 'Allow users to set their own timezone', 
         type: 'select', 
         options: [
@@ -126,12 +126,12 @@ const languageSettingsTemplate = [
     ]
   },
   {
-    category: 'Date & Time Formats',
+    category: t('settings.language.dateTimeFormats'),
     icon: Calendar,
     settings: [
       { 
         key: 'date_format', 
-        label: 'Date Format', 
+        label: t('settings.language.dateFormat'), 
         description: 'Default date display format', 
         type: 'select', 
         options: [
@@ -145,7 +145,7 @@ const languageSettingsTemplate = [
       },
       { 
         key: 'time_format', 
-        label: 'Time Format', 
+        label: t('settings.language.timeFormat'), 
         description: 'Default time display format', 
         type: 'select', 
         options: [
@@ -155,7 +155,7 @@ const languageSettingsTemplate = [
       },
       { 
         key: 'week_start_day', 
-        label: 'Week Start Day', 
+        label: t('settings.language.weekStartDay'), 
         description: 'First day of the week', 
         type: 'select', 
         options: [
@@ -167,12 +167,12 @@ const languageSettingsTemplate = [
     ]
   },
   {
-    category: 'Number & Currency Formats',
+    category: t('settings.language.numberCurrencyFormats'),
     icon: DollarSign,
     settings: [
       { 
         key: 'number_format', 
-        label: 'Number Format', 
+        label: t('settings.language.numberFormat'), 
         description: 'Number formatting style', 
         type: 'select', 
         options: [
@@ -184,7 +184,7 @@ const languageSettingsTemplate = [
       },
       { 
         key: 'currency_format', 
-        label: 'Currency Format', 
+        label: t('settings.language.currencyFormat'), 
         description: 'Currency display format', 
         type: 'select', 
         options: [
@@ -195,7 +195,7 @@ const languageSettingsTemplate = [
       },
       { 
         key: 'default_currency', 
-        label: 'Default Currency', 
+        label: t('settings.language.defaultCurrency'), 
         description: 'Default currency for the application', 
         type: 'select', 
         options: [

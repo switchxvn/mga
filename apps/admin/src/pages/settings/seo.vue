@@ -1,8 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, provide, onMounted } from 'vue'
+import { ref, computed, provide, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePermissions } from '@/composables/usePermissions'
 import { useAdminSettings } from '@/composables/useAdminSettings'
+import { useUserStore } from '@/stores/useUserStore'
+
+// Add page meta for auth middleware
+definePageMeta({
+  middleware: ['auth']
+})
 import { 
   Search, 
   ArrowLeft, 
@@ -26,9 +32,36 @@ const {
   deleteSetting,
   clearError 
 } = useAdminSettings()
+const userStore = useUserStore()
 
 // Provide page title for layout
-provide('pageTitle', ref('SEO Settings'))
+provide('pageTitle', ref(t('settings.seo.title')))
+
+// Permission checking state
+const isLoadingPermissions = ref(true)
+const hasPermissionAccess = ref(false)
+
+// Watch for user data changes and check permissions
+watch(() => userStore.user, (user) => {
+  if (user) {
+    // Check permissions once user data is available
+    hasPermissionAccess.value = isSuperAdmin.value || hasPermission('MANAGE_SEO')
+    isLoadingPermissions.value = false
+    
+    if (!hasPermissionAccess.value) {
+      console.log('User does not have permission to access SEO settings')
+      navigateTo('/settings')
+    }
+  }
+}, { immediate: true })
+
+// Also check if user store is not loading
+watch(() => userStore.isLoading, (loading) => {
+  if (!loading && !userStore.user) {
+    // User finished loading but no user data - redirect to login
+    navigateTo('/auth/login')
+  }
+})
 
 // Local state
 const seoSettings = ref<any[]>([])
@@ -47,33 +80,33 @@ const createForm = ref({
 // SEO settings template
 const seoSettingsTemplate = [
   {
-    category: 'Meta Tags',
+    category: t('settings.seo.metaTags'),
     icon: FileText,
     settings: [
       { 
         key: 'meta_title', 
-        label: 'Default Meta Title', 
+        label: t('settings.seo.metaTitle'), 
         description: 'Default title tag for pages without specific titles', 
         type: 'text', 
         placeholder: 'My Awesome Website' 
       },
       { 
         key: 'meta_description', 
-        label: 'Default Meta Description', 
+        label: t('settings.seo.metaDescription'), 
         description: 'Default description for pages without specific descriptions', 
         type: 'textarea', 
         placeholder: 'A comprehensive description of your website...' 
       },
       { 
         key: 'meta_keywords', 
-        label: 'Default Meta Keywords', 
+        label: t('settings.seo.metaKeywords'), 
         description: 'Default keywords for pages (comma-separated)', 
         type: 'text', 
         placeholder: 'keyword1, keyword2, keyword3' 
       },
       { 
         key: 'meta_author', 
-        label: 'Author', 
+        label: t('settings.seo.metaAuthor'), 
         description: 'Website author information', 
         type: 'text', 
         placeholder: 'Your Company Name' 
@@ -81,40 +114,40 @@ const seoSettingsTemplate = [
     ]
   },
   {
-    category: 'Open Graph',
+    category: t('settings.seo.openGraph'),
     icon: Share2,
     settings: [
       { 
         key: 'og_site_name', 
-        label: 'Site Name', 
+        label: t('settings.seo.ogSiteName'), 
         description: 'Site name for Open Graph', 
         type: 'text', 
         placeholder: 'My Website' 
       },
       { 
         key: 'og_title', 
-        label: 'Default OG Title', 
+        label: t('settings.seo.ogTitle'), 
         description: 'Default Open Graph title', 
         type: 'text', 
         placeholder: 'Welcome to My Website' 
       },
       { 
         key: 'og_description', 
-        label: 'Default OG Description', 
+        label: t('settings.seo.ogDescription'), 
         description: 'Default Open Graph description', 
         type: 'textarea', 
         placeholder: 'A great description for social sharing...' 
       },
       { 
         key: 'og_image', 
-        label: 'Default OG Image', 
+        label: t('settings.seo.ogImage'), 
         description: 'Default Open Graph image URL', 
         type: 'url', 
         placeholder: 'https://example.com/og-image.jpg' 
       },
       { 
         key: 'og_type', 
-        label: 'OG Type', 
+        label: t('settings.seo.ogType'), 
         description: 'Open Graph object type', 
         type: 'select', 
         options: [
@@ -127,12 +160,12 @@ const seoSettingsTemplate = [
     ]
   },
   {
-    category: 'Twitter Cards',
+    category: t('settings.seo.twitterCards'),
     icon: Share2,
     settings: [
       { 
         key: 'twitter_card', 
-        label: 'Card Type', 
+        label: t('settings.seo.twitterCard'), 
         description: 'Twitter card type', 
         type: 'select', 
         options: [
@@ -144,14 +177,14 @@ const seoSettingsTemplate = [
       },
       { 
         key: 'twitter_site', 
-        label: 'Twitter Site', 
+        label: t('settings.seo.twitterSite'), 
         description: 'Twitter username for the website', 
         type: 'text', 
         placeholder: '@yourwebsite' 
       },
       { 
         key: 'twitter_creator', 
-        label: 'Twitter Creator', 
+        label: t('settings.seo.twitterCreator'), 
         description: 'Twitter username for content creator', 
         type: 'text', 
         placeholder: '@yourcreator' 
@@ -453,17 +486,29 @@ const deleteSetting_ = async (settingId: number) => {
 const canEdit = computed(() => isSuperAdmin.value || hasPermission('MANAGE_SEO'))
 
 onMounted(async () => {
-  if (!canEdit.value) {
-    navigateTo('/settings')
-    return
+  // Ensure user data is loaded
+  if (!userStore.user && !userStore.isLoading) {
+    try {
+      await userStore.fetchUser()
+    } catch (error) {
+      console.error('Failed to fetch user in SEO settings:', error)
+    }
   }
   
+  // Load settings data
   await loadSeoSettings()
 })
 </script>
 
 <template>
   <div class="space-y-6">
+    <!-- Loading State -->
+    <div v-if="isLoadingPermissions" class="flex items-center justify-center min-h-screen">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+    </div>
+
+    <!-- Main Content -->
+    <template v-else-if="hasPermissionAccess">
     <!-- Header -->
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
       <div class="flex items-center justify-between">
@@ -863,5 +908,24 @@ onMounted(async () => {
         </template>
       </UCard>
     </UModal>
+    </template>
+
+    <!-- Access Denied Fallback -->
+    <div v-else class="bg-white dark:bg-gray-800 shadow rounded-lg p-8 text-center">
+      <Search class="h-12 w-12 text-gray-400 mx-auto mb-4" />
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        {{ t('settings.access_denied', 'Access Denied') }}
+      </h3>
+      <p class="text-sm text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+        {{ t('settings.access_denied_message', 'You don\'t have sufficient permissions to access these settings.') }}
+      </p>
+      <UButton 
+        to="/settings" 
+        variant="outline" 
+        class="mt-4"
+      >
+        {{ t('common.back_to_settings', 'Back to Settings') }}
+      </UButton>
+    </div>
   </div>
 </template> 
