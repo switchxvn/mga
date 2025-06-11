@@ -31,6 +31,35 @@ const footer = ref<any>(null);
 const isMaintenanceMode = ref(false);
 const sessionId = ref<string>('');
 
+// GTM Configuration
+const gtmConfig = useState('gtm-id', () => null);
+
+// Reactive head configuration with GTM
+useHead(() => {
+  const scripts = [];
+  const noscripts = [];
+  
+  // Add GTM script if ID is available
+  if (gtmConfig.value) {
+    scripts.push({
+      innerHTML: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${gtmConfig.value}');`
+    });
+    
+    noscripts.push({
+      innerHTML: `<iframe src="https://www.googletagmanager.com/ns.html?id=${gtmConfig.value}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`
+    });
+  }
+  
+  return {
+    script: scripts,
+    noscript: noscripts
+  };
+});
+
 // Register available components
 const components = {
   CombinedNavbar,

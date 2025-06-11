@@ -273,6 +273,7 @@ export default defineNuxtConfig({
 
   plugins: [
     '~/plugins/trpc',
+    '~/plugins/seo.server',
     '~/plugins/gtm.server',
   ],
 
@@ -349,10 +350,9 @@ export default defineNuxtConfig({
         { name: 'robots', content: 'index, follow' },
         { property: 'og:type', content: 'website' },
       ],
-            link: [
+      link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-      ],
-
+      ]
     },
     pageTransition: { name: 'page', mode: 'out-in' }
   },
