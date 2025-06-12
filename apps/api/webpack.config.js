@@ -6,21 +6,16 @@ module.exports = composePlugins(withNx(), (config) => {
   // Update the webpack config as needed here.
   // e.g. `config.plugins.push(new MyPlugin())`
 
-  // Disable node polyfills since we're targeting Node.js
+  // Configure for Node.js target without polyfills
+  config.target = 'node';
+  
   config.node = {
     __dirname: false,
     __filename: false,
   };
 
-  // Set the target to node
-  config.target = 'node';
-
-  // Disable the webpack 'fs' polyfill
-  config.resolve.fallback = {
-    fs: false,
-    path: false,
-    crypto: false,
-  };
+  // Disable all polyfills - use native Node.js modules
+  config.resolve.fallback = false;
 
   // Add alias for @ew/shared
   config.resolve.alias = {

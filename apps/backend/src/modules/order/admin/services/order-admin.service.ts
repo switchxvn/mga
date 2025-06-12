@@ -13,7 +13,7 @@ import { MailService } from '../../../mail/services/mail.service';
 import { UploadFrontendService } from '../../../upload/frontend/services/upload-frontend.service';
 import * as QRCode from 'qrcode';
 import { Readable } from 'stream';
-import fetch from 'node-fetch';
+// Using native fetch - Node.js 18+ support
 
 // Interface cho thông tin quét vé
 export interface ScanTicketResult {
