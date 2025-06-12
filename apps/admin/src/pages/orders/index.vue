@@ -204,12 +204,8 @@ const fetchOrders = async () => {
       paymentStatus: paymentStatusFilter.value
     };
     
-    // Log request parameters
-    console.log('Request params:', params);
-    
     // Nhận kết quả từ API
     const response = await trpc.admin.order.getAllOrders.query(params);
-    console.log('Raw API response:', response);
     
     // Trường hợp API trả về dữ liệu trực tiếp
     if (response && typeof response === 'object' && 'items' in response && 'total' in response) {

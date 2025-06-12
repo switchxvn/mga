@@ -59,20 +59,29 @@ export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => 
  */
 async function handleServerSideSEO(path: string) {
   try {
+    // Check if we're in a valid Nuxt context
+    const nuxtApp = useNuxtApp();
+    if (!nuxtApp) {
+      console.warn('SEO Middleware: Nuxt app context not available');
+      return;
+    }
+
     // First try to get preloaded SEO data from server plugin
-    const preloadedSeoState = useState(`seo-${path}`, () => null)
-    let seoData: SeoOutput | null = preloadedSeoState.value
+    const preloadedSeoState = useState(`seo-${path}`, () => null);
+    let seoData: SeoOutput | null = preloadedSeoState.value;
     
-    // If no preloaded data, fetch directly
+    // If no preloaded data, try to fetch directly
     if (!seoData) {
-      const trpc = useTrpc();
-      
-      if (trpc) {
-        try {
+      try {
+        const trpc = useTrpc();
+        
+        if (trpc && typeof globalThis.fetch !== 'undefined') {
           seoData = await trpc.seo.getSeoByPath.query(path || '/');
-        } catch (apiError) {
-          console.error('SEO Middleware: API error on server:', apiError);
+        } else {
+          console.warn('SEO Middleware: tRPC or fetch not available, using defaults');
         }
+      } catch (apiError) {
+        console.error('SEO Middleware: API error on server:', apiError);
       }
     }
 
@@ -84,7 +93,12 @@ async function handleServerSideSEO(path: string) {
 
   } catch (error) {
     console.error('SEO Middleware: Server-side error:', error);
-    applySeoMeta(transformSeoData(null), path);
+    // Apply default SEO as fallback
+    try {
+      applySeoMeta(transformSeoData(null), path);
+    } catch (fallbackError) {
+      console.error('SEO Middleware: Failed to apply fallback SEO:', fallbackError);
+    }
   }
 }
 
@@ -93,6 +107,11 @@ async function handleServerSideSEO(path: string) {
  */
 async function handleClientSideSEO(path: string) {
   try {
+    // Check if we're in a valid client context
+    if (!process.client || typeof window === 'undefined') {
+      return;
+    }
+
     // Get current SEO state (should be hydrated from server)
     const currentTitle = document?.title;
     
@@ -151,45 +170,56 @@ function applySeoMeta(seo: {
   robotsTxt: string;
   canonicalUrl: string;
 }, path: string) {
-  const config = useRuntimeConfig();
-  const baseUrl = config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
-  
-  // Build canonical URL
-  const canonicalUrl = seo.canonicalUrl || `${baseUrl}${path}`;
-  const fullOgImage = seo.ogImage.startsWith('http') ? seo.ogImage : `${baseUrl}${seo.ogImage}`;
-  
-  // Apply SEO meta tags - MUST be synchronous for SSR
-  useSeoMeta({
-    title: seo.title,
-    ogTitle: seo.ogTitle,
-    description: seo.description,
-    ogDescription: seo.ogDescription,
-    ogImage: fullOgImage,
-    keywords: seo.keywords,
-    robots: seo.robotsTxt,
-    ogUrl: canonicalUrl,
-    ogType: 'website',
-    ogSiteName: 'Website',
-    twitterCard: 'summary_large_image',
-    twitterTitle: seo.ogTitle,
-    twitterDescription: seo.ogDescription,
-    twitterImage: fullOgImage,
-  });
+  try {
+    // Check if we're in a valid Nuxt context before using composables
+    const nuxtApp = useNuxtApp();
+    if (!nuxtApp) {
+      console.warn('SEO Middleware: Cannot apply SEO meta - Nuxt context unavailable');
+      return;
+    }
 
-  // Set document head - CRITICAL for SSR
-  useHead({
-    title: seo.title,
-    htmlAttrs: {
-      lang: 'vi'
-    },
-    link: [
-      { rel: 'canonical', href: canonicalUrl }
-    ],
-    meta: [
-      { name: 'format-detection', content: 'telephone=no' },
-      { property: 'og:locale', content: 'vi_VN' },
-      { name: 'revisit-after', content: '1 days' },
-      { name: 'author', content: 'Website' },
-    ]
-  });
+    const config = useRuntimeConfig();
+    const baseUrl = config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
+    
+    // Build canonical URL
+    const canonicalUrl = seo.canonicalUrl || `${baseUrl}${path}`;
+    const fullOgImage = seo.ogImage.startsWith('http') ? seo.ogImage : `${baseUrl}${seo.ogImage}`;
+    
+    // Apply SEO meta tags - MUST be synchronous for SSR
+    useSeoMeta({
+      title: seo.title,
+      ogTitle: seo.ogTitle,
+      description: seo.description,
+      ogDescription: seo.ogDescription,
+      ogImage: fullOgImage,
+      keywords: seo.keywords,
+      robots: seo.robotsTxt,
+      ogUrl: canonicalUrl,
+      ogType: 'website',
+      ogSiteName: 'Website',
+      twitterCard: 'summary_large_image',
+      twitterTitle: seo.ogTitle,
+      twitterDescription: seo.ogDescription,
+      twitterImage: fullOgImage,
+    });
+
+    // Set document head - CRITICAL for SSR
+    useHead({
+      title: seo.title,
+      htmlAttrs: {
+        lang: 'vi'
+      },
+      link: [
+        { rel: 'canonical', href: canonicalUrl }
+      ],
+      meta: [
+        { name: 'format-detection', content: 'telephone=no' },
+        { property: 'og:locale', content: 'vi_VN' },
+        { name: 'revisit-after', content: '1 days' },
+        { name: 'author', content: 'Website' },
+      ]
+    });
+  } catch (error) {
+    console.error('SEO Middleware: Error applying SEO meta:', error);
+  }
 } 

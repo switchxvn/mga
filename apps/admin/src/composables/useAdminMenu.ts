@@ -121,7 +121,7 @@ export const useAdminMenu = () => {
   };
 
   // Load menu items from API
-  const loadMenuItems = async () => {
+  const loadMenuItems = async (specificLocale?: string) => {
     isLoadingMenu.value = true;
     menuError.value = null; // Reset error
     
@@ -134,17 +134,38 @@ export const useAdminMenu = () => {
         throw new Error('Chưa đăng nhập');
       }
       
-      // Lấy ngôn ngữ hiện tại từ localStorage
-      const currentLocale = storage ? storage.getItem('locale') || 'en' : 'en';
+      // Lấy ngôn ngữ hiện tại từ localStorage hoặc i18n locale
+      let currentLocale = specificLocale || (storage ? storage.getItem('locale') : null);
+      
+      // If no locale in localStorage, try to get from current context
+      if (!currentLocale) {
+        // Try to get from document.documentElement.lang or default to 'en'
+        currentLocale = (typeof document !== 'undefined' ? document.documentElement.lang : '') || 'en';
+      }
+      
+      console.log('🚀 loadMenuItems called with locale:', currentLocale);
+      console.log('📤 About to call tRPC API: admin.adminMenu.getAdminMenuItems');
+      
+      // Add timestamp to prevent caching and force fresh API call
+      const timestamp = Date.now();
       
       // Sử dụng đúng endpoint từ adminMenuAdminRouter và truyền locale
       const response = await trpc.admin.adminMenu.getAdminMenuItems.query({ 
         includeInactive: false,
-        locale: currentLocale // Thêm locale vào query
+        locale: currentLocale, // Thêm locale vào query
+        _timestamp: timestamp // Add timestamp to force fresh API call
       });
+      
+      console.log('📥 tRPC API response received:', { itemCount: response?.length, locale: currentLocale });
       
       if (response) {
         menuItems.value = response as MenuItem[];
+        console.log('✅ Menu items updated in state:', response.length, 'items for locale:', currentLocale);
+        
+        // Log the first few menu item names to verify translation
+        if (response.length > 0) {
+          console.log('📝 Sample menu items:', response.slice(0, 3).map(item => ({ code: item.code, name: item.name })));
+        }
       } else {
         throw new Error('API response is empty or invalid');
       }
