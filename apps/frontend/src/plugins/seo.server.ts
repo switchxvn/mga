@@ -1,4 +1,10 @@
 export default defineNuxtPlugin(async (nuxtApp) => {
+  // Temporarily disabled to avoid fetch issues in production
+  // SEO will be handled by middleware with fallbacks
+  console.log('SEO Server Plugin: Disabled to avoid fetch issues - using middleware fallbacks');
+  return;
+
+  /* DISABLED CODE - CAN BE RE-ENABLED WHEN FETCH ISSUES ARE RESOLVED
   // Only run on server side for SSR optimization
   if (process.client) return
 
@@ -66,4 +72,5 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   } catch (error) {
     console.error('SEO Server Plugin: Error:', error);
   }
+  */
 }) 

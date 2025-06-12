@@ -290,7 +290,8 @@ export default defineNuxtConfig({
   ],
 
   plugins: [
-    '~/plugins/fetch-polyfill.server',
+    // Conditionally load fetch polyfill only if needed
+    ...(process.env.ENABLE_FETCH_POLYFILL !== 'false' ? ['~/plugins/fetch-polyfill.server'] : []),
     '~/plugins/trpc',
     '~/plugins/seo.server',
     '~/plugins/gtm.server',
