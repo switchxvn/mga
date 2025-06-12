@@ -55,14 +55,8 @@ export default defineNuxtPlugin(() => {
           return headers;
         },
         fetch(url, options) {
-          // Use native fetch if available, otherwise fallback
-          const fetchFn = globalThis.fetch || fetch;
-          
-          if (!fetchFn) {
-            return Promise.reject(new Error('Fetch is not available'));
-          }
-
-          return fetchFn(url, {
+          // Node.js 18+ has native fetch support, no polyfill needed
+          return fetch(url, {
             ...options,
             signal: AbortSignal.timeout(30000), // 30 second timeout
             credentials: 'include',
