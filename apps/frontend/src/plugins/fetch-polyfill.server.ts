@@ -2,7 +2,7 @@
 export default defineNuxtPlugin({
   name: 'fetch-polyfill',
   enforce: 'pre', // Run before other plugins
-  setup() {
+  async setup() {
     // Only run on server side
     if (process.client) return;
 
@@ -12,20 +12,25 @@ export default defineNuxtPlugin({
     }
 
     try {
-      // Try to require node-fetch synchronously for immediate availability
-      const nodeFetch = require('node-fetch');
+      // Use dynamic import to avoid bundling node-fetch in client build
+      const { default: fetch, Headers, Request, Response } = await import('node-fetch');
       
       // Polyfill fetch globally
-      globalThis.fetch = nodeFetch.default;
-      globalThis.Headers = nodeFetch.Headers;
-      globalThis.Request = nodeFetch.Request;
-      globalThis.Response = nodeFetch.Response;
+      // @ts-expect-error - Adding fetch polyfill to globalThis
+      globalThis.fetch = fetch;
+      // @ts-expect-error - Adding Headers polyfill to globalThis
+      globalThis.Headers = Headers;
+      // @ts-expect-error - Adding Request polyfill to globalThis
+      globalThis.Request = Request;
+      // @ts-expect-error - Adding Response polyfill to globalThis  
+      globalThis.Response = Response;
 
       console.log('Fetch polyfill: Successfully loaded node-fetch');
     } catch (error) {
       console.error('Fetch polyfill: Failed to load node-fetch:', error);
       
       // Fallback: provide a minimal fetch implementation that rejects
+      // @ts-expect-error - Adding fallback fetch to globalThis
       globalThis.fetch = () => {
         return Promise.reject(new Error('Fetch is not available in this environment'));
       };
