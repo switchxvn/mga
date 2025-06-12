@@ -13,7 +13,6 @@ export default defineNuxtConfig({
     port: process.env.NUXT_PORT ? parseInt(process.env.NUXT_PORT) : 4200,
   },
 
-  // Add Node.js polyfills for server-side environment
   nitro: {
     experimental: {
       wasm: true
@@ -23,12 +22,7 @@ export default defineNuxtConfig({
         target: 'node18'
       }
     },
-    // Ensure fetch is available in production
-    preset: 'node-server',
-    // Exclude node-fetch from client bundle
-    externals: {
-      inline: ['node-fetch']
-    }
+    preset: 'node-server'
   },
 
   components: {
@@ -290,8 +284,6 @@ export default defineNuxtConfig({
   ],
 
   plugins: [
-    // Conditionally load fetch polyfill only if needed
-    ...(process.env.ENABLE_FETCH_POLYFILL !== 'false' ? ['~/plugins/fetch-polyfill.server'] : []),
     '~/plugins/trpc',
     '~/plugins/seo.server',
     '~/plugins/gtm.server',
@@ -304,19 +296,14 @@ export default defineNuxtConfig({
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
       include: ['@trpc/client', '@trpc/server', 'photoswipe', 'estree-walker'],
-      exclude: ['entities', 'node-fetch'],
+      exclude: ['entities'],
       esbuildOptions: {
         target: 'es2020'
       }
     },
-    define: {
-      // Polyfills for Node.js environment
-      global: 'globalThis',
-    },
     build: {
       target: 'es2020',
       rollupOptions: {
-        external: ['node-fetch'],
         output: {
           manualChunks: {
             photoswipe: ['photoswipe']
@@ -330,8 +317,7 @@ export default defineNuxtConfig({
       }
     },
     ssr: {
-      noExternal: ['entities', 'photoswipe'],
-      external: ['node-fetch']
+      noExternal: ['entities', 'photoswipe']
     },
     vue: {
       script: {
