@@ -21,6 +21,41 @@ const defaultSeo = {
   canonicalUrl: ''
 } as const;
 
+/**
+ * Get base URL in a safe way that works in all contexts
+ */
+function getSafeBaseUrl(): string {
+  // Server-side: use environment variables directly
+  if (process.server) {
+    return process.env.API_BASE?.replace('/api', '') || 
+           process.env.NUXT_PUBLIC_API_BASE?.replace('/api', '') || 
+           'http://localhost:3000';
+  }
+  
+  // Client-side: try various methods
+  try {
+    // Try to get from window.location first
+    if (typeof window !== 'undefined' && window.location) {
+      const origin = window.location.origin;
+      // If we're on a known port (4200), it's likely dev mode
+      if (origin.includes(':4200')) {
+        return 'http://localhost:3000'; // API is usually on 3000
+      }
+      return origin;
+    }
+  } catch {
+    // Fallback if window access fails
+  }
+  
+  // Try runtime config as last resort on client
+  try {
+    const config = useRuntimeConfig();
+    return config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
+  } catch {
+    return 'http://localhost:3000';
+  }
+}
+
 export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => {
   // Skip for static resources and API routes
   if (to.path.match(/\.(svg|png|jpg|jpeg|gif|css|js|ico|woff|woff2|ttf|eot|json|xml)$/i) || 
@@ -190,17 +225,8 @@ function applySeoMeta(seo: {
   canonicalUrl: string;
 }, path: string) {
   try {
-    // Check if we're in a valid Nuxt context before using composables
-    let config: any;
-    let baseUrl: string;
-    
-    try {
-      config = useRuntimeConfig();
-      baseUrl = config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
-    } catch (configError) {
-      console.warn('SEO Middleware: Cannot access runtime config, using fallback');
-      baseUrl = 'http://localhost:3000';
-    }
+    // Get base URL using the safe method
+    const baseUrl = getSafeBaseUrl();
     
     // Build canonical URL
     const canonicalUrl = seo.canonicalUrl || `${baseUrl}${path}`;
