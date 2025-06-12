@@ -73,26 +73,35 @@ async function handleServerSideSEO(path: string) {
 
     // First try to get preloaded SEO data from server plugin
     const preloadedSeoState = useState(`seo-${path}`, () => null);
-    const seoData: SeoOutput | null = preloadedSeoState.value;
+    let seoData: SeoOutput | null = preloadedSeoState.value;
     
-    // If no preloaded data, skip API call for now to avoid fetch issues
+    // If no preloaded data, try to fetch directly from API
     if (!seoData) {
-      console.log('SEO Middleware: No preloaded data, using defaults for', path);
-      // Skip API call to avoid fetch issues
-      // TODO: Re-enable when fetch issues are resolved
-      /*
+      console.log('SEO Middleware: No preloaded data, fetching from API for', path);
       try {
         const trpc = useTrpc();
         
-        if (trpc && typeof globalThis.fetch !== 'undefined') {
-          seoData = await trpc.seo.getSeoByPath.query(path || '/');
+        if (trpc) {
+          // Add timeout to prevent hanging
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('SEO API timeout')), 3000)
+          );
+          
+          const seoPromise = trpc.seo.getSeoByPath.query(path || '/');
+          seoData = await Promise.race([seoPromise, timeoutPromise]) as SeoOutput;
+          
+          if (seoData) {
+            console.log('✅ SEO Middleware: Successfully fetched dynamic SEO data from API for', path);
+          }
         } else {
-          console.warn('SEO Middleware: tRPC or fetch not available, using defaults');
+          console.warn('SEO Middleware: tRPC not available, using defaults');
         }
       } catch (apiError) {
-        console.error('SEO Middleware: API error on server:', apiError);
+        console.warn('SEO Middleware: API error on server:', apiError);
+        console.log('SEO Middleware: Falling back to defaults for', path);
       }
-      */
+    } else {
+      console.log('✅ SEO Middleware: Using preloaded SEO data for', path);
     }
 
     // Transform and apply SEO data (handles null case)

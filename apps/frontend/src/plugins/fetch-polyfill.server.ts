@@ -8,7 +8,7 @@ export default defineNuxtPlugin({
 
     // Check if fetch is already available (native Node.js 18+ or already polyfilled)
     if (typeof globalThis.fetch !== 'undefined') {
-      console.log('Fetch polyfill: Native fetch already available');
+      console.log('✅ Fetch polyfill: Native fetch detected - no polyfill needed');
       return;
     }
 
@@ -31,13 +31,13 @@ export default defineNuxtPlugin({
         // @ts-expect-error - Adding Response polyfill to globalThis  
         globalThis.Response = nodeFetch.Response;
 
-        console.log('Fetch polyfill: Successfully loaded node-fetch polyfill');
+        console.log('✅ Fetch polyfill: Successfully loaded node-fetch polyfill');
       }
     } catch (error) {
-      console.error('Fetch polyfill: Failed to load node-fetch:', error);
+      console.error('❌ Fetch polyfill: Failed to load node-fetch:', error);
       
       // Don't provide a fallback that could cause issues
-      console.warn('Fetch polyfill: Skipping fetch polyfill due to error');
+      console.warn('⚠️ Fetch polyfill: Skipping fetch polyfill due to error');
     }
   }
 }); 
