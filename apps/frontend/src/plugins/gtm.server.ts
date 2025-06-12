@@ -1,4 +1,19 @@
 export default defineNuxtPlugin(async (nuxtApp) => {
+  // Temporarily disabled to avoid fetch issues in production
+  // GTM can be configured via hardcoded ID or environment variables
+  console.log('GTM Server Plugin: Disabled to avoid fetch issues - using hardcoded GTM config');
+  
+  // Set a fallback GTM ID if needed
+  const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH'; // Use environment variable or fallback
+  if (fallbackGtmId) {
+    nuxtApp.provide('gtmId', fallbackGtmId);
+    const gtmState = useState('gtm-id', () => fallbackGtmId);
+    console.log('GTM Server Plugin: Using fallback GTM ID:', fallbackGtmId);
+  }
+  
+  return;
+
+  /* DISABLED CODE - CAN BE RE-ENABLED WHEN FETCH ISSUES ARE RESOLVED
   // Only run on server side for SEO and initial load
   if (process.client) return
 
@@ -51,4 +66,5 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   } catch (error) {
     console.error('GTM Server Plugin: Error:', error);
   }
+  */
 }); 

@@ -59,19 +59,28 @@ export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => 
  */
 async function handleServerSideSEO(path: string) {
   try {
-    // Check if we're in a valid Nuxt context
-    const nuxtApp = useNuxtApp();
-    if (!nuxtApp) {
-      console.warn('SEO Middleware: Nuxt app context not available');
+    // Check if we're in a valid Nuxt context first
+    try {
+      const nuxtApp = useNuxtApp();
+      if (!nuxtApp) {
+        console.warn('SEO Middleware: Nuxt app context not available');
+        return;
+      }
+    } catch (contextError) {
+      console.warn('SEO Middleware: Cannot access Nuxt context:', contextError);
       return;
     }
 
     // First try to get preloaded SEO data from server plugin
     const preloadedSeoState = useState(`seo-${path}`, () => null);
-    let seoData: SeoOutput | null = preloadedSeoState.value;
+    const seoData: SeoOutput | null = preloadedSeoState.value;
     
-    // If no preloaded data, try to fetch directly
+    // If no preloaded data, skip API call for now to avoid fetch issues
     if (!seoData) {
+      console.log('SEO Middleware: No preloaded data, using defaults for', path);
+      // Skip API call to avoid fetch issues
+      // TODO: Re-enable when fetch issues are resolved
+      /*
       try {
         const trpc = useTrpc();
         
@@ -83,6 +92,7 @@ async function handleServerSideSEO(path: string) {
       } catch (apiError) {
         console.error('SEO Middleware: API error on server:', apiError);
       }
+      */
     }
 
     // Transform and apply SEO data (handles null case)
@@ -172,53 +182,63 @@ function applySeoMeta(seo: {
 }, path: string) {
   try {
     // Check if we're in a valid Nuxt context before using composables
-    const nuxtApp = useNuxtApp();
-    if (!nuxtApp) {
-      console.warn('SEO Middleware: Cannot apply SEO meta - Nuxt context unavailable');
-      return;
+    let config: any;
+    let baseUrl: string;
+    
+    try {
+      config = useRuntimeConfig();
+      baseUrl = config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
+    } catch (configError) {
+      console.warn('SEO Middleware: Cannot access runtime config, using fallback');
+      baseUrl = 'http://localhost:3000';
     }
-
-    const config = useRuntimeConfig();
-    const baseUrl = config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
     
     // Build canonical URL
     const canonicalUrl = seo.canonicalUrl || `${baseUrl}${path}`;
     const fullOgImage = seo.ogImage.startsWith('http') ? seo.ogImage : `${baseUrl}${seo.ogImage}`;
     
-    // Apply SEO meta tags - MUST be synchronous for SSR
-    useSeoMeta({
-      title: seo.title,
-      ogTitle: seo.ogTitle,
-      description: seo.description,
-      ogDescription: seo.ogDescription,
-      ogImage: fullOgImage,
-      keywords: seo.keywords,
-      robots: seo.robotsTxt,
-      ogUrl: canonicalUrl,
-      ogType: 'website',
-      ogSiteName: 'Website',
-      twitterCard: 'summary_large_image',
-      twitterTitle: seo.ogTitle,
-      twitterDescription: seo.ogDescription,
-      twitterImage: fullOgImage,
-    });
+    // Apply SEO meta tags - wrap in try-catch for safety
+    try {
+      useSeoMeta({
+        title: seo.title,
+        ogTitle: seo.ogTitle,
+        description: seo.description,
+        ogDescription: seo.ogDescription,
+        ogImage: fullOgImage,
+        keywords: seo.keywords,
+        robots: seo.robotsTxt,
+        ogUrl: canonicalUrl,
+        ogType: 'website',
+        ogSiteName: 'Website',
+        twitterCard: 'summary_large_image',
+        twitterTitle: seo.ogTitle,
+        twitterDescription: seo.ogDescription,
+        twitterImage: fullOgImage,
+      });
+    } catch (seoMetaError) {
+      console.warn('SEO Middleware: useSeoMeta failed:', seoMetaError);
+    }
 
-    // Set document head - CRITICAL for SSR
-    useHead({
-      title: seo.title,
-      htmlAttrs: {
-        lang: 'vi'
-      },
-      link: [
-        { rel: 'canonical', href: canonicalUrl }
-      ],
-      meta: [
-        { name: 'format-detection', content: 'telephone=no' },
-        { property: 'og:locale', content: 'vi_VN' },
-        { name: 'revisit-after', content: '1 days' },
-        { name: 'author', content: 'Website' },
-      ]
-    });
+    // Set document head - wrap in try-catch for safety
+    try {
+      useHead({
+        title: seo.title,
+        htmlAttrs: {
+          lang: 'vi'
+        },
+        link: [
+          { rel: 'canonical', href: canonicalUrl }
+        ],
+        meta: [
+          { name: 'format-detection', content: 'telephone=no' },
+          { property: 'og:locale', content: 'vi_VN' },
+          { name: 'revisit-after', content: '1 days' },
+          { name: 'author', content: 'Website' },
+        ]
+      });
+    } catch (headError) {
+      console.warn('SEO Middleware: useHead failed:', headError);
+    }
   } catch (error) {
     console.error('SEO Middleware: Error applying SEO meta:', error);
   }
