@@ -52,7 +52,7 @@ export default defineNuxtPlugin({
                   metaOgTitle.setAttribute('property', 'og:title');
                   metaOgTitle.setAttribute('content', title.textContent || '');
                   document.head.appendChild(metaOgTitle);
-                  console.log('Added missing og:title');
+          
                 }
               }
               
@@ -64,7 +64,7 @@ export default defineNuxtPlugin({
                   metaOgDescription.setAttribute('property', 'og:description');
                   metaOgDescription.setAttribute('content', description.getAttribute('content') || '');
                   document.head.appendChild(metaOgDescription);
-                  console.log('Added missing og:description');
+        
                 }
               }
               
@@ -75,7 +75,7 @@ export default defineNuxtPlugin({
                 metaOgUrl.setAttribute('property', 'og:url');
                 metaOgUrl.setAttribute('content', window.location.href);
                 document.head.appendChild(metaOgUrl);
-                console.log('Added missing og:url');
+        
               }
             });
           `,

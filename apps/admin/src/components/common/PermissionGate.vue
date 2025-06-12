@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue';
 import { usePermissions } from '../../composables/usePermissions';
-import { useAuth } from '../../composables/useAuth';
+import { useUserStore } from '../../stores/useUserStore';
 import { useLocalization } from '../../composables/useLocalization';
 import AccessDenied from './AccessDenied.vue';
 
@@ -48,85 +48,75 @@ const props = defineProps({
   }
 });
 
-// Use permissions composable
+// Use permissions composable and user store
 const { hasAnyPermission, isSuperAdmin } = usePermissions();
-const { user, checkAuth } = useAuth();
+const userStore = useUserStore();
 
-// Loading state
-const isLoading = ref(true);
+// Check if user is loaded
+const isUserLoaded = computed(() => !!userStore.user);
 
-// Wait for user data to be fully loaded
-onMounted(async () => {
-  console.log('PermissionGate mounted, checking auth...');
-  try {
-    await checkAuth();
-    console.log('PermissionGate - Auth check completed');
-    
-    // Wait a bit to ensure data has been updated
-    if (!user.value?.permissions) {
-      console.log('PermissionGate - Waiting for user data to load...');
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
-  } catch (error) {
-    console.error('PermissionGate - Error checking auth:', error);
-  } finally {
-    isLoading.value = false;
-    console.log('PermissionGate - Loading completed, user data:', JSON.stringify(user.value, null, 2));
-  }
+// Wait for user data to be available
+onMounted(() => {
+  console.log('🔒 PermissionGate: Mounted, checking user store...');
+  console.log('🔒 PermissionGate: User data:', {
+    hasUser: !!userStore.user,
+    userId: userStore.user?.id,
+    role: userStore.user?.role,
+    isSuperAdmin: userStore.isSuperAdmin,
+    permissions: userStore.user?.permissions
+  });
 });
 
 // Watch for changes in user data
-watch(() => user.value, (newUser) => {
-  console.log('PermissionGate - User data changed:', newUser);
+watch(() => userStore.user, (newUser) => {
+  console.log('🔒 PermissionGate: User data changed:', {
+    hasUser: !!newUser,
+    userId: newUser?.id,
+    role: newUser?.role,
+    isSuperAdmin: userStore.isSuperAdmin
+  });
 }, { deep: true });
 
 // Check if user has access
 const hasAccess = computed(() => {
-  // Loading data
-  if (isLoading.value) {
-    console.log('PermissionGate - Still loading user data...');
-    return false; // Don't show content while loading
-  }
-  
   // If disabled = true, always allow access
   if (props.disabled) {
-    console.log('Permission check disabled, allowing access');
+    console.log('🔒 PermissionGate: Check disabled, allowing access');
     return true;
   }
   
   // Check if user has information
-  if (!user.value) {
-    console.log('No user information available, denying access');
+  if (!userStore.user) {
+    console.log('🔒 PermissionGate: No user data in store, denying access');
     return false;
   }
   
   // Log detailed user information when checking permissions
-  console.log('PermissionGate - Checking permissions with user data:', {
-    id: user.value.id,
-    role: user.value.role,
-    isSuperAdmin: isSuperAdmin.value,
-    permissions: user.value.permissions,
-    required: props.permissions
+  console.log('🔒 PermissionGate: Checking permissions:', {
+    userId: userStore.user.id,
+    role: userStore.user.role,
+    isSuperAdmin: userStore.isSuperAdmin,
+    permissions: userStore.user.permissions,
+    requiredPermissions: props.permissions
   });
   
-  // SUPER_ADMIN has all permissions - use composable to check
-  if (isSuperAdmin.value) {
-    console.log('User is SUPER_ADMIN, allowing access to:', props.permissions);
+  // SUPER_ADMIN has all permissions
+  if (userStore.isSuperAdmin) {
+    console.log('🔒 PermissionGate: User is SUPER_ADMIN, granting access');
     return true;
   }
   
   // If no permissions are required, allow access
   if (!props.permissions.length) {
-    console.log('No permissions required, allowing access');
+    console.log('🔒 PermissionGate: No permissions required, allowing access');
     return true;
   }
   
   // Check if user has at least one permission
-  const result = hasAnyPermission(props.permissions);
-  console.log(`Permission check result: ${result}`, {
+  const result = userStore.hasAnyPermission(props.permissions);
+  console.log(`🔒 PermissionGate: Permission check result: ${result}`, {
     required: props.permissions,
-    userPermissions: user.value?.permissions || [],
-    userRole: user.value?.role
+    userPermissions: userStore.user.permissions || []
   });
   return result;
 });
@@ -144,8 +134,8 @@ const defaultAccessDeniedDescription = computed(() => {
 
 <template>
   <div>
-    <!-- Loading state -->
-    <div v-if="isLoading" class="p-4 flex items-center justify-center">
+    <!-- Loading state - wait for user to load -->
+    <div v-if="!isUserLoaded" class="p-4 flex items-center justify-center">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
     </div>
     

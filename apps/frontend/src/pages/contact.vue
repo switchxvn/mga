@@ -85,7 +85,7 @@ const translatedSections = computed(() => {
 // Fetch data using tRPC
 const fetchData = async () => {
   try {
-    console.log('Fetching contact sections with locale:', locale.value)
+
     isLoading.value = true
     error.value = null
 

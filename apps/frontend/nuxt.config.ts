@@ -273,6 +273,8 @@ export default defineNuxtConfig({
 
   plugins: [
     '~/plugins/trpc',
+    '~/plugins/seo.server',
+    '~/plugins/gtm.server',
   ],
 
   // @ts-expect-error - i18n module types

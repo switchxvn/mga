@@ -434,10 +434,17 @@ export function useProductDetail() {
 
   // Kiểm tra xem có cần hiển thị nút yêu cầu báo giá không
   const shouldShowPriceRequest = computed(() => {
+    if (!productData.value) return false;
+    
     // Nếu sản phẩm có variants
     if (productData.value?.variantAttributes?.variants?.length) {
-      // Chỉ hiện yêu cầu báo giá khi đã chọn variant và variant đó không có giá
-      return matchingVariant.value && !matchingVariant.value.price;
+      // Chỉ hiện yêu cầu báo giá khi:
+      // 1. Đã chọn variant và variant đó không có giá, HOẶC
+      // 2. Tất cả variants đều không có giá
+      const allVariantsNoPrices = productData.value.variantAttributes.variants.every(variant => !variant.price);
+      const selectedVariantNoPrice = matchingVariant.value && !matchingVariant.value.price;
+      
+      return allVariantsNoPrices || selectedVariantNoPrice;
     }
     
     // Nếu không có variants thì kiểm tra giá sản phẩm
@@ -446,6 +453,24 @@ export function useProductDetail() {
 
   // Kiểm tra xem có thể thêm vào giỏ hàng không
   const canAddToCart = computed(() => {
+    if (!productData.value) return false;
+    
+    // Nếu sản phẩm có variants
+    if (productData.value?.variantAttributes?.variants?.length) {
+      // Có thể add to cart nếu có ít nhất 1 variant có giá
+      // (Nếu chưa chọn variant sẽ mở modal, nếu đã chọn variant có giá thì add luôn)
+      const hasVariantWithPrice = productData.value.variantAttributes.variants.some(variant => variant.price);
+      return hasVariantWithPrice;
+    }
+    
+    // Nếu không có variants thì chỉ cần có giá sản phẩm
+    return !!productData.value?.price;
+  });
+
+  // Kiểm tra xem có thể "Mua ngay" không (yêu cầu đã chọn variant nếu có)
+  const canBuyNow = computed(() => {
+    if (!productData.value) return false;
+    
     // Nếu sản phẩm có variants
     if (productData.value?.variantAttributes?.variants?.length) {
       // Phải có matching variant và variant đó phải có giá
@@ -503,7 +528,10 @@ export function useProductDetail() {
       sku: matchingVariant.value?.sku || productData.value.sku,
       stock: matchingVariant.value?.stock || productData.value.stock,
       hasRequiredAttributes,
-      hasSelectedAllAttributes
+      hasSelectedAllAttributes,
+      // Thêm thông tin variants để AddToCartButton có thể mở modal
+      variantAttributes: productData.value.variantAttributes,
+      variants: productData.value.variantAttributes?.variants
     };
   });
 
@@ -581,6 +609,7 @@ export function useProductDetail() {
     shouldShowFromPrice,
     shouldShowPriceRequest,
     canAddToCart,
+    canBuyNow,
     displayPrice,
     displayComparePrice,
     getProductForCart,

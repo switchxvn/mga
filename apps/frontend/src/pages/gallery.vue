@@ -513,12 +513,10 @@ const allGalleryItems = ref<Gallery[]>([]);
 // Add click handler for gallery items
 const handleGalleryClick = (event: Event, index: number) => {
   event.preventDefault();
-  console.log('Gallery item clicked, opening at index:', index);
   
   // Nếu danh sách ảnh chưa được khởi tạo, tạo lại
   if (allGalleryItems.value.length === 0) {
     allGalleryItems.value = createFlatGalleryList();
-    console.log('Recreated flat gallery list with', allGalleryItems.value.length, 'items');
   }
   
   // Mở lightbox
@@ -592,7 +590,6 @@ const handleImageError = (event: Event) => {
   const imgElement = event.target as HTMLImageElement;
   if (imgElement) {
     imgElement.src = "https://placehold.co/800x600/e2e8f0/a0aec0?text=Image+Not+Found";
-    console.log('Image load failed, replaced with placeholder');
   }
 };
 
@@ -601,19 +598,16 @@ const fetchGalleries = async () => {
   try {
     isLoading.value = true;
     hasError.value = false;
-    console.log('Fetching galleries with categoryId:', selectedCategoryId.value);
     const result = await trpc.gallery.active.query({ 
       locale: locale.value,
       categoryId: selectedCategoryId.value || undefined
     });
     
-    console.log('Gallery data received:', result);
     galleries.value = result;
     
     // Tạo danh sách phẳng cho lightbox ngay sau khi nhận dữ liệu
     nextTick(() => {
       allGalleryItems.value = createFlatGalleryList();
-      console.log('Flat gallery list created:', allGalleryItems.value.length, 'items');
       updateMaxScroll();
     });
   } catch (error) {
@@ -639,8 +633,6 @@ const fetchCategories = async () => {
       locale: locale.value 
     });
 
-    console.log('Fetched categories:', result);
-
     categories.value = result.map(cat => ({
       id: cat.id,
       name: cat.translations?.find(t => t.locale === locale.value)?.name || 'Unknown'
@@ -652,7 +644,6 @@ const fetchCategories = async () => {
       fetchGalleries();
     } else {
       // Trường hợp không có category
-      console.log('No categories found');
       galleries.value = [];
     }
   } catch (error) {
@@ -690,8 +681,6 @@ const fetchVideos = async () => {
 
 // Tạo danh sách phẳng các items từ 3 rows
 const createFlatGalleryList = (): Gallery[] => {
-  console.log('Creating flat gallery list from', galleries.value.length, 'items');
-  
   if (galleries.value.length === 0) {
     return [];
   }
@@ -714,14 +703,6 @@ const openLightbox = (rowIndex: number, itemIndex: number) => {
   // Tính toán chỉ mục trong danh sách phẳng
   const itemsPerRow = Math.ceil(galleries.value.length / 3);
   const flatIndex = rowIndex * itemsPerRow + itemIndex;
-  
-  console.log('Opening lightbox:', { 
-    rowIndex, 
-    itemIndex, 
-    flatIndex, 
-    totalItems: allGalleryItems.value.length,
-    galleries: galleries.value.length
-  });
   
   // Đảm bảo chỉ mục hợp lệ
   if (flatIndex >= allGalleryItems.value.length) {

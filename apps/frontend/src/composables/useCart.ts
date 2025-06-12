@@ -2,8 +2,7 @@ import { useCartStore } from '~/stores/cart';
 import type { AddToCartDto } from '~/stores/cart';
 
 /**
- * Simple cart composable that uses the centralized cart store
- * No initialization logic - just access to store data and actions
+ * Cart composable - provides access to cart store
  */
 export function useCart() {
   const cartStore = useCartStore();
@@ -22,7 +21,7 @@ export function useCart() {
     isCartEnabled: cartStore.isCartEnabled,
     isInitialized: cartStore.isInitialized,
 
-    // Actions (delegated to store)
+    // Actions
     initialize: cartStore.initialize,
     fetchCart: cartStore.fetchCartData,
     addToCart: cartStore.addToCart,
@@ -31,7 +30,7 @@ export function useCart() {
     clearCart: cartStore.clearCart,
     mergeGuestCart: cartStore.mergeGuestCart,
     
-    // Legacy support for existing components
+    // Legacy support
     items: cartStore.cartItems,
     totalItems: cartStore.cartItemCount,
     totalPrice: cartStore.cartTotal,

@@ -98,7 +98,19 @@
     "checkout": "Thanh toán",
     "continueShopping": "Tiếp tục mua sắm",
     "viewCart": "Xem giỏ hàng",
-    "disabled": "Tính năng giỏ hàng hiện tại đã bị tắt"
+    "disabled": "Tính năng giỏ hàng hiện tại đã bị tắt",
+    "confirmRemove": {
+      "title": "Xác nhận xóa sản phẩm",
+      "message": "Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?",
+      "confirm": "Xóa",
+      "cancel": "Hủy"
+    },
+    "confirmClear": {
+      "title": "Xác nhận xóa tất cả",
+      "message": "Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng?",
+      "confirm": "Xóa tất cả",
+      "cancel": "Hủy"
+    }
   },
   "validation": {
     "required": "Trường này là bắt buộc",
@@ -193,6 +205,8 @@
     "hotline": "Hotline: 0917 001 254",
     "contactUs": "Liên hệ tư vấn",
     "requestPrice": "Yêu cầu báo giá",
+    "buyNow": "Mua ngay",
+    "contact": "Liên hệ",
     "shareProduct": "Chia sẻ sản phẩm",
     "shareOnFacebook": "Chia sẻ lên Facebook",
     "shareOnTwitter": "Chia sẻ lên Twitter",
@@ -548,7 +562,6 @@
     "ticketDetails": "Chi tiết vé",
     "ticketId": "Mã vé",
     "ticketType": "Loại vé",
-    "ticketDate": "Ngày sử dụng",
     "ticketQuantity": "Số lượng",
     "ticketValidity": "Có giá trị đến",
     "loadingOrder": "Đang tải thông tin đơn hàng...",

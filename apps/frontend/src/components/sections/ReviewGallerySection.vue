@@ -272,7 +272,6 @@ const checkValidGalleryObject = (obj: any): boolean => {
 const fetchGalleries = async () => {
   // Nếu đang gọi API thì không gọi tiếp
   if (isApiCallInProgress.value) {
-    console.log('API call already in progress, skipping');
     return;
   }
   
@@ -284,17 +283,6 @@ const fetchGalleries = async () => {
   resetEnvironment();
   
   try {
-    // Log thông tin chi tiết để debug API
-    console.log('[Gallery API] Section properties:', {
-      id: props.section?.id,
-      type: props.section?.type,
-      componentName: props.section?.componentName
-    });
-    console.log('[Gallery API] CategoryIds sources:');
-    console.log('- From props.section.categoryIds:', props.section?.categoryIds);
-    console.log('- From settings.categoryIds:', settings.value.categoryIds);
-    console.log('- Combined result (categoryIds.value):', categoryIds.value);
-    
     // Chuẩn bị tham số cho API
     const queryParams: Record<string, any> = {
       locale: locale.value
@@ -302,72 +290,43 @@ const fetchGalleries = async () => {
     
     // Chỉ thêm categoryIds nếu có giá trị
     if (categoryIds.value.length > 0) {
-      console.log('[Gallery API] Using categoryIds in API call:', categoryIds.value);
       queryParams.categoryIds = categoryIds.value;
-    } else {
-      console.log('[Gallery API] No categoryIds available for API call');
     }
     
-    // Log queryParams trước khi gọi API
-    console.log('[Gallery API] Final query params:', JSON.stringify(queryParams, null, 2));
-    
-    console.log('[Gallery API] Calling trpc.gallery.active.query...');
     // Gọi API với tham số đã chuẩn bị
     const result = await trpc.gallery.active.query(queryParams);
-    
-    // Log kết quả API chi tiết hơn để debug
-    console.log('[Gallery API] Response received. Result structure:', result ? Object.keys(result) : 'undefined');
-    console.log('[Gallery API] Result type:', result ? (Array.isArray(result) ? 'Array' : typeof result) : 'undefined');
-    if (result && typeof result === 'object') {
-      console.log('[Gallery API] First level properties:', Object.keys(result));
-      
-      if ('data' in result) {
-        console.log('[Gallery API] Data property type:', typeof result.data);
-        console.log('[Gallery API] Data is array?', Array.isArray(result.data));
-      }
-    }
     
     // Xử lý nhiều cấu trúc dữ liệu có thể từ API
     let galleryData = [];
     
     // Case 1: Kết quả là mảng trực tiếp
     if (Array.isArray(result)) {
-      console.log('[Gallery API] Processing direct array result');
       galleryData = result.filter((item: any) => checkValidGalleryObject(item));
     } 
     // Case 2: Kết quả có dạng { result: { data: [] } }
     else if (result?.result?.data && Array.isArray(result.result.data)) {
-      console.log('[Gallery API] Processing result.result.data');
       galleryData = result.result.data.filter((item: any) => checkValidGalleryObject(item));
     }
     // Case 3: Kết quả có dạng { data: [] }
     else if (result?.data && Array.isArray(result.data)) {
-      console.log('[Gallery API] Processing result.data array');
       galleryData = result.data.filter((item: any) => checkValidGalleryObject(item));
     }
     // Case 4: Kết quả có dạng { data: { data: [] } }
     else if (result?.data?.data && Array.isArray(result.data.data)) {
-      console.log('[Gallery API] Processing result.data.data');
       galleryData = result.data.data.filter((item: any) => checkValidGalleryObject(item));
     }
     // Case 5: Kết quả đơn giản là một object với các thuộc tính
     else if (checkValidGalleryObject(result)) {
-      console.log('[Gallery API] Processing single object result');
       galleryData = [result];
     }
-    
-    console.log('[Gallery API] Processed gallery data count:', galleryData.length);
     
     // Reset galleries trước khi gán dữ liệu mới để tránh hiển thị lặp
     galleries.value = [];
     
     // Ensure we have valid data
     if (galleryData && galleryData.length > 0) {
-      console.log('[Gallery API] Valid data found, using real data');
       galleries.value = galleryData;
       useMockData.value = false;
-      
-      console.log('[Gallery API] Final data count:', galleries.value.length);
       
       // Prepare data for lightbox
       allGalleryItems.value = createFlatGalleryList();
@@ -378,7 +337,6 @@ const fetchGalleries = async () => {
       });
     } else {
       // Hiển thị thông báo không có dữ liệu thay vì dùng mock
-      console.log('[Gallery API] No valid gallery data found');
       galleries.value = [];
       useMockData.value = false;
       hasError.value = true;
@@ -388,7 +346,6 @@ const fetchGalleries = async () => {
     hasError.value = true;
     
     // Hiển thị lỗi để người dùng biết có vấn đề với API
-    console.log('[Gallery API] Error occurred when fetching data');
     galleries.value = [];
     useMockData.value = false;
   } finally {
@@ -432,7 +389,7 @@ const handleImageError = (event: Event) => {
   // Thêm class để nhận biết ảnh bị lỗi
   img.classList.add('image-error');
   
-  console.log(`Image load failed for: ${originalSrc}, replaced with placeholder`);
+
 };
 
 // Tạo danh sách phẳng các items từ 3 rows
