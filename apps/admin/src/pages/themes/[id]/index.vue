@@ -163,27 +163,16 @@ const tabItems = computed(() => {
 // Get filtered sections
 const filteredSections = computed(() => {
   if (!theme.value || !theme.value.sections) {
-    console.log('theme or sections is null/undefined', { theme: theme.value })
     return []
   }
-  
-  console.log('All sections:', theme.value.sections.length, theme.value.sections)
   
   if (activeTab.value === 'all') {
     return [...theme.value.sections] // Return a copy to ensure reactivity
   }
   
   const filtered = theme.value.sections.filter(section => section.pageType === activeTab.value)
-  console.log(`Filtered for ${activeTab.value}:`, filtered.length, filtered)
   return filtered
 })
-
-// Debug logs to check data
-watch([() => theme.value?.sections, activeTab], ([sections, tab]) => {
-  console.log('Sections:', sections)
-  console.log('Active tab:', tab)
-  console.log('Filtered sections:', filteredSections.value)
-}, { immediate: true })
 
 // Delete section
 const deleteSection = async (sectionId: number) => {

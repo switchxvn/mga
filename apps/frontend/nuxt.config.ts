@@ -13,6 +13,20 @@ export default defineNuxtConfig({
     port: process.env.NUXT_PORT ? parseInt(process.env.NUXT_PORT) : 4200,
   },
 
+  // Add Node.js polyfills for server-side environment
+  nitro: {
+    experimental: {
+      wasm: true
+    },
+    esbuild: {
+      options: {
+        target: 'node18'
+      }
+    },
+    // Ensure fetch is available in production
+    preset: 'node-server'
+  },
+
   components: {
     dirs: [
       {
@@ -272,6 +286,7 @@ export default defineNuxtConfig({
   ],
 
   plugins: [
+    '~/plugins/fetch-polyfill.server',
     '~/plugins/trpc',
     '~/plugins/seo.server',
     '~/plugins/gtm.server',
@@ -283,11 +298,15 @@ export default defineNuxtConfig({
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
-      include: ['@trpc/client', '@trpc/server', 'photoswipe', 'estree-walker'],
+      include: ['@trpc/client', '@trpc/server', 'photoswipe', 'estree-walker', 'node-fetch'],
       exclude: ['entities'],
       esbuildOptions: {
         target: 'es2020'
       }
+    },
+    define: {
+      // Polyfills for Node.js environment
+      global: 'globalThis',
     },
     build: {
       target: 'es2020',

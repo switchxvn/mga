@@ -3,6 +3,18 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   if (process.client) return
 
   try {
+    // Check if we have a valid Nuxt context
+    if (!nuxtApp || !nuxtApp.ssrContext) {
+      console.warn('SEO Server Plugin: Invalid Nuxt context');
+      return;
+    }
+
+    // Check if fetch is available
+    if (typeof globalThis.fetch === 'undefined') {
+      console.warn('SEO Server Plugin: Fetch not available, skipping SEO preload');
+      return;
+    }
+
     // Get tRPC instance
     const { $trpc } = nuxtApp
     if (!$trpc) {
@@ -32,20 +44,26 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       return
     }
 
-    // Preload SEO data for the current path
+    // Preload SEO data for the current path with timeout
     try {
-      const seoData = await ($trpc as any).seo.getSeoByPath.query(path)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('SEO fetch timeout')), 5000)
+      );
+
+      const seoDataPromise = ($trpc as any).seo.getSeoByPath.query(path);
+      
+      const seoData = await Promise.race([seoDataPromise, timeoutPromise]);
       
       if (seoData) {
         // Store in global state for middleware to use
-        const seoState = useState(`seo-${path}`, () => seoData)
-
+        const seoState = useState(`seo-${path}`, () => seoData);
+        console.log('SEO Server Plugin: Successfully preloaded SEO data for', path);
       }
     } catch (apiError) {
-      console.warn('SEO Server Plugin: Failed to preload SEO data:', apiError)
+      console.warn('SEO Server Plugin: Failed to preload SEO data:', apiError);
     }
 
   } catch (error) {
-    console.error('SEO Server Plugin: Error:', error)
+    console.error('SEO Server Plugin: Error:', error);
   }
 }) 
