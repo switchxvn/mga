@@ -24,7 +24,11 @@ export default defineNuxtConfig({
       }
     },
     // Ensure fetch is available in production
-    preset: 'node-server'
+    preset: 'node-server',
+    // Exclude node-fetch from client bundle
+    externals: {
+      inline: ['node-fetch']
+    }
   },
 
   components: {
@@ -298,8 +302,8 @@ export default defineNuxtConfig({
   vite: {
     plugins: [nxViteTsPaths()],
     optimizeDeps: {
-      include: ['@trpc/client', '@trpc/server', 'photoswipe', 'estree-walker', 'node-fetch'],
-      exclude: ['entities'],
+      include: ['@trpc/client', '@trpc/server', 'photoswipe', 'estree-walker'],
+      exclude: ['entities', 'node-fetch'],
       esbuildOptions: {
         target: 'es2020'
       }
@@ -311,7 +315,7 @@ export default defineNuxtConfig({
     build: {
       target: 'es2020',
       rollupOptions: {
-        external: [],
+        external: ['node-fetch'],
         output: {
           manualChunks: {
             photoswipe: ['photoswipe']
@@ -325,7 +329,8 @@ export default defineNuxtConfig({
       }
     },
     ssr: {
-      noExternal: ['entities', 'photoswipe']
+      noExternal: ['entities', 'photoswipe'],
+      external: ['node-fetch']
     },
     vue: {
       script: {

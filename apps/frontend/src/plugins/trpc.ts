@@ -2,29 +2,7 @@ import { useRuntimeConfig } from '#imports';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../types/trpc';
 
-// Polyfill fetch for server-side if not available
-if (typeof globalThis.fetch === 'undefined') {
-  // Dynamic import for node-fetch polyfill
-  import('node-fetch').then((nodeFetch) => {
-    // @ts-expect-error - Adding fetch polyfill to globalThis
-    globalThis.fetch = nodeFetch.default;
-    // @ts-expect-error - Adding Headers polyfill to globalThis
-    globalThis.Headers = nodeFetch.Headers;
-    // @ts-expect-error - Adding Request polyfill to globalThis
-    globalThis.Request = nodeFetch.Request;
-    // @ts-expect-error - Adding Response polyfill to globalThis
-    globalThis.Response = nodeFetch.Response;
-  }).catch((error) => {
-    console.error('Failed to load node-fetch polyfill:', error);
-  });
-}
-
 export default defineNuxtPlugin(() => {
-  // Early return if fetch is not available
-  if (typeof globalThis.fetch === 'undefined' && process.server) {
-    console.warn('Fetch not available, tRPC client may not work properly');
-  }
-
   const config = useRuntimeConfig();
   const baseUrl = process.server 
     ? config.public.apiBase 
@@ -77,12 +55,14 @@ export default defineNuxtPlugin(() => {
           return headers;
         },
         fetch(url, options) {
-          // Handle server-side fetch if not available
-          if (typeof globalThis.fetch === 'undefined') {
+          // Use native fetch if available, otherwise fallback
+          const fetchFn = globalThis.fetch || fetch;
+          
+          if (!fetchFn) {
             return Promise.reject(new Error('Fetch is not available'));
           }
 
-          return globalThis.fetch(url, {
+          return fetchFn(url, {
             ...options,
             signal: AbortSignal.timeout(30000), // 30 second timeout
             credentials: 'include',
