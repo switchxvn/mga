@@ -1,10 +1,4 @@
 export default defineNuxtPlugin(async (nuxtApp) => {
-  // Temporarily disabled to avoid fetch issues in production
-  // SEO will be handled by middleware with fallbacks
-  console.log('SEO Server Plugin: Disabled to avoid fetch issues - using middleware fallbacks');
-  return;
-
-  /* DISABLED CODE - CAN BE RE-ENABLED WHEN FETCH ISSUES ARE RESOLVED
   // Only run on server side for SSR optimization
   if (process.client) return
 
@@ -15,21 +9,15 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       return;
     }
 
-    // Check if fetch is available
-    if (typeof globalThis.fetch === 'undefined') {
-      console.warn('SEO Server Plugin: Fetch not available, skipping SEO preload');
+    // Get tRPC instance
+    const { $trpc } = nuxtApp;
+    if (!$trpc) {
+      console.warn('SEO Server Plugin: tRPC not available');
       return;
     }
 
-    // Get tRPC instance
-    const { $trpc } = nuxtApp
-    if (!$trpc) {
-      console.warn('SEO Server Plugin: tRPC not available')
-      return
-    }
-
     // Get current route path
-    const path = nuxtApp.ssrContext?.url || '/'
+    const path = nuxtApp.ssrContext?.url || '/';
     
     // Skip detail pages and static resources
     const skipPatterns = [
@@ -44,10 +32,10 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       /^\/tickets\/[^/]+$/,
       /^\/categories\/[^/]+$/,
       /^\/danh-muc\/[^/]+$/,
-    ]
+    ];
 
     if (skipPatterns.some(pattern => pattern.test(path))) {
-      return
+      return;
     }
 
     // Preload SEO data for the current path with timeout
@@ -63,7 +51,9 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       if (seoData) {
         // Store in global state for middleware to use
         const seoState = useState(`seo-${path}`, () => seoData);
-        console.log('SEO Server Plugin: Successfully preloaded SEO data for', path);
+        console.log('✅ SEO Server Plugin: Successfully preloaded dynamic SEO data for', path);
+      } else {
+        console.log('SEO Server Plugin: No SEO data found for path:', path);
       }
     } catch (apiError) {
       console.warn('SEO Server Plugin: Failed to preload SEO data:', apiError);
@@ -72,5 +62,4 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   } catch (error) {
     console.error('SEO Server Plugin: Error:', error);
   }
-  */
-}) 
+}); 

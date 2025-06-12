@@ -1,19 +1,4 @@
 export default defineNuxtPlugin(async (nuxtApp) => {
-  // Temporarily disabled to avoid fetch issues in production
-  // GTM can be configured via hardcoded ID or environment variables
-  console.log('GTM Server Plugin: Disabled to avoid fetch issues - using hardcoded GTM config');
-  
-  // Set a fallback GTM ID if needed
-  const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH'; // Use environment variable or fallback
-  if (fallbackGtmId) {
-    nuxtApp.provide('gtmId', fallbackGtmId);
-    const gtmState = useState('gtm-id', () => fallbackGtmId);
-    console.log('GTM Server Plugin: Using fallback GTM ID:', fallbackGtmId);
-  }
-  
-  return;
-
-  /* DISABLED CODE - CAN BE RE-ENABLED WHEN FETCH ISSUES ARE RESOLVED
   // Only run on server side for SEO and initial load
   if (process.client) return
 
@@ -24,16 +9,17 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       return;
     }
 
-    // Check if fetch is available
-    if (typeof globalThis.fetch === 'undefined') {
-      console.warn('GTM Server Plugin: Fetch not available, skipping GTM settings fetch');
-      return;
-    }
-
     // Get tRPC instance to fetch settings
     const { $trpc } = nuxtApp;
     if (!$trpc) {
       console.warn('GTM Server Plugin: tRPC not available');
+      // Fallback to hardcoded GTM ID
+      const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH';
+      if (fallbackGtmId) {
+        nuxtApp.provide('gtmId', fallbackGtmId);
+        const gtmState = useState('gtm-id', () => fallbackGtmId);
+        console.log('✅ GTM fallback ready with ID:', fallbackGtmId);
+      }
       return;
     }
 
@@ -55,16 +41,36 @@ export default defineNuxtPlugin(async (nuxtApp) => {
         // Also provide it via nuxtApp for immediate access
         nuxtApp.provide('gtmId', gtmId);
 
-        console.log('GTM Server Plugin: Successfully loaded GTM ID');
+        console.log('✅ GTM Server Plugin: Successfully loaded dynamic GTM ID from database:', gtmId);
       } else {
-        console.warn('GTM Server Plugin: No GTM ID found in settings');
+        console.warn('GTM Server Plugin: No GTM ID found in database, using fallback');
+        // Fallback to hardcoded GTM ID
+        const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH';
+        if (fallbackGtmId) {
+          nuxtApp.provide('gtmId', fallbackGtmId);
+          const gtmState = useState('gtm-id', () => fallbackGtmId);
+          console.log('✅ GTM fallback ready with ID:', fallbackGtmId);
+        }
       }
     } catch (apiError) {
       console.warn('GTM Server Plugin: Failed to fetch GTM settings:', apiError);
+      // Fallback to hardcoded GTM ID
+      const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH';
+      if (fallbackGtmId) {
+        nuxtApp.provide('gtmId', fallbackGtmId);
+        const gtmState = useState('gtm-id', () => fallbackGtmId);
+        console.log('✅ GTM fallback ready with ID:', fallbackGtmId);
+      }
     }
 
   } catch (error) {
     console.error('GTM Server Plugin: Error:', error);
+    // Final fallback
+    const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH';
+    if (fallbackGtmId) {
+      nuxtApp.provide('gtmId', fallbackGtmId);
+      const gtmState = useState('gtm-id', () => fallbackGtmId);
+      console.log('✅ GTM final fallback ready with ID:', fallbackGtmId);
+    }
   }
-  */
 }); 
