@@ -63,36 +63,69 @@ function getSafeBaseUrl(): string {
   }
 }
 
-export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => {
-  // Skip for static resources and API routes
-  if (to.path.match(/\.(svg|png|jpg|jpeg|gif|css|js|ico|woff|woff2|ttf|eot|json|xml)$/i) || 
-      to.path.startsWith('/api/')) {
-    return;
-  }
-  
-  // Skip detail pages as they have their own SEO handling
-  const detailPagePatterns = [
-    /^\/posts\/[^/]+$/,
-    /^\/products\/[^/]+$/,
-    /^\/bai-viet\/[^/]+$/,
-    /^\/san-pham\/[^/]+$/,
-    /^\/dich-vu\/[^/]+$/,
-    /^\/services\/[^/]+$/,
-    /^\/tickets\/[^/]+$/,
-    /^\/categories\/[^/]+$/,
-    /^\/danh-muc\/[^/]+$/,
-  ];
-  
-  if (detailPagePatterns.some(pattern => pattern.test(to.path))) {
+export default defineNuxtRouteMiddleware(async (to) => {
+  // Skip if running on client-side navigation (to avoid double loading)
+  if (process.client && nuxtApp.isHydrating === false) {
     return;
   }
 
-  // Only run on server-side for SSR
-  if (process.server) {
-    await handleServerSideSEO(to.path);
-  } else {
-    // Client-side: track page view after navigation
-    await handleClientSideSEO(to.path);
+  try {
+    const config = useRuntimeConfig();
+    
+    // Get current URL safely
+    const currentUrl = process.client 
+      ? window.location.href 
+      : `${config.public.siteUrl}${to.fullPath}`;
+
+    // Fetch SEO data for current route
+    const seoData = await $fetch('/api/seo-meta', {
+      params: {
+        path: to.path,
+        url: currentUrl
+      }
+    });
+
+    // Apply SEO meta tags
+    if (seoData) {
+      useHead({
+        title: seoData.title,
+        meta: [
+          { name: 'description', content: seoData.description },
+          { name: 'keywords', content: seoData.keywords || '' },
+          { property: 'og:type', content: 'website' },
+          { property: 'og:title', content: seoData.ogTitle || seoData.title },
+          { property: 'og:description', content: seoData.ogDescription || seoData.description },
+          { property: 'og:image', content: seoData.ogImage || '/images/og-default.jpg' },
+          { property: 'og:url', content: seoData.ogUrl || currentUrl },
+          { name: 'twitter:card', content: seoData.twitterCard || 'summary_large_image' },
+          { name: 'twitter:title', content: seoData.ogTitle || seoData.title },
+          { name: 'twitter:description', content: seoData.ogDescription || seoData.description },
+          { name: 'twitter:image', content: seoData.ogImage || '/images/og-default.jpg' }
+        ],
+        link: [
+          { rel: 'canonical', href: seoData.canonical || currentUrl }
+        ]
+      });
+
+      // Also use useSeoMeta for additional optimization
+      useSeoMeta({
+        title: seoData.title,
+        description: seoData.description,
+        ogType: 'website',
+        ogTitle: seoData.ogTitle || seoData.title,
+        ogDescription: seoData.ogDescription || seoData.description,
+        ogImage: seoData.ogImage,
+        ogUrl: seoData.ogUrl || currentUrl,
+        twitterCard: seoData.twitterCard || 'summary_large_image',
+        twitterTitle: seoData.ogTitle || seoData.title,
+        twitterDescription: seoData.ogDescription || seoData.description,
+        twitterImage: seoData.ogImage
+      });
+    }
+
+  } catch (error) {
+    // Silently fail - default meta will be used from nuxt.config.ts
+    console.warn('SEO middleware: Failed to load SEO data, using defaults:', error);
   }
 });
 
