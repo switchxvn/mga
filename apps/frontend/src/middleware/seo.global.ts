@@ -1,7 +1,7 @@
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
 import { useTrpc } from '../composables/useTrpc';
-import { defineNuxtRouteMiddleware, useRuntimeConfig, useState } from 'nuxt/app';
+import { defineNuxtRouteMiddleware, useRuntimeConfig, useState, useRequestURL } from 'nuxt/app';
 import { useHead, useSeoMeta } from '@unhead/vue';
 import type { RouteLocationNormalized } from 'vue-router';
 import { useGTM } from '../composables/useGTM';
@@ -22,31 +22,38 @@ const defaultSeo = {
 } as const;
 
 /**
- * Get base URL in a safe way that works in all contexts
+ * Get base URL in a safe way that works in all contexts (Nuxt SSR best practice)
+ * - On server: use useRequestURL() to get the real request origin (see Nuxt docs)
+ * - On client: use window.location as before
  */
 function getSafeBaseUrl(): string {
-  // Server-side: use environment variables directly
   if (process.server) {
-    return process.env.API_BASE?.replace('/api', '') || 
-           process.env.NUXT_PUBLIC_API_BASE?.replace('/api', '') || 
-           'http://localhost:3000';
+    try {
+      // Debug: log env and runtimeConfig in SSR
+      const config = useRuntimeConfig();
+      // eslint-disable-next-line no-console
+      console.log('[SEO][SSR] runtimeConfig.public.apiBase:', config.public.apiBase);
+      // eslint-disable-next-line no-console
+      console.log('[SEO][SSR] process.env.NUXT_PUBLIC_API_BASE:', process.env.NUXT_PUBLIC_API_BASE);
+      const url = useRequestURL();
+      return url.origin;
+    } catch {
+      // Fallback if no request context (should rarely happen)
+      return 'https://yourdomain.com';
+    }
   }
-  
   // Client-side: try various methods
   try {
-    // Try to get from window.location first
     if (typeof window !== 'undefined' && window.location) {
       const origin = window.location.origin;
-      // If we're on a known port (4200), it's likely dev mode
       if (origin.includes(':4200')) {
-        return 'http://localhost:3000'; // API is usually on 3000
+        return 'http://localhost:3000';
       }
       return origin;
     }
   } catch {
     // Fallback if window access fails
   }
-  
   // Try runtime config as last resort on client
   try {
     const config = useRuntimeConfig();
