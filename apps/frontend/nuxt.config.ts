@@ -287,7 +287,6 @@ export default defineNuxtConfig({
 
   plugins: [
     '~/plugins/trpc',
-    '~/plugins/seo.server',
     '~/plugins/gtm.server',
   ],
 

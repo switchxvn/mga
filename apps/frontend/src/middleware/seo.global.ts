@@ -96,15 +96,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
       ? window.location.href 
       : `${config.public.siteUrl}${to.fullPath}`;
 
-    // Fetch SEO data via server API (better for SSR)
-    const response = await $fetch('/api/seo-meta', {
-      params: {
-        path: to.path
-      },
-      timeout: 5000
-    });
+    // Fetch SEO data directly from tRPC (works in all environments)
+    let seoData = null;
     
-    const seoData = response?.success ? response.data : null;
+    try {
+      const trpc = useTrpc();
+      seoData = await trpc.seo.getSeoByPath.query(to.path);
+    } catch (error) {
+      console.warn('SEO: Failed to fetch SEO data:', error);
+      seoData = null;
+    }
 
     // Apply SEO meta tags
     if (seoData) {
