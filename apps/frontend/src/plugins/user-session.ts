@@ -2,11 +2,6 @@ import { useUserSession } from '@/composables/useUserSession';
 import { useRoute, useRouter } from 'vue-router';
 
 export default defineNuxtPlugin(() => {
-  // TEMPORARILY DISABLED DUE TO SECURITY CONCERNS
-  // Suspicious external API calls may be compromised
-  console.warn('USER SESSION PLUGIN DISABLED FOR SECURITY REASONS');
-  return;
-  
   // Chỉ chạy ở phía client
   if (process.client) {
     const userSession = useUserSession();

@@ -1,7 +1,7 @@
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
 import { useTrpc } from '../composables/useTrpc';
-import { defineNuxtRouteMiddleware, useRuntimeConfig, useState } from 'nuxt/app';
+import { defineNuxtRouteMiddleware, useRuntimeConfig, useState, useRequestURL } from 'nuxt/app';
 import { useHead, useSeoMeta } from '@unhead/vue';
 import type { RouteLocationNormalized } from 'vue-router';
 import { useGTM } from '../composables/useGTM';
@@ -20,6 +20,48 @@ const defaultSeo = {
   robotsTxt: 'index, follow',
   canonicalUrl: ''
 } as const;
+
+/**
+ * Get base URL in a safe way that works in all contexts (Nuxt SSR best practice)
+ * - On server: use useRequestURL() to get the real request origin (see Nuxt docs)
+ * - On client: use window.location as before
+ */
+function getSafeBaseUrl(): string {
+  if (process.server) {
+    try {
+      // Debug: log env and runtimeConfig in SSR
+      const config = useRuntimeConfig();
+      // eslint-disable-next-line no-console
+      console.log('[SEO][SSR] runtimeConfig.public.apiBase:', config.public.apiBase);
+      // eslint-disable-next-line no-console
+      console.log('[SEO][SSR] process.env.NUXT_PUBLIC_API_BASE:', process.env.NUXT_PUBLIC_API_BASE);
+      const url = useRequestURL();
+      return url.origin;
+    } catch {
+      // Fallback if no request context (should rarely happen)
+      return 'https://yourdomain.com';
+    }
+  }
+  // Client-side: try various methods
+  try {
+    if (typeof window !== 'undefined' && window.location) {
+      const origin = window.location.origin;
+      if (origin.includes(':4200')) {
+        return 'http://localhost:3000';
+      }
+      return origin;
+    }
+  } catch {
+    // Fallback if window access fails
+  }
+  // Try runtime config as last resort on client
+  try {
+    const config = useRuntimeConfig();
+    return config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
+  } catch {
+    return 'http://localhost:3000';
+  }
+}
 
 export default defineNuxtRouteMiddleware(async (to: RouteLocationNormalized) => {
   // Skip for static resources and API routes
@@ -190,17 +232,8 @@ function applySeoMeta(seo: {
   canonicalUrl: string;
 }, path: string) {
   try {
-    // Check if we're in a valid Nuxt context before using composables
-    let config: any;
-    let baseUrl: string;
-    
-    try {
-      config = useRuntimeConfig();
-      baseUrl = config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
-    } catch (configError) {
-      console.warn('SEO Middleware: Cannot access runtime config, using fallback');
-      baseUrl = 'http://localhost:3000';
-    }
+    // Get base URL using the safe method
+    const baseUrl = getSafeBaseUrl();
     
     // Build canonical URL
     const canonicalUrl = seo.canonicalUrl || `${baseUrl}${path}`;
