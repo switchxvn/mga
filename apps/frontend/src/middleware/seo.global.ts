@@ -63,7 +63,32 @@ function getSafeBaseUrl(): string {
   }
 }
 
+interface SeoMeta {
+  title: string;
+  description: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogUrl: string;
+  twitterCard: string;
+  keywords?: string;
+  canonical?: string;
+}
+
 export default defineNuxtRouteMiddleware(async (to) => {
+  // Skip API routes, static assets, and internal paths to prevent infinite loops
+  if (
+    to.path.startsWith('/api/') ||
+    to.path.startsWith('/internal-api/') ||
+    to.path.startsWith('/_nuxt/') ||
+    to.path.startsWith('/static/') ||
+    to.path.startsWith('/images/') ||
+    to.path.startsWith('/favicon') ||
+    to.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|xml|txt)$/)
+  ) {
+    return;
+  }
+
   // Skip if running on client-side navigation (to avoid double loading)
   if (process.client) {
     const nuxtApp = useNuxtApp();
@@ -80,12 +105,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
       ? window.location.href 
       : `${config.public.siteUrl}${to.fullPath}`;
 
-    // Fetch SEO data for current route
-    const seoData = await $fetch('/internal-api/seo-meta', {
+    // Fetch SEO data for current route with timeout
+    const seoData = await $fetch<SeoMeta>('/internal-api/seo-meta', {
       params: {
         path: to.path,
         url: currentUrl
-      }
+      },
+      timeout: 5000 // 5 second timeout
     });
 
     // Apply SEO meta tags
