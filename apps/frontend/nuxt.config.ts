@@ -236,7 +236,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE || 'http://localhost:3000',
+      apiBase: process.env.API_BASE || 'http://localhost:3333',
       siteUrl: process.env.SITE_URL || 'http://localhost:4200',
       siteName: process.env.SITE_NAME || 'Ecommerce Web',
     },
@@ -330,7 +330,7 @@ export default defineNuxtConfig({
     server: {
       proxy: {
         '/api/trpc': {
-          target: process.env.API_BASE || 'http://localhost:3000',
+          target: process.env.API_BASE || 'http://localhost:3333',
           changeOrigin: true,
           rewrite: (path) => path,
         },
