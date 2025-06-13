@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { useHomePage } from '../composables/useHomePage';
 import { onBeforeUnmount } from 'vue';
-import type { Seo } from '@ew/shared';
-import { useHead } from '@unhead/vue';
-import { useAsyncData } from 'nuxt/app';
-import { computed, ref } from 'vue';
-import { useTrpc } from '../composables/useTrpc';
 
 const { 
   themeSections, 
@@ -17,38 +12,12 @@ const {
   getSectionConfig
 } = useHomePage();
 
-const trpc = useTrpc();
-
 // Cleanup khi unmount
 onBeforeUnmount(() => {
   cleanup();
 });
 
-const seoData = ref<Seo | null>(null);
-
-useAsyncData('home-seo', () => 
-  trpc.seo.getSeoByPath.query('/'),
-  {
-    server: true,
-    lazy: false,
-    transform: (data) => {
-      seoData.value = data as Seo;
-      return data;
-    }
-  }
-);
-
-useHead({
-  title: computed(() => seoData.value?.title || 'Trang Chủ'),
-  meta: computed(() => [
-    { name: 'title', content: seoData.value?.title || 'Trang Chủ' },
-    { property: 'og:title', content: seoData.value?.ogTitle || seoData.value?.title || 'Trang Chủ' },
-    { name: 'description', content: seoData.value?.description },
-    { property: 'og:description', content: seoData.value?.ogDescription || seoData.value?.description },
-    { property: 'og:image', content: seoData.value?.ogImage },
-    { name: 'keywords', content: seoData.value?.keywords }
-  ])
-});
+// SEO được handle tự động bởi middleware global, không cần code thêm
 </script>
 
 <template>
