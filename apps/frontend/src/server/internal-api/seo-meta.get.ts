@@ -81,7 +81,7 @@ export default defineEventHandler(async (event): Promise<SeoMeta> => {
     console.warn('Failed to fetch SEO data from database:', error);
   }
 
-  // Return default meta if database fetch failed
+  // Return default meta with potential customization for specific routes
   const defaultMeta = getDefaultMeta();
 
   try {

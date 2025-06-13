@@ -81,7 +81,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
       : `${config.public.siteUrl}${to.fullPath}`;
 
     // Fetch SEO data for current route
-    const seoData = await $fetch('/api/seo-meta', {
+    const seoData = await $fetch('/internal-api/seo-meta', {
       params: {
         path: to.path,
         url: currentUrl

@@ -49,7 +49,7 @@ export const useSeoData = () => {
         ? window.location.href 
         : `https://captreonuisam.com${route.fullPath}`);
 
-      const data = await $fetch<SeoMeta>('/api/seo-meta', {
+      const data = await $fetch<SeoMeta>('/internal-api/seo-meta', {
         params: {
           path: currentPath,
           url: currentUrl
