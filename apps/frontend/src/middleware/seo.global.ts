@@ -65,8 +65,11 @@ function getSafeBaseUrl(): string {
 
 export default defineNuxtRouteMiddleware(async (to) => {
   // Skip if running on client-side navigation (to avoid double loading)
-  if (process.client && nuxtApp.isHydrating === false) {
-    return;
+  if (process.client) {
+    const nuxtApp = useNuxtApp();
+    if (nuxtApp.isHydrating === false) {
+      return;
+    }
   }
 
   try {
