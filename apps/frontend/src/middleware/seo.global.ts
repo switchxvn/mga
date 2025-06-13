@@ -63,7 +63,23 @@ function getSafeBaseUrl(): string {
   }
 }
 
+// Use tRPC type instead of custom interface
+// interface SeoMeta will be replaced by SeoOutput from tRPC
+
 export default defineNuxtRouteMiddleware(async (to) => {
+  // Skip API routes, static assets, and internal paths to prevent infinite loops
+  if (
+    to.path.startsWith('/api/') ||
+    to.path.startsWith('/internal-api/') ||
+    to.path.startsWith('/_nuxt/') ||
+    to.path.startsWith('/static/') ||
+    to.path.startsWith('/images/') ||
+    to.path.startsWith('/favicon') ||
+    to.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|xml|txt)$/)
+  ) {
+    return;
+  }
+
   // Skip if running on client-side navigation (to avoid double loading)
   if (process.client) {
     const nuxtApp = useNuxtApp();
@@ -80,13 +96,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
       ? window.location.href 
       : `${config.public.siteUrl}${to.fullPath}`;
 
-    // Fetch SEO data for current route
-    const seoData = await $fetch('/api/seo-meta', {
+    // Fetch SEO data via server API (better for SSR)
+    const response = await $fetch('/api/seo-meta', {
       params: {
-        path: to.path,
-        url: currentUrl
-      }
+        path: to.path
+      },
+      timeout: 5000
     });
+    
+    const seoData = response?.success ? response.data : null;
 
     // Apply SEO meta tags
     if (seoData) {
@@ -99,14 +117,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
           { property: 'og:title', content: seoData.ogTitle || seoData.title },
           { property: 'og:description', content: seoData.ogDescription || seoData.description },
           { property: 'og:image', content: seoData.ogImage || '/images/og-default.jpg' },
-          { property: 'og:url', content: seoData.ogUrl || currentUrl },
-          { name: 'twitter:card', content: seoData.twitterCard || 'summary_large_image' },
+          { property: 'og:url', content: currentUrl },
+          { name: 'twitter:card', content: 'summary_large_image' },
           { name: 'twitter:title', content: seoData.ogTitle || seoData.title },
           { name: 'twitter:description', content: seoData.ogDescription || seoData.description },
           { name: 'twitter:image', content: seoData.ogImage || '/images/og-default.jpg' }
         ],
         link: [
-          { rel: 'canonical', href: seoData.canonical || currentUrl }
+          { rel: 'canonical', href: seoData.canonicalUrl || currentUrl }
         ]
       });
 
@@ -118,8 +136,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
         ogTitle: seoData.ogTitle || seoData.title,
         ogDescription: seoData.ogDescription || seoData.description,
         ogImage: seoData.ogImage,
-        ogUrl: seoData.ogUrl || currentUrl,
-        twitterCard: seoData.twitterCard || 'summary_large_image',
+        ogUrl: currentUrl,
+        twitterCard: 'summary_large_image',
         twitterTitle: seoData.ogTitle || seoData.title,
         twitterDescription: seoData.ogDescription || seoData.description,
         twitterImage: seoData.ogImage
