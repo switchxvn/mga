@@ -387,15 +387,15 @@ onMounted(async () => {
   <div class="space-y-6">
     <!-- Header -->
     <PageHeader
-      title="Orders Management"
-      description="Manage and track customer orders"
+      :title="$t('orders.management')"
+      :description="$t('orders.manageAndTrack')"
     >
       <template #actions>
         <div class="flex items-center gap-2">
           <Menu as="div" class="relative" v-if="selectedOrders.length">
             <MenuButton class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
               <ListChecksIcon class="h-4 w-4" />
-              Bulk Actions ({{ selectedOrders.length }})
+              {{ $t('orders.bulkActions') }} ({{ selectedOrders.length }})
               <ChevronDownIcon class="h-4 w-4" />
             </MenuButton>
 
@@ -410,7 +410,7 @@ onMounted(async () => {
                     ]"
                   >
                     <TrashIcon class="mr-2 h-4 w-4" />
-                    Delete Selected
+                    {{ $t('orders.deleteSelected') }}
                   </button>
                 </MenuItem>
               </div>
@@ -422,7 +422,7 @@ onMounted(async () => {
             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <PlusCircleIcon class="h-5 w-5 mr-2" />
-            Create Order
+            {{ $t('orders.createOrder') }}
           </NuxtLink>
         </div>
       </template>
@@ -433,7 +433,7 @@ onMounted(async () => {
       <template #search>
         <SearchFilter
           :search="search"
-          search-placeholder="Search orders..."
+          :search-placeholder="$t('orders.searchPlaceholder')"
           @update:search="search = $event"
         />
       </template>
@@ -442,13 +442,13 @@ onMounted(async () => {
         <StatusFilter
           :modelValue="statusFilter"
           :options="[
-            { label: 'All Status', value: undefined },
-            { label: 'Pending', value: OrderStatus.PENDING },
-            { label: 'Confirmed', value: OrderStatus.CONFIRMED },
-            { label: 'Processing', value: OrderStatus.PROCESSING },
-            { label: 'Shipped', value: OrderStatus.SHIPPED },
-            { label: 'Delivered', value: OrderStatus.DELIVERED },
-            { label: 'Cancelled', value: OrderStatus.CANCELLED }
+            { label: $t('orders.allStatus'), value: undefined },
+            { label: $t('orders.statusPending'), value: OrderStatus.PENDING },
+            { label: $t('orders.statusConfirmed'), value: OrderStatus.CONFIRMED },
+            { label: $t('orders.statusProcessing'), value: OrderStatus.PROCESSING },
+            { label: $t('orders.statusShipped'), value: OrderStatus.SHIPPED },
+            { label: $t('orders.statusDelivered'), value: OrderStatus.DELIVERED },
+            { label: $t('orders.statusCancelled'), value: OrderStatus.CANCELLED }
           ]"
           @update:modelValue="statusFilter = $event"
         />
@@ -457,13 +457,13 @@ onMounted(async () => {
       <template #additionalFilters>
         <div class="flex items-center space-x-4">
           <div class="w-48">
-            <label for="payment-status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Status</label>
+            <label for="payment-status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('orders.paymentStatusLabel') }}</label>
             <select
               id="payment-status"
               v-model="paymentStatusFilter"
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
             >
-              <option :value="undefined">All Payment Status</option>
+              <option :value="undefined">{{ $t('orders.allPaymentStatus') }}</option>
               <option v-for="status in Object.values(PaymentStatus)" :key="status" :value="status">
                 {{ capitalize(status.replace('_', ' ')) }}
               </option>
@@ -501,25 +501,25 @@ onMounted(async () => {
     >
       <template #header>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          ORDER INFO
+          {{ $t('orders.orderInfo') }}
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          CUSTOMER
+          {{ $t('orders.customer') }}
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          STATUS
+          {{ $t('orders.status') }}
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          PAYMENT
+          {{ $t('orders.payment') }}
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          AMOUNT
+          {{ $t('orders.amount') }}
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          DATE
+          {{ $t('orders.date') }}
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-          ACTIONS
+          {{ $t('orders.actions') }}
         </th>
       </template>
 
@@ -540,7 +540,7 @@ onMounted(async () => {
         <td class="px-6 py-4 whitespace-nowrap">
           <div class="flex flex-col">
             <div class="text-sm font-medium text-gray-900 dark:text-white">
-              {{ order.customerName || 'Guest Customer' }}
+              {{ order.customerName || $t('orders.guestCustomer') }}
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {{ order.email || `${order.phoneCode}${order.phoneNumber}` }}
@@ -556,7 +556,7 @@ onMounted(async () => {
           </div>
           <Menu as="div" class="relative inline-block text-left mt-1">
             <MenuButton class="inline-flex w-full justify-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-              <span class="underline">Change</span>
+              <span class="underline">{{ $t('orders.change') }}</span>
             </MenuButton>
             <MenuItems class="absolute left-0 z-10 mt-1 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-neutral-800 dark:ring-neutral-700">
               <div class="py-1">
@@ -584,7 +584,7 @@ onMounted(async () => {
           </div>
           <Menu as="div" class="relative inline-block text-left mt-1">
             <MenuButton class="inline-flex w-full justify-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-              <span class="underline">Change</span>
+              <span class="underline">{{ $t('orders.change') }}</span>
             </MenuButton>
             <MenuItems class="absolute left-0 z-10 mt-1 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-neutral-800 dark:ring-neutral-700">
               <div class="py-1">
@@ -633,9 +633,9 @@ onMounted(async () => {
       <template #empty>
         <div class="text-center py-10">
           <PackageIcon class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No orders found</h3>
+          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">{{ $t('orders.noOrdersFound') }}</h3>
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Get started by creating a new order.
+            {{ $t('orders.getStartedByCreating') }}
           </p>
           <div class="mt-6">
             <NuxtLink
@@ -643,7 +643,7 @@ onMounted(async () => {
               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <PlusCircleIcon class="-ml-1 mr-2 h-5 w-5" />
-              Create Order
+              {{ $t('orders.createOrder') }}
             </NuxtLink>
           </div>
         </div>
