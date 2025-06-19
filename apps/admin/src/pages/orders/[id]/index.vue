@@ -61,6 +61,7 @@ interface OrderItem {
   createdAt: string;
   updatedAt: string;
   product?: any;
+  travelDate?: string;
 }
 
 interface Order {
@@ -584,6 +585,9 @@ onMounted(async () => {
                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   {{ $t('orders.total') }}
                 </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  {{ $t('orders.travelDate') }}
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -619,6 +623,12 @@ onMounted(async () => {
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
                   {{ typeof item.totalPrice === 'number' ? item.totalPrice.toFixed(2) : item.totalPrice }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <span v-if="item.travelDate" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                    {{ formatDate(item.travelDate) }}
+                  </span>
+                  <span v-else class="text-gray-400 dark:text-gray-600 text-xs">N/A</span>
                 </td>
               </tr>
             </tbody>

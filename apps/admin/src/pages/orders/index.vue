@@ -89,6 +89,7 @@ interface OrderItem {
   createdAt: string;
   updatedAt: string;
   product?: any;
+  travelDate?: string;
 }
 
 interface Order {
@@ -519,6 +520,9 @@ onMounted(async () => {
           {{ $t('orders.date') }}
         </th>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          {{ $t('orders.travelDate') }}
+        </th>
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           {{ $t('orders.actions') }}
         </th>
       </template>
@@ -612,6 +616,19 @@ onMounted(async () => {
         <!-- DATE Column -->
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
           {{ formatDate(order.createdAt) }}
+        </td>
+        
+        <!-- TRAVEL DATE Column -->
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+          <div v-if="order.items && order.items.length > 0">
+            <div v-for="item in order.items" :key="item.id" class="mb-1">
+              <span v-if="item.travelDate" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                {{ formatDate(item.travelDate) }}
+              </span>
+              <span v-else class="text-gray-400 dark:text-gray-600 text-xs">N/A</span>
+            </div>
+          </div>
+          <span v-else class="text-gray-400 dark:text-gray-600 text-xs">N/A</span>
         </td>
         
         <!-- ACTIONS Column -->
