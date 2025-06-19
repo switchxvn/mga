@@ -521,6 +521,7 @@
     "orderID": "Mã đơn hàng",
     "customer": "Khách hàng",
     "date": "Ngày",
+    "travelDate": "Ngày đi",
     "total": "Tổng",
     "status": "Trạng thái",
     "viewOrder": "Xem đơn hàng",

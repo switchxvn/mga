@@ -521,6 +521,7 @@
     "orderID": "Order ID",
     "customer": "Customer",
     "date": "Date",
+    "travelDate": "Travel Date",
     "total": "Total",
     "status": "Status",
     "viewOrder": "View Order",
