@@ -36,11 +36,8 @@ export function useFeatureFlags() {
       isLoading.value = true;
       isGlobalLoading.value = true;
       error.value = null;
-      console.log('Fetching feature flags...');
-      
       // Gọi API tRPC
       const data = await trpc.featureFlags.getAllFeatureFlags.query();
-      console.log('Feature flags from tRPC:', data);
       
       // Lưu vào bộ nhớ cache
       featureFlags.value = data;
@@ -87,11 +84,8 @@ export function useFeatureFlags() {
     try {
       isLoading.value = true;
       error.value = null;
-      console.log(`Fetching feature flag with key: ${key}`);
-      
       // Gọi API tRPC
       const flag = await trpc.featureFlags.getFeatureFlagByKey.query(key);
-      console.log(`Feature flag with key ${key} from tRPC:`, flag);
       
       // Lưu vào cache
       if (flag && flag.key) {
@@ -131,7 +125,7 @@ export function useFeatureFlags() {
         defaultValue,
       });
       
-      console.log(`Feature ${key} enabled:`, result.enabled);
+
       
       // Lưu vào cache
       globalFeatureFlags[key] = {
@@ -151,9 +145,7 @@ export function useFeatureFlags() {
    * @returns true nếu cho phép, false nếu không
    */
   const isAddToCartEnabled = async () => {
-    console.log('Checking if add to cart is enabled...');
     const enabled = await isFeatureEnabled('enable_add_to_cart', true);
-    console.log('Add to cart enabled:', enabled);
     return enabled;
   };
   

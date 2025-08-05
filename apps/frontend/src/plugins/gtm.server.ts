@@ -1,38 +1,76 @@
 export default defineNuxtPlugin(async (nuxtApp) => {
-  // Only run on server side
+  // Only run on server side for SEO and initial load
   if (process.client) return
 
-  console.log('GTM Server Plugin: Starting with hardcoded GTM ID...')
-
-  // Hardcoded GTM ID as requested
-  const gtmId = 'GTM-T89X4CKH'
-
   try {
-    // Use useHead to inject GTM script in server-side rendering
-    useHead({
-      script: [
-        // Google Tag Manager
-        {
-          key: 'gtm-script',
-          innerHTML: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${gtmId}');`
-        }
-      ],
-      noscript: [
-        // Google Tag Manager (noscript)
-        {
-          key: 'gtm-noscript',
-          innerHTML: `<iframe src="https://www.googletagmanager.com/ns.html?id=${gtmId}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`
-        }
-      ]
-    })
+    // Check if we have a valid Nuxt context
+    if (!nuxtApp || !nuxtApp.ssrContext) {
+      console.warn('GTM Server Plugin: Invalid Nuxt context');
+      return;
+    }
 
-    console.log('GTM Server Plugin: GTM script injected with hardcoded ID:', gtmId)
+    // Get tRPC instance to fetch settings
+    const { $trpc } = nuxtApp;
+    if (!$trpc) {
+      console.warn('GTM Server Plugin: tRPC not available');
+      // Fallback to hardcoded GTM ID
+      const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH';
+      if (fallbackGtmId) {
+        nuxtApp.provide('gtmId', fallbackGtmId);
+        const gtmState = useState('gtm-id', () => fallbackGtmId);
+        console.log('✅ GTM fallback ready with ID:', fallbackGtmId);
+      }
+      return;
+    }
+
+    // Fetch GTM ID from database with timeout
+    try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('GTM settings fetch timeout')), 5000)
+      );
+
+      const settingsPromise = ($trpc as any).settings.getPublicSettings.query();
+      
+      const settings = await Promise.race([settingsPromise, timeoutPromise]);
+      const gtmId = settings.find((s: any) => s.key === 'google_tag_manager_id')?.value;
+
+      if (gtmId && gtmId.trim()) {
+        // Store GTM ID in global state for use across the app
+        const gtmState = useState('gtm-id', () => gtmId);
+        
+        // Also provide it via nuxtApp for immediate access
+        nuxtApp.provide('gtmId', gtmId);
+
+        console.log('✅ GTM Server Plugin: Successfully loaded dynamic GTM ID from database:', gtmId);
+      } else {
+        console.warn('GTM Server Plugin: No GTM ID found in database, using fallback');
+        // Fallback to hardcoded GTM ID
+        const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH';
+        if (fallbackGtmId) {
+          nuxtApp.provide('gtmId', fallbackGtmId);
+          const gtmState = useState('gtm-id', () => fallbackGtmId);
+          console.log('✅ GTM fallback ready with ID:', fallbackGtmId);
+        }
+      }
+    } catch (apiError) {
+      console.warn('GTM Server Plugin: Failed to fetch GTM settings:', apiError);
+      // Fallback to hardcoded GTM ID
+      const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH';
+      if (fallbackGtmId) {
+        nuxtApp.provide('gtmId', fallbackGtmId);
+        const gtmState = useState('gtm-id', () => fallbackGtmId);
+        console.log('✅ GTM fallback ready with ID:', fallbackGtmId);
+      }
+    }
 
   } catch (error) {
-    console.error('GTM Server Plugin: Error:', error)
+    console.error('GTM Server Plugin: Error:', error);
+    // Final fallback
+    const fallbackGtmId = process.env.GTM_ID || 'GTM-T89X4CKH';
+    if (fallbackGtmId) {
+      nuxtApp.provide('gtmId', fallbackGtmId);
+      const gtmState = useState('gtm-id', () => fallbackGtmId);
+      console.log('✅ GTM final fallback ready with ID:', fallbackGtmId);
+    }
   }
-}) 
+}); 

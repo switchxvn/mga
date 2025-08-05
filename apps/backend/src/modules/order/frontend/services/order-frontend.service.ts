@@ -15,7 +15,7 @@ import { UploadFrontendService } from '../../../upload/frontend/services/upload-
 import { generateRefundCode } from '../../utils/refund-code.util';
 import * as QRCode from 'qrcode';
 import { Readable } from 'stream';
-import fetch from 'node-fetch';
+// Using native fetch - Node.js 18+ support
 import { DashboardStatsService } from '../../../dashboard/services/dashboard-stats.service';
 
 export interface CreateOrderDto {

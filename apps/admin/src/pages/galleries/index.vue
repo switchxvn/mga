@@ -299,40 +299,16 @@ const handleClickUpload = () => {
   }
 };
 
-// Sau khi upload thành công, thêm chức năng gỡ lỗi
-const debugImageFile = (file: File) => {
-  console.table({
-    name: file.name,
-    type: file.type,
-    size: `${(file.size / 1024).toFixed(2)} KB`,
-    lastModified: new Date(file.lastModified).toLocaleString()
-  });
-  
-  // Thông tin thêm về định dạng ảnh
-  if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
-    console.log('JPEG/JPG file được phát hiện - định dạng ảnh phổ biến nhất');
-  } else if (file.type === 'image/png') {
-    console.log('PNG file được phát hiện - định dạng phổ biến hỗ trợ độ trong suốt');
-  } else if (file.type === 'image/gif') {
-    console.log('GIF file được phát hiện - định dạng hỗ trợ animation');
-  } else if (file.type === 'image/webp') {
-    console.log('WebP file được phát hiện - định dạng mới, có thể không được hỗ trợ trên mọi trình duyệt');
-  } else if (file.type === 'image/svg+xml') {
-    console.log('SVG file được phát hiện - định dạng vector, có thể không hoạt động với API upload ảnh');
-  } else if (file.type === 'image/heic' || file.type === 'image/heif') {
-    console.log('HEIC/HEIF file được phát hiện - định dạng của Apple, thường không được hỗ trợ trên web');
-  } else {
-    console.log(`Định dạng không phổ biến: ${file.type}`);
-  }
-  
+// Helper function for file validation
+const validateImageFile = (file: File) => {
   return file;
 };
 
 // Tạo preview cho file ảnh
 const createImagePreview = async (file: File): Promise<string> => {
   try {
-    // Debug thông tin về file ảnh
-    debugImageFile(file);
+    // Validate file
+    validateImageFile(file);
     
     // Kiểm tra xem file có phải là ảnh không
     if (!file.type.startsWith('image/')) {
@@ -343,11 +319,7 @@ const createImagePreview = async (file: File): Promise<string> => {
     // Kiểm tra kích thước file
     if (file.size > 10 * 1024 * 1024) { // > 10MB
       console.warn('File ảnh quá lớn:', file.size);
-      // Vẫn tạo preview nhưng ghi log cảnh báo
     }
-    
-    // Log thông tin file để debug
-    console.log('Đang tạo preview cho file:', file.name, file.type, file.size);
     
     // Sử dụng FileReader thay vì URL.createObjectURL để tránh vấn đề CORS
     return new Promise((resolve) => {
@@ -355,7 +327,6 @@ const createImagePreview = async (file: File): Promise<string> => {
       
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        console.log('FileReader đã tạo preview thành công');
         resolve(result || DEFAULT_IMAGE);
       };
       

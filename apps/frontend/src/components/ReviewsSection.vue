@@ -94,14 +94,6 @@ const currentLocale = computed(() => {
 
 // Get effective props, prioritizing direct props over config
 const effectiveProps = computed(() => {
-  console.log('Direct props:', { 
-    sectionTitle: props.sectionTitle,
-    sectionDescription: props.sectionDescription,
-    buttonText: props.buttonText,
-  });
-  
-  console.log('Config from section:', props.config);
-  
   return {
     limit: props.limit || props.config?.limit || 6,
     sectionTitle: props.sectionTitle || props.config?.sectionTitle || '',
@@ -187,67 +179,50 @@ const hasReviews = computed(() => reviews.value?.length > 0);
 
 // Helper function to get localized text from props
 const getLocalizedText = (text: TextOrMultiLang, fallbackKey: string): string => {
-  // Debug
-  console.log('[getLocalizedText]', { 
-    text, 
-    type: typeof text, 
-    isObject: typeof text === 'object',
-    currentLocale: currentLocale.value,
-    fallbackKey
-  });
-  
   // Trường hợp text là object
   if (text && typeof text === 'object') {
     // Thử lấy theo locale hiện tại
     const localizedText = text[currentLocale.value];
     if (localizedText) {
-      console.log('[getLocalizedText] Found localized text:', localizedText);
       return localizedText;
     }
     
     // Fallback sang tiếng Anh
     if (text['en']) {
-      console.log('[getLocalizedText] Falling back to EN:', text['en']);
       return text['en'];
     }
     
     // Lấy giá trị đầu tiên nếu không có locale phù hợp
     const firstKey = Object.keys(text)[0];
     if (firstKey) {
-      console.log('[getLocalizedText] Using first available key:', firstKey, text[firstKey]);
       return text[firstKey];
     }
   }
   
   // Trường hợp text là string
   if (typeof text === 'string' && text.trim()) {
-    console.log('[getLocalizedText] Using string value:', text);
     return text;
   }
   
   // Fallback to translation
-  console.log('[getLocalizedText] Using translation key:', fallbackKey);
   return t(fallbackKey);
 };
 
 // Get formatted section title 
 const formattedTitle = computed(() => {
   const title = getLocalizedText(effectiveProps.value.sectionTitle, 'reviews.featuredReviewsTitle');
-  console.log('[formattedTitle]', title);
   return title;
 });
 
 // Get formatted section description
 const formattedDescription = computed(() => {
   const desc = getLocalizedText(effectiveProps.value.sectionDescription, 'reviews.featuredReviewsDescription');
-  console.log('[formattedDescription]', desc);
   return desc;
 });
 
 // Get formatted button text
 const formattedButtonText = computed(() => {
   const btnText = getLocalizedText(effectiveProps.value.buttonText, 'reviews.viewAllReviews');
-  console.log('[formattedButtonText]', btnText);
   return btnText;
 });
 

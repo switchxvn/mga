@@ -61,7 +61,7 @@ const handleAddToCart = () => {
     'USD'              // Currency
   )
   
-  console.log('Add to cart event tracked!')
+  
 }
 
 const handleBeginCheckout = () => {
@@ -76,7 +76,7 @@ const handleBeginCheckout = () => {
   ]
   
   trackBeginCheckout(29.99, 'USD', cartItems)
-  console.log('Begin checkout event tracked!')
+  
 }
 
 const handlePurchase = () => {
@@ -92,19 +92,19 @@ const handlePurchase = () => {
   ]
   
   trackPurchase(transactionId, 29.99, 'USD', items)
-  console.log('Purchase event tracked!')
+  
 }
 
 const handleSearch = () => {
   // Example: Track search event
   trackSearch('sample search query')
-  console.log('Search event tracked!')
+  
 }
 
 const handleContact = () => {
   // Example: Track contact form submission
   trackContact()
-  console.log('Contact event tracked!')
+  
 }
 
 // Track page view when component is mounted
