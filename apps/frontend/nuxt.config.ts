@@ -13,6 +13,18 @@ export default defineNuxtConfig({
     port: process.env.NUXT_PORT ? parseInt(process.env.NUXT_PORT) : 4200,
   },
 
+  nitro: {
+    experimental: {
+      wasm: true
+    },
+    esbuild: {
+      options: {
+        target: 'node18'
+      }
+    },
+    preset: 'node-server'
+  },
+
   components: {
     dirs: [
       {
@@ -224,7 +236,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE || 'http://localhost:3000',
+      apiBase: process.env.API_BASE || 'http://localhost:3333',
+      siteUrl: process.env.SITE_URL || 'http://localhost:4200',
+      siteName: process.env.SITE_NAME || 'Ecommerce Web',
     },
   },
 
@@ -273,6 +287,7 @@ export default defineNuxtConfig({
 
   plugins: [
     '~/plugins/trpc',
+    '~/plugins/gtm.server',
   ],
 
   // @ts-expect-error - i18n module types
@@ -290,7 +305,6 @@ export default defineNuxtConfig({
     build: {
       target: 'es2020',
       rollupOptions: {
-        external: [],
         output: {
           manualChunks: {
             photoswipe: ['photoswipe']
@@ -315,7 +329,7 @@ export default defineNuxtConfig({
     server: {
       proxy: {
         '/api/trpc': {
-          target: process.env.API_BASE || 'http://localhost:3000',
+          target: process.env.API_BASE || 'http://localhost:3333',
           changeOrigin: true,
           rewrite: (path) => path,
         },
@@ -341,12 +355,22 @@ export default defineNuxtConfig({
   app: {
     head: {
       titleTemplate: '%s',
+      title: 'Ecommerce Web - Trang thương mại điện tử',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'robots', content: 'index, follow' },
+        { name: 'description', content: 'Khám phá các sản phẩm chất lượng cao. Mua sắm online dễ dàng, giao hàng nhanh chóng.' },
+        { name: 'keywords', content: 'thương mại điện tử, mua sắm online, sản phẩm chất lượng' },
         { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: 'Ecommerce Web - Trang thương mại điện tử' },
+        { property: 'og:description', content: 'Khám phá các sản phẩm chất lượng cao. Mua sắm online dễ dàng, giao hàng nhanh chóng.' },
+        { property: 'og:image', content: '/images/og-default.jpg' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'Ecommerce Web - Trang thương mại điện tử' },
+        { name: 'twitter:description', content: 'Khám phá các sản phẩm chất lượng cao. Mua sắm online dễ dàng, giao hàng nhanh chóng.' },
+        { name: 'twitter:image', content: '/images/og-default.jpg' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }

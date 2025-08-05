@@ -15,15 +15,25 @@ export const adminMenuAdminRouter = router({
       z.object({
         includeInactive: z.boolean().optional().default(false),
         locale: z.string().length(2).optional().default('en'),
+        _timestamp: z.number().optional(), // For cache busting
       }).optional()
     )
     .query(async ({ ctx, input }) => {
       try {
+        // Get locale from headers as fallback
+        const headerLocale = ctx.req?.headers?.['accept-language'] || 
+                            ctx.req?.headers?.['x-locale'] || 
+                            'en';
+        
+        // Use input locale first, then header locale, then default to 'en'
+        const locale = input?.locale || headerLocale || 'en';
+        
+        ctx.logger.log(`📡 API Call: getAdminMenuItems with locale: ${locale} (input: ${input?.locale}, header: ${headerLocale})`);
+        
         const items = await ctx.services.adminMenuAdminService.findAll(input);
         
         // Transform items to include name from translations based on locale
-        const locale = input?.locale || 'en';
-        return items.map(item => {
+        const translatedItems = items.map(item => {
           const translation = item.translations?.find(t => t.locale === locale) || 
                              item.translations?.find(t => t.locale === 'en');
           
@@ -32,6 +42,9 @@ export const adminMenuAdminRouter = router({
             name: translation?.name || item.code,
           };
         });
+        
+        ctx.logger.log(`✅ Returning ${translatedItems.length} menu items for locale: ${locale}`);
+        return translatedItems;
       } catch (error) {
         ctx.logger.error('Failed to fetch admin menu items:', error);
         throw new TRPCError({

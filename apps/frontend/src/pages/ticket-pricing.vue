@@ -122,7 +122,7 @@ const translatedSections = computed(() => {
 // Fetch data using tRPC and Theme services
 const fetchData = async () => {
   try {
-    console.log('Fetching ticket pricing sections with locale:', locale.value)
+
     isLoading.value = true
     error.value = null
 

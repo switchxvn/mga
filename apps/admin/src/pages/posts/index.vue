@@ -55,7 +55,7 @@ import { useLocalization } from '../../composables/useLocalization';
 import { usePost } from '../../composables/usePost';
 
 definePageMeta({
-  middleware: ["auth", "permission"],
+  middleware: ["auth"],
 });
 
 // Set page title with i18n support

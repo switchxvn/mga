@@ -86,11 +86,23 @@ export default defineNuxtPlugin(() => {
         },
         headers() {
           // Only access localStorage when on client-side
-          let token = null;
+          const headers: Record<string, string> = {};
+          
           if (process.client && typeof window !== 'undefined') {
-            token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+              headers.Authorization = `Bearer ${token}`;
+            }
+            
+            // Add locale from localStorage to headers
+            const locale = localStorage.getItem('locale') || 'en';
+            headers['Accept-Language'] = locale;
+            headers['X-Locale'] = locale;
+            
+            console.log('📤 tRPC request headers:', { locale, Authorization: !!token });
           }
-          return token ? { Authorization: `Bearer ${token}` } : {};
+          
+          return headers;
         }
       }),
     ],

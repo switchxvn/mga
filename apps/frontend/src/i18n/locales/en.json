@@ -97,7 +97,19 @@
     "checkout": "Checkout",
     "continueShopping": "Continue Shopping",
     "viewCart": "View Cart",
-    "disabled": "Cart feature is currently disabled"
+    "disabled": "Cart feature is currently disabled",
+    "confirmRemove": {
+      "title": "Confirm Remove Product",
+      "message": "Are you sure you want to remove this product from your cart?",
+      "confirm": "Remove",
+      "cancel": "Cancel"
+    },
+    "confirmClear": {
+      "title": "Confirm Clear Cart",
+      "message": "Are you sure you want to remove all products from your cart?",
+      "confirm": "Clear All",
+      "cancel": "Cancel"
+    }
   },
   "validation": {
     "required": "This field is required",
@@ -190,6 +202,8 @@
     "hotline": "Hotline: 1-800-123-4567",
     "contactUs": "Contact Us",
     "requestPrice": "Request Price Quote",
+    "buyNow": "Buy Now",
+    "contact": "Contact",
     "shareProduct": "Share Product",
     "shareOnFacebook": "Share on Facebook",
     "shareOnTwitter": "Share on Twitter",

@@ -300,7 +300,7 @@ onBeforeUnmount(() => {
 const definePageMeta = (meta: any) => {};
 
 definePageMeta({
-  middleware: ["auth", "permission"],
+  middleware: ["auth"],
 });
 </script>
 

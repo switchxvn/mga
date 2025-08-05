@@ -146,7 +146,7 @@ const handleAddToCart = (variant?: any) => {
     
     // Emit event để thêm vào giỏ hàng
     // Bạn cần thêm logic xử lý thêm vào giỏ hàng ở đây
-    console.log('Adding to cart:', productData);
+
   }
 };
 
@@ -169,7 +169,7 @@ const handleVariantSelected = (variant: any) => {
   
   // Emit event để thêm vào giỏ hàng
   // Bạn cần thêm logic xử lý thêm vào giỏ hàng ở đây
-  console.log('Adding variant to cart:', productData);
+  
 };
 </script>
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, nextTick, triggerRef } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
 import { useAuth } from '~/composables/useAuth';
 import { useFeatureFlags } from '~/composables/useFeatureFlags';
@@ -43,7 +43,7 @@ export interface AddToCartDto {
   metadata?: Record<string, any>;
 }
 
-// Global session ID management - outside store to persist across store resets
+// Global session ID management
 let globalSessionId: string | null = null;
 
 function getOrCreateSessionId(): string {
@@ -62,38 +62,150 @@ function getOrCreateSessionId(): string {
 }
 
 export const useCartStore = defineStore('cart', () => {
-  // State
+  // State with more specific type definitions
   const cart = ref<{ id: number; items: CartItem[] } | null>(null);
-  const cartSummary = ref<CartSummary | null>(null);
+  const cartSummary = ref<CartSummary>({ itemCount: 0, subtotal: 0, totalDiscount: 0, total: 0 });
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const isInitialized = ref(false);
   const isCartEnabled = ref(true);
   
-  // Internal state
-  const isInitializing = ref(false);
-  const apiCallCache = new Map();
+  // Computed with safe accessors
+  const cartItems = computed<CartItem[]>(() => {
+    return cart.value?.items || [];
+  });
+  const cartItemCount = computed<number>(() => cartSummary.value.itemCount);
+  const cartTotal = computed<number>(() => cartSummary.value.total);
+  const cartSubtotal = computed<number>(() => cartSummary.value.subtotal);
+  const cartDiscount = computed<number>(() => cartSummary.value.totalDiscount);
   
-  // Computed
-  const cartItems = computed(() => cart.value?.items || []);
-  const cartItemCount = computed(() => cartSummary.value?.itemCount || 0);
-  const cartTotal = computed(() => cartSummary.value?.total || 0);
-  const cartSubtotal = computed(() => cartSummary.value?.subtotal || 0);
-  const cartDiscount = computed(() => cartSummary.value?.totalDiscount || 0);
-  
-  // Actions
-  async function initialize() {
-    // Prevent multiple initializations
-    if (isInitialized.value || isInitializing.value) {
-      return;
+  // Helper function to create deep clone of objects
+  function deepClone<T>(obj: T): T {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
     }
     
-    isInitializing.value = true;
+    if (Array.isArray(obj)) {
+      return obj.map(item => deepClone(item)) as unknown as T;
+    }
+    
+    const result = {} as T;
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        (result as any)[key] = deepClone((obj as any)[key]);
+      }
+    }
+    return result;
+  }
+
+  // Helper function to parse API response and extract cart/summary data
+  function parseApiResponse(result: any) {
+    // Handle array response (some tRPC configs return arrays)
+    const data = Array.isArray(result) ? result[0]?.result?.data || result[0] : result;
+    
+    let cartData = null;
+    let summaryData = null;
+    
+    // Case 1: Response has separate cart and summary fields
+    if (data && typeof data === 'object' && data.cart && data.summary) {
+      cartData = data.cart;
+      summaryData = data.summary;
+    }
+    // Case 2: Response is the cart itself with summary attached
+    else if (data && typeof data === 'object' && data.summary) {
+      // Extract summary and treat the rest as cart data
+      summaryData = data.summary;
+      const { summary, ...cart } = data;
+      cartData = cart;
+    }
+    // Case 3: Response is just cart data (fallback)
+    else if (data) {
+      cartData = data;
+      summaryData = { itemCount: 0, subtotal: 0, totalDiscount: 0, total: 0 };
+    }
+    
+    return { cartData, summaryData };
+  }
+
+  // Helper function to detect data inconsistency
+  function hasDataInconsistency(cartData: any, summaryData: any): boolean {
+    const hasItems = cartData && cartData.items && Array.isArray(cartData.items) && cartData.items.length > 0;
+    const summaryCount = summaryData?.itemCount || 0;
+    
+    // Inconsistency: summary says there are items but cart.items is empty/null
+    return summaryCount > 0 && !hasItems;
+  }
+
+  // Helper function to update cart state
+  function updateCartState(cartData: any, summaryData: any, skipInconsistencyCheck = false) {
+    // Check for data inconsistency before updating
+    if (!skipInconsistencyCheck && hasDataInconsistency(cartData, summaryData)) {
+      // Trigger retry to fetch proper data
+      nextTick(async () => {
+        try {
+          await fetchCartData(true); // Force refresh with retry flag
+        } catch (err) {
+          // If retry fails, update with whatever data we have
+          updateCartState(cartData, summaryData, true);
+        }
+      });
+      return; // Don't update state yet, wait for retry
+    }
+
+    // Always create new object references for reactivity
+    if (cartData && cartData.items && Array.isArray(cartData.items)) {
+      // Create completely new cart object (even if items array is empty)
+      cart.value = {
+        id: cartData.id,
+        items: cartData.items.map((item: any) => ({
+          id: Number(item.id),
+          productId: Number(item.productId),
+          variantId: item.variantId ? Number(item.variantId) : undefined,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          discountPercent: Number(item.discountPercent),
+          finalPrice: Number(item.finalPrice),
+          metadata: item.metadata ? { ...item.metadata } : undefined,
+          product: item.product ? {
+            id: Number(item.product.id),
+            title: item.product.title,
+            thumbnail: item.product.thumbnail,
+            translations: item.product.translations ? [...item.product.translations] : undefined
+          } : undefined,
+          variant: item.variant ? {
+            id: Number(item.variant.id),
+            name: item.variant.name
+          } : undefined
+        }))
+      };
+    } else {
+      // Cart is empty or null
+      cart.value = null;
+    }
+    
+    // Always create new summary object
+    cartSummary.value = {
+      itemCount: Number(summaryData?.itemCount || 0),
+      subtotal: Number(summaryData?.subtotal || 0),
+      totalDiscount: Number(summaryData?.totalDiscount || 0),
+      total: Number(summaryData?.total || 0)
+    };
+    
+    // Force reactivity trigger
+    nextTick(() => {
+      triggerRef(cart);
+      triggerRef(cartSummary);
+    });
+  }
+  
+  // Initialize cart
+  async function initialize() {
+    if (isInitialized.value) return;
     
     try {
       const { isAddToCartEnabled, isInitialized: isFeatureFlagsInitialized } = useFeatureFlags();
       
-      // Wait for feature flags with timeout
+      // Wait for feature flags
       let retries = 0;
       while (!isFeatureFlagsInitialized.value && retries < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -104,9 +216,7 @@ export const useCartStore = defineStore('cart', () => {
         throw new Error('Timeout waiting for feature flags');
       }
       
-      // Check if cart feature is enabled
-      const cartEnabled = await isAddToCartEnabled();
-      isCartEnabled.value = cartEnabled;
+      isCartEnabled.value = await isAddToCartEnabled();
       
       if (isCartEnabled.value) {
         await fetchCartData();
@@ -115,200 +225,124 @@ export const useCartStore = defineStore('cart', () => {
       isInitialized.value = true;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi khởi tạo giỏ hàng';
-    } finally {
-      isInitializing.value = false;
-    }
-  }
-  
-  async function fetchCartData() {
-    if (!isCartEnabled.value) return;
-    
-    const cacheKey = 'getCartWithSummary';
-    
-    // Check cache
-    if (apiCallCache.has(cacheKey)) {
-      return apiCallCache.get(cacheKey);
-    }
-    
-    try {
-      const $trpc = useTrpc();
-      const fetchPromise = $trpc.cart.getCartWithSummary.query();
-      apiCallCache.set(cacheKey, fetchPromise);
-      
-      const result = await fetchPromise;
-      
-      // Handle array response structure: [{ result: { data: { cart: {...}, summary: {...} } } }]
-      const responseData = Array.isArray(result) ? result[0]?.result?.data : result;
-      const cartData = responseData?.cart || null;
-      const summaryData = responseData?.summary || { itemCount: 0, subtotal: 0, totalDiscount: 0, total: 0 };
-      
-      cart.value = cartData;
-      cartSummary.value = summaryData;
-      
-      apiCallCache.delete(cacheKey);
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải giỏ hàng';
-      apiCallCache.delete(cacheKey);
       throw err;
     }
   }
   
-  async function addToCart(dto: AddToCartDto) {
-    if (!isCartEnabled.value) {
-      error.value = 'Tính năng giỏ hàng đã bị tắt';
-      return;
-    }
-    
-    const cacheKey = `addToCart_${dto.productId}_${dto.variantId || 'none'}_${dto.quantity}`;
-    
-    if (apiCallCache.has(cacheKey)) {
-      return apiCallCache.get(cacheKey);
-    }
-    
-    if (isLoading.value) {
-      return;
-    }
+  // Fetch cart data
+  async function fetchCartData(retry = false) {
+    if (!isCartEnabled.value) return;
     
     try {
-      isLoading.value = true;
-      error.value = null;
-      
       const $trpc = useTrpc();
-      const addPromise = $trpc.cart.addToCart.mutate(dto);
-      apiCallCache.set(cacheKey, addPromise);
+      const result = await $trpc.cart.getCartWithSummary.query();
       
-      const result = await addPromise;
+      const { cartData, summaryData } = parseApiResponse(result);
+      updateCartState(cartData, summaryData, retry);
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải giỏ hàng';
+      throw err;
+    }
+  }
+  
+  // Add to cart
+  async function addToCart(dto: AddToCartDto) {
+    if (!isCartEnabled.value) {
+      throw new Error('Tính năng giỏ hàng đã bị tắt');
+    }
+    
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      const $trpc = useTrpc();
+      const result = await $trpc.cart.addToCart.mutate(dto);
       
-      // Handle array response structure
-      const responseData = Array.isArray(result) ? result[0]?.result?.data : result;
-      const cartData = responseData?.cart || null;
-      const summaryData = responseData?.summary || null;
+      const { cartData, summaryData } = parseApiResponse(result);
+      updateCartState(cartData, summaryData);
       
-      // Update state from response
-      cart.value = cartData;
-      if (summaryData) {
-        cartSummary.value = summaryData;
-      }
-      
-      apiCallCache.delete(cacheKey);
       return result;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng';
-      apiCallCache.delete(cacheKey);
       throw err;
     } finally {
       isLoading.value = false;
     }
   }
   
+  // Update cart item
   async function updateCartItem(itemId: number, quantity: number) {
-    if (!isCartEnabled.value || isLoading.value) return;
+    if (!isCartEnabled.value) return;
     
-    const cacheKey = `updateCartItem_${itemId}_${quantity}`;
-    if (apiCallCache.has(cacheKey)) {
-      return apiCallCache.get(cacheKey);
-    }
+    isLoading.value = true;
+    error.value = null;
     
     try {
-      isLoading.value = true;
-      error.value = null;
-      
       const $trpc = useTrpc();
-      const updatePromise = $trpc.cart.updateCartItem.mutate({ itemId, quantity });
-      apiCallCache.set(cacheKey, updatePromise);
+      const result = await $trpc.cart.updateCartItem.mutate({ itemId, quantity });
       
-      const result = await updatePromise;
+      const { cartData, summaryData } = parseApiResponse(result);
+      updateCartState(cartData, summaryData);
       
-      // Handle array response structure
-      const responseData = Array.isArray(result) ? result[0]?.result?.data : result;
-      const cartData = responseData?.cart || null;
-      const summaryData = responseData?.summary || null;
-      
-      cart.value = cartData;
-      if (summaryData) {
-        cartSummary.value = summaryData;
-      }
-      
-      apiCallCache.delete(cacheKey);
       return result;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi cập nhật giỏ hàng';
-      apiCallCache.delete(cacheKey);
       throw err;
     } finally {
       isLoading.value = false;
     }
   }
   
+  // Remove from cart
   async function removeFromCart(itemId: number) {
-    if (!isCartEnabled.value || isLoading.value) return;
+    if (!isCartEnabled.value) return;
     
-    const cacheKey = `removeFromCart_${itemId}`;
-    if (apiCallCache.has(cacheKey)) {
-      return apiCallCache.get(cacheKey);
-    }
+    isLoading.value = true;
+    error.value = null;
     
     try {
-      isLoading.value = true;
-      error.value = null;
-      
       const $trpc = useTrpc();
-      const removePromise = $trpc.cart.removeFromCart.mutate({ itemId });
-      apiCallCache.set(cacheKey, removePromise);
+      const result = await $trpc.cart.removeFromCart.mutate({ itemId });
       
-      const result = await removePromise;
-      console.log('🛒 Store - removeFromCart response:', JSON.stringify(result, null, 2));
+      const { cartData, summaryData } = parseApiResponse(result);
+      updateCartState(cartData, summaryData);
       
-      // Handle array response structure
-      const responseData = Array.isArray(result) ? result[0]?.result?.data : result;
-      const cartData = responseData?.cart || null;
-      const summaryData = responseData?.summary || null;
-      
-      cart.value = cartData;
-      if (summaryData) {
-        cartSummary.value = summaryData;
-      }
-      
-      apiCallCache.delete(cacheKey);
       return result;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi xóa sản phẩm khỏi giỏ hàng';
-      console.error('🛒 Store - Error removing from cart:', err);
-      apiCallCache.delete(cacheKey);
       throw err;
     } finally {
       isLoading.value = false;
     }
   }
   
+  // Clear cart
   async function clearCart() {
-    if (!isCartEnabled.value || isLoading.value) return;
+    if (!isCartEnabled.value) return;
+    
+    isLoading.value = true;
+    error.value = null;
     
     try {
-      isLoading.value = true;
-      error.value = null;
-      
       const $trpc = useTrpc();
       await $trpc.cart.clearCart.mutate();
       
-      cart.value = null;
-      cartSummary.value = { itemCount: 0, subtotal: 0, totalDiscount: 0, total: 0 };
-      
-      apiCallCache.clear();
+      updateCartState(null, { itemCount: 0, subtotal: 0, totalDiscount: 0, total: 0 });
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Có lỗi xảy ra khi xóa giỏ hàng';
-      console.error('🛒 Store - Error clearing cart:', err);
+      throw err;
     } finally {
       isLoading.value = false;
     }
   }
   
+  // Merge guest cart
   async function mergeGuestCart(sessionId: string) {
-    if (!sessionId || isLoading.value) return;
+    if (!sessionId) return;
+    
+    isLoading.value = true;
     
     try {
-      isLoading.value = true;
-      
       const $trpc = useTrpc();
       await $trpc.cart.mergeGuestCart.mutate({ sessionId });
       
@@ -323,40 +357,12 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
   
+  // Reset store
   function reset() {
-    cart.value = null;
-    cartSummary.value = null;
+    updateCartState(null, { itemCount: 0, subtotal: 0, totalDiscount: 0, total: 0 });
     isInitialized.value = false;
-    isInitializing.value = false;
-    apiCallCache.clear();
+    error.value = null;
     globalSessionId = null;
-  }
-  
-  // Setup user watcher
-  function setupUserWatcher() {
-    const { user } = useAuth();
-    
-    let userWatchTimeout: NodeJS.Timeout | null = null;
-    watch(user, async (newUser, oldUser) => {
-      console.log('🛒 Store - User changed:', { newUser: !!newUser, oldUser: !!oldUser });
-      
-      if (userWatchTimeout) {
-        clearTimeout(userWatchTimeout);
-      }
-      
-      userWatchTimeout = setTimeout(async () => {
-        if (newUser && !oldUser) {
-          // User logged in
-          const sessionId = localStorage.getItem('cart_session_id');
-          if (sessionId) {
-            await mergeGuestCart(sessionId);
-          }
-        } else if (!newUser && oldUser) {
-          // User logged out
-          reset();
-        }
-      }, 300);
-    });
   }
   
   return {
@@ -382,7 +388,6 @@ export const useCartStore = defineStore('cart', () => {
     clearCart,
     mergeGuestCart,
     reset,
-    setupUserWatcher,
     
     // Session
     getSessionId: getOrCreateSessionId

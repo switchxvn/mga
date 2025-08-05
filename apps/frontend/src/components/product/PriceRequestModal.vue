@@ -253,7 +253,7 @@ const modalTitle = computed(() => {
 
 // Debug log khi props.isOpen thay đổi
 watch(() => props.isOpen, (newValue) => {
-  console.log('Modal isOpen changed:', newValue);
+
 });
 
 </script>

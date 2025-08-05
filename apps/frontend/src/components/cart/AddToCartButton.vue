@@ -4,6 +4,8 @@ import { useCart } from '~/composables/useCart';
 import { useTrpc } from '~/composables/useTrpc';
 import { ShoppingCart, Minus, Plus, Loader } from 'lucide-vue-next';
 import ProductVariantModal from '~/components/modals/ProductVariantModal.vue';
+import { useToast } from '~/composables/useToast';
+import { useLocalization } from '~/composables/useLocalization';
 
 interface ProductVariant {
   id: number;
@@ -47,11 +49,15 @@ const props = withDefaults(defineProps<{
   buttonClass: 'bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2'
 });
 
+const emit = defineEmits(['success']);
+
 const { addToCart, isCartEnabled } = useCart();
 const $trpc = useTrpc();
+const { t } = useLocalization();
 const isAdding = ref(false);
 const quantity = ref(1);
 const showVariantModal = ref(false);
+const toast = useToast();
 
 // Ripple effect state
 const showRipple = ref(false);
@@ -97,33 +103,23 @@ const createRipple = (event: MouseEvent) => {
 
 // Kiểm tra xem có thể thêm vào giỏ hàng không
 const canAddToCart = computed(() => {
-  // Kiểm tra nếu không có sản phẩm
   if (!props.product) {
-    console.log('🛒 canAddToCart: No product');
     return false;
   }
 
   // Kiểm tra nếu sản phẩm có thuộc tính bắt buộc nhưng chưa chọn đủ
-  // Chỉ áp dụng cho trường hợp không phải quick add (khi showQuantity = true)
-  if (props.showQuantity && props.product.hasRequiredAttributes && !props.product.hasSelectedAllAttributes) {
-    console.log('🛒 canAddToCart: Required attributes not selected');
+  // và không có variants (nếu có variants thì modal sẽ xử lý)
+  if (props.showQuantity && !hasVariants.value && props.product.hasRequiredAttributes && !props.product.hasSelectedAllAttributes) {
     return false;
   }
 
-  const result = props.product.price !== null && isCartEnabled && !isAdding.value;
-  
-  console.log('🛒 canAddToCart debug:', {
-    productPrice: props.product.price,
-    isCartEnabled: isCartEnabled,
-    isAdding: isAdding.value,
-    showQuantity: props.showQuantity,
-    hasRequiredAttributes: props.product.hasRequiredAttributes,
-    hasSelectedAllAttributes: props.product.hasSelectedAllAttributes,
-    result
-  });
+  // Nếu có variants, luôn cho phép click để mở modal
+  if (hasVariants.value) {
+    return isCartEnabled && !isAdding.value;
+  }
 
-  // Kiểm tra giá, cart enabled và trạng thái đang thêm vào giỏ hàng
-  return result;
+  // Nếu không có variants, cần có giá
+  return props.product.price !== null && isCartEnabled && !isAdding.value;
 });
 
 // Kiểm tra số lượng tồn kho
@@ -139,33 +135,27 @@ const directAddToCart = async () => {
   const cartItem = {
     productId: props.product.id,
     variantId: props.product.variantId,
-    quantity: 1, // Default quantity for quick add
+    quantity: 1,
     metadata: {
       variantName: props.product.variantName,
       sku: props.product.sku
     }
   };
   
-  console.log('🛒 AddToCartButton - Direct add to cart:', cartItem);
-  
   try {
-    const result = await addToCart(cartItem);
-    console.log('🛒 AddToCartButton - Successfully added to cart:', result);
+    await addToCart(cartItem);
+    toast.success(t('common.success'));
+    emit('success');
   } catch (error) {
-    console.error('🛒 AddToCartButton - Error adding product to cart:', error);
+    toast.error(t('common.error'));
   } finally {
     isAdding.value = false;
   }
 };
 
-// Handle add to cart with quantity (when quantity selector is shown)
+// Handle add to cart with quantity
 const handleAddToCartWithQuantity = async (event: MouseEvent) => {
-  console.log('🛒 AddToCartButton - handleAddToCartWithQuantity called');
-  
-  if (!canAddToCart.value) {
-    console.log('🛒 AddToCartButton - Cannot add to cart, stopping');
-    return;
-  }
+  if (!canAddToCart.value) return;
   
   createRipple(event);
   isAdding.value = true;
@@ -180,30 +170,23 @@ const handleAddToCartWithQuantity = async (event: MouseEvent) => {
     }
   };
   
-  console.log('🛒 AddToCartButton - Adding to cart with quantity:', cartItem);
-  
   try {
-    const result = await addToCart(cartItem);
-    console.log('🛒 AddToCartButton - Successfully added to cart:', result);
+    await addToCart(cartItem);
+    toast.success(t('common.success'));
+    emit('success');
   } catch (error) {
-    console.error('🛒 AddToCartButton - Error adding product to cart:', error);
+    toast.error(t('common.error'));
   } finally {
     isAdding.value = false;
   }
 };
 
-// Main click handler - decides whether to show modal or add directly
+// Main click handler
 const handleClick = async (event: MouseEvent) => {
-  console.log('🛒 AddToCartButton - handleClick called, hasVariants:', hasVariants.value);
-  
-  if (!canAddToCart.value) {
-    console.log('🛒 AddToCartButton - Cannot add to cart, stopping');
-    return;
-  }
+  if (!canAddToCart.value) return;
 
   // If product has variants, show modal
   if (hasVariants.value) {
-    console.log('🛒 AddToCartButton - Product has variants, showing modal');
     showVariantModal.value = true;
     return;
   }
@@ -226,8 +209,12 @@ const handleModalClose = () => {
 
 // Handle successful add from modal
 const handleModalAddToCart = (item: any) => {
-  console.log('🛒 AddToCartButton - Item added from modal:', item);
   // Modal already handles the cart addition
+};
+
+// Handle success from modal
+const handleModalSuccess = () => {
+  emit('success');
 };
 
 // Component is now using centralized cart store
@@ -269,7 +256,7 @@ const handleModalAddToCart = (item: any) => {
           <ShoppingCart v-if="iconOnly" class="w-5 h-5" />
           <template v-else>
             <ShoppingCart class="cart-icon" />
-            <span class="button-text">{{ buttonText || 'Thêm vào giỏ hàng' }}</span>
+            <span class="button-text">{{ buttonText || t('common.addToCart') }}</span>
           </template>
         </template>
       </div>
@@ -297,6 +284,7 @@ const handleModalAddToCart = (item: any) => {
       :isOpen="showVariantModal"
       @close="handleModalClose"
       @addToCart="handleModalAddToCart"
+      @success="handleModalSuccess"
     />
   </div>
 </template>

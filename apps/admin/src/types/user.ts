@@ -9,7 +9,7 @@ export interface User {
   isActive?: boolean;
   isEmailVerified?: boolean;
   lastLoginAt?: string;
-  profile?: UserProfile;
+  profile?: UserProfile | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,13 +58,14 @@ export interface ProfileResponseExtended {
   id: string;
   email: string;
   username?: string;
+  role?: string; // Thêm role field để khớp với API response
   roles: (string | Role)[];  // Có thể là mảng string hoặc mảng Role
   isEmailVerified: boolean;
   isActive: boolean;
   lastLoginAt?: string | Date;
   createdAt: string | Date;
   updatedAt: string | Date;
-  profile?: UserProfile;
+  profile?: UserProfile | null;
   permissions?: Permission[];
 }
 

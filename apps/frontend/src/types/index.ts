@@ -16,4 +16,7 @@ export interface Notification {
   description?: string;
   icon?: string;
   timeout?: number;
-} 
+}
+
+// Export all cart types
+export * from './cart'; 

@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { useUserStore } from '@/stores/useUserStore';
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch, nextTick } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import { ChevronDown } from 'lucide-vue-next';
 import { useAdminMenu } from '@/composables/useAdminMenu';
-import { useNavigationMenu } from '@/composables/useNavigationMenu';
+import { useNavigationMenu, type ExtendedNavigationItem } from '@/composables/useNavigationMenu';
 import { useLocalization } from '@/composables/useLocalization';
 import type { NavigationItem } from '@/composables/useAdminMenu';
 
-const { t } = useI18n();
+const { t, locale: i18nLocale } = useI18n();
 const { locale } = useLocalization();
 const userStore = useUserStore();
 const { user } = storeToRefs(userStore);
@@ -35,16 +35,48 @@ const {
   processMenuItems,
   isActive,
   toggleMenu,
-  expandActiveMenus
+  expandActiveMenus,
+  getTranslatedLabel
 } = useNavigationMenu();
 
-// Xử lý menu từ API
-const navigation = computed<NavigationItem[]>(() => {
+// Create a reactive locale ref for tracking changes
+const currentLocale = ref('en');
+
+// Debug function for manual testing
+const debugReloadMenu = async (testLocale?: string) => {
+  const localeToUse = testLocale || currentLocale.value;
+  console.log('Manual reload menu with locale:', localeToUse);
+  
+  try {
+    isLanguageUpdating.value = true;
+    await loadMenuItems(localeToUse);
+    console.log('Manual menu reload successful');
+  } catch (error) {
+    console.error('Manual menu reload failed:', error);
+  } finally {
+    isLanguageUpdating.value = false;
+  }
+};
+
+// Expose debug function to window for testing
+if (process.client) {
+  (window as any).debugReloadMenu = debugReloadMenu;
+}
+
+// Function to get translated menu label - now reactive to locale changes
+const getMenuLabel = (item: ExtendedNavigationItem): string => {
+  return getTranslatedLabel(item, t);
+};
+
+// Xử lý menu từ API (reactive to locale changes)
+const navigation = computed<ExtendedNavigationItem[]>(() => {
   // If menu items are loading or there's an error, use default items
   if (isLoadingMenu.value || menuError.value || !menuItems.value || menuItems.value.length === 0) {
-    const defaultItems: NavigationItem[] = [
+    const defaultItems: ExtendedNavigationItem[] = [
       { 
         label: 'Dashboard', 
+        translationKey: 'menu.dashboard',
+        originalName: 'Dashboard',
         icon: 'Home', 
         to: '/',
         isOpen: ref(false)
@@ -55,6 +87,8 @@ const navigation = computed<NavigationItem[]>(() => {
     if (isSuperAdmin.value) {
       defaultItems.push({ 
         label: 'Settings', 
+        translationKey: 'menu.settings',
+        originalName: 'Settings',
         icon: 'Settings', 
         to: '/settings',
         isOpen: ref(false)
@@ -74,6 +108,8 @@ const navigation = computed<NavigationItem[]>(() => {
     if (!hasDashboard) {
       processedItems.unshift({ 
         label: 'Dashboard', 
+        translationKey: 'menu.dashboard',
+        originalName: 'Dashboard',
         icon: 'Home', 
         to: '/', 
         isOpen: ref(false)
@@ -99,30 +135,67 @@ const navigation = computed<NavigationItem[]>(() => {
   if (!hasDashboard) {
     filteredItems.unshift({ 
       label: 'Dashboard', 
+      translationKey: 'menu.dashboard',
+      originalName: 'Dashboard',
       icon: 'Home', 
       to: '/', 
       isOpen: ref(false)
     });
   }
-  
+
   return filteredItems;
 });
 
-// Watch for locale changes to reload menu
-watch(locale, async (newLocale) => {
-  if (newLocale && auth.isAuthenticated.value) {
+// Watch for i18n locale changes to reload menu  
+watch(i18nLocale, async (newLocale, oldLocale) => {
+  console.log('🔄 i18nLocale changed from', oldLocale, 'to', newLocale);
+  
+  if (newLocale && newLocale !== oldLocale && auth.isAuthenticated()) {
     try {
       isLanguageUpdating.value = true;
-      await loadMenuItems();
+      console.log('🚀 Starting menu reload for locale:', newLocale);
+      
+      // Make sure new locale is saved to localStorage
+      if (process.client) {
+        localStorage.setItem('locale', newLocale);
+        console.log('💾 Saved locale to localStorage:', newLocale);
+      }
+      
+      // Update current locale ref
+      currentLocale.value = newLocale;
+      
+      // Clear menu items first to force visual refresh
+      console.log('🗑️ Clearing existing menu items');
+      menuItems.value = [];
+      
+      console.log('📡 Calling loadMenuItems with locale:', newLocale);
+      await loadMenuItems(newLocale);
+      console.log('✅ Menu items reloaded successfully for locale:', newLocale);
+      
       // Set initial state based on current route
       expandActiveMenus(navigation.value);
     } catch (error) {
-      console.error('Failed to reload menu after language change:', error);
+      console.error('❌ Failed to reload menu after language change:', error);
     } finally {
       isLanguageUpdating.value = false;
     }
   }
-});
+}, { immediate: false });
+
+// Watch localStorage changes as a fallback detection method
+if (process.client) {
+  const checkLocaleChanges = () => {
+    const newLocale = localStorage.getItem('locale') || 'en';
+    if (newLocale !== currentLocale.value && auth.isAuthenticated()) {
+      console.log('localStorage locale changed to:', newLocale);
+      currentLocale.value = newLocale;
+      debugReloadMenu(newLocale);
+    }
+  };
+  
+  // Check every 1 second for locale changes
+  setInterval(checkLocaleChanges, 1000);
+}
 
 // Watch for route changes and initialize data
 onMounted(() => {
@@ -138,14 +211,7 @@ onMounted(() => {
     try {
       const isAuthenticated = await auth.checkAuth();
       
-      // Reload user from store after auth check
-      if (isAuthenticated && !user.value) {
-        try {
-          await userStore.fetchUser();
-        } catch (error) {
-          console.error('SidebarNavigation: Failed to fetch user:', error);
-        }
-      }
+      // User data will be loaded by useAuth.checkAuth() automatically
       
       // Chỉ tải menu khi đã xác thực
       if (isAuthenticated) {
@@ -188,8 +254,11 @@ onMounted(() => {
   <!-- Navigation Links -->
   <div>
     <!-- Loading state for menu -->
-    <div v-if="isLoadingMenu" class="animate-pulse space-y-4 px-4 py-2">
-      <div v-for="i in 5" :key="i" class="h-8 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
+    <div v-if="isLoadingMenu" class="animate-pulse space-y-2 px-4 py-2">
+      <div v-for="i in 7" :key="i" class="flex items-center space-x-3">
+        <div class="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
+      </div>
     </div>
     
     <!-- Error state -->
@@ -205,7 +274,7 @@ onMounted(() => {
     <!-- Loaded menu items -->
     <template v-else>
       <!-- API-driven menu items -->
-      <template v-for="(item, i) in navigation" :key="i">
+      <template v-for="(item, i) in navigation" :key="`${i}-${currentLocale}`">
         <!-- Single Item (no children) -->
         <template v-if="!item.children || item.children.length === 0">
           <!-- Link if has path -->
@@ -221,10 +290,10 @@ onMounted(() => {
           >
             <component 
               :is="item.icon" 
-              class="mr-3 h-5 w-5" 
+              class="mr-3 h-5 w-5 flex-shrink-0" 
               :class="isActive(item.to) ? 'text-primary-600 dark:text-primary-400' : ''"
             />
-            {{ item.label }}
+            {{ getMenuLabel(item) }}
           </NuxtLink>
           
           <!-- Non-link if no path -->
@@ -234,9 +303,9 @@ onMounted(() => {
           >
             <component 
               :is="item.icon" 
-              class="mr-3 h-5 w-5"
+              class="mr-3 h-5 w-5 flex-shrink-0"
             />
-            {{ item.label }}
+            {{ getMenuLabel(item) }}
           </div>
         </template>
         
@@ -247,8 +316,8 @@ onMounted(() => {
             @click="() => { if (item.isOpen) item.isOpen.value = !item.isOpen.value }"
           >
             <div class="flex items-center">
-              <component :is="item.icon" class="mr-3 h-5 w-5" />
-              {{ item.label }}
+              <component :is="item.icon" class="mr-3 h-5 w-5 flex-shrink-0" />
+              {{ getMenuLabel(item) }}
             </div>
             <ChevronDown 
               class="h-4 w-4 transition-transform" 
@@ -272,10 +341,10 @@ onMounted(() => {
               >
                 <component 
                   :is="child.icon" 
-                  class="mr-3 h-4 w-4" 
+                  class="mr-3 h-4 w-4 flex-shrink-0" 
                   :class="isActive(child.to) ? 'text-primary-600 dark:text-primary-400' : ''"
                 />
-                {{ child.label }}
+                {{ getMenuLabel(child) }}
               </NuxtLink>
               
               <!-- Child item with its own children (3rd level) -->
@@ -289,7 +358,7 @@ onMounted(() => {
                       :is="child.icon" 
                       class="mr-3 h-4 w-4"
                     />
-                    {{ child.label }}
+                    {{ getMenuLabel(child) }}
                   </div>
                   <ChevronDown 
                     class="h-3 w-3 transition-transform" 
@@ -311,7 +380,7 @@ onMounted(() => {
                       ]"
                     >
                       <span class="w-1.5 h-1.5 mr-2 rounded-full bg-current"></span>
-                      {{ grandchild.label }}
+                      {{ getMenuLabel(grandchild) }}
                     </NuxtLink>
                   </template>
                 </div>
@@ -326,7 +395,7 @@ onMounted(() => {
                   :is="child.icon" 
                   class="mr-3 h-4 w-4"
                 />
-                {{ child.label }}
+                {{ getMenuLabel(child) }}
               </div>
             </template>
           </div>

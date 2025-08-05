@@ -19,6 +19,12 @@ import {
   Plus
 } from 'lucide-vue-next';
 
+// Extend NavigationItem to include translation key
+export interface ExtendedNavigationItem extends NavigationItem {
+  translationKey?: string;
+  originalName?: string;
+}
+
 export const useNavigationMenu = () => {
   const route = useRoute();
   const router = useRouter();
@@ -48,8 +54,17 @@ export const useNavigationMenu = () => {
     return iconMap[iconName] || Home; // Default to Home icon if not found
   };
 
+  // Function to generate translation key from code or name
+  const generateTranslationKey = (item: MenuItem): string => {
+    if (item.code) {
+      return `menu.${item.code.toLowerCase()}`;
+    }
+    // Fallback to name-based key
+    return `menu.${item.name.toLowerCase().replace(/\s+/g, '_')}`;
+  };
+
   // Group menu items by parent
-  const processMenuItems = (items: MenuItem[]): NavigationItem[] => {
+  const processMenuItems = (items: MenuItem[]): ExtendedNavigationItem[] => {
     // First, filter to get only active items
     const activeItems = items.filter(item => item.isActive);
     
@@ -73,9 +88,13 @@ export const useNavigationMenu = () => {
     });
     
     // Function to recursively build menu tree
-    const buildMenuItem = (item: MenuItem): NavigationItem => {
-      const menuItem: NavigationItem = {
-        label: item.name,
+    const buildMenuItem = (item: MenuItem): ExtendedNavigationItem => {
+      const translationKey = generateTranslationKey(item);
+      
+      const menuItem: ExtendedNavigationItem = {
+        label: item.name, // This will be used as fallback
+        translationKey,
+        originalName: item.name,
         icon: getIconComponent(item.icon),
         to: item.path || undefined,
         isOpen: ref(false), // For expandable state
@@ -150,16 +169,32 @@ export const useNavigationMenu = () => {
   };
 
   // Function to toggle a menu item's open state
-  const toggleMenu = (item: NavigationItem) => {
+  const toggleMenu = (item: ExtendedNavigationItem) => {
     if (item.isOpen) {
       item.isOpen.value = !item.isOpen.value;
     }
   };
 
+  // Function to get translated label for menu item
+  const getTranslatedLabel = (item: ExtendedNavigationItem, tFunction: (key: string, fallback?: string) => string): string => {
+    // Use the name from API response (which is already translated based on locale)
+    // as it comes from database translations, fallback to translation keys if needed
+    if (item.label && item.label !== item.originalName) {
+      return item.label; // This is the translated name from API
+    }
+    
+    if (item.translationKey) {
+      // Try to get translation from frontend i18n, fallback to original name if translation is missing
+      const translated = tFunction(item.translationKey, '');
+      return translated || item.originalName || item.label;
+    }
+    return item.originalName || item.label;
+  };
+
   // Function to expand active menu items
-  const expandActiveMenus = (processedItems: NavigationItem[]) => {
+  const expandActiveMenus = (processedItems: ExtendedNavigationItem[]) => {
     // Trước tiên, đóng tất cả menu (reset state)
-    const resetAllMenus = (items: NavigationItem[]) => {
+    const resetAllMenus = (items: ExtendedNavigationItem[]) => {
       items.forEach(item => {
         if (item.isOpen) {
           item.isOpen.value = false;
@@ -173,12 +208,12 @@ export const useNavigationMenu = () => {
     resetAllMenus(processedItems);
     
     // Hàm đệ quy để tìm và mở menu tương ứng
-    const findAndExpandActiveMenu = (items: NavigationItem[]) => {
+    const findAndExpandActiveMenu = (items: ExtendedNavigationItem[]) => {
       for (const item of items) {
         // Kiểm tra xem item hiện tại có phù hợp với path hiện tại
         if (item.to && isActive(item.to)) {
           // Tìm item cha và mở nó
-          const findParentAndExpand = (allItems: NavigationItem[], targetItem: NavigationItem): boolean => {
+          const findParentAndExpand = (allItems: ExtendedNavigationItem[], targetItem: ExtendedNavigationItem): boolean => {
             for (const parentItem of allItems) {
               if (parentItem.children) {
                 // Kiểm tra xem targetItem có phải là con của parentItem
@@ -239,6 +274,7 @@ export const useNavigationMenu = () => {
     isActive,
     toggleMenu,
     expandActiveMenus,
-    updateCurrentPath
+    updateCurrentPath,
+    getTranslatedLabel
   };
 }; 

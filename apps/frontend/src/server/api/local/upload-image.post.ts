@@ -10,7 +10,7 @@ interface UploadResult {
 
 export default defineEventHandler(async (event) => {
   try {
-    console.log('Starting file upload process...')
+  
     // Parse multipart form data
     const formData = await readMultipartFormData(event)
     if (!formData || !formData[0]) {
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const file = formData[0]
-    console.log(`File received: ${file.filename}, type: ${file.type}, size: ${file.data.length} bytes`)
+
     
     // Get presigned info from form data
     const presignedUrl = formData.find(item => item.name === 'presignedUrl')?.data.toString()
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    console.log(`Uploading to: ${key}, URL: ${url}, ID: ${uploadId}`)
+    
     
     // Validate mime type
     if (!file.type?.includes('image/')) {
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    console.log('Starting upload to storage service with axios...')
+    
     
     // Cấu hình HTTPS agent với thời gian chờ dài hơn
     const httpsAgent = new https.Agent({
@@ -76,7 +76,7 @@ export default defineEventHandler(async (event) => {
         timeout: 60000 // 60 giây
       })
 
-      console.log('Upload completed successfully with status:', uploadResponse.status)
+
     } catch (uploadError) {
       console.error('Error during axios upload operation:', uploadError)
       
@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
       uploadId
     }
 
-    console.log('Returning upload result:', result)
+    
     return result
 
   } catch (error: unknown) {

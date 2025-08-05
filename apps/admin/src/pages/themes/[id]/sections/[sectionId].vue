@@ -31,12 +31,8 @@ provide('pageTitle', computed(() => section.value ? `Chỉnh sửa Section: ${se
 
 // URL params
 const themeId = computed(() => {
-  console.log('Route path:', route.path);
-  console.log('Route params:', route.params);
-  
   // Lấy theme ID từ params, đảm bảo luôn là số hợp lệ
   const id = Number(route.params.id);
-  console.log('Theme ID from params:', id);
   
   // Fallback xử lý nếu id không hợp lệ - redirect về trang themes
   if (isNaN(id) || id <= 0) {
@@ -55,7 +51,6 @@ const themeId = computed(() => {
 const sectionId = computed(() => {
   // Lấy section ID từ tham số URL
   const id = Number(route.params.sectionId);
-  console.log('Section ID from params:', id);
   return id;
 });
 
@@ -198,8 +193,6 @@ const fetchSection = async () => {
   loading.value = true
   error.value = null
   
-  console.log(`Fetching section: themeId=${themeId.value}, sectionId=${sectionId.value}`)
-  
   if (!themeId.value || themeId.value <= 0) {
     console.error('Invalid theme ID, cannot fetch section');
     error.value = 'ID theme không hợp lệ';
@@ -208,13 +201,10 @@ const fetchSection = async () => {
   }
   
   try {
-    console.log('Calling API with params:', { themeId: themeId.value, sectionId: sectionId.value });
     const data = await trpc.admin.themeSection.getById.query({
       themeId: themeId.value,
       sectionId: sectionId.value
     })
-    
-    console.log('Fetched section data:', data);
     section.value = data
     
     // Copy data to form

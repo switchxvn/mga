@@ -3,13 +3,10 @@ import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../types/trpc';
 
 export default defineNuxtPlugin(() => {
-  console.log('TRPC Plugin initialized');
   const config = useRuntimeConfig();
   const baseUrl = process.server 
     ? config.public.apiBase 
     : '';
-
-  console.log('TRPC Base URL:', baseUrl);
 
   // Cache session ID to prevent creating new ones on every request
   let cachedSessionId: string | null = null;
@@ -24,9 +21,6 @@ export default defineNuxtPlugin(() => {
       if (!cachedSessionId) {
         cachedSessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         localStorage.setItem('cart_session_id', cachedSessionId);
-        console.log('TRPC: Created new session ID:', cachedSessionId);
-      } else {
-        console.log('TRPC: Using existing session ID:', cachedSessionId);
       }
     }
     
@@ -61,26 +55,19 @@ export default defineNuxtPlugin(() => {
           return headers;
         },
         fetch(url, options) {
-          console.log('TRPC fetch request to:', url);
-          
+          // Node.js 18+ has native fetch support, no polyfill needed
           return fetch(url, {
             ...options,
             signal: AbortSignal.timeout(30000), // 30 second timeout
             credentials: 'include',
-          }).then(response => {
-            console.log('TRPC response status:', response.status);
-            return response;
           }).catch(error => {
             console.error('TRPC fetch error:', error);
             throw error;
           });
         },
-
       }),
     ],
   });
-
-  console.log('TRPC client created');
 
   return {
     provide: {

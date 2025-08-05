@@ -110,12 +110,10 @@ const heroSection = computed(() => {
 
 const fetchData = async () => {
   try {
-    console.log('Fetching about sections with locale:', locale.value);
     isLoading.value = true;
     error.value = null;
 
     const data = await trpc.about.getActiveSections.query(locale.value);
-    console.log('Received data:', data);
 
     if (!data || data.length === 0) {
       error.value = 'No active about sections found';
