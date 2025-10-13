@@ -12,7 +12,6 @@ import { OrderStatus, PaymentStatus, OrderType } from '@ew/shared';
 import { MailService } from '../../../mail/services/mail.service';
 import { UploadFrontendService } from '../../../upload/frontend/services/upload-frontend.service';
 import * as QRCode from 'qrcode';
-import { Readable } from 'stream';
 // Using native fetch - Node.js 18+ support
 
 // Interface cho thông tin quét vé
@@ -266,15 +265,10 @@ export class OrderAdminService {
         folder: 'qr-codes'
       });
 
-      // Create readable stream from buffer
-      const stream = new Readable();
-      stream.push(qrBuffer);
-      stream.push(null);
-
-      // Upload using node-fetch with stream
+      // Upload using native fetch with buffer body
       const response = await fetch(result.presignedUrl, {
         method: 'PUT',
-        body: stream,
+        body: qrBuffer,
         headers: {
           'Content-Type': 'image/png',
           'Content-Length': qrBuffer.length.toString(),
