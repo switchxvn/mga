@@ -120,7 +120,7 @@ docker run -d \
     --name $BACKEND_CONTAINER \
     --network $NETWORK_NAME \
     --network-alias backend \
-    -p $BACKEND_PORT:$BACKEND_PORT \
+    -p $BACKEND_PORT:3333 \
     --env-file apps/backend/.env.production \
     -e NODE_ENV=production \
     --restart unless-stopped \
@@ -136,7 +136,7 @@ docker run -d \
     --name $API_CONTAINER \
     --network $NETWORK_NAME \
     --network-alias api \
-    -p $API_PORT:$API_PORT \
+    -p $API_PORT:4000 \
     --env-file apps/api/.env.production \
     -e NODE_ENV=production \
     --restart unless-stopped \
@@ -152,7 +152,7 @@ docker run -d \
     --name $FRONTEND_CONTAINER \
     --network $NETWORK_NAME \
     --network-alias frontend \
-    -p $FRONTEND_PORT:$FRONTEND_PORT \
+    -p $FRONTEND_PORT:4201 \
     --env-file apps/frontend/.env.production \
     -e NODE_ENV=production \
     -e HOST=0.0.0.0 \
@@ -169,7 +169,7 @@ docker run -d \
     --name $ADMIN_CONTAINER \
     --network $NETWORK_NAME \
     --network-alias admin \
-    -p $ADMIN_PORT:$ADMIN_PORT \
+    -p $ADMIN_PORT:3001 \
     --env-file apps/admin/.env.production \
     -e NODE_ENV=production \
     -e HOST=0.0.0.0 \
@@ -200,7 +200,7 @@ echo "- Frontend: http://localhost:$FRONTEND_PORT"
 echo "- Admin: http://localhost:$ADMIN_PORT"
 echo "- Backend: http://localhost:$BACKEND_PORT"
 echo "- API: http://localhost:$API_PORT"
-echo "- Nginx: http://localhost (80) and https://localhost (443)"
+echo "- Nginx: http://localhost:$NGINX_HTTP_PORT and https://localhost:$NGINX_HTTPS_PORT"
 
 # Show running containers and their networks
 echo -e "\nRunning containers:"
