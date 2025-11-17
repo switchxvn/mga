@@ -21,6 +21,8 @@ fi
 APP_NAME="${APP_NAME:-cable-car}"
 
 # Set default ports if not defined in .env
+NGINX_HTTP_PORT="${NGINX_HTTP_PORT:-80}"
+NGINX_HTTPS_PORT="${NGINX_HTTPS_PORT:-443}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 ADMIN_PORT="${ADMIN_PORT:-3001}"
 BACKEND_PORT="${BACKEND_PORT:-3333}"
@@ -183,8 +185,8 @@ docker run -d \
     --platform linux/amd64 \
     --name $NGINX_CONTAINER \
     --network $NETWORK_NAME \
-    -p 80:80 \
-    -p 443:443 \
+    -p $NGINX_HTTP_PORT:80 \
+    -p $NGINX_HTTPS_PORT:443 \
     -v /etc/nginx/ssl:/etc/nginx/ssl:ro \
     --restart unless-stopped \
     $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-nginx:latest
