@@ -45,7 +45,7 @@ const createOrderSchema = z.object({
   totalAmount: z.number(),
   returnUrl: z.string(),
   cancelUrl: z.string(),
-}).strict();
+}).passthrough();
 
 // Schema cho yêu cầu hoàn trả
 const refundItemSchema = z.object({
