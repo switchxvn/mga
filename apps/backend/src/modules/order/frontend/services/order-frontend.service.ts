@@ -14,7 +14,6 @@ import { MailService } from '../../../mail/services/mail.service';
 import { UploadFrontendService } from '../../../upload/frontend/services/upload-frontend.service';
 import { generateRefundCode } from '../../utils/refund-code.util';
 import * as QRCode from 'qrcode';
-import { Readable } from 'stream';
 // Using native fetch - Node.js 18+ support
 import { DashboardStatsService } from '../../../dashboard/services/dashboard-stats.service';
 
@@ -106,15 +105,10 @@ export class OrderFrontendService {
         folder: 'qr-codes'
       });
 
-      // Create readable stream from buffer
-      const stream = new Readable();
-      stream.push(qrBuffer);
-      stream.push(null);
-
-      // Upload using node-fetch with stream
+      // Upload buffer directly via fetch
       const response = await fetch(result.presignedUrl, {
         method: 'PUT',
-        body: stream,
+        body: qrBuffer,
         headers: {
           'Content-Type': 'image/png',
           'Content-Length': qrBuffer.length.toString(),
