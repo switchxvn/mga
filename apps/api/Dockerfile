@@ -52,12 +52,28 @@ COPY .prettierrc .prettierignore ./
 COPY libs ./libs
 COPY apps ./apps
 
-# Build argument for environment file
+# Build arguments for environment file handling
 ARG ENV_FILE=.env.production
-ENV ENV_FILE=${ENV_FILE}
+ARG API_FALLBACK_ENV=.env
+ARG API_NODE_ENV=production
+ARG API_PORT=4000
+ARG API_PREFIX=api
 
-# Copy environment file
-COPY apps/api/${ENV_FILE} apps/api/.env
+# Ensure API always has an .env file available
+RUN set -e; \
+    PRIMARY_FILE="apps/api/${ENV_FILE}"; \
+    FALLBACK_FILE="apps/api/${API_FALLBACK_ENV}"; \
+    if [ -f "$PRIMARY_FILE" ]; then \
+        cp "$PRIMARY_FILE" "apps/api/.env"; \
+    elif [ -f "$FALLBACK_FILE" ]; then \
+        cp "$FALLBACK_FILE" "apps/api/.env"; \
+    else \
+        printf "NODE_ENV=%s\nPORT=%s\nAPI_PREFIX=%s\n" \
+            "$API_NODE_ENV" \
+            "$API_PORT" \
+            "$API_PREFIX" \
+            > "apps/api/.env"; \
+    fi
 
 # Build the application
 RUN yarn nx build api --prod

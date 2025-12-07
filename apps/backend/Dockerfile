@@ -53,12 +53,30 @@ COPY libs/database/tsconfig.migration.json ./libs/database/tsconfig.migration.js
 COPY libs ./libs
 COPY apps/backend ./apps/backend
 
-# Build argument for environment file
+# Build arguments for environment file handling
 ARG ENV_FILE=.env.production
-ENV ENV_FILE=${ENV_FILE}
+ARG BACKEND_FALLBACK_ENV=.env
+ARG BACKEND_NODE_ENV=production
+ARG BACKEND_PORT=3333
+ARG BACKEND_API_PREFIX=api
+ARG BACKEND_FRONTEND_URL=http://localhost:4201
 
-# Copy environment file
-COPY apps/backend/${ENV_FILE} apps/backend/.env
+# Ensure backend always has an .env file inside the image
+RUN set -e; \
+    PRIMARY_FILE="apps/backend/${ENV_FILE}"; \
+    FALLBACK_FILE="apps/backend/${BACKEND_FALLBACK_ENV}"; \
+    if [ -f "$PRIMARY_FILE" ]; then \
+        cp "$PRIMARY_FILE" "apps/backend/.env"; \
+    elif [ -f "$FALLBACK_FILE" ]; then \
+        cp "$FALLBACK_FILE" "apps/backend/.env"; \
+    else \
+        printf "NODE_ENV=%s\nPORT=%s\nAPI_PREFIX=%s\nFRONTEND_URL=%s\n" \
+            "$BACKEND_NODE_ENV" \
+            "$BACKEND_PORT" \
+            "$BACKEND_API_PREFIX" \
+            "$BACKEND_FRONTEND_URL" \
+            > "apps/backend/.env"; \
+    fi
 
 # Build the application
 RUN yarn nx build backend --prod
