@@ -38,11 +38,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Recreate .env from secret
-        if: ${{ secrets.DOTENV_FILE != '' }}
         env:
           DOTENV_FILE: ${{ secrets.DOTENV_FILE }}
         shell: bash
         run: |
+          if [ -z "$DOTENV_FILE" ]; then
+            echo "DOTENV_FILE secret is empty or not set, skipping"
+            exit 0
+          fi
           printf "%s" "$DOTENV_FILE" > .env
 
       - name: Load configuration from .env
