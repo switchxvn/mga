@@ -81,6 +81,10 @@ jobs:
             fi
             clean_key=$(echo "$key" | xargs)
             clean_value=$(echo "$value" | xargs)
+            # Skip overriding values already provided through env/variables
+            if printenv "$clean_key" >/dev/null 2>&1; then
+              continue
+            fi
             echo "$clean_key=$clean_value" >> "$GITHUB_ENV"
           done < <(grep -Ev '^(#|$)' .env)
 
