@@ -17,7 +17,7 @@ jobs:
     environment: Production
     env:
       REGISTRY: ghcr.io
-      APP_NAME: cable_car
+      APP_NAME: ${{ vars.APP_NAME != '' && vars.APP_NAME }}
       GITHUB_USERNAME: ${{ github.repository_owner }}
       ADMIN_HOST: localhost
       ADMIN_PORT: 4201
