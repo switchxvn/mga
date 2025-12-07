@@ -1,0 +1,124 @@
+name: Build and Push Containers
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: Production
+    env:
+      REGISTRY: ghcr.io
+      APP_NAME: cable_car
+      GITHUB_USERNAME: ${{ github.repository_owner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: frontend
+            dockerfile: apps/frontend/Dockerfile
+          - service: backend
+            dockerfile: apps/backend/Dockerfile
+          - service: api
+            dockerfile: apps/api/Dockerfile
+          - service: admin
+            dockerfile: apps/admin/Dockerfile
+          - service: nginx
+            dockerfile: nginx/Dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Recreate .env from secret
+        if: ${{ secrets.DOTENV_FILE != '' }}
+        env:
+          DOTENV_FILE: ${{ secrets.DOTENV_FILE }}
+        shell: bash
+        run: |
+          printf "%s" "$DOTENV_FILE" > .env
+
+      - name: Load configuration from .env
+        shell: bash
+        run: |
+          if [ ! -f .env ]; then
+            echo "::error::.env file not found in repository root"
+            exit 1
+          fi
+
+          while IFS='=' read -r key value; do
+            if [[ -z "$key" || "$key" =~ ^# ]]; then
+              continue
+            fi
+            clean_key=$(echo "$key" | xargs)
+            clean_value=$(echo "$value" | xargs)
+            echo "$clean_key=$clean_value" >> "$GITHUB_ENV"
+          done < <(grep -Ev '^(#|$)' .env)
+
+      - name: Override credentials with repository secrets
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.GHCR_USERNAME }}" ]; then
+            echo "GITHUB_USERNAME=${{ secrets.GHCR_USERNAME }}" >> "$GITHUB_ENV"
+          fi
+
+          if [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
+            echo "GHCR_PASSWORD=${{ secrets.GHCR_TOKEN }}" >> "$GITHUB_ENV"
+          elif [ -n "${{ secrets.GITHUB_TOKEN }}" ]; then
+            echo "GHCR_PASSWORD=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
+          elif [ -n "$GITHUB_TOKEN" ]; then
+            echo "GHCR_PASSWORD=$GITHUB_TOKEN" >> "$GITHUB_ENV"
+          fi
+
+      - name: Validate required environment
+        shell: bash
+        run: |
+          missing=()
+          for var in REGISTRY GITHUB_USERNAME APP_NAME GHCR_PASSWORD; do
+            if [ -z "${!var}" ]; then
+              missing+=("$var")
+            fi
+          done
+
+          if [ "${#missing[@]}" -ne 0 ]; then
+            echo "::error::Missing required variables: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.GITHUB_USERNAME }}
+          password: ${{ env.GHCR_PASSWORD }}
+
+      - name: Compute version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(git describe --tags --always)
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.GITHUB_USERNAME }}/${{ env.APP_NAME }}-${{ matrix.service }}:${{ steps.version.outputs.value }}
+            ${{ env.REGISTRY }}/${{ env.GITHUB_USERNAME }}/${{ env.APP_NAME }}-${{ matrix.service }}:latest

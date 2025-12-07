@@ -2,7 +2,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
 import { useTrpc } from '../composables/useTrpc';
 import { defineNuxtRouteMiddleware, useRuntimeConfig, useState, useRequestURL } from 'nuxt/app';
-import { useHead, useSeoMeta } from '@unhead/vue';
+import { useHead, useSeoMeta } from '#imports';
 import type { RouteLocationNormalized } from 'vue-router';
 import { useGTM } from '../composables/useGTM';
 import { nextTick } from 'vue';
