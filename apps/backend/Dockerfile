@@ -1,5 +1,5 @@
 # Stage 1: Dependencies
-FROM node:20-slim AS deps
+FROM node:20 AS deps
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN yarn config set ignore-engines true && \
     yarn install --frozen-lockfile --production=false
 
 # Stage 2: Builder
-FROM node:20-slim AS builder
+FROM node:20 AS builder
 
 WORKDIR /app
 
@@ -82,7 +82,7 @@ RUN set -e; \
 RUN yarn nx build backend --prod
 
 # Stage 3: Runner
-FROM node:20-slim AS runner
+FROM node:20 AS runner
 
 WORKDIR /app
 
