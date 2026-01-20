@@ -2,7 +2,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
 import { useTrpc } from '../composables/useTrpc';
 import { defineNuxtRouteMiddleware, useRuntimeConfig, useState, useRequestURL } from 'nuxt/app';
-import { useHead, useSeoMeta } from '#app';
+
 import type { RouteLocationNormalized } from 'vue-router';
 import { useGTM } from '../composables/useGTM';
 import { nextTick } from 'vue';
@@ -11,11 +11,11 @@ type RouterOutput = inferRouterOutputs<AppRouter>;
 type SeoOutput = RouterOutput['seo']['getSeoByPath'];
 
 const defaultSeo = {
-  title: 'Trang chủ',
-  description: 'Trang chủ của chúng tôi',
-  keywords: 'trang chủ, website',
-  ogTitle: 'Trang chủ',
-  ogDescription: 'Trang chủ của chúng tôi',
+  title: 'Xe Nâng MGA FORKLIFT Động Cơ ISUZU – Bền Bỉ, Mạnh Mẽ, Tiết Kiệm Nhiên Liệu Hàng Đầu',
+  description: 'Xe nâng MGA Forklift động cơ ISUZU – giải pháp nâng hạ hiệu suất cao, bền bỉ, mạnh mẽ và tiết kiệm nhiên liệu hàng đầu. Phân phối chính hãng, giá tốt, bảo hành toàn quốc.',
+  keywords: 'Xe Nâng MGA FORKLIFT Động Cơ ISUZU – Bền Bỉ, Mạnh Mẽ, Tiết Kiệm Nhiên Liệu Hàng Đầu',
+  ogTitle: 'Xe Nâng MGA FORKLIFT Động Cơ ISUZU – Bền Bỉ, Mạnh Mẽ, Tiết Kiệm Nhiên Liệu Hàng Đầu',
+  ogDescription: 'Xe nâng MGA Forklift động cơ ISUZU – giải pháp nâng hạ hiệu suất cao, bền bỉ, mạnh mẽ và tiết kiệm nhiên liệu hàng đầu. Phân phối chính hãng, giá tốt, bảo hành toàn quốc.',
   ogImage: '/images/og-default.jpg',
   robotsTxt: 'index, follow',
   canonicalUrl: ''
@@ -124,12 +124,12 @@ async function handleClientSideSEO(path: string) {
 function shouldSkipRoute(path: RouteLocationNormalized['path']): boolean {
   return Boolean(
     path.startsWith('/api/') ||
-      path.startsWith('/internal-api/') ||
-      path.startsWith('/_nuxt/') ||
-      path.startsWith('/static/') ||
-      path.startsWith('/images/') ||
-      path.startsWith('/favicon') ||
-      path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|xml|txt)$/),
+    path.startsWith('/internal-api/') ||
+    path.startsWith('/_nuxt/') ||
+    path.startsWith('/static/') ||
+    path.startsWith('/images/') ||
+    path.startsWith('/favicon') ||
+    path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|xml|txt)$/),
   );
 }
 
@@ -147,7 +147,7 @@ function normalizePath(path: string): string {
 
 async function fetchSeoDataFromServer(path: string): Promise<SeoOutput | null> {
   try {
-    const response = await $fetch<{ success: boolean; data: SeoOutput | null }>('/internal-api/seo-meta', {
+    const response = await $fetch<{ success: boolean; data: SeoOutput | null }>('/api/seo-meta', {
       params: { path },
     });
 
