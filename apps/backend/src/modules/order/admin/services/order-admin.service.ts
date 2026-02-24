@@ -265,7 +265,7 @@ export class OrderAdminService {
         folder: 'qr-codes'
       });
 
-      // Upload buffer directly via fetch
+      // Upload using native fetch with buffer body
       const response = await fetch(result.presignedUrl, {
         method: 'PUT',
         body: qrBuffer,

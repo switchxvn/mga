@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DashboardStats } from '../entities/dashboard-stats.entity';
 import { Order } from '../../order/entities/order.entity';
+import { PaymentStatus } from '@ew/shared';
 
 @Injectable()
 export class DashboardStatsService {
@@ -74,7 +75,7 @@ export class DashboardStatsService {
     const result = await this.orderRepository
       .createQueryBuilder('order')
       .select('SUM(order.totalAmount)', 'total')
-      .where('order.paymentStatus = :status', { status: 'PAID' })
+      .where('order.paymentStatus = :status', { status: PaymentStatus.PAID })
       .getRawOne();
     return Number(result?.total || 0);
   }
