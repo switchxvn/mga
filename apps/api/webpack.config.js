@@ -14,8 +14,8 @@ module.exports = composePlugins(withNx(), (config) => {
     __filename: false,
   };
 
-  // Disable all polyfills - use native Node.js modules
-  config.resolve.fallback = false;
+  // Disable all polyfills - use native Node.js modules while keeping schema happy
+  config.resolve.fallback = {};
 
   // Add alias for @ew/shared
   config.resolve.alias = {
