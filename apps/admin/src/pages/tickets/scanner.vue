@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useTrpc } from '@/composables/useTrpc';
 import { useI18n } from 'vue-i18n';
 import { navigateTo } from 'nuxt/app';
@@ -142,6 +142,31 @@ interface CustomerTicket {
   scanCount?: number;
 }
 
+interface OrderTicketItemDetail {
+  id: number;
+  qrCode: string;
+  orderId: number;
+  isUsed: boolean;
+  quantity?: number;
+  travelDate?: string;
+  productSnapshot?: {
+    variant?: {
+      name: string;
+      price: number;
+    };
+    translations?: {
+      locale: string;
+      title: string;
+      description?: string;
+    }[];
+  };
+  product?: {
+    translations?: {
+      title: string;
+    }[];
+  };
+}
+
 const { t } = useLocalization();
 const trpc = useTrpc();
 
@@ -156,6 +181,8 @@ const isLoadingHistory = ref(false);
 const showConfirmModal = ref(false);
 const currentQrCode = ref('');
 const errorMessage = ref('');
+const orderTicketItems = ref<OrderTicketItemDetail[]>([]);
+const isLoadingOrderTicketItems = ref(false);
 
 // Trang hiển thị trong tab
 const activeTab = ref('scanner');
@@ -211,6 +238,26 @@ const printSizes = ref<PrintSize[]>([
 ]);
 
 const debounceTimer = ref<NodeJS.Timeout | null>(null);
+
+const groupedOrderTicketItems = computed(() => {
+  const groups = new Map<string, { title: string; variant: string; quantity: number }>();
+
+  for (const item of orderTicketItems.value) {
+    const title = getProductTitle(item as any);
+    const variant = item.productSnapshot?.variant?.name || '';
+    const key = `${title}__${variant}`;
+    const quantity = Number(item.quantity) || 0;
+    const current = groups.get(key);
+
+    if (current) {
+      current.quantity += quantity;
+    } else {
+      groups.set(key, { title, variant, quantity });
+    }
+  }
+
+  return Array.from(groups.values());
+});
 
 // Cấu hình in vé
 const ticketSettings = ref({
@@ -363,6 +410,7 @@ const scanTicket = async () => {
       
       // Hiển thị modal xác nhận
       showConfirmModal.value = true;
+      await loadOrderTicketItems(orderItem.orderId);
       
       // Luôn tải lịch sử quét của vé này để hiển thị
       if (orderItem.id) {
@@ -498,6 +546,24 @@ const loadScanHistory = async (orderItemId: number) => {
   loadHistoryScanHistory();
 };
 
+const loadOrderTicketItems = async (orderId?: number) => {
+  if (!orderId) {
+    orderTicketItems.value = [];
+    return;
+  }
+
+  isLoadingOrderTicketItems.value = true;
+  try {
+    const result = await trpc.admin.ticketScanner.getOrderTicketItems.query({ orderId });
+    orderTicketItems.value = (result || []) as OrderTicketItemDetail[];
+  } catch (error) {
+    console.error('Error loading order ticket items:', error);
+    orderTicketItems.value = [];
+  } finally {
+    isLoadingOrderTicketItems.value = false;
+  }
+};
+
 // Load history scan history with pagination
 const loadHistoryScanHistory = async () => {
   if (!historyOrderItemId.value) return;
@@ -628,6 +694,7 @@ const switchTab = (tab: string) => {
 // Đóng confirm modal và thực hiện quét vé (lưu log)
 const closeConfirmModal = async () => {
   showConfirmModal.value = false;
+  orderTicketItems.value = [];
   
   if (scanResult.value?.success && currentQrCode.value) {
     try {
@@ -699,6 +766,7 @@ const closeConfirmModal = async () => {
         
         // Cập nhật lại kết quả với thông tin mới nhất
         scanResult.value = result;
+        await loadOrderTicketItems(result.orderItem?.orderId);
         
         // Cập nhật scanCount trong customerTickets nếu vé được quét từ danh sách tìm kiếm khách hàng
         if (customerTickets.value.length > 0 && result.orderItem) {
@@ -753,6 +821,7 @@ const closeConfirmModal = async () => {
 // Đóng modal và hủy quy trình quét vé (không lưu log)
 const cancelAction = () => {
   showConfirmModal.value = false;
+  orderTicketItems.value = [];
   toast.warning(t('Đã hủy quét vé - không lưu thông tin'));
   currentQrCode.value = '';
   errorMessage.value = '';
@@ -2340,6 +2409,25 @@ const getPrintDisabledReason = (ticket: any): string => {
                   <strong>{{ t('Số vé đã đặt') }}:</strong>
                   <span class="font-bold ml-1">{{ scanResult.orderItem.quantity || 0 }}</span>
                 </p>
+                <div v-if="scanResult?.orderItem" class="mt-3">
+                  <strong class="block mb-1">{{ t('Chi tiết loại vé trong đơn') }}:</strong>
+                  <div v-if="isLoadingOrderTicketItems" class="text-sm text-gray-600">
+                    {{ t('Đang tải...') }}
+                  </div>
+                  <div v-else-if="groupedOrderTicketItems.length > 0" class="space-y-1">
+                    <p
+                      v-for="(item, index) in groupedOrderTicketItems"
+                      :key="`${item.title}-${item.variant}-${index}`"
+                      class="text-sm"
+                    >
+                      <span class="font-semibold">{{ item.title }}</span>
+                      <span v-if="item.variant"> - {{ item.variant }}</span>
+                      <span class="ml-2 inline-block rounded-full border border-indigo-300 bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-800">
+                        SL: {{ item.quantity }}
+                      </span>
+                    </p>
+                  </div>
+                </div>
                 <p v-if="!scanResult?.isFirstScan" class="mt-3">
                   <strong class="mr-2">{{ t('Số lần quét trước đó') }}:</strong> 
                   <span class="font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full text-sm border border-blue-300 ml-1 inline-block">

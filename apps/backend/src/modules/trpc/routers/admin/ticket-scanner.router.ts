@@ -313,6 +313,73 @@ export const ticketScannerRouter = router({
         });
       }
     }),
+
+  // Lấy danh sách vé theo đơn hàng để hiển thị chi tiết từng loại vé
+  getOrderTicketItems: adminProcedure
+    .use(requirePermission(Permissions.VIEW_TICKETS))
+    .input(z.object({
+      orderId: z.number()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const entityManager = ctx.services.orderAdminService['orderRepository'].manager;
+
+        const query = `
+          SELECT
+            "item"."id" as "itemId",
+            "item"."qr_code" as "qrCode",
+            "item"."order_id" as "orderId",
+            "item"."is_used" as "isUsed",
+            "item"."quantity" as "quantity",
+            "item"."product_type" as "productType",
+            "item"."travel_date" as "travelDate",
+            "item"."product_snapshot" as "productSnapshot",
+            "product"."id" as "productId",
+            "translation"."title" as "productTitle"
+          FROM "order_items" "item"
+          INNER JOIN "products" "product" ON "item"."product_id" = "product"."id"
+          LEFT JOIN "product_translations" "translation" ON "translation"."product_id" = "product"."id"
+          WHERE "item"."order_id" = $1
+            AND "item"."product_type" = 'TICKET'
+          ORDER BY "item"."id" ASC
+        `;
+
+        const rawResults = await entityManager.query(query, [input.orderId]);
+
+        if (!rawResults || rawResults.length === 0) {
+          return [];
+        }
+
+        const itemMap = new Map<number, any>();
+
+        for (const row of rawResults) {
+          if (!itemMap.has(row.itemId)) {
+            itemMap.set(row.itemId, {
+              id: row.itemId,
+              qrCode: row.qrCode,
+              orderId: row.orderId,
+              isUsed: row.isUsed,
+              quantity: Number(row.quantity) || 0,
+              productType: row.productType,
+              travelDate: row.travelDate,
+              productSnapshot: row.productSnapshot,
+              product: {
+                id: row.productId,
+                translations: row.productTitle ? [{ title: row.productTitle }] : []
+              }
+            });
+          }
+        }
+
+        return Array.from(itemMap.values());
+      } catch (error) {
+        console.error('Error in getOrderTicketItems:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Lỗi khi lấy chi tiết vé theo đơn hàng',
+        });
+      }
+    }),
     
   // Lấy lịch sử quét vé
   getTicketScanHistory: adminProcedure

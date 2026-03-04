@@ -10,8 +10,6 @@ import enLocalTranslations from '../i18n/locales/en.json';
 
 // Define types for tRPC outputs
 type RouterOutput = inferRouterOutputs<AppRouter>;
-type LanguageOutput = RouterOutput['language']['getLanguages'][0];
-type TranslationsOutput = RouterOutput['language']['getAllTranslations'];
 
 // Define locale interface
 export interface Locale {
@@ -38,6 +36,8 @@ const localTranslations: { [key: string]: any } = {
   vi: viLocalTranslations,
   en: enLocalTranslations
 };
+
+const FALLBACK_LOCALE = 'en';
 
 // Create singleton state
 const state = {
@@ -120,18 +120,18 @@ export function useLocalization() {
     state.error.value = null;
 
     try {
-      // Get all languages first
-      const languages = await trpc.language.getLanguages.query();
+      const [defaultLang, languages] = await Promise.all([
+        trpc.language.getDefaultLanguage.query(),
+        trpc.language.getLanguages.query(),
+      ]);
+
       state.locales.value = languages;
 
-      // Find default language
-      const defaultLang = languages.find(lang => lang.isDefault);
       if (defaultLang && !state.locale.value) {
         state.locale.value = defaultLang.code;
       }
 
-      // Get translations for default or current language
-      const langCode = state.locale.value || defaultLang?.code || 'en';
+      const langCode = state.locale.value || defaultLang?.code || FALLBACK_LOCALE;
       
       // First set local translations
       state.translations.value = {
@@ -151,8 +151,7 @@ export function useLocalization() {
       state.isInitialized.value = true;
     } catch (err) {
       console.error('Failed to initialize localization:', err);
-      // Fallback to local translations if everything fails
-      const langCode = state.locale.value || 'en';
+      const langCode = state.locale.value || FALLBACK_LOCALE;
       state.translations.value = {
         [langCode]: mergeTranslations({}, langCode)
       };
@@ -243,6 +242,7 @@ export function useLocalization() {
   // Watch for language changes to update HTML lang attribute
   watch(state.locale, (newLocale) => {
     if (process.client && newLocale) {
+      localStorage.setItem('locale', newLocale);
       document.documentElement.setAttribute('lang', newLocale);
     }
   });

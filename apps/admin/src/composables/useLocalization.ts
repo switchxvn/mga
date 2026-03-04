@@ -1,8 +1,8 @@
 import { useI18n } from 'vue-i18n';
-import { ref, computed, reactive } from 'vue';
+import { ref, computed } from 'vue';
 import type { Composer } from 'vue-i18n';
 
-export type SupportedLocale = 'en' | 'vi';
+export type SupportedLocale = string;
 
 interface LocaleOption {
   code: SupportedLocale;
@@ -16,11 +16,11 @@ export const useLocalization = () => {
   let i18n: Composer | undefined;
   try {
     i18n = useI18n();
-  } catch (error) {
+  } catch {
     console.warn('i18n not initialized yet, using fallback');
   }
 
-  const currentLocaleCode = ref<SupportedLocale>('en');
+  const currentLocaleCode = ref<SupportedLocale>('');
   
   const availableLocales = ref<LocaleOption[]>([
     { code: 'en', name: 'English', nativeName: 'English', flag: '/images/flag/us.svg' },
@@ -47,6 +47,10 @@ export const useLocalization = () => {
     
     // Luôn cập nhật giá trị local
     currentLocaleCode.value = localeCode;
+
+    if (process.client) {
+      document.documentElement.setAttribute('lang', localeCode);
+    }
   };
 
   // Alias for setLocale that matches frontend API
@@ -89,13 +93,19 @@ export const useLocalization = () => {
 
   // Khởi tạo ngôn ngữ từ localStorage nếu có
   const initLocale = () => {
+    const runtimeLocale = i18n?.locale.value;
+    if (runtimeLocale) {
+      currentLocaleCode.value = runtimeLocale as SupportedLocale;
+    }
+
     if (process.client) {
       const savedLocale = localStorage.getItem('locale') as SupportedLocale | null;
-      if (savedLocale && availableLocales.value.some(l => l.code === savedLocale)) {
+      if (savedLocale) {
         if (i18n) {
           i18n.locale.value = savedLocale;
         }
         currentLocaleCode.value = savedLocale;
+        document.documentElement.setAttribute('lang', savedLocale);
       }
     }
   };
