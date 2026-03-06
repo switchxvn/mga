@@ -7,7 +7,9 @@
   "targets": {
     "build": {
       "executor": "@nx/webpack:webpack",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "target": "node",
@@ -33,11 +35,15 @@
     "serve": {
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "buildTarget": "api:build",
         "watch": true,
-        "args": ["--env-file=apps/api/.env"]
+        "args": [
+          "--env-file=apps/api/.env"
+        ]
       },
       "configurations": {
         "development": {
@@ -56,4 +62,4 @@
       }
     }
   }
-} 
+}

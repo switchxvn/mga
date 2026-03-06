@@ -10,32 +10,27 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const config = useRuntimeConfig()
-    
-    // Make direct HTTP request to tRPC endpoint
-    const tRpcUrl = `${config.public.apiBase}/api/trpc/seo.getSeoByPath?batch=1&input=${encodeURIComponent(JSON.stringify({ 0: path }))}`
-    
-    const response = await fetch(tRpcUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
+    // Use Nitro internal request to avoid SSR env/network mismatches.
+    const tRpcData = await event.$fetch('/api/trpc/seo.getSeoByPath', {
+      query: {
+        batch: '1',
+        input: JSON.stringify({ 0: path }),
+      },
     })
 
-    if (response.ok) {
-      const tRpcData = await response.json()
+    if (Array.isArray(tRpcData)) {
       const seoData = tRpcData?.[0]?.result?.data
 
       return {
         success: true,
-        data: seoData
+        data: seoData || null
       }
     }
 
     return {
       success: false,
       data: null,
-      error: 'Failed to fetch from tRPC'
+      error: 'Unexpected tRPC response format'
     }
 
   } catch (error) {

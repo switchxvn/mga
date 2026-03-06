@@ -32,7 +32,7 @@ async function bootstrap() {
     .addTag('Ticket Webhooks', 'Webhooks for ticket inventory updates')
     .addTag('Orders', 'Order management endpoints')
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('external-api/docs', app, document);
 

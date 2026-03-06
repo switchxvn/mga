@@ -21,7 +21,7 @@ import {
 } from 'lucide-vue-next';
 import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
-import { computed, nextTick, ref, unref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AddToCartButton from "~/components/cart/AddToCartButton.vue";
 import Breadcrumb from "~/components/common/Breadcrumb.vue";
@@ -195,69 +195,66 @@ const closeQuickPurchaseModal = () => {
   isQuickPurchaseModalOpen.value = false;
 };
 
-// Thiết lập meta tags
-useHead({
-  title: unref(computed(() => productData.value?.metaTitle || productTitle.value || "Chi tiết sản phẩm")),
+// Thiết lập meta tags (reactive cho SSR/client navigation)
+useHead(() => ({
+  title: productData.value?.metaTitle || productTitle.value || "Chi tiết sản phẩm",
   meta: [
     {
       name: "description",
-      content: unref(computed(() => productData.value?.metaDescription || productShortDescription.value || "")),
+      content: productData.value?.metaDescription || productShortDescription.value || "",
     },
-    { 
-      name: "keywords", 
-      content: unref(computed(() => productData.value?.metaKeywords || "")),
+    {
+      name: "keywords",
+      content: productData.value?.metaKeywords || "",
     },
-    // Open Graph
     {
       property: "og:title",
-      content: unref(computed(() => productData.value?.ogTitle || productTitle.value || "")),
+      content: productData.value?.ogTitle || productTitle.value || "",
     },
     {
       property: "og:description",
-      content: unref(computed(() => 
+      content:
         productData.value?.ogDescription ||
         productData.value?.metaDescription ||
         productShortDescription.value ||
-        ""
-      )),
+        "",
     },
     {
       property: "og:image",
-      content: unref(computed(() => productData.value?.ogImage || productData.value?.thumbnail || "")),
+      content: productData.value?.ogImage || productData.value?.thumbnail || "",
     },
-    { 
-      property: "og:url", 
-      content: unref(computed(() => canonicalUrl.value)),
+    {
+      property: "og:url",
+      content: canonicalUrl.value,
     },
-    { 
-      property: "og:type", 
+    {
+      property: "og:type",
       content: "product",
     },
-    // Twitter Card
-    { 
-      name: "twitter:card", 
+    {
+      name: "twitter:card",
       content: "summary_large_image",
-    },  
+    },
     {
       name: "twitter:title",
-      content: unref(computed(() => productData.value?.ogTitle || productTitle.value || "")),
+      content: productData.value?.ogTitle || productTitle.value || "",
     },
     {
       name: "twitter:description",
-      content: unref(computed(() => productData.value?.ogDescription || productShortDescription.value || "")),
+      content: productData.value?.ogDescription || productShortDescription.value || "",
     },
     {
       name: "twitter:image",
-      content: unref(computed(() => productData.value?.ogImage || productData.value?.thumbnail || "")),
+      content: productData.value?.ogImage || productData.value?.thumbnail || "",
     },
   ],
   link: [
-    { 
-      rel: "canonical", 
-      href: unref(computed(() => canonicalUrl.value)),
+    {
+      rel: "canonical",
+      href: canonicalUrl.value,
     },
   ],
-});
+}));
 
 // Theo dõi thay đổi của activeTab để cập nhật lại TableOfContents
 watch(activeTab, (newTab, oldTab) => {

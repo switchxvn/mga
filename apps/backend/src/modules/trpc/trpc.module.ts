@@ -96,10 +96,10 @@ import { AuthContext } from './contexts/auth.context';
     UserSessionModule,
     ApiKeyModule,
     forwardRef(() => PriceRequestModule),
-    
+
     // Auth module is imported with forwardRef to avoid circular dependency
     forwardRef(() => AuthModule),
-    
+
     // JWT configuration for authentication
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -108,7 +108,7 @@ import { AuthContext } from './contexts/auth.context';
       }),
       inject: [ConfigService],
     }),
-    
+
     // Global configuration module
     ConfigModule.forRoot({
       isGlobal: true,
@@ -126,4 +126,4 @@ import { AuthContext } from './contexts/auth.context';
   ],
   exports: [TrpcRouter],
 })
-export class TrpcModule {} 
+export class TrpcModule { } 

@@ -7,20 +7,12 @@
       :title="t('common.language')"
     >
       <div class="w-5 h-5 flex items-center justify-center">
-        <!-- Hiển thị cờ theo ngôn ngữ -->
         <ClientOnly>
           <template #default>
-            <img 
-              v-if="locale === 'en'"
-              src="/images/flag/us.svg" 
-              alt="English flag" 
-              class="w-5 h-5 rounded-sm object-cover"
-              @error="handleImageError"
-            />
-            <img 
-              v-else-if="locale === 'vi'"
-              src="/images/flag/vn.svg" 
-              alt="Vietnamese flag" 
+            <img
+              v-if="currentLocaleOption?.flag && !showFallback"
+              :src="currentLocaleOption.flag"
+              :alt="currentLocaleOption.name"
               class="w-5 h-5 rounded-sm object-cover"
               @error="handleImageError"
             />
@@ -52,19 +44,11 @@
           :class="{ 'bg-gray-100 dark:bg-gray-700': locale === loc.code }"
         >
           <div class="w-5 h-5 flex items-center justify-center mr-2">
-            <!-- Hiển thị cờ trong dropdown -->
             <ClientOnly>
-              <img 
-                v-if="loc.code === 'en'"
-                src="/images/flag/us.svg" 
-                alt="English flag" 
-                class="w-5 h-5 rounded-sm object-cover"
-                @error="handleDropdownImageError"
-              />
-              <img 
-                v-else-if="loc.code === 'vi'"
-                src="/images/flag/vn.svg" 
-                alt="Vietnamese flag" 
+              <img
+                v-if="loc.flag"
+                :src="loc.flag"
+                :alt="loc.name"
                 class="w-5 h-5 rounded-sm object-cover"
                 @error="handleDropdownImageError"
               />
@@ -91,13 +75,13 @@ import { useI18n } from 'vue-i18n';
 import { ClientOnly } from '#components';
 
 const { t } = useI18n();
-const { locale, locales, switchLanguage, initLocale } = useLocalization();
+const { locale, availableLocales, switchLanguage, initLocale } = useLocalization();
 
 const isOpen = ref(false);
 const showFallback = ref(false);
 
 // Computed
-const availableLocales = computed(() => locales.value || []);
+const currentLocaleOption = computed(() => availableLocales.value.find(loc => loc.code === locale.value));
 
 // Get current locale display
 const currentLocaleDisplay = computed(() => {
@@ -107,13 +91,6 @@ const currentLocaleDisplay = computed(() => {
   const current = availableLocales.value.find(loc => loc.code === locale.value);
   return current ? current.nativeName : t('common.language');
 });
-
-// Lấy đường dẫn cờ theo mã ngôn ngữ
-const getFlagPath = (code: string) => {
-  if (code === 'en') return '/images/flag/us.svg';
-  if (code === 'vi') return '/images/flag/vn.svg';
-  return '';
-};
 
 // Toggle dropdown
 const toggleDropdown = () => {
@@ -134,6 +111,7 @@ const handleSelectLanguage = async (code: string) => {
   
   try {
     await switchLanguage(code);
+    showFallback.value = false;
     closeDropdown();
     
     // Đảm bảo DOM đã cập nhật trước khi tiếp tục
@@ -172,23 +150,20 @@ const handleDropdownImageError = (event: Event) => {
 // Preload images to ensure they're in cache
 const preloadImages = () => {
   if (!process.client) return;
-  
-  const preloadImage = (src: string) => {
+
+  availableLocales.value.forEach((localeOption) => {
+    if (!localeOption.flag) return;
     const img = new Image();
-    img.src = src;
-  };
-  
-  preloadImage('/images/flag/us.svg');
-  preloadImage('/images/flag/vn.svg');
+    img.src = localeOption.flag;
+  });
 };
 
 // Initialize
-onMounted(() => {
+onMounted(async () => {
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
+    await initLocale();
     preloadImages();
-    // Khởi tạo ngôn ngữ từ localStorage nếu có
-    initLocale();
   }
 });
 

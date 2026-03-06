@@ -31,7 +31,7 @@ function patchFastifyVersion(pluginFn: any, version: string) {
 
 async function bootstrap() {
   // Đăng ký Handlebars helpers
-  Handlebars.registerHelper('eq', function(a, b) {
+  Handlebars.registerHelper('eq', function (a, b) {
     return a === b;
   });
 
@@ -46,7 +46,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     fastifyAdapter,
-    { 
+    {
       logger: ['error', 'warn', 'log', 'debug'],
       bufferLogs: true,
     }
@@ -83,7 +83,7 @@ async function bootstrap() {
       root: join(__dirname, '..', 'public'),
       prefix: '/public/',
     });
-    
+
     // Cấu hình trang chủ
     await fastifyInstance.register(fastifyViewFn, {
       engine: {
@@ -127,13 +127,13 @@ async function bootstrap() {
   const port = configService.get('PORT', 3000);
   const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
   await app.listen(port, host);
-  
+
   // Tạo URL với hostname là 'localhost' thay vì địa chỉ IP
   const displayUrl = `http://localhost:${port}`;
   console.log(`Application is running on: ${displayUrl}`);
   console.log(`API is available at: ${displayUrl}/${apiPrefix}`);
   console.log(`Swagger documentation is available at: ${displayUrl}/${apiPrefix}/docs`);
-  
+
   // Hiển thị thông tin về frontend URL
   const frontendUrl = configService.get('FRONTEND_URL', 'http://localhost:4200');
   console.log(`Frontend is expected to run at: ${frontendUrl}`);

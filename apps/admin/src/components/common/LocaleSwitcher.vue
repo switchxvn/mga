@@ -2,7 +2,7 @@
 import { useLocalization } from '@/composables/useLocalization';
 import { ref, onMounted } from 'vue';
 
-const { currentLocale, availableLocales, setLocale, initLocale, t } = useLocalization();
+const { currentLocale, currentLocaleOption, availableLocales, setLocale, initLocale, t } = useLocalization();
 const isOpen = ref(false);
 
 // Initialize language from localStorage when component is mounted
@@ -21,7 +21,7 @@ const toggleDropdown = () => {
 };
 
 // Select language
-const selectLocale = (code: 'en' | 'vi') => {
+const selectLocale = (code: string) => {
   setLocale(code);
   isOpen.value = false;
 };
@@ -35,11 +35,11 @@ const selectLocale = (code: 'en' | 'vi') => {
       :aria-label="t('components.common.languageSwitcher.selectLanguage')"
     >
       <img 
-        :src="currentLocale.flag" 
-        :alt="currentLocale.name" 
+        :src="currentLocaleOption.flag" 
+        :alt="currentLocaleOption.name" 
         class="w-5 h-5 rounded-sm object-cover"
       />
-      <span class="text-sm hidden sm:inline">{{ currentLocale.code.toUpperCase() }}</span>
+      <span class="text-sm hidden sm:inline">{{ currentLocale.toUpperCase() }}</span>
     </button>
 
     <div
@@ -51,7 +51,7 @@ const selectLocale = (code: 'en' | 'vi') => {
         :key="locale.code"
         @click="selectLocale(locale.code)"
         class="flex items-center w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-        :class="{ 'bg-gray-50 dark:bg-gray-700': locale.code === currentLocale.code }"
+        :class="{ 'bg-gray-50 dark:bg-gray-700': locale.code === currentLocale }"
       >
         <img 
           :src="locale.flag" 

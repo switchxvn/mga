@@ -40,4 +40,4 @@ import * as entities from '../../../apps/backend/src/modules/entities';
     ZnsModule,
   ],
 })
-export class AppModule {} 
+export class AppModule { } 
