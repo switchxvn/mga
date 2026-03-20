@@ -7,12 +7,110 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: build-and-push-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   packages: write
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: changes
+        if: github.event_name != 'workflow_dispatch'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'apps/frontend/**'
+              - 'libs/**'
+              - 'package.json'
+              - 'yarn.lock'
+              - 'nx.json'
+              - 'tsconfig.base.json'
+            backend:
+              - 'apps/backend/**'
+              - 'libs/**'
+              - 'package.json'
+              - 'yarn.lock'
+              - 'nx.json'
+              - 'tsconfig.base.json'
+            api:
+              - 'apps/api/**'
+              - 'libs/**'
+              - 'package.json'
+              - 'yarn.lock'
+              - 'nx.json'
+              - 'tsconfig.base.json'
+            admin:
+              - 'apps/admin/**'
+              - 'libs/**'
+              - 'package.json'
+              - 'yarn.lock'
+              - 'nx.json'
+              - 'tsconfig.base.json'
+            nginx:
+              - 'nginx/**'
+
+      - name: Build matrix
+        id: set-matrix
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            frontend=true
+            backend=true
+            api=true
+            admin=true
+            nginx=true
+          else
+            frontend="${{ steps.changes.outputs.frontend }}"
+            backend="${{ steps.changes.outputs.backend }}"
+            api="${{ steps.changes.outputs.api }}"
+            admin="${{ steps.changes.outputs.admin }}"
+            nginx="${{ steps.changes.outputs.nginx }}"
+          fi
+
+          entries=()
+          if [ "$frontend" = "true" ]; then
+            entries+=('{"service":"frontend","dockerfile":"apps/frontend/Dockerfile"}')
+          fi
+          if [ "$backend" = "true" ]; then
+            entries+=('{"service":"backend","dockerfile":"apps/backend/Dockerfile"}')
+          fi
+          if [ "$api" = "true" ]; then
+            entries+=('{"service":"api","dockerfile":"apps/api/Dockerfile"}')
+          fi
+          if [ "$admin" = "true" ]; then
+            entries+=('{"service":"admin","dockerfile":"apps/admin/Dockerfile"}')
+          fi
+          if [ "$nginx" = "true" ]; then
+            entries+=('{"service":"nginx","dockerfile":"nginx/Dockerfile"}')
+          fi
+
+          if [ "${#entries[@]}" -eq 0 ]; then
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            echo 'has_changes=false' >> "$GITHUB_OUTPUT"
+          else
+            joined=$(IFS=,; echo "${entries[*]}")
+            echo "matrix={\"include\":[${joined}]}" >> "$GITHUB_OUTPUT"
+            echo 'has_changes=true' >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: prepare
+    if: needs.prepare.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     environment: Production
     env:
@@ -40,18 +138,7 @@ jobs:
       API_PREFIX: api
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - service: frontend
-            dockerfile: apps/frontend/Dockerfile
-          - service: backend
-            dockerfile: apps/backend/Dockerfile
-          - service: api
-            dockerfile: apps/api/Dockerfile
-          - service: admin
-            dockerfile: apps/admin/Dockerfile
-          - service: nginx
-            dockerfile: nginx/Dockerfile
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -150,6 +237,8 @@ jobs:
             ${{ matrix.service == 'admin' && format('ENV_FILE={0}\nADMIN_HOST={1}\nADMIN_PORT={2}\nADMIN_API_BASE={3}', env.ADMIN_ENV_FILE, env.ADMIN_HOST, env.ADMIN_PORT, env.ADMIN_API_BASE) || '' }}
             ${{ matrix.service == 'backend' && format('ENV_FILE={0}\nBACKEND_FALLBACK_ENV={1}\nBACKEND_NODE_ENV={2}\nBACKEND_PORT={3}\nBACKEND_API_PREFIX={4}\nBACKEND_FRONTEND_URL={5}', env.BACKEND_ENV_FILE, env.BACKEND_FALLBACK_ENV, env.BACKEND_NODE_ENV, env.BACKEND_PORT, env.BACKEND_API_PREFIX, env.BACKEND_FRONTEND_URL) || '' }}
             ${{ matrix.service == 'api' && format('ENV_FILE={0}\nAPI_FALLBACK_ENV={1}\nAPI_NODE_ENV={2}\nAPI_PORT={3}\nAPI_PREFIX={4}', env.API_ENV_FILE, env.API_FALLBACK_ENV, env.API_NODE_ENV, env.API_PORT, env.API_PREFIX) || '' }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.GITHUB_USERNAME }}/${{ env.APP_NAME }}-${{ matrix.service }}:${{ steps.version.outputs.value }}
             ${{ env.REGISTRY }}/${{ env.GITHUB_USERNAME }}/${{ env.APP_NAME }}-${{ matrix.service }}:latest
