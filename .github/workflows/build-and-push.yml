@@ -6,6 +6,19 @@ on:
       - master
       - main
   workflow_dispatch:
+    inputs:
+      service:
+        description: Service to build and push
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - frontend
+          - backend
+          - api
+          - admin
+          - nginx
 
 concurrency:
   group: build-and-push-${{ github.ref }}
@@ -69,11 +82,33 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            frontend=true
-            backend=true
-            api=true
-            admin=true
-            nginx=true
+            selected_service="${{ github.event.inputs.service }}"
+            frontend=false
+            backend=false
+            api=false
+            admin=false
+            nginx=false
+
+            if [ -z "$selected_service" ] || [ "$selected_service" = "all" ]; then
+              frontend=true
+              backend=true
+              api=true
+              admin=true
+              nginx=true
+            elif [ "$selected_service" = "frontend" ]; then
+              frontend=true
+            elif [ "$selected_service" = "backend" ]; then
+              backend=true
+            elif [ "$selected_service" = "api" ]; then
+              api=true
+            elif [ "$selected_service" = "admin" ]; then
+              admin=true
+            elif [ "$selected_service" = "nginx" ]; then
+              nginx=true
+            else
+              echo "::error::Unsupported service input: $selected_service"
+              exit 1
+            fi
           else
             frontend="${{ steps.changes.outputs.frontend }}"
             backend="${{ steps.changes.outputs.backend }}"
