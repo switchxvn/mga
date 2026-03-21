@@ -2,9 +2,8 @@ name: Build and Push Containers
 
 on:
   push:
-    branches:
-      - master
-      - main
+    tags:
+      - '*'
   workflow_dispatch:
     inputs:
       service:
@@ -19,10 +18,14 @@ on:
           - api
           - admin
           - nginx
+      image_tag:
+        description: Image tag (e.g. v1.0.0)
+        required: true
+        type: string
 
 concurrency:
   group: build-and-push-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -109,6 +112,12 @@ jobs:
               echo "::error::Unsupported service input: $selected_service"
               exit 1
             fi
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            frontend=true
+            backend=true
+            api=true
+            admin=true
+            nginx=true
           else
             frontend="${{ steps.changes.outputs.frontend }}"
             backend="${{ steps.changes.outputs.backend }}"
@@ -253,12 +262,24 @@ jobs:
           username: ${{ env.GITHUB_USERNAME }}
           password: ${{ env.GHCR_PASSWORD }}
 
-      - name: Compute version
-        id: version
+      - name: Resolve image tag
+        id: image_tag
         shell: bash
         run: |
-          VERSION=$(git describe --tags --always)
-          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          INPUT_TAG="${{ github.event.inputs.image_tag }}"
+          REF_NAME="${GITHUB_REF_NAME}"
+
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG="$REF_NAME"
+          else
+            echo "::error::image_tag is required for manual dispatch, or run on a git tag push"
+            exit 1
+          fi
+
+          echo "value=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Using image tag: $TAG"
 
       - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v5
@@ -275,5 +296,4 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.GITHUB_USERNAME }}/${{ env.APP_NAME }}-${{ matrix.service }}:${{ steps.version.outputs.value }}
-            ${{ env.REGISTRY }}/${{ env.GITHUB_USERNAME }}/${{ env.APP_NAME }}-${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/${{ env.GITHUB_USERNAME }}/${{ env.APP_NAME }}-${{ matrix.service }}:${{ steps.image_tag.outputs.value }}
