@@ -11,7 +11,6 @@ import FooterStatistics from './FooterStatistics.vue';
 const isDev = ref(process.env.NODE_ENV === 'development');
 const isImageModalOpen = ref(false);
 const selectedImage = ref<{ url: string; alt: string } | null>(null);
-const mapEnabled = ref(false);
 const fanpageEnabled = ref(false);
 
 const {
@@ -110,10 +109,6 @@ onMounted(async () => {
     console.error('Error in Footer component:', err);
   }
 });
-
-const enableMap = () => {
-  mapEnabled.value = true;
-};
 
 const enableFanpage = async () => {
   if (fanpageEnabled.value) return;
@@ -252,7 +247,6 @@ const enableFanpage = async () => {
               <div v-if="activeFooter.mapUrl" 
                    class="map-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
                 <iframe
-                  v-if="mapEnabled"
                   :src="activeFooter.mapUrl + '&zoom=15&style=feature:all|element:labels.text.fill|color:0x000000|saturation:36|lightness:40&style=feature:all|element:labels.text.stroke|visibility:off&style=feature:administrative|element:geometry.stroke|color:0xdc2626|weight:1&style=feature:landscape|element:geometry.fill|color:0xfecaca&style=feature:poi|element:geometry.fill|color:0xfee2e2&style=feature:road|element:geometry.fill|color:0xffffff&style=feature:road|element:geometry.stroke|color:0xdc2626|weight:0.5&style=feature:water|element:geometry.fill|color:0xfca5a5'"
                   width="100%"
                   height="200"
@@ -263,14 +257,6 @@ const enableFanpage = async () => {
                   class="transition-all duration-500"
                 >
                 </iframe>
-                <button
-                  v-else
-                  class="h-[200px] w-full text-white font-semibold"
-                  style="background-color: rgba(255, 255, 255, 0.1);"
-                  @click="enableMap"
-                >
-                  Xem bản đồ
-                </button>
               </div>
 
               <!-- Facebook Fanpage -->

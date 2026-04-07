@@ -18,7 +18,6 @@ const {
 
 const colorMode = useColorMode();
 const isDark = computed(() => colorMode.value === 'dark');
-const mapEnabled = ref(false);
 const fanpageEnabled = ref(false);
 
 // Tính toán style dựa trên theme từ API
@@ -82,10 +81,6 @@ onMounted(async () => {
     console.error('Error in Footer component:', err);
   }
 });
-
-const enableMap = () => {
-  mapEnabled.value = true;
-};
 
 const enableFanpage = async () => {
   if (fanpageEnabled.value) return;
@@ -182,7 +177,6 @@ const enableFanpage = async () => {
             <!-- Map -->
             <div v-if="activeFooter.mapUrl" class="mt-6 h-[200px]">
               <iframe
-                v-if="mapEnabled"
                 :src="activeFooter.mapUrl"
                 width="100%"
                 height="100%"
@@ -192,13 +186,6 @@ const enableFanpage = async () => {
                 referrerpolicy="no-referrer-when-downgrade"
               >
               </iframe>
-              <button
-                v-else
-                class="h-full w-full rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                @click="enableMap"
-              >
-                Xem bản đồ
-              </button>
             </div>
 
             <!-- Facebook -->
