@@ -2,7 +2,7 @@ import { ref, computed, watch } from 'vue';
 import { useLocalStorage } from '@vueuse/core';
 import { useTrpc } from './useTrpc';
 import type { inferRouterOutputs } from '@trpc/server';
-import type { AppRouter } from '../../../backend/src/modules/trpc/trpc.router';
+import type { AppRouter } from '@backend/modules/trpc/routers';
 
 // Import local translations
 import viLocalTranslations from '../i18n/locales/vi.json';

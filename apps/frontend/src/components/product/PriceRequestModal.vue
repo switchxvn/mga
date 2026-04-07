@@ -51,7 +51,7 @@ const submitSuccess = ref(false);
 const phoneInputRef = ref<any>(null);
 
 // Kiểm tra xem trường nào là bắt buộc
-const isPhoneRequired = true
+const isPhoneRequired = true;
 
 // Định nghĩa quy tắc xác thực
 const rules = computed(() => {
@@ -92,15 +92,15 @@ const validatePhoneField = async () => {
   
   // Kiểm tra xem số điện thoại có được nhập không
   if (!phoneNumber.value.trim()) {
-    // Không hiển thị lỗi khi trường này trống - số điện thoại không bắt buộc
-    return true;
+    errors.value.phoneNumber = (t('priceRequest.phoneRequired') as string) || 'Vui lòng nhập số điện thoại';
+    return false;
   }
   
   // Xác thực số điện thoại
   let isPhoneValid = true;
   if (phoneInputRef.value) {
     // Gọi phương thức validate của PhoneInput để kiểm tra số điện thoại có phù hợp với quốc gia đã chọn không
-    isPhoneValid = await phoneInputRef.value.validatePhoneNumber();
+    isPhoneValid = await phoneInputRef.value.validate();
   }
   
   // Cập nhật thông báo lỗi cho số điện thoại
@@ -256,6 +256,12 @@ watch(() => props.isOpen, (newValue) => {
 
 });
 
+watch(phoneNumber, (newValue) => {
+  if (newValue?.trim() && errors.value.phoneNumber) {
+    errors.value.phoneNumber = '';
+  }
+});
+
 </script>
 
 <template>
@@ -299,14 +305,13 @@ watch(() => props.isOpen, (newValue) => {
         <div class="form-group">
           <label for="phone" class="form-label">
             {{ t('priceRequest.phone') }}
-            <span v-if="!isPhoneRequired" class="optional-field">({{ t('common.optional') || 'Không bắt buộc' }})</span>
+            <span v-if="isPhoneRequired" class="required-mark">*</span>
+            <span v-else class="optional-field">({{ t('common.optional') || 'Không bắt buộc' }})</span>
           </label>
           <PhoneInput
             ref="phoneInputRef"
-            :modelValue="phoneNumber"
-            :phoneCode="selectedPhoneCode"
-            v-model:phone="phoneNumber"
-            v-model:code="selectedPhoneCode"
+            v-model="phoneNumber"
+            v-model:phoneCode="selectedPhoneCode"
             :error="!!errors.phoneNumber"
             @validation="handlePhoneValidation"
           />
@@ -414,6 +419,11 @@ watch(() => props.isOpen, (newValue) => {
   font-size: 0.875rem;
   font-weight: normal;
   font-style: italic;
+  margin-left: 0.25rem;
+}
+
+.required-mark {
+  color: #ef4444;
   margin-left: 0.25rem;
 }
 

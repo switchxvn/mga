@@ -24,7 +24,7 @@ const { getActiveTheme } = useTheme();
 const { getIpInfo } = useIpInfo();
 
 const user = ref<any>(null);
-const isLoading = ref(true);
+const isLoading = ref(false);
 const isDarkMode = ref(false);
 const theme = ref<any>({ sections: [] }); // Initialize with empty sections
 const footer = ref<any>(null);
@@ -33,6 +33,7 @@ const sessionId = ref<string>('');
 
 // GTM Configuration
 const gtmConfig = useState('gtm-id', () => null);
+const shouldLoadTracking = ref(false);
 
 // Reactive head configuration with GTM
 useHead(() => {
@@ -40,7 +41,7 @@ useHead(() => {
   const noscripts = [];
   
   // Add GTM script if ID is available
-  if (gtmConfig.value) {
+  if (gtmConfig.value && shouldLoadTracking.value) {
     scripts.push({
       innerHTML: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -168,6 +169,18 @@ const checkDarkMode = () => {
 };
 
 onMounted(async () => {
+  if (process.client) {
+    const deferLoad = () => {
+      shouldLoadTracking.value = true;
+    };
+
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(deferLoad, { timeout: 4000 });
+    } else {
+      window.setTimeout(deferLoad, 2500);
+    }
+  }
+
   try {
     // Khởi tạo hoặc cập nhật session
     if (process.client) {

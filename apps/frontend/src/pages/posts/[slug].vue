@@ -33,7 +33,7 @@ const {
 } = usePost();
 
 // Sử dụng useAsyncData thay vì useLazyAsyncData để hỗ trợ SSR tốt hơn
-const { data: post, pending: loading, error, refresh } = useAsyncData(
+const { data: post, pending: loading, error, refresh } = await useAsyncData(
   `post-${slug}`,
   () => fetchPost(slug)
 );

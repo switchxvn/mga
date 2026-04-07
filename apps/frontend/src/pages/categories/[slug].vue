@@ -61,7 +61,7 @@ interface Category {
 }
 
 // Sử dụng useAsyncData để tải dữ liệu category trước khi trang được render (SSR)
-const { data: category, error: categoryError, refresh: refreshCategory } = useAsyncData<Category | null>(
+const { data: category, error: categoryError, refresh: refreshCategory } = await useAsyncData<Category | null>(
   `category-${slug.value}-${locale.value}`,
   async (ctx) => {
     try {

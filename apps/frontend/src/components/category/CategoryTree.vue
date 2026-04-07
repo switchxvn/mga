@@ -38,45 +38,6 @@ const hasChildren = (category: any) => {
   return category.children && category.children.length > 0;
 };
 
-// Component đệ quy để hiển thị cây danh mục
-const CategoryNode = (props: { category: any, level: number }) => {
-  const { category, level } = props;
-  const hasChildCategories = hasChildren(category);
-  const isExpanded = isCategoryExpanded(category.id);
-  
-  return (
-    <div class={`category-tree__node category-tree__node--level-${level}`}>
-      <div 
-        class="category-tree__node-header"
-        onClick={() => hasChildCategories && toggleCategory(category.id)}
-      >
-        {hasChildCategories && (
-          <span class={`category-tree__toggle ${isExpanded ? 'category-tree__toggle--expanded' : ''}`}>
-            {isExpanded ? '−' : '+'}
-          </span>
-        )}
-        <NuxtLink 
-          to={`/danh-muc/${category.slug}`}
-          class="category-tree__link"
-        >
-          {category.name}
-        </NuxtLink>
-      </div>
-      
-      {hasChildCategories && isExpanded && (
-        <div class="category-tree__children">
-          {category.children.map((child: any) => (
-            <CategoryNode 
-              key={child.id} 
-              category={child} 
-              level={level + 1} 
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 </script>
 
 <template>

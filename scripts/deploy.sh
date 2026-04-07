@@ -46,6 +46,7 @@ NGINX_HTTP_PORT="${NGINX_HTTP_PORT:-80}"
 NGINX_HTTPS_PORT="${NGINX_HTTPS_PORT:-443}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 ADMIN_PORT="${ADMIN_PORT:-3001}"
+ADMIN_BASE_PATH="${ADMIN_BASE_PATH:-/admin/}"
 BACKEND_PORT="${BACKEND_PORT:-3333}"
 API_PORT="${API_PORT:-4000}"
 
@@ -161,7 +162,7 @@ if service_enabled "backend"; then
         --network $NETWORK_NAME \
         --network-alias backend \
         -p $BACKEND_PORT:3333 \
-        --env-file apps/backend/.env.production \
+        --env-file .env \
         -e NODE_ENV=production \
         --restart unless-stopped \
         $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-backend:$BACKEND_TAG
@@ -218,6 +219,7 @@ if service_enabled "admin"; then
         -p $ADMIN_PORT:3001 \
         --env-file apps/admin/.env.production \
         -e NODE_ENV=production \
+        -e NUXT_APP_BASE_URL=$ADMIN_BASE_PATH \
         -e HOST=0.0.0.0 \
         --restart unless-stopped \
         $REGISTRY/$GITHUB_USERNAME/${APP_NAME}-admin:$ADMIN_TAG

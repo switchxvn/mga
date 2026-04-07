@@ -9,15 +9,17 @@ export const logoRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       try {
-        const logo = await ctx.services.logoFrontendService.findOneByType(input.type);
-        if (!logo) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `No active logo found for type ${input.type}`,
-          });
+        let logo = await ctx.services.logoFrontendService.findOneByType(input.type);
+
+        // Fallback to main logo when requested type is missing.
+        if (!logo && input.type !== 'main') {
+          logo = await ctx.services.logoFrontendService.findOneByType('main');
         }
+
         return logo;
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
+
         ctx.logger.error('Failed to fetch active logo:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',

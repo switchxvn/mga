@@ -18,6 +18,8 @@ const {
 
 const colorMode = useColorMode();
 const isDark = computed(() => colorMode.value === 'dark');
+const mapEnabled = ref(false);
+const fanpageEnabled = ref(false);
 
 // Tính toán style dựa trên theme từ API
 const footerStyle = computed(() => {
@@ -75,12 +77,22 @@ const reloadFacebookPlugin = () => {
 onMounted(async () => {
   try {
     await fetchActiveFooter();
-    await initFacebookSDK();
     console.log('Active footer:', activeFooter.value);
   } catch (err) {
     console.error('Error in Footer component:', err);
   }
 });
+
+const enableMap = () => {
+  mapEnabled.value = true;
+};
+
+const enableFanpage = async () => {
+  if (fanpageEnabled.value) return;
+  fanpageEnabled.value = true;
+  await initFacebookSDK();
+  setTimeout(() => reloadFacebookPlugin(), 100);
+};
 </script>
 
 <template>
@@ -169,35 +181,54 @@ onMounted(async () => {
 
             <!-- Map -->
             <div v-if="activeFooter.mapUrl" class="mt-6 h-[200px]">
-              <iframe :src="activeFooter.mapUrl" 
-                width="100%" 
-                height="100%" 
-                style="border:0;" 
-                allowfullscreen 
-                loading="lazy" 
-                referrerpolicy="no-referrer-when-downgrade">
+              <iframe
+                v-if="mapEnabled"
+                :src="activeFooter.mapUrl"
+                width="100%"
+                height="100%"
+                style="border:0;"
+                allowfullscreen
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+              >
               </iframe>
+              <button
+                v-else
+                class="h-full w-full rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                @click="enableMap"
+              >
+                Xem bản đồ
+              </button>
             </div>
 
             <!-- Facebook -->
             <div v-if="activeFooter.fanpageUrl" class="mt-6 w-full">
               <ClientOnly>
-                <div id="fb-root"></div>
-                <div 
-                  class="fb-page" 
-                  :data-href="activeFooter.fanpageUrl"
-                  data-tabs="timeline"
-                  data-width=""
-                  data-height="300"
-                  data-small-header="true"
-                  data-adapt-container-width="true"
-                  data-hide-cover="false"
-                  data-show-facepile="true"
-                >
-                  <blockquote :cite="activeFooter.fanpageUrl" class="fb-xfbml-parse-ignore">
-                    <a :href="activeFooter.fanpageUrl">{{ activeFooter.companyInfo.name }}</a>
-                  </blockquote>
+                <div v-if="fanpageEnabled">
+                  <div id="fb-root"></div>
+                  <div
+                    class="fb-page"
+                    :data-href="activeFooter.fanpageUrl"
+                    data-tabs="timeline"
+                    data-width=""
+                    data-height="300"
+                    data-small-header="true"
+                    data-adapt-container-width="true"
+                    data-hide-cover="false"
+                    data-show-facepile="true"
+                  >
+                    <blockquote :cite="activeFooter.fanpageUrl" class="fb-xfbml-parse-ignore">
+                      <a :href="activeFooter.fanpageUrl">{{ activeFooter.companyInfo.name }}</a>
+                    </blockquote>
+                  </div>
                 </div>
+                <button
+                  v-else
+                  class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  @click="enableFanpage"
+                >
+                  Xem Facebook fanpage
+                </button>
               </ClientOnly>
             </div>
           </div>

@@ -8,7 +8,7 @@ import { useNotification } from './useNotification';
 import { formatPrice } from '@ew/shared';
 import type { Product } from '@ew/shared';
 
-export function useProductDetail() {
+export async function useProductDetail() {
   const { t, locale } = useLocalization();
   const trpc = useTrpc();
   const route = useRoute();
@@ -33,7 +33,7 @@ export function useProductDetail() {
   const isTicketRoute = computed(() => route.path.includes("/tickets/"));
 
   // Sử dụng useAsyncData với tRPC
-  const { data: productData, pending: isLoading, error, refresh } = useAsyncData<Product | null>(
+  const { data: productData, pending: isLoading, error, refresh } = await useAsyncData<Product | null>(
     `product-${route.params.slug}`,
     async () => {
       try {

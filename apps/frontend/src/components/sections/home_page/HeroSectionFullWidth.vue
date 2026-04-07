@@ -217,12 +217,25 @@ const processedConfig = computed(() => {
         <Swiper v-if="sortedSlides.length > 0"
                 v-bind="swiperOptions"
                 class="w-full h-full hero-swiper">
-          <SwiperSlide v-for="slide in sortedSlides" :key="slide.order" class="relative">
+          <SwiperSlide
+            v-for="(slide, index) in sortedSlides"
+            :key="slide.order"
+            class="relative"
+          >
             <div class="relative w-full h-full">
               <!-- Image layer (z-index: 1) -->
-              <img 
-                :src="slide.image_url" 
+              <NuxtImg
+                :src="slide.image_url"
                 :alt="slide.title"
+                width="1780"
+                height="450"
+                sizes="(max-width: 768px) 100vw, 1780px"
+                format="webp"
+                fit="cover"
+                quality="75"
+                :preload="index === 0"
+                :loading="index === 0 ? 'eager' : 'lazy'"
+                :fetchpriority="index === 0 ? 'high' : 'auto'"
                 class="absolute inset-0 w-full h-full object-cover object-center z-[1]"
               />
               

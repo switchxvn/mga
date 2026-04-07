@@ -397,22 +397,43 @@ const pageDescription = computed(() => {
   return seoData.value?.description || '';
 });
 
-// SEO meta tags
-watch([pageTitle, pageDescription, seoData], () => {
-  useHead({
-    title: pageTitle.value,
-    meta: [
-      { name: 'description', content: pageDescription.value },
-      { name: 'robots', content: seoData.value?.robotsTxt || 'index, follow' },
-      { property: 'og:title', content: seoData.value?.ogTitle || pageTitle.value },
-      { property: 'og:description', content: seoData.value?.ogDescription || pageDescription.value },
-      { property: 'og:image', content: seoData.value?.ogImage },
-      { property: 'og:url', content: seoData.value?.canonicalUrl || route.fullPath },
-      { name: 'keywords', content: seoData.value?.keywords },
-      { name: 'canonical', content: seoData.value?.canonicalUrl || route.fullPath }
-    ]
-  });
-}, { immediate: true });
+const canonicalUrl = computed(() => {
+  if (seoData.value?.canonicalUrl) {
+    return seoData.value.canonicalUrl;
+  }
+
+  if (process.server) {
+    try {
+      const req = useRequestURL();
+      return `${req.origin}${route.fullPath}`;
+    } catch {
+      return route.fullPath;
+    }
+  }
+
+  if (process.client && typeof window !== 'undefined') {
+    return `${window.location.origin}${route.fullPath}`;
+  }
+
+  return route.fullPath;
+});
+
+// SEO meta tags (SSR-safe)
+useHead(() => ({
+  title: pageTitle.value || t('posts.title'),
+  meta: [
+    { name: 'description', content: pageDescription.value || t('posts.description') },
+    { name: 'robots', content: seoData.value?.robotsTxt || 'index, follow' },
+    { property: 'og:title', content: seoData.value?.ogTitle || pageTitle.value || t('posts.title') },
+    { property: 'og:description', content: seoData.value?.ogDescription || pageDescription.value || t('posts.description') },
+    { property: 'og:image', content: seoData.value?.ogImage || '' },
+    { property: 'og:url', content: canonicalUrl.value },
+    { name: 'keywords', content: seoData.value?.keywords || '' }
+  ],
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value }
+  ]
+}));
 </script>
 
 <template>

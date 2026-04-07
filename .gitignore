@@ -38,6 +38,9 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# source maps
+*.map
+
 .nx/cache
 .nx/workspace-data
 

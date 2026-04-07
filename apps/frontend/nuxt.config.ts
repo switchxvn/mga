@@ -6,16 +6,38 @@ import { ROUTE_NAMES, ROUTE_PATHS } from './src/utils/routes';
 export default defineNuxtConfig({
   workspaceDir: '../../',
   srcDir: 'src',
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV !== 'production' },
+  ignore: ['**/*.js.map', '**/*.js'],
 
   devServer: {
-    host: process.env.NUXT_HOST || 'localhost',
-    port: process.env.NUXT_PORT ? parseInt(process.env.NUXT_PORT) : 4200,
+    host: process.env.FRONTEND_NUXT_HOST || process.env.NUXT_HOST || 'localhost',
+    port: process.env.FRONTEND_NUXT_PORT
+      ? parseInt(process.env.FRONTEND_NUXT_PORT)
+      : process.env.NUXT_PORT
+        ? parseInt(process.env.NUXT_PORT)
+        : 4200,
   },
 
   nitro: {
     experimental: {
       wasm: true
+    },
+    routeRules: {
+      '/_nuxt/**': {
+        headers: {
+          'cache-control': 'public, max-age=31536000, immutable'
+        }
+      },
+      '/_ipx/**': {
+        headers: {
+          'cache-control': 'public, max-age=2592000, stale-while-revalidate=604800'
+        }
+      },
+      '/fonts/**': {
+        headers: {
+          'cache-control': 'public, max-age=31536000, immutable'
+        }
+      }
     },
     esbuild: {
       options: {
@@ -236,9 +258,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE || 'http://localhost:3333',
-      siteUrl: process.env.SITE_URL || 'http://localhost:4200',
-      siteName: process.env.SITE_NAME || 'Ecommerce Web',
+      apiBase: process.env.FRONTEND_API_BASE || process.env.API_BASE || 'http://localhost:3333',
+      siteUrl: process.env.FRONTEND_SITE_URL || process.env.SITE_URL || 'http://localhost:4200',
+      siteName: process.env.FRONTEND_SITE_NAME || process.env.SITE_NAME || 'Ecommerce Web',
     },
   },
 
@@ -329,7 +351,7 @@ export default defineNuxtConfig({
     server: {
       proxy: {
         '/api/trpc': {
-          target: process.env.API_BASE || 'http://localhost:3333',
+          target: process.env.FRONTEND_API_BASE || process.env.API_BASE || 'http://localhost:3333',
           changeOrigin: true,
           rewrite: (path) => path,
         },
@@ -382,6 +404,9 @@ export default defineNuxtConfig({
   image: {
     provider: 'ipx',
     dir: 'public',
+    quality: 75,
+    formats: ['webp', 'avif'],
+    domains: ['cdn.mgavietnam.com', 'cdn.captreonuisam.com', 'images.unsplash.com'],
     screens: {
       xs: 320,
       sm: 640,

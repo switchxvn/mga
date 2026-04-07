@@ -118,7 +118,7 @@ const {
   shareViaEmail,
   copyProductLink,
   getTabIcon: originalGetTabIcon
-} = useProductDetail();
+} = await useProductDetail();
 
 // Add new refs for date selection
 const selectedDate = ref<Date | null>(null);
@@ -925,6 +925,7 @@ const handleSubmit = async () => {
                         <iframe
                           class="h-full w-full"
                           :src="productData.videoReview"
+                          loading="lazy"
                           frameborder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowfullscreen

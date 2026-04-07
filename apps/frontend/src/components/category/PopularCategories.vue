@@ -20,7 +20,7 @@ const {
 
 // Tải dữ liệu khi component được mount
 onMounted(async () => {
-  await fetchPopularCategories(props.limit);
+  await fetchPopularCategories();
 });
 </script>
 
@@ -37,7 +37,7 @@ onMounted(async () => {
     <div v-else-if="error" class="popular-categories__error">
       <p class="popular-categories__error-message">{{ error }}</p>
       <button 
-        @click="() => fetchPopularCategories(limit)" 
+        @click="() => fetchPopularCategories()" 
         class="popular-categories__error-button"
       >
         Thử lại

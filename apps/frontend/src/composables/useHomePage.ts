@@ -1,4 +1,4 @@
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { useTrpc } from './useTrpc';
 import { useLocalization } from './useLocalization';
 import { useTheme } from './useTheme';
@@ -126,6 +126,17 @@ export function useHomePage() {
       isLoading.value = false;
     }
   }
+
+  // Fallback khi API page-sections trả rỗng: dùng sections từ active theme.
+  function fallbackThemeSectionsFromTheme(activeTheme: Theme | null | undefined): ThemeSection[] {
+    if (!activeTheme?.sections || activeTheme.sections.length === 0) {
+      return [];
+    }
+
+    return activeTheme.sections
+      .filter((section) => section.pageType === PageType.HOME_PAGE)
+      .sort((a, b) => a.order - b.order) as ThemeSection[];
+  }
   
   // Cleanup function
   function cleanup() {
@@ -155,7 +166,10 @@ export function useHomePage() {
         const currentLocale = process.client ? locale.value : defaultLocale.value;
         
         // Lấy sections với locale phù hợp
-        themeSections.value = await fetchThemeSections(activeTheme.id, currentLocale);
+        const fetchedSections = await fetchThemeSections(activeTheme.id, currentLocale);
+        themeSections.value = fetchedSections.length > 0
+          ? fetchedSections
+          : fallbackThemeSectionsFromTheme(theme.value);
         
         // Apply theme colors
         if (theme.value?.colors && process.client) {
@@ -200,7 +214,28 @@ export function useHomePage() {
   // Watch for locale changes to update theme sections
   watch(locale, async () => {
     if (theme.value?.id) {
-      themeSections.value = await fetchThemeSections(theme.value.id, locale.value);
+      const fetchedSections = await fetchThemeSections(theme.value.id, locale.value);
+      themeSections.value = fetchedSections.length > 0
+        ? fetchedSections
+        : fallbackThemeSectionsFromTheme(theme.value);
+    }
+  });
+
+  // Fix trường hợp SSR trả payload rỗng: refetch lại phía client sau hydration.
+  onMounted(async () => {
+    if (themeSections.value.length > 0) return;
+
+    try {
+      const activeTheme = await getActiveTheme({ pageType: PageType.HOME_PAGE });
+      if (!activeTheme) return;
+
+      theme.value = activeTheme as unknown as Theme;
+      const fetchedSections = await fetchThemeSections(activeTheme.id, locale.value);
+      themeSections.value = fetchedSections.length > 0
+        ? fetchedSections
+        : fallbackThemeSectionsFromTheme(theme.value);
+    } catch (err) {
+      console.error('Client hydration refetch for home sections failed:', err);
     }
   });
   

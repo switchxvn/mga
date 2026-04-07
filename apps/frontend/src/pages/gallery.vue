@@ -48,19 +48,37 @@
               class="video-card group relative h-[480px] bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <div class="relative h-[280px] overflow-hidden">
-                <!-- YouTube iframe -->
-                <iframe
-                  v-if="getVideoId(video.videoUrl)"
-                  :src="getEmbedUrl(video.videoUrl)"
-                  class="w-full h-full object-cover"
-                  :title="video.title"
-                  frameborder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                ></iframe>
+                <template v-if="getVideoId(video.videoUrl)">
+                  <img
+                    v-if="!isVideoActivated(video.id)"
+                    :src="getVideoThumbnail(video.videoUrl, video.thumbnailUrl)"
+                    :alt="video.title"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                    @error="handleImageError"
+                  />
+                  <iframe
+                    v-else
+                    :src="getEmbedUrl(video.videoUrl)"
+                    class="w-full h-full object-cover"
+                    :title="video.title"
+                    loading="lazy"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                  ></iframe>
+                  <button
+                    v-if="!isVideoActivated(video.id)"
+                    class="absolute inset-0 flex items-center justify-center bg-black/25 hover:bg-black/35 transition-colors"
+                    :aria-label="`Play ${video.title}`"
+                    @click="activateVideo(video.id)"
+                  >
+                    <PlayCircle class="w-16 h-16 text-white drop-shadow-lg" />
+                  </button>
+                </template>
                 <!-- Fallback for non-YouTube videos or invalid URLs -->
                 <img
-                  v-else
+                  v-else-if="!getVideoId(video.videoUrl)"
                   :src="video.thumbnailUrl"
                   :alt="video.title"
                   class="w-full h-full object-cover"
@@ -509,6 +527,7 @@ const lightboxIndex = ref(0);
 const touchStartX = ref(0);
 const touchEndX = ref(0);
 const allGalleryItems = ref<Gallery[]>([]);
+const activatedVideos = ref<Set<number>>(new Set());
 
 // Add click handler for gallery items
 const handleGalleryClick = (event: Event, index: number) => {
@@ -576,13 +595,30 @@ const getEmbedUrl = (url: string): string => {
   
   // Add parameters for better performance and user experience
   const params = new URLSearchParams({
-    autoplay: '0',
+    autoplay: '1',
     rel: '0', // Don't show related videos
     modestbranding: '1', // Minimal YouTube branding
-    enablejsapi: '1'
+    playsinline: '1'
   });
   
   return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+};
+
+const getVideoThumbnail = (url: string, fallback?: string): string => {
+  const videoId = getVideoId(url);
+  if (videoId) {
+    return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  }
+
+  return fallback || "https://placehold.co/800x600/e2e8f0/a0aec0?text=Video";
+};
+
+const activateVideo = (videoId: number) => {
+  activatedVideos.value.add(videoId);
+};
+
+const isVideoActivated = (videoId: number) => {
+  return activatedVideos.value.has(videoId);
 };
 
 // Handle image error

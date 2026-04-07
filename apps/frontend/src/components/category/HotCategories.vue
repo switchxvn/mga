@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useCategory } from '../composables/useCategory';
+import { useCategory } from '~/composables/useCategory';
 
 // Props
 const props = defineProps({
@@ -20,7 +20,7 @@ const {
 
 // Tải dữ liệu khi component được mount
 onMounted(async () => {
-  await fetchHotCategories(props.limit);
+  await fetchHotCategories();
 });
 </script>
 
@@ -37,7 +37,7 @@ onMounted(async () => {
     <div v-else-if="error" class="hot-categories__error">
       <p class="hot-categories__error-message">{{ error }}</p>
       <button 
-        @click="() => fetchHotCategories(limit)" 
+        @click="() => fetchHotCategories()" 
         class="hot-categories__error-button"
       >
         Thử lại

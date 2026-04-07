@@ -1,6 +1,4 @@
-import type { AppRouter } from '@backend/modules/trpc/routers';
 import { useNuxtApp } from 'nuxt/app';
-import type { inferRouterProxyClient } from '@trpc/client';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
 /**
@@ -9,7 +7,7 @@ import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
  */
 export const useTrpc = () => {
   const { $trpc } = useNuxtApp();
-  return $trpc as inferRouterProxyClient<AppRouter>;
+  return $trpc as any;
 };
 
 /**
@@ -18,7 +16,7 @@ export const useTrpc = () => {
 export const createTRPCClient = () => {
   const apiUrl = process.env.NUXT_PUBLIC_TRPC_API_URL || '/api/trpc';
   
-  return createTRPCProxyClient<AppRouter>({
+  return createTRPCProxyClient<any>({
     links: [
       httpBatchLink({
         url: apiUrl,

@@ -104,7 +104,7 @@ const {
   shareViaEmail,
   copyProductLink,
   getTabIcon
-} = useProductDetail();
+} = await useProductDetail();
 
 const { getPublicSettingValueByKey } = useSettings();
 const quickPurchaseEnabled = ref(false);
@@ -928,6 +928,7 @@ watch(activeTab, (newTab, oldTab) => {
                         <iframe
                           class="h-full w-full"
                           :src="productData.videoReview"
+                          loading="lazy"
                           frameborder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowfullscreen

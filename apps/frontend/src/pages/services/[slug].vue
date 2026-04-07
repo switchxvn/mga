@@ -39,7 +39,7 @@ const getIconComponent = (iconName: string) => {
 };
 
 // Fetch service data
-const { data: service, pending: loading, error, refresh } = useAsyncData(
+const { data: service, pending: loading, error, refresh } = await useAsyncData(
   `service-${slug}`,
   () => trpc.service.bySlug.query({ slug, locale: locale.value })
 );

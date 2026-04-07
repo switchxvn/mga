@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 const hasError = ref(false)
 const isLoading = ref(true)
 const currentSrc = ref(props.src || props.defaultSrc)
+const imageClass = props.class
 
 const handleError = () => {
   hasError.value = true
@@ -42,7 +43,7 @@ onMounted(() => {
     <img
       :src="currentSrc"
       :alt="alt"
-      :class="class"
+      :class="imageClass"
       @error="handleError"
       @load="handleLoad"
       loading="lazy"

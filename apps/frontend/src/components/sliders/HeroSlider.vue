@@ -4,9 +4,16 @@
           class="w-full h-full rounded-lg overflow-hidden shadow-md hero-slider">
     <SwiperSlide v-for="slide in slides" :key="slide.order" class="relative">
       <div class="relative w-full h-full">
-        <img 
-          :src="slide.image_url" 
+        <NuxtImg
+          :src="slide.image_url"
           :alt="slide.title"
+          width="1600"
+          height="900"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px"
+          format="webp"
+          fit="cover"
+          quality="75"
+          loading="lazy"
           class="absolute inset-0 w-full h-full object-cover"
         />
         

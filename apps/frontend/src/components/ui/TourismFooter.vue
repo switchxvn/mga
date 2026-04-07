@@ -11,6 +11,8 @@ import FooterStatistics from './FooterStatistics.vue';
 const isDev = ref(process.env.NODE_ENV === 'development');
 const isImageModalOpen = ref(false);
 const selectedImage = ref<{ url: string; alt: string } | null>(null);
+const mapEnabled = ref(false);
+const fanpageEnabled = ref(false);
 
 const {
   activeFooter,
@@ -104,11 +106,21 @@ const removeHoverBackground = (event: MouseEvent) => {
 onMounted(async () => {
   try {
     await fetchActiveFooter();
-    await initFacebookSDK();
   } catch (err) {
     console.error('Error in Footer component:', err);
   }
 });
+
+const enableMap = () => {
+  mapEnabled.value = true;
+};
+
+const enableFanpage = async () => {
+  if (fanpageEnabled.value) return;
+  fanpageEnabled.value = true;
+  await initFacebookSDK();
+  setTimeout(() => reloadFacebookPlugin(), 100);
+};
 </script>
 
 <template>
@@ -239,36 +251,57 @@ onMounted(async () => {
               <!-- Map with enhanced container -->
               <div v-if="activeFooter.mapUrl" 
                    class="map-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
-                <iframe :src="activeFooter.mapUrl + '&zoom=15&style=feature:all|element:labels.text.fill|color:0x000000|saturation:36|lightness:40&style=feature:all|element:labels.text.stroke|visibility:off&style=feature:administrative|element:geometry.stroke|color:0xdc2626|weight:1&style=feature:landscape|element:geometry.fill|color:0xfecaca&style=feature:poi|element:geometry.fill|color:0xfee2e2&style=feature:road|element:geometry.fill|color:0xffffff&style=feature:road|element:geometry.stroke|color:0xdc2626|weight:0.5&style=feature:water|element:geometry.fill|color:0xfca5a5'" 
-                        width="100%" 
-                        height="200" 
-                        style="border:0;" 
-                        allowfullscreen 
-                        loading="lazy" 
-                        referrerpolicy="no-referrer-when-downgrade"
-                        class="transition-all duration-500">
+                <iframe
+                  v-if="mapEnabled"
+                  :src="activeFooter.mapUrl + '&zoom=15&style=feature:all|element:labels.text.fill|color:0x000000|saturation:36|lightness:40&style=feature:all|element:labels.text.stroke|visibility:off&style=feature:administrative|element:geometry.stroke|color:0xdc2626|weight:1&style=feature:landscape|element:geometry.fill|color:0xfecaca&style=feature:poi|element:geometry.fill|color:0xfee2e2&style=feature:road|element:geometry.fill|color:0xffffff&style=feature:road|element:geometry.stroke|color:0xdc2626|weight:0.5&style=feature:water|element:geometry.fill|color:0xfca5a5'"
+                  width="100%"
+                  height="200"
+                  style="border:0;"
+                  allowfullscreen
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  class="transition-all duration-500"
+                >
                 </iframe>
+                <button
+                  v-else
+                  class="h-[200px] w-full text-white font-semibold"
+                  style="background-color: rgba(255, 255, 255, 0.1);"
+                  @click="enableMap"
+                >
+                  Xem bản đồ
+                </button>
               </div>
 
               <!-- Facebook Fanpage -->
               <div v-if="activeFooter.fanpageUrl" class="facebook-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
                 <ClientOnly>
-                  <div id="fb-root"></div>
-                  <div 
-                    class="fb-page" 
-                    :data-href="activeFooter.fanpageUrl"
-                    data-tabs="timeline"
-                    data-width=""
-                    data-height="300"
-                    data-small-header="true"
-                    data-adapt-container-width="true"
-                    data-hide-cover="false"
-                    data-show-facepile="true"
-                  >
-                    <blockquote :cite="activeFooter.fanpageUrl" class="fb-xfbml-parse-ignore">
-                      <a :href="activeFooter.fanpageUrl" class="text-white">{{ activeFooter.companyInfo.name }}</a>
-                    </blockquote>
+                  <div v-if="fanpageEnabled">
+                    <div id="fb-root"></div>
+                    <div
+                      class="fb-page"
+                      :data-href="activeFooter.fanpageUrl"
+                      data-tabs="timeline"
+                      data-width=""
+                      data-height="300"
+                      data-small-header="true"
+                      data-adapt-container-width="true"
+                      data-hide-cover="false"
+                      data-show-facepile="true"
+                    >
+                      <blockquote :cite="activeFooter.fanpageUrl" class="fb-xfbml-parse-ignore">
+                        <a :href="activeFooter.fanpageUrl" class="text-white">{{ activeFooter.companyInfo.name }}</a>
+                      </blockquote>
+                    </div>
                   </div>
+                  <button
+                    v-else
+                    class="h-12 w-full text-white font-semibold"
+                    style="background-color: rgba(255, 255, 255, 0.1);"
+                    @click="enableFanpage"
+                  >
+                    Xem Facebook fanpage
+                  </button>
                 </ClientOnly>
               </div>
 
