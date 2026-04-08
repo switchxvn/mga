@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue';
+import { onMounted, computed, ref, nextTick, watch } from 'vue';
 import { useFooter } from '~/composables/useFooter';
 import { useColorMode } from '@vueuse/core';
 import { Link, MapPin, Phone, Mail } from 'lucide-vue-next';
@@ -11,7 +11,6 @@ import FooterStatistics from './FooterStatistics.vue';
 const isDev = ref(process.env.NODE_ENV === 'development');
 const isImageModalOpen = ref(false);
 const selectedImage = ref<{ url: string; alt: string } | null>(null);
-const fanpageEnabled = ref(false);
 
 const {
   activeFooter,
@@ -46,22 +45,35 @@ declare global {
 }
 
 // Khởi tạo Facebook SDK
-const initFacebookSDK = () => {
-  return new Promise((resolve) => {
-    if (!document.getElementById('fb-root')) {
-      const fbRoot = document.createElement('div');
-      fbRoot.id = 'fb-root';
-      document.body.appendChild(fbRoot);
-    }
+const initFacebookSDK = async () => {
+  if (!document.getElementById('fb-root')) {
+    const fbRoot = document.createElement('div');
+    fbRoot.id = 'fb-root';
+    document.body.appendChild(fbRoot);
+  }
 
+  if (window.FB) return;
+
+  const existingScript = document.getElementById('facebook-jssdk') as HTMLScriptElement | null;
+  if (existingScript) {
+    if (window.FB) return;
+    await new Promise<void>((resolve) => {
+      existingScript.addEventListener('load', () => resolve(), { once: true });
+      existingScript.addEventListener('error', () => resolve(), { once: true });
+    });
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
     const script = document.createElement('script');
+    script.id = 'facebook-jssdk';
     script.src = 'https://connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v22.0';
     script.async = true;
     script.defer = true;
     script.crossOrigin = 'anonymous';
+    script.onload = () => resolve();
+    script.onerror = () => resolve();
     document.head.appendChild(script);
-    
-    resolve(true);
   });
 };
 
@@ -105,17 +117,25 @@ const removeHoverBackground = (event: MouseEvent) => {
 onMounted(async () => {
   try {
     await fetchActiveFooter();
+    if (activeFooter.value?.fanpageUrl) {
+      await nextTick();
+      await initFacebookSDK();
+      setTimeout(() => reloadFacebookPlugin(), 100);
+    }
   } catch (err) {
     console.error('Error in Footer component:', err);
   }
 });
 
-const enableFanpage = async () => {
-  if (fanpageEnabled.value) return;
-  fanpageEnabled.value = true;
-  await initFacebookSDK();
-  setTimeout(() => reloadFacebookPlugin(), 100);
-};
+watch(
+  () => activeFooter.value?.fanpageUrl,
+  async (fanpageUrl) => {
+    if (!fanpageUrl) return;
+    await nextTick();
+    await initFacebookSDK();
+    setTimeout(() => reloadFacebookPlugin(), 100);
+  }
+);
 </script>
 
 <template>
@@ -262,32 +282,21 @@ const enableFanpage = async () => {
               <!-- Facebook Fanpage -->
               <div v-if="activeFooter.fanpageUrl" class="facebook-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
                 <ClientOnly>
-                  <div v-if="fanpageEnabled">
-                    <div id="fb-root"></div>
-                    <div
-                      class="fb-page"
-                      :data-href="activeFooter.fanpageUrl"
-                      data-tabs="timeline"
-                      data-width=""
-                      data-height="300"
-                      data-small-header="true"
-                      data-adapt-container-width="true"
-                      data-hide-cover="false"
-                      data-show-facepile="true"
-                    >
-                      <blockquote :cite="activeFooter.fanpageUrl" class="fb-xfbml-parse-ignore">
-                        <a :href="activeFooter.fanpageUrl" class="text-white">{{ activeFooter.companyInfo.name }}</a>
-                      </blockquote>
-                    </div>
-                  </div>
-                  <button
-                    v-else
-                    class="h-12 w-full text-white font-semibold"
-                    style="background-color: rgba(255, 255, 255, 0.1);"
-                    @click="enableFanpage"
+                  <div
+                    class="fb-page"
+                    :data-href="activeFooter.fanpageUrl"
+                    data-tabs="timeline"
+                    data-width=""
+                    data-height="300"
+                    data-small-header="true"
+                    data-adapt-container-width="true"
+                    data-hide-cover="false"
+                    data-show-facepile="true"
                   >
-                    Xem Facebook fanpage
-                  </button>
+                    <blockquote :cite="activeFooter.fanpageUrl" class="fb-xfbml-parse-ignore">
+                      <a :href="activeFooter.fanpageUrl" class="text-white">{{ activeFooter.companyInfo.name }}</a>
+                    </blockquote>
+                  </div>
                 </ClientOnly>
               </div>
 

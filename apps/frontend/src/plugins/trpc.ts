@@ -1,5 +1,6 @@
 import { useRuntimeConfig } from '#imports';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { $fetch } from 'ofetch';
 import type { AppRouter } from '../types/trpc';
 
 export default defineNuxtPlugin(() => {
@@ -55,12 +56,12 @@ export default defineNuxtPlugin(() => {
           return headers;
         },
         fetch(url, options) {
-          // Node.js 18+ has native fetch support, no polyfill needed
-          return fetch(url, {
+          // Use ofetch raw response so SSR does not depend on global fetch availability.
+          return $fetch.raw(url.toString(), {
             ...options,
             signal: AbortSignal.timeout(30000), // 30 second timeout
             credentials: 'include',
-          }).catch(error => {
+          }).then((response: any) => response as Response).catch(error => {
             console.error('TRPC fetch error:', error);
             throw error;
           });

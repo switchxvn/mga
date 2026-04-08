@@ -104,15 +104,22 @@ export async function useProductDetail() {
   if (process.server) {
     try {
       const config = useRuntimeConfig();
+      const reqURL = useRequestURL();
+      const requestOrigin = `${reqURL.protocol}//${reqURL.host}`;
+      const configuredSiteUrl =
+        config.public && typeof config.public.siteUrl === "string"
+          ? config.public.siteUrl.trim()
+          : "";
+
+      // Prefer configured public site URL only when it is a real public domain.
       if (
-        config.public &&
-        config.public.siteUrl &&
-        typeof config.public.siteUrl === "string"
+        configuredSiteUrl &&
+        !configuredSiteUrl.includes("localhost") &&
+        !configuredSiteUrl.includes("127.0.0.1")
       ) {
-        serverUrl = config.public.siteUrl;
+        serverUrl = configuredSiteUrl;
       } else {
-        const reqURL = useRequestURL();
-        serverUrl = `${reqURL.protocol}//${reqURL.host}`;
+        serverUrl = requestOrigin;
       }
     } catch (e) {
       console.error("Error in server URL setup:", e);
@@ -134,11 +141,27 @@ export async function useProductDetail() {
     return baseUrl.value || "";
   });
 
+  const canonicalPath = computed(() => {
+    if (!productData.value) return "";
+
+    const translation =
+      productData.value.translations?.find((t) => t.locale === currentLocale.value) ||
+      productData.value.translations?.[0];
+    const resolvedSlug = translation?.slug || productData.value.slug || slug.value;
+    const pathSegments = route.path.split("?")[0].split("/").filter(Boolean);
+
+    if (pathSegments.length === 0) {
+      return `/san-pham/${resolvedSlug}`;
+    }
+
+    pathSegments[pathSegments.length - 1] = resolvedSlug;
+    return `/${pathSegments.join("/")}`;
+  });
+
   // Tạo canonical URL (không chứa UTM parameters)
   const canonicalUrl = computed(() => {
-    if (!productData.value) return "";
-    const translation = productData.value.translations?.find(t => t.locale === currentLocale.value) || productData.value.translations?.[0];
-    return `${currentURL.value}/san-pham/${translation?.slug || productData.value.slug}`;
+    if (!productData.value || !canonicalPath.value) return "";
+    return `${currentURL.value}${canonicalPath.value}`;
   });
 
   // Tạo URL chia sẻ với UTM parameters
@@ -172,70 +195,6 @@ export async function useProductDetail() {
       return translation?.ogImage || productData.value?.thumbnail || "";
     }
   );
-
-  // Thiết lập meta tags
-  useHead({
-    title: computed(() => productData.value?.metaTitle || productTitle.value || "Chi tiết sản phẩm"),
-    meta: [
-      {
-        name: "description",
-        content: computed(() => productData.value?.metaDescription || productShortDescription.value || ""),
-      },
-      { 
-        name: "keywords", 
-        content: computed(() => productData.value?.metaKeywords || ""),
-      },
-      // Open Graph
-      {
-        property: "og:title",
-        content: computed(() => productData.value?.ogTitle || productTitle.value || ""),
-      },
-      {
-        property: "og:description",
-        content: computed(() => 
-          productData.value?.ogDescription ||
-          productData.value?.metaDescription ||
-          productShortDescription.value ||
-          ""
-        ),
-      },
-      {
-        property: "og:image",
-        content: computed(() => productData.value?.ogImage || productData.value?.thumbnail || ""),
-      },
-      { 
-        property: "og:url", 
-        content: computed(() => canonicalUrl.value),
-      },
-      { 
-        property: "og:type", 
-        content: "product",
-      },
-      // Twitter Card
-      { 
-        name: "twitter:card", 
-        content: "summary_large_image",
-      },  
-      {
-        name: "twitter:title",
-        content: computed(() => productData.value?.ogTitle || productTitle.value || ""),
-      },
-      {
-        name: "twitter:description",
-        content: computed(() => productData.value?.ogDescription || productShortDescription.value || ""),
-      },
-      {
-        name: "twitter:image",
-        content: computed(() => productData.value?.ogImage || productData.value?.thumbnail || ""),
-      },
-    ],
-    link: [
-      { 
-        rel: "canonical", 
-        href: computed(() => canonicalUrl.value),
-      },
-    ],
-  });
 
   // Thêm hàm để xử lý chia sẻ mạng xã hội
   const shareToFacebook = () => {

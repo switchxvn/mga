@@ -515,32 +515,17 @@ const onSlideChange = () => {
 
 .swiper-outer-container {
   position: relative;
-  width: 100vw;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
+  margin: 0 auto;
   padding: 0;
-  overflow-x: hidden; /* Thêm overflow-x: hidden để ngăn scroll ngang */
-
-  @media (min-width: 641px) {
-    width: auto;
-    left: auto;
-    right: auto;
-    margin: 0 -40px;
-    padding: 0 40px;
-  }
+  width: 100%;
 }
 
 .swiper-container {
   overflow: hidden;
+  overflow-y: hidden; /* chỉ chặn vertical scrollbar trong khung video */
   position: relative;
   width: 100%;
-  padding: 0 16px;
-
-  @media (min-width: 641px) {
-    padding: 0;
-  }
+  padding: 0;
 }
 
 .video-intro-section :deep(.swiper) {

@@ -195,33 +195,73 @@ const closeQuickPurchaseModal = () => {
   isQuickPurchaseModalOpen.value = false;
 };
 
+const activeTranslation = computed(() =>
+  productData.value?.translations?.find((translation: any) => translation.locale === currentLocale.value) ||
+  productData.value?.translations?.[0]
+);
+
+const seoTitle = computed(
+  () =>
+    activeTranslation.value?.metaTitle ||
+    productData.value?.metaTitle ||
+    productTitle.value ||
+    "Chi tiết sản phẩm"
+);
+
+const seoDescription = computed(
+  () =>
+    activeTranslation.value?.metaDescription ||
+    productData.value?.metaDescription ||
+    productShortDescription.value ||
+    ""
+);
+
+const seoKeywords = computed(
+  () => activeTranslation.value?.metaKeywords || productData.value?.metaKeywords || ""
+);
+
+const seoOgTitle = computed(
+  () => activeTranslation.value?.ogTitle || productData.value?.ogTitle || seoTitle.value
+);
+
+const seoOgDescription = computed(
+  () =>
+    activeTranslation.value?.ogDescription ||
+    productData.value?.ogDescription ||
+    seoDescription.value
+);
+
+const seoImage = computed(
+  () =>
+    activeTranslation.value?.ogImage ||
+    productData.value?.ogImage ||
+    productData.value?.thumbnail ||
+    ""
+);
+
 // Thiết lập meta tags (reactive cho SSR/client navigation)
 useHead(() => ({
-  title: productData.value?.metaTitle || productTitle.value || "Chi tiết sản phẩm",
+  title: seoTitle.value,
   meta: [
     {
       name: "description",
-      content: productData.value?.metaDescription || productShortDescription.value || "",
+      content: seoDescription.value,
     },
     {
       name: "keywords",
-      content: productData.value?.metaKeywords || "",
+      content: seoKeywords.value,
     },
     {
       property: "og:title",
-      content: productData.value?.ogTitle || productTitle.value || "",
+      content: seoOgTitle.value,
     },
     {
       property: "og:description",
-      content:
-        productData.value?.ogDescription ||
-        productData.value?.metaDescription ||
-        productShortDescription.value ||
-        "",
+      content: seoOgDescription.value,
     },
     {
       property: "og:image",
-      content: productData.value?.ogImage || productData.value?.thumbnail || "",
+      content: seoImage.value,
     },
     {
       property: "og:url",
@@ -237,15 +277,15 @@ useHead(() => ({
     },
     {
       name: "twitter:title",
-      content: productData.value?.ogTitle || productTitle.value || "",
+      content: seoOgTitle.value,
     },
     {
       name: "twitter:description",
-      content: productData.value?.ogDescription || productShortDescription.value || "",
+      content: seoOgDescription.value,
     },
     {
       name: "twitter:image",
-      content: productData.value?.ogImage || productData.value?.thumbnail || "",
+      content: seoImage.value,
     },
   ],
   link: [
