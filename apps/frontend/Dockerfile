@@ -20,7 +20,7 @@ ENV YARN_CACHE_FOLDER=/app/.yarn-cache \
     NX_SKIP_NX_CACHE_CREATION=true \
     NX_DAEMON=false \
     CYPRESS_INSTALL_BINARY=0 \
-    NODE_OPTIONS="--max_old_space_size=4096 --no-experimental-fetch" \
+    NODE_OPTIONS="--max_old_space_size=4096" \
     YARN_NETWORK_TIMEOUT=300000
 # Install dependencies with optimized settings
 RUN yarn config set ignore-engines true \
@@ -82,7 +82,7 @@ ENV YARN_CACHE_FOLDER=/app/.yarn-cache \
     NX_SKIP_NX_CACHE_CREATION=true \
     NX_DAEMON=false \
     CYPRESS_INSTALL_BINARY=0 \
-    NODE_OPTIONS="--max-old-space-size=4096 --no-experimental-fetch" \
+    NODE_OPTIONS="--max-old-space-size=4096" \
     YARN_NETWORK_TIMEOUT=300000
 
 # Install production dependencies with optimized settings

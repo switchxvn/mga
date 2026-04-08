@@ -1,9 +1,13 @@
 import { useRuntimeConfig } from '#imports';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import { $fetch } from 'ofetch';
 import type { AppRouter } from '../types/trpc';
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin(async () => {
+  if (process.server && typeof globalThis.fetch !== 'function') {
+    const { fetch, Headers, Request, Response } = await import('undici');
+    Object.assign(globalThis, { fetch, Headers, Request, Response });
+  }
+
   const config = useRuntimeConfig();
   const baseUrl = process.server 
     ? config.public.apiBase 
@@ -56,12 +60,16 @@ export default defineNuxtPlugin(() => {
           return headers;
         },
         fetch(url, options) {
-          // Use ofetch raw response so SSR does not depend on global fetch availability.
-          return $fetch.raw(url.toString(), {
+          const timeoutSignal =
+            typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+              ? AbortSignal.timeout(30000)
+              : options?.signal;
+
+          return globalThis.fetch(url, {
             ...options,
-            signal: AbortSignal.timeout(30000), // 30 second timeout
+            signal: timeoutSignal,
             credentials: 'include',
-          }).then((response: any) => response as Response).catch(error => {
+          }).catch(error => {
             console.error('TRPC fetch error:', error);
             throw error;
           });
