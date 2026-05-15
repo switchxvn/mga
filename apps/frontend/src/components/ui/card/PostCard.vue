@@ -15,6 +15,7 @@ const { getTranslationByLocale } = usePost();
 const props = defineProps<{
   post: Post;
   compact?: boolean;
+  priority?: boolean;
   showDate?: boolean;
   showAuthor?: boolean;
   showExcerpt?: boolean;
@@ -82,6 +83,12 @@ watch(locale, () => {
             <LazyImage 
               :src="post.thumbnail || '/images/default-image.jpg'" 
               :alt="postTitle" 
+              :priority="!!priority"
+              :loading="priority ? 'eager' : 'lazy'"
+              :fetchpriority="priority ? 'high' : 'low'"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              width="640"
+              height="360"
               class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
             />
             <div v-if="overlayOpacity !== undefined" 
@@ -100,6 +107,11 @@ watch(locale, () => {
             <LazyImage 
               :src="post.thumbnail || '/images/default-image.jpg'" 
               :alt="postTitle" 
+              :loading="'lazy'"
+              :fetchpriority="'low'"
+              sizes="80px"
+              width="80"
+              height="80"
               class="w-full h-full object-cover"
             />
             <div v-if="overlayOpacity !== undefined" 

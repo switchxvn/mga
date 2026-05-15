@@ -127,17 +127,6 @@ export function useHomePage() {
     }
   }
 
-  // Fallback khi API page-sections trả rỗng: dùng sections từ active theme.
-  function fallbackThemeSectionsFromTheme(activeTheme: Theme | null | undefined): ThemeSection[] {
-    if (!activeTheme?.sections || activeTheme.sections.length === 0) {
-      return [];
-    }
-
-    return activeTheme.sections
-      .filter((section) => section.pageType === PageType.HOME_PAGE)
-      .sort((a, b) => a.order - b.order) as ThemeSection[];
-  }
-  
   // Cleanup function
   function cleanup() {
     pageIsMounted.value = false;
@@ -166,10 +155,11 @@ export function useHomePage() {
         const currentLocale = process.client ? locale.value : defaultLocale.value;
         
         // Lấy sections với locale phù hợp
-        const fetchedSections = await fetchThemeSections(activeTheme.id, currentLocale);
-        themeSections.value = fetchedSections.length > 0
-          ? fetchedSections
-          : fallbackThemeSectionsFromTheme(theme.value);
+        let fetchedSections = await fetchThemeSections(activeTheme.id, currentLocale);
+        if (fetchedSections.length === 0 && currentLocale) {
+          fetchedSections = await fetchThemeSections(activeTheme.id);
+        }
+        themeSections.value = fetchedSections;
         
         // Apply theme colors
         if (theme.value?.colors && process.client) {
@@ -203,6 +193,9 @@ export function useHomePage() {
         }
       }
       
+      if (!activeTheme) {
+        error.value = "Không tìm thấy theme đang hoạt động cho trang chủ.";
+      }
       return { theme: activeTheme };
     } catch (err) {
       console.error("Error in page initialization:", err);
@@ -215,9 +208,7 @@ export function useHomePage() {
   watch(locale, async () => {
     if (theme.value?.id) {
       const fetchedSections = await fetchThemeSections(theme.value.id, locale.value);
-      themeSections.value = fetchedSections.length > 0
-        ? fetchedSections
-        : fallbackThemeSectionsFromTheme(theme.value);
+      themeSections.value = fetchedSections;
     }
   });
 
@@ -230,10 +221,11 @@ export function useHomePage() {
       if (!activeTheme) return;
 
       theme.value = activeTheme as unknown as Theme;
-      const fetchedSections = await fetchThemeSections(activeTheme.id, locale.value);
-      themeSections.value = fetchedSections.length > 0
-        ? fetchedSections
-        : fallbackThemeSectionsFromTheme(theme.value);
+      let fetchedSections = await fetchThemeSections(activeTheme.id, locale.value);
+      if (fetchedSections.length === 0) {
+        fetchedSections = await fetchThemeSections(activeTheme.id);
+      }
+      themeSections.value = fetchedSections;
     } catch (err) {
       console.error('Client hydration refetch for home sections failed:', err);
     }

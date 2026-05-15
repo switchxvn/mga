@@ -6,13 +6,14 @@ import 'swiper/css/pagination';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Autoplay, EffectFade, Navigation, Pagination } from 'swiper/modules';
 import type { PropType } from 'vue';
-import { computed, defineComponent, onMounted, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useTrpc } from '~/composables/useTrpc';
 import type { Hero, HeroSlider, Slide } from '~/types/hero';
 import { useLocalization } from '~/composables/useLocalization';
 import HeroSliderComponent from '~/components/sliders/HeroSlider.vue';
 import type { Swiper as SwiperType } from 'swiper/types';
+import { useAsyncData } from '#imports';
 
 interface HeroConfig {
   layout?: 'split-columns' | 'full-width';
@@ -66,63 +67,35 @@ const props = withDefaults(defineProps<Props>(), {
 const { t } = useI18n();
 const { t: localT } = useLocalization();
 const currentSlide = ref(0);
-const isLoading = ref(true);
 const error = ref<Error | null>(null);
 
 const trpc = useTrpc();
-
-// Fetch hero data
-const heroQuery = trpc.hero.getHero.query();
-const sliderQuery = trpc.hero.getHeroSliders.query({ themeId: props.config?.themeId });
-
-const heroData = ref<Hero[]>([]);
-const sliderData = ref<HeroSlider[]>([]);
-
-onMounted(async () => {
-  try {
-    console.log('Fetching hero data...');
+const { data: heroPayload, pending: isLoading } = await useAsyncData(
+  'hero-full-width-data',
+  async () => {
     const [heroResult, sliderResult] = await Promise.all([
-      heroQuery,
-      sliderQuery
+      trpc.hero.getHero.query(),
+      trpc.hero.getHeroSliders.query({ themeId: props.config?.themeId }),
     ]);
-    
-    console.log('Raw hero result:', heroResult);
-    console.log('Raw slider result:', sliderResult);
-    
-    heroData.value = heroResult as Hero[];
-    sliderData.value = sliderResult as HeroSlider[];
-    
-    console.log('Processed hero data:', heroData.value);
-    console.log('Processed slider data:', sliderData.value);
-    
-    const sortedSlides = computed(() => {
-      if (sliderData.value && sliderData.value.length > 0) {
-        return [...sliderData.value]
-          .sort((a, b) => a.order - b.order)
-          .map(slider => ({
-            image_url: slider.imageUrl,
-            title: slider.title,
-            description: slider.description || '',
-            link: slider.buttonLink || '#',
-            buttonText: slider.buttonText,
-            order: slider.order
-          }));
-      }
-      return [...props.slides].sort((a, b) => a.order - b.order);
-    });
-    
-    console.log('Computed sortedSlides:', sortedSlides.value);
-    
-    isLoading.value = false;
-  } catch (err) {
-    console.error('Error fetching hero data:', err);
-    error.value = err as Error;
-    isLoading.value = false;
-  }
-});
+
+    return {
+      heroData: (heroResult || []) as Hero[],
+      sliderData: (sliderResult || []) as HeroSlider[],
+    };
+  },
+  {
+    default: () => ({
+      heroData: [] as Hero[],
+      sliderData: [] as HeroSlider[],
+    }),
+  },
+);
+
+const heroData = computed(() => heroPayload.value?.heroData || []);
+const sliderData = computed(() => heroPayload.value?.sliderData || []);
 
 const hero = computed(() => {
-  if (heroData.value && heroData.value.length > 0) {
+  if (heroData.value.length > 0) {
     return heroData.value[0];
   }
   return null;
@@ -163,7 +136,7 @@ const swiperOptions = computed(() => ({
 }));
 
 const sortedSlides = computed(() => {
-  if (sliderData.value && sliderData.value.length > 0) {
+  if (sliderData.value.length > 0) {
     return [...sliderData.value]
       .sort((a, b) => a.order - b.order)
       .map(slider => ({
@@ -177,6 +150,8 @@ const sortedSlides = computed(() => {
   }
   return [...props.slides].sort((a, b) => a.order - b.order);
 });
+
+const isRemoteImage = (url?: string) => Boolean(url && /^https?:\/\//i.test(url));
 
 // Thêm computed property để xử lý config
 const processedConfig = computed(() => {
@@ -197,7 +172,6 @@ const processedConfig = computed(() => {
     }
   };
 
-  console.log('Processed Config:', config);
   return config;
 });
 </script>
@@ -224,9 +198,20 @@ const processedConfig = computed(() => {
           >
             <div class="relative w-full h-full">
               <!-- Image layer (z-index: 1) -->
-              <NuxtImg
+              <img
+                v-if="isRemoteImage(slide.image_url)"
                 :src="slide.image_url"
                 :alt="slide.title"
+                :loading="index === 0 ? 'eager' : 'lazy'"
+                :fetchpriority="index === 0 ? 'high' : 'auto'"
+                decoding="async"
+                class="absolute inset-0 w-full h-full object-cover object-center z-[1]"
+              />
+              <NuxtImg
+                v-else
+                :src="slide.image_url"
+                :alt="slide.title"
+                provider="ipx"
                 width="1780"
                 height="450"
                 sizes="(max-width: 768px) 100vw, 1780px"

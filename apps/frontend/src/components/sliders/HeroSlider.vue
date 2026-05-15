@@ -2,18 +2,30 @@
   <Swiper v-if="slides.length > 0" 
           v-bind="options" 
           class="w-full h-full rounded-lg overflow-hidden shadow-md hero-slider">
-    <SwiperSlide v-for="slide in slides" :key="slide.order" class="relative">
+    <SwiperSlide v-for="(slide, index) in slides" :key="slide.order" class="relative">
       <div class="relative w-full h-full">
-        <NuxtImg
+        <img
+          v-if="isRemoteImage(slide.image_url)"
           :src="slide.image_url"
           :alt="slide.title"
+          :loading="index === 0 ? 'eager' : 'lazy'"
+          :fetchpriority="index === 0 ? 'high' : 'auto'"
+          decoding="async"
+          class="absolute inset-0 w-full h-full object-cover"
+        />
+        <NuxtImg
+          v-else
+          :src="slide.image_url"
+          :alt="slide.title"
+          provider="ipx"
           width="1600"
           height="900"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px"
           format="webp"
           fit="cover"
           quality="75"
-          loading="lazy"
+          :loading="index === 0 ? 'eager' : 'lazy'"
+          :fetchpriority="index === 0 ? 'high' : 'auto'"
           class="absolute inset-0 w-full h-full object-cover"
         />
         
@@ -70,6 +82,7 @@ defineProps({
 });
 
 const { t: localT } = useLocalization();
+const isRemoteImage = (url?: string) => Boolean(url && /^https?:\/\//i.test(url));
 </script>
 
 <style scoped>

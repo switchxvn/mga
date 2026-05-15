@@ -20,24 +20,24 @@ import {
 } from 'lucide-vue-next';
 import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, defineAsyncComponent, nextTick, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AddToCartButton from "~/components/cart/AddToCartButton.vue";
 import Breadcrumb from "~/components/common/Breadcrumb.vue";
 import TableOfContents from "~/components/common/TableOfContents.vue";
-import CrossSellProducts from "~/components/product/CrossSellProducts.vue";
-import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
-import QuickPurchaseModal from "~/components/product/QuickPurchaseModal.vue";
-import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
-import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
-import GlobalModal from "~/components/ui/GlobalModal.vue";
 import LazyImage from "~/components/ui/LazyImage.vue";
 import { useLocalization } from "~/composables/useLocalization";
 import { usePageSeo } from '~/composables/usePageSeo';
 import { useProductDetail } from '~/composables/useProductDetail';
 import { useCart } from "~/composables/useCart";
 import { useSettings } from "~/composables/useSettings";
-import TierPricingTable from "~/components/product/TierPricingTable.vue";
+const CrossSellProducts = defineAsyncComponent(() => import('~/components/product/CrossSellProducts.vue'));
+const PriceRequestModal = defineAsyncComponent(() => import('~/components/product/PriceRequestModal.vue'));
+const QuickPurchaseModal = defineAsyncComponent(() => import('~/components/product/QuickPurchaseModal.vue'));
+const ProductDetailSidebar = defineAsyncComponent(() => import('~/components/product/ProductDetailSidebar.vue'));
+const ProductSpecifications = defineAsyncComponent(() => import('~/components/product/ProductSpecifications.vue'));
+const GlobalModal = defineAsyncComponent(() => import('~/components/ui/GlobalModal.vue'));
+const TierPricingTable = defineAsyncComponent(() => import('~/components/product/TierPricingTable.vue'));
 import { buildProductSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
 
 // Định nghĩa interface cho PriceRequest
@@ -380,6 +380,12 @@ watch(activeTab, (newTab, oldTab) => {
                 :src="productData.thumbnail || ''"
                 :alt="productTitle"
                 fallbackSrc="/images/default-image.jpg"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                :priority="true"
+                loading="eager"
+                fetchpriority="high"
+                width="1200"
+                height="900"
                 customClass="h-auto w-full rounded-lg"
               />
 
@@ -394,6 +400,11 @@ watch(activeTab, (newTab, oldTab) => {
                   :src="image"
                   :alt="`${productTitle} - ${index + 1}`"
                   fallbackSrc="/images/default-image.jpg"
+                  sizes="(max-width: 768px) 25vw, 12vw"
+                  loading="lazy"
+                  fetchpriority="low"
+                  width="320"
+                  height="240"
                   customClass="h-20 w-full cursor-pointer rounded-md"
                 />
               </div>
@@ -606,7 +617,12 @@ watch(activeTab, (newTab, oldTab) => {
                           v-if="value.thumbnail"
                           :src="value.thumbnail"
                           :alt="value.displayValue"
-                          class="w-10 h-10 rounded-md object-cover"
+                          sizes="40px"
+                          loading="lazy"
+                          fetchpriority="low"
+                          width="40"
+                          height="40"
+                          customClass="w-10 h-10 rounded-md object-cover"
                           @error="(e) => e.target.style.display = 'none'"
                         />
                         

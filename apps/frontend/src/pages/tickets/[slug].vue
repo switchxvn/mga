@@ -1,20 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, h, nextTick, watch } from "vue";
+import { computed, defineAsyncComponent, ref, h, nextTick, watch } from "vue";
 import { useLocalization } from "~/composables/useLocalization";
 import { useTrpc } from "~/composables/useTrpc";
 import { useRoute, useRouter } from "vue-router";
 import LazyImage from "~/components/ui/LazyImage.vue";
-import CrossSellProducts from "~/components/product/CrossSellProducts.vue";
 import TableOfContents from "~/components/common/TableOfContents.vue";
-import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
 import { formatFullProductContent } from "~/utils/contentFormatter";
-import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
 import { useAsyncData } from 'nuxt/app';
-import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
 import { useNotification } from "~/composables/useNotification";
 import AddToCartButton from "~/components/cart/AddToCartButton.vue";
 import Breadcrumb from "~/components/common/Breadcrumb.vue";
-import GlobalModal from "~/components/ui/GlobalModal.vue";
 import { usePageSeo } from '~/composables/usePageSeo';
 import { 
   Check, 
@@ -51,9 +46,14 @@ import { useProductDetail } from '~/composables/useProductDetail';
 import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
 import { useTicketBooking } from '~/composables/useTicketBooking';
-import TierPricingTable from "~/components/product/TierPricingTable.vue";
 import { useTierPricing } from "~/composables/useTierPricing";
 import { buildProductSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
+const CrossSellProducts = defineAsyncComponent(() => import('~/components/product/CrossSellProducts.vue'));
+const ProductSpecifications = defineAsyncComponent(() => import('~/components/product/ProductSpecifications.vue'));
+const ProductDetailSidebar = defineAsyncComponent(() => import('~/components/product/ProductDetailSidebar.vue'));
+const PriceRequestModal = defineAsyncComponent(() => import('~/components/product/PriceRequestModal.vue'));
+const GlobalModal = defineAsyncComponent(() => import('~/components/ui/GlobalModal.vue'));
+const TierPricingTable = defineAsyncComponent(() => import('~/components/product/TierPricingTable.vue'));
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -479,6 +479,12 @@ const handleSubmit = async () => {
                 :src="productData.thumbnail || ''"
                 :alt="productTitle"
                 fallbackSrc="/images/default-image.jpg"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                :priority="true"
+                loading="eager"
+                fetchpriority="high"
+                width="1200"
+                height="900"
                 customClass="h-auto w-full rounded-lg"
               />
 
@@ -493,6 +499,11 @@ const handleSubmit = async () => {
                   :src="image"
                   :alt="`${productTitle} - ${index + 1}`"
                   fallbackSrc="/images/default-image.jpg"
+                  sizes="(max-width: 768px) 25vw, 12vw"
+                  loading="lazy"
+                  fetchpriority="low"
+                  width="320"
+                  height="240"
                   customClass="h-20 w-full cursor-pointer rounded-md"
                 />
               </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
 import { useTrpc } from "../../composables/useTrpc";
-import { ref, computed, onMounted, reactive, watch } from "vue";
+import { ref, computed, reactive, watch } from "vue";
 import { useLocalization } from "../../composables/useLocalization";
 import { useRoute, useRouter } from 'vue-router';
 import PostSidebar from "../../components/sidebar/PostSidebar.vue";
@@ -167,9 +167,7 @@ const fetchPosts = async () => {
   }
 };
 
-// Watch for route query changes
-watch(() => route.query, async (newQuery) => {
-  // Cập nhật tất cả các query parameters vào filters
+const syncFiltersFromQuery = (newQuery: Record<string, any>) => {
   Object.entries(newQuery).forEach(([key, value]) => {
     if (key === 'categories' && value) {
       filters.categories = (value as string).split(',');
@@ -180,17 +178,22 @@ watch(() => route.query, async (newQuery) => {
     } else if (['search', 'sort'].includes(key)) {
       filters[key] = value as string;
     } else {
-      // Lưu các query parameters khác
       filters[key] = value as string;
     }
   });
+};
 
-  // Xử lý thông tin category dựa trên filters
-  await handleCategoryData();
-  
-  // Fetch posts after category data is loaded
-  await fetchPosts();
-}, { immediate: true });
+if (import.meta.client) {
+  // Fetch posts client-side to avoid blocking SSR render on list pages
+  watch(() => route.query, (newQuery) => {
+    syncFiltersFromQuery(newQuery as Record<string, any>);
+    fetchPosts();
+  }, { immediate: true });
+
+  watch(locale, () => {
+    fetchPosts();
+  });
+}
 
 // Định nghĩa kiểu dữ liệu cho breadcrumb item
 interface BreadcrumbItem {
@@ -284,22 +287,6 @@ const handlePageChange = (page: number) => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
-// Watch for locale changes
-watch(locale, () => {
-  fetchPosts();
-});
-
-// Watch for page changes in URL
-watch(() => route.query.page, (newPage) => {
-  if (newPage) {
-    const pageNum = Number(newPage);
-    if (!isNaN(pageNum)) {
-    
-      fetchPosts();
-    }
-  }
-}, { immediate: true });
-
 // Sort posts
 const sortedPosts = computed(() => {
   if (!posts.value) return [];
@@ -315,24 +302,6 @@ const handleSortChange = (event: Event) => {
   updateQueryParams();
   fetchPosts();
 };
-
-onMounted(() => {
-  // Initialize filters from route query
-  filters.category = route.query['danh-muc'] as string || undefined;
-  filters.search = route.query.search as string || '';
-  filters.categories = route.query.categories ? (route.query.categories as string).split(',') : [];
-  filters.sort = (route.query.sort as string) || 'newest';
-  
-  // Đảm bảo giữ nguyên giá trị page từ URL
-  filters.page = currentPage.value;
-  
-  filters.limit = Number(route.query.limit) || 12;
-
-  // Xử lý thông tin category và fetch posts
-  handleCategoryData().then(() => {
-    fetchPosts();
-  });
-});
 
 /**
  * Tạo slug từ tiêu đề nếu không có slug
@@ -464,9 +433,10 @@ usePageSeo({
         <div class="flex-1 lg:max-w-[calc(100%-352px)]">
           <div v-if="!isLoading && posts.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <PostCard
-              v-for="post in sortedPosts"
+              v-for="(post, index) in sortedPosts"
               :key="`post-${post.id}`"
               :post="post"
+              :priority="index === 0"
               class="h-full"
             />
           </div>

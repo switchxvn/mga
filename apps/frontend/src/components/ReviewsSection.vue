@@ -3,7 +3,7 @@ import { useAsyncData } from 'nuxt/app';
 import { useRouter } from 'vue-router';
 import { useLocalization } from '../composables/useLocalization';
 import { useTrpc } from '../composables/useTrpc';
-import { computed, ref, watch } from '../composables/useVueComposables';
+import { computed, ref, watch } from 'vue';
 import type { ReviewStatus } from '@ew/shared';
 // Import Swiper components
 import { Swiper, SwiperSlide } from 'swiper/vue';

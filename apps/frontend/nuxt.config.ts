@@ -37,6 +37,26 @@ export default defineNuxtConfig({
         headers: {
           'cache-control': 'public, max-age=31536000, immutable'
         }
+      },
+      '/images/**': {
+        headers: {
+          'cache-control': 'public, max-age=2592000, stale-while-revalidate=604800'
+        }
+      },
+      '/favicon.ico': {
+        headers: {
+          'cache-control': 'public, max-age=2592000, stale-while-revalidate=604800'
+        }
+      },
+      '/robots.txt': {
+        headers: {
+          'cache-control': 'public, max-age=3600, stale-while-revalidate=86400'
+        }
+      },
+      '/sitemap.xml': {
+        headers: {
+          'cache-control': 'public, max-age=3600, stale-while-revalidate=86400'
+        }
       }
     },
     esbuild: {
@@ -265,6 +285,9 @@ export default defineNuxtConfig({
   },
 
   imports: {
+    exclude: [
+      /useVueComposables/,
+    ],
     dirs: [
       'composables',
       'composables/*/index.{ts,js,mjs,mts}',

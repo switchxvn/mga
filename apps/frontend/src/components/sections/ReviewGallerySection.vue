@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLocalization } from '../../composables/useLocalization';
 import { useTrpc } from '../../composables/useTrpc';
-import { ref, computed, onMounted, watch, nextTick } from '../../composables/useVueComposables';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import Loader from '../ui/Loader.vue';
 
 // Định nghĩa interface cho Gallery và ThemeSection

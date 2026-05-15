@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTrpc } from '../composables/useTrpc';
 import { useTheme } from '../composables/useTheme';
@@ -26,6 +26,10 @@ const isDarkMode = ref(false);
 const theme = ref<any>({ sections: [] }); // Initialize with empty sections
 const footer = ref<any>(null);
 const isMaintenanceMode = ref(false);
+const activeSections = computed(() => {
+  const sections = Array.isArray(theme.value?.sections) ? theme.value.sections : [];
+  return sections.filter((section: any) => section && section.isActive);
+});
 
 // GTM Configuration
 const gtmConfig = useState('gtm-id', () => null);
@@ -107,11 +111,41 @@ const checkDarkMode = () => {
   }
 };
 
+try {
+  const [activeTheme, activeFooter] = await Promise.all([
+    getActiveTheme({ pageType: PageType.COMMON }),
+    trpc.footer.getActiveFooter.query(),
+  ]);
+
+  if (activeTheme) {
+    theme.value = activeTheme;
+  }
+
+  if (activeFooter) {
+    footer.value = activeFooter;
+  }
+} catch {
+  // Keep fallback layout data
+}
+
 onMounted(async () => {
   if (process.client) {
     const deferLoad = () => {
       shouldLoadTracking.value = true;
     };
+
+    const loadOnInteraction = () => {
+      deferLoad();
+      window.removeEventListener('pointerdown', loadOnInteraction);
+      window.removeEventListener('keydown', loadOnInteraction);
+      window.removeEventListener('touchstart', loadOnInteraction);
+      window.removeEventListener('scroll', loadOnInteraction);
+    };
+
+    window.addEventListener('pointerdown', loadOnInteraction, { passive: true, once: true });
+    window.addEventListener('keydown', loadOnInteraction, { passive: true, once: true });
+    window.addEventListener('touchstart', loadOnInteraction, { passive: true, once: true });
+    window.addEventListener('scroll', loadOnInteraction, { passive: true, once: true });
 
     if ('requestIdleCallback' in window) {
       (window as any).requestIdleCallback(deferLoad, { timeout: 4000 });
@@ -131,36 +165,15 @@ onMounted(async () => {
         const currentUser = await trpc.auth.me.query();
         user.value = currentUser;
       } catch (error) {
-        console.error('Failed to validate token:', error);
         handleLogout();
       }
-    }
-    
-    // Lấy theme và navbar section với error handling
-    try {
-      const activeTheme = await getActiveTheme({ pageType: PageType.COMMON });
-      if (activeTheme) {
-        theme.value = activeTheme;
-      }
-    } catch (error) {
-      console.error('Failed to load theme:', error);
-    }
-    
-    // Fetch footer data
-    try {
-      const activeFooter = await trpc.footer.getActiveFooter.query();
-      if (activeFooter) {
-        footer.value = activeFooter;
-      }
-    } catch (error) {
-      console.error('Failed to load footer:', error);
     }
     
     // Kiểm tra dark mode
     checkDarkMode();
     
-  } catch (error) {
-    console.error('Error in layout setup:', error);
+  } catch {
+    isLoading.value = false;
   } finally {
     isLoading.value = false;
   }
@@ -193,7 +206,7 @@ async function handleLogout() {
     // Chuyển hướng đến trang đăng nhập
     router.push('/login');
   } catch (error) {
-    console.error('Logout failed:', error);
+    // No-op on logout error
   }
 }
 </script>
@@ -207,11 +220,10 @@ async function handleLogout() {
     </template>
     <template v-else>
       <!-- Header -->
-      <template v-if="theme?.sections">
+      <template v-if="activeSections.length">
         <component 
-          v-for="section in theme.sections" 
+          v-for="section in activeSections" 
           :key="section.id"
-          v-show="section.isActive"
           :is="resolveComponent(section)"
           :settings="section.settings"
           :user="user"

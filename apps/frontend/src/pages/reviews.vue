@@ -6,7 +6,7 @@ import { useRoute } from 'vue-router';
 import { useLocalization } from '../composables/useLocalization';
 import { useReviews } from '../composables/useReviews';
 import { useTrpc } from '../composables/useTrpc';
-import { computed, onMounted, ref } from '../composables/useVueComposables';
+import { computed, onMounted, ref } from 'vue';
 import { PageType } from '@ew/shared';
 
 // Import các component section

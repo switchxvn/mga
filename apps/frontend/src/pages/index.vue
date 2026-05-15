@@ -35,19 +35,12 @@ onBeforeUnmount(() => {
     <template v-else>
       <template v-if="themeSections && themeSections.length > 0">
         <template v-for="(section, index) in themeSections" :key="`section-${section.id}-${index}`">
-          <ClientOnly>
-            <component
-              v-if="section.isActive"
-              :is="resolveComponent(section)"
-              :section="section"
-              :config="getSectionConfig(section)"
-            />
-            <template #fallback>
-              <div class="p-4 text-center">
-                <Loader />
-              </div>
-            </template>
-          </ClientOnly>
+          <component
+            v-if="section.isActive"
+            :is="resolveComponent(section)"
+            :section="section"
+            :config="getSectionConfig(section)"
+          />
         </template>
       </template>
     </template>

@@ -1,125 +1,191 @@
 <template>
-  <div class="lazy-image-container relative" :style="width || height ? { width, height } : {}">
-    <!-- Skeleton loader -->
-    <div 
-      v-if="isLoading && !hasError" 
+  <div class="lazy-image-container relative" :style="containerStyle">
+    <div
+      v-if="isLoading && !hasError"
       class="absolute inset-0 bg-gray-200 animate-pulse dark:bg-gray-700"
-    ></div>
-    
-    <!-- Fallback image (shown when error occurs) -->
-    <img
-      v-if="hasError"
-      :src="fallbackSrc"
-      :alt="alt"
-      class="w-full h-full object-cover"
-      :class="[customClass]"
-      @error="handleFallbackError"
     />
-    
-    <!-- Main image (hidden when error occurs) -->
+
     <img
-      v-else
-      ref="imgRef"
-      :data-src="src"
+      v-if="!hasError && shouldUseNativeImage"
+      ref="nativeImageRef"
       :src="src"
       :alt="alt"
+      :width="normalizedWidth || undefined"
+      :height="normalizedHeight || undefined"
+      :loading="resolvedLoading"
+      :decoding="decoding"
+      :fetchpriority="resolvedFetchPriority"
       class="w-full h-full object-cover transition-opacity duration-300"
-      :class="{ 'opacity-0': isLoading, 'opacity-100': !isLoading, [customClass]: !!customClass }"
-      @error="handleError"
+      :class="imageClass"
       @load="handleLoad"
+      @error="handleError"
+    />
+
+    <NuxtImg
+      v-else-if="!hasError"
+      ref="optimizedImageRef"
+      provider="ipx"
+      :src="src"
+      :alt="alt"
+      :width="normalizedWidth"
+      :height="normalizedHeight"
+      :sizes="sizes"
+      :quality="quality"
+      :format="format"
+      :loading="resolvedLoading"
+      :decoding="decoding"
+      :fetchpriority="fetchpriority"
+      class="w-full h-full object-cover transition-opacity duration-300"
+      :class="imageClass"
+      @load="handleLoad"
+      @error="handleError"
+    />
+
+    <img
+      v-else
+      :src="fallbackSrc"
+      :alt="alt"
+      :width="normalizedWidth || undefined"
+      :height="normalizedHeight || undefined"
+      class="w-full h-full object-cover"
+      :class="[customClass]"
+      loading="lazy"
+      decoding="async"
+      @error="handleFallbackError"
     />
   </div>
 </template>
 
-<script>
-export default {
-  name: 'LazyImage',
-  props: {
-    src: {
-      type: String,
-      required: true
-    },
-    alt: {
-      type: String,
-      required: true
-    },
-    fallbackSrc: {
-      type: String,
-      default: '/images/default-image.jpg'
-    },
-    customClass: {
-      type: String,
-      default: ''
-    },
-    width: {
-      type: [String, Number],
-      default: null
-    },
-    height: {
-      type: [String, Number],
-      default: null
-    }
-  },
-  data() {
-    return {
-      isLoading: true,
-      hasError: false
-    }
-  },
-  mounted() {
-    this.setupLazyLoading();
-    console.log('LazyImage mounted:', {
-      src: this.src,
-      fallbackSrc: this.fallbackSrc
-    });
-  },
-  methods: {
-    handleError() {
-      console.error('Image failed to load:', this.src);
-      this.hasError = true;
-      this.isLoading = false;
-    },
-    handleFallbackError() {
-      console.error('Fallback image failed to load:', this.fallbackSrc);
-      this.isLoading = false;
-    },
-    handleLoad() {
-      console.log('Image loaded successfully:', this.src);
-      this.isLoading = false;
-    },
-    setupLazyLoading() {
-      if (this.hasError) return;
-      
-      if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting && this.$refs.imgRef && !this.hasError) {
-              const img = this.$refs.imgRef;
-              if (img.dataset.src) {
-                img.src = img.dataset.src;
-              }
-              observer.unobserve(entry.target);
-            }
-          });
-        }, {
-          rootMargin: '50px',
-          threshold: 0.1
-        });
-        
-        if (this.$refs.imgRef) {
-          observer.observe(this.$refs.imgRef);
-        }
-      } else {
-        if (this.$refs.imgRef && !this.hasError) {
-          const img = this.$refs.imgRef;
-          if (img.dataset.src) {
-            img.src = img.dataset.src;
-          }
-        }
-      }
-    }
-  }
+<script setup lang="ts">
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import type { ComponentPublicInstance } from 'vue';
+
+interface LazyImageProps {
+  src: string;
+  alt: string;
+  fallbackSrc?: string;
+  customClass?: string;
+  width?: string | number | null;
+  height?: string | number | null;
+  sizes?: string;
+  quality?: number;
+  priority?: boolean;
+  loading?: 'lazy' | 'eager';
+  decoding?: 'async' | 'sync' | 'auto';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  format?: string;
 }
+
+const props = withDefaults(defineProps<LazyImageProps>(), {
+  fallbackSrc: '/images/default-image.jpg',
+  customClass: '',
+  width: null,
+  height: null,
+  sizes: '100vw',
+  quality: 75,
+  priority: false,
+  loading: 'lazy',
+  decoding: 'async',
+  fetchpriority: 'auto',
+  format: 'avif,webp',
+});
+
+const isLoading = ref(true);
+const hasError = ref(false);
+const nativeImageRef = ref<HTMLImageElement | null>(null);
+const optimizedImageRef = ref<ComponentPublicInstance | null>(null);
+
+watch(() => props.src, () => {
+  isLoading.value = true;
+  hasError.value = false;
+});
+
+const normalizedWidth = computed(() => {
+  if (props.width === null || props.width === undefined || props.width === '') return null;
+  const numeric = Number(props.width);
+  return Number.isFinite(numeric) ? numeric : null;
+});
+
+const normalizedHeight = computed(() => {
+  if (props.height === null || props.height === undefined || props.height === '') return null;
+  const numeric = Number(props.height);
+  return Number.isFinite(numeric) ? numeric : null;
+});
+
+const containerStyle = computed(() => {
+  const style: Record<string, string> = {};
+  if (typeof props.width === 'string' && props.width) style.width = props.width;
+  if (typeof props.height === 'string' && props.height) style.height = props.height;
+  return style;
+});
+
+const resolvedLoading = computed(() => (props.priority ? 'eager' : props.loading));
+const resolvedFetchPriority = computed(() => (props.priority ? 'high' : props.fetchpriority));
+const fetchpriority = computed(() => resolvedFetchPriority.value);
+const shouldUseNativeImage = computed(() => /^https?:\/\//i.test(props.src));
+const imageClass = computed(() => ({
+  'opacity-0': isLoading.value,
+  'opacity-100': !isLoading.value,
+  [props.customClass]: !!props.customClass,
+}));
+
+const getRenderedImage = () => {
+  if (shouldUseNativeImage.value) {
+    return nativeImageRef.value;
+  }
+
+  const optimizedRoot = optimizedImageRef.value?.$el as Element | undefined;
+  if (!optimizedRoot) return null;
+
+  if (optimizedRoot instanceof HTMLImageElement) {
+    return optimizedRoot;
+  }
+
+  return optimizedRoot.querySelector('img');
+};
+
+const syncImageState = () => {
+  const imageElement = getRenderedImage();
+  if (!imageElement) return;
+
+  if (imageElement.complete) {
+    if (imageElement.naturalWidth > 0) {
+      isLoading.value = false;
+      hasError.value = false;
+      return;
+    }
+
+    hasError.value = true;
+    isLoading.value = false;
+  }
+};
+
+const handleLoad = () => {
+  isLoading.value = false;
+};
+
+const handleError = () => {
+  hasError.value = true;
+  isLoading.value = false;
+};
+
+const handleFallbackError = () => {
+  isLoading.value = false;
+};
+
+watch(
+  () => [props.src, shouldUseNativeImage.value],
+  async () => {
+    await nextTick();
+    syncImageState();
+  },
+  { flush: 'post' }
+);
+
+onMounted(async () => {
+  await nextTick();
+  syncImageState();
+});
 </script>
 
 <style scoped>

@@ -169,22 +169,12 @@ export function useTheme() {
   });
   
   const getActiveTheme = async (options?: { pageType?: PageType }): Promise<Theme | null> => {
-    console.log('Fetching active theme...', options);
     try {
       const theme = await trpc.theme.getActiveTheme.query(options);
-      console.log('Theme fetched successfully:', theme);
       return theme as Theme;
     } catch (error) {
       console.error('Failed to fetch active theme:', error);
-      // Return default theme to prevent blocking
-      return {
-        id: 0,
-        name: 'default',
-        isActive: true,
-        colors: defaultColors,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      return null;
     }
   };
 

@@ -217,6 +217,12 @@ usePageSeo({
               <LazyImage 
                 :src="postThumbnail || postOgImage" 
                 :alt="postTitle"
+                sizes="(max-width: 768px) 100vw, 900px"
+                :priority="true"
+                loading="eager"
+                fetchpriority="high"
+                width="1200"
+                height="675"
                 class="w-full h-auto rounded-lg"
                 :key="postId"
               />
