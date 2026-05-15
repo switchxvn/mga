@@ -13,6 +13,8 @@ import { useI18n } from 'vue-i18n';
 import type { Post, Profile, Author, Tag } from '@ew/shared';
 import { usePost } from '~/composables/usePost';
 import { formatDateTime } from '~/utils/date';
+import { usePageSeo } from '~/composables/usePageSeo';
+import { buildArticleSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
 
 // Định nghĩa alias cho URL tiếng Việt và tiếng Anh
 definePageMeta({
@@ -23,13 +25,12 @@ const route = useRoute();
 const router = useRouter();
 const { locale } = useI18n();
 const slug = route.params.slug as string;
+const siteUrl = useRuntimeConfig().public.siteUrl;
 
 const { 
   fetchPost, 
   getCurrentTranslation, 
   handleLocaleChange,
-  getBaseUrl,
-  getCanonicalUrl 
 } = usePost();
 
 // Sử dụng useAsyncData thay vì useLazyAsyncData để hỗ trợ SSR tốt hơn
@@ -77,14 +78,6 @@ const authorInfo = computed(() => {
   };
 });
 
-// Lấy URL hiện tại từ server - đặt ở ngoài computed
-const baseUrl = ref(getBaseUrl());
-
-// Sử dụng giá trị đã lưu trong ref
-const currentURL = computed(() => {
-  return baseUrl.value || '';
-});
-
 // Watch locale changes to update content
 watch(locale, async (newLocale) => {
   await handleLocaleChange(post.value, newLocale);
@@ -106,43 +99,55 @@ const breadcrumbItems = computed(() => [
   }
 ]);
 
-// Cập nhật canonical URL
-const canonicalUrl = computed(() => {
-  const translation = currentTranslation.value;
-  if (!translation) return '';
-  
-  const basePath = getLocalizedPath();
-  return `${baseUrl.value}${basePath}/${slug}`;
-});
-
 function goBack() {
   router.back();
 }
 
-// Thiết lập meta tags ở phía server
-useHead(() => {
-  const translation = currentTranslation.value;
-  if (!translation) return {};
+const postSlugByLocale = computed(() => ({
+  vi: postData.value.translations?.find((translation) => translation.locale === 'vi')?.slug,
+  en: postData.value.translations?.find((translation) => translation.locale === 'en')?.slug,
+}));
 
-  return {
-    title: translation.metaTitle || postTitle.value || 'Bài viết',
-    meta: [
-      { name: 'description', content: translation.metaDescription || postShortDescription.value || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
-      { name: 'keywords', content: translation.metaKeywords || '' },
-      { property: 'og:title', content: translation.ogTitle || postTitle.value || '' },
-      { property: 'og:description', content: translation.ogDescription || postShortDescription.value || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
-      { property: 'og:image', content: translation.ogImage || '' },
-      { property: 'og:url', content: canonicalUrl.value },
-      { property: 'og:type', content: 'article' },
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: translation.ogTitle || postTitle.value || '' },
-      { name: 'twitter:description', content: translation.ogDescription || (postContent.value ? postContent.value.substring(0, 160) : '') || '' },
-      { name: 'twitter:image', content: translation.ogImage || '' }
-    ],
-    link: [
-      { rel: 'canonical', href: canonicalUrl.value }
-    ]
-  };
+const resolvedCanonicalUrl = computed(() =>
+  resolveSeoCanonicalUrl({
+    siteUrl,
+    currentPath: route.path,
+    locale: locale.value === 'en' ? 'en' : 'vi',
+    routeKey: 'post-detail',
+    slugByLocale: postSlugByLocale.value,
+    candidate: currentTranslation.value?.canonicalUrl || null,
+  }),
+);
+
+usePageSeo({
+  title: computed(() => currentTranslation.value?.metaTitle || postTitle.value || 'Bài viết'),
+  description: computed(() => currentTranslation.value?.metaDescription || postShortDescription.value || (postContent.value ? postContent.value.substring(0, 160) : '') || ''),
+  keywords: computed(() => currentTranslation.value?.metaKeywords || ''),
+  ogTitle: computed(() => currentTranslation.value?.ogTitle || postTitle.value || ''),
+  ogDescription: computed(() => currentTranslation.value?.ogDescription || postShortDescription.value || (postContent.value ? postContent.value.substring(0, 160) : '') || ''),
+  image: computed(() => currentTranslation.value?.ogImage || postThumbnail.value || ''),
+  ogType: 'article',
+  canonicalUrl: computed(() => currentTranslation.value?.canonicalUrl || null),
+  currentPath: computed(() => route.path),
+  locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'post-detail',
+  slugByLocale: postSlugByLocale,
+  breadcrumbs: computed(() => [
+    { name: locale.value === 'vi' ? 'Trang chu' : 'Home', item: locale.value === 'en' ? '/en' : '/' },
+    { name: locale.value === 'vi' ? 'Bai viet' : 'Posts', item: locale.value === 'vi' ? '/bai-viet' : '/en/posts' },
+    { name: postTitle.value || 'Post' },
+  ]),
+  schemas: computed(() => [
+    buildArticleSchema({
+      headline: postTitle.value || 'Bài viết',
+      description: postShortDescription.value || '',
+      url: resolvedCanonicalUrl.value,
+      image: currentTranslation.value?.ogImage || postThumbnail.value || '',
+      datePublished: postCreatedAt.value || undefined,
+      dateModified: postUpdatedAt.value || undefined,
+      authorName: getAuthorName.value,
+    }),
+  ]),
 });
 </script>
 

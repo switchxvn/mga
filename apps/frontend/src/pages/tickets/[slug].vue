@@ -9,13 +9,13 @@ import TableOfContents from "~/components/common/TableOfContents.vue";
 import ProductSpecifications from "~/components/product/ProductSpecifications.vue";
 import { formatFullProductContent } from "~/utils/contentFormatter";
 import ProductDetailSidebar from "~/components/product/ProductDetailSidebar.vue";
-import { useHead } from '@unhead/vue';
 import { useAsyncData } from 'nuxt/app';
 import PriceRequestModal from "~/components/product/PriceRequestModal.vue";
 import { useNotification } from "~/composables/useNotification";
 import AddToCartButton from "~/components/cart/AddToCartButton.vue";
 import Breadcrumb from "~/components/common/Breadcrumb.vue";
 import GlobalModal from "~/components/ui/GlobalModal.vue";
+import { usePageSeo } from '~/composables/usePageSeo';
 import { 
   Check, 
   Share, 
@@ -53,6 +53,7 @@ import 'v-calendar/style.css';
 import { useTicketBooking } from '~/composables/useTicketBooking';
 import TierPricingTable from "~/components/product/TierPricingTable.vue";
 import { useTierPricing } from "~/composables/useTierPricing";
+import { buildProductSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -73,6 +74,7 @@ interface PriceRequest {
 const { t, locale } = useLocalization();
 const route = useRoute();
 const router = useRouter();
+const siteUrl = useRuntimeConfig().public.siteUrl;
 
 // Sử dụng composable useProductDetail
 const {
@@ -271,66 +273,53 @@ definePageMeta({
   layout: "default",
 });
 
-// Thiết lập meta tags (reactive cho SSR/client navigation)
-useHead(() => ({
-  title: productData.value?.metaTitle || productTitle.value || "Chi tiết vé",
-  meta: [
-    {
-      name: "description",
-      content: productData.value?.metaDescription || productShortDescription.value || "",
-    },
-    {
-      name: "keywords",
-      content: productData.value?.metaKeywords || "",
-    },
-    {
-      property: "og:title",
-      content: productData.value?.ogTitle || productTitle.value || "",
-    },
-    {
-      property: "og:description",
-      content:
-        productData.value?.ogDescription ||
-        productData.value?.metaDescription ||
-        productShortDescription.value ||
-        "",
-    },
-    {
-      property: "og:image",
-      content: productData.value?.ogImage || productData.value?.thumbnail || "",
-    },
-    {
-      property: "og:url",
-      content: canonicalUrl.value,
-    },
-    {
-      property: "og:type",
-      content: "product",
-    },
-    {
-      name: "twitter:card",
-      content: "summary_large_image",
-    },
-    {
-      name: "twitter:title",
-      content: productData.value?.ogTitle || productTitle.value || "",
-    },
-    {
-      name: "twitter:description",
-      content: productData.value?.ogDescription || productShortDescription.value || "",
-    },
-    {
-      name: "twitter:image",
-      content: productData.value?.ogImage || productData.value?.thumbnail || "",
-    },
-  ],
-  link: [
-    {
-      rel: "canonical",
-      href: canonicalUrl.value,
-    },
-  ],
+const ticketSlugByLocale = computed(() => ({
+  vi: productData.value?.translations?.find((translation: any) => translation.locale === 'vi')?.slug,
+  en: productData.value?.translations?.find((translation: any) => translation.locale === 'en')?.slug,
 }));
+
+const resolvedCanonicalUrl = computed(() =>
+  resolveSeoCanonicalUrl({
+    siteUrl,
+    currentPath: route.path,
+    locale: currentLocale.value === 'en' ? 'en' : 'vi',
+    routeKey: 'ticket-detail',
+    slugByLocale: ticketSlugByLocale.value,
+    candidate:
+      productData.value?.canonicalUrl ||
+      productData.value?.translations?.find((translation: any) => translation.locale === currentLocale.value)?.canonicalUrl ||
+      null,
+  }),
+);
+
+usePageSeo({
+  title: computed(() => productData.value?.metaTitle || productTitle.value || 'Chi tiết vé'),
+  description: computed(() => productData.value?.metaDescription || productShortDescription.value || ''),
+  keywords: computed(() => productData.value?.metaKeywords || ''),
+  ogTitle: computed(() => productData.value?.ogTitle || productTitle.value || ''),
+  ogDescription: computed(() => productData.value?.ogDescription || productData.value?.metaDescription || productShortDescription.value || ''),
+  image: computed(() => productData.value?.ogImage || productData.value?.thumbnail || ''),
+  ogType: 'product',
+  canonicalUrl: computed(() => productData.value?.canonicalUrl || productData.value?.translations?.find((translation: any) => translation.locale === currentLocale.value)?.canonicalUrl || null),
+  currentPath: computed(() => route.path),
+  locale: computed(() => (currentLocale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'ticket-detail',
+  slugByLocale: ticketSlugByLocale,
+  breadcrumbs: computed(() => [
+    { name: t('common.home') || 'Home', item: currentLocale.value === 'en' ? '/en' : '/' },
+    { name: t('tickets.title'), item: currentLocale.value === 'en' ? '/en/tickets' : '/tickets' },
+    { name: productTitle.value || 'Ticket' },
+  ]),
+  schemas: computed(() => [
+    buildProductSchema({
+      name: productTitle.value || 'Ticket',
+      description: productShortDescription.value || '',
+      url: resolvedCanonicalUrl.value,
+      image: productData.value?.ogImage || productData.value?.thumbnail || '',
+      price: typeof productData.value?.price === 'number' ? productData.value.price : null,
+    }),
+  ]),
+});
 
 // Theo dõi thay đổi của activeTab để cập nhật lại TableOfContents
 watch(activeTab, (newTab, oldTab) => {

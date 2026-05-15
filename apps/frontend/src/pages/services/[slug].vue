@@ -11,6 +11,8 @@ import type { Service } from '@ew/shared';
 import { useLocalization } from '~/composables/useLocalization';
 import { getLocalizedRoute } from '../../utils/routes';
 import * as LucideIcons from 'lucide-vue-next';
+import { usePageSeo } from '~/composables/usePageSeo';
+import { buildServiceSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
 
 // Định nghĩa meta cho trang
 definePageMeta({
@@ -23,6 +25,7 @@ const trpc = useTrpc();
 const { locale } = useI18n();
 const { t } = useLocalization();
 const slug = route.params.slug as string;
+const siteUrl = useRuntimeConfig().public.siteUrl;
 
 // Convert kebab-case to PascalCase for icon names
 const toPascalCase = (str: string) => {
@@ -58,9 +61,6 @@ const serviceShortDescription = computed(() => currentTranslation.value?.shortDe
 const serviceIcon = computed(() => serviceData.value.icon || '');
 const serviceId = computed(() => serviceData.value.id || 0);
 
-// Lấy URL hiện tại từ server
-const baseUrl = ref(process.client ? window.location.origin : '');
-
 // Watch locale changes to update content
 watch(locale, async (newLocale) => {
   const translation = serviceData.value.translations?.find(t => t.locale === newLocale);
@@ -86,39 +86,48 @@ const breadcrumbItems = computed(() => [
   }
 ]);
 
-// Canonical URL
-const canonicalUrl = computed(() => {
-  const translation = currentTranslation.value;
-  if (!translation) return '';
-  
-  const basePath = getLocalizedPath();
-  return `${baseUrl.value}${basePath}/${slug}`;
-});
+const serviceSlugByLocale = computed(() => ({
+  vi: serviceData.value.translations?.find((translation) => translation.locale === 'vi')?.slug,
+  en: serviceData.value.translations?.find((translation) => translation.locale === 'en')?.slug,
+}));
 
-// SEO meta tags
-useHead(() => {
-  const translation = currentTranslation.value;
-  if (!translation) return {};
+const resolvedCanonicalUrl = computed(() =>
+  resolveSeoCanonicalUrl({
+    siteUrl,
+    currentPath: route.path,
+    locale: locale.value === 'en' ? 'en' : 'vi',
+    routeKey: 'service-detail',
+    slugByLocale: serviceSlugByLocale.value,
+    candidate: currentTranslation.value?.canonicalUrl || null,
+  }),
+);
 
-  return {
-    title: translation.metaTitle || serviceTitle.value || 'Dịch vụ',
-    meta: [
-      { name: 'description', content: translation.metaDescription || serviceShortDescription.value || '' },
-      { name: 'keywords', content: translation.metaKeywords || '' },
-      { property: 'og:title', content: translation.ogTitle || serviceTitle.value || '' },
-      { property: 'og:description', content: translation.ogDescription || serviceShortDescription.value || '' },
-      { property: 'og:image', content: translation.ogImage || '' },
-      { property: 'og:url', content: canonicalUrl.value },
-      { property: 'og:type', content: 'article' },
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: translation.ogTitle || serviceTitle.value || '' },
-      { name: 'twitter:description', content: translation.ogDescription || serviceShortDescription.value || '' },
-      { name: 'twitter:image', content: translation.ogImage || '' }
-    ],
-    link: [
-      { rel: 'canonical', href: canonicalUrl.value }
-    ]
-  };
+usePageSeo({
+  title: computed(() => currentTranslation.value?.metaTitle || serviceTitle.value || 'Dich vu'),
+  description: computed(() => currentTranslation.value?.metaDescription || serviceShortDescription.value || ''),
+  keywords: computed(() => currentTranslation.value?.metaKeywords || ''),
+  ogTitle: computed(() => currentTranslation.value?.ogTitle || serviceTitle.value || ''),
+  ogDescription: computed(() => currentTranslation.value?.ogDescription || serviceShortDescription.value || ''),
+  image: computed(() => currentTranslation.value?.ogImage || ''),
+  ogType: 'article',
+  canonicalUrl: computed(() => currentTranslation.value?.canonicalUrl || null),
+  currentPath: computed(() => route.path),
+  locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'service-detail',
+  slugByLocale: serviceSlugByLocale,
+  breadcrumbs: computed(() => [
+    { name: locale.value === 'vi' ? 'Trang chu' : 'Home', item: locale.value === 'en' ? '/en' : '/' },
+    { name: locale.value === 'vi' ? 'Dich vu' : 'Services', item: locale.value === 'vi' ? '/dich-vu' : '/en/services' },
+    { name: serviceTitle.value || 'Service' },
+  ]),
+  schemas: computed(() => [
+    buildServiceSchema({
+      name: serviceTitle.value || 'Service',
+      description: serviceShortDescription.value || '',
+      url: resolvedCanonicalUrl.value,
+      image: currentTranslation.value?.ogImage || '',
+    }),
+  ]),
 });
 </script>
 

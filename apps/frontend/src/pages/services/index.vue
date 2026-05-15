@@ -5,6 +5,7 @@ import { useTrpc } from "../../composables/useTrpc";
 import { useRoute, useRouter } from "vue-router";
 import ServiceCardWithThumbnail from "../../components/ui/card/ServiceCardWithThumbnail.vue";
 import { useService, type ServiceFilter } from "../../composables/useService";
+import { usePageSeo } from "~/composables/usePageSeo";
 
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
@@ -15,8 +16,13 @@ definePageMeta({
   layout: "default",
 });
 
-// SEO data
-const seoData = ref({
+const { data: seoDataState } = await useAsyncData(
+  () => `seo-services-${locale.value}`,
+  () => trpc.seo.getSeoByPath.query("/services").catch(() => null),
+  { watch: [locale] },
+);
+
+const seoData = computed(() => seoDataState.value || {
   title: "",
   description: "",
   keywords: "",
@@ -26,42 +32,18 @@ const seoData = ref({
   canonicalUrl: "",
 });
 
-// Fetch SEO data
-const fetchSeoData = async () => {
-  try {
-    const seo = await trpc.seo.getSeoByPath.query("/services");
-    if (seo) {
-      seoData.value = seo;
-
-      // Update head with SEO data
-      useHead({
-        title: seo.title || t("services.title"),
-        meta: [
-          { name: "description", content: seo.description || t("services.description") },
-          { name: "keywords", content: seo.keywords || "" },
-          {
-            property: "og:title",
-            content: seo.ogTitle || seo.title || t("services.title"),
-          },
-          {
-            property: "og:description",
-            content: seo.ogDescription || seo.description || t("services.description"),
-          },
-          { property: "og:image", content: seo.ogImage || "" },
-        ],
-        link: [{ rel: "canonical", href: seo.canonicalUrl || window.location.href }],
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching SEO data:", error);
-
-    // Fallback to default SEO
-    useHead({
-      title: t("services.title"),
-      meta: [{ name: "description", content: t("services.description") }],
-    });
-  }
-};
+usePageSeo({
+  title: computed(() => seoData.value.title || t("services.title")),
+  description: computed(() => seoData.value.description || t("services.description")),
+  keywords: computed(() => seoData.value.keywords || ""),
+  ogTitle: computed(() => seoData.value.ogTitle || seoData.value.title || t("services.title")),
+  ogDescription: computed(() => seoData.value.ogDescription || seoData.value.description || t("services.description")),
+  image: computed(() => seoData.value.ogImage || ""),
+  canonicalUrl: computed(() => seoData.value.canonicalUrl || null),
+  currentPath: computed(() => route.path),
+  locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'services',
+});
 
 // State
 const currentPage = ref(Number(route.query.page) || 1);
@@ -150,13 +132,11 @@ const handlePageChange = (page: number) => {
 
 // Initial fetch
 onMounted(async () => {
-  await fetchSeoData();
   fetchServices(currentPage.value, itemsPerPage.value, filters.value);
 });
 
 // Watch for locale changes
 watch(locale, async () => {
-  await fetchSeoData();
   fetchServices(1, itemsPerPage.value, {
     ...filters.value,
     locale: locale.value,

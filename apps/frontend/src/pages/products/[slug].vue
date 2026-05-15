@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ProductType } from '@ew/shared';
-import { useHead } from '@unhead/vue';
 import {
   AlertCircle,
   AlertTriangle,
@@ -34,10 +33,12 @@ import ProductSpecifications from "~/components/product/ProductSpecifications.vu
 import GlobalModal from "~/components/ui/GlobalModal.vue";
 import LazyImage from "~/components/ui/LazyImage.vue";
 import { useLocalization } from "~/composables/useLocalization";
+import { usePageSeo } from '~/composables/usePageSeo';
 import { useProductDetail } from '~/composables/useProductDetail';
 import { useCart } from "~/composables/useCart";
 import { useSettings } from "~/composables/useSettings";
 import TierPricingTable from "~/components/product/TierPricingTable.vue";
+import { buildProductSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -58,6 +59,7 @@ interface PriceRequest {
 const { t, locale } = useLocalization();
 const route = useRoute();
 const router = useRouter();
+const siteUrl = useRuntimeConfig().public.siteUrl;
 
 // Sử dụng composable useProductDetail
 const {
@@ -239,62 +241,51 @@ const seoImage = computed(
     ""
 );
 
-// Thiết lập meta tags (reactive cho SSR/client navigation)
-useHead(() => ({
-  title: seoTitle.value,
-  meta: [
-    {
-      name: "description",
-      content: seoDescription.value,
-    },
-    {
-      name: "keywords",
-      content: seoKeywords.value,
-    },
-    {
-      property: "og:title",
-      content: seoOgTitle.value,
-    },
-    {
-      property: "og:description",
-      content: seoOgDescription.value,
-    },
-    {
-      property: "og:image",
-      content: seoImage.value,
-    },
-    {
-      property: "og:url",
-      content: canonicalUrl.value,
-    },
-    {
-      property: "og:type",
-      content: "product",
-    },
-    {
-      name: "twitter:card",
-      content: "summary_large_image",
-    },
-    {
-      name: "twitter:title",
-      content: seoOgTitle.value,
-    },
-    {
-      name: "twitter:description",
-      content: seoOgDescription.value,
-    },
-    {
-      name: "twitter:image",
-      content: seoImage.value,
-    },
-  ],
-  link: [
-    {
-      rel: "canonical",
-      href: canonicalUrl.value,
-    },
-  ],
+const productListPath = computed(() => (currentLocale.value === 'vi' ? '/san-pham' : '/en/products'));
+const productSlugByLocale = computed(() => ({
+  vi: productData.value?.translations?.find((translation: any) => translation.locale === 'vi')?.slug,
+  en: productData.value?.translations?.find((translation: any) => translation.locale === 'en')?.slug,
 }));
+
+const resolvedCanonicalUrl = computed(() =>
+  resolveSeoCanonicalUrl({
+    siteUrl,
+    currentPath: route.path,
+    locale: currentLocale.value === 'en' ? 'en' : 'vi',
+    routeKey: 'product-detail',
+    slugByLocale: productSlugByLocale.value,
+    candidate: activeTranslation.value?.canonicalUrl || null,
+  }),
+);
+
+usePageSeo({
+  title: seoTitle,
+  description: seoDescription,
+  keywords: seoKeywords,
+  ogTitle: seoOgTitle,
+  ogDescription: seoOgDescription,
+  image: seoImage,
+  ogType: 'product',
+  canonicalUrl: computed(() => activeTranslation.value?.canonicalUrl || null),
+  currentPath: computed(() => route.path),
+  locale: computed(() => (currentLocale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'product-detail',
+  slugByLocale: productSlugByLocale,
+  breadcrumbs: computed(() => [
+    { name: t('common.home') || 'Home', item: currentLocale.value === 'en' ? '/en' : '/' },
+    { name: t('products.title'), item: productListPath.value },
+    { name: productTitle.value || seoTitle.value },
+  ]),
+  schemas: computed(() => [
+    buildProductSchema({
+      name: productTitle.value || seoTitle.value,
+      description: seoDescription.value,
+      url: resolvedCanonicalUrl.value,
+      image: seoImage.value,
+      price: typeof productData.value?.price === 'number' ? productData.value.price : null,
+    }),
+  ]),
+});
 
 // Theo dõi thay đổi của activeTab để cập nhật lại TableOfContents
 watch(activeTab, (newTab, oldTab) => {

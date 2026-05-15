@@ -1,12 +1,10 @@
 import { useRuntimeConfig } from '#imports';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../types/trpc';
+import { ensureUniversalFetch } from '../utils/trpcFetch';
 
 export default defineNuxtPlugin(async () => {
-  if (process.server && typeof globalThis.fetch !== 'function') {
-    const { fetch, Headers, Request, Response } = await import('undici');
-    Object.assign(globalThis, { fetch, Headers, Request, Response });
-  }
+  const universalFetch = ensureUniversalFetch();
 
   const config = useRuntimeConfig();
   const baseUrl = process.server 
@@ -65,7 +63,7 @@ export default defineNuxtPlugin(async () => {
               ? AbortSignal.timeout(30000)
               : options?.signal;
 
-          return globalThis.fetch(url, {
+          return universalFetch(url, {
             ...options,
             signal: timeoutSignal,
             credentials: 'include',

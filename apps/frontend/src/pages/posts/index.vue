@@ -11,6 +11,7 @@ import type { Post } from "@ew/shared";
 import type { CategoryTranslation } from "../../types/category-translation";
 import Breadcrumb from "../../components/common/Breadcrumb.vue";
 import { SearchX, FilterX } from 'lucide-vue-next';
+import { usePageSeo } from '~/composables/usePageSeo';
 
 const { t, locale } = useLocalization();
 const route = useRoute();
@@ -397,43 +398,18 @@ const pageDescription = computed(() => {
   return seoData.value?.description || '';
 });
 
-const canonicalUrl = computed(() => {
-  if (seoData.value?.canonicalUrl) {
-    return seoData.value.canonicalUrl;
-  }
-
-  if (process.server) {
-    try {
-      const req = useRequestURL();
-      return `${req.origin}${route.fullPath}`;
-    } catch {
-      return route.fullPath;
-    }
-  }
-
-  if (process.client && typeof window !== 'undefined') {
-    return `${window.location.origin}${route.fullPath}`;
-  }
-
-  return route.fullPath;
+usePageSeo({
+  title: computed(() => pageTitle.value || t('posts.title')),
+  description: computed(() => pageDescription.value || t('posts.description')),
+  keywords: computed(() => seoData.value?.keywords || ''),
+  ogTitle: computed(() => seoData.value?.ogTitle || pageTitle.value || t('posts.title')),
+  ogDescription: computed(() => seoData.value?.ogDescription || pageDescription.value || t('posts.description')),
+  image: computed(() => seoData.value?.ogImage || ''),
+  canonicalUrl: computed(() => seoData.value?.canonicalUrl || null),
+  currentPath: computed(() => route.path),
+  locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'posts',
 });
-
-// SEO meta tags (SSR-safe)
-useHead(() => ({
-  title: pageTitle.value || t('posts.title'),
-  meta: [
-    { name: 'description', content: pageDescription.value || t('posts.description') },
-    { name: 'robots', content: seoData.value?.robotsTxt || 'index, follow' },
-    { property: 'og:title', content: seoData.value?.ogTitle || pageTitle.value || t('posts.title') },
-    { property: 'og:description', content: seoData.value?.ogDescription || pageDescription.value || t('posts.description') },
-    { property: 'og:image', content: seoData.value?.ogImage || '' },
-    { property: 'og:url', content: canonicalUrl.value },
-    { name: 'keywords', content: seoData.value?.keywords || '' }
-  ],
-  link: [
-    { rel: 'canonical', href: canonicalUrl.value }
-  ]
-}));
 </script>
 
 <template>

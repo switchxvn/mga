@@ -1,5 +1,6 @@
 import { useNuxtApp } from 'nuxt/app';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { ensureUniversalFetch } from '~/utils/trpcFetch';
 
 /**
  * Composable for accessing the tRPC client
@@ -15,6 +16,7 @@ export const useTrpc = () => {
  */
 export const createTRPCClient = () => {
   const apiUrl = process.env.NUXT_PUBLIC_TRPC_API_URL || '/api/trpc';
+  const universalFetch = ensureUniversalFetch();
   
   return createTRPCProxyClient<any>({
     links: [
@@ -22,7 +24,7 @@ export const createTRPCClient = () => {
         url: apiUrl,
         fetch(url, options) {
           console.log('Making TRPC API request to:', url);
-          return fetch(url, {
+          return universalFetch(url, {
             ...options,
             credentials: 'include',
             headers: {

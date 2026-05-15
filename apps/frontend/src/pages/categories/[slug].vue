@@ -8,12 +8,15 @@ import CategorySidebar from '../../components/sidebar/CategorySidebar.vue'
 import CategoryMobileSidebar from '../../components/sidebar/CategoryMobileSidebar.vue'
 import ProductCard from '../../components/cards/ProductCard.vue'
 import { useProduct, type ProductFilter, type ProductSortBy } from '../../composables/useProduct'
+import { usePageSeo } from '~/composables/usePageSeo'
+import { buildCollectionPageSchema, resolveSeoCanonicalUrl } from '~/utils/seo'
 
 // Sử dụng composables
 const { t, locale } = useLocalization()
 const trpc = useTrpc()
 const route = useRoute()
 const router = useRouter()
+const siteUrl = useRuntimeConfig().public.siteUrl
 const { 
   fetchProductCategories,
   fetchCategoryBySlug,
@@ -45,6 +48,7 @@ interface Category {
     locale: string;
     name: string;
     description?: string;
+    slug?: string;
   }>;
   type?: string;
   active?: boolean;
@@ -90,66 +94,47 @@ const categoryDescription = computed(() => {
 });
 const error = computed(() => categoryError.value ? (categoryError.value as Error).message : null)
 
-// Lấy URL hiện tại từ server
-let serverUrl = '';
-if (process.server) {
-  try {
-    const config = useRuntimeConfig();
-    if (config.public && config.public.siteUrl && typeof config.public.siteUrl === 'string') {
-      serverUrl = config.public.siteUrl;
-    } else {
-      const reqURL = useRequestURL();
-      serverUrl = `${reqURL.protocol}//${reqURL.host}`;
-    }
-  } catch (e) {
-    console.error('Error in server URL setup:', e);
-  }
-}
+const categorySlugByLocale = computed(() => ({
+  vi: categoryData.value.translations?.find((translation) => translation.locale === 'vi')?.slug || categoryData.value.slug,
+  en: categoryData.value.translations?.find((translation) => translation.locale === 'en')?.slug,
+}));
 
-// Sử dụng ref để lưu trữ URL
-const baseUrl = ref(serverUrl);
+const resolvedCanonicalUrl = computed(() =>
+  resolveSeoCanonicalUrl({
+    siteUrl,
+    currentPath: route.path,
+    locale: locale.value === 'en' ? 'en' : 'vi',
+    routeKey: 'category-detail',
+    slugByLocale: categorySlugByLocale.value,
+    candidate: categoryData.value.canonicalUrl || null,
+  }),
+);
 
-// Cập nhật URL ở client side khi component được mount
-onMounted(() => {
-  if (process.client && !baseUrl.value) {
-    baseUrl.value = window.location.origin;
-  }
-});
-
-// Sử dụng giá trị đã lưu trong ref
-const currentURL = computed(() => {
-  return baseUrl.value || '';
-});
-
-// Tạo canonical URL
-const canonicalUrl = computed(() => {
-  if (!categoryData.value || !categoryData.value.slug) return '';
-  return categoryData.value.canonicalUrl || `${currentURL.value}/categories/${categoryData.value.slug}`;
-});
-
-// Thiết lập meta tags
-useHead(() => {
-  return {
-    title: categoryData.value.metaTitle || categoryName.value || t('categories.defaultTitle'),
-    meta: [
-      { name: 'description', content: categoryData.value.metaDescription || `${t('categories.productsIn')} ${categoryName.value}` },
-      { name: 'keywords', content: categoryData.value.metaKeywords || `${categoryName.value}, ${t('categories.defaultKeywords')}` },
-      // Open Graph
-      { property: 'og:title', content: categoryData.value.ogTitle || categoryData.value.metaTitle || categoryName.value },
-      { property: 'og:description', content: categoryData.value.ogDescription || categoryData.value.metaDescription || `${t('categories.productsIn')} ${categoryName.value}` },
-      { property: 'og:image', content: categoryData.value.ogImage || '' },
-      { property: 'og:url', content: canonicalUrl.value },
-      { property: 'og:type', content: 'website' },
-      // Twitter Card
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: categoryData.value.ogTitle || categoryData.value.metaTitle || categoryName.value },
-      { name: 'twitter:description', content: categoryData.value.ogDescription || categoryData.value.metaDescription || `${t('categories.productsIn')} ${categoryName.value}` },
-      { name: 'twitter:image', content: categoryData.value.ogImage || '' }
-    ],
-    link: [
-      { rel: 'canonical', href: canonicalUrl.value }
-    ]
-  };
+usePageSeo({
+  title: computed(() => categoryData.value.metaTitle || categoryName.value || t('categories.defaultTitle')),
+  description: computed(() => categoryData.value.metaDescription || `${t('categories.productsIn')} ${categoryName.value}`),
+  keywords: computed(() => categoryData.value.metaKeywords || `${categoryName.value}, ${t('categories.defaultKeywords')}`),
+  ogTitle: computed(() => categoryData.value.ogTitle || categoryData.value.metaTitle || categoryName.value),
+  ogDescription: computed(() => categoryData.value.ogDescription || categoryData.value.metaDescription || `${t('categories.productsIn')} ${categoryName.value}`),
+  image: computed(() => categoryData.value.ogImage || ''),
+  canonicalUrl: computed(() => categoryData.value.canonicalUrl || null),
+  currentPath: computed(() => route.path),
+  locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'category-detail',
+  slugByLocale: categorySlugByLocale,
+  breadcrumbs: computed(() => [
+    { name: t('common.home') || 'Home', item: locale.value === 'en' ? '/en' : '/' },
+    { name: t('common.categories') || 'Categories', item: locale.value === 'en' ? '/en/categories' : '/danh-muc-san-pham' },
+    { name: categoryName.value || 'Category' },
+  ]),
+  schemas: computed(() => [
+    buildCollectionPageSchema(
+      siteUrl,
+      categoryName.value || 'Category',
+      categoryDescription.value || `${t('categories.productsIn')} ${categoryName.value}`,
+      resolvedCanonicalUrl.value,
+    ),
+  ]),
 });
 
 // Extend ProductFilter to ensure includeNullPrice is required and boolean

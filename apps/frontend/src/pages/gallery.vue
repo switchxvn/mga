@@ -345,16 +345,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useTrpc } from '~/composables/useTrpc';
+import { usePageSeo } from '~/composables/usePageSeo';
 
 import { ChevronLeft, ChevronRight, Image, Utensils, PlayCircle, Route } from 'lucide-vue-next';
-
-// Define SEO metadata
-useHead({
-  title: 'Thư viện ảnh',
-  meta: [
-    { name: 'description', content: 'Khám phá bộ sưu tập ảnh đẹp của chúng tôi' }
-  ]
-});
 
 interface GalleryTranslation {
   id: number;
@@ -385,6 +378,14 @@ interface VideoIntro {
 
 // i18n
 const { t, locale } = useI18n();
+
+usePageSeo({
+  title: computed(() => t('gallery.title') || 'Thu vien anh'),
+  description: computed(() => t('gallery.description') || 'Khám phá bộ sưu tập ảnh đẹp của chúng tôi'),
+  currentPath: computed(() => (locale.value === 'en' ? '/en/gallery' : '/thu-vien-hinh-anh')),
+  locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'gallery',
+});
 
 // tRPC client
 const trpc = useTrpc();

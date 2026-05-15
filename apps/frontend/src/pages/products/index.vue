@@ -7,6 +7,7 @@ import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.
 import ProductSidebar from "../../components/sidebar/ProductSidebar.vue";
 import { useLocalization } from "../../composables/useLocalization";
 import { useProduct, type ProductFilter, type ProductSortBy } from "../../composables/useProduct";
+import { usePageSeo } from "~/composables/usePageSeo";
 import { useTrpc } from "../../composables/useTrpc";
 
 const { t, locale } = useLocalization();
@@ -18,8 +19,13 @@ definePageMeta({
   layout: "default",
 });
 
-// SEO data
-const seoData = ref({
+const { data: seoDataState } = await useAsyncData(
+  () => `seo-products-${locale.value}`,
+  () => trpc.seo.getSeoByPath.query("/products").catch(() => null),
+  { watch: [locale] },
+);
+
+const seoData = computed(() => seoDataState.value || {
   title: "",
   description: "",
   keywords: "",
@@ -29,42 +35,18 @@ const seoData = ref({
   canonicalUrl: "",
 });
 
-// Fetch SEO data
-const fetchSeoData = async () => {
-  try {
-    const seo = await trpc.seo.getSeoByPath.query("/products");
-    if (seo) {
-      seoData.value = seo;
-
-      // Update head with SEO data
-      useHead({
-        title: seo.title || t("products.title"),
-        meta: [
-          { name: "description", content: seo.description || t("products.description") },
-          { name: "keywords", content: seo.keywords || "" },
-          {
-            property: "og:title",
-            content: seo.ogTitle || seo.title || t("products.title"),
-          },
-          {
-            property: "og:description",
-            content: seo.ogDescription || seo.description || t("products.description"),
-          },
-          { property: "og:image", content: seo.ogImage || "" },
-        ],
-        link: [{ rel: "canonical", href: seo.canonicalUrl || window.location.href }],
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching SEO data:", error);
-
-    // Fallback to default SEO
-    useHead({
-      title: t("products.title"),
-      meta: [{ name: "description", content: t("products.description") }],
-    });
-  }
-};
+usePageSeo({
+  title: computed(() => seoData.value.title || t("products.title")),
+  description: computed(() => seoData.value.description || t("products.description")),
+  keywords: computed(() => seoData.value.keywords || ""),
+  ogTitle: computed(() => seoData.value.ogTitle || seoData.value.title || t("products.title")),
+  ogDescription: computed(() => seoData.value.ogDescription || seoData.value.description || t("products.description")),
+  image: computed(() => seoData.value.ogImage || ""),
+  canonicalUrl: computed(() => seoData.value.canonicalUrl || null),
+  currentPath: computed(() => route.path),
+  locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
+  routeKey: 'products',
+});
 
 // Add type for specifications
 interface ProductSpecification {
@@ -191,7 +173,6 @@ const updateQueryParams = () => {
 
 // Initial fetch
 onMounted(() => {
-  fetchSeoData();
   fetchPriceRange();
   fetchProducts();
 });
@@ -224,7 +205,6 @@ watch(locale, async () => {
   await router.replace({ query: {} });
 
   // Then refresh data
-  await fetchSeoData();
   await fetchPriceRange();
   await fetchProducts();
 });
