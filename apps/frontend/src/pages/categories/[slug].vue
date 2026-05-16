@@ -106,7 +106,6 @@ const resolvedCanonicalUrl = computed(() =>
     locale: locale.value === 'en' ? 'en' : 'vi',
     routeKey: 'category-detail',
     slugByLocale: categorySlugByLocale.value,
-    candidate: categoryData.value.canonicalUrl || null,
   }),
 );
 
@@ -117,7 +116,7 @@ usePageSeo({
   ogTitle: computed(() => categoryData.value.ogTitle || categoryData.value.metaTitle || categoryName.value),
   ogDescription: computed(() => categoryData.value.ogDescription || categoryData.value.metaDescription || `${t('categories.productsIn')} ${categoryName.value}`),
   image: computed(() => categoryData.value.ogImage || ''),
-  canonicalUrl: computed(() => categoryData.value.canonicalUrl || null),
+  canonicalUrl: computed(() => resolvedCanonicalUrl.value),
   currentPath: computed(() => route.path),
   locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
   routeKey: 'category-detail',

@@ -896,17 +896,17 @@ onMounted(() => {
           <div class="flex justify-end gap-2">
             <button
               @click="editReview(review.id)"
-              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors shrink-0"
               title="Edit review"
             >
-              <PencilIcon class="h-5 w-5" />
+              <PencilIcon class="h-6 w-6 shrink-0" />
             </button>
             <button
               @click="deleteReview(review.id)"
-              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors shrink-0"
               title="Delete review"
             >
-              <Trash2Icon class="h-5 w-5" />
+              <Trash2Icon class="h-6 w-6 shrink-0" />
             </button>
           </div>
         </td>

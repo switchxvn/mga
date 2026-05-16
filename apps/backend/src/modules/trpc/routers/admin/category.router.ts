@@ -19,6 +19,10 @@ const categoryTranslationSchema = z.object({
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   metaKeywords: z.string().optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional(),
+  ogImage: z.string().optional(),
+  canonicalUrl: z.string().optional(),
 });
 
 const createCategorySchema = z.object({
@@ -59,6 +63,13 @@ const transformCategory = (category: any) => {
       name: translation.name,
       slug: translation.slug,
       description: translation.description,
+      metaTitle: translation.metaTitle,
+      metaDescription: translation.metaDescription,
+      metaKeywords: translation.metaKeywords,
+      ogTitle: translation.ogTitle,
+      ogDescription: translation.ogDescription,
+      ogImage: translation.ogImage,
+      canonicalUrl: translation.canonicalUrl,
       createdAt: translation.createdAt,
       updatedAt: translation.updatedAt
     })) || [],
@@ -72,7 +83,14 @@ const transformCategory = (category: any) => {
         locale: translation.locale,
         name: translation.name,
         slug: translation.slug,
-        description: translation.description
+        description: translation.description,
+        metaTitle: translation.metaTitle,
+        metaDescription: translation.metaDescription,
+        metaKeywords: translation.metaKeywords,
+        ogTitle: translation.ogTitle,
+        ogDescription: translation.ogDescription,
+        ogImage: translation.ogImage,
+        canonicalUrl: translation.canonicalUrl,
       })) || []
     } : null,
     children: category.children?.map((child: any) => ({
@@ -85,7 +103,14 @@ const transformCategory = (category: any) => {
         locale: translation.locale,
         name: translation.name,
         slug: translation.slug,
-        description: translation.description
+        description: translation.description,
+        metaTitle: translation.metaTitle,
+        metaDescription: translation.metaDescription,
+        metaKeywords: translation.metaKeywords,
+        ogTitle: translation.ogTitle,
+        ogDescription: translation.ogDescription,
+        ogImage: translation.ogImage,
+        canonicalUrl: translation.canonicalUrl,
       })) || []
     })) || []
   };

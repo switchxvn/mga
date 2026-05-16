@@ -256,6 +256,10 @@ export class ProductFrontendService {
       relations: [
         'product', 
         'product.translations', 
+        'product.categories',
+        'product.categories.translations',
+        'product.categories.parent',
+        'product.categories.parent.translations',
         'product.variants', 
         'product.variants.translations',
         'product.variants.attributeValues',
@@ -272,6 +276,10 @@ export class ProductFrontendService {
         relations: [
           'product', 
           'product.translations', 
+          'product.categories',
+          'product.categories.translations',
+          'product.categories.parent',
+          'product.categories.parent.translations',
           'product.variants', 
           'product.variants.translations',
           'product.variants.attributeValues',
@@ -292,7 +300,10 @@ export class ProductFrontendService {
       where: { id, published: true },
       relations: [
         'translations', 
-        'categories', 
+        'categories',
+        'categories.translations',
+        'categories.parent',
+        'categories.parent.translations',
         'variants', 
         'variants.translations',
         'variants.attributeValues',

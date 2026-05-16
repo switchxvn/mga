@@ -8,6 +8,7 @@ import { normalizeLocaleCode } from '../utils/locale';
 // Import local translations
 import viLocalTranslations from '../i18n/locales/vi.json';
 import enLocalTranslations from '../i18n/locales/en.json';
+import koLocalTranslations from '../i18n/locales/ko.json';
 
 // Define types for tRPC outputs
 type RouterOutput = inferRouterOutputs<AppRouter>;
@@ -35,7 +36,8 @@ export interface Translations {
 // Local translations mapping
 const localTranslations: { [key: string]: any } = {
   vi: viLocalTranslations,
-  en: enLocalTranslations
+  en: enLocalTranslations,
+  ko: koLocalTranslations,
 };
 
 const FALLBACK_LOCALE = 'en';

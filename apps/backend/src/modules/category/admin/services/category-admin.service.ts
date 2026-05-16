@@ -21,6 +21,13 @@ export interface CategoryTranslationData {
   name: string;
   slug: string;
   description?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  metaKeywords?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  ogImage?: string | null;
+  canonicalUrl?: string | null;
 }
 
 export interface CreateCategoryData {
@@ -151,6 +158,13 @@ export class CategoryAdminService {
         newTranslation.name = translation.name;
         newTranslation.slug = translation.slug;
         newTranslation.description = translation.description;
+        newTranslation.metaTitle = translation.metaTitle;
+        newTranslation.metaDescription = translation.metaDescription;
+        newTranslation.metaKeywords = translation.metaKeywords;
+        newTranslation.ogTitle = translation.ogTitle;
+        newTranslation.ogDescription = translation.ogDescription;
+        newTranslation.ogImage = translation.ogImage;
+        newTranslation.canonicalUrl = translation.canonicalUrl;
         return newTranslation;
       })
     });
@@ -290,6 +304,13 @@ export class CategoryAdminService {
         newTranslation.name = translation.name;
         newTranslation.slug = translation.slug;
         newTranslation.description = translation.description;
+        newTranslation.metaTitle = translation.metaTitle;
+        newTranslation.metaDescription = translation.metaDescription;
+        newTranslation.metaKeywords = translation.metaKeywords;
+        newTranslation.ogTitle = translation.ogTitle;
+        newTranslation.ogDescription = translation.ogDescription;
+        newTranslation.ogImage = translation.ogImage;
+        newTranslation.canonicalUrl = translation.canonicalUrl;
         newTranslation.category = category;
         return newTranslation;
       });

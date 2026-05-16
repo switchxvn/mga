@@ -4,12 +4,14 @@ describe('normalizeLocaleCode', () => {
   it('keeps supported short locale codes', () => {
     expect(normalizeLocaleCode('vi')).toBe('vi');
     expect(normalizeLocaleCode('en')).toBe('en');
+    expect(normalizeLocaleCode('ko')).toBe('ko');
   });
 
   it('normalizes browser locale variants to app locale codes', () => {
     expect(normalizeLocaleCode('vi-VN')).toBe('vi');
     expect(normalizeLocaleCode('en-US')).toBe('en');
     expect(normalizeLocaleCode('EN_us')).toBe('en');
+    expect(normalizeLocaleCode('ko-KR')).toBe('ko');
   });
 
   it('falls back when locale is missing or unsupported', () => {

@@ -193,6 +193,17 @@
               </div>
             </div>
 
+            <div v-show="currentTab === 'seo'" class="grid grid-cols-1 gap-6">
+              <CategorySEO
+                v-model:meta-title="currentTranslation.metaTitle"
+                v-model:meta-description="currentTranslation.metaDescription"
+                v-model:meta-keywords="currentTranslation.metaKeywords"
+                v-model:og-title="currentTranslation.ogTitle"
+                v-model:og-description="currentTranslation.ogDescription"
+                v-model:og-image="currentTranslation.ogImage"
+              />
+            </div>
+
             <!-- Settings Tab -->
             <div v-show="currentTab === 'settings'" class="grid grid-cols-1 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
               <div class="space-y-4">
@@ -232,9 +243,11 @@ import { useTrpc } from '../../../composables/useTrpc'
 import { useCategory } from '../../../composables/useCategory'
 import { useLocalization } from '../../../composables/useLocalization'
 import { useSiteTitle } from '../../../composables/useSiteTitle'
+import { createEmptyCategoryTranslation } from '../../../utils/categoryTranslation'
 
 // Import components
 import PageHeader from '../../../components/common/header/PageHeader.vue'
+import CategorySEO from '../../../components/categories/CategorySEO.vue'
 import IconSelector from '../../../components/common/IconSelector.vue'
 
 // Set page title with i18n support
@@ -272,6 +285,11 @@ const tabs = [
     id: 'basic', 
     name: t('categories.basicInfo'), 
     icon: FileTextIcon
+  },
+  {
+    id: 'seo',
+    name: t('settings.seo.title'),
+    icon: SearchIcon
   },
   { 
     id: 'settings', 
@@ -321,7 +339,14 @@ watch(selectedLanguage, (newLang, oldLang) => {
     form.value.translations[oldLang] = {
       name: form.value.name,
       slug: currentTranslation.value.slug,
-      description: currentTranslation.value.description
+      description: currentTranslation.value.description,
+      metaTitle: currentTranslation.value.metaTitle,
+      metaDescription: currentTranslation.value.metaDescription,
+      metaKeywords: currentTranslation.value.metaKeywords,
+      ogTitle: currentTranslation.value.ogTitle,
+      ogDescription: currentTranslation.value.ogDescription,
+      ogImage: currentTranslation.value.ogImage,
+      canonicalUrl: currentTranslation.value.canonicalUrl
     }
   }
   
@@ -332,11 +357,7 @@ watch(selectedLanguage, (newLang, oldLang) => {
   } else {
     // Initialize new translation
     form.value.name = ''
-    form.value.translations[newLang] = {
-      name: '',
-      slug: '',
-      description: ''
-    }
+    form.value.translations[newLang] = createEmptyCategoryTranslation()
   }
 })
 

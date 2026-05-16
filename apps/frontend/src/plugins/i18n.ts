@@ -2,6 +2,7 @@ import { createI18n } from 'vue-i18n';
 import { defineNuxtPlugin, useRequestURL, useRuntimeConfig } from 'nuxt/app';
 import en from '../i18n/locales/en.json';
 import vi from '../i18n/locales/vi.json';
+import ko from '../i18n/locales/ko.json';
 import { normalizeLocaleCode } from '../utils/locale';
 
 interface LanguageResponse {
@@ -37,7 +38,8 @@ export default defineNuxtPlugin(async ({ vueApp }) => {
     fallbackLocale: defaultLocale,
     messages: {
       en,
-      vi
+      vi,
+      ko,
     }
   });
 

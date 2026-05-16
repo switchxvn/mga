@@ -39,6 +39,7 @@ const ProductSpecifications = defineAsyncComponent(() => import('~/components/pr
 const GlobalModal = defineAsyncComponent(() => import('~/components/ui/GlobalModal.vue'));
 const TierPricingTable = defineAsyncComponent(() => import('~/components/product/TierPricingTable.vue'));
 import { buildProductSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
+import { resolveProductBreadcrumbCategory } from '~/utils/productBreadcrumb';
 
 // Định nghĩa interface cho PriceRequest
 interface PriceRequest {
@@ -242,6 +243,9 @@ const seoImage = computed(
 );
 
 const productListPath = computed(() => (currentLocale.value === 'vi' ? '/san-pham' : '/en/products'));
+const breadcrumbCategory = computed(() =>
+  resolveProductBreadcrumbCategory(productData.value?.categories, currentLocale.value),
+);
 const productSlugByLocale = computed(() => ({
   vi: productData.value?.translations?.find((translation: any) => translation.locale === 'vi')?.slug,
   en: productData.value?.translations?.find((translation: any) => translation.locale === 'en')?.slug,
@@ -273,7 +277,9 @@ usePageSeo({
   slugByLocale: productSlugByLocale,
   breadcrumbs: computed(() => [
     { name: t('common.home') || 'Home', item: currentLocale.value === 'en' ? '/en' : '/' },
-    { name: t('products.title'), item: productListPath.value },
+    breadcrumbCategory.value
+      ? { name: breadcrumbCategory.value.label, item: breadcrumbCategory.value.to }
+      : { name: t('products.title'), item: productListPath.value },
     { name: productTitle.value || seoTitle.value },
   ]),
   schemas: computed(() => [

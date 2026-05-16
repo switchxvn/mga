@@ -3,6 +3,7 @@ import { useToast } from './useToast'
 import { useRouter } from 'vue-router'
 import { useTrpc } from './useTrpc'
 import slugify from 'slugify'
+import { createEmptyCategoryTranslation, normalizeCategoryTranslation, withSeoFallbacks } from '../utils/categoryTranslation'
 
 const CategoryType = {
   NEWS: 'news',
@@ -17,6 +18,13 @@ interface Translation {
   name: string
   slug: string
   description: string
+  metaTitle: string
+  metaDescription: string
+  metaKeywords: string
+  ogTitle: string
+  ogDescription: string
+  ogImage: string
+  canonicalUrl: string
 }
 
 interface CategoryTranslation {
@@ -90,9 +98,7 @@ export function useCategory() {
   const currentTranslation = computed(() => {
     if (!selectedLanguage.value || !form.value.translations[selectedLanguage.value]) {
       return {
-        name: '',
-        slug: '',
-        description: ''
+        ...createEmptyCategoryTranslation(),
       }
     }
     return form.value.translations[selectedLanguage.value]
@@ -127,11 +133,7 @@ export function useCategory() {
   const generateSlug = () => {
     if (form.value.name) {
       if (!form.value.translations[selectedLanguage.value]) {
-        form.value.translations[selectedLanguage.value] = {
-          name: '',
-          slug: '',
-          description: ''
-        }
+        form.value.translations[selectedLanguage.value] = createEmptyCategoryTranslation()
       }
       form.value.translations[selectedLanguage.value].slug = slugify(form.value.name, {
         lower: true,
@@ -216,11 +218,7 @@ export function useCategory() {
         const translations: Record<string, any> = {}
         
         category.translations?.forEach((translation: any) => {
-          translations[translation.locale] = {
-            name: translation.name,
-            slug: translation.slug,
-            description: translation.description || ''
-          }
+          translations[translation.locale] = normalizeCategoryTranslation(translation)
         })
 
         form.value = {
@@ -255,7 +253,14 @@ export function useCategory() {
         form.value.translations[selectedLanguage.value] = {
           name: form.value.name,
           slug: currentTranslation.value.slug,
-          description: currentTranslation.value.description
+          description: currentTranslation.value.description,
+          metaTitle: currentTranslation.value.metaTitle,
+          metaDescription: currentTranslation.value.metaDescription,
+          metaKeywords: currentTranslation.value.metaKeywords,
+          ogTitle: currentTranslation.value.ogTitle,
+          ogDescription: currentTranslation.value.ogDescription,
+          ogImage: currentTranslation.value.ogImage,
+          canonicalUrl: currentTranslation.value.canonicalUrl
         }
       }
 
@@ -266,12 +271,22 @@ export function useCategory() {
         type: form.value.type,
         active: form.value.active,
         icon: form.value.icon,
-        translations: Object.entries(form.value.translations).map(([locale, content]) => ({
-          locale,
-          name: content.name,
-          slug: content.slug,
-          description: content.description || undefined
-        }))
+        translations: Object.entries(form.value.translations).map(([locale, content]) => {
+          const seoContent = withSeoFallbacks(content)
+          return {
+            locale,
+            name: seoContent.name,
+            slug: seoContent.slug,
+            description: seoContent.description || undefined,
+            metaTitle: seoContent.metaTitle || undefined,
+            metaDescription: seoContent.metaDescription || undefined,
+            metaKeywords: seoContent.metaKeywords || undefined,
+            ogTitle: seoContent.ogTitle || undefined,
+            ogDescription: seoContent.ogDescription || undefined,
+            ogImage: seoContent.ogImage || undefined,
+            canonicalUrl: seoContent.canonicalUrl || undefined
+          }
+        })
       }
 
       const result = await trpc.admin.category.createCategory.mutate(createData)
@@ -322,7 +337,14 @@ export function useCategory() {
         form.value.translations[selectedLanguage.value] = {
           name: form.value.name,
           slug: currentTranslation.value.slug,
-          description: currentTranslation.value.description
+          description: currentTranslation.value.description,
+          metaTitle: currentTranslation.value.metaTitle,
+          metaDescription: currentTranslation.value.metaDescription,
+          metaKeywords: currentTranslation.value.metaKeywords,
+          ogTitle: currentTranslation.value.ogTitle,
+          ogDescription: currentTranslation.value.ogDescription,
+          ogImage: currentTranslation.value.ogImage,
+          canonicalUrl: currentTranslation.value.canonicalUrl
         }
       }
 
@@ -333,12 +355,22 @@ export function useCategory() {
           type: form.value.type,
           active: form.value.active,
           icon: form.value.icon,
-          translations: Object.entries(form.value.translations).map(([locale, content]) => ({
-            locale,
-            name: content.name, 
-            slug: content.slug,
-            description: content.description || undefined
-          }))
+          translations: Object.entries(form.value.translations).map(([locale, content]) => {
+            const seoContent = withSeoFallbacks(content)
+            return {
+              locale,
+              name: seoContent.name,
+              slug: seoContent.slug,
+              description: seoContent.description || undefined,
+              metaTitle: seoContent.metaTitle || undefined,
+              metaDescription: seoContent.metaDescription || undefined,
+              metaKeywords: seoContent.metaKeywords || undefined,
+              ogTitle: seoContent.ogTitle || undefined,
+              ogDescription: seoContent.ogDescription || undefined,
+              ogImage: seoContent.ogImage || undefined,
+              canonicalUrl: seoContent.canonicalUrl || undefined
+            }
+          })
         }
       }
 

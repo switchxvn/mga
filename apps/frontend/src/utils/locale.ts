@@ -1,6 +1,6 @@
-export type SupportedLocaleCode = 'vi' | 'en';
+export type SupportedLocaleCode = 'vi' | 'en' | 'ko';
 
-const SUPPORTED_LOCALES: SupportedLocaleCode[] = ['vi', 'en'];
+const SUPPORTED_LOCALES: SupportedLocaleCode[] = ['vi', 'en', 'ko'];
 
 export function normalizeLocaleCode(
   input: string | null | undefined,
