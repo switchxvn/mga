@@ -5,6 +5,7 @@ import {
   getRouteIndexPolicy,
   inferSeoRoute,
   sanitizeCanonicalUrl,
+  shouldUseCmsSeoForRoute,
 } from './seo';
 
 describe('seo utils', () => {
@@ -45,6 +46,15 @@ describe('seo utils', () => {
       slug: 'xe-nang-dien',
       path: '/bai-viet/xe-nang-dien',
     });
+  });
+
+  it('uses CMS SEO only for static and listing routes', () => {
+    expect(shouldUseCmsSeoForRoute('products')).toBe(true);
+    expect(shouldUseCmsSeoForRoute('posts')).toBe(true);
+    expect(shouldUseCmsSeoForRoute('product-detail')).toBe(false);
+    expect(shouldUseCmsSeoForRoute('ticket-detail')).toBe(false);
+    expect(shouldUseCmsSeoForRoute('post-detail')).toBe(false);
+    expect(shouldUseCmsSeoForRoute(undefined)).toBe(true);
   });
 
   it('builds alternate links for localized detail pages', () => {

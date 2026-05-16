@@ -4,7 +4,7 @@ import { defineNuxtRouteMiddleware, useState } from 'nuxt/app';
 import { nextTick } from 'vue';
 import { useGTM } from '../composables/useGTM';
 import { usePageSeo } from '../composables/usePageSeo';
-import { getRouteIndexPolicy, inferSeoRoute, normalizePath, type SeoLocale } from '../utils/seo';
+import { getRouteIndexPolicy, inferSeoRoute, normalizePath, shouldUseCmsSeoForRoute, type SeoLocale } from '../utils/seo';
 import { useTrpc } from '../composables/useTrpc';
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
@@ -32,9 +32,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const routePolicy = getRouteIndexPolicy(normalizedPath);
   const routeLocale: SeoLocale = routeMatch?.locale || (normalizedPath.startsWith('/en') ? 'en' : 'vi');
   const seoState = useState<SeoOutput | null>(`seo-${normalizedPath}`, () => null);
+  const shouldLoadCmsSeo = shouldUseCmsSeoForRoute(routeMatch?.key);
 
   try {
-    if (process.server) {
+    if (!shouldLoadCmsSeo) {
+      seoState.value = null;
+    } else if (process.server) {
       seoState.value = await fetchSeoDataFromServer(normalizedPath);
     } else if (!seoState.value) {
       seoState.value = await fetchSeoDataFromClient(normalizedPath);

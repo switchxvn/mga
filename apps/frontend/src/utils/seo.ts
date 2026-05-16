@@ -129,6 +129,14 @@ const ENGLISH_ALIAS_ROUTE_KEYS = new Set<SeoRouteKey>([
   'order-ticket',
 ]);
 
+const CMS_SEO_DETAIL_ROUTE_KEYS = new Set<SeoRouteKey>([
+  'product-detail',
+  'ticket-detail',
+  'post-detail',
+  'service-detail',
+  'category-detail',
+]);
+
 export function normalizePath(path: string): string {
   if (!path) {
     return '/';
@@ -216,6 +224,14 @@ export function inferSeoRoute(path: string): SeoRouteMatch | null {
   }
 
   return null;
+}
+
+export function shouldUseCmsSeoForRoute(routeKey?: SeoRouteKey): boolean {
+  if (!routeKey) {
+    return true;
+  }
+
+  return !CMS_SEO_DETAIL_ROUTE_KEYS.has(routeKey);
 }
 
 export function buildLocalizedPath(routeKey: SeoRouteKey, locale: SeoLocale, slug?: string): string | null {
