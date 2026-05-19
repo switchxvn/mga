@@ -280,7 +280,7 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
           </div>
 
           <!-- Right Actions -->
-          <div class="hidden md:flex items-center gap-3">
+          <div class="hidden md:flex items-center gap-2">
             <template v-if="props.settings?.topMenu?.links">
               <template
                 v-for="(link, index) in props.settings.topMenu.links"
@@ -303,10 +303,10 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
                 >
               </template>
             </template>
-            <div class="min-w-[140px]">
+            <div class="flex-shrink-0">
               <LanguageSwitcher v-if="props.settings?.showLanguageSwitcher" />
             </div>
-            <div class="min-w-[140px]">
+            <div class="flex-shrink-0">
               <ThemeToggle v-if="props.settings?.showThemeToggle" />
             </div>
           </div>

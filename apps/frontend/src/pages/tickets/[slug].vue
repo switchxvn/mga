@@ -46,6 +46,7 @@ import { useProductVariants } from '~/composables/useProduct';
 import { formatPrice } from '@ew/shared';
 import type { Product } from '@ew/shared';
 import { useProductDetail } from '~/composables/useProductDetail';
+import { useSelectableGalleryImage } from '~/composables/useSelectableGalleryImage';
 import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
 import { useTicketBooking } from '~/composables/useTicketBooking';
@@ -126,6 +127,7 @@ const {
   copyProductLink,
   getTabIcon: originalGetTabIcon
 } = useProductDetail();
+const { activeImage, selectImage } = useSelectableGalleryImage(computed(() => productData.value?.thumbnail));
 
 // Add new refs for date selection
 const selectedDate = ref<Date | null>(null);
@@ -501,7 +503,7 @@ const handleSubmit = async () => {
           <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
             <div class="ticket-images bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
               <AppImage
-                :src="productData.thumbnail || ''"
+                :src="activeImage"
                 :alt="productTitle"
                 fallbackSrc="/images/default-image.jpg"
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -510,7 +512,7 @@ const handleSubmit = async () => {
                 fetchpriority="high"
                 width="1200"
                 height="900"
-                customClass="h-auto w-full rounded-lg"
+                customClass="h-72 md:h-[26rem] lg:h-[32rem] w-full rounded-lg bg-white object-contain"
               />
 
               <div
@@ -528,7 +530,13 @@ const handleSubmit = async () => {
                   fetchpriority="low"
                   width="320"
                   height="240"
-                  customClass="h-20 w-full cursor-pointer rounded-md"
+                  :customClass="[
+                    'h-20 w-full cursor-pointer rounded-md border-2 transition',
+                    activeImage === image
+                      ? 'border-primary-500'
+                      : 'border-transparent hover:border-primary-300'
+                  ].join(' ')"
+                  @click="selectImage(image)"
                 />
               </div>
             </div>

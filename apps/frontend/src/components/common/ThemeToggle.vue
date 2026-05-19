@@ -57,7 +57,7 @@ const getCurrentLabel = computed(() => {
 <template>
   <div ref="menuRef" class="relative">
     <button 
-      class="inline-flex items-center justify-between gap-1.5 sm:gap-1 px-3 py-2 sm:px-2 sm:py-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/20 dark:hover:bg-white/30 transition-[background] duration-150 text-gray-800 dark:text-white min-h-[40px] sm:min-h-auto w-full min-w-[120px] sm:min-w-auto"
+      class="inline-flex w-auto items-center justify-between gap-1.5 sm:gap-1 px-3 py-2 sm:px-2 sm:py-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/20 dark:hover:bg-white/30 transition-[background] duration-150 text-gray-800 dark:text-white min-h-[40px] sm:min-h-auto min-w-[120px] sm:min-w-auto"
       @click="isOpen = !isOpen"
       :title="translateWithFallback('theme.title', 'Giao diện')"
     >

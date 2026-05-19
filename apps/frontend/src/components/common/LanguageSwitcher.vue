@@ -3,12 +3,11 @@ import { useLocalization } from '~/composables/useLocalization';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useAsyncData } from '#imports';
 import { useLanguageInitializer } from '~/composables/useLanguageInitializer';
-import { useTransitionControl } from '~/composables/useTransitionControl';
 import Icon from '~/components/ui/Icon.vue';
+import { getLocaleDisplayName, getLocaleFallbackOptions, normalizeLocaleCode } from '~/utils/locale';
 
 const { t, locale, locales, switchLanguage } = useLocalization();
-const { initializeOnce, isInitializing, hasInitialized } = useLanguageInitializer();
-const { disableTransitions } = useTransitionControl();
+const { initializeOnce, isInitializing } = useLanguageInitializer();
 
 const isOpen = ref(false);
 const flagLoaded = ref(false);
@@ -32,12 +31,15 @@ const { pending: isLoadingLanguages } = useAsyncData(
 );
 
 // Computed
-const availableLocales = computed(() => locales.value);
+const availableLocales = computed(() => getLocaleFallbackOptions(locales.value));
 
 // Get current locale display
 const currentLocaleDisplay = computed(() => {
-  const current = availableLocales.value.find(loc => loc.code === locale.value);
-  return current ? current.nativeName : translateWithFallback('language', 'Ngôn ngữ');
+  return getLocaleDisplayName(
+    normalizeLocaleCode(locale.value, 'vi'),
+    availableLocales.value,
+    translateWithFallback('language', 'Ngôn ngữ'),
+  );
 });
 
 // Function to get flag image path
@@ -137,12 +139,28 @@ watch([locale, locales], () => {
   }
 }, { immediate: true });
 
+watch(
+  () => locales.value.length,
+  async (localeCount) => {
+    if (!process.client || localeCount > 0 || isInitializing.value) {
+      return;
+    }
+
+    await initializeOnce({ force: true });
+  },
+  { immediate: true },
+);
+
 // Initialize
 onMounted(() => {
   if (process.client) {
     document.addEventListener('click', handleClickOutside);
     if (locale.value && locales.value.length > 0) {
       preloadFlags();
+    }
+
+    if (!locales.value.length && !isInitializing.value) {
+      initializeOnce({ force: true });
     }
   }
 });

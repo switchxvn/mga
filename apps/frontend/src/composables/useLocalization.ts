@@ -24,6 +24,26 @@ export interface Locale {
   isDefault: boolean;
 }
 
+const normalizeLocaleEntries = (locales: Locale[]): Locale[] => {
+  const seenCodes = new Set<string>();
+
+  return locales.reduce<Locale[]>((result, localeEntry) => {
+    const normalizedCode = normalizeLocaleCode(localeEntry.code, FALLBACK_LOCALE as 'en');
+
+    if (seenCodes.has(normalizedCode)) {
+      return result;
+    }
+
+    seenCodes.add(normalizedCode);
+    result.push({
+      ...localeEntry,
+      code: normalizedCode,
+    });
+
+    return result;
+  }, []);
+};
+
 // Define translations interface
 export interface Translations {
   [languageCode: string]: {
@@ -191,9 +211,11 @@ export function useLocalization() {
   });
 
   // Methods
-  const initializeLocalization = async () => {
+  const initializeLocalization = async (options?: { force?: boolean }) => {
+    const shouldForce = options?.force === true;
+
     // Skip if already initialized
-    if (state.isInitialized.value) return;
+    if (state.isInitialized.value && !shouldForce) return;
 
     state.isLoading.value = true;
     state.error.value = null;
@@ -204,7 +226,7 @@ export function useLocalization() {
         trpc.language.getLanguages.query(),
       ]);
 
-      state.locales.value = languages;
+      state.locales.value = normalizeLocaleEntries(languages);
 
       if (defaultLang && !state.locale.value) {
         state.locale.value = normalizeLocaleCode(defaultLang.code, FALLBACK_LOCALE as 'en');

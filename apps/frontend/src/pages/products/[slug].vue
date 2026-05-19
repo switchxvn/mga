@@ -31,6 +31,7 @@ import AppImage from "~/components/ui/AppImage.vue";
 import { useLocalization } from "~/composables/useLocalization";
 import { usePageSeo } from '~/composables/usePageSeo';
 import { useProductDetail } from '~/composables/useProductDetail';
+import { useSelectableGalleryImage } from '~/composables/useSelectableGalleryImage';
 import { useCart } from "~/composables/useCart";
 import { useSettings } from "~/composables/useSettings";
 const CrossSellProducts = defineAsyncComponent(() => import('~/components/product/CrossSellProducts.vue'));
@@ -114,6 +115,7 @@ const {
 
 const { getPublicSettingValueByKey } = useSettings();
 const quickPurchaseEnabled = ref(false);
+const { activeImage, selectImage } = useSelectableGalleryImage(computed(() => productData.value?.thumbnail));
 
 try {
   const quickPurchaseSetting = await getPublicSettingValueByKey('enable_quick_purchase', 'false');
@@ -425,7 +427,7 @@ watch(activeTab, (newTab, oldTab) => {
             <!-- Product Images -->
             <div class="product-images bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
               <AppImage
-                :src="productData.thumbnail || ''"
+                :src="activeImage"
                 :alt="productTitle"
                 fallbackSrc="/images/default-image.jpg"
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -434,7 +436,7 @@ watch(activeTab, (newTab, oldTab) => {
                 fetchpriority="high"
                 width="1200"
                 height="900"
-                customClass="h-auto w-full rounded-lg"
+                customClass="h-72 md:h-[26rem] lg:h-[32rem] w-full rounded-lg bg-white object-contain"
               />
 
               <!-- Gallery slider -->
@@ -453,7 +455,13 @@ watch(activeTab, (newTab, oldTab) => {
                   fetchpriority="low"
                   width="320"
                   height="240"
-                  customClass="h-20 w-full cursor-pointer rounded-md"
+                  :customClass="[
+                    'h-20 w-full cursor-pointer rounded-md border-2 transition',
+                    activeImage === image
+                      ? 'border-primary-500'
+                      : 'border-transparent hover:border-primary-300'
+                  ].join(' ')"
+                  @click="selectImage(image)"
                 />
               </div>
 

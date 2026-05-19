@@ -5,6 +5,15 @@ import en from '../i18n/locales/en.json';
 import ko from '../i18n/locales/ko.json';
 import viLocale from '../i18n/locales/vi.json';
 
+const mockGetDefaultLanguage = vi.fn(async () => ({ code: 'vi' }));
+const mockGetLanguages = vi.fn(async () => []);
+const mockGetAllTranslations = vi.fn(async () => ({
+  products: {
+    quickPurchase: 'products.quickPurchase',
+    requestPrice: 'products.requestPrice',
+  },
+}));
+
 vi.mock('@vueuse/core', () => ({
   useLocalStorage: vi.fn(() => ref('vi')),
 }));
@@ -12,16 +21,9 @@ vi.mock('@vueuse/core', () => ({
 vi.mock('./useTrpc', () => ({
   useTrpc: () => ({
     language: {
-      getDefaultLanguage: { query: vi.fn(async () => ({ code: 'vi' })) },
-      getLanguages: { query: vi.fn(async () => []) },
-      getAllTranslations: {
-        query: vi.fn(async () => ({
-          products: {
-            quickPurchase: 'products.quickPurchase',
-            requestPrice: 'products.requestPrice',
-          },
-        })),
-      },
+      getDefaultLanguage: { query: mockGetDefaultLanguage },
+      getLanguages: { query: mockGetLanguages },
+      getAllTranslations: { query: mockGetAllTranslations },
     },
   }),
 }));
@@ -51,6 +53,14 @@ const getNestedValue = (source: Record<string, any>, key: string) =>
 describe('useLocalization', () => {
   beforeEach(() => {
     vi.resetModules();
+    mockGetDefaultLanguage.mockResolvedValue({ code: 'vi' });
+    mockGetLanguages.mockResolvedValue([]);
+    mockGetAllTranslations.mockResolvedValue({
+      products: {
+        quickPurchase: 'products.quickPurchase',
+        requestPrice: 'products.requestPrice',
+      },
+    });
   });
 
   it('returns bundled translations before async initialization completes', async () => {
@@ -107,6 +117,38 @@ describe('useLocalization', () => {
     const localization = useLocalization();
 
     expect(localization.t('products.missingKey')).toBe('');
+  });
+
+  it('normalizes runtime locale codes returned by the language API', async () => {
+    mockGetDefaultLanguage.mockResolvedValue({ code: 'vi-VN' });
+    mockGetLanguages.mockResolvedValue([
+      {
+        id: 1,
+        code: 'vi-VN',
+        name: 'Vietnamese',
+        nativeName: 'Tiếng Việt',
+        flagCode: 'vn',
+        isActive: true,
+        isDefault: true,
+      },
+      {
+        id: 2,
+        code: 'en-US',
+        name: 'English',
+        nativeName: 'English',
+        flagCode: 'us',
+        isActive: true,
+        isDefault: false,
+      },
+    ]);
+
+    const { useLocalization } = await import('./useLocalization');
+
+    const localization = useLocalization();
+    await localization.initializeLocalization();
+
+    expect(localization.locale.value).toBe('vi');
+    expect(localization.locales.value.map((language) => language.code)).toEqual(['vi', 'en']);
   });
 });
 

@@ -1,4 +1,9 @@
-import { normalizeLocaleCode, resolveInitialLocaleCode } from './locale';
+import {
+  getLocaleDisplayName,
+  getLocaleFallbackOptions,
+  normalizeLocaleCode,
+  resolveInitialLocaleCode,
+} from './locale';
 
 describe('normalizeLocaleCode', () => {
   it('keeps supported short locale codes', () => {
@@ -33,5 +38,39 @@ describe('resolveInitialLocaleCode', () => {
   it('uses the provided fallback when neither source is valid', () => {
     expect(resolveInitialLocaleCode('', '', 'en')).toBe('en');
     expect(resolveInitialLocaleCode(undefined, 'fr-FR', 'en')).toBe('en');
+  });
+});
+
+describe('getLocaleDisplayName', () => {
+  it('returns a built-in native name when runtime locale metadata is unavailable', () => {
+    expect(getLocaleDisplayName('vi', [], 'Ngôn ngữ')).toBe('Tiếng Việt');
+    expect(getLocaleDisplayName('en', [], 'Language')).toBe('English');
+  });
+
+  it('prefers runtime locale metadata when present', () => {
+    expect(
+      getLocaleDisplayName(
+        'vi',
+        [
+          {
+            code: 'vi',
+            nativeName: 'VI runtime',
+          },
+        ],
+        'Ngôn ngữ',
+      ),
+    ).toBe('VI runtime');
+  });
+});
+
+describe('getLocaleFallbackOptions', () => {
+  it('returns built-in locale options when the API list is empty', () => {
+    expect(getLocaleFallbackOptions().map((locale) => locale.code)).toEqual(['vi', 'en', 'ko']);
+  });
+
+  it('keeps runtime locale options when they already exist', () => {
+    const runtimeLocales = [{ code: 'vi', nativeName: 'VI runtime' }];
+
+    expect(getLocaleFallbackOptions(runtimeLocales)).toBe(runtimeLocales);
   });
 });
