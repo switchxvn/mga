@@ -239,7 +239,7 @@ usePageSeo({
   slugByLocale: categorySlugByLocale,
   breadcrumbs: computed(() => [
     { name: t('common.home') || 'Home', item: '/' },
-    { name: t('common.categories') || 'Categories', item: locale.value === 'en' ? '/categories' : '/danh-muc-san-pham' },
+    { name: t('common.categories') || 'Categories', item: getCategoryListRoute(locale.value) },
     { name: isInvalidCategory.value ? (t('categories.invalidCategoryTitle') || 'Không tìm thấy danh mục') : (categoryName.value || 'Category') },
   ]),
   schemas: computed(() => isInvalidCategory.value ? [] : [

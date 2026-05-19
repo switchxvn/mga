@@ -1027,10 +1027,7 @@ const handleSubmit = async () => {
         </div>
 
         <!-- Cross-Sell Products -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-            {{ t("tickets.relatedTickets") || "Vé bạn có thể thích" }}
-          </h2>
+        <div class="mt-10">
           <CrossSellProducts
             v-if="productData.id"
             :productId="productData.id"

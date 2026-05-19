@@ -83,7 +83,6 @@ const {
   shareTitle,
   shareDescription,
   shareImage,
-  canonicalUrl,
   productReviewAggregate,
   activeTab,
   isPriceRequestModalOpen,
@@ -226,6 +225,10 @@ const seoDescription = computed(
 const seoKeywords = computed(
   () => activeTranslation.value?.metaKeywords || productData.value?.metaKeywords || ""
 );
+const translateWithFallback = (key: string, fallback: string) => {
+  const translated = t(key);
+  return translated && translated.trim() && translated.trim() !== key ? translated : fallback;
+};
 
 const seoOgTitle = computed(
   () => activeTranslation.value?.ogTitle || productData.value?.ogTitle || seoTitle.value
@@ -290,6 +293,22 @@ const resolvedCanonicalUrl = computed(() =>
     candidate: activeTranslation.value?.canonicalUrl || null,
   }),
 );
+const seoRobots = computed(() => route.path.startsWith('/products/') ? 'noindex,follow' : 'index,follow');
+const schemaAvailability = computed(() => {
+  if (matchingVariant.value && typeof matchingVariant.value.stock === 'number') {
+    return matchingVariant.value.stock > 0
+      ? 'https://schema.org/InStock'
+      : 'https://schema.org/OutOfStock';
+  }
+
+  if (typeof productData.value?.stock === 'number') {
+    return productData.value.stock > 0
+      ? 'https://schema.org/InStock'
+      : 'https://schema.org/OutOfStock';
+  }
+
+  return undefined;
+});
 
 usePageSeo({
   title: seoTitle,
@@ -299,7 +318,8 @@ usePageSeo({
   ogDescription: seoOgDescription,
   image: seoImage,
   ogType: 'product',
-  canonicalUrl: computed(() => activeTranslation.value?.canonicalUrl || null),
+  robots: seoRobots,
+  canonicalUrl: computed(() => null),
   currentPath: computed(() => route.path),
   locale: computed(() => (currentLocale.value === 'en' ? 'en' : 'vi')),
   routeKey: 'product-detail',
@@ -317,7 +337,10 @@ usePageSeo({
       description: seoDescription.value,
       url: resolvedCanonicalUrl.value,
       image: seoImage.value,
+      sku: matchingVariant.value?.sku || productData.value?.sku || undefined,
+      brand: 'MGA Vietnam',
       price: productData.value?.price ?? minVariantPrice.value ?? null,
+      availability: schemaAvailability.value,
       ratingValue: productReviewAggregate.value?.averageRating
         ? Number.parseFloat(productReviewAggregate.value.averageRating)
         : null,
@@ -554,7 +577,7 @@ watch(activeTab, (newTab, oldTab) => {
               <div v-if="categoryBadges.length > 0" class="mb-5">
                 <div class="category-title text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <LayoutGrid class="inline-block mr-1 h-5 w-5 text-primary-500" />
-                  {{ t("products.categories") || "Danh mục:" }}
+                  {{ translateWithFallback("products.categories", "Danh mục") }}
                 </div>
                 <div class="flex flex-wrap gap-2">
                   <UBadge
@@ -577,7 +600,7 @@ watch(activeTab, (newTab, oldTab) => {
               <!-- Product Variants -->
               <div v-if="productData?.type === ProductType.TICKET" class="mb-6">
                 <div class="text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {{ t("products.departureDate") }}
+                  {{ translateWithFallback("products.departureDate", "Ngày khởi hành") }}
                   <span class="text-red-500">*</span>
                 </div>
                 <div class="space-y-4">
@@ -592,14 +615,14 @@ watch(activeTab, (newTab, oldTab) => {
                       <input
                         :value="inputValue"
                         v-on="inputEvents"
-                        :placeholder="t('products.selectDepartureDate')"
+                        :placeholder="translateWithFallback('products.selectDepartureDate', 'Chọn ngày khởi hành')"
                         class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none dark:bg-gray-800"
                         readonly
                       />
                     </template>
                   </DatePicker>
                   <div v-if="selectedDate" class="text-sm text-gray-600 dark:text-gray-400">
-                    {{ t("products.selectedDate") }}: {{ selectedDate.toLocaleDateString(currentLocale) }}
+                    {{ translateWithFallback("products.selectedDate", "Ngày đã chọn") }}: {{ selectedDate.toLocaleDateString(currentLocale) }}
                   </div>
                 </div>
               </div>
@@ -669,7 +692,7 @@ watch(activeTab, (newTab, oldTab) => {
                   class="text-sm text-red-600 dark:text-red-400 mt-2 flex items-center gap-2"
                 >
                   <AlertTriangle class="w-4 h-4" />
-                  {{ t("products.noMatchingVariant") || "Không có sản phẩm phù hợp với lựa chọn của bạn" }}
+                  {{ translateWithFallback("products.noMatchingVariant", "Không có sản phẩm phù hợp với lựa chọn của bạn") }}
                 </div>
               </div>
 
@@ -680,7 +703,7 @@ watch(activeTab, (newTab, oldTab) => {
                     <div class="ticket-info-item">
                       <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
                         <Calendar class="w-4 h-4 inline-block mr-1" />
-                        {{ t("products.ticketDate") || "Ngày sử dụng" }}
+                        {{ translateWithFallback("products.ticketDate", "Ngày sử dụng") }}
                       </div>
                       <div class="font-medium">
                         {{ productData.specifications?.find(spec => spec.name === 'date')?.value || 'Liên hệ để biết thêm' }}
@@ -689,7 +712,7 @@ watch(activeTab, (newTab, oldTab) => {
                     <div class="ticket-info-item">
                       <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
                         <Clock class="w-4 h-4 inline-block mr-1" />
-                        {{ t("products.ticketTime") || "Thời gian" }}
+                        {{ translateWithFallback("products.ticketTime", "Thời gian") }}
                       </div>
                       <div class="font-medium">
                         {{ productData.specifications?.find(spec => spec.name === 'time')?.value || 'Liên hệ để biết thêm' }}
@@ -698,7 +721,7 @@ watch(activeTab, (newTab, oldTab) => {
                     <div class="ticket-info-item">
                       <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
                         <MapPin class="w-4 h-4 inline-block mr-1" />
-                        {{ t("products.ticketLocation") || "Địa điểm" }}
+                        {{ translateWithFallback("products.ticketLocation", "Địa điểm") }}
                       </div>
                       <div class="font-medium">
                         {{ productData.specifications?.find(spec => spec.name === 'location')?.value || 'Liên hệ để biết thêm' }}
@@ -707,7 +730,7 @@ watch(activeTab, (newTab, oldTab) => {
                     <div class="ticket-info-item">
                       <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">
                         <Info class="w-4 h-4 inline-block mr-1" />
-                        {{ t("products.ticketValidity") || "Hiệu lực" }}
+                        {{ translateWithFallback("products.ticketValidity", "Hiệu lực") }}
                       </div>
                       <div class="font-medium">
                         {{ productData.specifications?.find(spec => spec.name === 'validity')?.value || 'Liên hệ để biết thêm' }}
@@ -750,7 +773,7 @@ watch(activeTab, (newTab, oldTab) => {
               <!-- Nút chia sẻ mạng xã hội -->
               <div class="mb-6">
                 <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {{ t("products.shareProduct") || "Chia sẻ sản phẩm:" }}
+                  {{ translateWithFallback("products.shareProduct", "Chia sẻ sản phẩm") }}
                 </div>
                 <div class="share-buttons flex flex-wrap gap-2">
                   <div class="tooltip">
@@ -764,7 +787,7 @@ watch(activeTab, (newTab, oldTab) => {
                       <Facebook class="h-5 w-5" />
                     </UButton>
                     <span class="tooltip-text">{{
-                      t("products.shareOnFacebook") || "Chia sẻ lên Facebook"
+                      translateWithFallback("products.shareOnFacebook", "Chia sẻ lên Facebook")
                     }}</span>
                   </div>
 
@@ -779,7 +802,7 @@ watch(activeTab, (newTab, oldTab) => {
                       <Twitter class="h-5 w-5" />
                     </UButton>
                     <span class="tooltip-text">{{
-                      t("products.shareOnTwitter") || "Chia sẻ lên Twitter"
+                      translateWithFallback("products.shareOnTwitter", "Chia sẻ lên Twitter")
                     }}</span>
                   </div>
 
@@ -794,7 +817,7 @@ watch(activeTab, (newTab, oldTab) => {
                       <Linkedin class="h-5 w-5" />
                     </UButton>
                     <span class="tooltip-text">{{
-                      t("products.shareOnLinkedIn") || "Chia sẻ lên LinkedIn"
+                      translateWithFallback("products.shareOnLinkedIn", "Chia sẻ lên LinkedIn")
                     }}</span>
                   </div>
 
@@ -809,7 +832,7 @@ watch(activeTab, (newTab, oldTab) => {
                       <Mail class="h-5 w-5" />
                     </UButton>
                     <span class="tooltip-text">{{
-                      t("products.shareViaEmail") || "Chia sẻ qua Email"
+                      translateWithFallback("products.shareViaEmail", "Chia sẻ qua Email")
                     }}</span>
                   </div>
 
@@ -824,7 +847,7 @@ watch(activeTab, (newTab, oldTab) => {
                       <Link class="h-5 w-5" />
                     </UButton>
                     <span class="tooltip-text">{{
-                      t("products.copyLink") || "Sao chép liên kết"
+                      translateWithFallback("products.copyLink", "Sao chép liên kết")
                     }}</span>
                   </div>
                 </div>
@@ -836,7 +859,7 @@ watch(activeTab, (newTab, oldTab) => {
                 <AddToCartButton
                   v-if="canAddToCart && getProductForCart && !quickPurchaseEnabled"
                   :product="getProductForCart"
-                  :buttonText="t('products.addToCart') || 'Thêm vào giỏ hàng'"
+                  :buttonText="translateWithFallback('products.addToCart', 'Thêm vào giỏ hàng')"
                   :showQuantity="!hasRequiredAttributes"
                   buttonClass="w-full bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium text-base transition-colors duration-200 flex items-center justify-center gap-2"
                 />
@@ -850,7 +873,7 @@ watch(activeTab, (newTab, oldTab) => {
                   class="border-primary-600 text-primary-600 hover:bg-primary-50 dark:border-primary-500 dark:text-primary-300 font-medium py-3 text-base"
                   @click="openQuickPurchaseModal"
                 >
-                  {{ t("products.quickPurchase") || "Mua hàng nhanh" }}
+                  {{ translateWithFallback("products.quickPurchase", "Mua hàng nhanh") }}
                 </UButton>
 
                 <!-- Buy Now Button -->
@@ -867,7 +890,7 @@ watch(activeTab, (newTab, oldTab) => {
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
                   </template>
-                  {{ t("products.buyNow") || "Mua ngay" }}
+                  {{ translateWithFallback("products.buyNow", "Mua ngay") }}
                 </UButton>
 
                 <!-- Price Request Button -->
@@ -882,7 +905,7 @@ watch(activeTab, (newTab, oldTab) => {
                   <template #leading>
                     <BadgeDollarSign class="h-5 w-5" />
                   </template>
-                  {{ t("products.requestPrice") || "Yêu cầu báo giá" }}
+                  {{ translateWithFallback("products.requestPrice", "Yêu cầu báo giá") }}
                 </UButton>
 
                 <!-- Contact Button when product is not available -->
@@ -897,7 +920,7 @@ watch(activeTab, (newTab, oldTab) => {
                   <template #leading>
                     <Phone class="h-5 w-5" />
                   </template>
-                  {{ t("products.contact") || "Liên hệ" }}
+                  {{ translateWithFallback("products.contact", "Liên hệ") }}
                 </UButton>
               </div>
             </div>
@@ -1016,8 +1039,7 @@ watch(activeTab, (newTab, oldTab) => {
                         />
                         <p class="text-gray-600 dark:text-gray-400">
                           {{
-                            t("products.noVideoAvailable") ||
-                            "Chưa có video review cho sản phẩm này"
+                            translateWithFallback("products.noVideoAvailable", "Chưa có video review cho sản phẩm này")
                           }}
                         </p>
                       </div>
@@ -1037,10 +1059,7 @@ watch(activeTab, (newTab, oldTab) => {
         </div>
 
         <!-- Cross-Sell Products -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-            {{ t("products.relatedProducts") || "Sản phẩm bạn có thể thích" }}
-          </h2>
+        <div class="mt-10">
           <CrossSellProducts
             v-if="productData.id"
             :productId="productData.id"

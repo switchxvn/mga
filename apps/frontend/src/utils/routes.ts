@@ -177,11 +177,11 @@ export function getRouteLocale(locale: string | null | undefined): LocaleType {
 }
 
 export function getCategoryDetailRoute(slug: string, locale: string | null | undefined): string {
-  return getLocalizedRoute('CATEGORY_DETAIL', getRouteLocale(locale), { slug });
+  return getLocalizedRoute('CATEGORY_DETAIL', 'vi', { slug });
 }
 
 export function getCategoryListRoute(locale: string | null | undefined): string {
-  return getLocalizedRoute('CATEGORIES_LIST', getRouteLocale(locale));
+  return getLocalizedRoute('CATEGORIES_LIST', 'vi');
 }
 
 export function getContactRoute(locale: string | null | undefined): string {

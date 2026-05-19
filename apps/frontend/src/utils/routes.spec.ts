@@ -19,12 +19,12 @@ describe('routes helpers', () => {
 
   it('builds localized category detail routes', () => {
     expect(getCategoryDetailRoute('xe-nang-dien', 'vi')).toBe('/danh-muc-san-pham/xe-nang-dien');
-    expect(getCategoryDetailRoute('electric-forklift', 'en')).toBe('/categories/electric-forklift');
+    expect(getCategoryDetailRoute('electric-forklift', 'en')).toBe('/danh-muc-san-pham/electric-forklift');
   });
 
   it('builds localized category listing routes', () => {
     expect(getCategoryListRoute('vi')).toBe('/danh-muc-san-pham');
-    expect(getCategoryListRoute('en')).toBe('/categories');
+    expect(getCategoryListRoute('en')).toBe('/danh-muc-san-pham');
   });
 
   it('builds localized contact routes', () => {

@@ -48,7 +48,7 @@ describe('resolveProductBreadcrumbCategory', () => {
 
     expect(result).toEqual({
       label: 'Electric Forklift',
-      to: '/categories/electric-forklift',
+      to: '/danh-muc-san-pham/electric-forklift',
     });
   });
 

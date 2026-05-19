@@ -5,6 +5,7 @@ import {
   buildSitemapXml,
   getRouteIndexPolicy,
   inferSeoRoute,
+  resolveSeoCanonicalUrl,
   sanitizeCanonicalUrl,
   shouldUseCmsSeoForRoute,
 } from './seo';
@@ -71,9 +72,53 @@ describe('seo utils', () => {
       }),
     ).toEqual([
       { hreflang: 'vi', href: 'https://example.test/san-pham/xe-nang-dau' },
-      { hreflang: 'en', href: 'https://example.test/products/diesel-forklift' },
       { hreflang: 'x-default', href: 'https://example.test/san-pham/xe-nang-dau' },
     ]);
+  });
+
+  it('uses only the vietnamese canonical category path', () => {
+    expect(
+      resolveSeoCanonicalUrl({
+        siteUrl,
+        currentPath: '/categories/electric-forklift',
+        locale: 'en',
+        routeKey: 'category-detail',
+        slugByLocale: {
+          vi: 'xe-nang-dien',
+          en: 'electric-forklift',
+        },
+        candidate: 'https://example.test/categories/electric-forklift',
+      }),
+    ).toBe('https://example.test/danh-muc-san-pham/electric-forklift');
+
+    expect(
+      buildAlternateLinks(siteUrl, 'category-detail', {
+        currentLocale: 'en',
+        slugByLocale: {
+          vi: 'xe-nang-dien',
+          en: 'electric-forklift',
+        },
+      }),
+    ).toEqual([
+      { hreflang: 'vi', href: 'https://example.test/danh-muc-san-pham/xe-nang-dien' },
+      { hreflang: 'x-default', href: 'https://example.test/danh-muc-san-pham/xe-nang-dien' },
+    ]);
+  });
+
+  it('forces product detail canonical urls to the vietnamese route', () => {
+    expect(
+      resolveSeoCanonicalUrl({
+        siteUrl,
+        currentPath: '/products/diesel-forklift',
+        locale: 'en',
+        routeKey: 'product-detail',
+        slugByLocale: {
+          vi: 'xe-nang-dau',
+          en: 'diesel-forklift',
+        },
+        candidate: 'https://example.test/products/diesel-forklift?utm_source=google',
+      }),
+    ).toBe('https://example.test/san-pham/xe-nang-dau');
   });
 
   it('builds robots.txt content with sitemap and disallow rules', () => {
@@ -147,8 +192,10 @@ describe('seo utils', () => {
         description: 'Mo ta',
         url: 'https://example.test/san-pham/bom-thuy-luc',
         price: '4500000.00' as unknown as number,
+        sku: 'BOM-001',
       }),
     ).toMatchObject({
+      sku: 'BOM-001',
       offers: {
         '@type': 'Offer',
         price: 4500000,

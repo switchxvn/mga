@@ -13,6 +13,10 @@ const { disableTransitions } = useTransitionControl();
 const isOpen = ref(false);
 const flagLoaded = ref(false);
 const flagLoadError = ref(false);
+const translateWithFallback = (key: string, fallback: string) => {
+  const translated = t(key);
+  return translated && translated.trim() && translated.trim() !== key ? translated : fallback;
+};
 
 // Sử dụng useAsyncData để load danh sách ngôn ngữ trong quá trình SSR
 const { pending: isLoadingLanguages } = useAsyncData(
@@ -33,7 +37,7 @@ const availableLocales = computed(() => locales.value);
 // Get current locale display
 const currentLocaleDisplay = computed(() => {
   const current = availableLocales.value.find(loc => loc.code === locale.value);
-  return current ? current.nativeName : 'Language';
+  return current ? current.nativeName : translateWithFallback('language', 'Ngôn ngữ');
 });
 
 // Function to get flag image path
@@ -157,7 +161,7 @@ onBeforeUnmount(() => {
       @click.stop="toggleDropdown"
       class="inline-flex items-center justify-between space-x-1.5 sm:space-x-1 px-3 py-2 sm:px-2 sm:py-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/20 dark:hover:bg-white/30 transition-[background] duration-150 text-gray-800 dark:text-white min-h-[40px] sm:min-h-auto"
       type="button"
-      :title="t('language')"
+      :title="translateWithFallback('language', 'Ngôn ngữ')"
       :disabled="isLoadingLanguages"
     >
       <div v-if="isLoadingLanguages" class="w-4 h-4 sm:w-3.5 sm:h-3.5 flex items-center justify-center">

@@ -11,13 +11,14 @@ export function useLanguageInitializer() {
   const initializeOnce = async () => {
     // Nếu đã khởi tạo hoặc đang trong quá trình khởi tạo, không làm gì cả
     if (hasInitialized.value || isInitializing.value) {
-      return;
+      return { initialized: hasInitialized.value };
     }
 
     try {
       isInitializing.value = true;
       await initializeLocalization();
       hasInitialized.value = true;
+      return { initialized: true };
     } finally {
       isInitializing.value = false;
     }

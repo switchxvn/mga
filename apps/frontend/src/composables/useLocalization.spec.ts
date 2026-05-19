@@ -100,6 +100,14 @@ describe('useLocalization', () => {
     expect(localization.t('language')).toBe('Ngôn ngữ');
     expect(localization.t('products.quickPurchase')).toBe('Mua hàng nhanh');
   });
+
+  it('returns an empty string for missing keys so UI literal fallbacks can render', async () => {
+    const { useLocalization } = await import('./useLocalization');
+
+    const localization = useLocalization();
+
+    expect(localization.t('products.missingKey')).toBe('');
+  });
 });
 
 describe('home locale coverage', () => {

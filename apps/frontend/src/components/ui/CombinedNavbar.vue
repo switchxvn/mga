@@ -17,7 +17,6 @@ import LanguageSwitcher from "~/components/common/LanguageSwitcher.vue";
 import CartIcon from "~/components/cart/CartIcon.vue";
 import MegaMenu from "~/components/menu/MegaMenu.vue";
 import MobileMegaMenu from "~/components/menu/MobileMegaMenu.vue";
-import { useI18n } from 'vue-i18n';
 import { processColorValue } from '~/utils/color';
 
 // Props cho component
@@ -127,7 +126,7 @@ const isCartEnabled = ref<boolean | null>(null);
 const isLoadingFeatureFlag = ref(true);
 
 // Localization
-const { locale, $t } = useLocalization();
+const { locale, t: translate } = useLocalization();
 
 // Logo
 const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
@@ -250,7 +249,19 @@ onBeforeUnmount(() => {
   // Cleanup other resources if needed
 });
 
-const { t } = useI18n();
+const translateMenuLabel = (label: string, isTranslated = false) => {
+  const normalizedLabel = label.trim().toLowerCase();
+  const looksLikeTranslationKey = /^[a-z0-9_.-]+$/.test(normalizedLabel) && normalizedLabel.includes(".");
+
+  if (!isTranslated || !looksLikeTranslationKey) {
+    return label;
+  }
+
+  const translated = translate(normalizedLabel);
+  return translated && translated.trim() && translated.trim() !== normalizedLabel
+    ? translated
+    : label;
+};
 </script>
 
 <template>
@@ -283,7 +294,7 @@ const { t } = useI18n();
                     '--hover-color': link.hoverColor,
                   }"
                 >
-                  {{ t(link.label.toLowerCase()) }}
+                  {{ translateMenuLabel(link.label, link.isTranslated) }}
                 </NuxtLink>
                 <span
                   v-if="index < props.settings.topMenu.links.length - 1"

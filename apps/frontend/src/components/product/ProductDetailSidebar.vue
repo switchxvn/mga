@@ -34,6 +34,10 @@ const trpc = useTrpc();
 const { t, locale } = useLocalization();
 const sidebarItems = ref<SidebarCardItem[]>([]);
 const loadingSidebarItems = ref(false);
+const translateWithFallback = (key: string, fallback: string) => {
+  const translated = t(key);
+  return translated && translated.trim() && translated.trim() !== key ? translated : fallback;
+};
 
 const isOnSale = computed(() => {
   return (
@@ -190,10 +194,10 @@ watch(
     <div class="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
         <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">
-          {{ t('sidebar.relatedContent') || 'Tin tức và dịch vụ' }}
+          {{ translateWithFallback('sidebar.relatedContent', 'Tin tức và dịch vụ') }}
         </h3>
         <span class="text-xs uppercase tracking-wide text-slate-500">
-          {{ configuredSidebarItems.length ? t('sidebar.customLabel') || 'Tùy chọn' : t('sidebar.defaultLabel') || 'Mặc định' }}
+          {{ configuredSidebarItems.length ? translateWithFallback('sidebar.customLabel', 'Tùy chọn') : translateWithFallback('sidebar.defaultLabel', 'Mặc định') }}
         </span>
       </div>
 
@@ -206,7 +210,7 @@ watch(
       </div>
 
       <div v-else-if="sidebarItems.length === 0" class="rounded-lg bg-slate-50 p-4 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-        {{ t('sidebar.noRelatedContent') || 'Chưa có dữ liệu để hiển thị trong sidebar.' }}
+        {{ translateWithFallback('sidebar.noRelatedContent', 'Chưa có dữ liệu để hiển thị trong sidebar.') }}
       </div>
 
       <div v-else class="space-y-3">
@@ -230,7 +234,7 @@ watch(
           <div class="min-w-0 flex-1">
             <div class="mb-1 flex items-center gap-2">
               <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                {{ item.type === 'post' ? t('sidebar.postLabel') || 'Tin tức' : t('sidebar.serviceLabel') || 'Dịch vụ' }}
+                {{ item.type === 'post' ? translateWithFallback('sidebar.postLabel', 'Tin tức') : translateWithFallback('sidebar.serviceLabel', 'Dịch vụ') }}
               </span>
             </div>
             <p class="line-clamp-2 text-sm font-semibold text-slate-900 dark:text-slate-100">

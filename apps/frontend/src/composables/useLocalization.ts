@@ -299,7 +299,7 @@ export function useLocalization() {
 
     if (typeof value !== 'string' || value.trim() === key) {
       console.warn(`Translation not found for key "${key}"`);
-      return key;
+      return '';
     }
 
     // Replace parameters in the translation string

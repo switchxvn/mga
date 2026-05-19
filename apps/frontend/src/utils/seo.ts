@@ -55,8 +55,8 @@ const ROUTE_DEFINITIONS: RouteDefinition[] = [
   { key: 'post-detail', vi: '/bai-viet', en: '/posts', detail: true },
   { key: 'services', vi: '/dich-vu', en: '/services' },
   { key: 'service-detail', vi: '/dich-vu', en: '/services', detail: true },
-  { key: 'categories', vi: '/danh-muc-san-pham', en: '/categories' },
-  { key: 'category-detail', vi: '/danh-muc-san-pham', en: '/categories', detail: true },
+  { key: 'categories', vi: '/danh-muc-san-pham', en: '/danh-muc-san-pham' },
+  { key: 'category-detail', vi: '/danh-muc-san-pham', en: '/danh-muc-san-pham', detail: true },
   { key: 'ticket-pricing', vi: '/bang-gia-ve', en: '/ticket-pricing' },
   { key: 'menu', vi: '/thuc-don', en: '/menu' },
   { key: 'order-ticket', vi: '/dat-ve', en: '/order-ticket' },
@@ -252,14 +252,21 @@ export function resolveSeoCanonicalUrl(options: {
   candidate?: string | null | undefined;
 }): string {
   const fallbackPath = normalizePath(options.currentPath || '/');
+  const forceCanonicalCategoryPath = options.routeKey === 'categories' || options.routeKey === 'category-detail';
+  const forceVietnameseCanonical = options.routeKey === 'product-detail';
+  const canonicalLocale: SeoLocale = forceVietnameseCanonical ? 'vi' : options.locale;
   const localizedFallbackPath =
     options.routeKey
       ? buildLocalizedPath(
           options.routeKey,
-          options.locale,
-          options.slugByLocale?.[options.locale],
+          canonicalLocale,
+          options.slugByLocale?.[canonicalLocale] || options.slugByLocale?.[options.locale],
         ) || fallbackPath
       : fallbackPath;
+
+  if (forceVietnameseCanonical || forceCanonicalCategoryPath) {
+    return buildAbsoluteUrl(options.siteUrl, localizedFallbackPath);
+  }
 
   return sanitizeCanonicalUrl(options.candidate, options.siteUrl) || buildAbsoluteUrl(options.siteUrl, localizedFallbackPath);
 }
@@ -318,7 +325,9 @@ export function buildAlternateLinks(
 ): Array<{ hreflang: 'vi' | 'en' | 'x-default'; href: string }> {
   const alternates: Array<{ hreflang: 'vi' | 'en' | 'x-default'; href: string }> = [];
   const viPath = buildLocalizedPath(routeKey, 'vi', options.slugByLocale?.vi);
-  const enPath = buildLocalizedPath(routeKey, 'en', options.slugByLocale?.en);
+  const enPath = ['product-detail', 'categories', 'category-detail'].includes(routeKey)
+    ? null
+    : buildLocalizedPath(routeKey, 'en', options.slugByLocale?.en);
 
   if (viPath) {
     alternates.push({ hreflang: 'vi', href: buildAbsoluteUrl(siteUrl, viPath) });
@@ -528,6 +537,8 @@ export function buildProductSchema(input: {
   description: string;
   url: string;
   image?: string;
+  sku?: string;
+  brand?: string;
   price?: number | string | null;
   priceCurrency?: string;
   availability?: string;
@@ -556,6 +567,13 @@ export function buildProductSchema(input: {
     description: input.description,
     url: input.url,
     image: input.image || undefined,
+    sku: input.sku || undefined,
+    brand: input.brand
+      ? {
+          '@type': 'Brand',
+          name: input.brand,
+        }
+      : undefined,
     offers:
       hasValidPrice
         ? {
