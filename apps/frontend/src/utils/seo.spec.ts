@@ -1,5 +1,6 @@
 import {
   buildAlternateLinks,
+  buildArticleSchema,
   buildProductSchema,
   buildRobotsTxt,
   buildSitemapXml,
@@ -185,6 +186,48 @@ describe('seo utils', () => {
     ).toBeUndefined();
   });
 
+  it('adds review objects to product schema when product reviews exist', () => {
+    expect(
+      buildProductSchema({
+        name: 'May nen khi',
+        description: 'Mo ta',
+        url: 'https://example.test/san-pham/may-nen-khi',
+        reviews: [
+          {
+            authorName: 'Nguyen Van A',
+            rating: 5,
+            createdAt: '2026-05-21T00:00:00.000Z',
+            translations: [
+              {
+                title: 'Rat tot',
+                content: 'San pham van hanh on dinh va dung nhu mo ta.',
+              },
+            ],
+          },
+        ],
+      }),
+    ).toMatchObject({
+      review: [
+        {
+          '@type': 'Review',
+          author: {
+            '@type': 'Person',
+            name: 'Nguyen Van A',
+          },
+          name: 'Rat tot',
+          reviewBody: 'San pham van hanh on dinh va dung nhu mo ta.',
+          datePublished: '2026-05-21T00:00:00.000Z',
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue: 5,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        },
+      ],
+    });
+  });
+
   it('builds offers from decimal string prices returned by the API', () => {
     expect(
       buildProductSchema({
@@ -202,6 +245,57 @@ describe('seo utils', () => {
         priceCurrency: 'VND',
         availability: 'https://schema.org/InStock',
         url: 'https://example.test/san-pham/bom-thuy-luc',
+      },
+    });
+  });
+
+  it('builds a blog posting schema with Google-recommended article fields', () => {
+    expect(
+      buildArticleSchema({
+        headline: 'Cach chon xe nang dien',
+        description: 'Huong dan chon xe nang dien cho kho xuong.',
+        url: 'https://example.test/bai-viet/cach-chon-xe-nang-dien',
+        image: [
+          'https://cdn.example.test/posts/forklift-1x1.jpg',
+          'https://cdn.example.test/posts/forklift-4x3.jpg',
+          'https://cdn.example.test/posts/forklift-16x9.jpg',
+        ],
+        datePublished: '2026-05-21T09:30:00.000Z',
+        dateModified: '2026-05-22T07:15:00.000Z',
+        authorName: 'Nguyen Van A',
+        authorUrl: 'https://example.test/tac-gia/nguyen-van-a',
+        publisherName: 'MGA Vietnam',
+        publisherLogoUrl: 'https://cdn.example.test/logo.png',
+      }),
+    ).toMatchObject({
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: 'Cach chon xe nang dien',
+      description: 'Huong dan chon xe nang dien cho kho xuong.',
+      url: 'https://example.test/bai-viet/cach-chon-xe-nang-dien',
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': 'https://example.test/bai-viet/cach-chon-xe-nang-dien',
+      },
+      image: [
+        'https://cdn.example.test/posts/forklift-1x1.jpg',
+        'https://cdn.example.test/posts/forklift-4x3.jpg',
+        'https://cdn.example.test/posts/forklift-16x9.jpg',
+      ],
+      datePublished: '2026-05-21T09:30:00.000Z',
+      dateModified: '2026-05-22T07:15:00.000Z',
+      author: {
+        '@type': 'Person',
+        name: 'Nguyen Van A',
+        url: 'https://example.test/tac-gia/nguyen-van-a',
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'MGA Vietnam',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://cdn.example.test/logo.png',
+        },
       },
     });
   });

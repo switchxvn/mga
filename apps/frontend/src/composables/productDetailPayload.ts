@@ -5,9 +5,22 @@ export interface ProductReviewAggregate {
   totalReviews: number;
 }
 
+export interface ProductReviewItem {
+  id: number;
+  authorName: string;
+  rating: number;
+  createdAt?: string;
+  translations: Array<{
+    locale: string;
+    title?: string;
+    content: string;
+  }>;
+}
+
 export interface ProductDetailPayload {
   product: Product | null;
   productReviewAggregate: ProductReviewAggregate | null;
+  productReviews: ProductReviewItem[];
 }
 
 interface TrpcProductQueries {
@@ -22,6 +35,16 @@ interface TrpcProductQueries {
 interface TrpcReviewQueries {
   getProductAggregateRating: {
     query: (input: { productId: number }) => Promise<ProductReviewAggregate>;
+  };
+  list: {
+    query: (input: {
+      productId: number;
+      locale: string;
+      limit?: number;
+      sortBy?: 'latest' | 'highest_rating' | 'lowest_rating';
+    }) => Promise<{
+      data: ProductReviewItem[];
+    }>;
   };
 }
 
@@ -52,9 +75,21 @@ export async function fetchProductDetailPayload(input: {
           productId: product.id,
         })
       : null;
+  const productReviews =
+    !input.isTicketRoute && product?.id
+      ? (
+          await input.trpc.review.list.query({
+            productId: product.id,
+            locale: input.locale,
+            limit: 3,
+            sortBy: 'latest',
+          })
+        ).data ?? []
+      : [];
 
   return {
     product,
     productReviewAggregate,
+    productReviews,
   };
 }

@@ -493,24 +493,48 @@ export function buildArticleSchema(input: {
   headline: string;
   description: string;
   url: string;
-  image?: string;
+  image?: string | string[];
   datePublished?: string;
   dateModified?: string;
   authorName?: string;
+  authorUrl?: string;
+  publisherName?: string;
+  publisherLogoUrl?: string;
+  inLanguage?: string;
 }) {
+  const images = Array.isArray(input.image) ? input.image.filter(Boolean) : input.image ? [input.image] : [];
+
   return {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': 'BlogPosting',
     headline: input.headline,
     description: input.description,
     url: input.url,
-    image: input.image || undefined,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': input.url,
+    },
+    image: images.length === 0 ? undefined : images.length === 1 ? images[0] : images,
     datePublished: input.datePublished || undefined,
     dateModified: input.dateModified || undefined,
+    inLanguage: input.inLanguage || undefined,
     author: input.authorName
       ? {
           '@type': 'Person',
           name: input.authorName,
+          url: input.authorUrl || undefined,
+        }
+      : undefined,
+    publisher: input.publisherName
+      ? {
+          '@type': 'Organization',
+          name: input.publisherName,
+          logo: input.publisherLogoUrl
+            ? {
+                '@type': 'ImageObject',
+                url: input.publisherLogoUrl,
+              }
+            : undefined,
         }
       : undefined,
   };
@@ -544,6 +568,15 @@ export function buildProductSchema(input: {
   availability?: string;
   ratingValue?: number | null;
   reviewCount?: number | null;
+  reviews?: Array<{
+    authorName: string;
+    rating: number;
+    createdAt?: string;
+    translations: Array<{
+      title?: string;
+      content: string;
+    }>;
+  }>;
 }) {
   const normalizedPrice =
     typeof input.price === 'number'
@@ -559,6 +592,41 @@ export function buildProductSchema(input: {
     typeof input.reviewCount === 'number' &&
     Number.isFinite(input.reviewCount) &&
     input.reviewCount > 0;
+  const review =
+    input.reviews
+      ?.map((item) => {
+        const translation = item.translations?.find((entry) => entry.content?.trim()) || item.translations?.[0];
+        const reviewBody = translation?.content?.trim();
+        const reviewTitle = translation?.title?.trim();
+
+        if (
+          !reviewBody ||
+          typeof item.rating !== 'number' ||
+          !Number.isFinite(item.rating) ||
+          item.rating <= 0 ||
+          !item.authorName?.trim()
+        ) {
+          return null;
+        }
+
+        return {
+          '@type': 'Review',
+          author: {
+            '@type': 'Person',
+            name: item.authorName.trim(),
+          },
+          name: reviewTitle || undefined,
+          reviewBody,
+          datePublished: item.createdAt || undefined,
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue: item.rating,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item)) || [];
 
   return {
     '@context': 'https://schema.org',
@@ -592,5 +660,6 @@ export function buildProductSchema(input: {
             reviewCount: input.reviewCount,
           }
         : undefined,
+    review: review.length > 0 ? review : undefined,
   };
 }

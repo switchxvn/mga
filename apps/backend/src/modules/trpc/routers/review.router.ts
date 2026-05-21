@@ -21,15 +21,37 @@ const translationSchema = z.object({
   content: z.string().min(10),
 });
 
-const submitReviewSchema = z.object({
+export const DEFAULT_PUBLIC_PRODUCT_REVIEW_SERVICE_TYPE_ID = 4;
+
+export const submitReviewSchema = z.object({
   authorName: z.string().min(2),
   authorAvatar: z.string().url().optional(),
   profession: z.string().optional(),
   rating: z.number().min(1).max(5),
-  serviceTypeId: z.number().min(1),
+  serviceTypeId: z.number().min(1).optional(),
+  productId: z.number().min(1).optional(),
   visitDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
   translations: z.array(translationSchema).min(1),
 });
+
+export function buildPublicReviewCreateInput(input: z.infer<typeof submitReviewSchema>): CreateReviewInput {
+  return {
+    authorName: input.authorName,
+    authorAvatar: input.authorAvatar,
+    profession: input.profession,
+    rating: input.rating,
+    serviceTypeId: input.serviceTypeId ?? DEFAULT_PUBLIC_PRODUCT_REVIEW_SERVICE_TYPE_ID,
+    productId: input.productId,
+    visitDate: input.visitDate,
+    status: ReviewStatus.PENDING,
+    featured: false,
+    translations: input.translations.map(t => ({
+      locale: t.locale,
+      title: t.title,
+      content: t.content
+    }))
+  };
+}
 
 export const reviewRouter = router({
   list: publicProcedure
@@ -110,25 +132,7 @@ export const reviewRouter = router({
   submitReview: publicProcedure
     .input(submitReviewSchema)
     .mutation(async ({ ctx, input }) => {
-      // Mặc định đánh dấu là chưa kích hoạt và không nổi bật
-      // để admin xem xét trước khi hiển thị
-      const reviewData: CreateReviewInput = {
-        authorName: input.authorName,
-        authorAvatar: input.authorAvatar,
-        profession: input.profession,
-        rating: input.rating,
-        serviceTypeId: input.serviceTypeId,
-        visitDate: input.visitDate,
-        status: ReviewStatus.PENDING,
-        featured: false,
-        translations: input.translations.map(t => ({
-          locale: t.locale,
-          title: t.title,
-          content: t.content
-        }))
-      };
-      
       const adminReviewService = ctx.services.admin.review;
-      return adminReviewService.create(reviewData);
+      return adminReviewService.create(buildPublicReviewCreateInput(input));
     }),
 }); 

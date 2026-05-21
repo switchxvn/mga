@@ -57,6 +57,7 @@ export function useProductDetail() {
       default: () => ({
         product: null,
         productReviewAggregate: null,
+        productReviews: [],
       }),
     },
   );
@@ -64,6 +65,7 @@ export function useProductDetail() {
   const productReviewAggregate = computed(
     () => productDetailPayload.value?.productReviewAggregate ?? null,
   );
+  const productReviews = computed(() => productDetailPayload.value?.productReviews ?? []);
 
   // Đảm bảo dữ liệu được tải ở phía client nếu cần
   onMounted(() => {
@@ -585,6 +587,7 @@ export function useProductDetail() {
     shareImage,
     canonicalUrl,
     productReviewAggregate,
+    productReviews,
     
     // Refs
     activeTab,

@@ -73,7 +73,7 @@ onMounted(() => {
 <template>
   <div class="post-sidebar">
     <!-- Single Card Container -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+    <div class="post-sidebar__shell bg-white dark:bg-gray-800 rounded-lg shadow-sm">
       <!-- Popular Posts -->
       <PopularPostsSection :exclude-id="postId" :limit="5" />
 
@@ -158,6 +158,10 @@ onMounted(() => {
 <style scoped>
 .post-sidebar {
   @apply w-full;
+}
+
+.post-sidebar__shell {
+  @apply overflow-hidden rounded-2xl border border-transparent transition-colors;
 }
 
 .post-sidebar__section {

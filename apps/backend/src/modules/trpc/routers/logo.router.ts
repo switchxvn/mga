@@ -2,6 +2,19 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, adminProcedure, router } from '../procedures';
 
+export async function resolvePublicLogoByType<T>(
+  findOneByType: (type: string) => Promise<T | null>,
+  requestedType: string,
+): Promise<T | null> {
+  const logo = await findOneByType(requestedType);
+
+  if (logo || requestedType === 'main' || requestedType === 'favicon') {
+    return logo;
+  }
+
+  return findOneByType('main');
+}
+
 export const logoRouter = router({
   getActiveLogo: publicProcedure
     .input(z.object({
@@ -9,12 +22,10 @@ export const logoRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       try {
-        let logo = await ctx.services.logoFrontendService.findOneByType(input.type);
-
-        // Fallback to main logo when requested type is missing.
-        if (!logo && input.type !== 'main') {
-          logo = await ctx.services.logoFrontendService.findOneByType('main');
-        }
+        const logo = await resolvePublicLogoByType(
+          (type) => ctx.services.logoFrontendService.findOneByType(type),
+          input.type,
+        );
 
         return logo;
       } catch (error) {

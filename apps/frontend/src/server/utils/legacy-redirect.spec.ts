@@ -20,6 +20,15 @@ describe('legacy redirect server helper', () => {
     });
   });
 
+  it('redirects bare legacy category slugs to canonical category urls while preserving query strings', () => {
+    expect(
+      resolveLegacyRedirectLocation('/xe-nang-dau?ref=gsc&page=2'),
+    ).toEqual({
+      destination: '/danh-muc-san-pham/xe-nang-dau?ref=gsc&page=2',
+      statusCode: 301,
+    });
+  });
+
   it('returns null when there is no redirect match', () => {
     expect(resolveLegacyRedirectLocation('/khong-ton-tai?page=2')).toBeNull();
   });

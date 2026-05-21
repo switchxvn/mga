@@ -38,6 +38,7 @@ const CrossSellProducts = defineAsyncComponent(() => import('~/components/produc
 const PriceRequestModal = defineAsyncComponent(() => import('~/components/product/PriceRequestModal.vue'));
 const QuickPurchaseModal = defineAsyncComponent(() => import('~/components/product/QuickPurchaseModal.vue'));
 const ProductDetailSidebar = defineAsyncComponent(() => import('~/components/product/ProductDetailSidebar.vue'));
+const ProductReviewsSection = defineAsyncComponent(() => import('~/components/product/ProductReviewsSection.vue'));
 const ProductSpecifications = defineAsyncComponent(() => import('~/components/product/ProductSpecifications.vue'));
 const GlobalModal = defineAsyncComponent(() => import('~/components/ui/GlobalModal.vue'));
 const TierPricingTable = defineAsyncComponent(() => import('~/components/product/TierPricingTable.vue'));
@@ -85,6 +86,7 @@ const {
   shareDescription,
   shareImage,
   productReviewAggregate,
+  productReviews,
   activeTab,
   isPriceRequestModalOpen,
   selectedAttributes,
@@ -347,6 +349,7 @@ usePageSeo({
         ? Number.parseFloat(productReviewAggregate.value.averageRating)
         : null,
       reviewCount: productReviewAggregate.value?.totalReviews ?? null,
+      reviews: productReviews.value,
     }),
   ]),
 });
@@ -1065,6 +1068,15 @@ watch(activeTab, (newTab, oldTab) => {
             </div>
           </div>
         </div>
+
+        <ProductReviewsSection
+          v-if="productData.id"
+          :product-id="productData.id"
+          :reviews="productReviews"
+          :locale="currentLocale"
+          :average-rating="productReviewAggregate?.averageRating ? Number.parseFloat(productReviewAggregate.averageRating) : 0"
+          :total-reviews="productReviewAggregate?.totalReviews ?? 0"
+        />
 
         <!-- Cross-Sell Products -->
         <div class="mt-10">

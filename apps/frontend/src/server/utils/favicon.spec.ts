@@ -1,0 +1,37 @@
+import { describe, expect, it } from 'vitest';
+
+import { buildFaviconLinks, resolveServerFaviconHref } from './favicon';
+
+describe('resolveServerFaviconHref', () => {
+  it('uses the favicon logo URL when the backend returns an active favicon', () => {
+    expect(
+      resolveServerFaviconHref({
+        type: 'favicon',
+        lightModeUrl: 'https://cdn.example.com/favicon.png',
+        darkModeUrl: null,
+      }),
+    ).toBe('https://cdn.example.com/favicon.png');
+  });
+
+  it('ignores fallback main logos returned by the API for favicon lookups', () => {
+    expect(
+      resolveServerFaviconHref({
+        type: 'main',
+        lightModeUrl: 'https://cdn.example.com/logo.png',
+        darkModeUrl: null,
+      }),
+    ).toBe('/favicon.ico');
+  });
+});
+
+describe('buildFaviconLinks', () => {
+  it('creates consistent favicon head links for SSR', () => {
+    expect(buildFaviconLinks('https://cdn.example.com/favicon.png')).toEqual([
+      { rel: 'icon', type: 'image/png', href: 'https://cdn.example.com/favicon.png' },
+      { rel: 'shortcut icon', type: 'image/png', href: 'https://cdn.example.com/favicon.png' },
+      { rel: 'apple-touch-icon', sizes: '180x180', href: 'https://cdn.example.com/favicon.png' },
+      { rel: 'icon', type: 'image/png', sizes: '32x32', href: 'https://cdn.example.com/favicon.png' },
+      { rel: 'icon', type: 'image/png', sizes: '16x16', href: 'https://cdn.example.com/favicon.png' },
+    ]);
+  });
+});

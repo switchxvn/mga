@@ -13,6 +13,11 @@ describe('legacy redirects', () => {
       statusCode: 301,
     });
 
+    expect(resolveLegacyRedirect('/xe-nang-dau')).toEqual({
+      destination: '/danh-muc-san-pham/xe-nang-dau',
+      statusCode: 301,
+    });
+
     expect(resolveLegacyRedirect('/danh-muc-san-pham/xe-nang/xe-nang-dau/')).toEqual({
       destination: '/danh-muc-san-pham/xe-nang-dau',
       statusCode: 301,

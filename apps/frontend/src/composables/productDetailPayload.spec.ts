@@ -9,6 +9,17 @@ describe('fetchProductDetailPayload', () => {
       averageRating: '4.8',
       totalReviews: 12,
     }));
+    const listReviews = vi.fn(async () => ({
+      data: [
+        {
+          id: 1,
+          authorName: 'Nguyen Van A',
+          rating: 5,
+          createdAt: '2026-05-21T00:00:00.000Z',
+          translations: [{ locale: 'vi', title: 'Rat tot', content: 'May chay on dinh.' }],
+        },
+      ],
+    }));
 
     const result = await fetchProductDetailPayload({
       slug: 'bom-thuy-luc',
@@ -21,6 +32,7 @@ describe('fetchProductDetailPayload', () => {
         },
         review: {
           getProductAggregateRating: { query: getProductAggregateRating },
+          list: { query: listReviews },
         },
       },
     });
@@ -30,15 +42,23 @@ describe('fetchProductDetailPayload', () => {
       locale: 'vi',
     });
     expect(getProductAggregateRating).toHaveBeenCalledWith({ productId: 227 });
+    expect(listReviews).toHaveBeenCalledWith({
+      productId: 227,
+      locale: 'vi',
+      limit: 3,
+      sortBy: 'latest',
+    });
     expect(result.productReviewAggregate).toEqual({
       averageRating: '4.8',
       totalReviews: 12,
     });
+    expect(result.productReviews).toHaveLength(1);
   });
 
   it('skips review aggregate queries for ticket detail pages', async () => {
     const getById = vi.fn(async () => ({ id: 15, title: 'Ticket' }));
     const getProductAggregateRating = vi.fn();
+    const listReviews = vi.fn();
 
     const result = await fetchProductDetailPayload({
       slug: '15',
@@ -51,6 +71,7 @@ describe('fetchProductDetailPayload', () => {
         },
         review: {
           getProductAggregateRating: { query: getProductAggregateRating },
+          list: { query: listReviews },
         },
       },
     });
@@ -60,6 +81,8 @@ describe('fetchProductDetailPayload', () => {
       locale: 'vi',
     });
     expect(getProductAggregateRating).not.toHaveBeenCalled();
+    expect(listReviews).not.toHaveBeenCalled();
     expect(result.productReviewAggregate).toBeNull();
+    expect(result.productReviews).toEqual([]);
   });
 });

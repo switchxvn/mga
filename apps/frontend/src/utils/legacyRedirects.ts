@@ -8,6 +8,7 @@ export interface LegacyRedirectResult {
 const EXACT_REDIRECTS = new Map<string, string>([
   ['/en/products/mga-16-ton-diesel-forklift', '/products/mga-16-ton-diesel-forklift'],
   ['/tat-ca-san-pham', '/san-pham'],
+  ['/xe-nang-dau', '/danh-muc-san-pham/xe-nang-dau'],
   ['/danh-muc-san-pham/xe-nang/xe-nang-dau', '/danh-muc-san-pham/xe-nang-dau'],
   ['/danh-muc-san-pham/xe-nang/xe-nang-dien/xe-nang-dien-dung-lai', '/danh-muc-san-pham/xe-nang-dien-dung-lai'],
 ]);

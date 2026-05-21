@@ -279,6 +279,7 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || process.env.FRONTEND_API_BASE || process.env.API_BASE || 'http://localhost:3333',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || process.env.FRONTEND_SITE_URL || process.env.SITE_URL || 'http://localhost:4200',
       siteName: process.env.NUXT_PUBLIC_SITE_NAME || process.env.FRONTEND_SITE_NAME || process.env.SITE_NAME || 'Ecommerce Web',
+      siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO_URL || process.env.FRONTEND_SITE_LOGO_URL || process.env.SITE_LOGO_URL || '',
     },
   },
 
@@ -424,9 +425,7 @@ export default defineNuxtConfig({
         { name: 'twitter:description', content: 'Khám phá các sản phẩm chất lượng cao. Mua sắm online dễ dàng, giao hàng nhanh chóng.' },
         { name: 'twitter:image', content: '/images/og-default.jpg' }
       ],
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-      ]
+      link: []
     },
     pageTransition: { name: 'page', mode: 'out-in' }
   },
