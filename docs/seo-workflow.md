@@ -51,6 +51,13 @@ Project-specific SEO execution notes for future category, product, and article S
    - `product_specification_translations`
 
 ## Article SEO Workflow
+- Khi tham chiếu một bài đối thủ để triển khai bài mới cho MGA, chỉ giữ lại `search intent`, cụm chủ đề và logic section; không sao chép câu chữ, không bê nguyên bố cục, và phải viết lại theo giọng tư vấn kỹ thuật của MGA.
+- Với bài dạng `báo giá`, `so sánh`, hoặc `chi phí`, cần có một thumbnail riêng cho bài và `2-3` ảnh phụ trong thân bài để tránh lặp lại ảnh sản phẩm/card giữa nhiều bài cùng cluster.
+- Vị trí ảnh phụ ưu tiên cho bài `báo giá/chi phí`:
+  - Ảnh 1: sau phần mở đầu hoặc đoạn tư vấn nhu cầu thực tế.
+  - Ảnh 2: sau section so sánh dòng xe, tải trọng hoặc cấu hình ảnh hưởng đến giá.
+  - Ảnh 3: gần phần chốt nhóm khách hàng phù hợp, tải nặng hoặc ngân sách đầu tư.
+- Ảnh tạo bằng ChatGPT/Vivaldi phải tải file gốc về local, upload lại lên `mgamv`, rồi mới chèn URL `https://cdn.mgavietnam.com/...` vào `posts.thumbnail`, `post_translations.og_image` và `post_translations.content`.
 
 1. Use `$seo` plus live SERP checks before drafting any article.
 2. Identify the dominant search intent first:
