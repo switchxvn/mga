@@ -27,11 +27,11 @@ describe('resolveServerFaviconHref', () => {
 describe('buildFaviconLinks', () => {
   it('creates consistent favicon head links for SSR', () => {
     expect(buildFaviconLinks('https://cdn.example.com/favicon.png')).toEqual([
-      { rel: 'icon', type: 'image/png', href: 'https://cdn.example.com/favicon.png' },
-      { rel: 'shortcut icon', type: 'image/png', href: 'https://cdn.example.com/favicon.png' },
-      { rel: 'apple-touch-icon', sizes: '180x180', href: 'https://cdn.example.com/favicon.png' },
-      { rel: 'icon', type: 'image/png', sizes: '32x32', href: 'https://cdn.example.com/favicon.png' },
-      { rel: 'icon', type: 'image/png', sizes: '16x16', href: 'https://cdn.example.com/favicon.png' },
+      { key: 'favicon-main', rel: 'icon', type: 'image/png', href: 'https://cdn.example.com/favicon.png' },
+      { key: 'favicon-shortcut', rel: 'shortcut icon', type: 'image/png', href: 'https://cdn.example.com/favicon.png' },
+      { key: 'apple-touch-icon', rel: 'apple-touch-icon', sizes: '180x180', href: 'https://cdn.example.com/favicon.png' },
+      { key: 'favicon-32', rel: 'icon', type: 'image/png', sizes: '32x32', href: 'https://cdn.example.com/favicon.png' },
+      { key: 'favicon-16', rel: 'icon', type: 'image/png', sizes: '16x16', href: 'https://cdn.example.com/favicon.png' },
     ]);
   });
 });

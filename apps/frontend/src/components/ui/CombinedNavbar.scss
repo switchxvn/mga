@@ -576,13 +576,17 @@
 /* Add responsive styles for top menu */
 @media (max-width: 768px) {
   .nav-wrapper {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
   }
 
   .nav-wrapper.nav-sticky {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
   

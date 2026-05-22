@@ -306,7 +306,7 @@ async function handleLogout() {
     </template>
 
     <!-- Main content -->
-    <main class="flex-grow">
+    <main class="app-main flex-grow">
       <slot />
     </main>
 
@@ -362,5 +362,15 @@ async function handleLogout() {
 /* Add shadow when navbar is stuck */
 .navbar-without-logo {
   box-shadow: 0 2px 15px -3px rgba(0,0,0,0.07), 0 10px 20px -2px rgba(0,0,0,0.04);
+}
+
+.app-main {
+  padding-top: 0;
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    padding-top: var(--mobile-nav-offset, 0px);
+  }
 }
 </style> 

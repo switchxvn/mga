@@ -86,6 +86,10 @@ export const useNavbar = () => {
 
     navHeight.value = Math.round(navWrapperRef.value.offsetHeight);
     document.documentElement.style.setProperty('--nav-height', `${navHeight.value}px`);
+    document.documentElement.style.setProperty(
+      '--mobile-nav-offset',
+      isMobileStickyMode() ? `${navHeight.value}px` : '0px'
+    );
   };
 
   const setStickyState = (sticky: boolean) => {
@@ -156,6 +160,10 @@ export const useNavbar = () => {
         'has-sticky-nav',
         isScrolled.value && !isMobileStickyMode()
       );
+      document.documentElement.style.setProperty(
+        '--mobile-nav-offset',
+        isMobileStickyMode() ? `${navHeight.value}px` : '0px'
+      );
     }
   };
 
@@ -183,6 +191,7 @@ export const useNavbar = () => {
     window.removeEventListener('scroll', throttledHandleScroll);
     window.removeEventListener('resize', handleResize);
     document.documentElement.style.removeProperty('--nav-height');
+    document.documentElement.style.removeProperty('--mobile-nav-offset');
     document.documentElement.style.removeProperty('--mobile-menu-top');
     document.body.classList.remove('has-sticky-nav');
   });
