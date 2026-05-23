@@ -228,11 +228,17 @@ const handleVariantSelected = (variant: any) => {
 
     <!-- Product image -->
     <NuxtLink :to="productLink" class="block overflow-hidden" :style="imageStyle">
-      <img
+      <AppImage
+        class="w-full h-full"
         :src="product.thumbnail || '/images/default-image.jpg'"
         :alt="title"
-        class="transition-transform duration-300 group-hover:scale-105 object-cover w-full h-full"
-        @error="($event.target as HTMLImageElement).src = '/images/default-image.jpg'"
+        fallbackSrc="/images/default-image.jpg"
+        sizes="(max-width: 768px) 100vw, 25vw"
+        width="640"
+        height="480"
+        loading="lazy"
+        fetchpriority="low"
+        customClass="transition-transform duration-300 group-hover:scale-105 object-cover w-full h-full"
       />
     </NuxtLink>
 

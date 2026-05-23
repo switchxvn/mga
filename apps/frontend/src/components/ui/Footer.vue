@@ -119,7 +119,16 @@ watch(
           
           <!-- Logo and Company Info -->
           <div class="col-span-1">
-            <img :src="activeFooter.logoUrl" :alt="activeFooter.logoAlt" class="h-26 mb-4" />
+            <AppImage
+              :src="activeFooter.logoUrl"
+              :alt="activeFooter.logoAlt"
+              width="240"
+              height="104"
+              sizes="240px"
+              loading="lazy"
+              fetchpriority="low"
+              customClass="h-26 mb-4 object-contain"
+            />
             <div class="company-info mb-4">
               <h3 class="font-bold mb-2 text-lg uppercase" style="color: #FF0000">{{ activeFooter.companyInfo.name }}</h3>
               <p>{{ activeFooter.companyInfo.registration }}</p>
@@ -132,7 +141,16 @@ watch(
                   <div v-for="cert in activeFooter.companyInfo.certifications" 
                       :key="cert.image" 
                       class="certification">
-                    <img :src="cert.image" :alt="cert.alt || ''" class="h-12" />
+                    <AppImage
+                      :src="cert.image"
+                      :alt="cert.alt || ''"
+                      width="96"
+                      height="48"
+                      sizes="96px"
+                      loading="lazy"
+                      fetchpriority="low"
+                      customClass="h-12 object-contain"
+                    />
                     <span v-if="cert.text" class="text-xs mt-1">{{ cert.text }}</span>
                   </div>
               </div>

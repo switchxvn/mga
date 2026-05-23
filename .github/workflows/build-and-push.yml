@@ -281,6 +281,30 @@ jobs:
           echo "value=$TAG" >> "$GITHUB_OUTPUT"
           echo "Using image tag: $TAG"
 
+      - name: Recreate nginx SSL files from secrets
+        if: matrix.service == 'nginx'
+        env:
+          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
+        shell: bash
+        run: |
+          if [ -z "$CF_ORIGIN_CERT" ] || [ -z "$CF_ORIGIN_KEY" ]; then
+            echo "::error::CF_ORIGIN_CERT and CF_ORIGIN_KEY repository secrets are required for nginx builds"
+            exit 1
+          fi
+
+          mkdir -p nginx/ssl
+          printf "%s" "$CF_ORIGIN_CERT" > nginx/ssl/fullchain.pem
+          printf "%s" "$CF_ORIGIN_KEY" > nginx/ssl/cloudflare-key.pem
+          chmod 600 nginx/ssl/fullchain.pem nginx/ssl/cloudflare-key.pem
+
+      - name: Validate nginx SSL files
+        if: matrix.service == 'nginx'
+        shell: bash
+        run: |
+          test -s nginx/ssl/fullchain.pem
+          test -s nginx/ssl/cloudflare-key.pem
+
       - name: Build and push ${{ matrix.service }}
         uses: docker/build-push-action@v5
         with:
@@ -297,3 +321,8 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.GITHUB_USERNAME }}/${{ env.APP_NAME }}-${{ matrix.service }}:${{ steps.image_tag.outputs.value }}
+
+      - name: Clean up nginx SSL files
+        if: always() && matrix.service == 'nginx'
+        shell: bash
+        run: rm -rf nginx/ssl

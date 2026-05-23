@@ -282,7 +282,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || process.env.FRONTEND_API_BASE || process.env.API_BASE || 'http://localhost:3333',
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || process.env.FRONTEND_SITE_URL || process.env.SITE_URL || 'http://localhost:4200',
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || process.env.FRONTEND_SITE_URL || process.env.FRONTEND_URL || process.env.SITE_URL || 'https://mgavietnam.com',
       siteName: process.env.NUXT_PUBLIC_SITE_NAME || process.env.FRONTEND_SITE_NAME || process.env.SITE_NAME || 'Ecommerce Web',
       siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO_URL || process.env.FRONTEND_SITE_LOGO_URL || process.env.SITE_LOGO_URL || '',
     },
@@ -440,7 +440,7 @@ export default defineNuxtConfig({
     dir: 'public',
     quality: 75,
     formats: ['webp', 'avif'],
-    domains: ['cdn.mgavietnam.com', 'cdn.captreonuisam.com', 'images.unsplash.com'],
+    domains: ['cdn.mgavietnam.com', 'cdn.captreonuisam.com', 'mgavietnam.com', 'www.mgavietnam.com', 'images.unsplash.com'],
     screens: {
       xs: 320,
       sm: 640,

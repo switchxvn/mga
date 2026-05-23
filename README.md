@@ -88,6 +88,11 @@ And join the Nx community:
 Workflow `Build and Push Containers` is configured to:
 - Auto-run only when you push a git tag.
 - Allow manual run (`workflow_dispatch`) with required `image_tag`.
+- Recreate `nginx/ssl/fullchain.pem` and `nginx/ssl/cloudflare-key.pem` from GitHub Actions secrets when building the `nginx` image.
+
+Required repository secrets for `nginx` builds:
+- `CF_ORIGIN_CERT`
+- `CF_ORIGIN_KEY`
 
 Example release build:
 
@@ -137,6 +142,7 @@ Admin service now supports path-based access on the main domain:
 
 `scripts/deploy.sh` uses:
 - `ADMIN_BASE_PATH` (default: `/admin/`)
+- Host SSL files mounted at `/etc/nginx/ssl` on the deployment machine
 
 You can override it when deploying:
 
@@ -157,3 +163,4 @@ ADMIN_BASE_PATH=/admin/ bash scripts/deploy.sh v1.0.0 admin,nginx
 
 - Legacy admin subdomain config can still exist, but `/admin` is now supported on main domain.
 - If you change `ADMIN_BASE_PATH`, ensure it starts and ends with `/` (example: `/admin/`).
+- GitHub Actions now reconstructs local `nginx/ssl` files from `CF_ORIGIN_CERT` and `CF_ORIGIN_KEY`; do not commit private keys to the repository.

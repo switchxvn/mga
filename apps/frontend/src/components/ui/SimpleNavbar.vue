@@ -1082,11 +1082,17 @@ const handleClickOutside = (event: MouseEvent) => {
                 v-if="showMobileLogoSkeleton"
                 class="block h-8 sm:h-10 w-[120px] sm:w-[140px] animate-pulse rounded bg-white/20"
               ></span>
-              <img
+              <AppImage
                 v-else-if="mobileLogoUrl"
+                class="w-auto"
                 :src="mobileLogoUrl"
                 :alt="mobileLogo?.altText || 'Logo'"
-                class="h-8 sm:h-10 w-auto object-contain max-w-[120px] sm:max-w-[140px]"
+                width="140"
+                height="40"
+                sizes="140px"
+                loading="eager"
+                fetchpriority="high"
+                customClass="h-8 sm:h-10 w-auto object-contain max-w-[120px] sm:max-w-[140px]"
               />
             </NuxtLink>
           </div>
@@ -1237,13 +1243,17 @@ const handleClickOutside = (event: MouseEvent) => {
                     v-if="showDesktopLogoSkeleton"
                     class="h-12 w-12 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
                   ></span>
-                  <img
+                  <AppImage
                     v-else-if="currentLogoUrl"
+                    class="w-full h-full"
                     :src="currentLogoUrl"
                     :alt="logo?.altText || 'Logo'"
-                    :width="logo?.width"
-                    :height="logo?.height"
-                    class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[60px] lg:max-h-[45px] xl:max-h-[60px]"
+                    :width="logo?.width || 200"
+                    :height="logo?.height || 60"
+                    sizes="200px"
+                    loading="eager"
+                    fetchpriority="high"
+                    customClass="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[60px] lg:max-h-[45px] xl:max-h-[60px]"
                   />
                 </div>
               </NuxtLink>
@@ -1462,11 +1472,17 @@ const handleClickOutside = (event: MouseEvent) => {
           <!-- Mobile Menu Header -->
           <div class="mobile-menu-header flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
             <NuxtLink to="/" class="flex-shrink-0" @click="isMobileMenuOpen = false">
-              <img
+              <AppImage
                 v-if="mobileLogoUrl"
+                class="w-auto"
                 :src="mobileLogoUrl"
                 :alt="mobileLogo?.altText || 'Logo'"
-                class="h-8 w-auto object-contain"
+                width="140"
+                height="32"
+                sizes="140px"
+                loading="eager"
+                fetchpriority="high"
+                customClass="h-8 w-auto object-contain"
               />
             </NuxtLink>
             <button

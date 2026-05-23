@@ -153,7 +153,6 @@ const sortedSlides = computed(() => {
   return [...props.slides].sort((a, b) => a.order - b.order);
 });
 
-const isRemoteImage = (url?: string) => Boolean(url && /^https?:\/\//i.test(url));
 
 // Thêm computed property để xử lý config
 const processedConfig = computed(() => {
@@ -200,30 +199,19 @@ const processedConfig = computed(() => {
           >
             <div class="relative w-full h-full">
               <!-- Image layer (z-index: 1) -->
-              <img
-                v-if="isRemoteImage(slide.image_url)"
+              <AppImage
+                class="absolute inset-0 w-full h-full z-[1]"
                 :src="slide.image_url"
                 :alt="slide.title"
-                :loading="index === 0 ? 'eager' : 'lazy'"
-                :fetchpriority="index === 0 ? 'high' : 'auto'"
-                decoding="async"
-                class="absolute inset-0 w-full h-full object-cover object-center z-[1]"
-              />
-              <NuxtImg
-                v-else
-                :src="slide.image_url"
-                :alt="slide.title"
-                provider="ipx"
                 width="1780"
                 height="450"
                 sizes="(max-width: 768px) 100vw, 1780px"
                 format="webp"
-                fit="cover"
                 quality="75"
-                :preload="index === 0"
+                :priority="index === 0"
                 :loading="index === 0 ? 'eager' : 'lazy'"
                 :fetchpriority="index === 0 ? 'high' : 'auto'"
-                class="absolute inset-0 w-full h-full object-cover object-center z-[1]"
+                customClass="w-full h-full object-cover object-center"
               />
               
               <!-- Dark overlay layer (z-index: 2) -->
@@ -247,9 +235,9 @@ const processedConfig = computed(() => {
               <!-- Content layer (z-index: 3) -->
               <div class="absolute inset-0 flex items-center justify-center z-[3]" v-if="processedConfig?.overlay?.enabled">
                 <div class="container mx-auto px-4 text-center text-white">
-                  <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-2 md:mb-4 drop-shadow-lg">
+                  <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-2 md:mb-4 drop-shadow-lg">
                     {{ slide.title }}
-                  </h1>
+                  </h2>
                   <p class="text-base sm:text-lg md:text-xl mb-4 md:mb-8 max-w-2xl mx-auto drop-shadow line-clamp-3 md:line-clamp-none">
                     {{ slide.description }}
                   </p>

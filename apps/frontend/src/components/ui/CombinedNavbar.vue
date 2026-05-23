@@ -318,13 +318,17 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
                   v-if="showLogoSkeleton"
                   class="h-8 w-24 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
                 ></span>
-                <img
+                <AppImage
                   v-else-if="currentLogoUrl"
+                  class="w-full h-full"
                   :src="currentLogoUrl"
                   :alt="logo?.altText || 'Logo'"
-                  :width="logo?.width"
-                  :height="logo?.height"
-                  class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+                  :width="logo?.width || 240"
+                  :height="logo?.height || 80"
+                  sizes="240px"
+                  loading="eager"
+                  fetchpriority="high"
+                  customClass="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
                 />
               </div>
             </NuxtLink>
@@ -337,9 +341,9 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
               <div class="mt-2 h-5 w-72 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700"></div>
               <div class="mt-2 h-7 w-64 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700"></div>
             </template>
-            <h1 v-else-if="props.settings?.slogan" class="text-xl font-bold text-red-600">
+            <p v-else-if="props.settings?.slogan" class="text-xl font-bold text-red-600">
               {{ props.settings.slogan.text }}
-            </h1>
+            </p>
             <h4
               v-if="!shouldShowSkeleton && props.settings?.slogan"
               class="text-md font-semibold text-black-600"
@@ -462,11 +466,17 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
                     v-if="showLogoSkeleton"
                     class="h-8 w-16 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
                   ></span>
-                  <img
+                  <AppImage
                     v-else-if="currentLogoUrl"
+                    class="w-full h-full"
                     :src="currentLogoUrl"
                     :alt="logo?.altText || 'Logo'"
-                    class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+                    width="140"
+                    height="40"
+                    sizes="140px"
+                    loading="eager"
+                    fetchpriority="high"
+                    customClass="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
                   />
                 </div>
               </NuxtLink>
@@ -578,11 +588,17 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
                   v-if="showLogoSkeleton"
                   class="h-6 w-16 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
                 ></span>
-                <img
+                <AppImage
                   v-else-if="currentLogoUrl"
+                  class="w-full h-full"
                   :src="currentLogoUrl"
                   :alt="logo?.altText || 'Logo'"
-                  class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[40px]"
+                  width="160"
+                  height="40"
+                  sizes="160px"
+                  loading="eager"
+                  fetchpriority="high"
+                  customClass="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[40px]"
                 />
               </div>
             </NuxtLink>

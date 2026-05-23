@@ -153,7 +153,34 @@ export function normalizePath(path: string): string {
 }
 
 export function normalizeSiteUrl(siteUrl: string): string {
-  return siteUrl.replace(/\/+$/, '');
+  const trimmed = siteUrl.replace(/\/+$/, '');
+
+  try {
+    const parsedUrl = new URL(trimmed);
+    const canonicalHost = 'mgavietnam.com';
+    const canonicalAliases = new Set([
+      canonicalHost,
+      `www.${canonicalHost}`,
+      'captreonuisam.com',
+      'www.captreonuisam.com',
+      'captreo.ultron.vn',
+    ]);
+
+    if (canonicalAliases.has(parsedUrl.hostname)) {
+      parsedUrl.protocol = 'https:';
+      parsedUrl.hostname = canonicalHost;
+
+      if (parsedUrl.pathname.length > 1) {
+        parsedUrl.pathname = parsedUrl.pathname.replace(/\/+$/, '');
+      }
+
+      return parsedUrl.toString().replace(/\/+$/, '');
+    }
+
+    return parsedUrl.toString().replace(/\/+$/, '');
+  } catch {
+    return trimmed;
+  }
 }
 
 function splitLocalePrefix(path: string): { locale: SeoLocale | null; strippedPath: string } {

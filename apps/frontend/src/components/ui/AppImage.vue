@@ -122,7 +122,26 @@ const containerStyle = computed(() => {
 const resolvedLoading = computed(() => (props.priority ? 'eager' : props.loading));
 const resolvedFetchPriority = computed(() => (props.priority ? 'high' : props.fetchpriority));
 const fetchpriority = computed(() => resolvedFetchPriority.value);
-const shouldUseNativeImage = computed(() => /^https?:\/\//i.test(props.src));
+const shouldUseNativeImage = computed(() => {
+  if (!/^https?:\/\//i.test(props.src)) {
+    return false;
+  }
+
+  try {
+    const parsedUrl = new URL(props.src);
+    const optimizedHosts = new Set([
+      'cdn.mgavietnam.com',
+      'cdn.captreonuisam.com',
+      'mgavietnam.com',
+      'www.mgavietnam.com',
+      'images.unsplash.com',
+    ]);
+
+    return !optimizedHosts.has(parsedUrl.hostname);
+  } catch {
+    return true;
+  }
+});
 const imageClass = computed(() => ({
   'opacity-0': isLoading.value,
   'opacity-100': !isLoading.value,
@@ -192,6 +211,5 @@ onMounted(async () => {
 .lazy-image-container {
   overflow: hidden;
   position: relative;
-  min-height: 100px;
 }
 </style> 

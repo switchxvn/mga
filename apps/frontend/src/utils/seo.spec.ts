@@ -23,6 +23,15 @@ describe('seo utils', () => {
     ).toBe('https://example.test/san-pham/xe-nang?page=2');
   });
 
+  it('normalizes site urls to https non-www origins', async () => {
+    const { normalizeSiteUrl } = await import('./seo');
+
+    expect(normalizeSiteUrl('http://www.mgavietnam.com/')).toBe('https://mgavietnam.com');
+    expect(normalizeSiteUrl('https://www.mgavietnam.com/path/')).toBe('https://mgavietnam.com/path');
+    expect(normalizeSiteUrl('http://mgavietnam.com')).toBe('https://mgavietnam.com');
+    expect(normalizeSiteUrl('https://captreonuisam.com/dich-vu')).toBe('https://mgavietnam.com/dich-vu');
+  });
+
   it('rejects foreign canonical urls', () => {
     expect(
       sanitizeCanonicalUrl('https://example.com/san-pham/xe-nang', siteUrl),

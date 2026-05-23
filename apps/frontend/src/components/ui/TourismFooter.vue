@@ -150,7 +150,16 @@ watch(
             <!-- Company Info Section -->
             <div class="col-span-1 md:col-span-4 backdrop-blur-sm rounded-xl p-6" style="background-color: rgba(255, 255, 255, 0.05);">
               <div class="company-brand mb-6">
-                <img :src="activeFooter.logoUrl" :alt="activeFooter.logoAlt" class="h-20 mb-4 object-contain" />
+                <AppImage
+                  :src="activeFooter.logoUrl"
+                  :alt="activeFooter.logoAlt"
+                  width="240"
+                  height="80"
+                  sizes="240px"
+                  loading="lazy"
+                  fetchpriority="low"
+                  customClass="h-20 mb-4 object-contain"
+                />
                 <h3 class="text-3xl font-extrabold mb-3 bg-gradient-to-r from-white to-white/90 bg-clip-text">
                   {{ activeFooter.companyInfo.name }}
                 </h3>
@@ -163,10 +172,15 @@ watch(
 
               <!-- Vertical Company Image -->
               <div v-if="activeFooter.settings?.verticalImage" class="vertical-image-container mt-6">
-                <img 
-                  :src="activeFooter.settings.verticalImage.url" 
+                <AppImage
+                  :src="activeFooter.settings.verticalImage.url"
                   :alt="activeFooter.settings.verticalImage.alt"
-                  class="w-full h-auto rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer"
+                  width="600"
+                  height="900"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  loading="lazy"
+                  fetchpriority="low"
+                  customClass="w-full h-auto rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer"
                   @click="() => {
                     if (activeFooter?.settings?.verticalImage) {
                       openPhotoSwipe(
@@ -184,7 +198,16 @@ watch(
                 <div v-for="cert in activeFooter.companyInfo.certifications" 
                      :key="cert.image" 
                      class="certification-item hover:scale-105 transition-all duration-300">
-                  <img :src="cert.image" :alt="cert.alt || ''" class="h-12 filter brightness-110" />
+                  <AppImage
+                    :src="cert.image"
+                    :alt="cert.alt || ''"
+                    width="96"
+                    height="48"
+                    sizes="96px"
+                    loading="lazy"
+                    fetchpriority="low"
+                    customClass="h-12 object-contain filter brightness-110"
+                  />
                   <span v-if="cert.text" class="text-xs mt-1 text-white/70">{{ cert.text }}</span>
                 </div>
               </div>

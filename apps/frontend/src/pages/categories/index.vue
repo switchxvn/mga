@@ -142,11 +142,17 @@ const navigateToCategory = (slug: string) => {
               @click="navigateToCategory(category.slug)"
             >
               <div class="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900">
-                <img
+                <AppImage
                   v-if="category.ogImage"
+                  class="h-full w-full"
                   :src="category.ogImage"
                   :alt="category.name"
-                  class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                  width="640"
+                  height="360"
+                  sizes="(max-width: 768px) 100vw, 25vw"
+                  loading="lazy"
+                  fetchpriority="low"
+                  customClass="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                 />
                 <div v-else class="flex h-full items-center justify-center bg-gray-200 dark:bg-gray-700">
                   <UIcon name="i-heroicons-folder" class="h-12 w-12 text-gray-400 dark:text-gray-500" />
@@ -227,11 +233,17 @@ const navigateToCategory = (slug: string) => {
               @click="navigateToCategory(category.slug)"
             >
               <div class="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900">
-                <img
+                <AppImage
                   v-if="category.ogImage"
+                  class="h-full w-full"
                   :src="category.ogImage"
                   :alt="category.name"
-                  class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                  width="640"
+                  height="360"
+                  sizes="(max-width: 768px) 100vw, 25vw"
+                  loading="lazy"
+                  fetchpriority="low"
+                  customClass="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                 />
                 <div v-else class="flex h-full items-center justify-center bg-gray-200 dark:bg-gray-700">
                   <UIcon name="i-heroicons-folder" class="h-12 w-12 text-gray-400 dark:text-gray-500" />

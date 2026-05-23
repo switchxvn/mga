@@ -11,7 +11,7 @@ services:
     networks:
       - app-network
     volumes:
-      - /etc/nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
 
 
   frontend:

@@ -4,38 +4,27 @@
           class="w-full h-full rounded-lg overflow-hidden shadow-md hero-slider">
     <SwiperSlide v-for="(slide, index) in slides" :key="slide.order" class="relative">
       <div class="relative w-full h-full">
-        <img
-          v-if="isRemoteImage(slide.image_url)"
+        <AppImage
+          class="absolute inset-0 w-full h-full"
           :src="slide.image_url"
           :alt="slide.title"
-          :loading="index === 0 ? 'eager' : 'lazy'"
-          :fetchpriority="index === 0 ? 'high' : 'auto'"
-          decoding="async"
-          class="absolute inset-0 w-full h-full object-cover"
-        />
-        <NuxtImg
-          v-else
-          :src="slide.image_url"
-          :alt="slide.title"
-          provider="ipx"
           width="1600"
           height="900"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px"
           format="webp"
-          fit="cover"
-          quality="75"
           :loading="index === 0 ? 'eager' : 'lazy'"
           :fetchpriority="index === 0 ? 'high' : 'auto'"
-          class="absolute inset-0 w-full h-full object-cover"
+          :priority="index === 0"
+          customClass="w-full h-full object-cover"
         />
         
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
         
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="container mx-auto px-4 text-center text-white">
-            <h1 class="text-4xl md:text-6xl font-bold mb-4">
+            <h2 class="text-4xl md:text-6xl font-bold mb-4">
               {{ slide.title }}
-            </h1>
+            </h2>
             <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">
               {{ slide.description }}
             </p>
@@ -82,7 +71,6 @@ defineProps({
 });
 
 const { t: localT } = useLocalization();
-const isRemoteImage = (url?: string) => Boolean(url && /^https?:\/\//i.test(url));
 </script>
 
 <style scoped>
