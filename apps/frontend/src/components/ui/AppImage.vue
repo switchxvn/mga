@@ -34,7 +34,7 @@
       :alt="alt"
       :width="normalizedWidth"
       :height="normalizedHeight"
-      :sizes="sizes"
+      :sizes="resolvedNuxtSizes"
       :quality="quality"
       :format="resolvedFormat"
       :loading="resolvedLoading"
@@ -132,10 +132,21 @@ const containerStyle = computed(() => {
 const resolvedLoading = computed(() => (props.priority ? 'eager' : props.loading));
 const resolvedFetchPriority = computed(() => (props.priority ? 'high' : props.fetchpriority));
 const resolvedFormat = computed(() => props.format || undefined);
-const shouldUseNativeImage = computed(() => {
-  if (!/^https?:\/\//i.test(props.src)) {
-    return false;
+const resolvedNuxtSizes = computed(() => {
+  const value = props.sizes?.trim();
+  if (!value) return undefined;
+
+  // Nuxt Image expects responsive-first syntax like `100vw md:50vw`.
+  // Existing call sites often pass native HTML sizes syntax, which Nuxt Image misparses.
+  if (value.includes('(') || value.includes(')') || value.includes(',')) {
+    return undefined;
   }
+
+  return value;
+});
+const shouldUseNativeImage = computed(() => {
+  if (!props.src) return true;
+  if (!/^https?:\/\//i.test(props.src)) return false;
 
   try {
     const parsedUrl = new URL(props.src);
@@ -159,8 +170,7 @@ const forwardedAttrs = computed(() => {
 });
 const containerClass = computed(() => attrClass.value);
 const imageClass = computed(() => ({
-  'opacity-0': isLoading.value,
-  'opacity-100': !isLoading.value,
+  'opacity-100': true,
 }));
 const renderedImageClass = computed(() => [attrClass.value, props.customClass, imageClass.value]);
 const fallbackImageClass = computed(() => [attrClass.value, props.customClass]);
