@@ -765,14 +765,16 @@ watch(activeTab, (newTab, oldTab) => {
               </div>
 
               <!-- Tiered Pricing Table -->
-              <TierPricingTable 
-                v-if="!hasRequiredAttributes || matchingVariant"
-                :productId="!matchingVariant ? productData?.id : null"
-                :variantId="matchingVariant?.id || null"
-                :quantity="productQuantity"
-                :originalPrice="matchingVariant?.price || productData?.price || 0"
-                class="mb-6"
-              />
+              <ClientOnly>
+                <TierPricingTable 
+                  v-if="!hasRequiredAttributes || matchingVariant"
+                  :productId="!matchingVariant ? productData?.id : null"
+                  :variantId="matchingVariant?.id || null"
+                  :quantity="productQuantity"
+                  :originalPrice="matchingVariant?.price || productData?.price || 0"
+                  class="mb-6"
+                />
+              </ClientOnly>
 
               <div
                 v-if="productShortDescription"
@@ -943,17 +945,19 @@ watch(activeTab, (newTab, oldTab) => {
           <!-- Phần mô tả sản phẩm và tabs -->
           <div class="lg:col-span-2">
             <!-- Table of Contents -->
-            <Transition name="fade" mode="out-in">
-              <TableOfContents
-                v-if="activeTab === 'description'"
-                :contentSelector="`#${productContentId}`"
-                :offset="100"
-                :collapsible="true"
-                :defaultCollapsed="false"
-                key="table-of-contents"
-                class="mb-6"
-              />
-            </Transition>
+            <ClientOnly>
+              <Transition name="fade" mode="out-in">
+                <TableOfContents
+                  v-if="activeTab === 'description'"
+                  :contentSelector="`#${productContentId}`"
+                  :offset="100"
+                  :collapsible="true"
+                  :defaultCollapsed="false"
+                  key="table-of-contents"
+                  class="mb-6"
+                />
+              </Transition>
+            </ClientOnly>
 
             <!-- Product Description and Video Review Tabs -->
             <div
@@ -1069,48 +1073,54 @@ watch(activeTab, (newTab, oldTab) => {
           </div>
         </div>
 
-        <ProductReviewsSection
-          v-if="productData.id"
-          :product-id="productData.id"
-          :reviews="productReviews"
-          :locale="currentLocale"
-          :average-rating="productReviewAggregate?.averageRating ? Number.parseFloat(productReviewAggregate.averageRating) : 0"
-          :total-reviews="productReviewAggregate?.totalReviews ?? 0"
-        />
+        <ClientOnly>
+          <ProductReviewsSection
+            v-if="productData.id"
+            :product-id="productData.id"
+            :reviews="productReviews"
+            :locale="currentLocale"
+            :average-rating="productReviewAggregate?.averageRating ? Number.parseFloat(productReviewAggregate.averageRating) : 0"
+            :total-reviews="productReviewAggregate?.totalReviews ?? 0"
+          />
+        </ClientOnly>
 
         <!-- Cross-Sell Products -->
-        <div class="mt-10">
-          <CrossSellProducts
-            v-if="productData.id"
-            :productId="productData.id"
-            :limit="4"
-          />
-        </div>
-
-        <!-- Modal -->
-        <GlobalModal :show="isPriceRequestModalOpen" @close="closePriceRequestModal">
-          <div class="modal-content">
-            <PriceRequestModal
-              v-if="productData"
-              :is-open="isPriceRequestModalOpen"
-              :product-id="productData.id"
-              :product-name="productData.translations?.[0]?.title"
-              :variant-id="matchingVariant?.id"
-              :variant-name="matchingVariant?.sku"
-              @success="handlePriceRequestSuccess"
-              @close="closePriceRequestModal"
+        <ClientOnly>
+          <div class="mt-10">
+            <CrossSellProducts
+              v-if="productData.id"
+              :productId="productData.id"
+              :limit="4"
             />
           </div>
-        </GlobalModal>
+        </ClientOnly>
 
-        <QuickPurchaseModal
-          v-if="productData"
-          :is-open="isQuickPurchaseModalOpen"
-          :product-id="productData.id"
-          :product-name="productTitle"
-          @close="closeQuickPurchaseModal"
-          @success="closeQuickPurchaseModal"
-        />
+        <!-- Modal -->
+        <ClientOnly>
+          <GlobalModal :show="isPriceRequestModalOpen" @close="closePriceRequestModal">
+            <div class="modal-content">
+              <PriceRequestModal
+                v-if="productData"
+                :is-open="isPriceRequestModalOpen"
+                :product-id="productData.id"
+                :product-name="productData.translations?.[0]?.title"
+                :variant-id="matchingVariant?.id"
+                :variant-name="matchingVariant?.sku"
+                @success="handlePriceRequestSuccess"
+                @close="closePriceRequestModal"
+              />
+            </div>
+          </GlobalModal>
+
+          <QuickPurchaseModal
+            v-if="productData"
+            :is-open="isQuickPurchaseModalOpen"
+            :product-id="productData.id"
+            :product-name="productTitle"
+            @close="closeQuickPurchaseModal"
+            @success="closeQuickPurchaseModal"
+          />
+        </ClientOnly>
       </div>
 
       <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">

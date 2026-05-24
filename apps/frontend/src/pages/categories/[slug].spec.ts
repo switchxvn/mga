@@ -207,6 +207,13 @@ describe('category slug page', () => {
     expect(source).toContain('/dich-vu/sua-xe-nang-tphcm');
   });
 
+  it('serializes only lightweight suggested category links into the SSR payload', () => {
+    const source = readFileSync('/Users/abc/project/mga/apps/frontend/src/pages/categories/[slug].vue', 'utf8');
+
+    expect(source).toContain('const { data: suggestedCategoryLinks } = await useAsyncData<LocalizedCategoryLink[]>(');
+    expect(source).not.toContain('const { data: suggestedCategoriesData } = await useAsyncData<Category[]>(');
+  });
+
   it('initializes without reading totalProducts before useProduct returns', async () => {
     const page = (await import('./[slug].vue')).default;
     const TestHost = defineComponent({

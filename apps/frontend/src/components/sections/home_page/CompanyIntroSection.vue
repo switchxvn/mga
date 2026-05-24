@@ -174,8 +174,9 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
           class="mb-6 text-center text-3xl font-bold md:text-4xl dark:text-white"
           :class="extractedHeading.className"
           :style="extractedHeading.style"
-          v-html="extractedHeading.content"
-        />
+        >
+          <span v-html="extractedHeading.content"></span>
+        </component>
         <div
           class="prose dark:prose-invert max-w-none mb-8 mx-auto"
           v-html="descriptionWithoutHeading"

@@ -166,11 +166,11 @@ export function useHomePage() {
       if (!activeTheme) {
         error.value = "Không tìm thấy theme đang hoạt động cho trang chủ.";
       }
-      return { theme: activeTheme };
+      return { themeId: activeTheme?.id ?? null };
     } catch (err) {
       console.error("Error in page initialization:", err);
       error.value = "Không thể tải dữ liệu trang. Vui lòng thử lại sau.";
-      return { theme: null };
+      return { themeId: null };
     }
   });
   

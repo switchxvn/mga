@@ -13,4 +13,9 @@ describe('useHomePage locale priority', () => {
     expect(source).toContain("return defaultLang?.code || 'vi';");
     expect(source).toContain("return 'vi';");
   });
+
+  it('keeps the SSR payload lightweight instead of serializing the full active theme', () => {
+    expect(source).toContain('return { themeId: activeTheme?.id ?? null };');
+    expect(source).not.toContain('return { theme: activeTheme };');
+  });
 });

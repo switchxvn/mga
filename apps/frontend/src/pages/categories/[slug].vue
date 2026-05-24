@@ -170,7 +170,20 @@ const { data: category, pending: isCategoryPending, error: categoryError, refres
   }
 )
 
-const { data: suggestedCategoriesData } = await useAsyncData<Category[]>(
+const resolveCategoryLinkForLocale = (
+  item: Category,
+  currentLocale: string,
+): LocalizedCategoryLink => {
+  const translation = item.translations?.find((entry) => entry.locale === currentLocale)
+
+  return {
+    id: item.id,
+    name: translation?.name || item.name,
+    slug: translation?.slug || item.slug,
+  }
+}
+
+const { data: suggestedCategoryLinks } = await useAsyncData<LocalizedCategoryLink[]>(
   `category-suggestions-${routeLocale.value}`,
   async () => {
     const result = await trpc.category.byType.query({
@@ -178,7 +191,9 @@ const { data: suggestedCategoriesData } = await useAsyncData<Category[]>(
       locale: routeLocale.value,
     })
 
-    return (result as Category[]) || []
+    return ((result as Category[]) || [])
+      .map((item) => resolveCategoryLinkForLocale(item, routeLocale.value))
+      .filter((item) => Boolean(item.slug))
   },
   {
     default: () => [],
@@ -219,21 +234,9 @@ const isFilteredEmptyState = computed(() => pageState.value.kind === 'filtered-e
 const isEmptyCategoryState = computed(() => pageState.value.kind === 'empty-category')
 const showCategoryError = computed(() => Boolean(error.value) && !isInvalidCategory.value && !isCategoryPending.value)
 
-const resolveCategoryLink = (item: Category): LocalizedCategoryLink => {
-  const translation = item.translations?.find((entry) => entry.locale === locale.value)
-
-  return {
-    id: item.id,
-    name: translation?.name || item.name,
-    slug: translation?.slug || item.slug,
-  }
-}
-
 const relatedCategories = computed(() =>
-  (suggestedCategoriesData.value || [])
+  (suggestedCategoryLinks.value || [])
     .filter((item) => item.id !== categoryData.value?.id)
-    .map(resolveCategoryLink)
-    .filter((item) => Boolean(item.slug))
     .slice(0, 4),
 )
 
