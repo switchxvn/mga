@@ -632,6 +632,8 @@ export function buildServiceSchema(input: {
   description: string;
   url: string;
   image?: string;
+  areaServed?: string;
+  providerName?: string;
 }) {
   return {
     '@context': 'https://schema.org',
@@ -640,6 +642,39 @@ export function buildServiceSchema(input: {
     description: input.description,
     url: input.url,
     image: input.image || undefined,
+    areaServed: input.areaServed
+      ? {
+          '@type': 'Place',
+          name: input.areaServed,
+        }
+      : undefined,
+    provider: input.providerName
+      ? {
+          '@type': 'Organization',
+          name: input.providerName,
+        }
+      : undefined,
+  };
+}
+
+export function buildLocalBusinessSchema(input: {
+  name: string;
+  url: string;
+  telephone: string;
+  areaServed: string;
+  image?: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: input.name,
+    url: input.url,
+    telephone: input.telephone,
+    image: input.image || undefined,
+    areaServed: {
+      '@type': 'Place',
+      name: input.areaServed,
+    },
   };
 }
 

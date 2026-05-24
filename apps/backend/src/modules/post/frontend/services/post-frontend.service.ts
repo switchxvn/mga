@@ -6,6 +6,7 @@ import { Tag } from '../../../settings/entities/tag.entity';
 import { PostTag } from '../../entities/post-tag.entity';
 import { PostTranslation } from '../../entities/post-translation.entity';
 import { Post } from '../../entities/post.entity';
+import { serializeVietnamTimestamp } from '../utils/post-timestamp.util';
 
 interface PostWhereConditions {
   published: boolean;
@@ -125,8 +126,8 @@ export class PostFrontendService {
       thumbnail: post.thumbnail,
       published: post.published,
       authorId: String(post.authorId),
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
+      createdAt: serializeVietnamTimestamp(post.createdAt),
+      updatedAt: serializeVietnamTimestamp(post.updatedAt),
       tags,
       author: post.author ? {
         id: String(post.author.id),
@@ -154,8 +155,8 @@ export class PostFrontendService {
         ogImage: t.ogImage,
         canonicalUrl: t.canonicalUrl,
         postId: t.postId,
-        createdAt: t.createdAt,
-        updatedAt: t.updatedAt
+        createdAt: serializeVietnamTimestamp(t.createdAt),
+        updatedAt: serializeVietnamTimestamp(t.updatedAt)
       })) || []
     };
   }

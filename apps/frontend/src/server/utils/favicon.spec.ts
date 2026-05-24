@@ -3,13 +3,23 @@ import { describe, expect, it } from 'vitest';
 import { buildFaviconLinks, resolveServerFaviconHref } from './favicon';
 
 describe('resolveServerFaviconHref', () => {
-  it('uses the favicon logo URL when the backend returns an active favicon', () => {
+  it('keeps the static favicon for SSR by default', () => {
     expect(
       resolveServerFaviconHref({
         type: 'favicon',
         lightModeUrl: 'https://cdn.example.com/favicon.png',
         darkModeUrl: null,
       }),
+    ).toBe('/favicon.ico');
+  });
+
+  it('uses the favicon logo URL when the backend returns an active favicon', () => {
+    expect(
+      resolveServerFaviconHref({
+        type: 'favicon',
+        lightModeUrl: 'https://cdn.example.com/favicon.png',
+        darkModeUrl: null,
+      }, '/favicon.ico', false),
     ).toBe('https://cdn.example.com/favicon.png');
   });
 
@@ -19,7 +29,7 @@ describe('resolveServerFaviconHref', () => {
         type: 'main',
         lightModeUrl: 'https://cdn.example.com/logo.png',
         darkModeUrl: null,
-      }),
+      }, '/favicon.ico', false),
     ).toBe('/favicon.ico');
   });
 });

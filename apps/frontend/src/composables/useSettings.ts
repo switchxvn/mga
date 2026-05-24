@@ -198,7 +198,7 @@ export function useSettings() {
   };
   
   // Khởi tạo settings nếu chưa được khởi tạo
-  if (!isInitialized.value && !isGlobalLoading.value) {
+  if (process.client && !isInitialized.value && !isGlobalLoading.value) {
     fetchPublicSettings();
   }
   

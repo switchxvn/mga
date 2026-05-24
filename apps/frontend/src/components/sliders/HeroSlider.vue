@@ -22,9 +22,12 @@
         
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="container mx-auto px-4 text-center text-white">
-            <h2 class="text-4xl md:text-6xl font-bold mb-4">
+            <component
+              :is="index === 0 ? titleTag : fallbackTitleTag"
+              class="text-4xl md:text-6xl font-bold mb-4"
+            >
               {{ slide.title }}
-            </h2>
+            </component>
             <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">
               {{ slide.description }}
             </p>
@@ -67,6 +70,14 @@ defineProps({
   options: {
     type: Object,
     required: true
+  },
+  titleTag: {
+    type: String,
+    default: 'h2'
+  },
+  fallbackTitleTag: {
+    type: String,
+    default: 'div'
   }
 });
 

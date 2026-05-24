@@ -188,6 +188,17 @@ describe('category slug page', () => {
     expect(useProductIndex).toBeLessThan(serverReadIndex);
   });
 
+  it('defines seo support sections for commercial category pages', () => {
+    const source = readFileSync('/Users/abc/project/mga/apps/frontend/src/pages/categories/[slug].vue', 'utf8');
+
+    expect(source).toContain('Bao gia nhanh theo nhom nhu cau');
+    expect(source).toContain('xe-nang-dau');
+    expect(source).toContain('xe-nang-dien');
+    expect(source).toContain('phu-tung-xe-nang');
+    expect(source).toContain('/dich-vu/cho-thue-xe-nang-tphcm');
+    expect(source).toContain('/dich-vu/sua-xe-nang-tphcm');
+  });
+
   it('initializes without reading totalProducts before useProduct returns', async () => {
     const page = (await import('./[slug].vue')).default;
     const TestHost = defineComponent({

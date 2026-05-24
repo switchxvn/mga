@@ -13,6 +13,7 @@ import { useDarkMode } from '~/composables/useDarkMode';
 import { useIcon } from '~/composables/useIcon';
 import { useCssColorValue } from '~/composables/useColorUtils';
 import { useSkeletonGate } from '~/composables/useSkeletonGate';
+import { resolveTopMenuMode } from '~/utils/navbarBreakpoint';
 import { Phone, User, LogIn, UserCircle, LogOut, Settings, Globe, Moon, Clock } from 'lucide-vue-next';
 import type { MenuItem, TopMenuItem } from '~/types/navbar';
 import { defineAsyncComponent, markRaw } from 'vue';
@@ -233,21 +234,20 @@ const { settings, menuBackgroundColor, textColor, borderColor, navigationTextCol
 // Time
 const now = useNow();
 const formattedTime = useDateFormat(now, 'HH:mm:ss - DD/MM/YYYY');
+const viewportWidth = ref<number | null>(null);
 
-// Thêm biến để kiểm soát hiển thị thời gian
+const syncViewportWidth = () => {
+  viewportWidth.value = window.innerWidth;
+};
+
+const topMenuMode = computed(() => resolveTopMenuMode(viewportWidth.value));
+
 const showTimeOnTopBar = computed(() => {
-  if (typeof window !== 'undefined') {
-    return window.innerWidth >= 1400; // Tăng breakpoint để ẩn time ở màn hình nhỏ
-  }
-  return true;
+  return topMenuMode.value === 'desktop';
 });
 
-// Thêm biến kiểm soát hiển thị top menu dạng hamburger
 const showTopMenuHamburger = computed(() => {
-  if (typeof window !== 'undefined') {
-    return window.innerWidth < 1400; // Tăng breakpoint để hiển thị hamburger menu ở 1320px
-  }
-  return false;
+  return topMenuMode.value === 'mobile';
 });
 
 // Thêm biến kiểm soát hiển thị/ẩn dropdown của top menu hamburger
@@ -423,7 +423,10 @@ onMounted(() => {
     init();
   });
 
+  syncViewportWidth();
+
   // Thêm event listener để kiểm tra kích thước cửa sổ khi thay đổi
+  window.addEventListener('resize', syncViewportWidth);
   window.addEventListener('resize', () => {
     // Đóng dropdown khi resize
     if (isTopMenuDropdownOpen.value && window.innerWidth >= 1400) {
@@ -459,6 +462,7 @@ onUnmounted(() => {
   
   // Remove scroll event listener
   window.removeEventListener('scroll', handleMobileScroll);
+  window.removeEventListener('resize', syncViewportWidth);
   
   // Remove click outside handler
   document.removeEventListener('click', handleClickOutside);

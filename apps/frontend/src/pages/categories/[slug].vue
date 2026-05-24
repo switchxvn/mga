@@ -100,6 +100,23 @@ interface BreadcrumbItem {
   active?: boolean;
 }
 
+interface CategorySupportLink {
+  label: string;
+  to: string;
+}
+
+interface CategorySupportBlock {
+  eyebrow: string;
+  heading: string;
+  summary: string;
+  bullets: string[];
+  quickLinks: CategorySupportLink[];
+  faq: Array<{
+    question: string;
+    answer: string;
+  }>;
+}
+
 const tr = (key: string, fallback: string) => t(key) || fallback
 
 const filters = reactive<FilterState>({
@@ -212,6 +229,92 @@ const relatedCategories = computed(() =>
     .map(resolveCategoryLink)
     .filter((item) => Boolean(item.slug))
     .slice(0, 4),
+)
+
+// Bao gia nhanh theo nhom nhu cau
+const categorySupportBySlug: Record<string, CategorySupportBlock> = {
+  'xe-nang-dau': {
+    eyebrow: 'Báo giá nhanh theo nhóm nhu cầu',
+    heading: 'Tập trung cho nhóm khách hàng đang tìm mua xe nâng dầu mới tại TPHCM',
+    summary: 'Danh mục này là trang đích cho các truy vấn như bán xe nâng dầu, xe nâng dầu mới, xe nâng dầu 2.5 tấn đến 10 tấn và các bài toán vận hành ngoài trời hoặc tải nặng nhiều ca.',
+    bullets: [
+      'Phù hợp kho xưởng, bãi hàng và khu sản xuất cần động cơ mạnh, dễ bảo trì.',
+      'Nhóm tải trọng được hỏi nhiều nhất hiện nay là 2.5 tấn, 3.0 tấn, 3.5 tấn, 5.0 tấn và 10 tấn.',
+      'Có thể kết hợp thêm dịch vụ thuê ngắn hạn hoặc sửa chữa tận nơi tại TPHCM khi doanh nghiệp cần xử lý gấp.',
+    ],
+    quickLinks: [
+      { label: 'Xe nâng dầu MGA 2.5 tấn', to: '/san-pham/xe-nang-dau-mga-2-5-tan' },
+      { label: 'Xe nâng dầu MGA 3.0 tấn', to: '/san-pham/xe-nang-dau-mga-3-0-tan' },
+      { label: 'Xe nâng dầu MGA 5.0 tấn', to: '/san-pham/xe-nang-dau-mga-5-0-tan' },
+      { label: 'Dịch vụ cho thuê xe nâng TPHCM', to: '/dich-vu/cho-thue-xe-nang-tphcm' },
+    ],
+    faq: [
+      {
+        question: 'Khi nào nên ưu tiên xe nâng dầu?',
+        answer: 'Khi doanh nghiệp vận hành ngoài trời, tải nặng, chạy nhiều ca hoặc cần biên tải ổn định ở môi trường công nghiệp nặng.',
+      },
+      {
+        question: 'Nhóm xe dầu nào dễ cân đối ngân sách nhất?',
+        answer: 'Nhóm 2.5-3.5 tấn thường là điểm bắt đầu hợp lý cho nhiều kho xưởng vì cân bằng giữa giá đầu tư và khả năng nâng pallet phổ thông.',
+      },
+    ],
+  },
+  'xe-nang-dien': {
+    eyebrow: 'Báo giá nhanh theo nhóm nhu cầu',
+    heading: 'Danh mục trung tâm cho cụm bán xe nâng điện và xe nâng điện theo tải trọng',
+    summary: 'Trang này nhắm đến người dùng đang tìm xe nâng điện, xe nâng điện 1.5 tấn, 2 tấn, 3 tấn, xe nâng điện ngồi lái và các cấu hình vận hành trong kho kín tại TPHCM.',
+    bullets: [
+      'Ưu tiên cho kho trong nhà, nhà xưởng sạch, lối đi hẹp và nhu cầu vận hành êm.',
+      'Có thể đối chiếu nhanh giữa xe điện đứng lái, ngồi lái và xe điện tải trọng 1.5-3.0 tấn.',
+      'Khi phát sinh lỗi bình điện, bộ sạc hoặc mô-tơ, có thể điều hướng sang cụm sửa xe nâng điện tại TPHCM.',
+    ],
+    quickLinks: [
+      { label: 'Xe nâng điện MGA 1.5 tấn', to: '/san-pham/xe-nang-dien-mga-1-5-tan' },
+      { label: 'Xe nâng điện MGA 2.0 tấn', to: '/san-pham/xe-nang-dien-mga-2-0-tan' },
+      { label: 'Xe nâng điện ngồi lái MGA 1.5 tấn', to: '/san-pham/xe-nang-dien-ngoi-lai-mga-1-5-tan' },
+      { label: 'Dịch vụ sửa xe nâng điện TPHCM', to: '/dich-vu/sua-xe-nang-dien-tphcm' },
+    ],
+    faq: [
+      {
+        question: 'Xe nâng điện phù hợp môi trường nào nhất?',
+        answer: 'Phù hợp kho trong nhà, khu thành phẩm, xưởng sạch và các điểm cần giảm tiếng ồn hoặc khí thải trong nhà.',
+      },
+      {
+        question: 'Nên bắt đầu từ xe điện 1.5 tấn hay 2 tấn?',
+        answer: 'Nếu pallet phổ thông và không nâng sát tải liên tục, 1.5 tấn đủ dùng; nếu muốn dư tải hơn cho hàng nặng, nhóm 2.0 tấn thường an toàn hơn.',
+      },
+    ],
+  },
+  'phu-tung-xe-nang': {
+    eyebrow: 'Báo giá nhanh theo nhóm nhu cầu',
+    heading: 'Điểm gom intent cho phụ tùng xe nâng và phụ tùng xe nâng dầu',
+    summary: 'Danh mục này phục vụ các truy vấn phụ tùng xe nâng, phụ tùng xe nâng dầu và nhu cầu thay thế linh kiện nhanh để giảm thời gian dừng máy tại TPHCM.',
+    bullets: [
+      'Tập trung nhóm linh kiện hao mòn, phụ tùng hệ thống nâng, bánh xe, thủy lực và điện.',
+      'Phù hợp khách hàng đang cần vừa mua phụ tùng vừa kiểm tra tình trạng xe để tránh thay sai hạng mục.',
+      'Kết hợp chặt với cụm sửa chữa xe nâng và bảo dưỡng định kỳ để đẩy lead dịch vụ có giá trị cao hơn.',
+    ],
+    quickLinks: [
+      { label: 'Dịch vụ sửa xe nâng TPHCM', to: '/dich-vu/sua-xe-nang-tphcm' },
+      { label: 'Dịch vụ bảo dưỡng xe nâng', to: '/dich-vu/yeu-cau-bao-duong' },
+      { label: 'Xe nâng dầu MGA 3.0 tấn', to: '/san-pham/xe-nang-dau-mga-3-0-tan' },
+      { label: 'Xe nâng điện MGA 2.0 tấn', to: '/san-pham/xe-nang-dien-mga-2-0-tan' },
+    ],
+    faq: [
+      {
+        question: 'Khi nào nên thay phụ tùng thay vì sửa tạm?',
+        answer: 'Khi linh kiện đã hao mòn rõ, có nguy cơ gây dừng xe lặp lại hoặc ảnh hưởng trực tiếp đến an toàn nâng hạ và độ ổn định của hệ thống.',
+      },
+      {
+        question: 'Phụ tùng xe nâng dầu và xe nâng điện có nên gom chung?',
+        answer: 'Không nên gom khi chẩn đoán mua hàng; nên xác định theo đúng dòng xe và đúng hệ thống để tránh sai part và kéo dài thời gian dừng máy.',
+      },
+    ],
+  },
+}
+
+const categorySupport = computed<CategorySupportBlock | null>(() =>
+  categorySupportBySlug[slug.value] || null,
 )
 
 if (import.meta.server) {
@@ -485,6 +588,69 @@ const updateQueryParams = () => {
             {{ categoryDescription }}
           </p>
         </div>
+
+        <section
+          v-if="categorySupport"
+          class="mb-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]"
+        >
+          <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400">
+              {{ categorySupport.eyebrow }}
+            </p>
+            <h2 class="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">
+              {{ categorySupport.heading }}
+            </h2>
+            <p class="mt-3 text-gray-600 dark:text-gray-300">
+              {{ categorySupport.summary }}
+            </p>
+            <ul class="mt-5 space-y-3 text-sm text-gray-700 dark:text-gray-200">
+              <li v-for="item in categorySupport.bullets" :key="item" class="flex gap-3">
+                <span class="mt-1 h-2.5 w-2.5 rounded-full bg-primary-500" />
+                <span>{{ item }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+              Link nhanh theo intent thương mại
+            </h2>
+            <div class="mt-4 space-y-3">
+              <NuxtLink
+                v-for="item in categorySupport.quickLinks"
+                :key="item.to"
+                :to="item.to"
+                class="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-800 transition hover:border-primary-500 hover:text-primary-600 dark:border-gray-700 dark:text-gray-100 dark:hover:border-primary-400 dark:hover:text-primary-300"
+              >
+                <span>{{ item.label }}</span>
+                <span aria-hidden="true">→</span>
+              </NuxtLink>
+            </div>
+          </div>
+        </section>
+
+        <section
+          v-if="categorySupport"
+          class="mb-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800"
+        >
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            Câu hỏi thường gặp trong nhóm {{ categoryName }}
+          </h2>
+          <div class="mt-5 grid gap-4 lg:grid-cols-2">
+            <article
+              v-for="item in categorySupport.faq"
+              :key="item.question"
+              class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50"
+            >
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                {{ item.question }}
+              </h3>
+              <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                {{ item.answer }}
+              </p>
+            </article>
+          </div>
+        </section>
 
         <div
           v-if="isInvalidCategory"

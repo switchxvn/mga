@@ -12,7 +12,7 @@ import { useLocalization } from '~/composables/useLocalization';
 import { getLocalizedRoute } from '../../utils/routes';
 import * as LucideIcons from 'lucide-vue-next';
 import { usePageSeo } from '~/composables/usePageSeo';
-import { buildServiceSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
+import { buildLocalBusinessSchema, buildServiceSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
 import { normalizeLocaleCode } from '~/utils/locale';
 
 // Định nghĩa meta cho trang
@@ -126,6 +126,15 @@ usePageSeo({
       name: serviceTitle.value || 'Service',
       description: serviceShortDescription.value || '',
       url: resolvedCanonicalUrl.value,
+      image: currentTranslation.value?.ogImage || '',
+      areaServed: 'TP.HCM',
+      providerName: 'MGA Vietnam',
+    }),
+    buildLocalBusinessSchema({
+      name: 'MGA Vietnam',
+      url: resolvedCanonicalUrl.value,
+      telephone: '0918865060',
+      areaServed: 'TP.HCM',
       image: currentTranslation.value?.ogImage || '',
     }),
   ]),

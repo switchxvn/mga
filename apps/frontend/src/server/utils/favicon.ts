@@ -6,7 +6,12 @@ type LogoOutput = RouterOutput['logo']['getActiveLogo'];
 export function resolveServerFaviconHref(
   logo: LogoOutput,
   defaultFavicon = '/favicon.ico',
+  preferStatic = true,
 ): string {
+  if (preferStatic) {
+    return defaultFavicon;
+  }
+
   if (!logo || logo.type !== 'favicon') {
     return defaultFavicon;
   }

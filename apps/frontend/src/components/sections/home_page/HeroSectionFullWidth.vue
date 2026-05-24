@@ -42,6 +42,8 @@ interface HeroConfig {
 interface Props {
   slides?: Slide[];
   config?: HeroConfig;
+  titleTag?: string;
+  fallbackTitleTag?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -62,7 +64,9 @@ const props = withDefaults(defineProps<Props>(), {
         direction: 'to-t'
       }
     }
-  })
+  }),
+  titleTag: 'h2',
+  fallbackTitleTag: 'div',
 });
 
 const { t } = useI18n();
@@ -235,9 +239,12 @@ const processedConfig = computed(() => {
               <!-- Content layer (z-index: 3) -->
               <div class="absolute inset-0 flex items-center justify-center z-[3]" v-if="processedConfig?.overlay?.enabled">
                 <div class="container mx-auto px-4 text-center text-white">
-                  <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-2 md:mb-4 drop-shadow-lg">
+                  <component
+                    :is="index === 0 ? titleTag : fallbackTitleTag"
+                    class="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-2 md:mb-4 drop-shadow-lg"
+                  >
                     {{ slide.title }}
-                  </h2>
+                  </component>
                   <p class="text-base sm:text-lg md:text-xl mb-4 md:mb-8 max-w-2xl mx-auto drop-shadow line-clamp-3 md:line-clamp-none">
                     {{ slide.description }}
                   </p>

@@ -28,10 +28,12 @@ const initApp = async () => {
   try {
     await initializeTheme();
 
-    try {
-      await initializeFavicon();
-    } catch {
-      // Keep default favicon on failure
+    if (process.client) {
+      try {
+        await initializeFavicon();
+      } catch {
+        // Keep default favicon on failure
+      }
     }
 
     if (process.client) {

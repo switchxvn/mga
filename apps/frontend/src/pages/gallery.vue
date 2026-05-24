@@ -1,6 +1,14 @@
 <template>
   <div class="bg-white dark:bg-gray-900 min-h-screen">
     <div class="container mx-auto px-4 py-16">
+      <header class="mb-12 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
+          {{ t('gallery.title') || 'Thu vien anh' }}
+        </h1>
+        <p class="mx-auto mt-4 max-w-3xl text-base text-gray-600 dark:text-gray-400 md:text-lg">
+          {{ t('gallery.description') || 'Khám phá bộ sưu tập ảnh đẹp của chúng tôi' }}
+        </p>
+      </header>
 
       <!-- Video Gallery Section -->
       <div class="mb-16">

@@ -20,7 +20,7 @@ export function useHomePage() {
   const latestPosts = ref<any[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const defaultLocale = ref('en');
+  const defaultLocale = ref('vi');
   const pageIsMounted = ref(true);
   
   // Định nghĩa type cho components
@@ -103,18 +103,16 @@ export function useHomePage() {
   // Lấy ngôn ngữ mặc định từ server
   async function getDefaultLanguage(): Promise<string> {
     try {
-      // Lấy ngôn ngữ mặc định từ server
-      const languages = await trpc.language.getAll.query();
-      const defaultLang = languages.find((lang: { code: string; isDefault: boolean }) => lang.isDefault);
-      return defaultLang?.code || 'en';
+      const defaultLang = await trpc.language.getDefaultLanguage.query();
+      return defaultLang?.code || 'vi';
     } catch (error) {
       console.error("Error fetching default language:", error);
-      return 'en';
+      return 'vi';
     }
   }
   
   // Lấy theme sections với locale phù hợp
-  async function fetchThemeSections(themeId: number, currentLocale: string): Promise<ThemeSection[]> {
+  async function fetchThemeSections(themeId: number, currentLocale: string = 'vi'): Promise<ThemeSection[]> {
     try {
       isLoading.value = true;
       const safeLocale = normalizeLocaleCode(currentLocale, 'vi');

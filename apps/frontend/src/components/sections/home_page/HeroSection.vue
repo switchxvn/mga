@@ -15,6 +15,8 @@ import type { Hero, HeroConfig, HeroSlider, Slide, VideoThumbnail } from '~/type
 interface Props {
   slides?: Slide[];
   config?: HeroConfig;
+  titleTag?: string;
+  fallbackTitleTag?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -41,6 +43,8 @@ const props = withDefaults(defineProps<Props>(), {
     },
     overlayOpacity: '0.5',
   }),
+  titleTag: 'h2',
+  fallbackTitleTag: 'div',
 });
 
 const trpc = useTrpc();
@@ -178,7 +182,13 @@ const openVideo = (videoUrl: string) => {
           ]"
           :style="{ width: videoThumbnails.length > 0 ? config.sliderWidth : '100%' }"
         >
-          <HeroSliderComponent :slides="sortedSlides" :options="swiperOptions" :config="config" />
+          <HeroSliderComponent
+            :slides="sortedSlides"
+            :options="swiperOptions"
+            :config="config"
+            :title-tag="titleTag"
+            :fallback-title-tag="fallbackTitleTag"
+          />
         </div>
       </div>
 
@@ -188,7 +198,13 @@ const openVideo = (videoUrl: string) => {
         :style="{ gap: config.gap }"
       >
         <div :style="{ height: `calc(100% - ${config.videoRowHeight})` }">
-          <HeroSliderComponent :slides="sortedSlides" :options="swiperOptions" :config="config" />
+          <HeroSliderComponent
+            :slides="sortedSlides"
+            :options="swiperOptions"
+            :config="config"
+            :title-tag="titleTag"
+            :fallback-title-tag="fallbackTitleTag"
+          />
         </div>
 
         <div
@@ -215,7 +231,13 @@ const openVideo = (videoUrl: string) => {
       </div>
 
       <div v-else class="h-full">
-        <HeroSliderComponent :slides="sortedSlides" :options="swiperOptions" :config="config" />
+        <HeroSliderComponent
+          :slides="sortedSlides"
+          :options="swiperOptions"
+          :config="config"
+          :title-tag="titleTag"
+          :fallback-title-tag="fallbackTitleTag"
+        />
       </div>
     </div>
   </section>

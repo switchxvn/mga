@@ -17,7 +17,37 @@ onBeforeUnmount(() => {
   cleanup();
 });
 
-// SEO được handle tự động bởi middleware global, không cần code thêm
+const heroSectionTypes = new Set(['hero', 'hero_full_width']);
+const heroComponentNames = new Set(['HeroSection', 'HeroSectionFullWidth']);
+const companyIntroSectionTypes = new Set(['company_intro']);
+const companyIntroComponentNames = new Set(['CompanyIntroSection']);
+
+const isHeroSection = (section: { type?: string; componentName?: string | null }) =>
+  heroSectionTypes.has(section.type || '') ||
+  (section.componentName ? heroComponentNames.has(section.componentName) : false);
+
+const isCompanyIntroSection = (section: { type?: string; componentName?: string | null }) =>
+  companyIntroSectionTypes.has(section.type || '') ||
+  (section.componentName ? companyIntroComponentNames.has(section.componentName) : false);
+
+const getSemanticHeadingProps = (
+  section: { id: number; type?: string; componentName?: string | null },
+) => {
+  if (!isHeroSection(section)) {
+    if (isCompanyIntroSection(section)) {
+      return {
+        titleTag: 'h1',
+      };
+    }
+
+    return {};
+  }
+
+  return {
+    titleTag: 'h2',
+    fallbackTitleTag: 'div',
+  };
+};
 </script>
 
 <template>
@@ -42,6 +72,7 @@ onBeforeUnmount(() => {
             :is="resolveComponent(section)"
             :section="section"
             :config="getSectionConfig(section)"
+            v-bind="getSemanticHeadingProps(section)"
           />
         </template>
       </template>

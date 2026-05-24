@@ -55,11 +55,12 @@ export const useFavicon = () => {
   // Initialize favicon on server and client
   const initializeFavicon = async () => {
     if (process.server) {
-      // On server, set default favicon immediately for SSR
+      // Keep SSR favicon static and same-origin for crawlers.
       setFavicon(defaultFavicon);
+      return;
     }
-    
-    // Fetch favicon from API (works on both server and client)
+
+    // Fetch favicon from API on the client only.
     await fetchFavicon();
   };
 
