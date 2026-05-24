@@ -117,6 +117,12 @@ interface CategorySupportBlock {
   }>;
 }
 
+interface CategoryFilterAttribute {
+  id: string;
+  name: string;
+  values: string[];
+}
+
 const tr = (key: string, fallback: string) => t(key) || fallback
 
 const filters = reactive<FilterState>({
@@ -231,6 +237,37 @@ const relatedCategories = computed(() =>
     .slice(0, 4),
 )
 
+const availableAttributes = computed<CategoryFilterAttribute[]>(() => {
+  const attributesMap = new Map<string, CategoryFilterAttribute>()
+
+  for (const product of products.value || []) {
+    for (const attribute of product.variantAttributes?.attributes || []) {
+      const attributeId = String(attribute.id)
+      const existingAttribute = attributesMap.get(attributeId) || {
+        id: attributeId,
+        name: attribute.displayName || attribute.name,
+        values: [],
+      }
+
+      const values = new Set(existingAttribute.values)
+      for (const value of attribute.values || []) {
+        const label = value.displayValue || value.value
+        if (label) {
+          values.add(label)
+        }
+      }
+
+      attributesMap.set(attributeId, {
+        ...existingAttribute,
+        name: existingAttribute.name || attribute.displayName || attribute.name,
+        values: Array.from(values),
+      })
+    }
+  }
+
+  return Array.from(attributesMap.values()).filter((attribute) => attribute.values.length > 0)
+})
+
 // Bao gia nhanh theo nhom nhu cau
 const categorySupportBySlug: Record<string, CategorySupportBlock> = {
   'xe-nang-dau': {
@@ -316,6 +353,19 @@ const categorySupportBySlug: Record<string, CategorySupportBlock> = {
 const categorySupport = computed<CategorySupportBlock | null>(() =>
   categorySupportBySlug[slug.value] || null,
 )
+
+const categorySupportCta = computed(() => {
+  if (!categorySupport.value) {
+    return null
+  }
+
+  return {
+    title: 'Cần tư vấn nhanh?',
+    description: 'MGA hỗ trợ chọn tải trọng và cấu hình phù hợp theo kho, lối đi và ngân sách vận hành.',
+    primaryLabel: tr('categories.contactForAdvice', 'Liên hệ tư vấn mua hàng'),
+    primaryTo: getContactRoute(locale.value),
+  }
+})
 
 if (import.meta.server) {
   const requestEvent = useRequestEvent()
@@ -589,69 +639,6 @@ const updateQueryParams = () => {
           </p>
         </div>
 
-        <section
-          v-if="categorySupport"
-          class="mb-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]"
-        >
-          <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400">
-              {{ categorySupport.eyebrow }}
-            </p>
-            <h2 class="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">
-              {{ categorySupport.heading }}
-            </h2>
-            <p class="mt-3 text-gray-600 dark:text-gray-300">
-              {{ categorySupport.summary }}
-            </p>
-            <ul class="mt-5 space-y-3 text-sm text-gray-700 dark:text-gray-200">
-              <li v-for="item in categorySupport.bullets" :key="item" class="flex gap-3">
-                <span class="mt-1 h-2.5 w-2.5 rounded-full bg-primary-500" />
-                <span>{{ item }}</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-              Link nhanh theo intent thương mại
-            </h2>
-            <div class="mt-4 space-y-3">
-              <NuxtLink
-                v-for="item in categorySupport.quickLinks"
-                :key="item.to"
-                :to="item.to"
-                class="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-800 transition hover:border-primary-500 hover:text-primary-600 dark:border-gray-700 dark:text-gray-100 dark:hover:border-primary-400 dark:hover:text-primary-300"
-              >
-                <span>{{ item.label }}</span>
-                <span aria-hidden="true">→</span>
-              </NuxtLink>
-            </div>
-          </div>
-        </section>
-
-        <section
-          v-if="categorySupport"
-          class="mb-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800"
-        >
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-            Câu hỏi thường gặp trong nhóm {{ categoryName }}
-          </h2>
-          <div class="mt-5 grid gap-4 lg:grid-cols-2">
-            <article
-              v-for="item in categorySupport.faq"
-              :key="item.question"
-              class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50"
-            >
-              <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-                {{ item.question }}
-              </h3>
-              <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                {{ item.answer }}
-              </p>
-            </article>
-          </div>
-        </section>
-
         <div
           v-if="isInvalidCategory"
           class="mb-10 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-800"
@@ -738,6 +725,7 @@ const updateQueryParams = () => {
             v-if="pageState.shouldShowFilters"
             :initial-filters="filters"
             :category-id="categoryData?.id"
+            :available-attributes="availableAttributes"
             @filter-change="handleFilterChange"
             class="mb-6 lg:hidden"
           />
@@ -747,6 +735,10 @@ const updateQueryParams = () => {
               <CategorySidebar
                 :initial-filters="filters"
                 :category-id="categoryData?.id"
+                :available-attributes="availableAttributes"
+                :quick-links-heading="'Xem nhanh theo nhu cầu'"
+                :quick-links="categorySupport?.quickLinks || []"
+                :support-cta="categorySupportCta"
                 @filter-change="handleFilterChange"
               />
             </div>
@@ -856,6 +848,50 @@ const updateQueryParams = () => {
                       @update:model-value="handlePageChange"
                     />
                   </div>
+
+                  <section
+                    v-if="categorySupport"
+                    class="mt-10 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800"
+                  >
+                    <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400">
+                      {{ categorySupport.eyebrow }}
+                    </p>
+                    <h2 class="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">
+                      {{ categorySupport.heading }}
+                    </h2>
+                    <p class="mt-3 text-gray-600 dark:text-gray-300">
+                      {{ categorySupport.summary }}
+                    </p>
+                    <ul class="mt-5 space-y-3 text-sm text-gray-700 dark:text-gray-200">
+                      <li v-for="item in categorySupport.bullets" :key="item" class="flex gap-3">
+                        <span class="mt-1 h-2.5 w-2.5 rounded-full bg-primary-500" />
+                        <span>{{ item }}</span>
+                      </li>
+                    </ul>
+                  </section>
+
+                  <section
+                    v-if="categorySupport"
+                    class="mt-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800"
+                  >
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                      Câu hỏi thường gặp trong nhóm {{ categoryName }}
+                    </h2>
+                    <div class="mt-5 grid gap-4 lg:grid-cols-2">
+                      <article
+                        v-for="item in categorySupport.faq"
+                        :key="item.question"
+                        class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50"
+                      >
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                          {{ item.question }}
+                        </h3>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                          {{ item.answer }}
+                        </p>
+                      </article>
+                    </div>
+                  </section>
                 </template>
               </template>
             </div>

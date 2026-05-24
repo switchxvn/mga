@@ -35,6 +35,11 @@ const props = defineProps<{
     categorySlug?: string;
   };
   categoryId?: number;
+  availableAttributes?: Array<{
+    id: string;
+    name: string;
+    values: string[];
+  }>;
 }>();
 
 const emit = defineEmits<{
@@ -72,7 +77,7 @@ const minPriceInput = ref('');
 const maxPriceInput = ref('');
 
 // Attributes data
-const categoryAttributes = ref<any[]>([]);
+const categoryAttributes = computed(() => props.availableAttributes || []);
 const isLoadingAttributes = ref(false);
 const selectedAttributes = ref<Record<string, string[]>>({});
 
@@ -156,26 +161,6 @@ const fetchPriceRange = async () => {
     updatePriceInputs();
   } finally {
     isLoadingPriceRange.value = false;
-  }
-};
-
-// Fetch category attributes
-const fetchCategoryAttributes = async () => {
-  if (!props.categoryId) return;
-  
-  isLoadingAttributes.value = true;
-  try {
-    const result = await trpc.category.getAttributesByCategoryId.query({
-      categoryId: props.categoryId,
-      locale: locale.value
-    });
-    
-    categoryAttributes.value = result || [];
-  } catch (error) {
-    console.error('Error fetching category attributes:', error);
-    categoryAttributes.value = [];
-  } finally {
-    isLoadingAttributes.value = false;
   }
 };
 
@@ -268,7 +253,6 @@ const toggleSection = (section: string) => {
 // Initialize
 onMounted(() => {
   fetchPriceRange();
-  fetchCategoryAttributes();
 });
 </script>
 

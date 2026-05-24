@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useLocalization } from '~/composables/useLocalization';
-import { useTrpc } from '~/composables/useTrpc';
 import { useCategory } from '~/composables/useCategory';
 import { useProduct, type ProductFilter, type ProductSortBy } from '~/composables/useProduct';
 import { 
@@ -19,7 +18,6 @@ import Slider from '@vueform/slider';
 import '@vueform/slider/themes/default.css';
 
 const { t, locale } = useLocalization();
-const trpc = useTrpc();
 const DEFAULT_MAX_PRICE = 10_000_000_000;
 const { 
   productCategories,
@@ -32,6 +30,26 @@ const {
 const props = defineProps<{
   initialFilters: ProductFilter;
   categoryId?: number;
+  quickLinksHeading?: string;
+  quickLinks?: Array<{
+    label: string;
+    to: string;
+  }>;
+  availableAttributes?: Array<{
+    id: string;
+    name: string;
+    values: string[];
+    translations?: Array<{
+      locale: string;
+      name: string;
+    }>;
+  }>;
+  supportCta?: {
+    title: string;
+    description: string;
+    primaryLabel: string;
+    primaryTo: string;
+  } | null;
 }>();
 
 const emit = defineEmits<{
@@ -133,7 +151,7 @@ interface ProductFilterWithAttributes extends ProductFilter {
   }>;
 }
 
-const attributes = ref<CategoryAttribute[]>([]);
+const attributes = computed<CategoryAttribute[]>(() => props.availableAttributes || []);
 const isLoadingAttributes = ref(false);
 const selectedAttributes = ref<Record<string, string[]>>({});
 
@@ -189,32 +207,6 @@ const updatePriceInputs = () => {
   }
 };
 
-// Fetch category attributes
-const fetchCategoryAttributes = async () => {
-  if (!props.categoryId) return;
-  
-  isLoadingAttributes.value = true;
-  try {
-    const result = await trpc.category.getAttributes.query({ 
-      id: props.categoryId,
-      locale: locale.value 
-    });
-    
-    if (result?.attributes) {
-      attributes.value = result.attributes.map(attr => ({
-        id: String(attr.id),
-        name: attr.translations?.find(t => t.locale === locale.value)?.name || attr.name,
-        values: attr.values || [],
-        translations: attr.translations
-      }));
-    }
-  } catch (error) {
-    console.error('Error fetching category attributes:', error);
-  } finally {
-    isLoadingAttributes.value = false;
-  }
-};
-
 // Toggle attribute value selection
 const toggleAttributeValue = (attributeId: string, value: string) => {
   if (!selectedAttributes.value[attributeId]) {
@@ -246,7 +238,6 @@ const toggleSection = (section: keyof typeof expandedSections.value) => {
 onMounted(() => {
   fetchPriceRange();
   fetchProductCategories();
-  fetchCategoryAttributes();
 });
 
 // Reset filters with emit
@@ -262,14 +253,6 @@ const handleResetFilters = () => {
   });
 };
 
-// Watch for categoryId changes to fetch attributes
-watch(() => props.categoryId, (newId) => {
-  if (newId) {
-    fetchCategoryAttributes();
-  } else {
-    attributes.value = [];
-  }
-}, { immediate: true });
 </script>
 
 <template>
@@ -513,6 +496,44 @@ watch(() => props.categoryId, (newId) => {
           {{ tr('products.resetFilters', 'Đặt lại bộ lọc') }}
         </UButton>
       </div>
+    </div>
+
+    <div
+      v-if="props.quickLinks?.length"
+      class="mt-6 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-800"
+    >
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+        {{ props.quickLinksHeading || 'Xem nhanh theo nhu cầu' }}
+      </h3>
+      <div class="mt-4 space-y-3">
+        <NuxtLink
+          v-for="item in props.quickLinks"
+          :key="item.to"
+          :to="item.to"
+          class="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-800 transition hover:border-primary-500 hover:text-primary-600 dark:border-gray-700 dark:text-gray-100 dark:hover:border-primary-400 dark:hover:text-primary-300"
+        >
+          <span>{{ item.label }}</span>
+          <span aria-hidden="true">→</span>
+        </NuxtLink>
+      </div>
+    </div>
+
+    <div
+      v-if="props.supportCta"
+      class="mt-6 rounded-3xl border border-primary-200 bg-primary-50 p-5 shadow-sm dark:border-primary-900/60 dark:bg-primary-900/20"
+    >
+      <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+        {{ props.supportCta.title }}
+      </h3>
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+        {{ props.supportCta.description }}
+      </p>
+      <NuxtLink
+        :to="props.supportCta.primaryTo"
+        class="mt-4 inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700"
+      >
+        {{ props.supportCta.primaryLabel }}
+      </NuxtLink>
     </div>
   </div>
 </template>

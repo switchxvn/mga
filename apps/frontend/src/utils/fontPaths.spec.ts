@@ -11,4 +11,11 @@ describe('Inter font stylesheet', () => {
     expect(stylesheet).toContain("/fonts/inter/web/Inter-Regular.woff2");
     expect(stylesheet).toContain("/fonts/inter/web/Inter.var.woff2");
   });
+
+  it('keeps Nuxt public assets rooted at the app public directory outside srcDir', () => {
+    const nuxtConfigPath = resolve(__dirname, '../../nuxt.config.ts');
+    const nuxtConfig = readFileSync(nuxtConfigPath, 'utf8');
+
+    expect(nuxtConfig).toMatch(/dir:\s*\{[\s\S]*public:\s*['"]\.\.\/public['"]/);
+  });
 });

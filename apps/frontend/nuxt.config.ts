@@ -7,6 +7,9 @@ import { ROUTE_NAMES, ROUTE_PATHS } from './src/utils/routes';
 export default defineNuxtConfig({
   workspaceDir: '../../',
   srcDir: 'src',
+  dir: {
+    public: '../public',
+  },
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
   ignore: ['**/*.js.map', '**/*.js'],
 

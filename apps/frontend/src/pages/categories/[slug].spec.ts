@@ -5,6 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const localizationLocale = ref('vi');
 const localizationT = vi.fn((key: string) => key);
+const mockedRouteSlug = ref('may-nen-khi');
+const mockedRoutePath = ref('/danh-muc-san-pham/may-nen-khi');
+const mockedProducts = ref([{ id: 101, slug: 'sample-product' }]);
+const mockedTotalProducts = ref(1);
 const mockedProductFilters = ref({
   search: '',
   minPrice: undefined as number | undefined,
@@ -67,8 +71,8 @@ vi.mock('../../composables/useTrpc', () => ({
 vi.mock('../../composables/useProduct', () => ({
   useProduct: () => ({
     filters: mockedProductFilters,
-    products: ref([]),
-    totalProducts: ref(0),
+    products: mockedProducts,
+    totalProducts: mockedTotalProducts,
     isLoadingProducts: ref(false),
     fetchProducts: vi.fn(),
   }),
@@ -91,9 +95,9 @@ vi.mock('~/utils/routes', () => ({
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
-    params: { slug: 'may-nen-khi' },
+    params: { slug: mockedRouteSlug.value },
     query: {},
-    path: '/danh-muc-san-pham/may-nen-khi',
+    path: mockedRoutePath.value,
   }),
   useRouter: () => ({
     replace: vi.fn(),
@@ -136,6 +140,10 @@ describe('category slug page', () => {
       limit: 12,
       locale: 'vi',
     };
+    mockedRouteSlug.value = 'may-nen-khi';
+    mockedRoutePath.value = '/danh-muc-san-pham/may-nen-khi';
+    mockedProducts.value = [{ id: 101, slug: 'sample-product' }];
+    mockedTotalProducts.value = 1;
   });
 
   it('fetches the category using the locale implied by the route path during CSR navigation', async () => {
@@ -347,5 +355,54 @@ describe('category slug page', () => {
 
     expect(wrapper.text()).toContain('Trang chủ');
     expect(wrapper.text()).toContain('Danh mục sản phẩm');
+  });
+
+  it('passes quick links to the desktop sidebar with clearer copy and removes the old heading', async () => {
+    mockedRouteSlug.value = 'xe-nang-dien';
+    mockedRoutePath.value = '/danh-muc-san-pham/xe-nang-dien';
+    categoryBySlugQuery.mockResolvedValueOnce({
+      id: 2,
+      name: 'Xe nâng điện',
+      slug: 'xe-nang-dien',
+      description: 'Danh mục xe nâng điện',
+      translations: [{ locale: 'vi', name: 'Xe nâng điện', slug: 'xe-nang-dien', description: 'Danh mục xe nâng điện' }],
+    });
+
+    const page = (await import('./[slug].vue')).default;
+    const TestHost = defineComponent({
+      components: { Page: page },
+      template: `
+        <Suspense>
+          <Page />
+        </Suspense>
+      `,
+    });
+
+    const wrapper = mount(TestHost, {
+      global: {
+        stubs: {
+          CategorySidebar: {
+            props: ['quickLinksHeading', 'quickLinks', 'supportCta'],
+            template: '<div data-testid="sidebar-quick-links">{{ quickLinksHeading }}|{{ quickLinks?.length || 0 }}|{{ supportCta?.title || "" }}</div>',
+          },
+          CategoryMobileSidebar: true,
+          ProductCard: true,
+          UIcon: true,
+          UButton: true,
+          UPagination: true,
+          Pagination: true,
+          NuxtLink: NuxtLinkStub,
+          CardGridSkeleton: true,
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="sidebar-quick-links"]').text()).toContain('Xem nhanh theo nhu cầu');
+    expect(wrapper.find('[data-testid="sidebar-quick-links"]').text()).toContain('|4|');
+    expect(wrapper.find('[data-testid="sidebar-quick-links"]').text()).toContain('Cần tư vấn nhanh?');
+    expect(wrapper.text()).toContain('Câu hỏi thường gặp trong nhóm Xe nâng điện');
+    expect(wrapper.text()).not.toContain('Link nhanh theo intent thương mại');
   });
 });
