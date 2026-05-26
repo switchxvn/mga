@@ -29,6 +29,24 @@ describe('legacy redirect server helper', () => {
     });
   });
 
+  it('redirects english post aliases to the canonical vietnamese path while preserving query strings', () => {
+    expect(
+      resolveLegacyRedirectLocation('/posts/safe-forklift-operation-guide?ref=gsc&page=2'),
+    ).toEqual({
+      destination: '/bai-viet/safe-forklift-operation-guide?ref=gsc&page=2',
+      statusCode: 301,
+    });
+  });
+
+  it('redirects trailing-slash canonical urls to the slashless canonical path', () => {
+    expect(
+      resolveLegacyRedirectLocation('/san-pham/bo-cang-gat-gu/?ref=gsc&page=2'),
+    ).toEqual({
+      destination: '/san-pham/bo-cang-gat-gu?ref=gsc&page=2',
+      statusCode: 301,
+    });
+  });
+
   it('returns null when there is no redirect match', () => {
     expect(resolveLegacyRedirectLocation('/khong-ton-tai?page=2')).toBeNull();
   });

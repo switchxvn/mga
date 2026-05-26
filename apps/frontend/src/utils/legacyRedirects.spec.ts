@@ -48,6 +48,42 @@ describe('legacy redirects', () => {
     });
   });
 
+  it('redirects english post aliases to the canonical vietnamese post path', () => {
+    expect(resolveLegacyRedirect('/posts/safe-forklift-operation-guide')).toEqual({
+      destination: '/bai-viet/safe-forklift-operation-guide',
+      statusCode: 301,
+    });
+
+    expect(resolveLegacyRedirect('/posts')).toEqual({
+      destination: '/bai-viet',
+      statusCode: 301,
+    });
+  });
+
+  it('redirects english service aliases to the canonical vietnamese service path', () => {
+    expect(resolveLegacyRedirect('/services/diesel-forklift-rental')).toEqual({
+      destination: '/dich-vu/diesel-forklift-rental',
+      statusCode: 301,
+    });
+
+    expect(resolveLegacyRedirect('/services')).toEqual({
+      destination: '/dich-vu',
+      statusCode: 301,
+    });
+  });
+
+  it('redirects trailing-slash canonical routes to the slashless vietnamese url', () => {
+    expect(resolveLegacyRedirect('/san-pham/bo-cang-gat-gu/')).toEqual({
+      destination: '/san-pham/bo-cang-gat-gu',
+      statusCode: 301,
+    });
+
+    expect(resolveLegacyRedirect('/bai-viet/huong-dan-van-hanh-xe-nang-an-toan/')).toEqual({
+      destination: '/bai-viet/huong-dan-van-hanh-xe-nang-an-toan',
+      statusCode: 301,
+    });
+  });
+
   it('returns null for unmapped legacy urls', () => {
     expect(resolveLegacyRedirect('/khong-ton-tai')).toBeNull();
     expect(resolveLegacyRedirect('/bai-viet/slug-hop-le')).toBeNull();
