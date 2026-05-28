@@ -258,10 +258,17 @@ usePageSeo({
 }
 
 /* Add new styles for images and tables */
-:deep(.service-prose img) {
-  max-width: 150px;
+:deep(.service-prose figure) {
+  @apply my-8 overflow-hidden rounded-xl;
+}
+
+:deep(.service-prose figure img),
+:deep(.service-content > img) {
+  width: 100%;
+  max-width: 100%;
   height: auto;
-  object-fit: contain;
+  object-fit: cover;
+  display: block;
 }
 
 :deep(.service-prose table) {
