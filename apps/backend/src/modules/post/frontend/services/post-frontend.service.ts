@@ -7,6 +7,7 @@ import { PostTag } from '../../entities/post-tag.entity';
 import { PostTranslation } from '../../entities/post-translation.entity';
 import { Post } from '../../entities/post.entity';
 import { serializeVietnamTimestamp } from '../utils/post-timestamp.util';
+import { applyTagSlugFilterToPostQuery } from './post-query-filter.util';
 
 interface PostWhereConditions {
   published: boolean;
@@ -164,6 +165,7 @@ export class PostFrontendService {
   async findByLocale(locale: string, filters?: {
     categories?: number[];
     categorySlugs?: string[];
+    tagSlugs?: string[];
     search?: string;
     page?: number;
     limit?: number;
@@ -205,6 +207,8 @@ export class PostFrontendService {
             categorySlugs: filters.categorySlugs 
           });
       }
+
+      applyTagSlugFilterToPostQuery(qb, filters?.tagSlugs);
 
       // Thêm điều kiện tìm kiếm nếu có
       if (filters?.search?.trim()) {

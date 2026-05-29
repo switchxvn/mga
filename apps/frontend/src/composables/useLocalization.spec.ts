@@ -47,6 +47,16 @@ const HOME_CRITICAL_KEYS = [
   'tickets.ticketType',
 ] as const;
 
+const SERVICE_LISTING_KEYS = [
+  'services.showing',
+  'services.items',
+  'services.sortBy',
+  'sort.newest',
+  'sort.oldest',
+  'sort.title_asc',
+  'sort.title_desc',
+] as const;
+
 const getNestedValue = (source: Record<string, any>, key: string) =>
   key.split('.').reduce<any>((value, part) => value?.[part], source);
 
@@ -119,6 +129,17 @@ describe('useLocalization', () => {
     expect(localization.t('products.missingKey')).toBe('');
   });
 
+  it('resolves service listing keys from bundled translations without inline fallbacks', async () => {
+    const { useLocalization } = await import('./useLocalization');
+
+    const localization = useLocalization();
+
+    expect(localization.t('services.showing')).toBe('Đang hiển thị');
+    expect(localization.t('services.items')).toBe('dịch vụ');
+    expect(localization.t('services.sortBy')).toBe('Sắp xếp theo');
+    expect(localization.t('sort.newest')).toBe('Mới nhất');
+  });
+
   it('normalizes runtime locale codes returned by the language API', async () => {
     mockGetDefaultLanguage.mockResolvedValue({ code: 'vi-VN' });
     mockGetLanguages.mockResolvedValue([
@@ -159,6 +180,18 @@ describe('home locale coverage', () => {
     ['ko', ko],
   ])('includes critical home-page keys for %s', (_, messages) => {
     for (const key of HOME_CRITICAL_KEYS) {
+      expect(getNestedValue(messages as Record<string, any>, key), key).toEqual(expect.any(String));
+    }
+  });
+});
+
+describe('service listing locale coverage', () => {
+  it.each([
+    ['vi', viLocale],
+    ['en', en],
+    ['ko', ko],
+  ])('includes service listing keys for %s', (_, messages) => {
+    for (const key of SERVICE_LISTING_KEYS) {
       expect(getNestedValue(messages as Record<string, any>, key), key).toEqual(expect.any(String));
     }
   });

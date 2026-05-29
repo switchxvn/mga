@@ -63,12 +63,12 @@ const filters = computed<ServiceFilter>(() => ({
 }));
 
 // Sort options
-const sortOptions = [
+const sortOptions = computed(() => [
   { value: 'newest', label: t('sort.newest') },
   { value: 'oldest', label: t('sort.oldest') },
   { value: 'name_asc', label: t('sort.title_asc') },
   { value: 'name_desc', label: t('sort.title_desc') },
-] as const;
+] as const);
 
 // Use service composable
 const { services, totalServices, isLoading, error, fetchServices } = useService();
