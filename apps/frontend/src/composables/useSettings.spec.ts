@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const query = vi.fn(async () => []);
+const queryByKey = vi.fn(async () => null);
 
 vi.mock('./useTrpc', () => ({
   useTrpc: () => ({
     settings: {
       getPublicSettings: { query },
-      getPublicSettingByKey: { query: vi.fn(async () => null) },
+      getPublicSettingByKey: { query: queryByKey },
     },
   }),
 }));
@@ -30,5 +31,22 @@ describe('useSettings', () => {
     useSettings();
 
     expect(query).not.toHaveBeenCalled();
+  });
+
+  it('returns the cached public setting value without querying by key again', async () => {
+    (process as any).server = false;
+    (process as any).client = true;
+    query.mockResolvedValueOnce([
+      { key: 'google_tag_manager_id', value: 'GTM-API123' },
+    ]);
+
+    const { useSettings } = await import('./useSettings');
+    const { getPublicSettingValueByKey } = useSettings();
+
+    const value = await getPublicSettingValueByKey('google_tag_manager_id', '');
+
+    expect(value).toBe('GTM-API123');
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(queryByKey).not.toHaveBeenCalled();
   });
 });

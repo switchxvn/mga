@@ -137,7 +137,6 @@ const themeCssText = computed(() => buildThemeCssText(theme.value?.colors));
 
 // GTM Configuration
 const gtmConfig = useState('gtm-id', () => null);
-const shouldLoadTracking = ref(false);
 
 // Reactive head configuration with GTM
 useHead(() => {
@@ -146,8 +145,9 @@ useHead(() => {
   const styles = [];
   
   // Add GTM script if ID is available
-  if (gtmConfig.value && shouldLoadTracking.value) {
+  if (gtmConfig.value) {
     scripts.push({
+      key: 'google-tag-manager',
       innerHTML: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -156,6 +156,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     });
     
     noscripts.push({
+      key: 'google-tag-manager-noscript',
       innerHTML: `<iframe src="https://www.googletagmanager.com/ns.html?id=${gtmConfig.value}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`
     });
   }
@@ -228,31 +229,6 @@ try {
 }
 
 onMounted(async () => {
-  if (process.client) {
-    const deferLoad = () => {
-      shouldLoadTracking.value = true;
-    };
-
-    const loadOnInteraction = () => {
-      deferLoad();
-      window.removeEventListener('pointerdown', loadOnInteraction);
-      window.removeEventListener('keydown', loadOnInteraction);
-      window.removeEventListener('touchstart', loadOnInteraction);
-      window.removeEventListener('scroll', loadOnInteraction);
-    };
-
-    window.addEventListener('pointerdown', loadOnInteraction, { passive: true, once: true });
-    window.addEventListener('keydown', loadOnInteraction, { passive: true, once: true });
-    window.addEventListener('touchstart', loadOnInteraction, { passive: true, once: true });
-    window.addEventListener('scroll', loadOnInteraction, { passive: true, once: true });
-
-    if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(deferLoad, { timeout: 4000 });
-    } else {
-      window.setTimeout(deferLoad, 2500);
-    }
-  }
-
   try {
     // Kiểm tra xem người dùng đã đăng nhập chưa
     const storedUser = localStorage.getItem('user');

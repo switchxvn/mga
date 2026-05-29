@@ -5,10 +5,6 @@ import { useUserStore } from '@/stores/useUserStore';
 // Session storage key
 const SESSION_ID_KEY = 'user_session_id';
 
-// Session update interval in milliseconds (1 minute)
-const UPDATE_INTERVAL = 60 * 1000; // Giảm xuống 1 phút thay vì 5 phút
-const MIN_ACTIVITY_UPDATE_INTERVAL = 15 * 1000;
-
 let cachedIpInfo: IpInfo | null = null;
 let ipInfoPromise: Promise<IpInfo> | null = null;
 let clientTrackingStarted = false;
@@ -69,12 +65,9 @@ const createUserSession = () => {
   const isActive = ref(true);
   const pageViews = ref(0);
   const sessionStartTime = ref<Date | null>(null);
-  const lastActivity = ref<Date | null>(null);
   const currentPage = ref<string | null>(null);
-  const updateIntervalId = ref<NodeJS.Timeout | null>(null);
   const error = ref<string | null>(null);
   const isInitialized = ref(false);
-  const updateInFlight = ref(false);
 
   // Tạo hoặc lấy session ID từ localStorage
   const getOrCreateSessionId = (): string => {
@@ -100,12 +93,8 @@ const createUserSession = () => {
       if (session) {
         // Cập nhật các giá trị theo thông tin từ server
         sessionStartTime.value = new Date(session.startTime);
-        lastActivity.value = new Date(); // Cập nhật thời gian hiện tại
         pageViews.value = session.pageViews;
         isActive.value = true;
-        
-        // Cập nhật session ngay lập tức để gửi lastActivity mới
-        await updateSession();
         return true;
       }
       
@@ -167,13 +156,9 @@ const createUserSession = () => {
 
         // Khởi tạo các giá trị theo dõi
         sessionStartTime.value = new Date();
-        lastActivity.value = new Date();
         pageViews.value = 1;
         isActive.value = true;
       }
-
-      // Thiết lập interval để cập nhật session định kỳ
-      startUpdateInterval();
       isInitialized.value = true;
 
       return sessionId.value;
@@ -186,46 +171,7 @@ const createUserSession = () => {
 
   // Cập nhật session khi có hoạt động
   const updateSession = async () => {
-    try {
-      if (!sessionId.value) {
-        return;
-      }
-
-      if (updateInFlight.value) {
-        return;
-      }
-
-      // Luôn cập nhật thời gian hoạt động mới nhất
-      const currentTime = new Date();
-      const lastUpdateTime = lastActivity.value?.getTime() || 0;
-      if (currentTime.getTime() - lastUpdateTime < MIN_ACTIVITY_UPDATE_INTERVAL) {
-        return;
-      }
-      const isoString = currentTime.toISOString();
-      updateInFlight.value = true;
-      
-      // Lấy IP address và country hiện tại
-      const ipInfo = await getClientIpInfo();
-      
-      const payload = {
-        sessionId: sessionId.value,
-        lastActivity: isoString,
-        isActive: isActive.value,
-        ipAddress: ipInfo.ip,
-        country: ipInfo.country || 'XX' // Đảm bảo luôn có giá trị country
-      };
-
-      // Chuyển đổi Date thành chuỗi ISO để đảm bảo tương thích
-      await trpc.userSession.updateSession.mutate(payload);
-      
-      // Cập nhật giá trị lastActivity sau khi gửi thành công
-      lastActivity.value = currentTime;
-    } catch (err: any) {
-      console.error('Error updating session:', err);
-      error.value = err?.message || 'Lỗi cập nhật phiên';
-    } finally {
-      updateInFlight.value = false;
-    }
+    return;
   };
 
   // Kết thúc session
@@ -246,9 +192,6 @@ const createUserSession = () => {
       sessionId.value = null;
       isActive.value = false;
       isInitialized.value = false;
-
-      // Dừng interval cập nhật
-      stopUpdateInterval();
 
       return true;
     } catch (err: any) {
@@ -274,45 +217,17 @@ const createUserSession = () => {
   const updatePageView = (path: string) => {
     currentPage.value = path;
     pageViews.value += 1;
-    
-    // Cập nhật session sau khi người dùng chuyển trang
-    updateSession();
-  };
-
-  // Bắt đầu interval cập nhật
-  const startUpdateInterval = () => {
-    // Dừng interval hiện tại nếu có
-    stopUpdateInterval();
-
-    // Tạo interval mới để cập nhật session định kỳ
-    updateIntervalId.value = setInterval(() => {
-      if (isActive.value && sessionId.value) {
-        updateSession();
-      }
-    }, UPDATE_INTERVAL);
-  };
-
-  // Dừng interval cập nhật
-  const stopUpdateInterval = () => {
-    if (updateIntervalId.value) {
-      clearInterval(updateIntervalId.value);
-      updateIntervalId.value = null;
-    }
   };
 
   // Force cập nhật thời gian hoạt động ngay lập tức
   const pingActivity = () => {
-    updateSession();
+    return;
   };
 
   // Xử lý sự kiện khi user không còn hoạt động
   const handleVisibilityChange = () => {
     const isVisible = document.visibilityState === 'visible';
     isActive.value = isVisible;
-    
-    if (isVisible && sessionId.value) {
-      updateSession();
-    }
   };
 
   // Xử lý sự kiện trước khi trang được đóng
@@ -356,7 +271,6 @@ const createUserSession = () => {
       return;
     }
 
-    stopUpdateInterval();
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('beforeunload', handleBeforeUnload);
 

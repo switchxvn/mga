@@ -1,5 +1,7 @@
 import { CategoryType } from '@ew/shared';
+import { NotFoundException } from '@nestjs/common';
 import { TRPCError } from '@trpc/server';
+import { EntityNotFoundError } from 'typeorm';
 import { z } from 'zod';
 import { publicProcedure, router } from '../procedures';
 
@@ -18,6 +20,30 @@ const normalizeCategoryPriceRange = (category: any): any => {
       : category.children,
   };
 };
+
+export function mapCategoryLookupError(error: unknown) {
+  if (error instanceof TRPCError) {
+    return error;
+  }
+
+  if (error instanceof EntityNotFoundError) {
+    return new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Category not found',
+      cause: error,
+    });
+  }
+
+  if (error instanceof NotFoundException) {
+    return new TRPCError({
+      code: 'NOT_FOUND',
+      message: error.message,
+      cause: error,
+    });
+  }
+
+  return error;
+}
 
 export const categoryRouter = router({
   all: publicProcedure
@@ -75,11 +101,13 @@ export const categoryRouter = router({
           ctx.logger.debug(`Successfully retrieved category ID: ${input.id}`);
           return normalizeCategoryPriceRange(category);
         } catch (err) {
-          ctx.logger.warn(`Category not found for ID: ${input.id}`);
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Category with ID ${input.id} not found`,
-          });
+          const mappedError = mapCategoryLookupError(err);
+          if (mappedError instanceof TRPCError) {
+            ctx.logger.warn(`Category not found for ID: ${input.id}`);
+            throw mappedError;
+          }
+
+          throw mappedError;
         }
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -107,11 +135,13 @@ export const categoryRouter = router({
           ctx.logger.debug(`Successfully retrieved category with slug: ${input.slug}`);
           return normalizeCategoryPriceRange(category);
         } catch (err) {
-          ctx.logger.warn(`Category not found for slug: ${input.slug}`);
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Category with slug "${input.slug}" not found`,
-          });
+          const mappedError = mapCategoryLookupError(err);
+          if (mappedError instanceof TRPCError) {
+            ctx.logger.warn(`Category not found for slug: ${input.slug}`);
+            throw mappedError;
+          }
+
+          throw mappedError;
         }
       } catch (error) {
         if (error instanceof TRPCError) throw error;
