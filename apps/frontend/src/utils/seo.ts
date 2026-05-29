@@ -588,8 +588,61 @@ export function buildArticleSchema(input: {
   publisherName?: string;
   publisherLogoUrl?: string;
   inLanguage?: string;
+  ratingValue?: number | null;
+  reviewCount?: number | null;
+  reviews?: Array<{
+    authorName: string;
+    rating: number;
+    createdAt?: string;
+    translations: Array<{
+      title?: string;
+      content: string;
+    }>;
+  }>;
 }) {
   const images = Array.isArray(input.image) ? input.image.filter(Boolean) : input.image ? [input.image] : [];
+  const hasValidAggregateRating =
+    typeof input.ratingValue === 'number' &&
+    Number.isFinite(input.ratingValue) &&
+    input.ratingValue > 0 &&
+    typeof input.reviewCount === 'number' &&
+    Number.isFinite(input.reviewCount) &&
+    input.reviewCount > 0;
+  const review =
+    input.reviews
+      ?.map((item) => {
+        const translation = item.translations?.find((entry) => entry.content?.trim()) || item.translations?.[0];
+        const reviewBody = translation?.content?.trim();
+        const reviewTitle = translation?.title?.trim();
+
+        if (
+          !reviewBody ||
+          typeof item.rating !== 'number' ||
+          !Number.isFinite(item.rating) ||
+          item.rating <= 0 ||
+          !item.authorName?.trim()
+        ) {
+          return null;
+        }
+
+        return {
+          '@type': 'Review',
+          author: {
+            '@type': 'Person',
+            name: item.authorName.trim(),
+          },
+          name: reviewTitle || undefined,
+          reviewBody,
+          datePublished: item.createdAt || undefined,
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue: item.rating,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item)) || [];
 
   return {
     '@context': 'https://schema.org',
@@ -624,6 +677,15 @@ export function buildArticleSchema(input: {
             : undefined,
         }
       : undefined,
+    aggregateRating:
+      hasValidAggregateRating
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: input.ratingValue,
+            reviewCount: input.reviewCount,
+          }
+        : undefined,
+    review: review.length > 0 ? review : undefined,
   };
 }
 

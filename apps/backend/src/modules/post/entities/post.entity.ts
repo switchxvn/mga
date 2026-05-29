@@ -4,6 +4,7 @@ import { Category } from '../../category/entities/category.entity';
 import { PostTag } from './post-tag.entity';
 import { PostTranslation } from './post-translation.entity';
 import { Comment } from '../../comment/entities/comment.entity';
+import { Review } from '../../review/entities/review.entity';
 
 @Entity('posts')
 export class Post {
@@ -64,4 +65,7 @@ export class Post {
 
   @OneToMany(() => Comment, comment => comment.post)
   comments!: Comment[];
+
+  @OneToMany(() => Review, (review) => review.post)
+  reviews!: Review[];
 }

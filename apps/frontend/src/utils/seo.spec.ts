@@ -266,6 +266,76 @@ describe('seo utils', () => {
     });
   });
 
+  it('adds aggregateRating to article schema only when valid review stats exist', () => {
+    expect(
+      buildArticleSchema({
+        headline: 'Xe nang dien cho kho lanh',
+        description: 'Mo ta',
+        url: 'https://example.test/bai-viet/xe-nang-dien-cho-kho-lanh',
+        ratingValue: 4.9,
+        reviewCount: 7,
+      }),
+    ).toMatchObject({
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: 4.9,
+        reviewCount: 7,
+      },
+    });
+
+    expect(
+      buildArticleSchema({
+        headline: 'Xe nang dien cho kho lanh',
+        description: 'Mo ta',
+        url: 'https://example.test/bai-viet/xe-nang-dien-cho-kho-lanh',
+        ratingValue: 0,
+        reviewCount: 7,
+      }).aggregateRating,
+    ).toBeUndefined();
+  });
+
+  it('adds review objects to article schema when post reviews exist', () => {
+    expect(
+      buildArticleSchema({
+        headline: 'Xe nang dien cho kho lanh',
+        description: 'Mo ta',
+        url: 'https://example.test/bai-viet/xe-nang-dien-cho-kho-lanh',
+        reviews: [
+          {
+            authorName: 'Nguyen Van B',
+            rating: 5,
+            createdAt: '2026-05-29T00:00:00.000Z',
+            translations: [
+              {
+                title: 'Bai viet ro rang',
+                content: 'Noi dung bai viet de theo doi va giai thich rat sat thuc te.',
+              },
+            ],
+          },
+        ],
+      }),
+    ).toMatchObject({
+      review: [
+        {
+          '@type': 'Review',
+          author: {
+            '@type': 'Person',
+            name: 'Nguyen Van B',
+          },
+          name: 'Bai viet ro rang',
+          reviewBody: 'Noi dung bai viet de theo doi va giai thich rat sat thuc te.',
+          datePublished: '2026-05-29T00:00:00.000Z',
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue: 5,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        },
+      ],
+    });
+  });
+
   it('builds offers from decimal string prices returned by the API', () => {
     expect(
       buildProductSchema({

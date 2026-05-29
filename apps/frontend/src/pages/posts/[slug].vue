@@ -10,6 +10,7 @@ import Breadcrumb from '~/components/common/Breadcrumb.vue';
 import AppImage from '~/components/ui/AppImage.vue';
 import Icon from '~/components/ui/Icon.vue';
 import PostComments from '~/components/post/PostComments.vue';
+import PostReviewsSection from '~/components/post/PostReviewsSection.vue';
 import { useI18n } from 'vue-i18n';
 import type { Post, Profile, Author, Tag } from '@ew/shared';
 import { usePost } from '~/composables/usePost';
@@ -19,6 +20,7 @@ import { usePageSeo } from '~/composables/usePageSeo';
 import { buildArticleSchema, resolveSeoCanonicalUrl } from '~/utils/seo';
 import { formatFullPostContent } from '~/utils/contentFormatter';
 import { getCategoryDetailRoute } from '~/utils/routes';
+import { fetchPostDetailPayload } from '~/composables/postDetailPayload';
 
 // Định nghĩa alias cho URL tiếng Việt và tiếng Anh
 definePageMeta({
@@ -28,22 +30,37 @@ definePageMeta({
 const route = useRoute();
 const router = useRouter();
 const { locale } = useI18n();
+const trpc = useTrpc();
 const slug = route.params.slug as string;
 const siteUrl = useRuntimeConfig().public.siteUrl;
 const siteName = useRuntimeConfig().public.siteName;
 const siteLogoUrl = useRuntimeConfig().public.siteLogoUrl as string | undefined;
 
 const { 
-  fetchPost, 
   getCurrentTranslation, 
   handleLocaleChange,
 } = usePost();
 
-// Sử dụng useAsyncData thay vì useLazyAsyncData để hỗ trợ SSR tốt hơn
-const { data: post, pending: loading, error, refresh } = await useAsyncData(
-  `post-${slug}`,
-  () => fetchPost(slug)
+const { data: payload, pending: loading, error, refresh } = await useAsyncData(
+  `post-${slug}-${locale.value}`,
+  () => fetchPostDetailPayload({
+    slug,
+    locale: locale.value,
+    trpc: {
+      post: {
+        bySlugWithAuthorAndTags: trpc.post.bySlugWithAuthorAndTags,
+      },
+      review: {
+        getPostAggregateRating: trpc.review.getPostAggregateRating,
+        list: trpc.review.list,
+      },
+    },
+  }),
 );
+
+const post = computed(() => payload.value?.post || null);
+const postReviewAggregate = computed(() => payload.value?.postReviewAggregate ?? null);
+const postReviews = computed(() => payload.value?.postReviews ?? []);
 
 // Tạo các computed properties để truy cập dữ liệu post một cách an toàn
 const postData = computed(() => post.value || {} as Post);
@@ -146,8 +163,8 @@ function goBack() {
 }
 
 const postSlugByLocale = computed(() => ({
-  vi: postData.value.translations?.find((translation) => translation.locale === 'vi')?.slug,
-  en: postData.value.translations?.find((translation) => translation.locale === 'en')?.slug,
+  vi: postData.value.translations?.find((translation: any) => translation.locale === 'vi')?.slug,
+  en: postData.value.translations?.find((translation: any) => translation.locale === 'en')?.slug,
 }));
 
 const resolvedCanonicalUrl = computed(() =>
@@ -191,6 +208,11 @@ usePageSeo({
       publisherName: siteName || undefined,
       publisherLogoUrl: siteLogoUrl || undefined,
       inLanguage: locale.value === 'en' ? 'en' : 'vi',
+      ratingValue: postReviewAggregate.value?.averageRating
+        ? Number.parseFloat(postReviewAggregate.value.averageRating)
+        : null,
+      reviewCount: postReviewAggregate.value?.totalReviews ?? null,
+      reviews: postReviews.value,
     }),
   ]),
 });
@@ -341,6 +363,15 @@ usePageSeo({
                 </NuxtLink>
               </div>
             </div>
+
+            <PostReviewsSection
+              v-if="postId"
+              :post-id="postId"
+              :reviews="postReviews"
+              :locale="locale"
+              :average-rating="postReviewAggregate ? Number(postReviewAggregate.averageRating) : null"
+              :total-reviews="postReviewAggregate?.totalReviews ?? null"
+            />
             
             <!-- Comments section -->
             <PostComments v-if="postId" :postId="postId" />

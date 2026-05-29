@@ -7,6 +7,7 @@ import { ReviewServiceType } from '../../entities/review-service-type.entity';
 import { ReviewStatus } from '@ew/shared';
 import { Product } from '../../../product/entities/product.entity';
 import { Service } from '../../../service/entities/service.entity';
+import { Post } from '../../../post/entities/post.entity';
 
 export interface CreateReviewInput {
   authorName: string;
@@ -16,6 +17,7 @@ export interface CreateReviewInput {
   serviceTypeId?: number;
   productId?: number;
   serviceId?: number;
+  postId?: number;
   visitDate?: Date;
   featured?: boolean;
   status?: ReviewStatus;
@@ -34,6 +36,7 @@ export interface UpdateReviewInput {
   serviceTypeId?: number;
   productId?: number | null;
   serviceId?: number | null;
+  postId?: number | null;
   visitDate?: Date;
   featured?: boolean;
   status?: ReviewStatus;
@@ -51,6 +54,7 @@ export interface ReviewsPaginationParams {
   featured?: boolean;
   serviceTypeId?: number;
   serviceId?: number;
+  postId?: number;
   minRating?: number;
   maxRating?: number;
   status?: ReviewStatus;
@@ -70,6 +74,8 @@ export class AdminReviewService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Service)
     private readonly serviceRepository: Repository<Service>,
+    @InjectRepository(Post)
+    private readonly postRepository: Repository<Post>,
   ) {}
 
   private async assertProductExists(productId: number) {
@@ -94,6 +100,17 @@ export class AdminReviewService {
     }
   }
 
+  private async assertPostExists(postId: number) {
+    const post = await this.postRepository.findOne({
+      where: { id: postId },
+      select: ['id'],
+    });
+
+    if (!post) {
+      throw new Error(`Post with ID ${postId} not found`);
+    }
+  }
+
   async findAll(params: ReviewsPaginationParams = {}) {
     const {
       page = 1,
@@ -102,6 +119,7 @@ export class AdminReviewService {
       featured,
       serviceTypeId,
       serviceId,
+      postId,
       minRating,
       maxRating,
       status,
@@ -136,6 +154,10 @@ export class AdminReviewService {
 
     if (serviceId) {
       query.andWhere('review.serviceId = :serviceId', { serviceId });
+    }
+
+    if (postId) {
+      query.andWhere('review.postId = :postId', { postId });
     }
 
     if (minRating !== undefined) {
@@ -194,6 +216,10 @@ export class AdminReviewService {
       await this.assertServiceExists(data.serviceId);
     }
 
+    if (typeof data.postId === 'number') {
+      await this.assertPostExists(data.postId);
+    }
+
     const review = this.reviewRepository.create({
       authorName: data.authorName,
       authorAvatar: data.authorAvatar,
@@ -202,6 +228,7 @@ export class AdminReviewService {
       serviceTypeId: data.serviceTypeId,
       productId: data.productId,
       serviceId: data.serviceId,
+      postId: data.postId,
       visitDate: data.visitDate,
       featured: data.featured,
       status: data.status ?? ReviewStatus.ACTIVE,
@@ -243,6 +270,14 @@ export class AdminReviewService {
       } else {
         await this.assertServiceExists(data.serviceId);
         review.serviceId = data.serviceId;
+      }
+    }
+    if (data.postId !== undefined) {
+      if (data.postId === null) {
+        review.postId = null;
+      } else {
+        await this.assertPostExists(data.postId);
+        review.postId = data.postId;
       }
     }
     if (data.visitDate !== undefined) review.visitDate = data.visitDate;

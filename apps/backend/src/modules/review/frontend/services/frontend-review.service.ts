@@ -12,6 +12,7 @@ export interface ReviewsFilterParams {
   serviceTypeId?: number;
   productId?: number;
   serviceId?: number;
+  postId?: number;
   locale?: string;
   minRating?: number;
   sortBy?: 'latest' | 'highest_rating' | 'lowest_rating';
@@ -34,6 +35,7 @@ export class FrontendReviewService {
       serviceTypeId,
       productId,
       serviceId,
+      postId,
       locale = 'vi',
       minRating,
       sortBy = 'latest',
@@ -66,6 +68,10 @@ export class FrontendReviewService {
 
     if (serviceId) {
       query.andWhere('review.serviceId = :serviceId', { serviceId });
+    }
+
+    if (postId) {
+      query.andWhere('review.postId = :postId', { postId });
     }
 
     // Filter by minimum rating
@@ -187,6 +193,21 @@ export class FrontendReviewService {
       .createQueryBuilder('review')
       .where('review.status = :status', { status: ReviewStatus.ACTIVE })
       .andWhere('review.serviceId = :serviceId', { serviceId })
+      .select('AVG(review.rating)', 'avgRating')
+      .addSelect('COUNT(review.id)', 'totalReviews')
+      .getRawOne();
+
+    return {
+      averageRating: result?.avgRating ? parseFloat(result.avgRating).toFixed(1) : '0.0',
+      totalReviews: parseInt(result?.totalReviews, 10) || 0,
+    };
+  }
+
+  async getPostAggregateRating(postId: number) {
+    const result = await this.reviewRepository
+      .createQueryBuilder('review')
+      .where('review.status = :status', { status: ReviewStatus.ACTIVE })
+      .andWhere('review.postId = :postId', { postId })
       .select('AVG(review.rating)', 'avgRating')
       .addSelect('COUNT(review.id)', 'totalReviews')
       .getRawOne();

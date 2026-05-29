@@ -44,6 +44,25 @@ describe('submitReviewSchema', () => {
     expect(parsed.serviceId).toBe(12);
     expect(parsed.serviceTypeId).toBeUndefined();
   });
+
+  it('accepts post detail review payloads without serviceTypeId', () => {
+    const parsed = submitReviewSchema.parse({
+      authorName: 'Nguyen Van C',
+      profession: 'Dieu phoi kho',
+      rating: 5,
+      postId: 44,
+      translations: [
+        {
+          locale: 'vi',
+          title: 'Noi dung huu ich',
+          content: 'Bai viet de hieu va giup toi chot cau hinh nhanh hon.',
+        },
+      ],
+    });
+
+    expect(parsed.postId).toBe(44);
+    expect(parsed.serviceTypeId).toBeUndefined();
+  });
 });
 
 describe('buildPublicReviewCreateInput', () => {
@@ -86,6 +105,27 @@ describe('buildPublicReviewCreateInput', () => {
     });
 
     expect(result.serviceId).toBe(12);
+    expect(result.status).toBe(ReviewStatus.PENDING);
+    expect(result.featured).toBe(false);
+  });
+
+  it('keeps post-linked reviews pending and preserves postId', () => {
+    const result = buildPublicReviewCreateInput({
+      authorName: 'Nguyen Van C',
+      profession: 'Dieu phoi kho',
+      rating: 5,
+      postId: 44,
+      visitDate: undefined,
+      translations: [
+        {
+          locale: 'vi',
+          title: 'Noi dung huu ich',
+          content: 'Bai viet de hieu va giup toi chot cau hinh nhanh hon.',
+        },
+      ],
+    });
+
+    expect(result.postId).toBe(44);
     expect(result.status).toBe(ReviewStatus.PENDING);
     expect(result.featured).toBe(false);
   });

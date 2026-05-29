@@ -13,6 +13,7 @@ import { ReviewStatus } from '@ew/shared';
 import { ReviewServiceType } from './review-service-type.entity';
 import { Product } from '../../product/entities/product.entity';
 import { Service } from '../../service/entities/service.entity';
+import { Post } from '../../post/entities/post.entity';
 
 @Entity('reviews')
 export class Review {
@@ -40,6 +41,9 @@ export class Review {
   @Column({ name: 'service_id', nullable: true })
   serviceId?: number | null;
 
+  @Column({ name: 'post_id', nullable: true })
+  postId?: number | null;
+
   @ManyToOne(() => ReviewServiceType, (serviceType) => serviceType.reviews)
   @JoinColumn({ name: 'service_type_id' })
   serviceType?: ReviewServiceType;
@@ -51,6 +55,10 @@ export class Review {
   @ManyToOne(() => Service, (service) => service.reviews, { nullable: true })
   @JoinColumn({ name: 'service_id' })
   service?: Service | null;
+
+  @ManyToOne(() => Post, (post) => post.reviews, { nullable: true })
+  @JoinColumn({ name: 'post_id' })
+  post?: Post | null;
 
   @Column({ name: 'visit_date', type: 'date', nullable: true })
   visitDate?: Date;

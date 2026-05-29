@@ -11,6 +11,7 @@ const reviewsFilterSchema = z.object({
   serviceTypeId: z.number().optional(),
   productId: z.number().optional(),
   serviceId: z.number().optional(),
+  postId: z.number().optional(),
   locale: z.string().optional(),
   minRating: z.number().optional(),
   sortBy: z.enum(['latest', 'highest_rating', 'lowest_rating']).optional(),
@@ -32,6 +33,7 @@ export const submitReviewSchema = z.object({
   serviceTypeId: z.number().min(1).optional(),
   productId: z.number().min(1).optional(),
   serviceId: z.number().min(1).optional(),
+  postId: z.number().min(1).optional(),
   visitDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
   translations: z.array(translationSchema).min(1),
 });
@@ -45,6 +47,7 @@ export function buildPublicReviewCreateInput(input: z.infer<typeof submitReviewS
     serviceTypeId: input.serviceTypeId ?? (input.productId ? DEFAULT_PUBLIC_PRODUCT_REVIEW_SERVICE_TYPE_ID : undefined),
     productId: input.productId,
     serviceId: input.serviceId,
+    postId: input.postId,
     visitDate: input.visitDate,
     status: ReviewStatus.PENDING,
     featured: false,
@@ -121,6 +124,15 @@ export const reviewRouter = router({
     .query(async ({ ctx, input }) => {
       const frontendReviewService = ctx.services.frontend.review;
       return frontendReviewService.getServiceAggregateRating(input.serviceId);
+    }),
+
+  getPostAggregateRating: publicProcedure
+    .input(z.object({
+      postId: z.number().min(1),
+    }))
+    .query(async ({ ctx, input }) => {
+      const frontendReviewService = ctx.services.frontend.review;
+      return frontendReviewService.getPostAggregateRating(input.postId);
     }),
 
   getRatingDistribution: publicProcedure
