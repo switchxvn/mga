@@ -64,10 +64,10 @@ const filters = computed<ServiceFilter>(() => ({
 
 // Sort options
 const sortOptions = computed(() => [
-  { value: 'newest', label: t('sort.newest') },
-  { value: 'oldest', label: t('sort.oldest') },
-  { value: 'name_asc', label: t('sort.title_asc') },
-  { value: 'name_desc', label: t('sort.title_desc') },
+  { value: 'newest', label: t('sort.newest') || 'Mới nhất' },
+  { value: 'oldest', label: t('sort.oldest') || 'Cũ nhất' },
+  { value: 'name_asc', label: t('sort.title_asc') || 'Tiêu đề: A-Z' },
+  { value: 'name_desc', label: t('sort.title_desc') || 'Tiêu đề: Z-A' },
 ] as const);
 
 // Use service composable
@@ -169,12 +169,12 @@ watch(locale, async () => {
           </div>
 
           <div class="flex items-center gap-2">
-            <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t("services.sortBy") }}:</label>
+            <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">{{ t("services.sortBy") || "Sắp xếp theo" }}:</label>
             <select
               id="sort"
               :value="currentSort"
               @change="handleSortChange"
-              class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+              class="min-w-[11rem] rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
             >
               <option
                 v-for="option in sortOptions"

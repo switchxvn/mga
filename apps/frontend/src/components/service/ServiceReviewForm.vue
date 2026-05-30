@@ -50,31 +50,31 @@ const validateForm = () => {
   let isValid = true;
 
   if (!formData.authorName.trim()) {
-    formErrors.authorName = tr('validation.required', 'Bat buoc');
+    formErrors.authorName = tr('validation.required', 'Bắt buộc');
     isValid = false;
   } else if (formData.authorName.trim().length < 2) {
-    formErrors.authorName = tr('validation.minLength', 'Toi thieu {min} ky tu').replace('{min}', '2');
+    formErrors.authorName = tr('validation.minLength', 'Tối thiểu {min} ký tự').replace('{min}', '2');
     isValid = false;
   }
 
   if (!formData.rating || formData.rating < 1 || formData.rating > 5) {
-    formErrors.rating = tr('validation.required', 'Bat buoc');
+    formErrors.rating = tr('validation.required', 'Bắt buộc');
     isValid = false;
   }
 
   if (!formData.title.trim()) {
-    formErrors.title = tr('validation.required', 'Bat buoc');
+    formErrors.title = tr('validation.required', 'Bắt buộc');
     isValid = false;
   } else if (formData.title.trim().length < 4) {
-    formErrors.title = tr('validation.minLength', 'Toi thieu {min} ky tu').replace('{min}', '4');
+    formErrors.title = tr('validation.minLength', 'Tối thiểu {min} ký tự').replace('{min}', '4');
     isValid = false;
   }
 
   if (!formData.content.trim()) {
-    formErrors.content = tr('validation.required', 'Bat buoc');
+    formErrors.content = tr('validation.required', 'Bắt buộc');
     isValid = false;
   } else if (formData.content.trim().length < 10) {
-    formErrors.content = tr('validation.minLength', 'Toi thieu {min} ky tu').replace('{min}', '10');
+    formErrors.content = tr('validation.minLength', 'Tối thiểu {min} ký tự').replace('{min}', '10');
     isValid = false;
   }
 
@@ -88,15 +88,15 @@ const setRating = (rating: number) => {
 const getRatingLabel = (rating: number): string => {
   switch (rating) {
     case 5:
-      return tr('reviews.ratingExcellent', 'Xuat sac');
+      return tr('reviews.ratingExcellent', 'Xuất sắc');
     case 4:
-      return tr('reviews.ratingGood', 'Tot');
+      return tr('reviews.ratingGood', 'Tốt');
     case 3:
-      return tr('reviews.ratingAverage', 'Trung binh');
+      return tr('reviews.ratingAverage', 'Trung bình');
     case 2:
-      return tr('reviews.ratingPoor', 'Kem');
+      return tr('reviews.ratingPoor', 'Kém');
     case 1:
-      return tr('reviews.ratingBad', 'Rat kem');
+      return tr('reviews.ratingBad', 'Rất kém');
     default:
       return '';
   }
@@ -157,14 +157,14 @@ defineExpose({
     <div class="grid gap-4 md:grid-cols-2">
       <div>
         <label class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-          {{ tr('reviews.authorName', 'Ten cua ban') }}
+          {{ tr('reviews.authorName', 'Tên của bạn') }}
         </label>
         <input
           ref="inputRef"
           v-model="formData.authorName"
           type="text"
           class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-          :placeholder="tr('reviews.authorNamePlaceholder', 'Nhap ten cua ban')"
+          :placeholder="tr('reviews.authorNamePlaceholder', 'Nhập tên của bạn')"
         />
         <p v-if="formErrors.authorName" class="mt-2 text-sm text-red-600 dark:text-red-400">
           {{ formErrors.authorName }}
@@ -173,20 +173,20 @@ defineExpose({
 
       <div>
         <label class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-          {{ tr('reviews.professionLabel', 'Nghe nghiep') }}
+          {{ tr('reviews.professionLabel', 'Nghề nghiệp') }}
         </label>
         <input
           v-model="formData.profession"
           type="text"
           class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-          :placeholder="tr('reviews.professionPlaceholder', 'Nhap nghe nghiep cua ban (khong bat buoc)')"
+          :placeholder="tr('reviews.professionPlaceholder', 'Nhập nghề nghiệp của bạn (không bắt buộc)')"
         />
       </div>
     </div>
 
     <div>
       <label class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-        {{ tr('reviews.rating', 'Danh gia') }}
+        {{ tr('reviews.rating', 'Đánh giá') }}
       </label>
       <div class="flex items-center gap-2">
         <button
@@ -214,13 +214,13 @@ defineExpose({
 
     <div>
       <label class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-        {{ tr('reviews.reviewTitle', 'Tieu de danh gia') }}
+        {{ tr('reviews.reviewTitle', 'Tiêu đề đánh giá') }}
       </label>
       <input
         v-model="formData.title"
         type="text"
         class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-        :placeholder="tr('reviews.reviewTitlePlaceholder', 'Tom tat trai nghiem cua ban trong mot cau')"
+        :placeholder="tr('reviews.reviewTitlePlaceholder', 'Tóm tắt trải nghiệm của bạn trong một câu')"
       />
       <p v-if="formErrors.title" class="mt-2 text-sm text-red-600 dark:text-red-400">
         {{ formErrors.title }}
@@ -229,13 +229,13 @@ defineExpose({
 
     <div>
       <label class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-        {{ tr('reviews.reviewContent', 'Noi dung danh gia') }}
+        {{ tr('reviews.reviewContent', 'Nội dung đánh giá') }}
       </label>
       <textarea
         v-model="formData.content"
         rows="5"
         class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-        :placeholder="tr('reviews.reviewContentPlaceholder', 'Mo ta chi tiet trai nghiem cua ban...')"
+        :placeholder="tr('reviews.reviewContentPlaceholder', 'Mô tả chi tiết trải nghiệm của bạn...')"
       />
       <p v-if="formErrors.content" class="mt-2 text-sm text-red-600 dark:text-red-400">
         {{ formErrors.content }}
@@ -243,9 +243,9 @@ defineExpose({
     </div>
 
     <div class="flex items-center justify-between gap-4 rounded-2xl bg-primary-50 px-4 py-3 text-sm text-primary-800 dark:bg-primary-950/40 dark:text-primary-200">
-      <p>{{ tr('reviews.moderationNotice', 'Danh gia cua ban se duoc hien thi sau khi duoc kiem duyet.') }}</p>
+      <p>{{ tr('reviews.moderationNotice', 'Đánh giá của bạn sẽ được hiển thị sau khi được kiểm duyệt.') }}</p>
       <UButton type="submit" color="primary" :loading="isSubmitting">
-        {{ tr('reviews.submitReview', 'Gui danh gia') }}
+        {{ tr('reviews.submitReview', 'Gửi đánh giá') }}
       </UButton>
     </div>
   </form>

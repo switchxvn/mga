@@ -386,6 +386,15 @@
     "price_asc": "Giá: Thấp đến cao",
     "price_desc": "Giá: Cao đến thấp"
   },
+  "pagination": {
+    "showing": "Hiển thị",
+    "of": "trong số",
+    "results": "kết quả",
+    "previous": "Trang trước",
+    "next": "Trang sau",
+    "goToPage": "Đi đến trang {page}",
+    "navigation": "Điều hướng phân trang"
+  },
   "services": {
     "title": "Dịch vụ",
     "description": "Khám phá các dịch vụ của chúng tôi",

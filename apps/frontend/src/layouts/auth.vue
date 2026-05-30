@@ -5,7 +5,7 @@ import { useLogo } from '~/composables/useLogo';
 import { useTheme } from '~/composables/useTheme';
 
 const { isDark, initializeTheme } = useTheme();
-const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
 const isLoading = ref(true);
 
 // Khởi tạo theme trước khi component được mounted
@@ -66,7 +66,7 @@ const toggleTheme = () => {
                   <img
                     v-if="currentLogoUrl"
                     :src="currentLogoUrl"
-                    :alt="logo?.altText || 'Logo'"
+                    :alt="currentLogoAlt"
                     class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
                   />
                   <span v-else-if="isLoadingLogo" class="h-16 w-16 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>

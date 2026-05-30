@@ -8,9 +8,10 @@ import { defineAsyncComponent, markRaw } from 'vue';
 import { useAsyncData } from 'nuxt/app';
 import { normalizeLocaleCode } from '../utils/locale';
 import ReviewsSection from '../components/ReviewsSection.vue';
+import HeroSectionFullWidth from '../components/sections/home_page/HeroSectionFullWidth.vue';
 import { Autoplay, Navigation, Pagination } from 'swiper/modules';
 
-export function useHomePage() {
+export async function useHomePage() {
   const trpc = useTrpc();
   const { locale } = useLocalization();
   const { getActiveTheme, getPageSections } = useTheme();
@@ -21,7 +22,6 @@ export function useHomePage() {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const defaultLocale = ref('vi');
-  const pageIsMounted = ref(true);
   
   // Định nghĩa type cho components
   type ComponentType = Component;
@@ -36,7 +36,7 @@ export function useHomePage() {
     'ServiceSection': defineAsyncComponent(() => import("../components/sections/home_page/ServiceSection.vue")),
     'NewsSection': defineAsyncComponent(() => import("../components/sections/home_page/NewsSection.vue")),
     'CompanyIntroSection': defineAsyncComponent(() => import("../components/sections/home_page/CompanyIntroSection.vue")),
-    'HeroSectionFullWidth': defineAsyncComponent(() => import("../components/sections/home_page/HeroSectionFullWidth.vue")),
+    'HeroSectionFullWidth': HeroSectionFullWidth,
     'VideoIntroSection': defineAsyncComponent(() => import("../components/sections/home_page/VideoIntroSection.vue")),
     'StyledProductCategoriesSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledProductCategoriesSection.vue")),
     'StyledFeaturedProductsSection': defineAsyncComponent(() => import("../components/sections/home_page/StyledFeaturedProductsSection.vue")),
@@ -71,6 +71,7 @@ export function useHomePage() {
       'hero': 'HeroSection',
       'hero_banner': 'HeroBannerSection',
       'featured_products': 'FeaturedProductsSection',
+      'new_products': 'FeaturedProductsSection',
       'product_categories': 'ProductCategoriesSection',
       'services': 'ServiceSection',
       'news': 'NewsSection',
@@ -127,53 +128,6 @@ export function useHomePage() {
     }
   }
 
-  // Cleanup function
-  function cleanup() {
-    pageIsMounted.value = false;
-    // Reset theme và các states khác
-    theme.value = null;
-    themeSections.value = [];
-    latestPosts.value = [];
-    isLoading.value = false;
-    error.value = null;
-  }
-  
-  // Fetch data for SSR và CSR
-  const { data: pageData } = useAsyncData('home-theme', async () => {
-    try {
-      // Lấy ngôn ngữ mặc định từ server
-      defaultLocale.value = await getDefaultLanguage();
-      
-      // Lấy theme chính
-      const activeTheme = await getActiveTheme({ pageType: PageType.HOME_PAGE });
-      
-      if (activeTheme) {
-        // Gán giá trị cho theme và ép kiểu thành Theme từ shared library
-        theme.value = activeTheme as unknown as Theme;
-        
-        // Sử dụng locale từ user nếu ở client-side, hoặc defaultLocale nếu ở server-side
-        const currentLocale = process.client ? locale.value : defaultLocale.value;
-        
-        // Lấy sections với locale phù hợp
-        let fetchedSections = await fetchThemeSections(activeTheme.id, currentLocale);
-        if (fetchedSections.length === 0 && currentLocale) {
-          fetchedSections = await fetchThemeSections(activeTheme.id);
-        }
-        themeSections.value = fetchedSections;
-        
-      }
-      
-      if (!activeTheme) {
-        error.value = "Không tìm thấy theme đang hoạt động cho trang chủ.";
-      }
-      return { themeId: activeTheme?.id ?? null };
-    } catch (err) {
-      console.error("Error in page initialization:", err);
-      error.value = "Không thể tải dữ liệu trang. Vui lòng thử lại sau.";
-      return { themeId: null };
-    }
-  });
-  
   // Watch for locale changes to update theme sections
   watch(locale, async () => {
     if (theme.value?.id) {
@@ -200,6 +154,58 @@ export function useHomePage() {
       console.error('Client hydration refetch for home sections failed:', err);
     }
   });
+
+  // Fetch data for SSR và CSR
+  const { data: pageData } = await useAsyncData('home-theme', async () => {
+    try {
+      // Lấy ngôn ngữ mặc định từ server
+      defaultLocale.value = await getDefaultLanguage();
+      
+      // Lấy theme chính
+      const activeTheme = await getActiveTheme({ pageType: PageType.HOME_PAGE });
+      
+      if (activeTheme) {
+        // Sử dụng locale từ user nếu ở client-side, hoặc defaultLocale nếu ở server-side
+        const currentLocale = process.client ? locale.value : defaultLocale.value;
+        
+        // Lấy sections với locale phù hợp
+        let fetchedSections = await fetchThemeSections(activeTheme.id, currentLocale);
+        if (fetchedSections.length === 0 && currentLocale) {
+          fetchedSections = await fetchThemeSections(activeTheme.id);
+        }
+
+        return {
+          themeId: activeTheme.id,
+          theme: {
+            id: activeTheme.id,
+            sections: activeTheme.sections ?? [],
+          } as Theme,
+          themeSections: fetchedSections,
+        };
+      }
+      
+      if (!activeTheme) {
+        error.value = "Không tìm thấy theme đang hoạt động cho trang chủ.";
+      }
+
+      return {
+        themeId: activeTheme?.id ?? null,
+        theme: null,
+        themeSections: [] as ThemeSection[],
+      };
+    } catch (err) {
+      console.error("Error in page initialization:", err);
+      error.value = "Không thể tải dữ liệu trang. Vui lòng thử lại sau.";
+      return {
+        themeId: null,
+        theme: null,
+        themeSections: [] as ThemeSection[],
+      };
+    }
+  });
+
+  theme.value = (pageData.value?.theme ?? null) as Theme | null;
+  themeSections.value = pageData.value?.themeSections ?? [];
   
   // Cấu hình Swiper cho posts dựa trên theme
   const getPostsSwiperOptions = (theme: Theme | null) => {
@@ -281,9 +287,7 @@ export function useHomePage() {
     latestPosts,
     isLoading,
     error,
-    pageIsMounted,
     resolveComponent,
-    cleanup,
     getSectionConfig,
     getAuthorName,
     postsSwiperOptions

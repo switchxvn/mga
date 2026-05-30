@@ -9,6 +9,7 @@ describe('useNavbar', () => {
 
   beforeEach(() => {
     document.documentElement.style.removeProperty('--nav-height');
+    document.documentElement.style.removeProperty('--mobile-nav-offset');
     document.documentElement.style.removeProperty('--mobile-menu-top');
     document.body.className = '';
 
@@ -108,6 +109,8 @@ describe('useNavbar', () => {
 
     expect((wrapper.vm as { isScrolled: boolean }).isScrolled).toBe(false);
     expect(document.documentElement.style.getPropertyValue('--nav-height')).toBe('64px');
+    expect(document.documentElement.style.getPropertyValue('--mobile-nav-offset')).toBe('64px');
+    expect(document.body.classList.contains('has-mobile-fixed-nav')).toBe(true);
     expect((wrapper.vm as { navHeight: number }).navHeight).toBe(64);
   });
 
@@ -193,8 +196,17 @@ describe('useNavbar', () => {
 
     expect((wrapper.vm as { isScrolled: boolean }).isScrolled).toBe(true);
     expect(document.body.classList.contains('has-sticky-nav')).toBe(false);
+    expect(document.body.classList.contains('has-mobile-fixed-nav')).toBe(true);
     expect(document.documentElement.style.getPropertyValue('--nav-height')).toBe('64px');
+    expect(document.documentElement.style.getPropertyValue('--mobile-nav-offset')).toBe('64px');
     expect((wrapper.vm as { navHeight: number }).navHeight).toBe(64);
+  });
+
+  it('removes the mobile fixed-nav body class outside the mobile breakpoint', async () => {
+    await mountNavbarHarness(0);
+
+    expect(document.body.classList.contains('has-mobile-fixed-nav')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--mobile-nav-offset')).toBe('0px');
   });
 
   it('does not open the mega menu immediately on accidental hover', async () => {

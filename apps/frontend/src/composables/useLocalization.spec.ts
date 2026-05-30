@@ -48,6 +48,13 @@ const HOME_CRITICAL_KEYS = [
 ] as const;
 
 const SERVICE_LISTING_KEYS = [
+  'pagination.showing',
+  'pagination.of',
+  'pagination.results',
+  'pagination.previous',
+  'pagination.next',
+  'pagination.goToPage',
+  'pagination.navigation',
   'services.showing',
   'services.items',
   'services.sortBy',

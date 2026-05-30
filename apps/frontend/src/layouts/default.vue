@@ -343,10 +343,4 @@ async function handleLogout() {
 .app-main {
   padding-top: 0;
 }
-
-@media (max-width: 768px) {
-  .app-main {
-    padding-top: var(--mobile-nav-offset, 0px);
-  }
-}
 </style> 

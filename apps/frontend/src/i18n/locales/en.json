@@ -387,6 +387,15 @@
     "price_asc": "Price: Low to High",
     "price_desc": "Price: High to Low"
   },
+  "pagination": {
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "previous": "Previous page",
+    "next": "Next page",
+    "goToPage": "Go to page {page}",
+    "navigation": "Pagination navigation"
+  },
   "services": {
     "title": "Services",
     "description": "Explore our services",

@@ -110,7 +110,7 @@ export const useNavbar = () => {
     const currentScrollPosition = Math.round(window.scrollY);
 
     if (isMobileStickyMode()) {
-      isScrolled.value = currentScrollPosition > MOBILE_STICKY_ACTIVATION_OFFSET;
+      setStickyState(currentScrollPosition > MOBILE_STICKY_ACTIVATION_OFFSET);
       lastScrollPosition.value = currentScrollPosition;
       return;
     }
@@ -156,13 +156,16 @@ export const useNavbar = () => {
 
   const updateBodyPadding = () => {
     if (typeof document !== 'undefined') {
+      const isMobile = isMobileStickyMode();
+
       document.body.classList.toggle(
         'has-sticky-nav',
-        isScrolled.value && !isMobileStickyMode()
+        isScrolled.value && !isMobile
       );
+      document.body.classList.toggle('has-mobile-fixed-nav', isMobile);
       document.documentElement.style.setProperty(
         '--mobile-nav-offset',
-        isMobileStickyMode() ? `${navHeight.value}px` : '0px'
+        isMobile ? `${navHeight.value}px` : '0px'
       );
     }
   };
@@ -194,6 +197,7 @@ export const useNavbar = () => {
     document.documentElement.style.removeProperty('--mobile-nav-offset');
     document.documentElement.style.removeProperty('--mobile-menu-top');
     document.body.classList.remove('has-sticky-nav');
+    document.body.classList.remove('has-mobile-fixed-nav');
   });
 
   return {

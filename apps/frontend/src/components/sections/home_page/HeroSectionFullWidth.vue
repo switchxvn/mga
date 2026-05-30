@@ -6,7 +6,7 @@ import 'swiper/css/pagination';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Autoplay, EffectFade, Navigation, Pagination } from 'swiper/modules';
 import type { PropType } from 'vue';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useTrpc } from '~/composables/useTrpc';
 import type { Hero, HeroSlider, Slide } from '~/types/hero';
@@ -73,6 +73,7 @@ const { t } = useI18n();
 const { t: localT } = useLocalization();
 const currentSlide = ref(0);
 const error = ref<Error | null>(null);
+const hasMounted = ref(false);
 
 const trpc = useTrpc();
 const { shouldShowSkeleton } = useSkeletonGate();
@@ -179,6 +180,10 @@ const processedConfig = computed(() => {
 
   return config;
 });
+
+onMounted(() => {
+  hasMounted.value = true;
+});
 </script>
 
 <template>
@@ -192,6 +197,75 @@ const processedConfig = computed(() => {
         <p class="text-red-500">{{ error.message }}</p>
       </div>
       
+      <div
+        v-else-if="sortedSlides.length > 0 && !hasMounted"
+        class="w-full h-full relative"
+      >
+        <div class="relative h-full w-full">
+          <div class="relative h-full w-full">
+            <AppImage
+              class="absolute inset-0 w-full h-full z-[1]"
+              :src="sortedSlides[0].image_url"
+              :alt="sortedSlides[0].title"
+              width="1780"
+              height="450"
+              sizes="(max-width: 768px) 100vw, 1780px"
+              format="webp"
+              :quality="75"
+              priority
+              loading="eager"
+              fetchpriority="high"
+              customClass="w-full h-full object-cover object-center"
+            />
+
+            <div
+              v-if="processedConfig.overlay?.enabled"
+              class="absolute inset-0 z-[2]"
+              :class="{
+                'bg-gradient-to-t from-black/70 to-transparent': processedConfig.overlay.gradient?.direction === 'to-t',
+                'bg-gradient-to-b from-black/70 to-transparent': processedConfig.overlay.gradient?.direction === 'to-b',
+                'bg-gradient-to-l from-black/70 to-transparent': processedConfig.overlay.gradient?.direction === 'to-l',
+                'bg-gradient-to-r from-black/70 to-transparent': processedConfig.overlay.gradient?.direction === 'to-r'
+              }"
+              :style="{
+                '--tw-gradient-from': processedConfig.overlay.gradient?.from || 'rgb(0 0 0 / 0.7)',
+                '--tw-gradient-to': processedConfig.overlay.gradient?.to || 'rgb(0 0 0 / 0)',
+                '--tw-gradient-stops': processedConfig.overlay.gradient
+                  ? `${processedConfig.overlay.gradient.from}, ${processedConfig.overlay.gradient.to}`
+                  : undefined
+              }"
+            ></div>
+
+            <div
+              v-if="processedConfig?.overlay?.enabled"
+              class="absolute inset-0 flex items-center justify-center z-[3]"
+            >
+              <div class="container mx-auto px-4 text-center text-white">
+                <component
+                  :is="titleTag"
+                  class="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-2 md:mb-4 drop-shadow-lg"
+                >
+                  {{ sortedSlides[0].title }}
+                </component>
+                <p class="text-base sm:text-lg md:text-xl mb-4 md:mb-8 max-w-2xl mx-auto drop-shadow line-clamp-3 md:line-clamp-none">
+                  {{ sortedSlides[0].description }}
+                </p>
+                <NuxtLink
+                  v-if="sortedSlides[0].link"
+                  :to="sortedSlides[0].link"
+                  class="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-2 md:py-3 px-6 md:px-8 rounded-lg transition-colors text-sm md:text-base"
+                >
+                  {{ sortedSlides[0].buttonText || localT('common.learn_more') }}
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="processedConfig.showArrows" class="hero-swiper-prev swiper-button-prev !z-10 !hidden md:!flex"></div>
+        <div v-if="processedConfig.showArrows" class="hero-swiper-next swiper-button-next !z-10 !hidden md:!flex"></div>
+      </div>
+
       <div v-else class="w-full h-full relative">
         <Swiper v-if="sortedSlides.length > 0"
                 v-bind="swiperOptions"
@@ -211,7 +285,7 @@ const processedConfig = computed(() => {
                 height="450"
                 sizes="(max-width: 768px) 100vw, 1780px"
                 format="webp"
-                quality="75"
+                :quality="75"
                 :priority="index === 0"
                 :loading="index === 0 ? 'eager' : 'lazy'"
                 :fetchpriority="index === 0 ? 'high' : 'auto'"

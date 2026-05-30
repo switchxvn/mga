@@ -32,7 +32,7 @@ const isLoadingFeatureFlag = ref(true);
 const { locale } = useLocalization();
 
 // Logo
-const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
 
 // Kiểm tra feature flag enable_add_to_cart
 const checkCartFeatureFlag = async () => {
@@ -276,21 +276,32 @@ watch([logo, isLoadingLogo], () => {
         <!-- Logo -->
         <div class="flex items-center">
           <NuxtLink to="/" class="flex items-center space-x-2">
-            <div 
-              class="flex items-center justify-center" 
-              :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
-            >
-              <img
-                v-if="currentLogoUrl"
-                :src="currentLogoUrl"
-                :alt="logo?.altText || 'Logo'"
-                :width="logo?.width"
-                :height="logo?.height"
-                class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
-              />
-              <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
-            </div>
-            
+            <template v-if="currentLogoUrl">
+              <div class="flex items-center justify-center max-w-[160px] sm:max-w-[180px] md:hidden">
+                <img
+                  :src="currentLogoUrl"
+                  :alt="currentLogoAlt"
+                  :width="logo?.width"
+                  :height="logo?.height"
+                  class="block w-full h-auto max-h-[44px] object-contain transition-transform duration-300 hover:scale-110"
+                />
+              </div>
+
+              <div
+                class="hidden md:flex items-center justify-center"
+                :style="logo ? `width: ${logo.width}px; height: ${logo.height}px` : ''"
+              >
+                <img
+                  :src="currentLogoUrl"
+                  :alt="currentLogoAlt"
+                  :width="logo?.width"
+                  :height="logo?.height"
+                  class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+                />
+              </div>
+            </template>
+
+            <span v-else-if="isLoadingLogo" class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"></span>
           </NuxtLink>
         </div>
 

@@ -12,7 +12,7 @@
               <img
                 v-if="currentLogoUrl"
                 :src="currentLogoUrl"
-                :alt="logo?.altText || 'Logo'"
+                :alt="currentLogoAlt"
                 :width="logo?.width"
                 :height="logo?.height"
                 class="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[60px]"
@@ -40,5 +40,5 @@ import DashboardUserMenu from '~/components/auth/DashboardUserMenu.vue';
 import { useLogo } from '~/composables/useLogo';
 
 // Logo handling
-const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
 </script> 

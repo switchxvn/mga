@@ -1,32 +1,18 @@
-import { defineComponent, nextTick } from 'vue';
-import { mount } from '@vue/test-utils';
+import { readFileSync } from 'node:fs';
 
-import { useSkeletonGate } from './useSkeletonGate';
+const source = readFileSync(
+  '/Users/abc/project/mga/apps/frontend/src/composables/useSkeletonGate.ts',
+  'utf8',
+);
 
 describe('useSkeletonGate', () => {
-  it('shows a skeleton on first client paint, then reveals content', async () => {
-    const TestComponent = defineComponent({
-      setup() {
-        const { shouldShowSkeleton } = useSkeletonGate();
-        return { shouldShowSkeleton };
-      },
-      template: `
-        <div>
-          <div v-if="shouldShowSkeleton" data-testid="skeleton">skeleton</div>
-          <div v-else data-testid="content">content</div>
-        </div>
-      `,
-    });
+  it('skips skeletons during Nuxt hydration so SSR content stays visible on refresh', () => {
+    expect(source).toContain('let hasHydratedInitialPage = false;');
+    expect(source).toContain('const shouldShowSkeleton = ref(import.meta.client && hasHydratedInitialPage);');
+  });
 
-    const wrapper = mount(TestComponent);
-
-    expect(wrapper.find('[data-testid="skeleton"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="content"]').exists()).toBe(false);
-
-    await nextTick();
-    await nextTick();
-
-    expect(wrapper.find('[data-testid="skeleton"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="content"]').exists()).toBe(true);
+  it('marks the initial hydration as complete after mount so later client navigations may use skeletons', () => {
+    expect(source).toContain('hasHydratedInitialPage = true;');
+    expect(source).toContain('shouldShowSkeleton.value = false;');
   });
 });

@@ -23,7 +23,7 @@
 .nav-wrapper {
   position: relative;
   width: 100%;
-  z-index: 900;
+  z-index: 999;
   transition: box-shadow 0.2s ease;
   will-change: box-shadow;
   transform: translateZ(0);
@@ -116,6 +116,19 @@
   object-fit: contain;
 }
 
+.mobile-nav-row {
+  min-height: var(--nav-height, 64px);
+}
+
+.mobile-action-button {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.mobile-nav-spacer {
+  display: none;
+}
+
 .nav-wrapper.nav-sticky .navigation-section {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
@@ -181,7 +194,7 @@
   z-index: 950;
   border-color: var(--navbar-border) !important;
   color: var(--navbar-text) !important;
-  background-color: #FEB914;
+  background-color: #feb914;
 }
 
 /* Keep existing animations */
@@ -197,7 +210,8 @@
 }
 
 @keyframes wiggle {
-  0%, 100% {
+  0%,
+  100% {
     transform: rotate(-10deg);
   }
   50% {
@@ -378,7 +392,6 @@
   z-index: 51;
 }
 
-
 @media (max-width: 1280px) {
   .mega-menu {
     width: calc(100vw - 2rem);
@@ -482,7 +495,8 @@
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   min-height: 48px;
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .top-menu-bg-layer {
@@ -575,6 +589,11 @@
 
 /* Add responsive styles for top menu */
 @media (max-width: 768px) {
+  .mobile-nav-spacer {
+    display: block;
+    height: var(--nav-height, 64px);
+  }
+
   .nav-wrapper {
     position: fixed;
     top: 0;
@@ -582,18 +601,39 @@
     right: 0;
   }
 
-  .nav-wrapper.nav-sticky {
+  .nav-wrapper:not(.nav-sticky) {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
+  }
+
+  .nav-wrapper.nav-sticky {
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
-  
+
+  .navigation-section {
+    min-height: max(var(--nav-height, 64px), 72px);
+  }
+
+  .navigation-section > .container > div,
+  .mobile-nav-row {
+    min-height: max(var(--nav-height, 64px), 72px);
+  }
+
+  .navigation-section .mobile-logo {
+    height: 40px;
+  }
+
+  .navigation-section .mobile-logo img {
+    max-height: 40px;
+    width: 100%;
+  }
+
   .mobile-menu-content {
     top: 0;
   }
-  
+
   .top-menu {
     display: none;
   }
@@ -619,4 +659,4 @@
 .mobile-submenu-item {
   font-size: inherit;
   font-weight: inherit;
-} 
+}

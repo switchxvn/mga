@@ -266,7 +266,7 @@ const topMenuButtonRef = ref<HTMLElement | null>(null);
 const { checkCartFeatureFlag } = useNavbarFeatures();
 
 // Logo
-const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
 const { shouldShowSkeleton } = useSkeletonGate();
 
 // Mobile Logo - tạo một instance mới của useLogo riêng cho mobile
@@ -1251,7 +1251,7 @@ const handleClickOutside = (event: MouseEvent) => {
                     v-else-if="currentLogoUrl"
                     class="w-full h-full"
                     :src="currentLogoUrl"
-                    :alt="logo?.altText || 'Logo'"
+                    :alt="currentLogoAlt"
                     :width="logo?.width || 200"
                     :height="logo?.height || 60"
                     sizes="200px"

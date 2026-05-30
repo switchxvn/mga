@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useAttrs, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useAttrs, watch } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
 
 defineOptions({
@@ -104,6 +104,8 @@ const isLoading = ref(true);
 const hasError = ref(false);
 const nativeImageRef = ref<HTMLImageElement | null>(null);
 const optimizedImageRef = ref<ComponentPublicInstance | null>(null);
+let cleanupOptimizedImageListeners: (() => void) | null = null;
+let optimizedImageObserver: MutationObserver | null = null;
 
 watch(() => props.src, () => {
   isLoading.value = true;
@@ -190,6 +192,46 @@ const getRenderedImage = () => {
   return optimizedRoot.querySelector('img');
 };
 
+const bindOptimizedImageListeners = () => {
+  cleanupOptimizedImageListeners?.();
+  cleanupOptimizedImageListeners = null;
+  optimizedImageObserver?.disconnect();
+  optimizedImageObserver = null;
+
+  if (shouldUseNativeImage.value) {
+    return;
+  }
+
+  const optimizedRoot = optimizedImageRef.value?.$el as Element | undefined;
+  if (optimizedRoot instanceof Element) {
+    optimizedImageObserver = new MutationObserver(() => {
+      const imageElement = getRenderedImage();
+      if (!(imageElement instanceof HTMLImageElement)) {
+        return;
+      }
+
+      bindOptimizedImageListeners();
+      syncImageState();
+    });
+    optimizedImageObserver.observe(optimizedRoot, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  const imageElement = getRenderedImage();
+  if (!(imageElement instanceof HTMLImageElement)) {
+    return;
+  }
+
+  imageElement.addEventListener('load', handleLoad);
+  imageElement.addEventListener('error', handleError);
+  cleanupOptimizedImageListeners = () => {
+    imageElement.removeEventListener('load', handleLoad);
+    imageElement.removeEventListener('error', handleError);
+  };
+};
+
 const syncImageState = () => {
   const imageElement = getRenderedImage();
   if (!imageElement) return;
@@ -223,6 +265,7 @@ watch(
   () => [props.src, shouldUseNativeImage.value],
   async () => {
     await nextTick();
+    bindOptimizedImageListeners();
     syncImageState();
   },
   { flush: 'post' }
@@ -230,7 +273,15 @@ watch(
 
 onMounted(async () => {
   await nextTick();
+  bindOptimizedImageListeners();
   syncImageState();
+});
+
+onBeforeUnmount(() => {
+  cleanupOptimizedImageListeners?.();
+  cleanupOptimizedImageListeners = null;
+  optimizedImageObserver?.disconnect();
+  optimizedImageObserver = null;
 });
 </script>
 

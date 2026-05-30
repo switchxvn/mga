@@ -110,10 +110,10 @@ const handleSubmitError = () => {
           Reader Feedback
         </p>
         <h2 class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-          {{ tr('reviews.title', 'Danh gia') }}
+          {{ tr('reviews.title', 'Đánh giá') }}
         </h2>
         <p class="mt-3 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300">
-          Chia se cam nhan thuc te ve bai viet nay de nguoi doc sau co them boi canh truoc khi ap dung.
+          Chia sẻ cảm nhận thực tế về bài viết này để người đọc sau có thêm bối cảnh trước khi áp dụng.
         </p>
       </div>
 
@@ -137,7 +137,7 @@ const handleSubmitError = () => {
         </div>
 
         <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">
-          {{ tr('reviews.basedOn', 'Dua tren') }} <strong>{{ normalizedTotalReviews }}</strong> {{ tr('reviews.reviews', 'danh gia') }}
+          {{ tr('reviews.basedOn', 'Dựa trên') }} <strong>{{ normalizedTotalReviews }}</strong> {{ tr('reviews.reviews', 'đánh giá') }}
         </p>
 
         <UButton
@@ -148,7 +148,7 @@ const handleSubmitError = () => {
           <template #leading>
             <PencilLine class="h-4 w-4" />
           </template>
-          {{ tr('reviews.writeReview', 'Viet danh gia') }}
+          {{ tr('reviews.writeReview', 'Viết đánh giá') }}
         </UButton>
       </div>
     </div>
@@ -202,10 +202,10 @@ const handleSubmitError = () => {
       >
         <MessageSquareQuote class="mx-auto h-10 w-10 text-gray-400" />
         <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
-          {{ tr('reviews.noReviews', 'Khong tim thay danh gia nao') }}
+          {{ tr('reviews.noReviews', 'Không tìm thấy đánh giá nào') }}
         </h3>
         <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-          Hay la nguoi dau tien chia se cach bai viet nay giup ban trong quyet dinh thuc te.
+          Hãy là người đầu tiên chia sẻ cách bài viết này giúp bạn trong quyết định thực tế.
         </p>
       </div>
     </div>
@@ -215,10 +215,10 @@ const handleSubmitError = () => {
         <div>
           <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">
             <PencilLine class="mr-2 inline h-4 w-4" />
-            {{ tr('reviews.writeReview', 'Viet danh gia') }}
+            {{ tr('reviews.writeReview', 'Viết đánh giá') }}
           </p>
           <h3 class="mt-2 text-xl font-bold text-gray-900 dark:text-white">
-            {{ tr('reviews.shareYourExperience', 'Chia se trai nghiem cua ban') }}
+            {{ tr('reviews.shareYourExperience', 'Chia sẻ trải nghiệm của bạn') }}
           </h3>
         </div>
 
@@ -228,7 +228,7 @@ const handleSubmitError = () => {
           variant="soft"
           @click="openForm"
         >
-          {{ tr('reviews.writeReview', 'Viet danh gia') }}
+          {{ tr('reviews.writeReview', 'Viết đánh giá') }}
         </UButton>
       </div>
 
@@ -236,16 +236,16 @@ const handleSubmitError = () => {
         v-if="submitSuccess"
         class="mt-5 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200"
       >
-        <p class="font-medium">{{ tr('reviews.thankYou', 'Cam on ban!') }}</p>
-        <p class="mt-1 text-sm">{{ tr('reviews.reviewSubmitSuccessDetail', 'Danh gia cua ban da duoc gui thanh cong!') }}</p>
-        <p class="mt-1 text-sm">{{ tr('reviews.moderationNotice', 'Danh gia cua ban se duoc hien thi sau khi duoc kiem duyet.') }}</p>
+        <p class="font-medium">{{ tr('reviews.thankYou', 'Cảm ơn bạn!') }}</p>
+        <p class="mt-1 text-sm">{{ tr('reviews.reviewSubmitSuccessDetail', 'Đánh giá của bạn đã được gửi thành công!') }}</p>
+        <p class="mt-1 text-sm">{{ tr('reviews.moderationNotice', 'Đánh giá của bạn sẽ được hiển thị sau khi được kiểm duyệt.') }}</p>
       </div>
 
       <div
         v-if="submitError"
         class="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
       >
-        {{ tr('reviews.reviewSubmitError', 'Da xay ra loi khi gui danh gia cua ban. Vui long thu lai sau.') }}
+        {{ tr('reviews.reviewSubmitError', 'Đã xảy ra lỗi khi gửi đánh giá của bạn. Vui lòng thử lại sau.') }}
       </div>
 
       <PostReviewForm

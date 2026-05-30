@@ -1,21 +1,13 @@
 <script setup lang="ts">
 import { useHomePage } from '../composables/useHomePage';
-import { onBeforeUnmount } from 'vue';
 
 const { 
   themeSections, 
   isLoading, 
   error, 
-  pageIsMounted,
   resolveComponent,
-  cleanup,
   getSectionConfig
-} = useHomePage();
-
-// Cleanup khi unmount
-onBeforeUnmount(() => {
-  cleanup();
-});
+} = await useHomePage();
 
 const heroSectionTypes = new Set(['hero', 'hero_full_width']);
 const heroComponentNames = new Set(['HeroSection', 'HeroSectionFullWidth']);
@@ -51,7 +43,7 @@ const getSemanticHeadingProps = (
 </script>
 
 <template>
-  <div class="bg-gray-50 dark:bg-gray-900" v-if="pageIsMounted">
+  <div class="bg-gray-50 dark:bg-gray-900">
     <template v-if="isLoading">
       <div class="space-y-10 px-4 py-6">
         <HeroSkeleton overlay-card />

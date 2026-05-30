@@ -310,19 +310,25 @@ usePageSeo({
                     {{ authorInitial }}
                   </div>
                   <div class="post-detail__author-info">
-                    <div class="post-detail__author-name">
-                      <Icon name="User" :size="16" class="mr-1" />
-                      <span>{{ authorInfo.name }}</span>
+                    <div class="post-detail__author-kicker">
+                      {{ locale === 'vi' ? 'Biên soạn bởi' : 'Written by' }}
                     </div>
-                    <div class="post-detail__date">
-                      <Icon name="Calendar" :size="16" class="mr-1" />
-                      <span>{{ formatDateTime(postCreatedAt) }}</span>
+                    <div class="post-detail__meta-list">
+                      <div class="post-detail__meta-pill post-detail__meta-pill--author">
+                        <Icon name="UserRound" :size="15" />
+                        <span>{{ authorInfo.name }}</span>
+                      </div>
+                      <div class="post-detail__meta-pill">
+                        <Icon name="CalendarDays" :size="15" />
+                        <span>{{ formatDateTime(postCreatedAt) }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
                 <div v-if="postUpdatedAt !== postCreatedAt" class="post-detail__updated">
-                  Cập nhật: {{ formatDateTime(postUpdatedAt) }}
+                  <Icon name="RefreshCw" :size="14" />
+                  <span>{{ locale === 'vi' ? 'Cập nhật' : 'Updated' }}: {{ formatDateTime(postUpdatedAt) }}</span>
                 </div>
               </div>
             </div>
@@ -467,37 +473,51 @@ usePageSeo({
 }
 
 .post-detail__meta {
-  @apply flex flex-col gap-3 border-t border-black/5 pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between;
+  @apply flex flex-col gap-4 border-t border-black/5 pt-5 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between;
 }
 
 .post-detail__author {
-  @apply min-w-0;
+  @apply flex min-w-0 items-start gap-3.5;
 }
 
 .post-detail__author-avatar {
-  @apply mr-3 h-10 w-10 text-base sm:h-12 sm:w-12 sm:text-lg;
+  @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-semibold uppercase text-white shadow-sm ring-1 ring-black/5 sm:h-12 sm:w-12 sm:text-base dark:ring-white/10;
 }
 
 .post-detail__author-info {
-  @apply min-w-0;
+  @apply min-w-0 space-y-2;
 }
 
-.post-detail__author-name,
-.post-detail__date {
-  @apply mb-0 gap-1.5 text-sm;
+.post-detail__author-kicker {
+  @apply text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400;
 }
 
-.post-detail__author-name {
-  @apply font-medium text-gray-800 dark:text-gray-100;
+.post-detail__meta-list {
+  @apply flex flex-wrap gap-2;
 }
 
-.post-detail__date,
+.post-detail__meta-pill {
+  @apply inline-flex max-w-full items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-medium text-gray-600 ring-1 ring-black/5 dark:bg-gray-900 dark:text-gray-300 dark:ring-white/10;
+}
+
+.post-detail__meta-pill :deep(svg) {
+  @apply shrink-0 text-primary-600 dark:text-primary-300;
+}
+
+.post-detail__meta-pill span {
+  @apply min-w-0 truncate;
+}
+
+.post-detail__meta-pill--author {
+  @apply text-gray-900 dark:text-white;
+}
+
 .post-detail__updated {
-  @apply text-gray-500 dark:text-gray-400;
+  @apply inline-flex items-center gap-2 self-start rounded-full bg-black px-3 py-2 text-sm font-medium text-white dark:bg-white dark:text-gray-900 sm:self-auto;
 }
 
-.post-detail__updated {
-  @apply text-sm not-italic;
+.post-detail__updated :deep(svg) {
+  @apply shrink-0;
 }
 
 .post-detail__body {

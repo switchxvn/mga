@@ -7,6 +7,11 @@ const source = readFileSync(
 );
 
 describe('useHomePage locale priority', () => {
+  it('awaits the homepage async payload before SSR renders the page body', () => {
+    expect(source).toContain('export async function useHomePage() {');
+    expect(source).toContain("const { data: pageData } = await useAsyncData('home-theme', async () => {");
+  });
+
   it('prefers Vietnamese for SSR homepage locale resolution', () => {
     expect(source).toContain("const defaultLocale = ref('vi');");
     expect(source).toContain('trpc.language.getDefaultLanguage.query()');
@@ -14,8 +19,15 @@ describe('useHomePage locale priority', () => {
     expect(source).toContain("return 'vi';");
   });
 
-  it('keeps the SSR payload lightweight instead of serializing the full active theme', () => {
-    expect(source).toContain('return { themeId: activeTheme?.id ?? null };');
+  it('serializes homepage sections into the async payload so hydration matches SSR', () => {
+    expect(source).toContain('return {');
+    expect(source).toContain('themeId: activeTheme?.id ?? null,');
+    expect(source).toContain('themeSections: fetchedSections,');
+    expect(source).toContain('theme.value = (pageData.value?.theme ?? null) as Theme | null;');
+    expect(source).toContain('themeSections.value = pageData.value?.themeSections ?? [];');
+  });
+
+  it('keeps the SSR payload lightweight instead of serializing the full active theme graph', () => {
     expect(source).not.toContain('return { theme: activeTheme };');
   });
 });

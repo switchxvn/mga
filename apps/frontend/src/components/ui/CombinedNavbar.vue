@@ -1,7 +1,6 @@
 <!-- Kết hợp NavbarWithLogoHotline và NavbarWithoutLogo -->
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, computed, onBeforeUnmount } from "vue";
-import { useNow, useDateFormat } from "@vueuse/core";
 import { useFeatureFlags } from "~/composables/useFeatureFlags";
 import { useLocalization } from "~/composables/useLocalization";
 import { useLogo } from "~/composables/useLogo";
@@ -129,7 +128,7 @@ const isLoadingFeatureFlag = ref(true);
 const { locale, t: translate } = useLocalization();
 
 // Logo
-const { currentLogoUrl, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
 const { shouldShowSkeleton } = useSkeletonGate();
 
 // Navbar
@@ -137,6 +136,7 @@ const {
   isMobileMenuOpen,
   isScrolled,
   navWrapperRef,
+  navHeight,
   activeMegaMenu,
   activeMobileMegaMenu,
   toggleMobileMenu,
@@ -205,8 +205,18 @@ const getNavLinkColor = (isActive: boolean) => ({
 });
 
 // Time
-const now = useNow();
-const formattedTime = useDateFormat(now, "HH:mm:ss - DD/MM/YYYY");
+const formattedTime = ref('');
+let timeInterval: ReturnType<typeof window.setInterval> | null = null;
+
+const formatCurrentTime = () => {
+  const now = new Date();
+  const pad = (value: number) => value.toString().padStart(2, '0');
+
+  formattedTime.value = [
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`,
+    `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`,
+  ].join(' - ');
+};
 
 // Features (Time and Cart)
 const { checkCartFeatureFlag } = useNavbarFeatures();
@@ -225,6 +235,8 @@ onMounted(() => {
   };
 
   init();
+  formatCurrentTime();
+  timeInterval = window.setInterval(formatCurrentTime, 1000);
 });
 
 // Watch for locale changes
@@ -235,7 +247,9 @@ watch(locale, () => {
 // Cải thiện cleanup
 onBeforeUnmount(() => {
   isMounted.value = false;
-  // Cleanup other resources if needed
+  if (timeInterval !== null) {
+    window.clearInterval(timeInterval);
+  }
 });
 
 const translateMenuLabel = (label: string, isTranslated = false) => {
@@ -318,17 +332,16 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
                   v-if="showLogoSkeleton"
                   class="h-8 w-24 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
                 ></span>
-                <AppImage
+                <img
                   v-else-if="currentLogoUrl"
-                  class="w-full h-full"
                   :src="currentLogoUrl"
-                  :alt="logo?.altText || 'Logo'"
+                  :alt="currentLogoAlt"
                   :width="logo?.width || 240"
                   :height="logo?.height || 80"
-                  sizes="240px"
                   loading="eager"
                   fetchpriority="high"
-                  customClass="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+                  decoding="async"
+                  class="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
                 />
               </div>
             </NuxtLink>
@@ -455,28 +468,25 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
           }"
         ></div>
         <div class="container mx-auto px-4">
-          <div class="flex items-center justify-between h-full relative">
+          <div class="mobile-nav-row flex items-center justify-between h-full relative">
             <!-- Mobile Logo - Left -->
             <div class="flex-shrink-0 md:hidden">
-              <NuxtLink to="/" class="block py-3">
+              <NuxtLink to="/" class="block py-2">
                 <div
-                  class="mobile-logo flex h-10 w-[140px] items-center justify-start"
+                  class="mobile-logo flex h-10 w-[132px] items-center justify-start"
                 >
                   <span
                     v-if="showLogoSkeleton"
                     class="h-8 w-16 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
                   ></span>
-                  <AppImage
+                  <img
                     v-else-if="currentLogoUrl"
-                    class="w-full h-full"
                     :src="currentLogoUrl"
-                    :alt="logo?.altText || 'Logo'"
-                    width="140"
-                    height="40"
-                    sizes="140px"
+                    :alt="currentLogoAlt"
                     loading="eager"
                     fetchpriority="high"
-                    customClass="transition-transform duration-300 hover:scale-110 object-contain w-full h-full"
+                    decoding="async"
+                    class="w-full h-full object-contain object-left transition-transform duration-300 hover:scale-110 max-h-[40px]"
                   />
                 </div>
               </NuxtLink>
@@ -544,18 +554,18 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
               </div>
 
               <!-- Mobile Actions -->
-              <div class="md:hidden flex items-center gap-2 py-3">
+              <div class="md:hidden flex items-center gap-2 py-2">
                 <!-- User Icon -->
                 <NuxtLink
                   to="/auth/login"
-                  class="flex items-center justify-center w-10 h-10 text-white hover:bg-primary-400 rounded-full transition-colors"
+                  class="mobile-action-button flex items-center justify-center text-white hover:bg-primary-400 rounded-full transition-colors"
                 >
                   <Icon name="User" class="h-6 w-6" />
                 </NuxtLink>
 
                 <!-- Hamburger Menu Button -->
                 <button
-                  class="flex items-center justify-center w-10 h-10 text-white hover:bg-primary-400 rounded-full transition-colors"
+                  class="mobile-action-button flex items-center justify-center text-white hover:bg-primary-400 rounded-full transition-colors"
                   @click="toggleMobileMenu"
                   aria-label="Toggle Menu"
                 >
@@ -567,6 +577,12 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
         </div>
       </nav>
     </div>
+
+    <div
+      class="mobile-nav-spacer md:hidden"
+      aria-hidden="true"
+      :style="{ height: `${navHeight}px` }"
+    ></div>
 
     <!-- Mobile Menu -->
     <Transition name="slide-fade">
@@ -588,17 +604,14 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
                   v-if="showLogoSkeleton"
                   class="h-6 w-16 animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded"
                 ></span>
-                <AppImage
+                <img
                   v-else-if="currentLogoUrl"
-                  class="w-full h-full"
                   :src="currentLogoUrl"
-                  :alt="logo?.altText || 'Logo'"
-                  width="160"
-                  height="40"
-                  sizes="160px"
+                  :alt="currentLogoAlt"
                   loading="eager"
                   fetchpriority="high"
-                  customClass="transition-transform duration-300 hover:scale-110 object-contain w-full h-full max-h-[40px]"
+                  decoding="async"
+                  class="w-full h-full object-contain transition-transform duration-300 hover:scale-110 max-h-[40px]"
                 />
               </div>
             </NuxtLink>

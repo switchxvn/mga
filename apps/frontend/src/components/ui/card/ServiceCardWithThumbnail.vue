@@ -41,7 +41,7 @@ const handleImageError = (payload: string | Event) => {
         class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
         loading="lazy"
         format="webp"
-        quality="80"
+        :quality="80"
         fit="cover"
         placeholder
       />

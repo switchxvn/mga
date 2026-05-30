@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import AppImage from './AppImage.vue';
 
 const NuxtImgStub = defineComponent({
@@ -33,6 +33,66 @@ const NuxtImgStub = defineComponent({
         'data-sizes': props.sizes,
         class: ['nuxt-img-stub', attrs.class],
       });
+  },
+});
+
+const WrappedNuxtImgStub = defineComponent({
+  name: 'NuxtImg',
+  inheritAttrs: false,
+  props: {
+    src: {
+      type: String,
+      required: true,
+    },
+    alt: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props, { attrs }) {
+    return () =>
+      h('div', { class: 'nuxt-img-wrapper' }, [
+        h('img', {
+          src: props.src,
+          alt: props.alt,
+          class: ['nuxt-img-inner', attrs.class],
+        }),
+      ]);
+  },
+});
+
+const DelayedNuxtImgStub = defineComponent({
+  name: 'NuxtImg',
+  inheritAttrs: false,
+  props: {
+    src: {
+      type: String,
+      required: true,
+    },
+    alt: {
+      type: String,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      showImage: false,
+    };
+  },
+  async mounted() {
+    await nextTick();
+    this.showImage = true;
+  },
+  render() {
+    return h('div', { class: 'nuxt-img-delayed-wrapper' }, this.showImage
+      ? [
+          h('img', {
+            src: this.src,
+            alt: this.alt,
+            class: 'nuxt-img-delayed-inner',
+          }),
+        ]
+      : []);
   },
 });
 
@@ -119,5 +179,54 @@ describe('AppImage', () => {
     });
 
     expect(wrapper.find('.nuxt-img-stub').classes()).toContain('consumer-image-class');
+  });
+
+  it('clears the loading overlay when a nested NuxtImg image fires a native load event', async () => {
+    const wrapper = mount(AppImage, {
+      props: {
+        src: 'https://cdn.mgavietnam.com/banner/5.jpg',
+        alt: 'Hero image',
+      },
+      global: {
+        stubs: {
+          NuxtImg: WrappedNuxtImgStub,
+        },
+      },
+    });
+
+    expect(wrapper.html()).toContain('animate-pulse');
+    await nextTick();
+    await nextTick();
+
+    await wrapper.find('.nuxt-img-inner').trigger('load');
+    await nextTick();
+
+    expect(wrapper.html()).not.toContain('animate-pulse');
+  });
+
+  it('recovers when the NuxtImg inner image is inserted after AppImage mounts', async () => {
+    const wrapper = mount(AppImage, {
+      props: {
+        src: 'https://cdn.mgavietnam.com/banner/6.jpg',
+        alt: 'Delayed hero image',
+      },
+      global: {
+        stubs: {
+          NuxtImg: DelayedNuxtImgStub,
+        },
+      },
+    });
+
+    expect(wrapper.html()).toContain('animate-pulse');
+
+    await nextTick();
+    await nextTick();
+
+    expect(wrapper.find('.nuxt-img-delayed-inner').exists()).toBe(true);
+
+    await wrapper.find('.nuxt-img-delayed-inner').trigger('load');
+    await nextTick();
+
+    expect(wrapper.html()).not.toContain('animate-pulse');
   });
 });

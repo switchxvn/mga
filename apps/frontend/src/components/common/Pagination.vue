@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useLocalization } from '~/composables/useLocalization';
 
 interface Props {
   /**
@@ -31,6 +32,8 @@ const props = withDefaults(defineProps<Props>(), {
   showTotal: true,
   itemsPerPage: 12 // Default value if undefined
 });
+
+const { t } = useLocalization();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: number): void;
@@ -129,14 +132,14 @@ const handleNextClick = () => {
   <div v-if="totalPages > 1" class="flex flex-col items-center gap-4">
     <!-- Pagination info -->
     <div v-if="showTotal" class="text-sm text-gray-600 dark:text-gray-400">
-      Hiển thị {{ currentRange }} trên tổng số {{ total }} kết quả
+      {{ t('pagination.showing') }} {{ currentRange }} {{ t('pagination.of') }} {{ total }} {{ t('pagination.results') }}
     </div>
 
     <!-- Pagination navigation -->
     <nav
       class="flex items-center justify-center gap-1"
       role="navigation"
-      aria-label="Pagination Navigation"
+      :aria-label="t('pagination.navigation')"
     >
       <!-- Previous button -->
       <button
@@ -148,7 +151,7 @@ const handleNextClick = () => {
         }"
         :disabled="modelValue === 1"
         @click="handlePrevClick"
-        aria-label="Previous Page"
+        :aria-label="t('pagination.previous')"
       >
         <i class="i-heroicons-chevron-left-20-solid h-5 w-5" />
       </button>
@@ -174,7 +177,7 @@ const handleNextClick = () => {
             'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800': item.value !== modelValue
           }"
           @click="handlePageClick(item.value)"
-          :aria-label="'Go to page ' + item.value"
+          :aria-label="t('pagination.goToPage', { page: item.value })"
           :aria-current="item.value === modelValue ? 'page' : undefined"
         >
           {{ item.value }}
@@ -191,7 +194,7 @@ const handleNextClick = () => {
         }"
         :disabled="modelValue === totalPages"
         @click="handleNextClick"
-        aria-label="Next Page"
+        :aria-label="t('pagination.next')"
       >
         <i class="i-heroicons-chevron-right-20-solid h-5 w-5" />
       </button>
