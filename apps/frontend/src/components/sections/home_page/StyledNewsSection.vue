@@ -266,6 +266,7 @@ watch(locale, () => {
             <div class="w-32 flex justify-end">
               <NuxtLink
                 to="/bai-viet"
+                :aria-label="`${t('news.viewAll')} ${config.title}`"
                 class="mobile-view-all inline-flex items-center justify-center px-4 py-2 text-xs sm:text-lg font-semibold uppercase tracking-wider text-white hover:text-primary-100 transition-colors duration-200 whitespace-nowrap"
               >
                 {{ t("news.viewAll") }}

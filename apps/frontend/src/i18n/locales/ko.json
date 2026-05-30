@@ -62,6 +62,8 @@
     "featured": "추천",
     "sale": "할인",
     "addToCart": "장바구니에 담기",
+    "decreaseQuantity": "수량 감소",
+    "increaseQuantity": "수량 증가",
     "price": "가격",
     "viewAll": "전체 보기",
     "home": "홈",

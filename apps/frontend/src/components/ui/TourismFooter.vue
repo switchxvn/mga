@@ -21,6 +21,11 @@ const {
 
 const { isDark } = useDarkMode();
 
+const getSocialLinkLabel = (name?: string) => {
+  const normalized = name?.trim();
+  return normalized ? `Theo doi MGA Viet Nam tren ${normalized}` : 'Theo doi MGA Viet Nam tren mang xa hoi';
+};
+
 // Tính toán style dựa trên theme từ API
 const footerStyle = computed(() => {
   // Bỏ qua giá trị từ API và áp dụng cứng màu đỏ
@@ -292,6 +297,7 @@ watch(
                    class="map-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
                 <iframe
                   :src="activeFooter.mapUrl + '&zoom=15&style=feature:all|element:labels.text.fill|color:0x000000|saturation:36|lightness:40&style=feature:all|element:labels.text.stroke|visibility:off&style=feature:administrative|element:geometry.stroke|color:0xdc2626|weight:1&style=feature:landscape|element:geometry.fill|color:0xfecaca&style=feature:poi|element:geometry.fill|color:0xfee2e2&style=feature:road|element:geometry.fill|color:0xffffff&style=feature:road|element:geometry.stroke|color:0xdc2626|weight:0.5&style=feature:water|element:geometry.fill|color:0xfca5a5'"
+                  :title="`Bản đồ chi nhánh ${activeFooter.companyInfo?.name || 'MGA Việt Nam'}`"
                   width="100%"
                   height="200"
                   style="border:0;"
@@ -331,6 +337,8 @@ watch(
                    :href="icon.url" 
                    target="_blank"
                    rel="noopener noreferrer"
+                   :aria-label="getSocialLinkLabel(icon.name)"
+                   :title="getSocialLinkLabel(icon.name)"
                    class="social-icon-link p-4 rounded-full transform hover:scale-110 transition-all duration-300"
                    style="background-color: rgba(255, 255, 255, 0.1);"
                    @mouseover="addHoverBackground"

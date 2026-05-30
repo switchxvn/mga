@@ -128,6 +128,16 @@ const isMaxQuantity = computed(() => {
   return quantity.value >= maxStock;
 });
 
+const addToCartLabel = computed(() => {
+  const baseLabel = props.buttonText || t('common.addToCart');
+
+  if (!props.product?.title) {
+    return baseLabel;
+  }
+
+  return `${baseLabel}: ${props.product.title}`;
+});
+
 // Direct add to cart (for products without variants)
 const directAddToCart = async () => {
   isAdding.value = true;
@@ -229,6 +239,7 @@ const handleModalSuccess = () => {
         @click="decreaseQuantity" 
         class="quantity-btn"
         :disabled="quantity <= 1"
+        :aria-label="t('common.decreaseQuantity')"
       >
         <Minus class="w-4 h-4" />
       </button>
@@ -237,6 +248,7 @@ const handleModalSuccess = () => {
         @click="increaseQuantity" 
         class="quantity-btn"
         :disabled="isMaxQuantity"
+        :aria-label="t('common.increaseQuantity')"
       >
         <Plus class="w-4 h-4" />
       </button>
@@ -245,6 +257,7 @@ const handleModalSuccess = () => {
     <button
       :class="['add-to-cart-button', buttonClass]"
       :disabled="!canAddToCart"
+      :aria-label="addToCartLabel"
       @click="handleClick"
     >
       <div class="button-content">

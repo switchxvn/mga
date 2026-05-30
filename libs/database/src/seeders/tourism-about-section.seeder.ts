@@ -80,22 +80,22 @@ export class TourismAboutSectionSeeder {
           features: [
             {
               title: 'Lăng Thoại Ngọc Hầu',
-              image: 'https://cdn.captreonuisam.com/tourism/lang-thoai-ngoc-hau.jpg',
+              image: 'https://cdn.mgavietnam.com/tourism/lang-thoai-ngoc-hau.jpg',
               link: '/bai-viet/kham-pha-lang-thoai-ngoc-hau-tuyet-tac-kien-truc-giua-long-nui-sam'
             },
             {
               title: 'Đền Phật Ngọc',
-              image: 'https://cdn.captreonuisam.com/tourism/den-phat-ngoc.jpg',
+              image: 'https://cdn.mgavietnam.com/tourism/den-phat-ngoc.jpg',
               link: '/bai-viet/phat-ngoc-hoa-binh-the-gioi-tren-dinh-nui-sam'
             },
             {
               title: 'Nhà Ga Cáp Treo',
-              image: 'https://cdn.captreonuisam.com/tourism/nha-ga-cap-treo.jpg',
+              image: 'https://cdn.mgavietnam.com/tourism/nha-ga-cap-treo.jpg',
               link: '/bai-viet/nha-ga-cap-treo-nui-sam'
             },
             {
               title: 'Rừng tràm Trà Sư',
-              image: 'https://cdn.captreonuisam.com/tourism/rung-tram-tra-su.jpg',
+              image: 'https://cdn.mgavietnam.com/tourism/rung-tram-tra-su.jpg',
               link: '/bai-viet/cam-nang-du-lich-rung-tram-tra-su'
             }
           ]
@@ -138,8 +138,8 @@ export class TourismAboutSectionSeeder {
           },
           imagePosition: 'right',
           images: [
-            'https://cdn.captreonuisam.com/tourism/cultural-1.jpg',
-            'https://cdn.captreonuisam.com/tourism/cultural-2.jpg'
+            'https://cdn.mgavietnam.com/tourism/cultural-1.jpg',
+            'https://cdn.mgavietnam.com/tourism/cultural-2.jpg'
           ]
         }
       }, {
@@ -196,8 +196,8 @@ export class TourismAboutSectionSeeder {
           },
           imagePosition: 'left',
           images: [
-            'https://cdn.captreonuisam.com/tourism/cultural-3.jpg',
-            'https://cdn.captreonuisam.com/tourism/cultural-4.jpg'
+            'https://cdn.mgavietnam.com/tourism/cultural-3.jpg',
+            'https://cdn.mgavietnam.com/tourism/cultural-4.jpg'
           ]
         }
       }, {
@@ -254,42 +254,42 @@ export class TourismAboutSectionSeeder {
           },
           gallery: [
             {
-              "image": "https://cdn.captreonuisam.com/tourism/be-ba-chua-xu.jpg",
+              "image": "https://cdn.mgavietnam.com/tourism/be-ba-chua-xu.jpg",
               "title": "Bệ Bà Chúa Xứ",
               "category": "spiritual"
             },
             {
-              "image": "https://cdn.captreonuisam.com/tourism/den-phat-ngoc-hoa-binh.jpg",
+              "image": "https://cdn.mgavietnam.com/tourism/den-phat-ngoc-hoa-binh.jpg",
               "title": "Đền Phật Ngọc Hoà Bình Thế Giới",
               "category": "spiritual"
             },
             {
-              "image": "https://cdn.captreonuisam.com/tourism/nha-ga-cap-treo-nui-sam.jpg",
+              "image": "https://cdn.mgavietnam.com/tourism/nha-ga-cap-treo-nui-sam.jpg",
               "title": "Nhà Ga Cáp Treo",
               "category": "infrastructure"
             },
             {
-              "image": "https://cdn.captreonuisam.com/tourism/bai-giu-xe.jpg",
+              "image": "https://cdn.mgavietnam.com/tourism/bai-giu-xe.jpg",
               "title": "Bãi Giữ Xe Rộng Rãi",
               "category": "facility"
             },
             {
-              "image": "https://cdn.captreonuisam.com/tourism/chua-mot-cot.jpg",
+              "image": "https://cdn.mgavietnam.com/tourism/chua-mot-cot.jpg",
               "title": "Chùa Một Cột",
               "category": "spiritual"
             },
             {
-              "image": "https://cdn.captreonuisam.com/tourism/phat-thien-thu.jpg",
+              "image": "https://cdn.mgavietnam.com/tourism/phat-thien-thu.jpg",
               "title": "Phật Thiên Thủ Thiên Nhãn",
               "category": "spiritual"
             },
             {
-              "image": "https://cdn.captreonuisam.com/tourism/dien-phat-duoc-su.jpg",
+              "image": "https://cdn.mgavietnam.com/tourism/dien-phat-duoc-su.jpg",
               "title": "Điện Phật Dược Sư",
               "category": "spiritual"
             },
             {
-              "image": "https://cdn.captreonuisam.com/tourism/dai-vong-canh.jpg",
+              "image": "https://cdn.mgavietnam.com/tourism/dai-vong-canh.jpg",
               "title": "Đài Vọng Cảnh",
               "category": "viewpoint"
             }

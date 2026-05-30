@@ -68,7 +68,7 @@
             <div class="p-6 flex flex-col h-[200px]">
               <div class="flex-1">
                 <!-- Title -->
-                <h3
+                <div
                   v-if="props.config?.showTitle"
                   :class="titleClasses"
                   class="line-clamp-2 mb-3"
@@ -85,7 +85,7 @@
                     {{ video.title }}
                   </a>
                   <span v-else :class="titleClasses">{{ video.title }}</span>
-                </h3>
+                </div>
                 
                 <!-- Description -->
                 <p
@@ -192,7 +192,7 @@
                   <div class="p-6 flex flex-col h-[170px]">
                     <div class="flex-1">
                       <!-- Title -->
-                      <h3
+                      <div
                         v-if="props.config?.showTitle"
                         :class="titleClasses"
                         class="line-clamp-2 mb-3"
@@ -209,7 +209,7 @@
                           {{ video.title }}
                         </a>
                         <span v-else :class="titleClasses">{{ video.title }}</span>
-                      </h3>
+                      </div>
                       
                       <!-- Description -->
                       <p

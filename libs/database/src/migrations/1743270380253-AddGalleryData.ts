@@ -4,7 +4,7 @@ export class AddGalleryData1743270380253 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Insert gallery data
     const galleryData = Array.from({ length: 21 }, (_, i) => ({
-      image: `https://cdn.captreonuisam.com/gallery/${i + 1}.jpg`,
+      image: `https://cdn.mgavietnam.com/gallery/${i + 1}.jpg`,
       translations: [
         {
           locale: 'vi',

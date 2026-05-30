@@ -49,6 +49,25 @@ const props = defineProps<{
 
 const { isDark } = useDarkMode();
 const { processColorValue } = useCssColorValue();
+const ACCESSIBLE_LIGHT_ACCENT = '#b45309';
+
+const normalizeInlineAccentColors = (content: string) => {
+  if (!content) return content;
+
+  if (isDark.value && props.config?.darkMode?.accentColor) {
+    return content.replace(/#ff9800/gi, processColorValue(props.config.darkMode.accentColor));
+  }
+
+  return content.replace(/#ff9800/gi, ACCESSIBLE_LIGHT_ACCENT);
+};
+
+const accessibleAccentColor = computed(() => {
+  if (isDark.value && props.config?.darkMode?.accentColor) {
+    return processColorValue(props.config.darkMode.accentColor);
+  }
+
+  return ACCESSIBLE_LIGHT_ACCENT;
+});
 
 const sectionClasses = computed(() => {
   const baseClasses = ['company-intro', 'py-16', 'transition-colors', 'duration-300'];
@@ -70,11 +89,7 @@ const sectionClasses = computed(() => {
 const processedDescription = computed(() => {
   if (!props.config) return "";
 
-  let desc = props.config.description;
-  if (isDark.value && props.config.darkMode?.accentColor) {
-    desc = desc.replace(/#ff9800/g, processColorValue(props.config.darkMode.accentColor));
-  }
-  return desc;
+  return normalizeInlineAccentColors(props.config.description);
 });
 
 const extractedHeading = computed(() => {
@@ -147,9 +162,13 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
 
   if (config.buttonStyle.backgroundColor) {
     buttonStyles.backgroundColor = processColorValue(config.buttonStyle.backgroundColor);
+  } else {
+    buttonStyles.backgroundColor = accessibleAccentColor.value;
   }
   if (config.buttonStyle.textColor) {
     buttonStyles.color = processColorValue(config.buttonStyle.textColor);
+  } else {
+    buttonStyles.color = '#ffffff';
   }
 
   return buttonStyles;
@@ -185,7 +204,7 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
         <!-- Stats Grid for full-text layout -->
         <div v-if="config.stats" class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
           <div v-for="stat in config.stats" :key="stat.id" class="text-center">
-            <div class="text-3xl font-bold text-primary dark:text-primary mb-2">
+            <div class="text-3xl font-bold mb-2" :style="{ color: accessibleAccentColor }">
               {{ stat.value }}
             </div>
             <div class="text-sm text-gray-600 dark:text-gray-400">{{ stat.label }}</div>
@@ -193,16 +212,14 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
         </div>
         <div class="flex justify-center">
           <!-- CTA Button for full-text layout -->
-          <UButton
+          <NuxtLink
             v-if="config.buttonText && config.buttonLink"
             :to="config.buttonLink"
-            color="primary"
-            variant="solid"
-            class="mt-4 inline-block mx-auto transition-colors duration-300"
+            class="company-intro-cta mt-4 inline-flex items-center justify-center rounded-lg mx-auto transition-colors duration-300"
             :style="getButtonStyles(config)"
           >
             {{ config.buttonText }}
-          </UButton>
+          </NuxtLink>
         </div>
       </div>
 
@@ -247,7 +264,7 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
           <!-- Stats Grid -->
           <div v-if="config.stats" class="grid grid-cols-2 gap-6 mb-8">
             <div v-for="stat in config.stats" :key="stat.id" class="text-center">
-              <div class="text-3xl font-bold text-primary dark:text-primary mb-2">
+              <div class="text-3xl font-bold mb-2" :style="{ color: accessibleAccentColor }">
                 {{ stat.value }}
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400">{{ stat.label }}</div>
@@ -255,16 +272,14 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
           </div>
 
           <!-- CTA Button -->
-          <UButton
+          <NuxtLink
             v-if="config.buttonText && config.buttonLink"
             :to="config.buttonLink"
-            color="primary"
-            variant="solid"
-            class="mt-4 inline-block transition-colors duration-300"
+            class="company-intro-cta mt-4 inline-flex items-center justify-center rounded-lg transition-colors duration-300"
             :style="getButtonStyles(config)"
           >
             {{ config.buttonText }}
-          </UButton>
+          </NuxtLink>
         </div>
       </div>
     </div>
@@ -282,5 +297,14 @@ const getButtonStyles = (config: CompanyIntroConfig) => {
   --tw-prose-body: var(--text);
   --tw-prose-headings: var(--text);
   --tw-prose-links: var(--primary);
+}
+
+.company-intro-cta {
+  text-decoration: none;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.company-intro-cta:hover {
+  filter: brightness(0.96);
 }
 </style>

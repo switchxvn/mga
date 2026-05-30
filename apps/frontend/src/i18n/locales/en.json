@@ -62,6 +62,8 @@
     "featured": "Featured",
     "sale": "Sale",
     "addToCart": "Add to Cart",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity",
     "price": "Price",
     "home": "Home",
     "about": "About",

@@ -170,7 +170,7 @@ const {
 
 // Computed color values
 const salesBackgroundColor = computed(
-  () => processColorValue(props.settings.hotlines?.sales?.backgroundColor) || "#0EA5E9"
+  () => processColorValue(props.settings.hotlines?.sales?.backgroundColor) || "#0369A1"
 );
 
 const salesTextColor = computed(
@@ -178,7 +178,7 @@ const salesTextColor = computed(
 );
 
 const supportBackgroundColor = computed(
-  () => processColorValue(props.settings.hotlines?.support?.backgroundColor) || "#0EA5E9"
+  () => processColorValue(props.settings.hotlines?.support?.backgroundColor) || "#0369A1"
 );
 
 const supportTextColor = computed(
@@ -354,18 +354,18 @@ const translateMenuLabel = (label: string, isTranslated = false) => {
               <div class="mt-2 h-5 w-72 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700"></div>
               <div class="mt-2 h-7 w-64 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700"></div>
             </template>
-            <p v-else-if="props.settings?.slogan" class="text-xl font-bold text-red-600">
+            <p v-else-if="props.settings?.slogan" class="text-xl font-bold text-red-700">
               {{ props.settings.slogan.text }}
             </p>
             <h4
               v-if="!shouldShowSkeleton && props.settings?.slogan"
-              class="text-md font-semibold text-black-600"
+              class="text-md font-semibold text-neutral-900"
             >
               {{ props.settings.slogan.subText }}
             </h4>
             <p
               v-if="!shouldShowSkeleton && props.settings?.slogan?.additionalText"
-              class="text-2xl font-bold text-red-600"
+              class="text-2xl font-bold text-red-700"
             >
               {{ props.settings.slogan.additionalText }}
             </p>

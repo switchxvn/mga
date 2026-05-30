@@ -63,6 +63,8 @@
     "featured": "Nổi bật",
     "sale": "Giảm giá",
     "addToCart": "Thêm vào giỏ hàng",
+    "decreaseQuantity": "Giảm số lượng",
+    "increaseQuantity": "Tăng số lượng",
     "price": "Giá",
     "viewAll": "Xem tất cả",
     "home": "Trang chủ",

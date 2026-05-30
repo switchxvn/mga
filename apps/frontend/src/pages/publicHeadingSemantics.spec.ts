@@ -9,6 +9,7 @@ const heroSliderSource = readSource('/Users/abc/project/mga/apps/frontend/src/co
 const heroFullWidthSource = readSource('/Users/abc/project/mga/apps/frontend/src/components/sections/home_page/HeroSectionFullWidth.vue');
 const orderTicketBannerSource = readSource('/Users/abc/project/mga/apps/frontend/src/components/sections/order-ticket/OrderTicketBannerSection.vue');
 const companyIntroSource = readSource('/Users/abc/project/mga/apps/frontend/src/components/sections/home_page/CompanyIntroSection.vue');
+const videoIntroSource = readSource('/Users/abc/project/mga/apps/frontend/src/components/sections/home_page/VideoIntroSection.vue');
 
 describe('public page heading semantics', () => {
   it('uses the company intro section as the homepage h1 source instead of a fallback heading block', () => {
@@ -37,5 +38,11 @@ describe('public page heading semantics', () => {
     expect(companyIntroSource).toContain(':style="extractedHeading.style"');
     expect(companyIntroSource).toContain('v-html="extractedHeading.content"');
     expect(companyIntroSource).toContain(":is=\"titleTag || 'h2'\"");
+  });
+
+  it('keeps video intro card titles out of the heading outline', () => {
+    expect(videoIntroSource).not.toContain('<h3\n                  v-if="props.config?.showTitle"');
+    expect(videoIntroSource).toContain('<div\n                  v-if="props.config?.showTitle"');
+    expect(videoIntroSource).toContain('<div\n                        v-if="props.config?.showTitle"');
   });
 });

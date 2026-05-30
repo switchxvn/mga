@@ -29,7 +29,7 @@ export class AddHeroBannerSection1743270380267 implements MigrationInterface {
                 1,
                 'home_page',
                 '{
-                    "backgroundImage": "https://cdn.captreonuisam.com/backgrounds/cap-treo-nui-sam.png",
+                    "backgroundImage": "https://cdn.mgavietnam.com/backgrounds/cap-treo-nui-sam.png",
                     "overlay": {
                         "backgroundColor": "rgba(0, 0, 0, 0.4)",
                         "backgroundGradient": {

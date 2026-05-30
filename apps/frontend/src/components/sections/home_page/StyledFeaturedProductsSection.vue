@@ -203,6 +203,7 @@ async function fetchFeaturedProducts() {
             <div class="w-32 flex justify-end">
               <NuxtLink
                 to="/products"
+                :aria-label="`${t('products.viewAll')} ${config.title}`"
                 class="mobile-view-all inline-flex items-center justify-center px-4 py-2 text-xs sm:text-lg font-semibold uppercase tracking-wider text-white hover:text-primary-100 transition-colors duration-200 whitespace-nowrap"
               >
                 {{ t("products.viewAll") }}

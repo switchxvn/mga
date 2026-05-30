@@ -54,7 +54,7 @@ useHead({
 
     <div class="map-container mx-auto shadow-lg rounded-lg overflow-hidden">
       <ZoomableImage
-        src="https://cdn.captreonuisam.com/maps/z6543989555098_8a3f117355c3f449457a1bf3200486c4.jpg"
+        src="https://cdn.mgavietnam.com/maps/z6543989555098_8a3f117355c3f449457a1bf3200486c4.jpg"
         alt="Bản đồ khu du lịch Cáp Treo Núi Sam"
         :maxScale="2.5"
       />

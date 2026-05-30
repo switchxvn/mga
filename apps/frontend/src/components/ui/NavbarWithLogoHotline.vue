@@ -152,10 +152,10 @@ const navbarStyles = computed(() => {
 
         <!-- Slogan -->
         <div class="flex flex-col items-center justify-center text-center">
-          <p v-if="props.settings?.slogan" class="text-xl font-bold text-red-600">
+          <p v-if="props.settings?.slogan" class="text-xl font-bold text-red-700">
             {{ translatedSloganText }}
           </p>
-          <p v-if="props.settings?.slogan" class="text-lg font-bold text-red-600">
+          <p v-if="props.settings?.slogan" class="text-lg font-bold text-red-700">
             {{ translatedSloganSubText }}
           </p>
         </div>
@@ -165,22 +165,22 @@ const navbarStyles = computed(() => {
           <!-- Mua hàng -->
           <div v-if="props.settings?.hotlines?.sales" class="flex items-center gap-2">
             <div class="flex items-center justify-center rounded-full bg-white p-2 shadow-md">
-              <Icon name="Phone" class="h-5 w-5 text-red-600" />
+              <Icon name="Phone" class="h-5 w-5 text-red-700" />
             </div>
             <div class="flex flex-col">
-              <span class="text-sm text-gray-600">{{ translatedSalesText }}</span>
-              <span class="text-lg font-bold text-red-600">{{ props.settings.hotlines.sales.number }}</span>
+              <span class="text-sm text-gray-700">{{ translatedSalesText }}</span>
+              <span class="text-lg font-bold text-red-700">{{ props.settings.hotlines.sales.number }}</span>
             </div>
           </div>
 
           <!-- Hỗ trợ kỹ thuật -->
           <div v-if="props.settings?.hotlines?.support" class="flex items-center gap-2">
             <div class="flex items-center justify-center rounded-full bg-white p-2 shadow-md">
-              <Icon name="Phone" class="h-5 w-5 text-red-600" />
+              <Icon name="Phone" class="h-5 w-5 text-red-700" />
             </div>
             <div class="flex flex-col">
-              <span class="text-sm text-gray-600">{{ translatedSupportText }}</span>
-              <span class="text-lg font-bold text-red-600">{{ props.settings.hotlines.support.number }}</span>
+              <span class="text-sm text-gray-700">{{ translatedSupportText }}</span>
+              <span class="text-lg font-bold text-red-700">{{ props.settings.hotlines.support.number }}</span>
             </div>
           </div>
         </div>

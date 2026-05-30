@@ -19,6 +19,11 @@ const {
 
 const { isDark } = useDarkMode();
 
+const getSocialLinkLabel = (name?: string) => {
+  const normalized = name?.trim();
+  return normalized ? `Theo doi MGA Viet Nam tren ${normalized}` : 'Theo doi MGA Viet Nam tren mang xa hoi';
+};
+
 // Tính toán style dựa trên theme từ API
 const footerStyle = computed(() => {
   if (!activeFooter.value) return {};
@@ -213,6 +218,7 @@ watch(
             <div v-if="activeFooter.mapUrl" class="mt-6 h-[200px]">
               <iframe
                 :src="activeFooter.mapUrl"
+                :title="`Bản đồ vị trí ${activeFooter.companyInfo?.name || 'MGA Việt Nam'}`"
                 width="100%"
                 height="100%"
                 style="border:0;"
@@ -292,6 +298,8 @@ watch(
              :href="icon.url" 
              target="_blank"
              rel="noopener noreferrer"
+             :aria-label="getSocialLinkLabel(icon.name)"
+             :title="getSocialLinkLabel(icon.name)"
              class="hover:opacity-80"
              :style="{
                color: isDark

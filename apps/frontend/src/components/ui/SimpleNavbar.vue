@@ -1132,7 +1132,7 @@ const handleClickOutside = (event: MouseEvent) => {
               @click="toggleMobileMenu"
               aria-label="Toggle Menu"
             >
-              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              <Icon :name="isMobileMenuOpen ? 'X' : 'Menu'" class="nav-icon w-6 h-6 text-white" />
             </button>
           </div>
         </div>

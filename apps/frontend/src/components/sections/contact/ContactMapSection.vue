@@ -55,6 +55,7 @@ const padding = computed(() => {
       <div class="relative w-full" :style="{ height: mapHeight }">
         <iframe 
           :src="mapUrl"
+          :title="translations.title || 'Bản đồ địa điểm'"
           class="absolute inset-0 w-full h-full"
           :style="{ border: 0 }"
           loading="lazy"
