@@ -464,9 +464,9 @@ watch(activeTab, (newTab, oldTab) => {
                 :priority="true"
                 loading="eager"
                 fetchpriority="high"
-                width="1200"
+                width="1600"
                 height="900"
-                customClass="h-72 md:h-[26rem] lg:h-[32rem] w-full rounded-lg bg-white object-contain"
+                customClass="aspect-video w-full rounded-lg bg-white object-contain"
               />
 
               <!-- Gallery slider -->
@@ -484,9 +484,9 @@ watch(activeTab, (newTab, oldTab) => {
                   loading="lazy"
                   fetchpriority="low"
                   width="320"
-                  height="240"
+                  height="180"
                   :customClass="[
-                    'h-20 w-full cursor-pointer rounded-md border-2 transition',
+                    'aspect-video w-full cursor-pointer rounded-md border-2 bg-white object-contain transition',
                     activeImage === image
                       ? 'border-primary-500'
                       : 'border-transparent hover:border-primary-300'

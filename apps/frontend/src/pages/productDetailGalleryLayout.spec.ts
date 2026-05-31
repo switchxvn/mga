@@ -12,15 +12,21 @@ const ticketDetailSource = readFileSync(
 );
 
 describe('product detail main gallery image layout', () => {
-  it('uses a fixed-height main image on the product detail page', () => {
+  it('uses a 16:9 main image on the product detail page', () => {
     expect(productDetailSource).toContain(
-      'customClass="h-72 md:h-[26rem] lg:h-[32rem] w-full rounded-lg bg-white object-contain"'
+      'customClass="aspect-video w-full rounded-lg bg-white object-contain"'
     );
   });
 
   it('uses a fixed-height main image on the ticket detail page', () => {
     expect(ticketDetailSource).toContain(
       'customClass="h-72 md:h-[26rem] lg:h-[32rem] w-full rounded-lg bg-white object-contain"'
+    );
+  });
+
+  it('uses 16:9 gallery thumbnails on the product detail page', () => {
+    expect(productDetailSource).toContain(
+      "'aspect-video w-full cursor-pointer rounded-md border-2 bg-white object-contain transition'"
     );
   });
 
