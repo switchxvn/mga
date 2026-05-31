@@ -15,7 +15,10 @@ export function useProductDetail() {
   const trpc = useTrpc();
   const route = useRoute();
   const router = useRouter();
-  const slug = computed(() => route.params.slug as string);
+  const slug = computed(() => {
+    const routeSlug = route.params.slug;
+    return typeof routeSlug === "string" ? routeSlug.trim() : "";
+  });
 
   // Xác định locale từ URL path và loại sản phẩm
   const currentLocale = computed(() => {
@@ -36,7 +39,7 @@ export function useProductDetail() {
 
   // Sử dụng useAsyncData với tRPC
   const { data: productDetailPayload, pending: isLoading, error, refresh } = useAsyncData(
-    `product-${route.params.slug}`,
+    () => `product-${slug.value || "pending"}`,
     async () => {
       try {
         return await fetchProductDetailPayload({
@@ -69,13 +72,16 @@ export function useProductDetail() {
 
   // Đảm bảo dữ liệu được tải ở phía client nếu cần
   onMounted(() => {
-    if (!productData.value) {
+    if (slug.value && !productData.value) {
       refresh();
     }
   });
 
   // Theo dõi thay đổi của slug hoặc locale
-  watch([slug, currentLocale], () => {
+  watch([slug, currentLocale], ([currentSlug]) => {
+    if (!currentSlug) {
+      return;
+    }
     refresh();
   });
 

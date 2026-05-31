@@ -238,7 +238,7 @@ const productForCart = computed(() => ({
 
 <template>
   <div
-    class="product-card group relative overflow-hidden rounded-lg border-2 border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+    class="mga-product-card product-card group relative overflow-hidden rounded-lg border-2 border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
     :class="{'ticket-card': product.type === ProductType.TICKET}"
   >
     <!-- Badge: New, Sale, Featured -->
@@ -381,107 +381,3 @@ const productForCart = computed(() => ({
     </div>
   </div>
 </template>
-
-<style scoped>
-.product-card {
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.product-card:hover {
-  transform: translateY(-5px);
-}
-
-/* Đảm bảo chiều cao cố định cho phần thông tin sản phẩm */
-.product-info {
-  height: 11rem;
-  display: grid;
-  grid-template-rows: auto 3rem 1fr;
-}
-
-/* Ticket card specific styles */
-.ticket-card {
-  border-color: rgba(168, 85, 247, 0.3);
-}
-
-.ticket-info {
-  grid-template-rows: auto auto 1fr;
-}
-
-.ticket-details {
-  margin-top: 0.25rem;
-}
-
-.product-title {
-  height: 3rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.5rem;
-}
-
-.product-description-container {
-  height: 3rem;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.product-description {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.product-description-empty {
-  height: 3rem;
-}
-
-.product-footer {
-  align-self: end;
-  width: 100%;
-}
-
-/* CSS cho nút thêm vào giỏ hàng nhỏ */
-:deep(.cart-button-small) {
-  background: rgb(var(--color-primary-500));
-  box-shadow: 0 2px 4px rgb(var(--color-primary-500) / 0.3);
-  transition: all 0.15s ease;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-:deep(.cart-button-small svg) {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  min-height: 20px;
-}
-
-:deep(.cart-button-small:hover) {
-  background: rgb(var(--color-primary-600));
-  box-shadow: 0 4px 8px rgb(var(--color-primary-500) / 0.4);
-}
-
-:deep(.cart-button-small:active) {
-  transform: scale(0.95);
-}
-
-.dark :deep(.cart-button-small) {
-  background: rgb(var(--color-primary-600));
-  box-shadow: 0 2px 4px rgb(var(--color-primary-500) / 0.4);
-}
-
-.dark :deep(.cart-button-small:hover) {
-  background: rgb(var(--color-primary-700));
-  box-shadow: 0 4px 8px rgb(var(--color-primary-500) / 0.5);
-}
-</style>

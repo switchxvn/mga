@@ -249,10 +249,6 @@ import {
 } from "swiper/modules";
 import { useTrpc } from "~/composables/useTrpc";
 import { useDarkMode } from "~/composables/useDarkMode";
-import "swiper/css";
-import "swiper/css/pagination";
-import "swiper/css/navigation";
-import "swiper/css/autoplay";
 import { PlayCircle } from "lucide-vue-next";
 import { type Swiper as SwiperInstance } from 'swiper';
 

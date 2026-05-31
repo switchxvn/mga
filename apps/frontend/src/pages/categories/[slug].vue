@@ -22,7 +22,10 @@ const trpc = useTrpc()
 const route = useRoute()
 const router = useRouter()
 const siteUrl = useRuntimeConfig().public.siteUrl
-const slug = computed(() => route.params.slug as string)
+const slug = computed(() => {
+  const routeSlug = route.params.slug
+  return typeof routeSlug === 'string' ? routeSlug.trim() : ''
+})
 const routeLocale = computed(() => {
   if (route.path.startsWith('/categories')) {
     return 'en'
@@ -159,8 +162,12 @@ const initialFilters: CategoryProductFilter = {
 }
 
 const { data: category, pending: isCategoryPending, error: categoryError, refresh: refreshCategory } = await useAsyncData<Category | null>(
-  `category-${slug.value}-${routeLocale.value}`,
+  () => `category-${slug.value || 'pending'}-${routeLocale.value}`,
   async () => {
+    if (!slug.value) {
+      return null
+    }
+
     const result = await trpc.category.bySlug.query({
       slug: slug.value,
       locale: routeLocale.value,
@@ -235,9 +242,10 @@ const pageState = computed(() =>
     totalProducts: totalProducts.value,
     hasActiveFilters: hasActiveFilters.value,
     errorMessage: error.value,
-    isPending: isCategoryPending.value,
+    isPending: isCategoryPending.value || !slug.value,
   }),
 )
+const shouldShowCategorySkeleton = computed(() => isCategoryPending.value || !slug.value)
 const isInvalidCategory = computed(() => pageState.value.kind === 'invalid-category')
 const isFilteredEmptyState = computed(() => pageState.value.kind === 'filtered-empty')
 const isEmptyCategoryState = computed(() => pageState.value.kind === 'empty-category')
@@ -623,7 +631,7 @@ const updateQueryParams = () => {
         </UButton>
       </div>
 
-      <div v-else-if="isCategoryPending" class="py-2">
+      <div v-else-if="shouldShowCategorySkeleton" class="py-2">
         <CardGridSkeleton :item-count="6" :columns="3" />
       </div>
 
@@ -658,9 +666,11 @@ const updateQueryParams = () => {
           <p v-if="isInvalidCategory" class="mt-2 max-w-3xl text-gray-600 dark:text-gray-400">
             {{ t('categories.invalidCategoryDescription') || 'Danh mục bạn đang tìm không tồn tại hoặc đã được cập nhật đường dẫn.' }}
           </p>
-          <p v-else-if="categoryDescription" class="mt-2 text-gray-600 dark:text-gray-400">
-            {{ categoryDescription }}
-          </p>
+          <div
+            v-else-if="categoryDescription"
+            class="category-description mt-2 text-gray-600 dark:text-gray-400"
+            v-html="categoryDescription"
+          ></div>
         </div>
 
         <div
@@ -947,4 +957,8 @@ const updateQueryParams = () => {
 :deep(.u-pagination-item.active) {
   @apply bg-primary-500 text-white dark:bg-primary-600;
 }
-</style> 
+
+.category-description :deep(p) {
+  @apply my-0;
+}
+</style>

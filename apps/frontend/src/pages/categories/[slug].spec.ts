@@ -91,6 +91,7 @@ vi.mock('~/utils/routes', () => ({
   getCategoryDetailRoute: vi.fn().mockImplementation((slug: string) => `/danh-muc-san-pham/${slug}`),
   getCategoryListRoute: vi.fn().mockReturnValue('/danh-muc-san-pham'),
   getContactRoute: vi.fn().mockReturnValue('/lien-he'),
+  getRouteLocale: vi.fn().mockImplementation((locale: string) => locale),
 }));
 
 vi.mock('vue-router', () => ({
@@ -283,12 +284,19 @@ describe('category slug page', () => {
     const originalUseAsyncData = globalThis.useAsyncData;
 
     Object.assign(globalThis, {
-      useAsyncData: async (_key: string, handler: () => Promise<unknown>, options?: { default?: () => unknown }) => ({
-        data: ref(_key.startsWith('category-') ? null : (handler ? await handler() : options?.default?.())),
-        pending: ref(_key.startsWith('category-')),
+      useAsyncData: async (
+        _key: string | (() => string),
+        handler: () => Promise<unknown>,
+        options?: { default?: () => unknown },
+      ) => {
+        const resolvedKey = typeof _key === 'function' ? _key() : _key;
+
+        return {
+        data: ref(resolvedKey.startsWith('category-') ? null : (handler ? await handler() : options?.default?.())),
+        pending: ref(resolvedKey.startsWith('category-')),
         error: ref(null),
         refresh: vi.fn(),
-      }),
+      }},
     });
 
     try {
@@ -329,6 +337,44 @@ describe('category slug page', () => {
     }
   });
 
+  it('does not query or flash the invalid-category state when the route slug is missing during teardown', async () => {
+    mockedRouteSlug.value = '';
+    mockedRoutePath.value = '/';
+    categoryBySlugQuery.mockResolvedValueOnce(null);
+
+    const page = (await import('./[slug].vue')).default;
+    const TestHost = defineComponent({
+      components: { Page: page },
+      template: `
+        <Suspense>
+          <Page />
+        </Suspense>
+      `,
+    });
+
+    const wrapper = mount(TestHost, {
+      global: {
+        stubs: {
+          CategorySidebar: true,
+          CategoryMobileSidebar: true,
+          ProductCard: true,
+          UIcon: true,
+          UButton: true,
+          UPagination: true,
+          Pagination: true,
+          NuxtLink: NuxtLinkStub,
+          CardGridSkeleton: true,
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(categoryBySlugQuery).not.toHaveBeenCalled();
+    expect(wrapper.html()).toContain('card-grid-skeleton-stub');
+    expect(wrapper.html()).not.toContain('categories.invalidCategoryTitle');
+  });
+
   it('falls back to literal breadcrumb labels when translations resolve to an empty string', async () => {
     localizationT.mockImplementation(() => '');
 
@@ -362,6 +408,54 @@ describe('category slug page', () => {
 
     expect(wrapper.text()).toContain('Trang chủ');
     expect(wrapper.text()).toContain('Danh mục sản phẩm');
+  });
+
+  it('renders category descriptions stored as HTML markup', async () => {
+    categoryBySlugQuery.mockResolvedValueOnce({
+      id: 3,
+      name: 'Phụ tùng xe nâng',
+      slug: 'phu-tung-xe-nang',
+      description: '<p><strong>Phụ tùng xe nâng</strong> không chỉ là danh sách linh kiện.</p>',
+      translations: [
+        {
+          locale: 'vi',
+          name: 'Phụ tùng xe nâng',
+          slug: 'phu-tung-xe-nang',
+          description: '<p><strong>Phụ tùng xe nâng</strong> không chỉ là danh sách linh kiện.</p>',
+        },
+      ],
+    });
+
+    const page = (await import('./[slug].vue')).default;
+    const TestHost = defineComponent({
+      components: { Page: page },
+      template: `
+        <Suspense>
+          <Page />
+        </Suspense>
+      `,
+    });
+
+    const wrapper = mount(TestHost, {
+      global: {
+        stubs: {
+          CategorySidebar: true,
+          CategoryMobileSidebar: true,
+          ProductCard: true,
+          UIcon: true,
+          UButton: true,
+          UPagination: true,
+          Pagination: true,
+          NuxtLink: NuxtLinkStub,
+          CardGridSkeleton: true,
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.html()).toContain('<strong>Phụ tùng xe nâng</strong>');
+    expect(wrapper.html()).not.toContain('&lt;strong&gt;Phụ tùng xe nâng&lt;/strong&gt;');
   });
 
   it('passes quick links to the desktop sidebar with clearer copy and removes the old heading', async () => {

@@ -6,10 +6,6 @@ import ProductCard from '~/components/cards/ProductCard.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay, EffectCreative } from 'swiper/modules';
 import { normalizeLocaleCode } from '~/utils/locale';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-import 'swiper/css/effect-creative';
 
 interface ProductTranslation {
   locale: string;

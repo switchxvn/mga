@@ -7,9 +7,6 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { ArrowRight } from 'lucide-vue-next';
 import { normalizeLocaleCode } from '~/utils/locale';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 
 interface ProductTranslation {
   locale: string;

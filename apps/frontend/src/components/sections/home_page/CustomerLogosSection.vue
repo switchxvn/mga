@@ -4,8 +4,6 @@ import { useTrpc } from '~/composables/useTrpc';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Autoplay } from 'swiper/modules';
 import { useColorMode } from '@vueuse/core';
-import 'swiper/css';
-import 'swiper/css/navigation';
 
 interface CustomerLogo {
   id: number;

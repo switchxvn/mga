@@ -2,9 +2,6 @@
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Autoplay, Navigation, Pagination } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 import { computed, ref, onBeforeUnmount } from 'vue';
 import { Quote, Star, StarOff } from 'lucide-vue-next';
 

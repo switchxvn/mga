@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-import 'swiper/css/effect-fade';
 import { computed } from 'vue';
 import { Autoplay, EffectFade, Navigation, Pagination } from 'swiper/modules';
 import { useAsyncData } from '#imports';

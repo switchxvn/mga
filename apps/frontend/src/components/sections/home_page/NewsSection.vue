@@ -6,9 +6,6 @@ import { useTrpc } from '~/composables/useTrpc';
 import { useLocalization } from '~/composables/useLocalization';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 import PostCard from '~/components/ui/card/PostCard.vue';
 
 interface PostTranslation {

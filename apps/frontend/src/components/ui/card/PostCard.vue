@@ -74,7 +74,7 @@ watch(locale, () => {
 </script>
 
 <template>
-  <NuxtLink :to="postUrl" class="block h-full">
+  <NuxtLink :to="postUrl" class="mga-post-card block h-full">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
       <div class="flex" :class="{ 'flex-col flex-grow': !compact, 'flex-row': compact }">
         <!-- Hình ảnh bài viết - phiên bản lớn khi không compact -->
@@ -152,56 +152,3 @@ watch(locale, () => {
     </div>
   </NuxtLink>
 </template>
-
-<style scoped>
-.hover\:scale-105:hover {
-  transform: scale(1.05);
-}
-
-/* Cố định chiều cao cho hình ảnh */
-.image-container {
-  height: 240px;
-  width: 100%;
-  overflow: hidden;
-}
-
-.compact-image-container {
-  width: 80px;
-  height: 80px;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-/* Cố định chiều cao cho tiêu đề */
-.title-container {
-  height: 72px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  text-overflow: ellipsis;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: inherit;
-}
-
-.dark .title-container {
-  color: white;
-}
-
-/* Cố định chiều cao cho mô tả */
-.description-container {
-  @apply text-sm text-gray-600 dark:text-gray-300 mt-2;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.5;
-}
-
-.dark .description-container {
-  color: #d1d5db;
-}
-</style> 

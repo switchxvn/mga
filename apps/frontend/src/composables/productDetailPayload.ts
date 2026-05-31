@@ -59,13 +59,23 @@ export async function fetchProductDetailPayload(input: {
   isTicketRoute: boolean;
   trpc: ProductDetailPayloadDependencies;
 }): Promise<ProductDetailPayload> {
-  const product = Number.isNaN(Number(input.slug))
+  const normalizedSlug = input.slug?.trim();
+
+  if (!normalizedSlug) {
+    return {
+      product: null,
+      productReviewAggregate: null,
+      productReviews: [],
+    };
+  }
+
+  const product = Number.isNaN(Number(normalizedSlug))
     ? await input.trpc.product.getBySlug.query({
-        slug: input.slug,
+        slug: normalizedSlug,
         locale: input.locale,
       })
     : await input.trpc.product.getById.query({
-        id: Number(input.slug),
+        id: Number(normalizedSlug),
         locale: input.locale,
       });
 

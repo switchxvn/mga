@@ -66,6 +66,10 @@ const { t, locale } = useLocalization();
 const route = useRoute();
 const router = useRouter();
 const siteUrl = useRuntimeConfig().public.siteUrl;
+const routeSlug = computed(() => {
+  const currentSlug = route.params.slug;
+  return typeof currentSlug === 'string' ? currentSlug.trim() : '';
+});
 
 // Sử dụng composable useProductDetail
 const {
@@ -114,6 +118,7 @@ const {
   copyProductLink,
   getTabIcon
 } = useProductDetail();
+const shouldShowProductSkeleton = computed(() => isLoading.value || !routeSlug.value);
 
 const { getPublicSettingValueByKey } = useSettings();
 const quickPurchaseEnabled = ref(false);
@@ -420,12 +425,12 @@ watch(activeTab, (newTab, oldTab) => {
         <Breadcrumb :items="breadcrumbItems" />
       </div>
 
-      <div v-if="isLoading" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <div v-if="shouldShowProductSkeleton" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <DetailPageSkeleton />
       </div>
 
       <div
-        v-else-if="error"
+        v-else-if="error && routeSlug"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center"
       >
         <AlertCircle class="mx-auto mb-4 h-16 w-16 text-red-500" />

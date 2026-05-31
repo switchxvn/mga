@@ -1,6 +1,6 @@
 <template>
   <div
-    class="lazy-image-container relative"
+    class="mga-app-image lazy-image-container relative"
     v-bind="forwardedAttrs"
     :class="containerClass"
     :style="containerStyle"
@@ -284,10 +284,3 @@ onBeforeUnmount(() => {
   optimizedImageObserver = null;
 });
 </script>
-
-<style scoped>
-.lazy-image-container {
-  overflow: hidden;
-  position: relative;
-}
-</style> 

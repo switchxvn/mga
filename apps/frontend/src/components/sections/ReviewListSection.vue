@@ -8,10 +8,6 @@ import Pagination from '../common/Pagination.vue';
 import Loader from '../ui/Loader.vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination as SwiperPagination, Zoom } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-import 'swiper/css/zoom';
 
 // Props cho section này
 const props = defineProps({

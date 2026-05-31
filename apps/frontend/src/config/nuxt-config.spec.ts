@@ -53,4 +53,16 @@ describe('nuxt startup config', () => {
       expect(existsSync(resolve(frontendRoot, relativePath))).toBe(true);
     }
   });
+
+  it('groups Nuxt UI and Nuxt app runtime into stable vendor chunks', () => {
+    const output = nuxtConfig.vite?.build?.rollupOptions?.output;
+    const manualChunks =
+      output && !Array.isArray(output) && typeof output === 'object'
+        ? output.manualChunks
+        : undefined;
+
+    expect(typeof manualChunks).toBe('function');
+    expect(manualChunks?.('/virtual/node_modules/@nuxt/ui/dist/runtime/components/forms/Input.vue')).toBe('nuxt-ui');
+    expect(manualChunks?.('/virtual/node_modules/nuxt/dist/app/nuxt.js')).toBe('nuxt-core');
+  });
 });

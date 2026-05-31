@@ -308,9 +308,6 @@ import {
   Plus as PlusIcon,
   Ticket as TicketIcon,
 } from "lucide-vue-next";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 import {
   Navigation as SwiperNavigation,
   Pagination as SwiperPagination,

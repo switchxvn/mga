@@ -14,6 +14,8 @@
 @use 'components/button' as *;
 @use 'components/detail-page' as *;
 @use 'components/form' as *;
+@use 'components/render-critical' as *;
+@use 'components/swiper' as *;
 
 // Import Tailwind layers
 @tailwind base;
@@ -263,14 +265,3 @@
     }
   }
 }
-
-/* Swiper pagination bullet styles */
-.swiper-pagination-bullet {
-  background-color: rgb(var(--secondary-300)) !important;
-  opacity: 1 !important;
-}
-
-.swiper-pagination-bullet-active {
-  background-color: rgb(var(--primary-500)) !important;
-  opacity: 1 !important;
-} 

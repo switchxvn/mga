@@ -3,6 +3,39 @@ import { describe, expect, it, vi } from 'vitest';
 import { fetchProductDetailPayload } from './productDetailPayload';
 
 describe('fetchProductDetailPayload', () => {
+  it('returns an empty payload without querying tRPC when slug is missing during route hydration', async () => {
+    const getById = vi.fn();
+    const getBySlug = vi.fn();
+    const getProductAggregateRating = vi.fn();
+    const listReviews = vi.fn();
+
+    const result = await fetchProductDetailPayload({
+      slug: '',
+      locale: 'vi',
+      isTicketRoute: false,
+      trpc: {
+        product: {
+          getById: { query: getById },
+          getBySlug: { query: getBySlug },
+        },
+        review: {
+          getProductAggregateRating: { query: getProductAggregateRating },
+          list: { query: listReviews },
+        },
+      },
+    });
+
+    expect(getById).not.toHaveBeenCalled();
+    expect(getBySlug).not.toHaveBeenCalled();
+    expect(getProductAggregateRating).not.toHaveBeenCalled();
+    expect(listReviews).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      product: null,
+      productReviewAggregate: null,
+      productReviews: [],
+    });
+  });
+
   it('loads product review aggregate for product detail pages during SSR', async () => {
     const getBySlug = vi.fn(async () => ({ id: 227, title: 'Bom thuy luc' }));
     const getProductAggregateRating = vi.fn(async () => ({

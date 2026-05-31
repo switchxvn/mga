@@ -18,9 +18,6 @@ import { DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation as SwiperNavigation, Pagination as SwiperPagination } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 import { useTierPricing } from '~/composables/useTierPricing';
 import TierPricingTable from '~/components/product/TierPricingTable.vue';
 

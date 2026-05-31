@@ -7,9 +7,6 @@ import { useLocalization } from '~/composables/useLocalization';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { ArrowRight } from 'lucide-vue-next';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 import PostCard from '~/components/ui/card/PostCard.vue';
 import type { Post } from '@ew/shared';
 

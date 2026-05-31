@@ -366,8 +366,20 @@ export default defineNuxtConfig({
       target: 'es2020',
       rollupOptions: {
         output: {
-          manualChunks: {
-            photoswipe: ['photoswipe']
+          manualChunks(id) {
+            if (id.includes('node_modules/photoswipe')) {
+              return 'photoswipe';
+            }
+
+            if (id.includes('node_modules/@nuxt/ui')) {
+              return 'nuxt-ui';
+            }
+
+            if (id.includes('node_modules/nuxt/dist/app')) {
+              return 'nuxt-core';
+            }
+
+            return undefined;
           }
         }
       },
