@@ -182,11 +182,6 @@ const discountPercentage = computed(() => {
 
 const productLink = computed(() => getProductUrl(props.product));
 
-// Style computed properties
-const imageStyle = computed(() => ({
-  height: `${styleConfig.value?.settings?.imageHeight || 200}px`
-}));
-
 const priceTextStyle = computed(() => {
   const priceStyle = styleConfig.value?.settings?.priceStyles?.price;
   return {
@@ -291,7 +286,7 @@ const productForCart = computed(() => ({
     </div>
 
     <!-- Product image -->
-    <NuxtLink :to="productLink" class="block overflow-hidden" :style="imageStyle">
+    <NuxtLink :to="productLink" class="block aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800">
       <AppImage
         class="w-full h-full"
         :src="product.thumbnail || '/images/default-image.jpg'"

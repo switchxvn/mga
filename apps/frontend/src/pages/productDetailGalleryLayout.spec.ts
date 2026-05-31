@@ -12,9 +12,9 @@ const ticketDetailSource = readFileSync(
 );
 
 describe('product detail main gallery image layout', () => {
-  it('uses a 16:9 main image on the product detail page', () => {
+  it('uses a 4:3 main image on the product detail page', () => {
     expect(productDetailSource).toContain(
-      'customClass="aspect-video w-full rounded-lg bg-white object-contain"'
+      'customClass="aspect-[4/3] w-full rounded-lg bg-white object-contain"'
     );
   });
 
@@ -24,9 +24,9 @@ describe('product detail main gallery image layout', () => {
     );
   });
 
-  it('uses 16:9 gallery thumbnails on the product detail page', () => {
+  it('uses 4:3 gallery thumbnails on the product detail page', () => {
     expect(productDetailSource).toContain(
-      "'aspect-video w-full cursor-pointer rounded-md border-2 bg-white object-contain transition'"
+      "'aspect-[4/3] w-full cursor-pointer rounded-md border-2 bg-white object-contain transition'"
     );
   });
 
