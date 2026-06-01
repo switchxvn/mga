@@ -1,9 +1,14 @@
 import { useUserSession } from '@/composables/useUserSession';
 import { useRouter } from 'vue-router';
 
-export default defineNuxtPlugin((nuxtApp) => {
-  // Chỉ chạy ở phía client
-  if (process.client) {
+export default defineNuxtPlugin({
+  name: 'user-session',
+  dependsOn: ['trpc'],
+  setup(nuxtApp) {
+    if (!process.client) {
+      return;
+    }
+
     const trackingWindow = window as Window & {
       __mgaUserSessionPluginInitialized?: boolean;
     };
@@ -30,7 +35,6 @@ export default defineNuxtPlugin((nuxtApp) => {
       window.setTimeout(bootstrapTracking, 250);
     }
 
-    // Lắng nghe sự kiện thay đổi route để theo dõi page views
     router.afterEach((to) => {
       try {
         userSession.trackPageView(to.path);
@@ -43,5 +47,5 @@ export default defineNuxtPlugin((nuxtApp) => {
       userSession.teardownTracking();
       trackingWindow.__mgaUserSessionPluginInitialized = false;
     });
-  }
+  },
 }); 

@@ -1,18 +1,22 @@
-import { useFavicon } from '~/composables/useFavicon';
-
-export default defineNuxtPlugin(() => {
-  const { refreshFavicon, updateFaviconUrl } = useFavicon();
-
-  // Provide global favicon refresh functionality
-  const faviconApi = {
-    refresh: refreshFavicon,
-    updateUrl: updateFaviconUrl
-  };
-
-  // Make it globally available
-  return {
-    provide: {
-      favicon: faviconApi
-    }
-  };
-}); 
+export default defineNuxtPlugin({
+  name: 'favicon-client',
+  dependsOn: ['trpc'],
+  setup() {
+    return {
+      provide: {
+        favicon: {
+          refresh: async () => {
+            const { useFavicon } = await import('~/composables/useFavicon');
+            const { refreshFavicon } = useFavicon();
+            return refreshFavicon();
+          },
+          updateUrl: async (url: string) => {
+            const { useFavicon } = await import('~/composables/useFavicon');
+            const { updateFaviconUrl } = useFavicon();
+            updateFaviconUrl(url);
+          },
+        },
+      },
+    };
+  },
+});

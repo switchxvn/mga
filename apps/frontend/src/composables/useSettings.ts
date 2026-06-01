@@ -205,11 +205,6 @@ export function useSettings() {
     return enabled;
   };
   
-  // Khởi tạo settings nếu chưa được khởi tạo
-  if (process.client && !isInitialized.value && !isGlobalLoading.value) {
-    fetchPublicSettings();
-  }
-  
   return {
     settings,
     isLoading,

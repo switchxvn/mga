@@ -149,11 +149,6 @@ export function useFeatureFlags() {
     return enabled;
   };
   
-  // Khởi tạo feature flags nếu chưa được khởi tạo
-  if (!isInitialized.value && !isGlobalLoading.value) {
-    fetchFeatureFlags();
-  }
-  
   return {
     isLoading,
     error,
