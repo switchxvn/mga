@@ -39,11 +39,11 @@ const unwrapIpxUrl = (value?: string | null): string | null => {
   }
 };
 
-export const useLogo = async (type = 'main') => {
+export const useLogo = (type = 'main') => {
   const trpc = useTrpc();
   const { isDark } = useTheme();
 
-  const { data: logo, pending: isLoading, error } = await useAsyncData(
+  const { data: logo, pending: isLoading, error } = useAsyncData(
     `logo-${type}`,
     async () => {
       const result = await trpc.logo.getActiveLogo.query({ type });
@@ -54,7 +54,7 @@ export const useLogo = async (type = 'main') => {
     }
   );
 
-  const { data: homeSeoTitle } = await useAsyncData(
+  const { data: homeSeoTitle } = useAsyncData(
     'logo-home-seo-title',
     async () => {
       const seo = await trpc.seo.getSeoByPath.query('/');

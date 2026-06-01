@@ -213,24 +213,6 @@ const getDefaultComponent = (type: string) => {
   return typeToComponent[type] || components.CombinedNavbar;
 };
 
-try {
-  const [activeTheme, activeFooter] = await Promise.all([
-    getActiveTheme({ pageType: PageType.COMMON }),
-    trpc.footer.getActiveFooter.query(),
-    !menuItems.value.length ? fetchMenuItems() : Promise.resolve(),
-  ]);
-
-  if (activeTheme) {
-    theme.value = activeTheme;
-  }
-
-  if (activeFooter) {
-    footer.value = activeFooter;
-  }
-} catch {
-  // Keep fallback layout data
-}
-
 onMounted(async () => {
   try {
     // Kiểm tra xem người dùng đã đăng nhập chưa
@@ -249,6 +231,24 @@ onMounted(async () => {
     
   } catch {}
 });
+
+try {
+  const [activeTheme, activeFooter] = await Promise.all([
+    getActiveTheme({ pageType: PageType.COMMON }),
+    trpc.footer.getActiveFooter.query(),
+    !menuItems.value.length ? fetchMenuItems() : Promise.resolve(),
+  ]);
+
+  if (activeTheme) {
+    theme.value = activeTheme;
+  }
+
+  if (activeFooter) {
+    footer.value = activeFooter;
+  }
+} catch {
+  // Keep fallback layout data
+}
 
 async function handleLogout() {
   try {

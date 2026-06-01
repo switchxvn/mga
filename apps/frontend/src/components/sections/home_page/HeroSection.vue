@@ -45,24 +45,26 @@ const props = withDefaults(defineProps<Props>(), {
 
 const trpc = useTrpc();
 const { shouldShowSkeleton } = useSkeletonGate();
-const dataKey = `hero-section-${props.config?.themeId ?? 'default'}`;
+const heroThemeId = computed(() => props.config?.themeId ?? null);
+const heroDataKey = computed(() => `hero-section-${heroThemeId.value ?? 'default'}`);
 
 const { data: heroPayload, error, pending } = await useAsyncData(
-  dataKey,
+  heroDataKey,
   async () => {
-    const [heroResult, sliderResult, videoResult] = await Promise.all([
+    const [heroResult, initialSliderResult, initialVideoResult] = await Promise.all([
       trpc.hero.getHero.query(),
-      trpc.hero.getHeroSliders.query({ themeId: props.config?.themeId }),
-      trpc.hero.getHeroVideos.query({ themeId: props.config?.themeId }),
+      trpc.hero.getHeroSliders.query({ themeId: heroThemeId.value ?? undefined }),
+      trpc.hero.getHeroVideos.query({ themeId: heroThemeId.value ?? undefined }),
     ]);
 
     return {
       heroData: (heroResult || []) as Hero[],
-      sliderData: (sliderResult || []) as HeroSlider[],
-      videoData: (videoResult || []) as VideoThumbnail[],
+      sliderData: (initialSliderResult || []) as HeroSlider[],
+      videoData: (initialVideoResult || []) as VideoThumbnail[],
     };
   },
   {
+    watch: [heroThemeId],
     default: () => ({
       heroData: [] as Hero[],
       sliderData: [] as HeroSlider[],

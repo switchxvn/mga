@@ -7,7 +7,7 @@ const source = readFileSync(
 );
 
 describe('useHomePage locale priority', () => {
-  it('awaits the homepage async payload before SSR renders the page body', () => {
+  it('awaits the homepage SSR payload before rendering the page', () => {
     expect(source).toContain('export async function useHomePage() {');
     expect(source).toContain("const { data: pageData } = await useAsyncData('home-theme', async () => {");
   });

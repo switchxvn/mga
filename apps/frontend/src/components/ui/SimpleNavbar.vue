@@ -265,9 +265,9 @@ const topMenuButtonRef = ref<HTMLElement | null>(null);
 const { checkCartFeatureFlag } = useNavbarFeatures();
 
 // Logo
-const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = await useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
 const { shouldShowSkeleton } = useSkeletonGate();
-const { currentLogoUrl: mobileLogoUrl, currentLogoAlt: mobileLogoAlt, isLoading: isLoadingMobileLogo } = await useLogo('main_mobile');
+const { currentLogoUrl: mobileLogoUrl, currentLogoAlt: mobileLogoAlt, isLoading: isLoadingMobileLogo } = useLogo('main_mobile');
 
 // Add these refs and computed properties
 const menuContainerRef = ref<HTMLElement | null>(null);

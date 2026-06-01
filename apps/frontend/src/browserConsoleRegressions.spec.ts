@@ -59,7 +59,20 @@ describe('browser console regressions', () => {
     expect(homePageComposableSource).toContain("import HeroSectionFullWidth from '../components/sections/home_page/HeroSectionFullWidth.vue';");
     expect(homePageComposableSource).toContain("'HeroSectionFullWidth': HeroSectionFullWidth,");
     expect(heroSectionSource).toContain('const hasMounted = ref(false);');
+    expect(heroSectionSource).toContain("const heroThemeId = computed(() => props.config?.themeId ?? null);");
+    expect(heroSectionSource).toContain("const heroDataKey = computed(() => `hero-full-width-data-${heroThemeId.value ?? 'default'}`);");
+    expect(heroSectionSource).toContain('const { data: heroPayload, pending: isLoading } = await useAsyncData(');
+    expect(heroSectionSource).toContain('watch: [heroThemeId],');
     expect(heroSectionSource).toContain('onMounted(() => {');
     expect(heroSectionSource).toContain('v-else-if="sortedSlides.length > 0 && !hasMounted"');
+    expect(heroSectionSource).not.toContain("await trpc.hero.getHeroSliders.query({})");
+  });
+
+  it('avoids async setup lifecycle warnings in hydration-critical header and hero components', () => {
+    expect(navbarSource).toContain('const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();');
+    expect(navbarSource).not.toContain('await useLogo();');
+    expect(heroSectionSource.indexOf('onMounted(() => {')).toBeLessThan(
+      heroSectionSource.indexOf('const { data: heroPayload, pending: isLoading } = await useAsyncData('),
+    );
   });
 });

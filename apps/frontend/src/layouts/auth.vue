@@ -5,7 +5,7 @@ import { useLogo } from '~/composables/useLogo';
 import { useTheme } from '~/composables/useTheme';
 
 const { isDark, initializeTheme } = useTheme();
-const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = await useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
 const isLoading = ref(true);
 
 // Khởi tạo theme trước khi component được mounted

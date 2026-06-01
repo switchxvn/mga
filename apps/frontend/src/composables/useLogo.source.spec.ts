@@ -19,17 +19,20 @@ const combinedNavbarSource = readFileSync(
 
 describe('logo SSR source', () => {
   it('preloads logos through useAsyncData instead of onMounted-only fetching', () => {
-    expect(useLogoSource).toContain('await useAsyncData(');
+    expect(useLogoSource).toContain('const { data: logo, pending: isLoading, error } = useAsyncData(');
+    expect(useLogoSource).toContain('const { data: homeSeoTitle } = useAsyncData(');
     expect(useLogoSource).not.toContain('onMounted(() => {');
     expect(useLogoSource).not.toContain('fetchHomeSeoTitle();');
   });
 
   it('uses shared SSR logo composable for mobile navbar logo', () => {
-    expect(simpleNavbarSource).toContain("const { currentLogoUrl: mobileLogoUrl, currentLogoAlt: mobileLogoAlt, isLoading: isLoadingMobileLogo } = await useLogo('main_mobile');");
+    expect(simpleNavbarSource).toContain("const { currentLogoUrl: mobileLogoUrl, currentLogoAlt: mobileLogoAlt, isLoading: isLoadingMobileLogo } = useLogo('main_mobile');");
     expect(simpleNavbarSource).not.toContain("const result = await mobileTrpc.logo.getActiveLogo.query({ type: 'main_mobile' });");
   });
 
-  it('awaits SSR logo composable in header navbars', () => {
-    expect(combinedNavbarSource).toContain('const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = await useLogo();');
+  it('keeps logo composable synchronous in header navbars to avoid async setup lifecycle loss', () => {
+    expect(combinedNavbarSource).toContain('const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();');
+    expect(combinedNavbarSource).not.toContain('await useLogo();');
+    expect(simpleNavbarSource).not.toContain('await useLogo(');
   });
 });

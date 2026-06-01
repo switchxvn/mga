@@ -128,7 +128,7 @@ const isLoadingFeatureFlag = ref(true);
 const { locale, t: translate } = useLocalization();
 
 // Logo
-const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = await useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
 const { shouldShowSkeleton } = useSkeletonGate();
 
 // Navbar

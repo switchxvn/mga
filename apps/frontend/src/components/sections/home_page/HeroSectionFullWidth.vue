@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Autoplay, EffectFade, Navigation, Pagination } from 'swiper/modules';
-import type { PropType } from 'vue';
-import { computed, defineComponent, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useTrpc } from '~/composables/useTrpc';
 import type { Hero, HeroSlider, Slide } from '~/types/hero';
@@ -71,22 +70,31 @@ const currentSlide = ref(0);
 const error = ref<Error | null>(null);
 const hasMounted = ref(false);
 
+onMounted(() => {
+  hasMounted.value = true;
+});
+
 const trpc = useTrpc();
 const { shouldShowSkeleton } = useSkeletonGate();
+const heroThemeId = computed(() => props.config?.themeId ?? null);
+const heroDataKey = computed(() => `hero-full-width-data-${heroThemeId.value ?? 'default'}`);
 const { data: heroPayload, pending: isLoading } = await useAsyncData(
-  'hero-full-width-data',
+  heroDataKey,
   async () => {
-    const [heroResult, sliderResult] = await Promise.all([
-      trpc.hero.getHero.query(),
-      trpc.hero.getHeroSliders.query({ themeId: props.config?.themeId }),
+    const heroResultPromise = trpc.hero.getHero.query();
+    const sliderResultPromise = trpc.hero.getHeroSliders.query({ themeId: heroThemeId.value ?? undefined });
+    const [heroResult, initialSliderResult] = await Promise.all([
+      heroResultPromise,
+      sliderResultPromise,
     ]);
 
     return {
       heroData: (heroResult || []) as Hero[],
-      sliderData: (sliderResult || []) as HeroSlider[],
+      sliderData: (initialSliderResult || []) as HeroSlider[],
     };
   },
   {
+    watch: [heroThemeId],
     default: () => ({
       heroData: [] as Hero[],
       sliderData: [] as HeroSlider[],
@@ -177,9 +185,6 @@ const processedConfig = computed(() => {
   return config;
 });
 
-onMounted(() => {
-  hasMounted.value = true;
-});
 </script>
 
 <template>
