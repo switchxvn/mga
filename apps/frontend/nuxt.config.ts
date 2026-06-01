@@ -371,14 +371,6 @@ export default defineNuxtConfig({
               return 'photoswipe';
             }
 
-            if (id.includes('node_modules/@nuxt/ui')) {
-              return 'nuxt-ui';
-            }
-
-            if (id.includes('node_modules/nuxt/dist/app')) {
-              return 'nuxt-core';
-            }
-
             return undefined;
           }
         }

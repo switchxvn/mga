@@ -54,7 +54,7 @@ describe('nuxt startup config', () => {
     }
   });
 
-  it('groups Nuxt UI and Nuxt app runtime into stable vendor chunks', () => {
+  it('only forces a manual vendor chunk for photoswipe', () => {
     const output = nuxtConfig.vite?.build?.rollupOptions?.output;
     const manualChunks =
       output && !Array.isArray(output) && typeof output === 'object'
@@ -62,7 +62,8 @@ describe('nuxt startup config', () => {
         : undefined;
 
     expect(typeof manualChunks).toBe('function');
-    expect(manualChunks?.('/virtual/node_modules/@nuxt/ui/dist/runtime/components/forms/Input.vue')).toBe('nuxt-ui');
-    expect(manualChunks?.('/virtual/node_modules/nuxt/dist/app/nuxt.js')).toBe('nuxt-core');
+    expect(manualChunks?.('/virtual/node_modules/photoswipe/dist/photoswipe.esm.js')).toBe('photoswipe');
+    expect(manualChunks?.('/virtual/node_modules/@nuxt/ui/dist/runtime/components/forms/Input.vue')).toBeUndefined();
+    expect(manualChunks?.('/virtual/node_modules/nuxt/dist/app/nuxt.js')).toBeUndefined();
   });
 });
