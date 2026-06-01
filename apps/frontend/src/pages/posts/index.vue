@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
 import { useTrpc } from "../../composables/useTrpc";
-import { ref, computed, reactive, watch } from "vue";
+import { ref, computed, reactive, watch, watchEffect } from "vue";
 import { useLocalization } from "../../composables/useLocalization";
 import { useRoute, useRouter } from 'vue-router';
 import PostSidebar from "../../components/sidebar/PostSidebar.vue";
@@ -66,86 +66,103 @@ watch(currentPage, (newPage) => {
   }
 });
 
-// Fetch category data by slug
-const fetchCategoryData = async (slug: string) => {
-  try {
-    const category = await trpc.category.getBySlug.query({
-      slug,
-      locale: locale.value
-    });
-    categoryData.value = category;
-    return category;
-  } catch (error) {
-    console.error('Error fetching category data:', error);
-    categoryData.value = null;
-    return null;
-  }
+/**
+ * Chuyển đổi dữ liệu post từ API thành đúng type Post
+ */
+const transformPost = (post: any): Post => {
+  return {
+    ...post,
+    author: post.author ? {
+      ...post.author,
+      lastLoginAt: post.author.lastLoginAt ? new Date(post.author.lastLoginAt) : null
+    } : null
+  };
 };
 
-// Fetch SEO data
-const fetchSeoData = async () => {
-  try {
-    const seo = await trpc.seo.getSeoByPath.query('/posts');
-    seoData.value = seo;
-    return seo;
-  } catch (err) {
-    console.error('Error fetching SEO data:', err);
-    seoData.value = null;
-    return null;
+const fetchPostsPagePayload = async () => {
+  const queryParams: any = {
+    locale: locale.value,
+    page: filters.page,
+    limit: filters.limit,
+    sort: filters.sort
+  };
+
+  if (filters.search) {
+    queryParams.search = filters.search;
   }
+
+  if (filters.categories && filters.categories.length > 0) {
+    queryParams.categories = filters.categories.join(',');
+  }
+
+  if (filters.tags && filters.tags.length > 0) {
+    queryParams.tags = filters.tags.join(',');
+  }
+
+  const result = await trpc.post.byLocale.query(queryParams);
+
+  let resolvedCategoryData = null;
+  let resolvedSeoData = null;
+
+  if (filters.categories.length === 1) {
+    try {
+      resolvedCategoryData = await trpc.category.getBySlug.query({
+        slug: filters.categories[0],
+        locale: locale.value
+      });
+    } catch (categoryError) {
+      console.error('Error fetching category data:', categoryError);
+    }
+  } else {
+    try {
+      resolvedSeoData = await trpc.seo.getSeoByPath.query('/posts');
+    } catch (seoError) {
+      console.error('Error fetching SEO data:', seoError);
+    }
+  }
+
+  return {
+    posts: Array.isArray(result.items) ? result.items.map(transformPost) : [],
+    totalPosts: result.total || 0,
+    totalPages: result.totalPages || 0,
+    categoryData: resolvedCategoryData,
+    seoData: resolvedSeoData,
+  };
 };
 
-// Hàm mới để xử lý việc lấy thông tin category dựa trên filters
-const handleCategoryData = async () => {
-  // Nếu có nhiều categories hoặc không có category nào
-  if (filters.categories.length > 1 || filters.categories.length === 0) {
-    categoryData.value = null;
-    await fetchSeoData();
+const applyPostsPayload = (payload?: {
+  posts: Post[];
+  totalPosts: number;
+  totalPages: number;
+  categoryData: any;
+  seoData: any;
+} | null) => {
+  posts.value = payload?.posts || [];
+  totalPosts.value = payload?.totalPosts || 0;
+  totalPages.value = payload?.totalPages || 0;
+  categoryData.value = payload?.categoryData || null;
+  seoData.value = payload?.seoData || null;
+};
+
+const { data: initialPostsPayload } = await useAsyncData(
+  () => `posts-list-${locale.value}-${route.fullPath}`,
+  fetchPostsPagePayload,
+  { watch: [locale, () => route.fullPath] },
+);
+
+watchEffect(() => {
+  if (!initialPostsPayload.value) {
     return;
   }
-  
-  // Nếu chỉ có một category
-  if (filters.categories.length === 1) {
-    await fetchCategoryData(filters.categories[0]);
-  }
-};
+
+  applyPostsPayload(initialPostsPayload.value);
+});
 
 const fetchPosts = async () => {
   try {
     isLoading.value = true;
     error.value = null;
-
-    // Build query params
-    const queryParams: any = {
-      locale: locale.value,
-      page: filters.page,
-      limit: filters.limit,
-      sort: filters.sort
-    };
-
-    // Add search if exists
-    if (filters.search) {
-      queryParams.search = filters.search;
-    }
-
-    // Add categories if exists
-    if (filters.categories && filters.categories.length > 0) {
-      queryParams.categories = filters.categories.join(',');
-    }
-
-    // Add tags if exists
-    if (filters.tags && filters.tags.length > 0) {
-      queryParams.tags = filters.tags.join(',');
-    }
-
-    // Fetch posts
-    const result = await trpc.post.byLocale.query(queryParams);
-    posts.value = Array.isArray(result.items) ? result.items.map(transformPost) : [];
-    totalPosts.value = result.total;
-    totalPages.value = result.totalPages;
-
-    // Xử lý thông tin category dựa trên filters
-    await handleCategoryData();
+    applyPostsPayload(await fetchPostsPagePayload());
 
   } catch (err) {
     console.error('Failed to fetch posts:', err);
@@ -165,17 +182,9 @@ const syncFiltersFromQuery = (newQuery: Record<string, any>) => {
   filters.tags = parsed.tags;
 };
 
-if (import.meta.client) {
-  // Fetch posts client-side to avoid blocking SSR render on list pages
-  watch(() => route.query, (newQuery) => {
-    syncFiltersFromQuery(newQuery as Record<string, any>);
-    fetchPosts();
-  }, { immediate: true });
-
-  watch(locale, () => {
-    fetchPosts();
-  });
-}
+watch(() => route.query, (newQuery) => {
+  syncFiltersFromQuery(newQuery as Record<string, any>);
+});
 
 // Định nghĩa kiểu dữ liệu cho breadcrumb item
 interface BreadcrumbItem {
@@ -190,19 +199,6 @@ const sortOptions = computed(() => [
   { value: "title_asc", label: t("sort.title_asc") },
   { value: "title_desc", label: t("sort.title_desc") },
 ]);
-
-/**
- * Chuyển đổi dữ liệu post từ API thành đúng type Post
- */
-const transformPost = (post: any): Post => {
-  return {
-    ...post,
-    author: post.author ? {
-      ...post.author,
-      lastLoginAt: post.author.lastLoginAt ? new Date(post.author.lastLoginAt) : null
-    } : null
-  };
-};
 
 // Handle filter change from sidebar
 const handleFilterChange = (newFilters: any) => {

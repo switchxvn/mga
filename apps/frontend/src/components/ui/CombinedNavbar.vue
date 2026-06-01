@@ -128,7 +128,7 @@ const isLoadingFeatureFlag = ref(true);
 const { locale, t: translate } = useLocalization();
 
 // Logo
-const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = await useLogo();
 const { shouldShowSkeleton } = useSkeletonGate();
 
 // Navbar
@@ -226,11 +226,6 @@ const isMounted = ref(true);
 
 onMounted(() => {
   const init = async () => {
-    try {
-      await fetchMenuItems();
-    } catch (err) {
-      console.error("Error fetching menu items:", err);
-    }
     await checkCartFeatureFlag();
   };
 

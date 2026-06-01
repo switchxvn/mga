@@ -4,6 +4,7 @@ import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTrpc } from '../composables/useTrpc';
 import { useTheme } from '../composables/useTheme';
+import { useMenuItems } from '../composables/useMenuItems';
 import { PageType } from '@ew/shared';
 import { AUTH_ROUTE_PATHS } from '../utils/routes';
 // Import components
@@ -19,6 +20,7 @@ import SimpleNavbar from '~/components/ui/SimpleNavbar.vue';
 const router = useRouter();
 const trpc = useTrpc();
 const { getActiveTheme } = useTheme();
+const { menuItems, fetchMenuItems } = useMenuItems();
 
 const user = ref<any>(null);
 const theme = ref<any>({ sections: [] }); // Initialize with empty sections
@@ -215,6 +217,7 @@ try {
   const [activeTheme, activeFooter] = await Promise.all([
     getActiveTheme({ pageType: PageType.COMMON }),
     trpc.footer.getActiveFooter.query(),
+    !menuItems.value.length ? fetchMenuItems() : Promise.resolve(),
   ]);
 
   if (activeTheme) {

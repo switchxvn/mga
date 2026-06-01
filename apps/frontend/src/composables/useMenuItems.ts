@@ -5,16 +5,24 @@ import { TRPCClientError } from '@trpc/client';
 
 export function useMenuItems() {
   const trpc = useTrpc();
-  const menuItems = ref<MenuItem[]>([]);
-  const isLoading = ref(false);
-  const error = ref<string | null>(null);
+  const menuItems = useState<MenuItem[]>('menu-items', () => []);
+  const isLoading = useState<boolean>('menu-items-loading', () => false);
+  const error = useState<string | null>('menu-items-error', () => null);
+  const pendingRequest = useState<Promise<MenuItem[]> | null>('menu-items-pending-request', () => null);
 
   const fetchMenuItems = async (params?: GetMenuItemsInput) => {
+    if (isLoading.value && pendingRequest.value) {
+      return pendingRequest.value;
+    }
+
     try {
+      const request = trpc.settings.getAllMenuItems.query(params);
+      pendingRequest.value = request;
       isLoading.value = true;
       error.value = null;
-      const items = await trpc.settings.getAllMenuItems.query(params);
+      const items = await request;
       menuItems.value = items;
+      return items;
     } catch (err) {
       if (err instanceof TRPCClientError) {
         error.value = err.message;
@@ -22,8 +30,10 @@ export function useMenuItems() {
         error.value = 'Đã xảy ra lỗi khi tải menu';
       }
       console.error('Error fetching menu items:', err);
+      return menuItems.value;
     } finally {
       isLoading.value = false;
+      pendingRequest.value = null;
     }
   };
 

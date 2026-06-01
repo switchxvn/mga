@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrpc } from '~/composables/useTrpc'
@@ -25,33 +25,50 @@ const categories = ref<any[]>([])
 const featuredCategories = ref<any[]>([])
 const popularCategories = ref<any[]>([])
 
-// Lấy danh sách danh mục
-const fetchCategories = async () => {
-  try {
-    isLoading.value = true
-    
-    // Lấy tất cả danh mục
-    const allCategories = await trpc.category.byType.query({ type: 'product' })
-    categories.value = allCategories
-    
-    // Lấy danh mục nổi bật
-    const featured = await trpc.category.featured.query()
-    featuredCategories.value = featured.filter(cat => cat.type === 'product' || cat.type === 'both')
-    
-    // Lấy danh mục phổ biến
-    const popular = await trpc.category.popular.query({ limit: 6 })
-    popularCategories.value = popular.filter(cat => cat.type === 'product' || cat.type === 'both')
-  } catch (err: any) {
-    console.error('Error fetching categories:', err)
-    error.value = err.message || t('categories.errorLoading') || 'Không thể tải danh sách danh mục'
-  } finally {
-    isLoading.value = false
-  }
+const { data: categoryListingPayload, error: categoryListingError, refresh: refreshCategories } = await useAsyncData(
+  () => `categories-index-${locale.value}`,
+  async () => {
+    try {
+      const [allCategories, featured, popular] = await Promise.all([
+        trpc.category.byType.query({ type: 'product' }),
+        trpc.category.featured.query(),
+        trpc.category.popular.query({ limit: 6 }),
+      ])
+
+      return {
+        categories: allCategories,
+        featuredCategories: featured.filter(cat => cat.type === 'product' || cat.type === 'both'),
+        popularCategories: popular.filter(cat => cat.type === 'product' || cat.type === 'both'),
+      }
+    } catch (err: any) {
+      error.value = err.message || t('categories.errorLoading') || 'Không thể tải danh sách danh mục'
+      return {
+        categories: [],
+        featuredCategories: [],
+        popularCategories: [],
+      }
+    }
+  },
+  { watch: [locale] },
+)
+
+if (categoryListingPayload.value) {
+  categories.value = categoryListingPayload.value.categories
+  featuredCategories.value = categoryListingPayload.value.featuredCategories
+  popularCategories.value = categoryListingPayload.value.popularCategories
+  isLoading.value = false
 }
 
-// Khởi tạo trang
-onMounted(() => {
-  fetchCategories()
+watchEffect(() => {
+  if (!categoryListingPayload.value) {
+    return
+  }
+
+  categories.value = categoryListingPayload.value.categories
+  featuredCategories.value = categoryListingPayload.value.featuredCategories
+  popularCategories.value = categoryListingPayload.value.popularCategories
+  error.value = categoryListingError.value ? (categoryListingError.value as Error).message : null
+  isLoading.value = false
 })
 
 usePageSeo({
@@ -103,7 +120,7 @@ const navigateToCategory = (slug: string) => {
         <UIcon name="i-heroicons-exclamation-circle" class="mx-auto mb-4 h-12 w-12 text-red-500" />
         <h3 class="mb-2 text-lg font-medium text-red-800 dark:text-red-400">{{ t('common.error') }}</h3>
         <p class="text-red-600 dark:text-red-300">{{ error }}</p>
-        <UButton color="red" variant="soft" class="mt-4" @click="fetchCategories">
+        <UButton color="red" variant="soft" class="mt-4" @click="refreshCategories">
           {{ t('common.tryAgain') }}
         </UButton>
       </div>

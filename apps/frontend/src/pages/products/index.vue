@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ProductType, type Product } from '@ew/shared';
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ProductCard from "../../components/cards/ProductCard.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
@@ -123,9 +123,47 @@ const {
   totalProducts,
   totalPages,
   isLoadingProducts: isLoading,
+  priceRange,
   fetchPriceRange,
   fetchProducts
 } = useProduct(initialFilters.value);
+
+const buildProductListQuery = () => ({
+  locale: locale.value,
+  search: filters.value.search || undefined,
+  minPrice: typeof filters.value.minPrice === 'number' ? filters.value.minPrice : undefined,
+  maxPrice: typeof filters.value.maxPrice === 'number' ? filters.value.maxPrice : undefined,
+  categories: filters.value.categories?.length ? filters.value.categories : undefined,
+  isFeatured: filters.value.isFeatured || undefined,
+  isNew: filters.value.isNew || undefined,
+  isSale: filters.value.isSale || undefined,
+  includeNullPrice: filters.value.includeNullPrice,
+  sortBy: filters.value.sortBy,
+  page: filters.value.page,
+  limit: filters.value.limit,
+  type: filters.value.type,
+});
+
+const { data: initialProductsPayload } = await useAsyncData(
+  () => `products-list-${locale.value}-${route.fullPath}`,
+  () => trpc.product.getAll.query(buildProductListQuery()),
+  { watch: [locale, () => route.fullPath] },
+);
+
+const { data: initialPriceRangePayload } = await useAsyncData(
+  'products-price-range',
+  () => trpc.product.getMinMaxPrice.query(),
+);
+
+if (initialProductsPayload.value) {
+  products.value = initialProductsPayload.value.items;
+  totalProducts.value = initialProductsPayload.value.total;
+  totalPages.value = initialProductsPayload.value.totalPages;
+}
+
+if (initialPriceRangePayload.value) {
+  priceRange.value = initialPriceRangePayload.value;
+}
 
 // Remove client-side filtering
 const hasProducts = computed(() => products.value.length > 0);
@@ -211,12 +249,6 @@ const updateQueryParams = () => {
   // Fetch products with new filters
   fetchProducts();
 };
-
-// Initial fetch
-onMounted(() => {
-  fetchPriceRange();
-  fetchProducts();
-});
 
 // Watch for locale changes
 watch(locale, async () => {

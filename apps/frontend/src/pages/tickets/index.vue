@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TicketCard from "../../components/cards/TicketCard.vue";
 import ProductMobileSidebar from "../../components/sidebar/ProductMobileSidebar.vue";
@@ -72,9 +72,47 @@ const {
   totalProducts,
   totalPages,
   isLoadingProducts: isLoading,
+  priceRange,
   fetchPriceRange,
   fetchProducts
 } = useProduct(initialFilters);
+
+const buildTicketListQuery = () => ({
+  locale: locale.value,
+  search: filters.value.search || undefined,
+  minPrice: typeof filters.value.minPrice === 'number' ? filters.value.minPrice : undefined,
+  maxPrice: typeof filters.value.maxPrice === 'number' ? filters.value.maxPrice : undefined,
+  categories: filters.value.categories?.length ? filters.value.categories : undefined,
+  isFeatured: filters.value.isFeatured || undefined,
+  isNew: filters.value.isNew || undefined,
+  isSale: filters.value.isSale || undefined,
+  includeNullPrice: filters.value.includeNullPrice,
+  sortBy: filters.value.sortBy,
+  page: filters.value.page,
+  limit: filters.value.limit,
+  type: filters.value.type,
+});
+
+const { data: initialTicketsPayload } = await useAsyncData(
+  () => `tickets-list-${locale.value}-${route.fullPath}`,
+  () => trpc.product.getAll.query(buildTicketListQuery()),
+  { watch: [locale, () => route.fullPath] },
+);
+
+const { data: initialTicketPriceRangePayload } = await useAsyncData(
+  'tickets-price-range',
+  () => trpc.product.getMinMaxPrice.query(),
+);
+
+if (initialTicketsPayload.value) {
+  products.value = initialTicketsPayload.value.items;
+  totalProducts.value = initialTicketsPayload.value.total;
+  totalPages.value = initialTicketsPayload.value.totalPages;
+}
+
+if (initialTicketPriceRangePayload.value) {
+  priceRange.value = initialTicketPriceRangePayload.value;
+}
 
 // No need to filter products since we're already filtering by type in the API
 const ticketProducts = computed(() => products.value);
@@ -144,12 +182,6 @@ const updateQueryParams = () => {
   // Fetch products with new filters
   fetchProducts();
 };
-
-// Initial fetch
-onMounted(() => {
-  fetchPriceRange();
-  fetchProducts();
-});
 
 // Watch for locale changes
 watch(locale, async () => {

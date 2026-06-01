@@ -19,6 +19,11 @@ export function useProductDetail() {
     const routeSlug = route.params.slug;
     return typeof routeSlug === "string" ? routeSlug.trim() : "";
   });
+  const isProductDetailRoute = computed(() =>
+    route.path.startsWith("/san-pham/") ||
+    route.path.startsWith("/products/") ||
+    route.path.startsWith("/tickets/"),
+  );
 
   // Xác định locale từ URL path và loại sản phẩm
   const currentLocale = computed(() => {
@@ -41,6 +46,14 @@ export function useProductDetail() {
   const { data: productDetailPayload, pending: isLoading, error, refresh } = useAsyncData(
     () => `product-${slug.value || "pending"}`,
     async () => {
+      if (!slug.value || !isProductDetailRoute.value) {
+        return {
+          product: null,
+          productReviewAggregate: null,
+          productReviews: [],
+        };
+      }
+
       try {
         return await fetchProductDetailPayload({
           slug: slug.value,
@@ -72,14 +85,14 @@ export function useProductDetail() {
 
   // Đảm bảo dữ liệu được tải ở phía client nếu cần
   onMounted(() => {
-    if (slug.value && !productData.value) {
+    if (slug.value && isProductDetailRoute.value && !productData.value) {
       refresh();
     }
   });
 
   // Theo dõi thay đổi của slug hoặc locale
   watch([slug, currentLocale], ([currentSlug]) => {
-    if (!currentSlug) {
+    if (!currentSlug || !isProductDetailRoute.value) {
       return;
     }
     refresh();
@@ -89,7 +102,7 @@ export function useProductDetail() {
     () => productData.value?.id,
     () => {
       const translation = productData.value?.translations?.find(t => t.locale === currentLocale.value) || productData.value?.translations?.[0];
-      if (!translation?.slug || !process.client) {
+      if (!translation?.slug || !process.client || !isProductDetailRoute.value) {
         return;
       }
 
@@ -577,6 +590,7 @@ export function useProductDetail() {
     isLoading,
     error,
     refresh,
+    isProductDetailRoute,
     currentLocale,
     
     // Computed

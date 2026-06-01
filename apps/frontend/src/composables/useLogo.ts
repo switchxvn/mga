@@ -1,4 +1,5 @@
-import { ref, onMounted, computed } from 'vue';
+import { computed } from 'vue';
+import { refreshNuxtData, useAsyncData } from 'nuxt/app';
 import { useTrpc } from './useTrpc';
 import { useTheme } from './useTheme';
 import type { RouterOutput } from '../types/trpc';
@@ -9,7 +10,7 @@ const unwrapIpxUrl = (value?: string | null): string | null => {
   if (!value) return null;
 
   try {
-    const parsed = new URL(value, window.location.origin);
+    const parsed = new URL(value, 'http://localhost');
     if (!parsed.pathname.startsWith('/_ipx/')) {
       return value;
     }
@@ -31,33 +32,38 @@ const unwrapIpxUrl = (value?: string | null): string | null => {
     }
 
     return decodedSourcePath.startsWith('/')
-      ? `${parsed.origin}${decodedSourcePath}`
-      : `${parsed.origin}/${decodedSourcePath}`;
+      ? decodedSourcePath
+      : `/${decodedSourcePath}`;
   } catch {
     return value;
   }
 };
 
-export const useLogo = () => {
+export const useLogo = async (type = 'main') => {
   const trpc = useTrpc();
   const { isDark } = useTheme();
-  const logo = ref<LogoData | null>(null);
-  const homeSeoTitle = ref<string | null>(null);
-  const isLoading = ref(false);
-  const error = ref<string | null>(null);
 
-  const fetchLogo = async (type = 'main') => {
-    try {
-      isLoading.value = true;
-      error.value = null;
-      logo.value = await trpc.logo.getActiveLogo.query({ type });
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Error fetching logo';
-      console.error('Error fetching logo:', err);
-    } finally {
-      isLoading.value = false;
+  const { data: logo, pending: isLoading, error } = await useAsyncData(
+    `logo-${type}`,
+    async () => {
+      const result = await trpc.logo.getActiveLogo.query({ type });
+      return (result ?? null) as LogoData | null;
+    },
+    {
+      default: () => null,
     }
-  };
+  );
+
+  const { data: homeSeoTitle } = await useAsyncData(
+    'logo-home-seo-title',
+    async () => {
+      const seo = await trpc.seo.getSeoByPath.query('/');
+      return seo?.title?.trim() || null;
+    },
+    {
+      default: () => null,
+    }
+  );
 
   const currentLogoUrl = computed(() => {
     if (!logo.value) return null;
@@ -69,20 +75,9 @@ export const useLogo = () => {
     return homeSeoTitle.value || logo.value?.altText || 'Logo';
   });
 
-  const fetchHomeSeoTitle = async () => {
-    try {
-      const seo = await trpc.seo.getSeoByPath.query('/');
-      homeSeoTitle.value = seo?.title?.trim() || null;
-    } catch (err) {
-      homeSeoTitle.value = null;
-      console.error('Error fetching home SEO title:', err);
-    }
+  const fetchLogo = async () => {
+    await refreshNuxtData(`logo-${type}`);
   };
-
-  onMounted(() => {
-    fetchLogo();
-    fetchHomeSeoTitle();
-  });
 
   return {
     logo,
@@ -90,6 +85,6 @@ export const useLogo = () => {
     currentLogoAlt,
     isLoading,
     error,
-    fetchLogo
+    fetchLogo,
   };
 };

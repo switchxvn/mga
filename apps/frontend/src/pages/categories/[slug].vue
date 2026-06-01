@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, watch, watchEffect } from 'vue'
 import { setResponseStatus } from 'h3'
-import { useRequestEvent } from 'nuxt/app'
+import { useAsyncData, useRequestEvent } from 'nuxt/app'
 import { useLocalization } from '../../composables/useLocalization'
 import { useTrpc } from '../../composables/useTrpc'
 import { useRoute, useRouter } from 'vue-router'
@@ -129,6 +129,12 @@ interface CategoryFilterAttribute {
   values: string[];
 }
 
+interface CategoryProductListPayload {
+  items: Awaited<ReturnType<typeof trpc.product.getAll.query>>['items'];
+  total: number;
+  totalPages: number;
+}
+
 const tr = (key: string, fallback: string) => t(key) || fallback
 
 const filters = reactive<FilterState>({
@@ -228,13 +234,100 @@ const categoryPriceRangeSummary = computed(() =>
 const error = computed(() => categoryError.value ? (categoryError.value as Error).message : null)
 const hasActiveFilters = computed(() => hasActiveCategoryFilters(filters))
 
+const buildCategoryFiltersFromRoute = (categoryId: number): FilterState => ({
+  search: route.query.search as string || '',
+  minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
+  maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
+  includeNullPrice: route.query.includeNullPrice !== 'false',
+  categories: [categoryId],
+  isFeatured: route.query.isFeatured === 'true',
+  isNew: route.query.isNew === 'true',
+  isSale: route.query.isSale === 'true',
+  sortBy: (route.query.sortBy as ProductSortBy) || 'newest',
+  page: Number(route.query.page) || 1,
+  limit: Number(route.query.limit) || 12,
+  categorySlug: slug.value,
+})
+
+const buildCategoryProductListQuery = (categoryId: number) => {
+  const currentFilters = buildCategoryFiltersFromRoute(categoryId)
+
+  return {
+    locale: routeLocale.value,
+    search: currentFilters.search || undefined,
+    minPrice: typeof currentFilters.minPrice === 'number' ? currentFilters.minPrice : undefined,
+    maxPrice: typeof currentFilters.maxPrice === 'number' ? currentFilters.maxPrice : undefined,
+    categories: currentFilters.categories,
+    isFeatured: currentFilters.isFeatured || undefined,
+    isNew: currentFilters.isNew || undefined,
+    isSale: currentFilters.isSale || undefined,
+    includeNullPrice: currentFilters.includeNullPrice,
+    sortBy: currentFilters.sortBy,
+    page: currentFilters.page,
+    limit: currentFilters.limit,
+  }
+}
+
 const {
   filters: productFilters,
   products,
   totalProducts,
-  isLoadingProducts: isLoading,
-  fetchProducts
-} = useProduct(initialFilters)
+  totalPages,
+} = useProduct(initialFilters, { autoFetch: false })
+
+const { data: initialProductsPayload, pending: isProductsPending } = await useAsyncData<CategoryProductListPayload | null>(
+  () => `category-products-${routeLocale.value}-${slug.value || 'pending'}-${route.fullPath}`,
+  async () => {
+    if (!categoryData.value?.id) {
+      return null
+    }
+
+    const result = await trpc.product.getAll.query(buildCategoryProductListQuery(categoryData.value.id))
+
+    return {
+      items: result.items,
+      total: result.total,
+      totalPages: result.totalPages,
+    }
+  },
+  {
+    watch: [slug, routeLocale, () => route.fullPath],
+    default: () => null,
+  }
+)
+
+const isLoading = computed(() => isProductsPending.value && products.value.length === 0)
+
+watchEffect(() => {
+  if (!categoryData.value?.id) {
+    products.value = []
+    totalProducts.value = 0
+    totalPages.value = 0
+    return
+  }
+
+  const syncedFilters = buildCategoryFiltersFromRoute(categoryData.value.id)
+
+  Object.assign(filters, syncedFilters)
+  productFilters.value = {
+    ...syncedFilters,
+    categories: syncedFilters.categories,
+    locale: routeLocale.value,
+  }
+
+  if (initialProductsPayload.value) {
+    products.value = initialProductsPayload.value.items
+    totalProducts.value = initialProductsPayload.value.total
+    totalPages.value = initialProductsPayload.value.totalPages
+    return
+  }
+
+  if (!isProductsPending.value) {
+    products.value = []
+    totalProducts.value = 0
+    totalPages.value = 0
+  }
+})
 
 const pageState = computed(() =>
   resolveCategoryPageState({
@@ -483,30 +576,13 @@ watch([() => slug.value, () => categoryData.value?.id], async ([, newId]) => {
     return
   }
 
-  const updatedFilters: FilterState = {
-    search: route.query.search as string || '',
-    minPrice: route.query.minPrice ? Number(route.query.minPrice) : undefined,
-    maxPrice: route.query.maxPrice ? Number(route.query.maxPrice) : undefined,
-    includeNullPrice: true,
-    categories: [newId],
-    isFeatured: route.query.isFeatured === 'true',
-    isNew: route.query.isNew === 'true',
-    isSale: route.query.isSale === 'true',
-    sortBy: (route.query.sortBy as ProductSortBy) || 'newest',
-    page: Number(route.query.page) || 1,
-    limit: Number(route.query.limit) || 12,
-    categorySlug: slug.value
-  }
+  const updatedFilters = buildCategoryFiltersFromRoute(newId)
 
   Object.assign(filters, updatedFilters)
   productFilters.value = {
     ...updatedFilters,
     categories: updatedFilters.categories,
     locale: routeLocale.value
-  }
-
-  if (!isLoading.value) {
-    fetchProducts()
   }
 }, { immediate: true })
 
@@ -612,10 +688,6 @@ const updateQueryParams = () => {
   if (filters.limit !== 12) query.limit = filters.limit
 
   router.replace({ query })
-
-  if (!isLoading.value) {
-    fetchProducts()
-  }
 }
 </script>
 
@@ -866,10 +938,11 @@ const updateQueryParams = () => {
                 <template v-else>
                   <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     <ProductCard
-                      v-for="product in products"
+                      v-for="(product, index) in products"
                       :key="product.id"
                       :product="product"
                       :locale="locale"
+                      :image-priority="index < 6"
                     />
                   </div>
 

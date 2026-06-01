@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watchEffect } from "vue";
 import { useLocalization } from "~/composables/useLocalization";
-import { useCategory } from "~/composables/useCategory";
 import { useTrpc } from "~/composables/useTrpc";
 import ProductCard from "~/components/cards/ProductCard.vue";
 import type { Category, CategoryTranslation } from "@ew/shared";
@@ -76,48 +75,79 @@ const props = defineProps<{
 }>();
 
 const { t, locale } = useLocalization();
-const { loading, error } = useCategory();
 const trpc = useTrpc();
 
 // State
 const categories = ref<Category[]>([]);
 const categoryProducts = ref<Record<number, any[]>>({});
-
-// Composables
-const { fetchCategoryById } = useCategory();
+const categoryIds = computed(() => props.config.categoryIds ?? []);
+const productsPerCategory = computed(() => props.config.productsPerCategory || 4);
+const safeLocale = computed(() => normalizeLocaleCode(locale.value, "vi"));
 
 // Methods
-const fetchCategories = async () => {
-  if (!props.config.categoryIds?.length) return;
+const fetchSectionPayload = async () => {
+  if (!categoryIds.value.length) {
+    return {
+      categories: [] as Category[],
+      categoryProducts: {} as Record<number, any[]>,
+    };
+  }
 
   try {
     const fetchedCategories = await Promise.all(
-      props.config.categoryIds.map((id) => fetchCategoryById(id))
+      categoryIds.value.map(async (id) => {
+        const result = await trpc.category.byId.query({ id, locale: safeLocale.value });
+        return result as Category;
+      })
     );
 
-    categories.value = fetchedCategories.filter((cat) => cat !== null);
+    const validCategories = fetchedCategories.filter((cat) => cat !== null);
+    const productsByCategory: Record<number, any[]> = {};
 
-    // Fetch products for each category
     await Promise.all(
-      categories.value.map(async (category) => {
+      validCategories.map(async (category) => {
         try {
-          const safeLocale = normalizeLocaleCode(locale.value, 'vi');
           const result = await trpc.product.getAll.query({
             categories: [category.id],
-            limit: props.config.productsPerCategory || 4,
-            locale: safeLocale,
+            limit: productsPerCategory.value,
+            locale: safeLocale.value,
           });
-          categoryProducts.value[category.id] = result.items;
+          productsByCategory[category.id] = result.items;
         } catch (err) {
           console.error(`Error fetching products for category ${category.id}:`, err);
-          categoryProducts.value[category.id] = [];
+          productsByCategory[category.id] = [];
         }
       })
     );
+
+    return {
+      categories: validCategories,
+      categoryProducts: productsByCategory,
+    };
   } catch (err) {
     console.error("Error fetching categories:", err);
+    throw err;
   }
 };
+
+const { data: sectionPayload, pending: loading, error } = await useAsyncData(
+  `home-product-categories-${safeLocale.value}-${categoryIds.value.join(",")}-${productsPerCategory.value}`,
+  fetchSectionPayload,
+  {
+    watch: [safeLocale, categoryIds, productsPerCategory],
+    default: () => ({
+      categories: [] as Category[],
+      categoryProducts: {} as Record<number, any[]>,
+    }),
+  }
+);
+
+const errorMessage = computed(() => error.value?.message || null);
+
+watchEffect(() => {
+  categories.value = sectionPayload.value?.categories ?? [];
+  categoryProducts.value = sectionPayload.value?.categoryProducts ?? {};
+});
 
 // Computed
 const getCategoryTranslation = (category: Category): CategoryTranslation => {
@@ -141,11 +171,6 @@ const gridClasses = computed(() => {
     "md:grid-cols-3": cols >= 3,
     "lg:grid-cols-4": cols >= 4,
   };
-});
-
-// Lifecycle
-onMounted(() => {
-  fetchCategories();
 });
 </script>
 
@@ -281,9 +306,9 @@ onMounted(() => {
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="container mx-auto px-4">
+    <div v-else-if="errorMessage" class="container mx-auto px-4">
       <div class="text-center text-red-500 py-8">
-        {{ error }}
+        {{ errorMessage }}
       </div>
     </div>
 

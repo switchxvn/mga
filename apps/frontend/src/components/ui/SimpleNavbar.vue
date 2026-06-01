@@ -19,7 +19,6 @@ import type { MenuItem, TopMenuItem } from '~/types/navbar';
 import { defineAsyncComponent, markRaw } from 'vue';
 import type { Component } from 'vue';
 import { useAuth } from '@/composables/useAuth';
-import { useTrpc } from '@/composables/useTrpc';
 import CurrentDateTime from '~/components/common/CurrentDateTime.vue';
 import { getBookingRoute } from '~/utils/routes';
 
@@ -266,40 +265,9 @@ const topMenuButtonRef = ref<HTMLElement | null>(null);
 const { checkCartFeatureFlag } = useNavbarFeatures();
 
 // Logo
-const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = await useLogo();
 const { shouldShowSkeleton } = useSkeletonGate();
-
-// Mobile Logo - tạo một instance mới của useLogo riêng cho mobile
-const mobileLogo = ref<any>(null);
-const mobileLogoUrl = ref<string | null>(null);
-const isLoadingMobileLogo = ref(false);
-
-// Fetch mobile logo
-const fetchMobileLogo = async () => {
-  try {
-    isLoadingMobileLogo.value = true;
-    const mobileTrpc = useTrpc();
-    const result = await mobileTrpc.logo.getActiveLogo.query({ type: 'main_mobile' });
-    mobileLogo.value = result;
-    
-    // Xác định URL dựa trên dark mode
-    const { isDark } = useDarkMode();
-    mobileLogoUrl.value = isDark.value ? result.darkModeUrl : result.lightModeUrl;
-
-    // Watch thay đổi dark mode để cập nhật URL logo mobile
-    watch(() => isDark.value, (newValue) => {
-      if (mobileLogo.value) {
-        mobileLogoUrl.value = newValue ? mobileLogo.value.darkModeUrl : mobileLogo.value.lightModeUrl;
-      }
-    });
-  } catch (err) {
-    console.error('Error fetching mobile logo:', err);
-    // Fallback to main logo if mobile logo fails
-    mobileLogoUrl.value = currentLogoUrl.value;
-  } finally {
-    isLoadingMobileLogo.value = false;
-  }
-};
+const { currentLogoUrl: mobileLogoUrl, currentLogoAlt: mobileLogoAlt, isLoading: isLoadingMobileLogo } = await useLogo('main_mobile');
 
 // Add these refs and computed properties
 const menuContainerRef = ref<HTMLElement | null>(null);
@@ -408,16 +376,7 @@ onMounted(() => {
   // Check auth state when component mounts
   checkAuth().then(() => {
     const init = async () => {
-      try {
-        await fetchMenuItems();
-        nextTick(() => {
-          calculateVisibleItems();
-        });
-      } catch (err) {
-        console.error('Error fetching menu items:', err);
-      }
       await checkCartFeatureFlag();
-      await fetchMobileLogo();
     };
     
     init();
@@ -472,6 +431,12 @@ onUnmounted(() => {
 watch(locale, () => {
   fetchMenuItems();
 });
+
+watch(processedMenuItems, () => {
+  nextTick(() => {
+    calculateVisibleItems();
+  });
+}, { deep: true });
 
 // Hàm để đóng dropdown khi click ra ngoài
 const handleClickOutside = (event: MouseEvent) => {
@@ -1090,7 +1055,7 @@ const handleClickOutside = (event: MouseEvent) => {
                 v-else-if="mobileLogoUrl"
                 class="w-auto"
                 :src="mobileLogoUrl"
-                :alt="mobileLogo?.altText || 'Logo'"
+                :alt="mobileLogoAlt"
                 width="140"
                 height="40"
                 sizes="140px"
@@ -1480,7 +1445,7 @@ const handleClickOutside = (event: MouseEvent) => {
                 v-if="mobileLogoUrl"
                 class="w-auto"
                 :src="mobileLogoUrl"
-                :alt="mobileLogo?.altText || 'Logo'"
+                :alt="mobileLogoAlt"
                 width="140"
                 height="32"
                 sizes="140px"

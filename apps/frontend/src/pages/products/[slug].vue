@@ -77,6 +77,7 @@ const {
   isLoading,
   error,
   refresh,
+  isProductDetailRoute,
   currentLocale,
   productTitle,
   productContent,
@@ -118,7 +119,11 @@ const {
   copyProductLink,
   getTabIcon
 } = useProductDetail();
-const shouldShowProductSkeleton = computed(() => isLoading.value || !routeSlug.value);
+const shouldShowProductSkeleton = computed(() =>
+  isLoading.value ||
+  !routeSlug.value ||
+  !isProductDetailRoute.value,
+);
 
 const { getPublicSettingValueByKey } = useSettings();
 const quickPurchaseEnabled = ref(false);
@@ -430,7 +435,7 @@ watch(activeTab, (newTab, oldTab) => {
       </div>
 
       <div
-        v-else-if="error && routeSlug"
+        v-else-if="error && routeSlug && isProductDetailRoute"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center"
       >
         <AlertCircle class="mx-auto mb-4 h-16 w-16 text-red-500" />

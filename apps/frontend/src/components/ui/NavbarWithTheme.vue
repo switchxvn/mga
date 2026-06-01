@@ -32,7 +32,7 @@ const isLoadingFeatureFlag = ref(true);
 const { locale } = useLocalization();
 
 // Logo
-const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = await useLogo();
 
 // Kiểm tra feature flag enable_add_to_cart
 const checkCartFeatureFlag = async () => {

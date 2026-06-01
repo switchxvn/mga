@@ -37,6 +37,10 @@ export interface ProductListResponse {
   totalPages: number;
 }
 
+interface UseProductOptions {
+  autoFetch?: boolean;
+}
+
 // Product Variant Interfaces
 export interface ProductAttributeValue {
   id: number;
@@ -89,7 +93,7 @@ export interface Product {
   }>;
 }
 
-export function useProduct(initialFilters?: ProductFilter) {
+export function useProduct(initialFilters?: ProductFilter, options: UseProductOptions = {}) {
   const { locale } = useLocalization();
   const trpc = useTrpc();
 
@@ -306,6 +310,10 @@ export function useProduct(initialFilters?: ProductFilter) {
 
   // Watch for filter changes and refetch products
   watch(filters, () => {
+    if (options.autoFetch === false) {
+      return;
+    }
+
     fetchProducts();
   }, { deep: true });
 

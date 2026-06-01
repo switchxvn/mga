@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
+import { ref, watch, computed } from "vue";
 import { useLocalization } from "../../composables/useLocalization";
 import { useTrpc } from "../../composables/useTrpc";
 import { useRoute, useRouter } from "vue-router";
@@ -73,6 +73,25 @@ const sortOptions = computed(() => [
 // Use service composable
 const { services, totalServices, isLoading, error, fetchServices } = useService();
 
+const buildServiceListQuery = () => ({
+  page: currentPage.value,
+  limit: itemsPerPage.value,
+  ...filters.value,
+  locale: normalizeLocaleCode(locale.value),
+  sortBy: currentSort.value,
+});
+
+const { data: initialServicesPayload } = await useAsyncData(
+  () => `services-list-${locale.value}-${route.fullPath}`,
+  () => trpc.service.list.query(buildServiceListQuery()),
+  { watch: [locale, () => route.fullPath] },
+);
+
+if (initialServicesPayload.value) {
+  services.value = initialServicesPayload.value.items;
+  totalServices.value = initialServicesPayload.value.total;
+}
+
 // Handle filter changes
 const handleFilterChange = (newFilters: ServiceFilter) => {
   // Update URL query params
@@ -131,11 +150,6 @@ const handlePageChange = (page: number) => {
   // Scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
-
-// Initial fetch
-onMounted(async () => {
-  fetchServices(currentPage.value, itemsPerPage.value, filters.value);
-});
 
 // Watch for locale changes
 watch(locale, async () => {

@@ -6,7 +6,7 @@
     :style="containerStyle"
   >
     <div
-      v-if="isLoading && !hasError"
+      v-if="shouldShowLoadingOverlay"
       class="absolute inset-0 bg-gray-200 animate-pulse dark:bg-gray-700"
     />
 
@@ -102,6 +102,7 @@ const props = withDefaults(defineProps<LazyImageProps>(), {
 const attrs = useAttrs();
 const isLoading = ref(true);
 const hasError = ref(false);
+const hasHydrated = ref(false);
 const nativeImageRef = ref<HTMLImageElement | null>(null);
 const optimizedImageRef = ref<ComponentPublicInstance | null>(null);
 let cleanupOptimizedImageListeners: (() => void) | null = null;
@@ -171,6 +172,7 @@ const forwardedAttrs = computed(() => {
   return rest;
 });
 const containerClass = computed(() => attrClass.value);
+const shouldShowLoadingOverlay = computed(() => hasHydrated.value && isLoading.value && !hasError.value);
 const imageClass = computed(() => ({
   'opacity-100': true,
 }));
@@ -275,6 +277,7 @@ onMounted(async () => {
   await nextTick();
   bindOptimizedImageListeners();
   syncImageState();
+  hasHydrated.value = true;
 });
 
 onBeforeUnmount(() => {

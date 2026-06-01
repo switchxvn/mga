@@ -40,5 +40,5 @@ import DashboardUserMenu from '~/components/auth/DashboardUserMenu.vue';
 import { useLogo } from '~/composables/useLogo';
 
 // Logo handling
-const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = useLogo();
+const { currentLogoUrl, currentLogoAlt, logo, isLoading: isLoadingLogo } = await useLogo();
 </script> 

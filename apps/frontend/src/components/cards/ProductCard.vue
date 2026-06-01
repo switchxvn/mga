@@ -57,6 +57,7 @@ const props = defineProps<{
     formattedComparePrice?: string;
   };
   locale?: string;
+  imagePriority?: boolean;
 }>();
 
 const { t } = useLocalization();
@@ -295,8 +296,9 @@ const productForCart = computed(() => ({
         sizes="(max-width: 768px) 100vw, 25vw"
         width="640"
         height="480"
-        loading="lazy"
-        fetchpriority="low"
+        :priority="!!imagePriority"
+        :loading="imagePriority ? 'eager' : 'lazy'"
+        :fetchpriority="imagePriority ? 'high' : 'low'"
         customClass="transition-transform duration-300 group-hover:scale-105 object-cover w-full h-full"
       />
     </NuxtLink>

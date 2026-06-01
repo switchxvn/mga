@@ -97,6 +97,47 @@ const DelayedNuxtImgStub = defineComponent({
 });
 
 describe('AppImage', () => {
+  it('does not render the loading overlay during hydration when the native image is already complete', async () => {
+    const originalComplete = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'complete');
+    const originalNaturalWidth = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'naturalWidth');
+
+    Object.defineProperty(HTMLImageElement.prototype, 'complete', {
+      configurable: true,
+      get: () => true,
+    });
+    Object.defineProperty(HTMLImageElement.prototype, 'naturalWidth', {
+      configurable: true,
+      get: () => 640,
+    });
+
+    try {
+      const wrapper = mount(AppImage, {
+        props: {
+          src: 'https://example.com/product.jpg',
+          alt: 'Completed product image',
+        },
+      });
+
+      expect(wrapper.html()).not.toContain('animate-pulse');
+
+      await nextTick();
+
+      expect(wrapper.html()).not.toContain('animate-pulse');
+    } finally {
+      if (originalComplete) {
+        Object.defineProperty(HTMLImageElement.prototype, 'complete', originalComplete);
+      } else {
+        delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).complete;
+      }
+
+      if (originalNaturalWidth) {
+        Object.defineProperty(HTMLImageElement.prototype, 'naturalWidth', originalNaturalWidth);
+      } else {
+        delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).naturalWidth;
+      }
+    }
+  });
+
   it('keeps whitelisted CDN images on the NuxtImg/IPX path', () => {
     const wrapper = mount(AppImage, {
       props: {
@@ -194,9 +235,10 @@ describe('AppImage', () => {
       },
     });
 
+    await nextTick();
+    await nextTick();
+
     expect(wrapper.html()).toContain('animate-pulse');
-    await nextTick();
-    await nextTick();
 
     await wrapper.find('.nuxt-img-inner').trigger('load');
     await nextTick();
@@ -217,10 +259,10 @@ describe('AppImage', () => {
       },
     });
 
-    expect(wrapper.html()).toContain('animate-pulse');
+    await nextTick();
+    await nextTick();
 
-    await nextTick();
-    await nextTick();
+    expect(wrapper.html()).toContain('animate-pulse');
 
     expect(wrapper.find('.nuxt-img-delayed-inner').exists()).toBe(true);
 

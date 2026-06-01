@@ -9,6 +9,13 @@ const mockedRouteSlug = ref('may-nen-khi');
 const mockedRoutePath = ref('/danh-muc-san-pham/may-nen-khi');
 const mockedProducts = ref([{ id: 101, slug: 'sample-product' }]);
 const mockedTotalProducts = ref(1);
+const mockedTotalPages = ref(1);
+const mockedUseAsyncData = vi.fn(async (_key: string, handler: () => Promise<unknown>, options?: { default?: () => unknown }) => ({
+  data: ref(handler ? await handler() : options?.default?.()),
+  pending: ref(false),
+  error: ref(null),
+  refresh: vi.fn(),
+}));
 const mockedProductFilters = ref({
   search: '',
   minPrice: undefined as number | undefined,
@@ -30,6 +37,13 @@ const categoryBySlugQuery = vi.fn().mockResolvedValue({
   slug: 'may-nen-khi',
   translations: [{ locale: 'vi', name: 'Máy nén khí', slug: 'may-nen-khi' }],
 });
+const productGetAllQuery = vi.fn().mockResolvedValue({
+  items: [{ id: 101, slug: 'sample-product' }],
+  total: 1,
+  page: 1,
+  limit: 12,
+  totalPages: 1,
+});
 const NuxtLinkStub = defineComponent({
   props: {
     to: {
@@ -46,6 +60,7 @@ vi.mock('h3', () => ({
 
 vi.mock('nuxt/app', () => ({
   useRequestEvent: () => null,
+  useAsyncData: (...args: Parameters<typeof mockedUseAsyncData>) => mockedUseAsyncData(...args),
 }));
 
 vi.mock('../../composables/useLocalization', () => ({
@@ -65,6 +80,11 @@ vi.mock('../../composables/useTrpc', () => ({
         query: categoryBySlugQuery,
       },
     },
+    product: {
+      getAll: {
+        query: productGetAllQuery,
+      },
+    },
   }),
 }));
 
@@ -73,6 +93,7 @@ vi.mock('../../composables/useProduct', () => ({
     filters: mockedProductFilters,
     products: mockedProducts,
     totalProducts: mockedTotalProducts,
+    totalPages: mockedTotalPages,
     isLoadingProducts: ref(false),
     fetchProducts: vi.fn(),
   }),
@@ -112,12 +133,6 @@ Object.assign(globalThis, {
       siteUrl: 'https://example.test',
     },
   }),
-  useAsyncData: async (_key: string, handler: () => Promise<unknown>, options?: { default?: () => unknown }) => ({
-    data: ref(handler ? await handler() : options?.default?.()),
-    pending: ref(false),
-    error: ref(null),
-    refresh: vi.fn(),
-  }),
 });
 
 describe('category slug page', () => {
@@ -127,6 +142,7 @@ describe('category slug page', () => {
     localizationT.mockImplementation((key: string) => key);
     categoryBySlugQuery.mockClear();
     categoryByTypeQuery.mockClear();
+    productGetAllQuery.mockClear();
     mockedProductFilters.value = {
       search: '',
       minPrice: undefined,
@@ -145,6 +161,13 @@ describe('category slug page', () => {
     mockedRoutePath.value = '/danh-muc-san-pham/may-nen-khi';
     mockedProducts.value = [{ id: 101, slug: 'sample-product' }];
     mockedTotalProducts.value = 1;
+    mockedTotalPages.value = 1;
+    mockedUseAsyncData.mockImplementation(async (_key: string, handler: () => Promise<unknown>, options?: { default?: () => unknown }) => ({
+      data: ref(handler ? await handler() : options?.default?.()),
+      pending: ref(false),
+      error: ref(null),
+      refresh: vi.fn(),
+    }));
   });
 
   it('fetches the category using the locale implied by the route path during CSR navigation', async () => {
@@ -215,6 +238,17 @@ describe('category slug page', () => {
     expect(source).not.toContain('const { data: suggestedCategoriesData } = await useAsyncData<Category[]>(');
   });
 
+  it('preloads category product listing data during SSR', () => {
+    const source = readFileSync('/Users/abc/project/mga/apps/frontend/src/pages/categories/[slug].vue', 'utf8');
+
+    expect(source).toContain('const { data: initialProductsPayload, pending: isProductsPending } = await useAsyncData<CategoryProductListPayload | null>(');
+    expect(source).toContain('} = useProduct(initialFilters, { autoFetch: false })');
+    expect(source).toContain("watch: [slug, routeLocale, () => route.fullPath],");
+    expect(source).toContain('const isLoading = computed(() => isProductsPending.value && products.value.length === 0)');
+    expect(source).toContain(':image-priority="index < 6"');
+    expect(source).not.toContain('    fetchProducts()\n  }\n}, { immediate: true })');
+  });
+
   it('initializes without reading totalProducts before useProduct returns', async () => {
     const page = (await import('./[slug].vue')).default;
     const TestHost = defineComponent({
@@ -281,23 +315,22 @@ describe('category slug page', () => {
   });
 
   it('shows a loading skeleton instead of the invalid-category state while category data is pending', async () => {
-    const originalUseAsyncData = globalThis.useAsyncData;
+    const previousImplementation = mockedUseAsyncData.getMockImplementation();
 
-    Object.assign(globalThis, {
-      useAsyncData: async (
-        _key: string | (() => string),
-        handler: () => Promise<unknown>,
-        options?: { default?: () => unknown },
-      ) => {
+    mockedUseAsyncData.mockImplementation(async (
+      _key: string | (() => string),
+      handler: () => Promise<unknown>,
+      options?: { default?: () => unknown },
+    ) => {
         const resolvedKey = typeof _key === 'function' ? _key() : _key;
 
         return {
-        data: ref(resolvedKey.startsWith('category-') ? null : (handler ? await handler() : options?.default?.())),
-        pending: ref(resolvedKey.startsWith('category-')),
-        error: ref(null),
-        refresh: vi.fn(),
-      }},
-    });
+          data: ref(resolvedKey.startsWith('category-') ? null : (handler ? await handler() : options?.default?.())),
+          pending: ref(resolvedKey.startsWith('category-')),
+          error: ref(null),
+          refresh: vi.fn(),
+        }
+      });
 
     try {
       const page = (await import('./[slug].vue')).default;
@@ -331,9 +364,7 @@ describe('category slug page', () => {
       expect(wrapper.html()).toContain('card-grid-skeleton-stub');
       expect(wrapper.html()).not.toContain('categories.invalidCategoryTitle');
     } finally {
-      Object.assign(globalThis, {
-        useAsyncData: originalUseAsyncData,
-      });
+      mockedUseAsyncData.mockImplementation(previousImplementation);
     }
   });
 

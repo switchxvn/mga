@@ -11,6 +11,7 @@ const mockedUseProductDetail = {
   isLoading: ref(false),
   error: ref<{ message: string } | null>(null),
   refresh: mockedRefresh,
+  isProductDetailRoute: ref(true),
   currentLocale: ref('vi'),
   productTitle: ref(''),
   productContent: ref(''),
@@ -137,12 +138,14 @@ describe('product slug page', () => {
     mockedUseProductDetail.productData.value = null;
     mockedUseProductDetail.isLoading.value = false;
     mockedUseProductDetail.error.value = null;
+    mockedUseProductDetail.isProductDetailRoute.value = true;
   });
 
   it('keeps the loading skeleton visible instead of flashing the error state when the route slug is missing during teardown', async () => {
     mockedRouteSlug.value = '';
     mockedRoutePath.value = '/';
     mockedUseProductDetail.error.value = { message: 'Product not found' };
+    mockedUseProductDetail.isProductDetailRoute.value = false;
 
     const page = (await import('./[slug].vue')).default;
     const TestHost = defineComponent({
@@ -183,6 +186,54 @@ describe('product slug page', () => {
 
     expect(wrapper.html()).toContain('detail-page-skeleton-stub');
     expect(wrapper.text()).not.toContain('Product not found');
+    expect(wrapper.text()).not.toContain('products.error');
+  });
+
+  it('does not flash the product error state while navigating to a non-product slug route', async () => {
+    mockedRouteSlug.value = 'xe-nang-dien';
+    mockedRoutePath.value = '/danh-muc-san-pham/xe-nang-dien';
+    mockedUseProductDetail.error.value = { message: 'Product with slug "xe-nang-dien" not found' };
+    mockedUseProductDetail.isProductDetailRoute.value = false;
+
+    const page = (await import('./[slug].vue')).default;
+    const TestHost = defineComponent({
+      components: { Page: page },
+      template: `
+        <Suspense>
+          <Page />
+        </Suspense>
+      `,
+    });
+
+    const wrapper = mount(TestHost, {
+      global: {
+        stubs: {
+          Breadcrumb: true,
+          DetailPageSkeleton: true,
+          AddToCartButton: true,
+          AppImage: true,
+          CrossSellProducts: true,
+          PriceRequestModal: true,
+          QuickPurchaseModal: true,
+          ProductDetailSidebar: true,
+          ProductReviewsSection: true,
+          ProductSpecifications: true,
+          GlobalModal: true,
+          TierPricingTable: true,
+          TableOfContents: true,
+          UIcon: true,
+          UButton: true,
+          UBadge: true,
+          ClientOnly: true,
+          DatePicker: true,
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.html()).toContain('detail-page-skeleton-stub');
+    expect(wrapper.text()).not.toContain('Product with slug "xe-nang-dien" not found');
     expect(wrapper.text()).not.toContain('products.error');
   });
 });
