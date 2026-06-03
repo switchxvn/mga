@@ -43,6 +43,9 @@ export class ServiceTranslation {
   @Column({ name: 'canonical_url', nullable: true })
   canonicalUrl: string;
 
+  @Column({ type: 'text', nullable: true })
+  address: string;
+
   @Column({ name: 'service_id' })
   serviceId: number;
 

@@ -21,7 +21,13 @@ const simpleNavbarSource = readFileSync(
 describe('navigation SSR source', () => {
   it('preloads menu items from the default layout before render', () => {
     expect(defaultLayoutSource).toContain('const { menuItems, fetchMenuItems } = useMenuItems();');
-    expect(defaultLayoutSource).toContain('!menuItems.value.length ? fetchMenuItems() : Promise.resolve()');
+    expect(defaultLayoutSource).toContain('!menuItems.value.length ? fetchMenuItems({ locale: locale.value }) : Promise.resolve()');
+  });
+
+  it('does not block SSR on footer data before rendering the layout shell', () => {
+    expect(defaultLayoutSource).not.toContain('trpc.footer.getActiveFooter.query(),');
+    expect(defaultLayoutSource).toContain('void loadFooter();');
+    expect(defaultLayoutSource).toContain('footer.value = await trpc.footer.getActiveFooter.query();');
   });
 
   it('does not wait until navbar mount to load the navigation menu', () => {

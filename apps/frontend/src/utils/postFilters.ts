@@ -66,3 +66,18 @@ export function buildPostListQuery(filters: PostListFilters): Record<string, str
 
   return query;
 }
+
+export function normalizePostListQuery(query: Record<string, unknown>): Record<string, string> {
+  return buildPostListQuery(parsePostListQuery(query));
+}
+
+export function isSingleCategoryPostLanding(filters: PostListFilters): boolean {
+  return Boolean(
+    filters.categories.length === 1
+      && !filters.search
+      && filters.tags.length === 0
+      && filters.sort === 'newest'
+      && filters.page === 1
+      && filters.limit === 12,
+  );
+}

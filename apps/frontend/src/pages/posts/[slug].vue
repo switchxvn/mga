@@ -208,11 +208,6 @@ usePageSeo({
       publisherName: siteName || undefined,
       publisherLogoUrl: siteLogoUrl || undefined,
       inLanguage: locale.value === 'en' ? 'en' : 'vi',
-      ratingValue: postReviewAggregate.value?.averageRating
-        ? Number.parseFloat(postReviewAggregate.value.averageRating)
-        : null,
-      reviewCount: postReviewAggregate.value?.totalReviews ?? null,
-      reviews: postReviews.value,
     }),
   ]),
 });

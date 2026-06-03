@@ -13,11 +13,14 @@ import Breadcrumb from "../../components/common/Breadcrumb.vue";
 import { SearchX, FilterX } from 'lucide-vue-next';
 import { usePageSeo } from '~/composables/usePageSeo';
 import { getAuthorName } from '~/utils/author';
-import { buildPostListQuery, parsePostListQuery } from '~/utils/postFilters';
+import { buildAbsoluteUrl } from '~/utils/seo';
+import { buildPostListQuery, isSingleCategoryPostLanding, normalizePostListQuery, parsePostListQuery } from '~/utils/postFilters';
 
 const { t, locale } = useLocalization();
 const route = useRoute();
 const router = useRouter();
+const config = useRuntimeConfig();
+const siteUrl = config.public.siteUrl;
 
 // Định nghĩa alias cho URL tiếng Việt và meta
 definePageMeta({
@@ -38,6 +41,11 @@ const categoryData = ref<any>(null);
 const seoData = ref<any>(null);
 const shouldResetSidebar = ref(false);
 const initialQueryFilters = parsePostListQuery(route.query as Record<string, unknown>);
+
+const normalizedInitialQuery = normalizePostListQuery(route.query as Record<string, unknown>);
+if (typeof route.query['danh-muc'] === 'string') {
+  await navigateTo({ path: route.path, query: normalizedInitialQuery }, { redirectCode: 301, replace: true });
+}
 
 // Filter state với tất cả các query parameters có thể có
 const filters = reactive<{
@@ -115,7 +123,7 @@ const fetchPostsPagePayload = async () => {
     }
   } else {
     try {
-      resolvedSeoData = await trpc.seo.getSeoByPath.query('/posts');
+      resolvedSeoData = await trpc.seo.getSeoByPath.query(locale.value === 'en' ? '/posts' : '/bai-viet');
     } catch (seoError) {
       console.error('Error fetching SEO data:', seoError);
     }
@@ -320,6 +328,36 @@ const pageDescription = computed(() => {
   return seoData.value?.description || '';
 });
 
+const normalizedPostFilters = computed(() => ({
+  search: filters.search,
+  categories: [...filters.categories],
+  sort: filters.sort,
+  page: filters.page,
+  limit: filters.limit,
+  tags: [...filters.tags],
+}));
+
+const canonicalPostQuery = computed(() => buildPostListQuery(normalizedPostFilters.value));
+const canonicalPostQueryString = computed(() => new URLSearchParams(canonicalPostQuery.value).toString());
+const isSingleCategoryLanding = computed(() => isSingleCategoryPostLanding(normalizedPostFilters.value));
+const categoryLandingCanonicalUrl = computed(() => {
+  const baseUrl = buildAbsoluteUrl(siteUrl, route.path);
+  return canonicalPostQueryString.value ? `${baseUrl}?${canonicalPostQueryString.value}` : baseUrl;
+});
+const seoRobots = computed(() =>
+  isSingleCategoryLanding.value || filters.categories.length === 0
+    ? 'index,follow'
+    : 'noindex,follow',
+);
+const categoryLandingAlternates = computed(() =>
+  isSingleCategoryLanding.value
+    ? [
+        { hreflang: 'vi' as const, href: categoryLandingCanonicalUrl.value },
+        { hreflang: 'x-default' as const, href: categoryLandingCanonicalUrl.value },
+      ]
+    : undefined,
+);
+
 usePageSeo({
   title: computed(() => pageTitle.value || t('posts.title')),
   description: computed(() => pageDescription.value || t('posts.description')),
@@ -327,7 +365,9 @@ usePageSeo({
   ogTitle: computed(() => seoData.value?.ogTitle || pageTitle.value || t('posts.title')),
   ogDescription: computed(() => seoData.value?.ogDescription || pageDescription.value || t('posts.description')),
   image: computed(() => seoData.value?.ogImage || ''),
-  canonicalUrl: computed(() => seoData.value?.canonicalUrl || null),
+  robots: seoRobots,
+  canonicalUrl: computed(() => isSingleCategoryLanding.value ? categoryLandingCanonicalUrl.value : (seoData.value?.canonicalUrl || null)),
+  alternates: categoryLandingAlternates,
   currentPath: computed(() => route.path),
   locale: computed(() => (locale.value === 'en' ? 'en' : 'vi')),
   routeKey: 'posts',

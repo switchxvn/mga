@@ -19,7 +19,7 @@ definePageMeta({
 
 const { data: seoDataState } = await useAsyncData(
   () => `seo-services-${locale.value}`,
-  () => trpc.seo.getSeoByPath.query("/services").catch(() => null),
+  () => trpc.seo.getSeoByPath.query(locale.value === 'en' ? '/services' : '/dich-vu').catch(() => null),
   { watch: [locale] },
 );
 

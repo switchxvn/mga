@@ -22,4 +22,16 @@ describe('homepage product categories SSR source', () => {
     expect(styledProductCategoriesSectionSource).toContain('const { data: sectionPayload, pending: loading, error } = await useAsyncData(');
     expect(styledProductCategoriesSectionSource).not.toContain('onMounted(() => {\n  fetchCategories();\n});');
   });
+
+  it('trims homepage category and product payloads before serializing SSR state', () => {
+    for (const source of [productCategoriesSectionSource, styledProductCategoriesSectionSource]) {
+      expect(source).toContain('const toHomeCategory = (category: Category): HomeCategory => ({');
+      expect(source).toContain('const toHomeProduct = (product: any): HomeProduct => ({');
+      expect(source).toContain('productsByCategory[category.id] = result.items.map(toHomeProduct);');
+      expect(source).not.toContain('content: translation?.content');
+      expect(source).not.toContain('metaTitle: translation?.metaTitle');
+      expect(source).not.toContain('metaDescription: translation?.metaDescription');
+      expect(source).not.toContain('metaKeywords: translation?.metaKeywords');
+    }
+  });
 });

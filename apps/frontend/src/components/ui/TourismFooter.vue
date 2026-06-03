@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, nextTick, watch } from 'vue';
+import { onBeforeUnmount, onMounted, computed, ref, nextTick, watch } from 'vue';
 import { useFooter } from '~/composables/useFooter';
 import { useDarkMode } from '~/composables/useDarkMode';
 import { MapPin, Phone, Mail } from 'lucide-vue-next';
-import type { Footer } from '~/interfaces/footer.interface';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/style.css';
 import FooterStatistics from './FooterStatistics.vue';
+import { deferUntilVisible } from '~/utils/deferredLoad';
 
 const isDev = ref(process.env.NODE_ENV === 'development');
 const isImageModalOpen = ref(false);
 const selectedImage = ref<{ url: string; alt: string } | null>(null);
+const fanpageContainer = ref<HTMLElement | null>(null);
+let stopDeferredFacebookLoad: (() => void) | null = null;
 
 const {
   activeFooter,
@@ -88,6 +90,21 @@ const reloadFacebookPlugin = () => {
   }
 };
 
+const queueFacebookSdkLoad = async () => {
+  await nextTick();
+
+  if (!activeFooter.value?.fanpageUrl || !fanpageContainer.value) {
+    return;
+  }
+
+  stopDeferredFacebookLoad?.();
+  stopDeferredFacebookLoad = deferUntilVisible(fanpageContainer.value, () => {
+    void initFacebookSDK().then(() => {
+      window.setTimeout(() => reloadFacebookPlugin(), 100);
+    });
+  });
+};
+
 // Hàm mở PhotoSwipe
 const openPhotoSwipe = (imageUrl: string, imageAlt: string) => {
   // Tạo một image object để lấy kích thước thật của ảnh
@@ -121,11 +138,7 @@ const removeHoverBackground = (event: MouseEvent) => {
 onMounted(async () => {
   try {
     await fetchActiveFooter();
-    if (activeFooter.value?.fanpageUrl) {
-      await nextTick();
-      await initFacebookSDK();
-      setTimeout(() => reloadFacebookPlugin(), 100);
-    }
+    await queueFacebookSdkLoad();
   } catch (err) {
     console.error('Error in Footer component:', err);
   }
@@ -135,11 +148,13 @@ watch(
   () => activeFooter.value?.fanpageUrl,
   async (fanpageUrl) => {
     if (!fanpageUrl) return;
-    await nextTick();
-    await initFacebookSDK();
-    setTimeout(() => reloadFacebookPlugin(), 100);
+    await queueFacebookSdkLoad();
   }
 );
+
+onBeforeUnmount(() => {
+  stopDeferredFacebookLoad?.();
+});
 </script>
 
 <template>
@@ -310,7 +325,7 @@ watch(
               </div>
 
               <!-- Facebook Fanpage -->
-              <div v-if="activeFooter.fanpageUrl" class="facebook-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
+              <div v-if="activeFooter.fanpageUrl" ref="fanpageContainer" class="facebook-container rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 mb-6">
                 <ClientOnly>
                   <div
                     class="fb-page"

@@ -21,7 +21,7 @@ definePageMeta({
 
 const { data: seoDataState } = await useAsyncData(
   () => `seo-products-${locale.value}`,
-  () => trpc.seo.getSeoByPath.query("/products").catch(() => null),
+  () => trpc.seo.getSeoByPath.query(locale.value === 'en' ? '/products' : '/san-pham').catch(() => null),
   { watch: [locale] },
 );
 

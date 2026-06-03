@@ -1,5 +1,4 @@
 import { ref, watch, computed, onMounted } from 'vue';
-import { useTrpc } from './useTrpc';
 import { useLocalization } from './useLocalization';
 import { useTheme } from './useTheme';
 import { PageType, Theme, ThemeSection } from '@ew/shared';
@@ -12,7 +11,6 @@ import HeroSectionFullWidth from '../components/sections/home_page/HeroSectionFu
 import { Autoplay, Navigation, Pagination } from 'swiper/modules';
 
 export async function useHomePage() {
-  const trpc = useTrpc();
   const { locale } = useLocalization();
   const { getActiveTheme, getPageSections } = useTheme();
   
@@ -21,7 +19,7 @@ export async function useHomePage() {
   const latestPosts = ref<any[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const defaultLocale = ref('vi');
+  const resolvedLocale = computed(() => normalizeLocaleCode(locale.value, 'vi'));
   
   // Định nghĩa type cho components
   type ComponentType = Component;
@@ -101,17 +99,6 @@ export async function useHomePage() {
     return null;
   };
   
-  // Lấy ngôn ngữ mặc định từ server
-  async function getDefaultLanguage(): Promise<string> {
-    try {
-      const defaultLang = await trpc.language.getDefaultLanguage.query();
-      return defaultLang?.code || 'vi';
-    } catch (error) {
-      console.error("Error fetching default language:", error);
-      return 'vi';
-    }
-  }
-  
   // Lấy theme sections với locale phù hợp
   async function fetchThemeSections(themeId: number, currentLocale: string = 'vi'): Promise<ThemeSection[]> {
     try {
@@ -131,7 +118,7 @@ export async function useHomePage() {
   // Watch for locale changes to update theme sections
   watch(locale, async () => {
     if (theme.value?.id) {
-      const fetchedSections = await fetchThemeSections(theme.value.id, locale.value);
+      const fetchedSections = await fetchThemeSections(theme.value.id, resolvedLocale.value);
       themeSections.value = fetchedSections;
     }
   });
@@ -145,7 +132,7 @@ export async function useHomePage() {
       if (!activeTheme) return;
 
       theme.value = activeTheme as unknown as Theme;
-      let fetchedSections = await fetchThemeSections(activeTheme.id, locale.value);
+      let fetchedSections = await fetchThemeSections(activeTheme.id, resolvedLocale.value);
       if (fetchedSections.length === 0) {
         fetchedSections = await fetchThemeSections(activeTheme.id);
       }
@@ -158,15 +145,11 @@ export async function useHomePage() {
   // Fetch data for SSR và CSR
   const { data: pageData } = await useAsyncData('home-theme', async () => {
     try {
-      // Lấy ngôn ngữ mặc định từ server
-      defaultLocale.value = await getDefaultLanguage();
-      
       // Lấy theme chính
       const activeTheme = await getActiveTheme({ pageType: PageType.HOME_PAGE });
       
       if (activeTheme) {
-        // Sử dụng locale từ user nếu ở client-side, hoặc defaultLocale nếu ở server-side
-        const currentLocale = process.client ? locale.value : defaultLocale.value;
+        const currentLocale = resolvedLocale.value;
         
         // Lấy sections với locale phù hợp
         let fetchedSections = await fetchThemeSections(activeTheme.id, currentLocale);

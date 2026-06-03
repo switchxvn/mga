@@ -3,7 +3,6 @@ import { defineEventHandler, setHeader } from 'h3';
 import { useRuntimeConfig } from '#imports';
 import { fetchTrpcQuery } from '../utils/trpc';
 import {
-  buildAlternateLinks,
   buildLocalizedPath,
   buildSitemapXml,
   buildAbsoluteUrl,
@@ -61,6 +60,35 @@ const STATIC_ROUTE_KEYS: SeoRouteKey[] = [
   'ticket-pricing',
   'menu',
 ];
+
+const CANONICAL_STATIC_ROUTE_KEYS: SeoRouteKey[] = ['about', 'posts', 'services', 'products'];
+const VI_ONLY_STATIC_ROUTE_KEYS = new Set<SeoRouteKey>(['home', 'gallery', 'categories', 'tickets']);
+
+function shouldIncludeStaticLocale(routeKey: SeoRouteKey, locale: SeoLocale): boolean {
+  if (CANONICAL_STATIC_ROUTE_KEYS.includes(routeKey)) {
+    return locale === 'vi';
+  }
+
+  if (VI_ONLY_STATIC_ROUTE_KEYS.has(routeKey)) {
+    return locale === 'vi';
+  }
+
+  return true;
+}
+
+function resolveSitemapDetailPath(
+  routeKey: SeoRouteKey,
+  slugs: Partial<Record<SeoLocale, string>>,
+): string | null {
+  const locale: SeoLocale = slugs.vi ? 'vi' : 'en';
+  const slug = slugs[locale];
+
+  if (!slug) {
+    return null;
+  }
+
+  return buildLocalizedPath(routeKey, locale, slug);
+}
 
 function getEntityLastModified(item: LocalizedEntityState): string | undefined {
   return item.updatedAt || item.createdAt;
@@ -169,72 +197,40 @@ async function buildDynamicEntries(event: H3Event, siteUrl: string): Promise<Sit
 
   for (const product of productMap.values()) {
     const routeKey: SeoRouteKey = product.type === 'TICKET' ? 'ticket-detail' : 'product-detail';
-    const alternates = buildAlternateLinks(siteUrl, routeKey, {
-      currentLocale: product.slugs.vi ? 'vi' : 'en',
-      slugByLocale: product.slugs,
-    });
-
-    for (const alternate of alternates) {
-      if (alternate.hreflang === 'x-default') {
-        continue;
-      }
-
+    const path = resolveSitemapDetailPath(routeKey, product.slugs);
+    if (path) {
       entries.push({
-        loc: alternate.href,
+        loc: buildAbsoluteUrl(siteUrl, path),
         lastmod: getEntityLastModified(product),
       });
     }
   }
 
   for (const post of postMap.values()) {
-    const alternates = buildAlternateLinks(siteUrl, 'post-detail', {
-      currentLocale: post.slugs.vi ? 'vi' : 'en',
-      slugByLocale: post.slugs,
-    });
-
-    for (const alternate of alternates) {
-      if (alternate.hreflang === 'x-default') {
-        continue;
-      }
-
+    const path = resolveSitemapDetailPath('post-detail', post.slugs);
+    if (path) {
       entries.push({
-        loc: alternate.href,
+        loc: buildAbsoluteUrl(siteUrl, path),
         lastmod: getEntityLastModified(post),
       });
     }
   }
 
   for (const category of categoryMap.values()) {
-    const alternates = buildAlternateLinks(siteUrl, 'category-detail', {
-      currentLocale: category.slugs.vi ? 'vi' : 'en',
-      slugByLocale: category.slugs,
-    });
-
-    for (const alternate of alternates) {
-      if (alternate.hreflang === 'x-default') {
-        continue;
-      }
-
+    const path = resolveSitemapDetailPath('category-detail', category.slugs);
+    if (path) {
       entries.push({
-        loc: alternate.href,
+        loc: buildAbsoluteUrl(siteUrl, path),
         lastmod: getEntityLastModified(category),
       });
     }
   }
 
   for (const service of serviceMap.values()) {
-    const alternates = buildAlternateLinks(siteUrl, 'service-detail', {
-      currentLocale: service.slugs.vi ? 'vi' : 'en',
-      slugByLocale: service.slugs,
-    });
-
-    for (const alternate of alternates) {
-      if (alternate.hreflang === 'x-default') {
-        continue;
-      }
-
+    const path = resolveSitemapDetailPath('service-detail', service.slugs);
+    if (path) {
       entries.push({
-        loc: alternate.href,
+        loc: buildAbsoluteUrl(siteUrl, path),
         lastmod: getEntityLastModified(service),
       });
     }
@@ -252,11 +248,11 @@ function buildStaticEntries(siteUrl: string): SitemapEntry[] {
     const viPath = buildLocalizedPath(routeKey, 'vi');
     const enPath = buildLocalizedPath(routeKey, 'en');
 
-    if (viPath) {
+    if (viPath && shouldIncludeStaticLocale(routeKey, 'vi')) {
       entries.push({ loc: buildAbsoluteUrl(siteUrl, viPath) });
     }
 
-    if (enPath) {
+    if (enPath && shouldIncludeStaticLocale(routeKey, 'en')) {
       entries.push({ loc: buildAbsoluteUrl(siteUrl, enPath) });
     }
   }

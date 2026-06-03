@@ -12,6 +12,7 @@ export interface ServiceTranslation {
   ogDescription: string;
   ogImage: string | null;
   canonicalUrl: string;
+  address: string | null;
   serviceId: number;
   createdAt: string;
   updatedAt: string;

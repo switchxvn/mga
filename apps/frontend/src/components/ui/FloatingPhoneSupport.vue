@@ -44,17 +44,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
 import { useTrpc } from '~/composables/useTrpc'
 import { Phone } from 'lucide-vue-next'
+import { deferUntilFirstScroll } from '~/utils/deferredLoad'
 
 const isHovered = ref(false)
 const phones = ref<string[]>([])
 let hideTimeout: NodeJS.Timeout | null = null
+let stopDeferredPhonesLoad: (() => void) | null = null
 
 const trpc = useTrpc()
 
-onMounted(async () => {
+const loadSupportPhones = async () => {
   try {
     const result = await trpc.settings.getPublicSettingByKey.query('support_phones')
     if (result?.value) {
@@ -63,6 +65,13 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to fetch support phones:', error)
   }
+}
+
+onMounted(() => {
+  stopDeferredPhonesLoad?.()
+  stopDeferredPhonesLoad = deferUntilFirstScroll(() => {
+    void loadSupportPhones()
+  })
 })
 
 const handleMouseEnter = () => {
@@ -90,6 +99,10 @@ onUnmounted(() => {
   if (hideTimeout) {
     clearTimeout(hideTimeout)
   }
+})
+
+onBeforeUnmount(() => {
+  stopDeferredPhonesLoad?.()
 })
 
 const formatPhoneNumber = (phone: string) => {

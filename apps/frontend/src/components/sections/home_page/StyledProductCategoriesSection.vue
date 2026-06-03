@@ -70,9 +70,105 @@ const props = defineProps<{
 const { t, locale } = useLocalization();
 const trpc = useTrpc();
 
+type HomeCategoryTranslation = Pick<CategoryTranslation, "locale" | "name" | "slug" | "description">;
+type HomeCategory = Pick<Category, "id"> & {
+  translations: HomeCategoryTranslation[];
+};
+type HomeProduct = {
+  id: number;
+  sku?: string;
+  price: number | null;
+  comparePrice?: number | null;
+  thumbnail?: string | null;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  isSale?: boolean;
+  type?: unknown;
+  formattedPrice?: string;
+  translations: Array<{
+    locale: string;
+    title: string;
+    shortDescription?: string;
+    slug: string;
+  }>;
+  variantAttributes?: {
+    attributes?: Array<{
+      name: string;
+      values: Array<{
+        value: string;
+        price?: number;
+        stock?: number;
+        image?: string;
+      }>;
+    }>;
+    variants: Array<{
+      id: number;
+      name: string;
+      price: number | null;
+      comparePrice?: number | null;
+      sku?: string;
+      stock: number;
+      image?: string;
+      attributes?: Record<string, unknown>;
+    }>;
+  };
+};
+
+const toHomeCategory = (category: Category): HomeCategory => ({
+  id: category.id,
+  translations: (category.translations ?? []).map((translation) => ({
+    locale: translation.locale,
+    name: translation.name,
+    slug: translation.slug,
+    description: translation.description,
+  })),
+});
+
+const toHomeProduct = (product: any): HomeProduct => ({
+  id: product.id,
+  sku: product.sku,
+  price: product.price,
+  comparePrice: product.comparePrice,
+  thumbnail: product.thumbnail,
+  isFeatured: product.isFeatured,
+  isNew: product.isNew,
+  isSale: product.isSale,
+  type: product.type,
+  formattedPrice: product.formattedPrice,
+  translations: (product.translations ?? []).map((translation: any) => ({
+    locale: translation.locale,
+    title: translation.title,
+    shortDescription: translation.shortDescription,
+    slug: translation.slug,
+  })),
+  variantAttributes: product.variantAttributes
+    ? {
+        attributes: product.variantAttributes.attributes?.map((attribute: any) => ({
+          name: attribute.name,
+          values: (attribute.values ?? []).map((value: any) => ({
+            value: value.value,
+            price: value.price,
+            stock: value.stock,
+            image: value.image,
+          })),
+        })),
+        variants: (product.variantAttributes.variants ?? []).map((variant: any) => ({
+          id: variant.id,
+          name: variant.name,
+          price: variant.price,
+          comparePrice: variant.comparePrice,
+          sku: variant.sku,
+          stock: variant.stock,
+          image: variant.image,
+          attributes: variant.attributes,
+        })),
+      }
+    : undefined,
+});
+
 // State
-const categories = ref<Category[]>([]);
-const categoryProducts = ref<Record<number, any[]>>({});
+const categories = ref<HomeCategory[]>([]);
+const categoryProducts = ref<Record<number, HomeProduct[]>>({});
 const categoryIds = computed(() => props.config.categoryIds ?? []);
 const productsPerCategory = computed(() => props.config.maxItems || 8);
 const safeLocale = computed(() => normalizeLocaleCode(locale.value, "vi"));
@@ -81,8 +177,8 @@ const safeLocale = computed(() => normalizeLocaleCode(locale.value, "vi"));
 const fetchSectionPayload = async () => {
   if (!categoryIds.value.length) {
     return {
-      categories: [] as Category[],
-      categoryProducts: {} as Record<number, any[]>,
+      categories: [] as HomeCategory[],
+      categoryProducts: {} as Record<number, HomeProduct[]>,
     };
   }
 
@@ -95,7 +191,7 @@ const fetchSectionPayload = async () => {
     );
 
     const validCategories = fetchedCategories.filter((cat) => cat !== null);
-    const productsByCategory: Record<number, any[]> = {};
+    const productsByCategory: Record<number, HomeProduct[]> = {};
 
     await Promise.all(
       validCategories.map(async (category) => {
@@ -105,7 +201,7 @@ const fetchSectionPayload = async () => {
             limit: productsPerCategory.value,
             locale: safeLocale.value,
           });
-          productsByCategory[category.id] = result.items;
+          productsByCategory[category.id] = result.items.map(toHomeProduct);
         } catch (err) {
           console.error(`Error fetching products for category ${category.id}:`, err);
           productsByCategory[category.id] = [];
@@ -114,7 +210,7 @@ const fetchSectionPayload = async () => {
     );
 
     return {
-      categories: validCategories,
+      categories: validCategories.map(toHomeCategory),
       categoryProducts: productsByCategory,
     };
   } catch (err) {
@@ -129,8 +225,8 @@ const { data: sectionPayload, pending: loading, error } = await useAsyncData(
   {
     watch: [safeLocale, categoryIds, productsPerCategory],
     default: () => ({
-      categories: [] as Category[],
-      categoryProducts: {} as Record<number, any[]>,
+      categories: [] as HomeCategory[],
+      categoryProducts: {} as Record<number, HomeProduct[]>,
     }),
   }
 );
@@ -143,7 +239,7 @@ watchEffect(() => {
 });
 
 // Computed
-const getCategoryTranslation = (category: Category): CategoryTranslation => {
+const getCategoryTranslation = (category: HomeCategory): HomeCategoryTranslation => {
   return category.translations?.find((t: CategoryTranslation) => t.locale === locale.value) || {} as CategoryTranslation;
 };
 

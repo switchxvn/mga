@@ -1,10 +1,11 @@
 <script setup lang="ts">
 // Auto-imported by Nuxt 3;
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTrpc } from '../composables/useTrpc';
 import { useTheme } from '../composables/useTheme';
 import { useMenuItems } from '../composables/useMenuItems';
+import { useLocalization } from '../composables/useLocalization';
 import { PageType } from '@ew/shared';
 import { AUTH_ROUTE_PATHS } from '../utils/routes';
 // Import components
@@ -16,15 +17,22 @@ import FloatingPhoneSupport from '~/components/ui/FloatingPhoneSupport.vue';
 import FloatingZaloSupport from '~/components/ui/FloatingZaloSupport.vue';
 import FloatingMessengerSupport from '~/components/ui/FloatingMessengerSupport.vue';
 import SimpleNavbar from '~/components/ui/SimpleNavbar.vue';
+import { deferUntilFirstScroll, deferUntilVisible } from '~/utils/deferredLoad';
 
 const router = useRouter();
 const trpc = useTrpc();
 const { getActiveTheme } = useTheme();
+const { locale } = useLocalization();
 const { menuItems, fetchMenuItems } = useMenuItems();
 
 const user = ref<any>(null);
 const theme = ref<any>({ sections: [] }); // Initialize with empty sections
 const footer = ref<any>(null);
+const isLoadingFooter = ref(false);
+const hasLoadedGtm = ref(false);
+const footerLoadAnchor = ref<HTMLElement | null>(null);
+let stopDeferredGtmLoad: (() => void) | null = null;
+let stopDeferredFooterLoad: (() => void) | null = null;
 const activeSections = computed(() => {
   const sections = Array.isArray(theme.value?.sections) ? theme.value.sections : [];
   return sections.filter((section: any) => section && section.isActive);
@@ -140,28 +148,8 @@ const themeCssText = computed(() => buildThemeCssText(theme.value?.colors));
 // GTM Configuration
 const gtmConfig = useState('gtm-id', () => null);
 
-// Reactive head configuration with GTM
 useHead(() => {
-  const scripts = [];
-  const noscripts = [];
   const styles = [];
-  
-  // Add GTM script if ID is available
-  if (gtmConfig.value) {
-    scripts.push({
-      key: 'google-tag-manager',
-      innerHTML: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${gtmConfig.value}');`
-    });
-    
-    noscripts.push({
-      key: 'google-tag-manager-noscript',
-      innerHTML: `<iframe title="Google Tag Manager" src="https://www.googletagmanager.com/ns.html?id=${gtmConfig.value}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`
-    });
-  }
 
   if (themeCssText.value) {
     styles.push({
@@ -171,11 +159,32 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   }
   
   return {
-    script: scripts,
-    noscript: noscripts,
     style: styles,
   };
 });
+
+const loadGoogleTagManager = () => {
+  if (process.server || hasLoadedGtm.value || !gtmConfig.value) {
+    return;
+  }
+
+  hasLoadedGtm.value = true;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    'gtm.start': Date.now(),
+    event: 'gtm.js',
+  });
+
+  if (document.getElementById('google-tag-manager')) {
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.id = 'google-tag-manager';
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmConfig.value)}`;
+  document.head.appendChild(script);
+};
 
 // Register available components
 const components = {
@@ -213,6 +222,21 @@ const getDefaultComponent = (type: string) => {
   return typeToComponent[type] || components.CombinedNavbar;
 };
 
+const loadFooter = async () => {
+  if (footer.value || isLoadingFooter.value) {
+    return;
+  }
+
+  try {
+    isLoadingFooter.value = true;
+    footer.value = await trpc.footer.getActiveFooter.query();
+  } catch {
+    // Keep footer empty when the request fails
+  } finally {
+    isLoadingFooter.value = false;
+  }
+};
+
 onMounted(async () => {
   try {
     // Kiểm tra xem người dùng đã đăng nhập chưa
@@ -230,21 +254,33 @@ onMounted(async () => {
     }
     
   } catch {}
+
+  if (!footer.value && footerLoadAnchor.value) {
+    stopDeferredFooterLoad?.();
+    stopDeferredFooterLoad = deferUntilVisible(footerLoadAnchor.value, () => {
+      void loadFooter();
+    });
+  }
+
+  if (gtmConfig.value) {
+    stopDeferredGtmLoad?.();
+    stopDeferredGtmLoad = deferUntilFirstScroll(loadGoogleTagManager);
+  }
+});
+
+onBeforeUnmount(() => {
+  stopDeferredGtmLoad?.();
+  stopDeferredFooterLoad?.();
 });
 
 try {
-  const [activeTheme, activeFooter] = await Promise.all([
+  const [activeTheme] = await Promise.all([
     getActiveTheme({ pageType: PageType.COMMON }),
-    trpc.footer.getActiveFooter.query(),
-    !menuItems.value.length ? fetchMenuItems() : Promise.resolve(),
+    !menuItems.value.length ? fetchMenuItems({ locale: locale.value }) : Promise.resolve(),
   ]);
 
   if (activeTheme) {
     theme.value = activeTheme;
-  }
-
-  if (activeFooter) {
-    footer.value = activeFooter;
   }
 } catch {
   // Keep fallback layout data
@@ -290,6 +326,7 @@ async function handleLogout() {
     </main>
 
     <!-- Footer -->
+    <div ref="footerLoadAnchor" class="h-px w-full" aria-hidden="true"></div>
     <component
       v-if="footer"
       :is="resolveFooterComponent(footer.componentName)"

@@ -53,7 +53,20 @@ describe('categoryPageState', () => {
       errorMessage: null,
     })).toEqual({
       kind: 'filtered-empty',
-      shouldIndex: true,
+      shouldIndex: false,
+      shouldShowFilters: true,
+    });
+  });
+
+  it('marks filtered category listings with products as non-indexable faceted urls', () => {
+    expect(resolveCategoryPageState({
+      categoryId: 12,
+      totalProducts: 8,
+      hasActiveFilters: true,
+      errorMessage: null,
+    })).toEqual({
+      kind: 'has-products',
+      shouldIndex: false,
       shouldShowFilters: true,
     });
   });

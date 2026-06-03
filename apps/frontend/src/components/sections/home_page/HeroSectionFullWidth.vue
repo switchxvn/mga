@@ -9,7 +9,7 @@ import { useLocalization } from '~/composables/useLocalization';
 import { useSkeletonGate } from '~/composables/useSkeletonGate';
 import HeroSliderComponent from '~/components/sliders/HeroSlider.vue';
 import type { Swiper as SwiperType } from 'swiper/types';
-import { useAsyncData } from '#imports';
+import { useAsyncData, useHead } from '#imports';
 
 interface HeroConfig {
   layout?: 'split-columns' | 'full-width';
@@ -161,6 +161,22 @@ const sortedSlides = computed(() => {
   }
   return [...props.slides].sort((a, b) => a.order - b.order);
 });
+
+const heroPreloadImage = computed(() => sortedSlides.value[0]?.image_url || null);
+
+useHead(() => ({
+  link: heroPreloadImage.value
+    ? [
+        {
+          key: 'hero-lcp-image',
+          rel: 'preload',
+          as: 'image',
+          href: heroPreloadImage.value,
+          fetchpriority: 'high',
+        },
+      ]
+    : [],
+}));
 
 
 // Thêm computed property để xử lý config

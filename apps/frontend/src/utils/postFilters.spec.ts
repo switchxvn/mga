@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildPostListQuery, parsePostListQuery } from './postFilters';
+import { buildPostListQuery, isSingleCategoryPostLanding, normalizePostListQuery, parsePostListQuery } from './postFilters';
 
 describe('postFilters', () => {
   it('maps the legacy danh-muc query parameter to categories', () => {
@@ -37,5 +37,35 @@ describe('postFilters', () => {
     })).toEqual({
       categories: 'ban-giao-xe-nang',
     });
+  });
+
+  it('normalizes legacy post list queries to canonical query params', () => {
+    expect(normalizePostListQuery({
+      'danh-muc': 'du-an-mga',
+      sort: 'newest',
+      page: '1',
+    })).toEqual({
+      categories: 'du-an-mga',
+    });
+  });
+
+  it('detects indexable single-category landing pages', () => {
+    expect(isSingleCategoryPostLanding({
+      search: '',
+      categories: ['ban-giao-xe-nang'],
+      sort: 'newest',
+      page: 1,
+      limit: 12,
+      tags: [],
+    })).toBe(true);
+
+    expect(isSingleCategoryPostLanding({
+      search: 'xe nang',
+      categories: ['ban-giao-xe-nang'],
+      sort: 'newest',
+      page: 1,
+      limit: 12,
+      tags: [],
+    })).toBe(false);
   });
 });

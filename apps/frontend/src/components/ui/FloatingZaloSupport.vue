@@ -23,13 +23,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onBeforeUnmount, onMounted } from 'vue'
 import { useTrpc } from '~/composables/useTrpc'
+import { deferUntilFirstScroll } from '~/utils/deferredLoad'
 
 const zaloLink = ref('')
 const trpc = useTrpc()
+let stopDeferredZaloLoad: (() => void) | null = null
 
-onMounted(async () => {
+const loadZaloSupport = async () => {
   try {
     const result = await trpc.settings.getPublicSettingByKey.query('zalo_support')
     if (result?.value) {
@@ -38,6 +40,17 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to fetch Zalo support link:', error)
   }
+}
+
+onMounted(() => {
+  stopDeferredZaloLoad?.()
+  stopDeferredZaloLoad = deferUntilFirstScroll(() => {
+    void loadZaloSupport()
+  })
+})
+
+onBeforeUnmount(() => {
+  stopDeferredZaloLoad?.()
 })
 </script>
 

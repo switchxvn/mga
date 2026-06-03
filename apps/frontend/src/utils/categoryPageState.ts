@@ -65,7 +65,7 @@ export function resolveCategoryPageState(input: ResolveCategoryPageStateInput): 
   if (input.totalProducts > 0) {
     return {
       kind: 'has-products',
-      shouldIndex: true,
+      shouldIndex: !input.hasActiveFilters,
       shouldShowFilters: true,
     };
   }
@@ -73,7 +73,7 @@ export function resolveCategoryPageState(input: ResolveCategoryPageStateInput): 
   if (input.hasActiveFilters) {
     return {
       kind: 'filtered-empty',
-      shouldIndex: true,
+      shouldIndex: false,
       shouldShowFilters: true,
     };
   }

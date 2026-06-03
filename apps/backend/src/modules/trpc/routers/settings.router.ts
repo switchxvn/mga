@@ -48,6 +48,18 @@ interface MenuItem {
   updatedAt: Date;
 }
 
+interface PublicMenuItem {
+  id: number;
+  defaultLocale: string;
+  icon?: string | null;
+  order: number;
+  level: number;
+  isActive: boolean;
+  parentId?: number | null;
+  translations: MenuItemTranslation[];
+  children?: PublicMenuItem[];
+}
+
 export const settingsRouter = router({
   admin: router({
     menuItems: adminMenuItemsRouter,
@@ -62,17 +74,30 @@ export const settingsRouter = router({
       try {
         ctx.logger.log('Fetching all menu items');
         const items = await ctx.services.settingsFrontendService.findActiveMenuItems(input);
+        const requestedLocale = input?.locale;
 
         // Transform items into recursive structure
-        const buildMenuTree = (items: MenuItem[]): MenuItem[] => {
+        const buildMenuTree = (items: MenuItem[]): PublicMenuItem[] => {
           // Create a map of id to item for quick lookup
-          const itemMap = new Map<number, MenuItem>();
+          const itemMap = new Map<number, PublicMenuItem>();
           items.forEach(item => {
-            itemMap.set(item.id, { ...item, children: [] });
+            itemMap.set(item.id, {
+              id: item.id,
+              defaultLocale: item.defaultLocale,
+              icon: item.icon,
+              order: item.order,
+              level: item.level,
+              isActive: item.isActive,
+              parentId: item.parentId ?? null,
+              translations: requestedLocale
+                ? item.translations.filter((translation) => translation.locale === requestedLocale)
+                : item.translations,
+              children: [],
+            });
           });
 
           // Build the tree structure
-          const rootItems: MenuItem[] = [];
+          const rootItems: PublicMenuItem[] = [];
           
           itemMap.forEach(item => {
             if (!item.parentId) {
@@ -91,7 +116,7 @@ export const settingsRouter = router({
           });
 
           // Sort children by order
-          const sortByOrder = (items: MenuItem[]) => {
+          const sortByOrder = (items: PublicMenuItem[]) => {
             items.sort((a, b) => a.order - b.order);
             items.forEach(item => {
               if (item.children && item.children.length > 0) {

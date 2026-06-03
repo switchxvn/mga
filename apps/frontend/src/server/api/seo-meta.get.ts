@@ -11,6 +11,8 @@ import {
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 type SeoOutput = RouterOutput['seo']['getSeoByPath']
+const SEO_META_CACHE_TTL_MS = 5 * 60 * 1000
+const seoMetaCache = new Map<string, { expiresAt: number; data: SeoOutput | null }>();
 
 export default defineEventHandler(async (event) => {
   try {
@@ -24,6 +26,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    const now = Date.now()
+    const cachedSeoEntry = seoMetaCache.get(path)
+    if (cachedSeoEntry && cachedSeoEntry.expiresAt > now) {
+      return {
+        success: true,
+        data: cachedSeoEntry.data,
+      }
+    }
+
     if (shouldBypassSeoApiFetch()) {
       return {
         success: false,
@@ -33,6 +44,10 @@ export default defineEventHandler(async (event) => {
     }
 
     const seoData = await fetchTrpcQuery<SeoOutput | null>(event, 'seo.getSeoByPath', path)
+    seoMetaCache.set(path, {
+      expiresAt: now + SEO_META_CACHE_TTL_MS,
+      data: seoData || null,
+    })
     markSeoApiSuccess()
 
     return {

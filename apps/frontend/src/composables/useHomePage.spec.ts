@@ -12,11 +12,11 @@ describe('useHomePage locale priority', () => {
     expect(source).toContain("const { data: pageData } = await useAsyncData('home-theme', async () => {");
   });
 
-  it('prefers Vietnamese for SSR homepage locale resolution', () => {
-    expect(source).toContain("const defaultLocale = ref('vi');");
-    expect(source).toContain('trpc.language.getDefaultLanguage.query()');
-    expect(source).toContain("return defaultLang?.code || 'vi';");
-    expect(source).toContain("return 'vi';");
+  it('uses the current normalized locale directly during SSR homepage resolution', () => {
+    expect(source).toContain("const resolvedLocale = computed(() => normalizeLocaleCode(locale.value, 'vi'));");
+    expect(source).toContain('const currentLocale = resolvedLocale.value;');
+    expect(source).not.toContain("const defaultLocale = ref('vi');");
+    expect(source).not.toContain('trpc.language.getDefaultLanguage.query()');
   });
 
   it('serializes homepage sections into the async payload so hydration matches SSR', () => {

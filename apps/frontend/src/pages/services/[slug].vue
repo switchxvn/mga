@@ -142,6 +142,7 @@ usePageSeo({
       url: resolvedCanonicalUrl.value,
       telephone: '0918865060',
       areaServed: 'TP.HCM',
+      address: currentTranslation.value?.address,
       image: currentTranslation.value?.ogImage || '',
     }),
   ]),

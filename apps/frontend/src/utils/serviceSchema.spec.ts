@@ -32,14 +32,33 @@ describe('service schema helpers', () => {
         url: 'https://example.test/dich-vu/sua-xe-nang-tphcm',
         telephone: '0918865060',
         areaServed: 'TP.HCM',
+        address: '37/6 Khu Pho Tay, Phuong Lai Thieu, Thanh Pho Ho Chi Minh',
       }),
     ).toMatchObject({
       '@type': 'LocalBusiness',
       telephone: '0918865060',
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: '37/6 Khu Pho Tay',
+        addressLocality: 'Phuong Lai Thieu',
+        addressRegion: 'Thanh Pho Ho Chi Minh',
+        addressCountry: 'VN',
+      },
       areaServed: {
         '@type': 'Place',
         name: 'TP.HCM',
       },
     });
+  });
+
+  it('skips local business schema when address is missing', () => {
+    expect(
+      buildLocalBusinessSchema({
+        name: 'MGA Vietnam',
+        url: 'https://example.test/dich-vu/sua-xe-nang-tphcm',
+        telephone: '0918865060',
+        areaServed: 'TP.HCM',
+      }),
+    ).toBeNull();
   });
 });

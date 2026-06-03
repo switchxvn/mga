@@ -135,7 +135,45 @@ interface CategoryProductListPayload {
   totalPages: number;
 }
 
+const DEFAULT_CATEGORY_MAX_PRICE = 10_000_000_000
+
 const tr = (key: string, fallback: string) => t(key) || fallback
+
+const normalizeCategoryRouteQuery = (query: Record<string, unknown>): Record<string, string> => {
+  const normalized: Record<string, string> = {}
+  const minPrice = typeof query.minPrice === 'string' ? Number(query.minPrice) : undefined
+  const maxPrice = typeof query.maxPrice === 'string' ? Number(query.maxPrice) : undefined
+  const includeNullPrice = query.includeNullPrice === 'true'
+  const page = typeof query.page === 'string' ? Number(query.page) : 1
+  const limit = typeof query.limit === 'string' ? Number(query.limit) : 12
+
+  if (typeof query.search === 'string' && query.search.trim()) normalized.search = query.search.trim()
+  if (typeof minPrice === 'number' && Number.isFinite(minPrice) && minPrice > 0) normalized.minPrice = String(minPrice)
+  if (typeof maxPrice === 'number' && Number.isFinite(maxPrice) && maxPrice < DEFAULT_CATEGORY_MAX_PRICE) normalized.maxPrice = String(maxPrice)
+  if (query.isFeatured === 'true') normalized.isFeatured = 'true'
+  if (query.isNew === 'true') normalized.isNew = 'true'
+  if (query.isSale === 'true') normalized.isSale = 'true'
+  if (typeof query.sortBy === 'string' && query.sortBy !== 'newest') normalized.sortBy = query.sortBy
+  if (Number.isInteger(page) && page > 1) normalized.page = String(page)
+  if (Number.isInteger(limit) && limit > 0 && limit !== 12) normalized.limit = String(limit)
+  if (includeNullPrice && (normalized.minPrice || normalized.maxPrice)) normalized.includeNullPrice = 'true'
+
+  return normalized
+}
+
+const hasSameQuery = (left: Record<string, unknown>, right: Record<string, string>) => {
+  const leftEntries = Object.entries(left)
+    .filter(([, value]) => typeof value === 'string' && value !== '')
+    .sort(([a], [b]) => a.localeCompare(b))
+  const rightEntries = Object.entries(right).sort(([a], [b]) => a.localeCompare(b))
+
+  return JSON.stringify(leftEntries) === JSON.stringify(rightEntries)
+}
+
+const normalizedCategoryQuery = normalizeCategoryRouteQuery(route.query as Record<string, unknown>)
+if (!hasSameQuery(route.query as Record<string, unknown>, normalizedCategoryQuery)) {
+  await navigateTo({ path: route.path, query: normalizedCategoryQuery }, { redirectCode: 301, replace: true })
+}
 
 const filters = reactive<FilterState>({
   search: route.query.search as string || '',
@@ -675,11 +713,12 @@ const updateQueryParams = () => {
   if (!categoryData.value?.id) return
 
   const query: Record<string, string | number | undefined> = {}
+  const hasExplicitPriceRange = filters.minPrice !== undefined || filters.maxPrice !== undefined
 
   if (filters.search) query.search = filters.search
   if (filters.minPrice !== undefined) query.minPrice = filters.minPrice
   if (filters.maxPrice !== undefined) query.maxPrice = filters.maxPrice
-  if (filters.includeNullPrice) query.includeNullPrice = 'true'
+  if (filters.includeNullPrice && hasExplicitPriceRange) query.includeNullPrice = 'true'
   if (filters.isFeatured) query.isFeatured = 'true'
   if (filters.isNew) query.isNew = 'true'
   if (filters.isSale) query.isSale = 'true'

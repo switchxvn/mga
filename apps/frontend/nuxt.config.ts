@@ -12,6 +12,9 @@ export default defineNuxtConfig({
   },
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
   ignore: ['**/*.js.map', '**/*.js'],
+  features: {
+    inlineStyles: false,
+  },
 
   devServer: {
     host: process.env.FRONTEND_NUXT_HOST || process.env.NUXT_HOST || 'localhost',

@@ -34,6 +34,7 @@ interface PageSeoOptions {
   ogType?: MaybeRefOrGetter<string | undefined>;
   robots?: MaybeRefOrGetter<string | undefined>;
   canonicalUrl?: MaybeRefOrGetter<string | null | undefined>;
+  alternates?: MaybeRefOrGetter<Array<{ hreflang: 'vi' | 'en' | 'x-default'; href: string }> | undefined>;
   schemas?: MaybeRefOrGetter<Record<string, unknown>[] | undefined>;
   breadcrumbs?: MaybeRefOrGetter<BreadcrumbInput[] | undefined>;
 }
@@ -106,14 +107,20 @@ export function usePageSeo(options: PageSeoOptions) {
       candidate: toValue(options.canonicalUrl),
     });
   });
-  const alternates = computed(() =>
-    options.routeKey
+  const alternates = computed(() => {
+    const explicitAlternates = toValue(options.alternates);
+
+    if (explicitAlternates) {
+      return explicitAlternates;
+    }
+
+    return options.routeKey
       ? buildAlternateLinks(siteUrl, options.routeKey, {
           currentLocale: normalizedLocale.value,
           slugByLocale: normalizedSlugByLocale.value,
         })
-      : [],
-  );
+      : [];
+  });
   const imageUrl = computed(() => toAbsoluteMediaUrl(siteUrl, toValue(options.image)));
   const breadcrumbItems = computed(() =>
     toValue(options.breadcrumbs)

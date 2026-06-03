@@ -5,6 +5,7 @@ import { MenuItem } from '../../entities/menu-item.entity';
 import { Logo } from '../../entities/logo.entity';
 import { Tag } from '../../entities/tag.entity';
 import { Settings } from '../../entities/settings.entity';
+import { sanitizeMenuItemFilters } from './menu-item-filter.util';
 
 @Injectable()
 export class SettingsFrontendService {
@@ -21,12 +22,14 @@ export class SettingsFrontendService {
 
   // Menu Items - Frontend chỉ cần các phương thức đọc
   async findActiveMenuItems(filters: any = {}): Promise<MenuItem[]> {
+    const menuItemFilters = sanitizeMenuItemFilters(filters);
+
     return this.menuItemRepository.find({
       where: {
         isActive: true,
-        ...filters,
+        ...menuItemFilters,
       },
-      relations: ['parent', 'children', 'translations'],
+      relations: ['translations'],
       order: { order: 'ASC' },
     });
   }

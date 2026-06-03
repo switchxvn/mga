@@ -1,6 +1,7 @@
 import {
   buildAlternateLinks,
   buildArticleSchema,
+  buildLocalBusinessSchema,
   buildLlmsTxt,
   buildProductSchema,
   buildRobotsTxt,
@@ -85,6 +86,52 @@ describe('seo utils', () => {
     ).toEqual([
       { hreflang: 'vi', href: 'https://example.test/san-pham/xe-nang-dau' },
       { hreflang: 'x-default', href: 'https://example.test/san-pham/xe-nang-dau' },
+    ]);
+  });
+
+  it('omits english hreflang links for canonical-only post and service routes', () => {
+    expect(
+      buildAlternateLinks(siteUrl, 'posts', {
+        currentLocale: 'vi',
+      }),
+    ).toEqual([
+      { hreflang: 'vi', href: 'https://example.test/bai-viet' },
+      { hreflang: 'x-default', href: 'https://example.test/bai-viet' },
+    ]);
+
+    expect(
+      buildAlternateLinks(siteUrl, 'post-detail', {
+        currentLocale: 'vi',
+        slugByLocale: {
+          vi: 'huong-dan-van-hanh-xe-nang-an-toan',
+          en: 'safe-forklift-operation-guide',
+        },
+      }),
+    ).toEqual([
+      { hreflang: 'vi', href: 'https://example.test/bai-viet/huong-dan-van-hanh-xe-nang-an-toan' },
+      { hreflang: 'x-default', href: 'https://example.test/bai-viet/huong-dan-van-hanh-xe-nang-an-toan' },
+    ]);
+
+    expect(
+      buildAlternateLinks(siteUrl, 'services', {
+        currentLocale: 'vi',
+      }),
+    ).toEqual([
+      { hreflang: 'vi', href: 'https://example.test/dich-vu' },
+      { hreflang: 'x-default', href: 'https://example.test/dich-vu' },
+    ]);
+
+    expect(
+      buildAlternateLinks(siteUrl, 'service-detail', {
+        currentLocale: 'vi',
+        slugByLocale: {
+          vi: 'cho-thue-xe-nang-dau',
+          en: 'diesel-forklift-rental',
+        },
+      }),
+    ).toEqual([
+      { hreflang: 'vi', href: 'https://example.test/dich-vu/cho-thue-xe-nang-dau' },
+      { hreflang: 'x-default', href: 'https://example.test/dich-vu/cho-thue-xe-nang-dau' },
     ]);
   });
 
@@ -266,35 +313,39 @@ describe('seo utils', () => {
     });
   });
 
-  it('adds aggregateRating to article schema only when valid review stats exist', () => {
+  it('splits local business postal address into structured fields', () => {
     expect(
-      buildArticleSchema({
-        headline: 'Xe nang dien cho kho lanh',
-        description: 'Mo ta',
-        url: 'https://example.test/bai-viet/xe-nang-dien-cho-kho-lanh',
-        ratingValue: 4.9,
-        reviewCount: 7,
+      buildLocalBusinessSchema({
+        name: 'MGA Vietnam',
+        url: 'https://example.test/dich-vu/sua-xe-nang-tphcm',
+        telephone: '0918865060',
+        areaServed: 'TP.HCM',
+        address: '37/6 Khu Pho Tay, Phuong Lai Thieu, Thanh Pho Ho Chi Minh',
       }),
     ).toMatchObject({
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: 4.9,
-        reviewCount: 7,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: '37/6 Khu Pho Tay',
+        addressLocality: 'Phuong Lai Thieu',
+        addressRegion: 'Thanh Pho Ho Chi Minh',
+        addressCountry: 'VN',
       },
     });
+  });
 
+  it('omits aggregateRating from article schema even when review stats exist', () => {
     expect(
       buildArticleSchema({
         headline: 'Xe nang dien cho kho lanh',
         description: 'Mo ta',
         url: 'https://example.test/bai-viet/xe-nang-dien-cho-kho-lanh',
-        ratingValue: 0,
+        ratingValue: 4.9,
         reviewCount: 7,
       }).aggregateRating,
     ).toBeUndefined();
   });
 
-  it('adds review objects to article schema when post reviews exist', () => {
+  it('omits review objects from article schema even when post reviews exist', () => {
     expect(
       buildArticleSchema({
         headline: 'Xe nang dien cho kho lanh',
@@ -313,27 +364,8 @@ describe('seo utils', () => {
             ],
           },
         ],
-      }),
-    ).toMatchObject({
-      review: [
-        {
-          '@type': 'Review',
-          author: {
-            '@type': 'Person',
-            name: 'Nguyen Van B',
-          },
-          name: 'Bai viet ro rang',
-          reviewBody: 'Noi dung bai viet de theo doi va giai thich rat sat thuc te.',
-          datePublished: '2026-05-29T00:00:00.000Z',
-          reviewRating: {
-            '@type': 'Rating',
-            ratingValue: 5,
-            bestRating: 5,
-            worstRating: 1,
-          },
-        },
-      ],
-    });
+      }).review,
+    ).toBeUndefined();
   });
 
   it('builds offers from decimal string prices returned by the API', () => {
@@ -424,6 +456,32 @@ describe('seo utils', () => {
         },
       },
     });
+  });
+
+  it('omits review markup from blog posting schema to stay within Google article support', () => {
+    const schema = buildArticleSchema({
+      headline: 'Cach chon xe nang dien',
+      description: 'Huong dan chon xe nang dien cho kho xuong.',
+      url: 'https://example.test/bai-viet/cach-chon-xe-nang-dien',
+      ratingValue: 4.9,
+      reviewCount: 12,
+      reviews: [
+        {
+          authorName: 'Nguyen Van A',
+          rating: 5,
+          createdAt: '2026-05-21T00:00:00.000Z',
+          translations: [
+            {
+              title: 'Rat huu ich',
+              content: 'Bai viet de doc va co gia tri tham khao.',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(schema.aggregateRating).toBeUndefined();
+    expect(schema.review).toBeUndefined();
   });
 
 });

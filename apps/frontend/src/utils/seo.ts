@@ -136,6 +136,17 @@ const CMS_SEO_DETAIL_ROUTE_KEYS = new Set<SeoRouteKey>([
   'category-detail',
 ]);
 
+const CANONICAL_ONLY_HREFLANG_ROUTE_KEYS = new Set<SeoRouteKey>([
+  'products',
+  'product-detail',
+  'posts',
+  'post-detail',
+  'services',
+  'service-detail',
+  'categories',
+  'category-detail',
+]);
+
 export function normalizePath(path: string): string {
   if (!path) {
     return '/';
@@ -359,7 +370,7 @@ export function buildAlternateLinks(
 ): Array<{ hreflang: 'vi' | 'en' | 'x-default'; href: string }> {
   const alternates: Array<{ hreflang: 'vi' | 'en' | 'x-default'; href: string }> = [];
   const viPath = buildLocalizedPath(routeKey, 'vi', options.slugByLocale?.vi);
-  const enPath = ['product-detail', 'categories', 'category-detail'].includes(routeKey)
+  const enPath = CANONICAL_ONLY_HREFLANG_ROUTE_KEYS.has(routeKey)
     ? null
     : buildLocalizedPath(routeKey, 'en', options.slugByLocale?.en);
 
@@ -588,61 +599,8 @@ export function buildArticleSchema(input: {
   publisherName?: string;
   publisherLogoUrl?: string;
   inLanguage?: string;
-  ratingValue?: number | null;
-  reviewCount?: number | null;
-  reviews?: Array<{
-    authorName: string;
-    rating: number;
-    createdAt?: string;
-    translations: Array<{
-      title?: string;
-      content: string;
-    }>;
-  }>;
 }) {
   const images = Array.isArray(input.image) ? input.image.filter(Boolean) : input.image ? [input.image] : [];
-  const hasValidAggregateRating =
-    typeof input.ratingValue === 'number' &&
-    Number.isFinite(input.ratingValue) &&
-    input.ratingValue > 0 &&
-    typeof input.reviewCount === 'number' &&
-    Number.isFinite(input.reviewCount) &&
-    input.reviewCount > 0;
-  const review =
-    input.reviews
-      ?.map((item) => {
-        const translation = item.translations?.find((entry) => entry.content?.trim()) || item.translations?.[0];
-        const reviewBody = translation?.content?.trim();
-        const reviewTitle = translation?.title?.trim();
-
-        if (
-          !reviewBody ||
-          typeof item.rating !== 'number' ||
-          !Number.isFinite(item.rating) ||
-          item.rating <= 0 ||
-          !item.authorName?.trim()
-        ) {
-          return null;
-        }
-
-        return {
-          '@type': 'Review',
-          author: {
-            '@type': 'Person',
-            name: item.authorName.trim(),
-          },
-          name: reviewTitle || undefined,
-          reviewBody,
-          datePublished: item.createdAt || undefined,
-          reviewRating: {
-            '@type': 'Rating',
-            ratingValue: item.rating,
-            bestRating: 5,
-            worstRating: 1,
-          },
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => Boolean(item)) || [];
 
   return {
     '@context': 'https://schema.org',
@@ -677,15 +635,6 @@ export function buildArticleSchema(input: {
             : undefined,
         }
       : undefined,
-    aggregateRating:
-      hasValidAggregateRating
-        ? {
-            '@type': 'AggregateRating',
-            ratingValue: input.ratingValue,
-            reviewCount: input.reviewCount,
-          }
-        : undefined,
-    review: review.length > 0 ? review : undefined,
   };
 }
 
@@ -724,8 +673,26 @@ export function buildLocalBusinessSchema(input: {
   url: string;
   telephone: string;
   areaServed: string;
+  address?: string | null;
   image?: string;
 }) {
+  const normalizedAddress = input.address?.trim();
+
+  if (!normalizedAddress) {
+    return null;
+  }
+
+  const addressSegments = normalizedAddress
+    .split(',')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  const streetAddress =
+    addressSegments.length >= 3 ? addressSegments.slice(0, -2).join(', ') : normalizedAddress;
+  const addressLocality =
+    addressSegments.length >= 2 ? addressSegments.at(-2) : input.areaServed;
+  const addressRegion =
+    addressSegments.length >= 3 ? addressSegments.at(-1) : undefined;
+
   return {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
@@ -733,6 +700,13 @@ export function buildLocalBusinessSchema(input: {
     url: input.url,
     telephone: input.telephone,
     image: input.image || undefined,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress,
+      addressLocality,
+      addressRegion,
+      addressCountry: 'VN',
+    },
     areaServed: {
       '@type': 'Place',
       name: input.areaServed,

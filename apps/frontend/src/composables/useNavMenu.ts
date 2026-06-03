@@ -28,7 +28,13 @@ interface MenuItem {
 export const useNavMenu = () => {
   const route = useRoute();
   const { locale } = useLocalization();
-  const { menuItems, isLoading, error, fetchMenuItems } = useMenuItems();
+  const { menuItems, isLoading, error, fetchMenuItems: fetchRawMenuItems } = useMenuItems();
+
+  const fetchMenuItems = (params: Record<string, unknown> = {}) =>
+    fetchRawMenuItems({
+      locale: locale.value,
+      ...params,
+    });
 
   const getTranslation = (item: MenuItem, targetLocale: string) => {
     if (!item.translations || item.translations.length === 0) {

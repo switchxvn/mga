@@ -61,6 +61,10 @@ describe('browser console regressions', () => {
     expect(heroSectionSource).toContain('const hasMounted = ref(false);');
     expect(heroSectionSource).toContain("const heroThemeId = computed(() => props.config?.themeId ?? null);");
     expect(heroSectionSource).toContain("const heroDataKey = computed(() => `hero-full-width-data-${heroThemeId.value ?? 'default'}`);");
+    expect(heroSectionSource).toContain('const heroPreloadImage = computed(() => sortedSlides.value[0]?.image_url || null);');
+    expect(heroSectionSource).toContain('useHead(() => ({');
+    expect(heroSectionSource).toContain("rel: 'preload'");
+    expect(heroSectionSource).toContain("as: 'image'");
     expect(heroSectionSource).toContain('const { data: heroPayload, pending: isLoading } = await useAsyncData(');
     expect(heroSectionSource).toContain('watch: [heroThemeId],');
     expect(heroSectionSource).toContain('onMounted(() => {');

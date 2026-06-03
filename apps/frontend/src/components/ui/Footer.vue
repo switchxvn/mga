@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, nextTick, watch } from 'vue';
+import { onBeforeUnmount, onMounted, computed, ref, nextTick, watch } from 'vue';
 import { useFooter } from '~/composables/useFooter';
 import { useDarkMode } from '~/composables/useDarkMode';
-import type { Footer } from '~/interfaces/footer.interface';
 import FooterStatistics from './FooterStatistics.vue';
 import { resolveFooterContactIcon } from '~/utils/footerContactIcon';
+import { deferUntilVisible } from '~/utils/deferredLoad';
 
 // Kiểm tra môi trường phát triển
 const isDev = ref(process.env.NODE_ENV === 'development');
@@ -18,6 +18,8 @@ const {
 } = useFooter();
 
 const { isDark } = useDarkMode();
+const fanpageContainer = ref<HTMLElement | null>(null);
+let stopDeferredFacebookLoad: (() => void) | null = null;
 
 const getSocialLinkLabel = (name?: string) => {
   const normalized = name?.trim();
@@ -88,14 +90,25 @@ const reloadFacebookPlugin = () => {
   }
 };
 
+const queueFacebookSdkLoad = async () => {
+  await nextTick();
+
+  if (!activeFooter.value?.fanpageUrl || !fanpageContainer.value) {
+    return;
+  }
+
+  stopDeferredFacebookLoad?.();
+  stopDeferredFacebookLoad = deferUntilVisible(fanpageContainer.value, () => {
+    void initFacebookSDK().then(() => {
+      window.setTimeout(() => reloadFacebookPlugin(), 100);
+    });
+  });
+};
+
 onMounted(async () => {
   try {
     await fetchActiveFooter();
-    if (activeFooter.value?.fanpageUrl) {
-      await nextTick();
-      await initFacebookSDK();
-      setTimeout(() => reloadFacebookPlugin(), 100);
-    }
+    await queueFacebookSdkLoad();
   } catch (err) {
     console.error('Error in Footer component:', err);
   }
@@ -105,11 +118,13 @@ watch(
   () => activeFooter.value?.fanpageUrl,
   async (fanpageUrl) => {
     if (!fanpageUrl) return;
-    await nextTick();
-    await initFacebookSDK();
-    setTimeout(() => reloadFacebookPlugin(), 100);
+    await queueFacebookSdkLoad();
   }
 );
+
+onBeforeUnmount(() => {
+  stopDeferredFacebookLoad?.();
+});
 </script>
 
 <template>
@@ -230,7 +245,7 @@ watch(
             </div>
 
             <!-- Facebook -->
-            <div v-if="activeFooter.fanpageUrl" class="mt-6 w-full">
+            <div v-if="activeFooter.fanpageUrl" ref="fanpageContainer" class="mt-6 w-full">
               <ClientOnly>
                 <div
                   class="fb-page"
