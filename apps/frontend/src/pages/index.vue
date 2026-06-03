@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useHomePage } from '../composables/useHomePage';
+import DeferredHomeSection from '../components/sections/home_page/DeferredHomeSection.vue';
 
 const { 
   themeSections, 
@@ -40,6 +42,13 @@ const getSemanticHeadingProps = (
     fallbackTitleTag: 'div',
   };
 };
+
+const activeSections = computed(() => (themeSections.value || []).filter((section) => section.isActive));
+
+const isEagerSection = (
+  section: { id: number; type?: string; componentName?: string | null },
+  activeIndex: number,
+) => activeIndex < 2 || isHeroSection(section) || isCompanyIntroSection(section);
 </script>
 
 <template>
@@ -58,13 +67,13 @@ const getSemanticHeadingProps = (
     </template>
     <template v-else>
       <template v-if="themeSections && themeSections.length > 0">
-        <template v-for="(section, index) in themeSections" :key="`section-${section.id}-${index}`">
-          <component
-            v-if="section.isActive"
-            :is="resolveComponent(section)"
+        <template v-for="(section, index) in activeSections" :key="`section-${section.id}-${index}`">
+          <DeferredHomeSection
+            :component="resolveComponent(section)"
             :section="section"
             :config="getSectionConfig(section)"
-            v-bind="getSemanticHeadingProps(section)"
+            :semantic-heading-props="getSemanticHeadingProps(section)"
+            :eager="isEagerSection(section, index)"
           />
         </template>
       </template>
